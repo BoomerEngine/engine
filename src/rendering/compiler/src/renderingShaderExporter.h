@@ -11,35 +11,33 @@
 #include "base/memory/include/linearAllocator.h"
 #include "base/memory/include/buffer.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+namespace shader
 {
-	namespace shader
-	{
-		struct StubProgram;
-	} // shader
+    struct StubProgram;
+} // shader
 
-    namespace compiler
-    {
+END_BOOMER_NAMESPACE(rendering)
 
-		//--
+BEGIN_BOOMER_NAMESPACE(rendering::shadercompiler)
 
-		struct AssembledShader
-		{
-			base::Buffer blob;
-			ShaderMetadataPtr metadata;
-		};
+//--
 
-		extern bool AssembleShaderStubs(
-			base::mem::LinearAllocator& mem,
-			CodeLibrary& lib, // TODO: const!
-			AssembledShader& outAssembledShader,
-			base::StringView contextPath, // copied into program data, debug source file location, can be empty
-			base::StringView contextOptions, // copied into program data, debug source file compilation options, can be empty
-			base::parser::IErrorReporter& err);
+struct AssembledShader
+{
+    base::Buffer blob;
+    ShaderMetadataPtr metadata;
+};
 
-		//--
+extern bool AssembleShaderStubs(
+    base::mem::LinearAllocator& mem,
+    CodeLibrary& lib, // TODO: const!
+    AssembledShader& outAssembledShader,
+    base::StringView contextPath, // copied into program data, debug source file location, can be empty
+    base::StringView contextOptions, // copied into program data, debug source file compilation options, can be empty
+    base::parser::IErrorReporter& err);
 
-    } // compiler
-} // rendering
+//--
 
-
+END_BOOMER_NAMESPACE(rendering::shadercompiler)

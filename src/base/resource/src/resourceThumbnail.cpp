@@ -10,23 +10,20 @@
 #include "resourceThumbnail.h"
 #include "resourceTags.h"
 
-namespace base
-{
-    namespace res
-    {
-        //--
+BEGIN_BOOMER_NAMESPACE(base::res)
 
-        RTTI_BEGIN_TYPE_CLASS(ResourceThumbnail);
-            RTTI_PROPERTY(imagePixels);
-            RTTI_PROPERTY(imageWidth);
-            RTTI_PROPERTY(imageHeight);
-            RTTI_PROPERTY(comments);
-        RTTI_END_TYPE();
+//--
 
-        ResourceThumbnail::ResourceThumbnail()
-        {}
+RTTI_BEGIN_TYPE_CLASS(ResourceThumbnail);
+    RTTI_PROPERTY(imagePixels);
+    RTTI_PROPERTY(imageWidth);
+    RTTI_PROPERTY(imageHeight);
+    RTTI_PROPERTY(comments);
+RTTI_END_TYPE();
 
-        //--
+ResourceThumbnail::ResourceThumbnail()
+{}
 
-    } // res
-} // base
+//--
+
+END_BOOMER_NAMESPACE(base::res)

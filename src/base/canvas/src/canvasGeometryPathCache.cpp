@@ -32,281 +32,279 @@
 #include "canvasGeometryPathCache.h"
 #include "canvasGeometryBuilder.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::canvas)
+
+namespace prv
 {
-    namespace canvas
-    {
-        namespace prv
-        {
     
-            PathCache::PathCache(float minPointDist, float tesseltationTollerance)
-                : minPointDist(minPointDist)
-                , tessTol(tesseltationTollerance)
-            {}
+    PathCache::PathCache(float minPointDist, float tesseltationTollerance)
+        : minPointDist(minPointDist)
+        , tessTol(tesseltationTollerance)
+    {}
 
-            void PathCache::reset()
+    void PathCache::reset()
+    {
+        paths.reset();
+        points.reset();
+    }
+
+    void PathCache::addPath()
+    {
+        paths.emplaceBack();
+        paths.back().first = points.size();
+    }
+
+    void PathCache::closePath()
+    {
+        if (!paths.empty())
+            paths.back().closed = true;
+    }
+
+    void PathCache::winding(Winding winding)
+    {
+        if (!paths.empty())
+            paths.back().winding = winding;
+    }
+
+    void PathCache::addBezier(const Vector2& p1, const Vector2& p2, const Vector2& p3, const Vector2& p4, uint32_t level, PointTypeFlags flags)
+    {
+        if (level > 10)
+        {
+            addPoint(p4, flags);
+            return;
+        }
+
+        // calculate half points (geometric bezier interpolation method)
+        auto p12 = (p1 + p2) * 0.5f;
+        auto p23 = (p2 + p3) * 0.5f;
+        auto p34 = (p3 + p4) * 0.5f;
+        auto p123 = (p12 + p23) * 0.5f;
+        auto p234 = (p23 + p34) * 0.5f;
+        auto p1234 = (p123 + p234) * 0.5f;
+
+        // is there a point tesselating more ?
+        {
+            auto d40 = p4 - p1;
+            auto d2 = fabs((p2.x - p4.x) * d40.y - (p2.y - p4.y) * d40.x);
+            auto d3 = fabs((p3.x - p4.x) * d40.y - (p3.y - p4.y) * d40.x);
+            if ((d2 + d3)*(d2 + d3) < tessTol * d40.squareLength())
             {
-                paths.reset();
-                points.reset();
+                addPoint(p4, flags);
+                return;
+            }
+        }
+
+        // recurse
+        addBezier(p1, p12, p123, p1234, level + 1, PointTypeFlags());
+        addBezier(p1234, p234, p34, p4, level + 1, flags);
+    }
+
+    void PathCache::addPoint(const Vector2& pos, PointTypeFlags flags)
+    {
+        if (paths.empty())
+            return;
+
+        if (!points.empty())
+        {
+            auto& lastPoint = points.back();
+            if (pos.isSimilar(lastPoint.pos, minPointDist))
+            {
+                lastPoint.flags |= flags;
+                return;
+            }
+        }
+
+        points.pushBack(PathPoint(pos, flags));
+        paths.back().count += 1;
+
+    }
+
+    void PathCache::addPoint(float x, float y, PointTypeFlags flags)
+    {
+        addPoint(Vector2(x, y), flags);
+    }
+
+    static INLINE float CalcTriangleArea(const Vector2& a, const Vector2& b, const Vector2& c)
+    {
+        auto ab = b - a;
+        auto ac = c - a;
+        return ac.x*ab.y - ab.x*ac.y;
+    }
+
+    static float CalcPathArea(const PathPoint* points, uint32_t numPoints)
+    {
+        float area = 0.0f;
+        for (uint32_t i=2; i<numPoints; i++)
+            area += CalcTriangleArea(points[0].pos, points[i - 1].pos, points[i].pos);
+
+        return area * 0.5f;
+    }
+
+    static void ReversePathPoints(PathPoint* points, uint32_t numPoints)
+    {
+        uint32_t i = 0;
+        uint32_t j = numPoints - 1;
+
+        while (i < j)
+            std::swap(points[i++], points[j--]);
+    }
+
+    void PathCache::computeDeltas()
+    {
+        // count lengths of the paths and the deltas between points
+        for (auto& path : paths)
+        {
+            // skip over empty paths
+            if (path.count <= 1)
+                continue;
+
+            auto curPoint  = points.typedData() + path.first;
+            auto lastPoint  = curPoint + path.count - 1;
+
+            // If the first and last points are the same, remove the last, mark as closed path.
+            if (curPoint[0].pos.isSimilar(lastPoint->pos, minPointDist))
+            {
+                path.closed = true;
+                path.count -= 1;
+                lastPoint -= 1;
             }
 
-            void PathCache::addPath()
+            // Enforce path winding as set with in the winding flag
+            if (path.count > 2)
             {
-                paths.emplaceBack();
-                paths.back().first = points.size();
+                auto area = CalcPathArea(curPoint, path.count);
+                if ((path.winding == Winding::CCW && area < 0.0f) || (path.winding == Winding::CW && area > 0.0f))
+                    ReversePathPoints(curPoint, path.count);
             }
 
-            void PathCache::closePath()
+            // compute deltas
+            for (uint32_t i=0; i<path.count; ++i, lastPoint = curPoint++ )
             {
-                if (!paths.empty())
-                    paths.back().closed = true;
+                lastPoint->d = curPoint->pos - lastPoint->pos;
+                lastPoint->len = lastPoint->d.length();
+
+                if (lastPoint->len > 0.0f)
+                    lastPoint->d /= lastPoint->len;
+
+                //boundsMin = Min(boundsMin, lastPoint->pos);
+                //boundsMax = Min(boundsMax, lastPoint->pos);
             }
+        }
+    }
 
-            void PathCache::winding(Winding winding)
-            {
-                if (!paths.empty())
-                    paths.back().winding = winding;
-            }
+    static Vector2 CalcExtrusionVector(const PathPoint& p0, const PathPoint& p1, float& dmr)
+    {
+        auto dl0 = p0.d.prep();
+        auto dl1 = p1.d.prep();
 
-            void PathCache::addBezier(const Vector2& p1, const Vector2& p2, const Vector2& p3, const Vector2& p4, uint32_t level, PointTypeFlags flags)
-            {
-                if (level > 10)
-                {
-                    addPoint(p4, flags);
-                    return;
-                }
+        auto dm = (dl0 + dl1) * 0.5f;
 
-                // calculate half points (geometric bezier interpolation method)
-                auto p12 = (p1 + p2) * 0.5f;
-                auto p23 = (p2 + p3) * 0.5f;
-                auto p34 = (p3 + p4) * 0.5f;
-                auto p123 = (p12 + p23) * 0.5f;
-                auto p234 = (p23 + p34) * 0.5f;
-                auto p1234 = (p123 + p234) * 0.5f;
+        dmr = dm.squareLength();
+        if (dmr > 0.000001f)
+        {
+            float scale = std::min(600.0f, 1.0f / dmr);
+            return dm * scale;
+        }
+        else
+        {
+            return Vector2::ZERO();
+        }
+    }
 
-                // is there a point tesselating more ?
-                {
-                    auto d40 = p4 - p1;
-                    auto d2 = fabs((p2.x - p4.x) * d40.y - (p2.y - p4.y) * d40.x);
-                    auto d3 = fabs((p3.x - p4.x) * d40.y - (p3.y - p4.y) * d40.x);
-                    if ((d2 + d3)*(d2 + d3) < tessTol * d40.squareLength())
-                    {
-                        addPoint(p4, flags);
-                        return;
-                    }
-                }
-
-                // recurse
-                addBezier(p1, p12, p123, p1234, level + 1, PointTypeFlags());
-                addBezier(p1234, p234, p34, p4, level + 1, flags);
-            }
-
-            void PathCache::addPoint(const Vector2& pos, PointTypeFlags flags)
-            {
-                if (paths.empty())
-                    return;
-
-                if (!points.empty())
-                {
-                    auto& lastPoint = points.back();
-                    if (pos.isSimilar(lastPoint.pos, minPointDist))
-                    {
-                        lastPoint.flags |= flags;
-                        return;
-                    }
-                }
-
-                points.pushBack(PathPoint(pos, flags));
-                paths.back().count += 1;
-
-            }
-
-            void PathCache::addPoint(float x, float y, PointTypeFlags flags)
-            {
-                addPoint(Vector2(x, y), flags);
-            }
-
-            static INLINE float CalcTriangleArea(const Vector2& a, const Vector2& b, const Vector2& c)
-            {
-                auto ab = b - a;
-                auto ac = c - a;
-                return ac.x*ab.y - ab.x*ac.y;
-            }
-
-            static float CalcPathArea(const PathPoint* points, uint32_t numPoints)
-            {
-                float area = 0.0f;
-                for (uint32_t i=2; i<numPoints; i++)
-                    area += CalcTriangleArea(points[0].pos, points[i - 1].pos, points[i].pos);
-
-                return area * 0.5f;
-            }
-
-            static void ReversePathPoints(PathPoint* points, uint32_t numPoints)
-            {
-                uint32_t i = 0;
-                uint32_t j = numPoints - 1;
-
-                while (i < j)
-                    std::swap(points[i++], points[j--]);
-            }
-
-            void PathCache::computeDeltas()
-            {
-                // count lengths of the paths and the deltas between points
-                for (auto& path : paths)
-                {
-                    // skip over empty paths
-                    if (path.count <= 1)
-                        continue;
-
-                    auto curPoint  = points.typedData() + path.first;
-                    auto lastPoint  = curPoint + path.count - 1;
-
-                    // If the first and last points are the same, remove the last, mark as closed path.
-                    if (curPoint[0].pos.isSimilar(lastPoint->pos, minPointDist))
-                    {
-                        path.closed = true;
-                        path.count -= 1;
-                        lastPoint -= 1;
-                    }
-
-                    // Enforce path winding as set with in the winding flag
-                    if (path.count > 2)
-                    {
-                        auto area = CalcPathArea(curPoint, path.count);
-                        if ((path.winding == Winding::CCW && area < 0.0f) || (path.winding == Winding::CW && area > 0.0f))
-                            ReversePathPoints(curPoint, path.count);
-                    }
-
-                    // compute deltas
-                    for (uint32_t i=0; i<path.count; ++i, lastPoint = curPoint++ )
-                    {
-                        lastPoint->d = curPoint->pos - lastPoint->pos;
-                        lastPoint->len = lastPoint->d.length();
-
-                        if (lastPoint->len > 0.0f)
-                            lastPoint->d /= lastPoint->len;
-
-                        //boundsMin = Min(boundsMin, lastPoint->pos);
-                        //boundsMax = Min(boundsMax, lastPoint->pos);
-                    }
-                }
-            }
-
-            static Vector2 CalcExtrusionVector(const PathPoint& p0, const PathPoint& p1, float& dmr)
-            {
-                auto dl0 = p0.d.prep();
-                auto dl1 = p1.d.prep();
-
-                auto dm = (dl0 + dl1) * 0.5f;
-
-                dmr = dm.squareLength();
-                if (dmr > 0.000001f)
-                {
-                    float scale = std::min(600.0f, 1.0f / dmr);
-                    return dm * scale;
-                }
-                else
-                {
-                    return Vector2::ZERO();
-                }
-            }
-
-            void PathCache::computeJoints(float w, LineJoin lineJoin, float miterLimit)
-             {
-                float iw = (w > 0.0f) ? (1.0f / w) : 0.0f;
+    void PathCache::computeJoints(float w, LineJoin lineJoin, float miterLimit)
+        {
+        float iw = (w > 0.0f) ? (1.0f / w) : 0.0f;
                 
-                // Calculate which joins needs extra vertices to append, and gather vertex count
-                for (auto& path : paths)
-                {
-                    // skip over empty paths
-                    if (path.count <= 1)
-                        continue;
+        // Calculate which joins needs extra vertices to append, and gather vertex count
+        for (auto& path : paths)
+        {
+            // skip over empty paths
+            if (path.count <= 1)
+                continue;
 
-                    auto curPoint  = points.typedData() + path.first;
-                    auto lastPoint  = curPoint + path.count - 1;
+            auto curPoint  = points.typedData() + path.first;
+            auto lastPoint  = curPoint + path.count - 1;
 
-                    uint32_t nleft = 0;
-                    path.bevelCount = 0;
-                    for (uint32_t j=0; j<path.count; j++, lastPoint = curPoint++)
-                    {
-                        // calculate the extrusion direction
-                        float dmr2;
-                        curPoint->dm = CalcExtrusionVector(*lastPoint, *curPoint, dmr2);
-
-                        // clear flags, but keep the corner flag
-                        curPoint->flags &= PointTypeFlag::Corner;
-
-                        // keep track of left turns
-                        float cross = curPoint->d.x * lastPoint->d.y - lastPoint->d.x * curPoint->d.y;
-                        if (cross > 0.0f)
-                        {
-                            nleft++;
-                            curPoint->flags |= PointTypeFlag::Left;
-                        }
-
-                        // calculate if we should use bevel or miter for inner join
-                        float limit = std::max(1.01f, std::min(lastPoint->len, curPoint->len) * iw);
-                        if ((dmr2 * limit*limit) < 1.0f)
-                            curPoint->flags |= PointTypeFlag::InnerBevel;
-
-                        // check to see if the corner needs to be beveled
-                        if (curPoint->flags.test(PointTypeFlag::Corner))
-                            if ((dmr2 * miterLimit*miterLimit) < 1.0f || lineJoin == LineJoin::Bevel || lineJoin == LineJoin::Round)
-                                curPoint->flags |= PointTypeFlag::Bevel;
-
-                        if ((curPoint->flags.test(PointTypeFlag::Bevel)) || (curPoint->flags.test(PointTypeFlag::InnerBevel)))
-                            path.bevelCount += 1;
-                    }
-
-                    // the path is convex if all edges go into "left"
-                    path.convex = (nleft == path.count);
-                }
-            }
-
-            static INLINE uint32_t CalcCurveDivs(float r, float arc, float tol)
+            uint32_t nleft = 0;
+            path.bevelCount = 0;
+            for (uint32_t j=0; j<path.count; j++, lastPoint = curPoint++)
             {
-                float da = acosf(r / (r + tol)) * 2.0f;
-                return (uint32_t)std::max<int>(2, (int)ceil(arc / da));
-            }
+                // calculate the extrusion direction
+                float dmr2;
+                curPoint->dm = CalcExtrusionVector(*lastPoint, *curPoint, dmr2);
 
-            uint32_t PathCache::computeStrokeVertexCount(LineJoin lineJoin, LineCap lineCap, float strokeWidth) const
-            {
-                auto ncap = CalcCurveDivs(strokeWidth, PI, tessTol); // calculate divisions per half circle.
+                // clear flags, but keep the corner flag
+                curPoint->flags &= PointTypeFlag::Corner;
 
-                uint32_t ret = 0;
-                for (auto& path : paths)
+                // keep track of left turns
+                float cross = curPoint->d.x * lastPoint->d.y - lastPoint->d.x * curPoint->d.y;
+                if (cross > 0.0f)
                 {
-                    if (lineJoin == LineJoin::Round)
-                        ret += (path.count + path.bevelCount*(ncap + 2) + 1) * 2; // plus one for loop
-                    else
-                        ret += (path.count + path.bevelCount * 5 + 1) * 2; // plus one for loop
-
-                    if (!path.closed)
-                    {
-                        if (lineCap == LineCap::Round)
-                            ret += (ncap * 2 + 2) * 2;
-                        else
-                            ret += (3 + 3) * 2;
-                    }
+                    nleft++;
+                    curPoint->flags |= PointTypeFlag::Left;
                 }
 
-                return ret;
+                // calculate if we should use bevel or miter for inner join
+                float limit = std::max(1.01f, std::min(lastPoint->len, curPoint->len) * iw);
+                if ((dmr2 * limit*limit) < 1.0f)
+                    curPoint->flags |= PointTypeFlag::InnerBevel;
+
+                // check to see if the corner needs to be beveled
+                if (curPoint->flags.test(PointTypeFlag::Corner))
+                    if ((dmr2 * miterLimit*miterLimit) < 1.0f || lineJoin == LineJoin::Bevel || lineJoin == LineJoin::Round)
+                        curPoint->flags |= PointTypeFlag::Bevel;
+
+                if ((curPoint->flags.test(PointTypeFlag::Bevel)) || (curPoint->flags.test(PointTypeFlag::InnerBevel)))
+                    path.bevelCount += 1;
             }
 
-            uint32_t PathCache::computeFillVertexCount(bool hasFringe) const
+            // the path is convex if all edges go into "left"
+            path.convex = (nleft == path.count);
+        }
+    }
+
+    static INLINE uint32_t CalcCurveDivs(float r, float arc, float tol)
+    {
+        float da = acosf(r / (r + tol)) * 2.0f;
+        return (uint32_t)std::max<int>(2, (int)ceil(arc / da));
+    }
+
+    uint32_t PathCache::computeStrokeVertexCount(LineJoin lineJoin, LineCap lineCap, float strokeWidth) const
+    {
+        auto ncap = CalcCurveDivs(strokeWidth, PI, tessTol); // calculate divisions per half circle.
+
+        uint32_t ret = 0;
+        for (auto& path : paths)
+        {
+            if (lineJoin == LineJoin::Round)
+                ret += (path.count + path.bevelCount*(ncap + 2) + 1) * 2; // plus one for loop
+            else
+                ret += (path.count + path.bevelCount * 5 + 1) * 2; // plus one for loop
+
+            if (!path.closed)
             {
-                uint32_t ret = 0;
-                for (auto& path : paths)
-                {
-                    ret += path.count + path.bevelCount + 1;
-                    if (hasFringe)
-                        ret += (path.count + path.bevelCount * 5 + 1) * 2; // plus one for loop
-                }
-                return ret;
+                if (lineCap == LineCap::Round)
+                    ret += (ncap * 2 + 2) * 2;
+                else
+                    ret += (3 + 3) * 2;
             }
+        }
 
-        } // prv
-    } // canvas
-} // base
+        return ret;
+    }
+
+    uint32_t PathCache::computeFillVertexCount(bool hasFringe) const
+    {
+        uint32_t ret = 0;
+        for (auto& path : paths)
+        {
+            ret += path.count + path.bevelCount + 1;
+            if (hasFringe)
+                ret += (path.count + path.bevelCount * 5 + 1) * 2; // plus one for loop
+        }
+        return ret;
+    }
+
+} // prv
+
+END_BOOMER_NAMESPACE(base::canvas)

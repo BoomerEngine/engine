@@ -10,104 +10,102 @@
 
 #include "base/ui/include/uiElement.h"
 
-namespace rendering
-{
-	namespace scene
-	{
-		struct FrameParams_Capture;
-        class Camera;
-	}
-}
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
 
-namespace ui
+struct FrameParams_Capture;
+class Camera;
+
+END_BOOMER_NAMESPACE(rendering::scene)
+
+BEGIN_BOOMER_NAMESPACE(ui)
+
+//--
+
+/// ui widget capable of hosting any command buffer based rendering (3D/2D etc), even full scene
+class RENDERING_UI_HOST_API RenderingPanel : public IElement
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(RenderingPanel, IElement);
+
+public:
+    RenderingPanel();
+    virtual ~RenderingPanel();
+
     //--
 
-    /// ui widget capable of hosting any command buffer based rendering (3D/2D etc), even full scene
-    class RENDERING_UI_HOST_API RenderingPanel : public IElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(RenderingPanel, IElement);
+    // get auto render flag
+    INLINE bool autoRender() const { return m_autoRender; }
 
-    public:
-        RenderingPanel();
-        virtual ~RenderingPanel();
+    // get rendering rate
+    INLINE float renderRate() const { return m_renderRate; }
 
-        //--
+    //--
 
-        // get auto render flag
-        INLINE bool autoRender() const { return m_autoRender; }
+    // request redraw of the panel
+    void requestRedraw();
 
-        // get rendering rate
-        INLINE float renderRate() const { return m_renderRate; }
+    // toggle automatic rendering of the panel
+    void autoRender(bool flag);
 
-        //--
+    // set automatic rendering frequency
+    void renderRate(float rate);
 
-        // request redraw of the panel
-        void requestRedraw();
+    //--
 
-        // toggle automatic rendering of the panel
-        void autoRender(bool flag);
+	struct ViewportParams
+	{
+		uint32_t width = 0;
+		uint32_t height = 0;
 
-        // set automatic rendering frequency
-        void renderRate(float rate);
+		const rendering::RenderTargetView* colorBuffer = nullptr;
+		const rendering::RenderTargetView* depthBuffer = nullptr;
+		const rendering::scene::FrameParams_Capture* capture = nullptr;
+	};
 
-        //--
+	// render the panel, when done submit work to the device
+	virtual void renderContent(const ViewportParams& params, rendering::scene::Camera* outCameraUsedToRender = nullptr);
 
-		struct ViewportParams
-		{
-			uint32_t width = 0;
-			uint32_t height = 0;
+protected:
+    virtual void handleHoverEnter(const Position& pos) override;
+    virtual void handleHoverLeave(const Position& pos) override;
+    virtual bool handleMouseMovement(const base::input::MouseMovementEvent& evt) override;
+    virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
 
-			const rendering::RenderTargetView* colorBuffer = nullptr;
-			const rendering::RenderTargetView* depthBuffer = nullptr;
-			const rendering::scene::FrameParams_Capture* capture = nullptr;
-		};
+    bool calculateCurrentPixelUnderCursor(base::Point& outPixel) const;
 
-		// render the panel, when done submit work to the device
-		virtual void renderContent(const ViewportParams& params, rendering::scene::Camera* outCameraUsedToRender = nullptr);
+    base::Point m_renderTargetOffset = base::Point(0, 0);
+    int m_renderTargetZoom = 0;
 
-    protected:
-        virtual void handleHoverEnter(const Position& pos) override;
-        virtual void handleHoverLeave(const Position& pos) override;
-        virtual bool handleMouseMovement(const base::input::MouseMovementEvent& evt) override;
-        virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
+    void renderCaptureScene(const rendering::scene::FrameParams_Capture* capture, rendering::scene::Camera* outCameraUsedToRender = nullptr);
 
-        bool calculateCurrentPixelUnderCursor(base::Point& outPixel) const;
+private:
+    base::NativeTimePoint m_lastRenderTime;
+    float m_renderRate; // default render rate
+    bool m_autoRender; // render every frame
+    bool m_renderRequest; // rendering was requested
 
-        base::Point m_renderTargetOffset = base::Point(0, 0);
-        int m_renderTargetZoom = 0;
+    bool m_currentHoverAbsolutePositionValid = false;
+    ui::Position m_currentHoverAbsolutePosition;
 
-        void renderCaptureScene(const rendering::scene::FrameParams_Capture* capture, rendering::scene::Camera* outCameraUsedToRender = nullptr);
+    base::Point m_lastClickPosition = base::Point(-1,-1);
+    base::Point m_currentHoverPosition = base::Point(-1, -1);
 
-    private:
-        base::NativeTimePoint m_lastRenderTime;
-        float m_renderRate; // default render rate
-        bool m_autoRender; // render every frame
-        bool m_renderRequest; // rendering was requested
+    virtual void renderForeground(DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
 
-        bool m_currentHoverAbsolutePositionValid = false;
-        ui::Position m_currentHoverAbsolutePosition;
+	//--
 
-        base::Point m_lastClickPosition = base::Point(-1,-1);
-        base::Point m_currentHoverPosition = base::Point(-1, -1);
+	rendering::ImageObjectPtr m_colorSurface;
+	rendering::ImageObjectPtr m_depthSurface;
+	rendering::RenderTargetViewPtr m_colorSurfaceRTV;
+	rendering::ImageSampledViewPtr m_colorSurfaceSRV;
+	rendering::RenderTargetViewPtr m_depthSurfaceRTV;
 
-        virtual void renderForeground(DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+	base::canvas::Geometry* m_quadGeometry;
 
-		//--
+	void parepareRenderTargets(ViewportParams& viewport);
 
-		rendering::ImageObjectPtr m_colorSurface;
-		rendering::ImageObjectPtr m_depthSurface;
-		rendering::RenderTargetViewPtr m_colorSurfaceRTV;
-		rendering::ImageSampledViewPtr m_colorSurfaceSRV;
-		rendering::RenderTargetViewPtr m_depthSurfaceRTV;
+	//--
+};
 
-		base::canvas::Geometry* m_quadGeometry;
+///---
 
-		void parepareRenderTargets(ViewportParams& viewport);
-
-		//--
-    };
-
-    ///---
-
-} // ui
+END_BOOMER_NAMESPACE(ui)

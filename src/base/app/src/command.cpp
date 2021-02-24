@@ -14,32 +14,29 @@
 #include "base/net/include/messageConnection.h"
 #include "base/net/include/messagePool.h"
 
-namespace base
-{
-    namespace app
-    {
-        //--
+BEGIN_BOOMER_NAMESPACE(base::app)
 
-        RTTI_BEGIN_TYPE_CLASS(CommandNameMetadata);
-        RTTI_END_TYPE();
+//--
 
-        CommandNameMetadata::CommandNameMetadata()
-        {}
+RTTI_BEGIN_TYPE_CLASS(CommandNameMetadata);
+RTTI_END_TYPE();
 
-        //--
+CommandNameMetadata::CommandNameMetadata()
+{}
 
-        RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ICommand);
-        RTTI_END_TYPE();
+//--
 
-        //--
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ICommand);
+RTTI_END_TYPE();
 
-        ICommand::ICommand()
-        {}
+//--
 
-        ICommand::~ICommand()
-        {}
+ICommand::ICommand()
+{}
 
-        //--
+ICommand::~ICommand()
+{}
 
-    } // app
-} // base
+//--
+
+END_BOOMER_NAMESPACE(base::app)

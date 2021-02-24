@@ -12,42 +12,35 @@
 #include "gl4Shaders.h"
 #include "gl4GraphicsPipeline.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+//--
+
+GraphicsPipeline::GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates)
+	: IBaseGraphicsPipeline(owner, shaders, mergedRenderStates)
 {
-    namespace api
-    {
-		namespace gl4
+	m_staticRenderStates.apply(mergedRenderStates, m_staticRenderStateMask);
+}
+
+GraphicsPipeline::~GraphicsPipeline()
+{}
+
+bool GraphicsPipeline::apply(GLuint& glActiveProgram)
+{
+	if (GLuint glProgram = shaders()->object())
+	{
+		if (glProgram != glActiveProgram)
 		{
+			GL_PROTECT(glBindProgramPipeline(glProgram));
+			glActiveProgram = glProgram;
+		}
 
-			//--
+		return true;
+	}
 
-			GraphicsPipeline::GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates)
-				: IBaseGraphicsPipeline(owner, shaders, mergedRenderStates)
-			{
-				m_staticRenderStates.apply(mergedRenderStates, m_staticRenderStateMask);
-			}
+	return false;
+}
 
-			GraphicsPipeline::~GraphicsPipeline()
-			{}
+//--
 
-			bool GraphicsPipeline::apply(GLuint& glActiveProgram)
-			{
-				if (GLuint glProgram = shaders()->object())
-				{
-					if (glProgram != glActiveProgram)
-					{
-						GL_PROTECT(glBindProgramPipeline(glProgram));
-						glActiveProgram = glProgram;
-					}
-
-					return true;
-				}
-
-				return false;
-			}
-
-			//--
-
-		} // gl4
-    } // gl4
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::gl4)

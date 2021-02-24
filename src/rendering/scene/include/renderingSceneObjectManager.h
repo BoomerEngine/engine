@@ -14,37 +14,32 @@
 
 #include "rendering/material/include/renderingMaterialRuntimeService.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
+
+///---
+
+/// manager for rendering objects
+class RENDERING_SCENE_API IObjectManager : public ICommandDispatcher, public IMaterialDataProxyListener
 {
-    namespace scene
-    {
+	RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IObjectManager);
+	RTTI_DECLARE_POOL(POOL_RENDERING_RUNTIME)
 
-		///---
+public:
+	virtual ~IObjectManager();
+	virtual ObjectType objectType() const = 0;
 
-		/// manager for rendering objects
-		class RENDERING_SCENE_API IObjectManager : public ICommandDispatcher, public IMaterialDataProxyListener
-		{
-			RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IObjectManager);
-			RTTI_DECLARE_POOL(POOL_RENDERING_RUNTIME)
+	virtual void initialize(Scene* scene, IDevice* dev) = 0;
+	virtual void shutdown() = 0;
 
-		public:
-			virtual ~IObjectManager();
-			virtual ObjectType objectType() const = 0;
+	virtual void prepare(GPUCommandWriter& cmd, IDevice* dev, const FrameRenderer& frame) = 0;
 
-			virtual void initialize(Scene* scene, IDevice* dev) = 0;
-			virtual void shutdown() = 0;
+	virtual void render(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame) = 0;
+	virtual void render(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame) = 0;
+	virtual void render(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame) = 0;
+	virtual void render(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame) = 0;
+	virtual void render(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame) = 0;
+};
 
-			virtual void prepare(command::CommandWriter& cmd, IDevice* dev, const FrameRenderer& frame) = 0;
+//--
 
-			virtual void render(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame) = 0;
-			virtual void render(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame) = 0;
-			virtual void render(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame) = 0;
-			virtual void render(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame) = 0;
-			virtual void render(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame) = 0;
-		};
-
-		//--
-
-    } // scene
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::scene)

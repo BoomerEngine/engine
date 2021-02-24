@@ -8,27 +8,23 @@
 
 #include "base_replication_glue.inl"
 
-namespace base
-{
-    namespace replication
-    {
+BEGIN_BOOMER_NAMESPACE(base::replication)
 
-        class BitWriter;
-        class BitReader;
+class BitWriter;
+class BitReader;
 
-        struct FieldPacking;
-        class DataModel;
+struct FieldPacking;
+class DataModel;
 
-        class DataModelRepository;
-        typedef RefPtr<DataModelRepository> DataModelRepositoryPtr;
+class DataModelRepository;
+typedef RefPtr<DataModelRepository> DataModelRepositoryPtr;
 
-        class IDataModelMapper;
-        class IDataModelResolver;
+class IDataModelMapper;
+class IDataModelResolver;
 
-        typedef uint16_t DataMappedID;
-        typedef uint32_t QuantizedValue;
+typedef uint16_t DataMappedID;
+typedef uint32_t QuantizedValue;
 
-    } // replication
-} // base
+END_BOOMER_NAMESPACE(base::replication)
 
 #include "replicationRttiExtensions.h"

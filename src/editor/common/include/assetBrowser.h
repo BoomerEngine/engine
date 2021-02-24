@@ -11,102 +11,102 @@
 #include "base/ui/include/uiDragDrop.h"
 #include "base/ui/include/uiWindow.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+///--
+
+class AssetDepotTreeModel;
+class AssetBrowserTabFiles;
+class AssetBrowserResourceListDialog;
+
+//---
+
+/// drag&drop data with file
+class EDITOR_COMMON_API AssetBrowserFileDragDrop : public ui::IDragDropData
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserFileDragDrop, ui::IDragDropData);
 
-    ///--
+public:
+    AssetBrowserFileDragDrop(ManagedFile* file);
 
-    class AssetDepotTreeModel;
-    class AssetBrowserTabFiles;
-    class AssetBrowserResourceListDialog;
+    INLINE ManagedFile* file() const { return m_file; }
 
-    //---
+private:
+    virtual ui::ElementPtr createPreview() const override;
 
-    /// drag&drop data with file
-    class EDITOR_COMMON_API AssetBrowserFileDragDrop : public ui::IDragDropData
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserFileDragDrop, ui::IDragDropData);
+    ManagedFile* m_file;
+};
 
-    public:
-        AssetBrowserFileDragDrop(ManagedFile* file);
+//---
 
-        INLINE ManagedFile* file() const { return m_file; }
+/// drag&drop data with file
+class EDITOR_COMMON_API AssetBrowserDirectoryDragDrop : public ui::IDragDropData
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserDirectoryDragDrop, ui::IDragDropData);
 
-    private:
-        virtual ui::ElementPtr createPreview() const override;
+public:
+    AssetBrowserDirectoryDragDrop(ManagedDirectory* dir);
 
-        ManagedFile* m_file;
-    };
+    INLINE ManagedDirectory* directory() const { return m_dir; }
 
-    //---
+private:
+    virtual ui::ElementPtr createPreview() const override;
 
-    /// drag&drop data with file
-    class EDITOR_COMMON_API AssetBrowserDirectoryDragDrop : public ui::IDragDropData
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserDirectoryDragDrop, ui::IDragDropData);
+    ManagedDirectory* m_dir;
+};
 
-    public:
-        AssetBrowserDirectoryDragDrop(ManagedDirectory* dir);
+///--
 
-        INLINE ManagedDirectory* directory() const { return m_dir; }
+/// assert browser tab
+class EDITOR_COMMON_API AssetBrowser : public ui::Window
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowser, ui::Window);
 
-    private:
-        virtual ui::ElementPtr createPreview() const override;
+public:
+    AssetBrowser(ManagedDepot* depot);
+    virtual ~AssetBrowser();
 
-        ManagedDirectory* m_dir;
-    };
+    //--
 
-    ///--
+    // get selected file
+    ManagedFile* selectedFile() const;
 
-    /// assert browser tab
-    class EDITOR_COMMON_API AssetBrowser : public ui::Window
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowser, ui::Window);
+    // get the active directory
+    ManagedDirectory* selectedDirectory() const;
 
-    public:
-        AssetBrowser(ManagedDepot* depot);
-        virtual ~AssetBrowser();
+    // show file in the asset browser
+    bool showFile(ManagedFile* filePtr);
 
-        //--
+    // show directory in the depot tree and possible also as a file list
+    bool showDirectory(ManagedDirectory* dir, bool exploreContent);
 
-        // get selected file
-        ManagedFile* selectedFile() const;
+    //--
 
-        // get the active directory
-        ManagedDirectory* selectedDirectory() const;
+    virtual void configLoad(const ui::ConfigBlock& block) override;
+    virtual void configSave(const ui::ConfigBlock& block) const override;
 
-        // show file in the asset browser
-        bool showFile(ManagedFile* filePtr);
+    //--
 
-        // show directory in the depot tree and possible also as a file list
-        bool showDirectory(ManagedDirectory* dir, bool exploreContent);
+private:
+    ManagedDepot* m_depot; // the managed depot
 
-        //--
+    GlobalEventTable m_depotEvents;
 
-        virtual void configLoad(const ui::ConfigBlock& block) override;
-        virtual void configSave(const ui::ConfigBlock& block) const override;
+    RefPtr<AssetDepotTreeModel> m_depotTreeModel; // tree model for the depot
 
-        //--
+    ui::TreeViewPtr m_depotTree; // tree view for the depot
+    ui::DockContainerPtr m_dockContainer;
 
-    private:
-        ManagedDepot* m_depot; // the managed depot
+    void navigateToDirectory(ManagedDirectory* dir);
+    void navigateToDirectory(ManagedDirectory* dir, RefPtr<AssetBrowserTabFiles>& outTab);
 
-        GlobalEventTable m_depotEvents;
+    void closeDirectoryTab(ManagedDirectory* dir);
 
-        RefPtr<AssetDepotTreeModel> m_depotTreeModel; // tree model for the depot
+    virtual void handleExternalCloseRequest() override final;
+};
 
-        ui::TreeViewPtr m_depotTree; // tree view for the depot
-        ui::DockContainerPtr m_dockContainer;
+///--
 
-        void navigateToDirectory(ManagedDirectory* dir);
-        void navigateToDirectory(ManagedDirectory* dir, RefPtr<AssetBrowserTabFiles>& outTab);
+END_BOOMER_NAMESPACE(ed)
 
-        void closeDirectoryTab(ManagedDirectory* dir);
-
-        virtual void handleExternalCloseRequest() override final;
-    };
-
-    ///--
-
-} // ed
 

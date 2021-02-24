@@ -8,44 +8,44 @@
 
 #include "editor_gizmos_glue.inl"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+using namespace base;
+
+///---
+
+enum class GizmoRenderMode : uint8_t
 {
-    using namespace base;
+    Idle, // no gizmos are active or selected,
+    Hover, // user hovers the mouse over this gizmo but does not select it yet
+    Active, // this gizmo has been activated by the user
+    OtherActive, // other gizmo is active
+};
 
-    ///---
+///---
 
-    enum class GizmoRenderMode : uint8_t
-    {
-        Idle, // no gizmos are active or selected,
-        Hover, // user hovers the mouse over this gizmo but does not select it yet
-        Active, // this gizmo has been activated by the user
-        OtherActive, // other gizmo is active
-    };
+enum class GizmoSpace : uint8_t
+{
+    World, // use transformations in world space
+    Local, // use transformations in local space
+    Parent, // use transformations in parent space
+    View, // use transformations in view space
+};
 
-    ///---
+class IGizmo;
+typedef base::RefPtr<IGizmo> GizmoPtr;
+typedef base::RefWeakPtr<IGizmo> GizmoWeakPtr;
 
-    enum class GizmoSpace : uint8_t
-    {
-        World, // use transformations in world space
-        Local, // use transformations in local space
-        Parent, // use transformations in parent space
-        View, // use transformations in view space
-    };
+class GizmoGroup;
+typedef base::RefPtr<GizmoGroup> GizmoGroupPtr;
 
-    class IGizmo;
-    typedef base::RefPtr<IGizmo> GizmoPtr;
-    typedef base::RefWeakPtr<IGizmo> GizmoWeakPtr;
-
-    class GizmoGroup;
-    typedef base::RefPtr<GizmoGroup> GizmoGroupPtr;
-
-    struct GizmoReferenceSpace;
+struct GizmoReferenceSpace;
     
-    class IGizmoActionContext;
-    typedef base::RefPtr<IGizmoActionContext> GizmoActionContextPtr;
+class IGizmoActionContext;
+typedef base::RefPtr<IGizmoActionContext> GizmoActionContextPtr;
 
-    class IGizmoHost;
+class IGizmoHost;
 
-    ///---
+///---
 
-} // ed
+END_BOOMER_NAMESPACE(ed)

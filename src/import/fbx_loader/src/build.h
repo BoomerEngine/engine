@@ -11,6 +11,8 @@
 #define FBXSDK_SHARED
 #include <fbxsdk.h>
 
+BEGIN_BOOMER_NAMESPACE(assets)
+
 static base::Vector3 ToVector(const fbxsdk::FbxVector4& v)
 {
     return base::Vector3((float)v[0], (float)v[1], (float)v[2]);
@@ -34,3 +36,5 @@ static base::Matrix ToMatrix(const fbxsdk::FbxMatrix& m)
     ret.m[2][3] = (float)m.Get(3,2);
     return ret;
 }
+
+END_BOOMER_NAMESPACE(assets)

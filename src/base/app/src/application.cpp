@@ -17,33 +17,29 @@
 
 static bool GReportMemoryUsage = false;
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::app)
+
+//-----
+
+IApplication::IApplication()
+{}
+
+IApplication::~IApplication()
+{}
+
+bool IApplication::initialize(const CommandLine& commandline)
 {
-    namespace app
-    {
+    return true;
+}
 
-        //-----
+void IApplication::cleanup()
+{
+}
 
-        IApplication::IApplication()
-        {}
+void IApplication::update()
+{
+}
 
-        IApplication::~IApplication()
-        {}
+//---
 
-        bool IApplication::initialize(const CommandLine& commandline)
-        {
-            return true;
-        }
-
-        void IApplication::cleanup()
-        {
-        }
-
-        void IApplication::update()
-        {
-        }
-
-        //---
-
-    } // app
-} // base
+END_BOOMER_NAMESPACE(base::app)

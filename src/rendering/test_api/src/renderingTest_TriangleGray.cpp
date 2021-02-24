@@ -12,67 +12,64 @@
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::test)
+
+/// a basic rendering test
+class RenderingTest_TriangleGray : public IRenderingTest
 {
-    namespace test
+    RTTI_DECLARE_VIRTUAL_CLASS(RenderingTest_TriangleGray, IRenderingTest);
+
+public:
+    RenderingTest_TriangleGray();
+
+    virtual void initialize() override final;
+    virtual void render(GPUCommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
+
+private:
+    BufferObjectPtr m_vertexBuffer;
+    GraphicsPipelineObjectPtr m_shader;
+};
+
+RTTI_BEGIN_TYPE_CLASS(RenderingTest_TriangleGray);
+    RTTI_METADATA(RenderingTestOrderMetadata).order(9);
+RTTI_END_TYPE();
+
+//---       
+RenderingTest_TriangleGray::RenderingTest_TriangleGray()
+{
+}
+
+void RenderingTest_TriangleGray::initialize()
+{
     {
-        /// a basic rendering test
-        class RenderingTest_TriangleGray : public IRenderingTest
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(RenderingTest_TriangleGray, IRenderingTest);
+        base::Vector2 vertices[9];
+        vertices[0] = base::Vector2(0, -0.5f);
+        vertices[1] = base::Vector2(-0.7f, 0.5f);
+        vertices[2] = base::Vector2(0.7f, 0.5f);
 
-        public:
-            RenderingTest_TriangleGray();
+        vertices[3] = base::Vector2(0 - 0.2f, -0.5f);
+        vertices[4] = base::Vector2(-0.7f - 0.2f, 0.5f);
+        vertices[5] = base::Vector2(0.7f - 0.2f, 0.5f);
 
-            virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
+        vertices[6] = base::Vector2(0 + 0.2f, -0.5f);
+        vertices[7] = base::Vector2(-0.7f + 0.2f, 0.5f);
+        vertices[8] = base::Vector2(0.7f + 0.2f, 0.5f);
 
-        private:
-            BufferObjectPtr m_vertexBuffer;
-            GraphicsPipelineObjectPtr m_shader;
-        };
+        m_vertexBuffer = createVertexBuffer(sizeof(vertices), vertices);
+    }
 
-        RTTI_BEGIN_TYPE_CLASS(RenderingTest_TriangleGray);
-            RTTI_METADATA(RenderingTestOrderMetadata).order(9);
-        RTTI_END_TYPE();
+    m_shader = loadGraphicsShader("TriangleGray.csl");
+}
 
-        //---       
-        RenderingTest_TriangleGray::RenderingTest_TriangleGray()
-        {
-        }
+void RenderingTest_TriangleGray::render(GPUCommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
+{
+    FrameBuffer fb;
+    fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-        void RenderingTest_TriangleGray::initialize()
-        {
-            {
-                base::Vector2 vertices[9];
-                vertices[0] = base::Vector2(0, -0.5f);
-                vertices[1] = base::Vector2(-0.7f, 0.5f);
-                vertices[2] = base::Vector2(0.7f, 0.5f);
+    cmd.opBeingPass(fb);
+    cmd.opBindVertexBuffer("Vertex2D"_id, m_vertexBuffer);
+    cmd.opDraw(m_shader, 0, 9);
+    cmd.opEndPass();
+}
 
-                vertices[3] = base::Vector2(0 - 0.2f, -0.5f);
-                vertices[4] = base::Vector2(-0.7f - 0.2f, 0.5f);
-                vertices[5] = base::Vector2(0.7f - 0.2f, 0.5f);
-
-                vertices[6] = base::Vector2(0 + 0.2f, -0.5f);
-                vertices[7] = base::Vector2(-0.7f + 0.2f, 0.5f);
-                vertices[8] = base::Vector2(0.7f + 0.2f, 0.5f);
-
-                m_vertexBuffer = createVertexBuffer(sizeof(vertices), vertices);
-            }
-
-            m_shader = loadGraphicsShader("TriangleGray.csl");
-        }
-
-        void RenderingTest_TriangleGray::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
-        {
-            FrameBuffer fb;
-            fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
-
-            cmd.opBeingPass(fb);
-            cmd.opBindVertexBuffer("Vertex2D"_id, m_vertexBuffer);
-            cmd.opDraw(m_shader, 0, 9);
-            cmd.opEndPass();
-        }
-
-    } // test
-} // rendering
+END_BOOMER_NAMESPACE(rendering::test)

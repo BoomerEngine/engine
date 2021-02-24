@@ -11,52 +11,52 @@
 #include "base/ui/include/uiButton.h"
 #include "managedDepot.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+DECLARE_UI_EVENT(EVENT_RESOURCE_REIMPORT_WITH_CONFIG, res::ResourceConfigurationPtr);
+
+//--
+
+// bigger widget that shows more status information about the resource
+    class AssetFileImportWidget : public ui::IElement
 {
-    //--
+    RTTI_DECLARE_VIRTUAL_CLASS(AssetFileImportWidget, ui::IElement);
 
-    DECLARE_UI_EVENT(EVENT_RESOURCE_REIMPORT_WITH_CONFIG, res::ResourceConfigurationPtr);
+public:
+    AssetFileImportWidget();
+    virtual ~AssetFileImportWidget();
 
-    //--
+    void bindFile(ManagedFileNativeResource* file, const res::ResourceConfigurationPtr& config);
 
-    // bigger widget that shows more status information about the resource
-     class AssetFileImportWidget : public ui::IElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(AssetFileImportWidget, ui::IElement);
+private:
+    ManagedFileNativeResource* m_file;
 
-    public:
-        AssetFileImportWidget();
-        virtual ~AssetFileImportWidget();
+    ManagedFileImportStatusCheckPtr m_checker;
+    res::ResourceConfigurationPtr m_config;
 
-        void bindFile(ManagedFileNativeResource* file, const res::ResourceConfigurationPtr& config);
+    GlobalEventTable m_events;
 
-    private:
-        ManagedFileNativeResource* m_file;
-
-        ManagedFileImportStatusCheckPtr m_checker;
-        res::ResourceConfigurationPtr m_config;
-
-        GlobalEventTable m_events;
-
-        ui::EditBoxPtr m_fileNameText;
-        ui::TextLabelPtr m_statusText;
-        ui::ButtonPtr m_buttonRecheck;
-        ui::ButtonPtr m_buttonReimport;
-        ui::ButtonPtr m_buttonShowFileList;
-
-        //--
-
-        void cmdShowSourceAssets();
-        void cmdRecheckeck();
-        void cmdReimport();
-        void cmdSaveConfiguration();
-        void cmdLoadConfiguration();
-
-        //--
-
-        void updateStatus();
-    };
+    ui::EditBoxPtr m_fileNameText;
+    ui::TextLabelPtr m_statusText;
+    ui::ButtonPtr m_buttonRecheck;
+    ui::ButtonPtr m_buttonReimport;
+    ui::ButtonPtr m_buttonShowFileList;
 
     //--
 
-} // ed
+    void cmdShowSourceAssets();
+    void cmdRecheckeck();
+    void cmdReimport();
+    void cmdSaveConfiguration();
+    void cmdLoadConfiguration();
+
+    //--
+
+    void updateStatus();
+};
+
+//--
+
+END_BOOMER_NAMESPACE(ed)

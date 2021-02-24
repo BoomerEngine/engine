@@ -9,41 +9,39 @@
 
 #pragma once
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
+
+struct FrameParams;
+
+END_BOOMER_NAMESPACE(rendering::scene)
+
+
+BEGIN_BOOMER_NAMESPACE(base)
+
+//----
+
+/// GLOBAL (engine wide) debug page, just derive from this class and you will be rendered when debug panels are enabled
+class BASE_IMGUI_API IDebugPage : public base::IReferencable
 {
-    namespace scene
-    {
-        struct FrameParams;
-    } // scene
-} // render
+    RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IDebugPage);
 
-namespace base
-{
+public:
+    IDebugPage();
+    virtual ~IDebugPage();
 
-    //----
+    //! initialize the page
+    virtual bool handleInitialize();
 
-    /// GLOBAL (engine wide) debug page, just derive from this class and you will be rendered when debug panels are enabled
-    class BASE_IMGUI_API IDebugPage : public base::IReferencable
-    {
-        RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IDebugPage);
+    //! update page content
+    virtual void handleTick(float timeDelta);
 
-    public:
-        IDebugPage();
-        virtual ~IDebugPage();
+    //! generate ui using ImGui
+    virtual void handleRender();
 
-        //! initialize the page
-        virtual bool handleInitialize();
+    //! generate 3D debug fragments, very rare in g
+    virtual void handleRender3D(rendering::scene::FrameParams& frame);
+};
 
-        //! update page content
-        virtual void handleTick(float timeDelta);
+//----
 
-        //! generate ui using ImGui
-        virtual void handleRender();
-
-        //! generate 3D debug fragments, very rare in g
-        virtual void handleRender3D(rendering::scene::FrameParams& frame);
-    };
-
-    //----
-
-} // plugin
+END_BOOMER_NAMESPACE(base)

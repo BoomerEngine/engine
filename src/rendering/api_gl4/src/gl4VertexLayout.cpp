@@ -12,24 +12,7 @@
 #include "gl4VertexLayout.h"
 #include "gl4Utils.h"
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace gl4
-		{
-
-			//--
-
-			VertexBindingLayout::VertexBindingLayout(Thread* owner, const base::Array<ShaderVertexStreamMetadata>& streams)
-				: IBaseVertexBindingLayout(owner->objectCache(), streams)
-			{
-			}
-
-			VertexBindingLayout::~VertexBindingLayout()
-			{
-				if (m_glVertexLayout)
-				{
+BEGIN_BOOMER_NAMESPACE(rendering::api)
 					GL_PROTECT(glDeleteVertexArrays(1, &m_glVertexLayout));
 					m_glVertexLayout = 0;
 				}

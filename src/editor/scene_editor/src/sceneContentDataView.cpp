@@ -11,21 +11,21 @@
 #include "sceneContentDataView.h"
 #include "base/resource/include/objectIndirectTemplateDataView.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+DataViewPtr SceneContentEditableObject::createDataView() const
 {
-    //--
+    InplaceArray<const ObjectIndirectTemplate*, 10> ptrs;
+    ptrs.reserve(baseData.size());
 
-    DataViewPtr SceneContentEditableObject::createDataView() const
-    {
-        InplaceArray<const ObjectIndirectTemplate*, 10> ptrs;
-        ptrs.reserve(baseData.size());
+    for (const auto& ptr : baseData)
+        ptrs.pushBack(ptr);
 
-        for (const auto& ptr : baseData)
-            ptrs.pushBack(ptr);
+    return RefNew<ObjectIndirectTemplateDataView>(editableData, ptrs.typedData(), ptrs.size());
+}
 
-        return RefNew<ObjectIndirectTemplateDataView>(editableData, ptrs.typedData(), ptrs.size());
-    }
-
-    //--
+//--
     
-} // ed
+END_BOOMER_NAMESPACE(ed)

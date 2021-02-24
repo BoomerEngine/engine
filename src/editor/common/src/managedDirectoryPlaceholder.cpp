@@ -14,41 +14,40 @@
 #include "base/resource_compiler/include/importFileService.h"
 #include "base/image/include/image.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedDirectoryPlaceholder);
+RTTI_END_TYPE();
+
+ManagedDirectoryPlaceholder::ManagedDirectoryPlaceholder(ManagedDepot* depot, ManagedDirectory* parentDir, StringView initialName)
+    : ManagedItem(depot, parentDir, initialName)
 {
+    m_eventKey = MakeUniqueEventKey();
 
-    //--
+    static const auto thumbnail = LoadImageFromDepotPath("/engine/interface/thumbnails/directory.png");
+    m_directoryIcon = thumbnail;
+}
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedDirectoryPlaceholder);
-    RTTI_END_TYPE();
+ManagedDirectoryPlaceholder::~ManagedDirectoryPlaceholder()
+{
+}
 
-    ManagedDirectoryPlaceholder::ManagedDirectoryPlaceholder(ManagedDepot* depot, ManagedDirectory* parentDir, StringView initialName)
-        : ManagedItem(depot, parentDir, initialName)
+void ManagedDirectoryPlaceholder::rename(StringView name)
+{
+    if (ValidateFileName(name))
     {
-        m_eventKey = MakeUniqueEventKey();
-
-        static const auto thumbnail = LoadImageFromDepotPath("/engine/interface/thumbnails/directory.png");
-        m_directoryIcon = thumbnail;
+        m_name = StringBuf(name);
     }
+}
 
-    ManagedDirectoryPlaceholder::~ManagedDirectoryPlaceholder()
-    {
-    }
+const image::Image* ManagedDirectoryPlaceholder::typeThumbnail() const
+{
+    return m_directoryIcon;
+}
 
-    void ManagedDirectoryPlaceholder::rename(StringView name)
-    {
-        if (ValidateFileName(name))
-        {
-            m_name = StringBuf(name);
-        }
-    }
+//--
 
-    const image::Image* ManagedDirectoryPlaceholder::typeThumbnail() const
-    {
-        return m_directoryIcon;
-    }
-
-    //--
-
-} // depot
+END_BOOMER_NAMESPACE(ed)
 

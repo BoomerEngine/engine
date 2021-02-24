@@ -8,39 +8,38 @@
 
 #pragma once
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+///---
+
+/// notifier that is called whenever shaders should be reloaded
+class RENDERING_DEVICE_API ShaderReloadNotifier : public base::NoCopy
 {
+public:
+    ShaderReloadNotifier();
+    ~ShaderReloadNotifier();
 
-    ///---
+    //--
 
-    /// notifier that is called whenever shaders should be reloaded
-    class RENDERING_DEVICE_API ShaderReloadNotifier : public base::NoCopy
-    {
-    public:
-        ShaderReloadNotifier();
-        ~ShaderReloadNotifier();
+    typedef std::function<void(void)> TFunction;
+    ShaderReloadNotifier& operator=(const TFunction& func);
 
-        //--
+    //--
 
-        typedef std::function<void(void)> TFunction;
-        ShaderReloadNotifier& operator=(const TFunction& func);
+    // call the callback on this notifier
+    void notify();
 
-        //--
+    //--
 
-        // call the callback on this notifier
-        void notify();
+    // call all notifications (slow)
+    static void NotifyAll();
 
-        //--
+    //--
 
-        // call all notifications (slow)
-        static void NotifyAll();
+private:
+    TFunction m_func;
+};
 
-        //--
+//---
 
-    private:
-        TFunction m_func;
-    };
-
-    //---
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

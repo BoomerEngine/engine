@@ -10,31 +10,28 @@
 #include "xmlDataDocument.h"
 #include "base/resource/include/resourceTags.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::storage)
+
+///--
+
+RTTI_BEGIN_TYPE_CLASS(XMLData);
+    RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4xml");
+    RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Binary XML");
+    RTTI_PROPERTY(m_binaryData);
+RTTI_END_TYPE();
+
+XMLData::XMLData()
+{}
+
+XMLData::XMLData(const xml::DocumentPtr& document)
+    : m_document(document)
 {
-    namespace storage
-    {
-        ///--
+    // TEMPSHIT
+    StringBuilder txt;
+    m_document->saveAsText(txt, m_document->root());
+    m_binaryData = Buffer::Create(POOL_XML, txt.length(), 1, txt.c_str());
+}
 
-        RTTI_BEGIN_TYPE_CLASS(XMLData);
-            RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4xml");
-            RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Binary XML");
-            RTTI_PROPERTY(m_binaryData);
-        RTTI_END_TYPE();
+///---
 
-        XMLData::XMLData()
-        {}
-
-        XMLData::XMLData(const xml::DocumentPtr& document)
-            : m_document(document)
-        {
-            // TEMPSHIT
-            StringBuilder txt;
-            m_document->saveAsText(txt, m_document->root());
-            m_binaryData = Buffer::Create(POOL_XML, txt.length(), 1, txt.c_str());
-        }
-
-        ///---
-
-    } // storage
-} // base
+END_BOOMER_NAMESPACE(base::storage)

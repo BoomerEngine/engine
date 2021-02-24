@@ -8,217 +8,213 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+//----
+
+class ScriptedObject;
+
+// base wrapper for callable function
+class BASE_SCRIPT_API ScriptedCallRaw
 {
-    namespace script
+public:
+    ScriptedCallRaw(void* context, ClassType classPtr, StringID name);
+    ScriptedCallRaw(IObject* context, StringID name);
+
+    INLINE ScriptedCallRaw() : m_context(nullptr), m_function(nullptr) {}
+    INLINE ScriptedCallRaw(ScriptedCallRaw&& other) = default;
+    INLINE ScriptedCallRaw(const ScriptedCallRaw& other) = default;
+    INLINE ScriptedCallRaw& operator=(ScriptedCallRaw&& other) = default;
+    INLINE ScriptedCallRaw& operator=(const ScriptedCallRaw& other) = default;
+
+    // get context
+    INLINE void* context() const { return m_context; }
+
+    // get resolved function
+    INLINE const rtti::Function* function() const { return m_function; }
+
+    // valid call ?
+    INLINE operator bool() const { return m_function != nullptr; }
+
+    //--
+
+    INLINE void callRaw(rtti::FunctionCallingParams& params) const
     {
+        if (m_function)
+            m_function->run(nullptr, m_context, params);
+    }
 
-        //----
+protected:
+    void* m_context;
+    const rtti::Function* m_function;
+};
 
-        class ScriptedObject;
+//----
 
-        // base wrapper for callable function
-        class BASE_SCRIPT_API ScriptedCallRaw
-        {
-        public:
-            ScriptedCallRaw(void* context, ClassType classPtr, StringID name);
-            ScriptedCallRaw(IObject* context, StringID name);
+// callable function, no return
+struct BASE_SCRIPT_API ScriptedCall : public ScriptedCallRaw
+{
+public:
+    INLINE ScriptedCall()
+        : ScriptedCallRaw()
+    {}
 
-            INLINE ScriptedCallRaw() : m_context(nullptr), m_function(nullptr) {}
-            INLINE ScriptedCallRaw(ScriptedCallRaw&& other) = default;
-            INLINE ScriptedCallRaw(const ScriptedCallRaw& other) = default;
-            INLINE ScriptedCallRaw& operator=(ScriptedCallRaw&& other) = default;
-            INLINE ScriptedCallRaw& operator=(const ScriptedCallRaw& other) = default;
+    INLINE ScriptedCall(void* context, ClassType classPtr, StringID name)
+        : ScriptedCallRaw(context, classPtr, name)
+    {}
 
-            // get context
-            INLINE void* context() const { return m_context; }
+    INLINE ScriptedCall(IObject* context, StringID name)
+        : ScriptedCallRaw(context, name)
+    {}
 
-            // get resolved function
-            INLINE const rtti::Function* function() const { return m_function; }
+    INLINE ScriptedCall(ScriptedCall&& other) = default;
+    INLINE ScriptedCall(const ScriptedCall& other) = default;
+    INLINE ScriptedCall& operator=(ScriptedCall&& other) = default;
+    INLINE ScriptedCall& operator=(const ScriptedCall& other) = default;
 
-            // valid call ?
-            INLINE operator bool() const { return m_function != nullptr; }
+    //--
 
-            //--
+    INLINE void call() const
+    {
+        rtti::FunctionCallingParams params;
+        callRaw(params);
+    }
 
-            INLINE void callRaw(rtti::FunctionCallingParams& params) const
-            {
-                if (m_function)
-                    m_function->run(nullptr, m_context, params);
-            }
+    template< typename T0 >
+    INLINE void call(const T0& p0) const
+    {
+        rtti::FunctionCallingParams params;
+        params.m_argumentsPtr[0] = (void*)&p0;
+        callRaw(params);
+    }
 
-        protected:
-            void* m_context;
-            const rtti::Function* m_function;
-        };
+    template< typename T0, typename T1  >
+    INLINE void call(const T0& p0, const T1& p1) const
+    {
+        rtti::FunctionCallingParams params;
+        params.m_argumentsPtr[0] = (void*)&p0;
+        params.m_argumentsPtr[1] = (void*)&p1;
+        callRaw(params);
+    }
 
-        //----
+    template< typename T0, typename T1, typename T2 >
+    INLINE void call(const T0& p0, const T1& p1, const T2& p2) const
+    {
+        rtti::FunctionCallingParams params;
+        params.m_argumentsPtr[0] = (void*)&p0;
+        params.m_argumentsPtr[1] = (void*)&p1;
+        params.m_argumentsPtr[2] = (void*)&p2;
+        callRaw(params);
+    }
 
-        // callable function, no return
-        struct BASE_SCRIPT_API ScriptedCall : public ScriptedCallRaw
-        {
-        public:
-            INLINE ScriptedCall()
-                : ScriptedCallRaw()
-            {}
+    template< typename T0, typename T1, typename T2, typename T3 >
+    INLINE void call(const T0& p0, const T1& p1, const T2& p2, const T3& p3) const
+    {
+        rtti::FunctionCallingParams params;
+        params.m_argumentsPtr[0] = (void*)&p0;
+        params.m_argumentsPtr[1] = (void*)&p1;
+        params.m_argumentsPtr[2] = (void*)&p2;
+        params.m_argumentsPtr[3] = (void*)&p3;
+        callRaw(params);
+    }
+};
 
-            INLINE ScriptedCall(void* context, ClassType classPtr, StringID name)
-                : ScriptedCallRaw(context, classPtr, name)
-            {}
+//----
 
-            INLINE ScriptedCall(IObject* context, StringID name)
-                : ScriptedCallRaw(context, name)
-            {}
+// callable function, returning a type
+template< typename Ret >
+struct ScriptedCallRet : public ScriptedCallRaw
+{
+public:
+    INLINE ScriptedCallRet()
+        : ScriptedCallRaw()
+    {}
 
-            INLINE ScriptedCall(ScriptedCall&& other) = default;
-            INLINE ScriptedCall(const ScriptedCall& other) = default;
-            INLINE ScriptedCall& operator=(ScriptedCall&& other) = default;
-            INLINE ScriptedCall& operator=(const ScriptedCall& other) = default;
+    INLINE ScriptedCallRet(void* context, ClassType classPtr, StringID name)
+        : ScriptedCallRaw(context, classPtr, name)
+    {}
 
-            //--
+    INLINE ScriptedCallRet(IObject* context, StringID name)
+        : ScriptedCallRaw(context, name)
+    {}
 
-            INLINE void call() const
-            {
-                rtti::FunctionCallingParams params;
-                callRaw(params);
-            }
+    INLINE ScriptedCallRet(ScriptedCallRet<Ret>&& other) = default;
+    INLINE ScriptedCallRet(const ScriptedCallRet<Ret>& other) = default;
+    INLINE ScriptedCallRet& operator=(ScriptedCallRet<Ret>&& other) = default;
+    INLINE ScriptedCallRet& operator=(const ScriptedCallRet<Ret>& other) = default;
 
-            template< typename T0 >
-            INLINE void call(const T0& p0) const
-            {
-                rtti::FunctionCallingParams params;
-                params.m_argumentsPtr[0] = (void*)&p0;
-                callRaw(params);
-            }
+    //--
 
-            template< typename T0, typename T1  >
-            INLINE void call(const T0& p0, const T1& p1) const
-            {
-                rtti::FunctionCallingParams params;
-                params.m_argumentsPtr[0] = (void*)&p0;
-                params.m_argumentsPtr[1] = (void*)&p1;
-                callRaw(params);
-            }
+    INLINE Ret call() const
+    {
+        auto ret = Ret();
 
-            template< typename T0, typename T1, typename T2 >
-            INLINE void call(const T0& p0, const T1& p1, const T2& p2) const
-            {
-                rtti::FunctionCallingParams params;
-                params.m_argumentsPtr[0] = (void*)&p0;
-                params.m_argumentsPtr[1] = (void*)&p1;
-                params.m_argumentsPtr[2] = (void*)&p2;
-                callRaw(params);
-            }
+        rtti::FunctionCallingParams params;
+        params.m_returnPtr = &ret;
+        callRaw(params);
 
-            template< typename T0, typename T1, typename T2, typename T3 >
-            INLINE void call(const T0& p0, const T1& p1, const T2& p2, const T3& p3) const
-            {
-                rtti::FunctionCallingParams params;
-                params.m_argumentsPtr[0] = (void*)&p0;
-                params.m_argumentsPtr[1] = (void*)&p1;
-                params.m_argumentsPtr[2] = (void*)&p2;
-                params.m_argumentsPtr[3] = (void*)&p3;
-                callRaw(params);
-            }
-        };
+        return ret;
+    }
 
-        //----
+    template< typename T0 >
+    INLINE Ret call(const T0& p0)
+    {
+        auto ret = Ret();
 
-        // callable function, returning a type
-        template< typename Ret >
-        struct ScriptedCallRet : public ScriptedCallRaw
-        {
-        public:
-            INLINE ScriptedCallRet()
-                : ScriptedCallRaw()
-            {}
+        rtti::FunctionCallingParams params;
+        params.m_argumentsPtr[0] = (void*)&p0;
+        params.m_returnPtr = &ret;
+        callRaw(params);
 
-            INLINE ScriptedCallRet(void* context, ClassType classPtr, StringID name)
-                : ScriptedCallRaw(context, classPtr, name)
-            {}
+        return ret;
+    }
 
-            INLINE ScriptedCallRet(IObject* context, StringID name)
-                : ScriptedCallRaw(context, name)
-            {}
+    template< typename T0, typename T1  >
+    INLINE Ret call(const T0& p0, const T1& p1)
+    {
+        auto ret = Ret();
 
-            INLINE ScriptedCallRet(ScriptedCallRet<Ret>&& other) = default;
-            INLINE ScriptedCallRet(const ScriptedCallRet<Ret>& other) = default;
-            INLINE ScriptedCallRet& operator=(ScriptedCallRet<Ret>&& other) = default;
-            INLINE ScriptedCallRet& operator=(const ScriptedCallRet<Ret>& other) = default;
+        rtti::FunctionCallingParams params;
+        params.m_argumentsPtr[0] = (void*)&p0;
+        params.m_argumentsPtr[1] = (void*)&p1;
+        params.m_returnPtr = &ret;
+        callRaw(params);
 
-            //--
+        return ret;
+    }
 
-            INLINE Ret call() const
-            {
-                auto ret = Ret();
+    template< typename T0, typename T1, typename T2 >
+    INLINE Ret call(const T0& p0, const T1& p1, const T2& p2)
+    {
+        auto ret = Ret();
 
-                rtti::FunctionCallingParams params;
-                params.m_returnPtr = &ret;
-                callRaw(params);
+        rtti::FunctionCallingParams params;
+        params.m_argumentsPtr[0] = (void*)&p0;
+        params.m_argumentsPtr[1] = (void*)&p1;
+        params.m_argumentsPtr[2] = (void*)&p2;
+        params.m_returnPtr = &ret;
+        callRaw(params);
 
-                return ret;
-            }
+        return ret;
+    }
 
-            template< typename T0 >
-            INLINE Ret call(const T0& p0)
-            {
-                auto ret = Ret();
+    template< typename T0, typename T1, typename T2, typename T3 >
+    INLINE Ret call(const T0& p0, const T1& p1, const T2& p2, const T3& p3)
+    {
+        auto ret = Ret();
 
-                rtti::FunctionCallingParams params;
-                params.m_argumentsPtr[0] = (void*)&p0;
-                params.m_returnPtr = &ret;
-                callRaw(params);
+        rtti::FunctionCallingParams params;
+        params.m_argumentsPtr[0] = (void*)&p0;
+        params.m_argumentsPtr[1] = (void*)&p1;
+        params.m_argumentsPtr[2] = (void*)&p2;
+        params.m_argumentsPtr[3] = (void*)&p3;
+        params.m_returnPtr = &ret;
+        callRaw(params);
 
-                return ret;
-            }
+        return ret;
+    }
+};
 
-            template< typename T0, typename T1  >
-            INLINE Ret call(const T0& p0, const T1& p1)
-            {
-                auto ret = Ret();
+//----
 
-                rtti::FunctionCallingParams params;
-                params.m_argumentsPtr[0] = (void*)&p0;
-                params.m_argumentsPtr[1] = (void*)&p1;
-                params.m_returnPtr = &ret;
-                callRaw(params);
-
-                return ret;
-            }
-
-            template< typename T0, typename T1, typename T2 >
-            INLINE Ret call(const T0& p0, const T1& p1, const T2& p2)
-            {
-                auto ret = Ret();
-
-                rtti::FunctionCallingParams params;
-                params.m_argumentsPtr[0] = (void*)&p0;
-                params.m_argumentsPtr[1] = (void*)&p1;
-                params.m_argumentsPtr[2] = (void*)&p2;
-                params.m_returnPtr = &ret;
-                callRaw(params);
-
-                return ret;
-            }
-
-            template< typename T0, typename T1, typename T2, typename T3 >
-            INLINE Ret call(const T0& p0, const T1& p1, const T2& p2, const T3& p3)
-            {
-                auto ret = Ret();
-
-                rtti::FunctionCallingParams params;
-                params.m_argumentsPtr[0] = (void*)&p0;
-                params.m_argumentsPtr[1] = (void*)&p1;
-                params.m_argumentsPtr[2] = (void*)&p2;
-                params.m_argumentsPtr[3] = (void*)&p3;
-                params.m_returnPtr = &ret;
-                callRaw(params);
-
-                return ret;
-            }
-        };
-
-        //----
-
-    } // script
-} // base
+END_BOOMER_NAMESPACE(base::script)

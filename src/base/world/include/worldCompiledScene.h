@@ -10,30 +10,27 @@
 
 #include "base/resource/include/resource.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::world)
+
+//---
+
+/// Cooked scene
+class BASE_WORLD_API CompiledScene : public res::IResource
 {
-    namespace world
-    {
-        //---
+    RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
+    RTTI_DECLARE_VIRTUAL_CLASS(CompiledScene, res::IResource);
 
-        /// Cooked scene
-        class BASE_WORLD_API CompiledScene : public res::IResource
-        {
-            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
-            RTTI_DECLARE_VIRTUAL_CLASS(CompiledScene, res::IResource);
+public:
+    CompiledScene();
+    CompiledScene(Array<StreamingIslandPtr>&& rootIslands);
 
-        public:
-            CompiledScene();
-            CompiledScene(Array<StreamingIslandPtr>&& rootIslands);
+    // get root streaming islands
+    INLINE const Array<StreamingIslandPtr>& rootIslands() const { return m_rootIslands; }
 
-            // get root streaming islands
-            INLINE const Array<StreamingIslandPtr>& rootIslands() const { return m_rootIslands; }
+private:
+    Array<StreamingIslandPtr> m_rootIslands;
+};
 
-        private:
-            Array<StreamingIslandPtr> m_rootIslands;
-        };
+//---
 
-        //---
-
-    } // game
-} // base
+END_BOOMER_NAMESPACE(base::world)

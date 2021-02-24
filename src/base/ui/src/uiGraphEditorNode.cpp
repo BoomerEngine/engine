@@ -19,211 +19,211 @@
 #include "base/graph/include/graphSocket.h"
 #include "base/canvas/include/canvasGeometry.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(IGraphEditorNode);
+    //RTTI_METADATA(ElementClassNameMetadata).name("GraphEditorNode");
+RTTI_END_TYPE();
+
+IGraphEditorNode::IGraphEditorNode()
+{}
+
+IGraphEditorNode::~IGraphEditorNode()
+{}
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(GraphEditorSocketLabel);
+    RTTI_METADATA(ElementClassNameMetadata).name("GraphEditorSocket");
+RTTI_END_TYPE();
+
+GraphEditorSocketLabel::GraphEditorSocketLabel(const base::graph::SocketPtr& socket)
+    : m_socket(socket)
 {
-    //--
+    const auto caption = socket->name().view();
+    text(caption);
+}
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(IGraphEditorNode);
-        //RTTI_METADATA(ElementClassNameMetadata).name("GraphEditorNode");
-    RTTI_END_TYPE();
+//--
 
-    IGraphEditorNode::IGraphEditorNode()
-    {}
+GraphEditorBlockSocketTracker::GraphEditorBlockSocketTracker(const base::graph::Socket* socket)
+    : m_linkPos(0,0)
+    , m_linkDir(0,0)
+{
+    m_socket = socket;
+}
 
-    IGraphEditorNode::~IGraphEditorNode()
-    {}
+void GraphEditorBlockSocketTracker::update(const base::Vector2& pos, const base::Vector2& dir)
+{
+    m_linkPos = pos;
+    m_linkDir = dir;
+    m_valid = true;
+}
 
-    //--
+void GraphEditorBlockSocketTracker::invalidate()
+{
+    m_valid = false;
+}
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(GraphEditorSocketLabel);
-        RTTI_METADATA(ElementClassNameMetadata).name("GraphEditorSocket");
-    RTTI_END_TYPE();
+//--
 
-    GraphEditorSocketLabel::GraphEditorSocketLabel(const base::graph::SocketPtr& socket)
-        : m_socket(socket)
+RTTI_BEGIN_TYPE_NATIVE_CLASS(GraphEditorBlockNode);
+    RTTI_METADATA(ElementClassNameMetadata).name("GraphEditorBlockNode");
+RTTI_END_TYPE();
+
+GraphEditorBlockNode::GraphEditorBlockNode(base::graph::Block* block)
+    : m_block(AddRef(block))
+{
+    hitTest();
+    virtualPosition(block->position().toVector());
+    renderOverlayElements(false);
+
+    m_title = createChildWithType<ui::TextLabel>("GraphEditorNodeTitle"_id);
+    m_title->overlay(true);
+
+    m_payload = CreateGraphBlockInnerWidget(block);
+    if (m_payload)
     {
-        const auto caption = socket->name().view();
-        text(caption);
+        m_payload->overlay(true);
+        attachChild(m_payload);
     }
+}
 
-    //--
+GraphEditorBlockNode::~GraphEditorBlockNode()
+{}
 
-    GraphEditorBlockSocketTracker::GraphEditorBlockSocketTracker(const base::graph::Socket* socket)
-        : m_linkPos(0,0)
-        , m_linkDir(0,0)
+const base::graph::Socket* GraphEditorBlockNode::socketAtAbsolutePos(const Position& pos) const
+{
+    const auto localPos = pos - cachedDrawArea().absolutePosition();
+
+    for (const auto& socket : m_layout.sockets.values())
     {
-        m_socket = socket;
-    }
-
-    void GraphEditorBlockSocketTracker::update(const base::Vector2& pos, const base::Vector2& dir)
-    {
-        m_linkPos = pos;
-        m_linkDir = dir;
-        m_valid = true;
-    }
-
-    void GraphEditorBlockSocketTracker::invalidate()
-    {
-        m_valid = false;
-    }
-
-    //--
-
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(GraphEditorBlockNode);
-        RTTI_METADATA(ElementClassNameMetadata).name("GraphEditorBlockNode");
-    RTTI_END_TYPE();
-
-    GraphEditorBlockNode::GraphEditorBlockNode(base::graph::Block* block)
-        : m_block(AddRef(block))
-    {
-        hitTest();
-        virtualPosition(block->position().toVector());
-        renderOverlayElements(false);
-
-        m_title = createChildWithType<ui::TextLabel>("GraphEditorNodeTitle"_id);
-        m_title->overlay(true);
-
-        m_payload = CreateGraphBlockInnerWidget(block);
-        if (m_payload)
+        if (localPos.x >= socket.socketOffset.x && localPos.y >= socket.socketOffset.y &&
+            localPos.x <= socket.socketOffset.x + socket.socketSize.x && localPos.y <= socket.socketOffset.y + socket.socketSize.y)
         {
-            m_payload->overlay(true);
-            attachChild(m_payload);
+            return socket.ptr;
         }
     }
 
-    GraphEditorBlockNode::~GraphEditorBlockNode()
-    {}
+    return nullptr;
+}
 
-    const base::graph::Socket* GraphEditorBlockNode::socketAtAbsolutePos(const Position& pos) const
+bool GraphEditorBlockNode::calcSocketLinkPlacement(const base::graph::Socket* socket, Position& outLocalPosition, base::Vector2& outSocketDirection) const
+{
+    if (const auto* socketInfo = m_layout.sockets.find(socket))
     {
-        const auto localPos = pos - cachedDrawArea().absolutePosition();
+        outLocalPosition = socketInfo->linkPoint;
+        outSocketDirection = socketInfo->linkDir;
+        return true;
+    }
 
-        for (const auto& socket : m_layout.sockets.values())
+    return false;
+}
+
+void GraphEditorBlockNode::updateHoverSocket(const base::graph::Socket* socket)
+{
+    m_hoverSocketPreview = socket;
+    invalidateLayout();
+    invalidateGeometry();
+}
+
+void GraphEditorBlockNode::updateTrackedSockedPositions() const
+{
+    auto oldTrackers = std::move(m_trackers);
+
+    for (const auto& tracker : oldTrackers)
+    {
+        if (auto socket = tracker->socket().lock())
         {
-            if (localPos.x >= socket.socketOffset.x && localPos.y >= socket.socketOffset.y &&
-                localPos.x <= socket.socketOffset.x + socket.socketSize.x && localPos.y <= socket.socketOffset.y + socket.socketSize.y)
+            if (const auto* layoutInfo = m_layout.sockets.find(socket))
             {
-                return socket.ptr;
+                auto linkActualPos = actualPosition() + layoutInfo->linkPoint;
+                tracker->update(linkActualPos, layoutInfo->linkDir);
+                m_trackers.pushBack(tracker);
+                continue;
             }
         }
 
-        return nullptr;
+        // this tracker is no longer valid - socket is gone
+        // hopefully it's not used
+        tracker->invalidate();
     }
+}
 
-    bool GraphEditorBlockNode::calcSocketLinkPlacement(const base::graph::Socket* socket, Position& outLocalPosition, base::Vector2& outSocketDirection) const
+void GraphEditorBlockNode::updateActualPosition(const base::Vector2& pos)
+{
+    TBaseClass::updateActualPosition(pos);
+    updateTrackedSockedPositions();
+}
+
+void GraphEditorBlockNode::virtualPosition(const VirtualPosition& pos, bool updateInContainer /*= true*/)
+{
+    TBaseClass::virtualPosition(pos, updateInContainer);
+    m_block->position(pos);
+}
+
+base::RefPtr<GraphEditorBlockSocketTracker> GraphEditorBlockNode::createSocketTracker(const base::graph::Socket* socket)
+{
+    for (const auto& tracker : m_trackers)  
+        if (tracker->socket() == socket)
+            return tracker;
+
+    auto tracker = base::RefNew<GraphEditorBlockSocketTracker>(socket);
+    m_trackers.pushBack(tracker);
+    return nullptr;
+}
+
+void GraphEditorBlockNode::invalidateBlockLayout()
+{
+    if (m_layout.valid)
     {
-        if (const auto* socketInfo = m_layout.sockets.find(socket))
-        {
-            outLocalPosition = socketInfo->linkPoint;
-            outSocketDirection = socketInfo->linkDir;
-            return true;
-        }
-
-        return false;
-    }
-
-    void GraphEditorBlockNode::updateHoverSocket(const base::graph::Socket* socket)
-    {
-        m_hoverSocketPreview = socket;
+        m_layout.valid = false;
         invalidateLayout();
-        invalidateGeometry();
     }
+}
 
-    void GraphEditorBlockNode::updateTrackedSockedPositions() const
+//--
+
+ElementPtr CreateGraphBlockTooltip(base::SpecificClassType<base::graph::Block> block)
+{
+    ElementPtr ret = base::RefNew<IElement>();
+    ret->layoutVertical();
+    ret->customPadding(5, 5, 5, 5);
+
+    // block info
+    ret->createChild<ui::TextLabel>(FormatBlockClassDisplayString(block));
+
+    // block preview
+    if (auto tempBlock = block.create())
     {
-        auto oldTrackers = std::move(m_trackers);
+        // create default sockets
+        tempBlock->rebuildLayout();
 
-        for (const auto& tracker : oldTrackers)
-        {
-            if (auto socket = tracker->socket().lock())
-            {
-                if (const auto* layoutInfo = m_layout.sockets.find(socket))
-                {
-                    auto linkActualPos = actualPosition() + layoutInfo->linkPoint;
-                    tracker->update(linkActualPos, layoutInfo->linkDir);
-                    m_trackers.pushBack(tracker);
-                    continue;
-                }
-            }
+        // create a nice container
+        auto conainer = ret->createChildWithType<IElement>("GraphNodePreviewContainer"_id);
+        conainer->customHorizontalAligment(ElementHorizontalLayout::Expand);
+        conainer->layoutVertical();
 
-            // this tracker is no longer valid - socket is gone
-            // hopefully it's not used
-            tracker->invalidate();
-        }
+        // create node visualization
+        auto node = conainer->createChild<GraphEditorBlockNode>(tempBlock);
+        node->overlay(false);
+        node->hitTest(false);
+        node->refreshBlockStyle();
+        node->refreshBlockSockets();
+        node->customHorizontalAligment(ElementHorizontalLayout::Center);
+        node->customVerticalAligment(ElementVerticalLayout::Middle);
+        node->customProportion(1.0f);            
     }
 
-    void GraphEditorBlockNode::updateActualPosition(const base::Vector2& pos)
-    {
-        TBaseClass::updateActualPosition(pos);
-        updateTrackedSockedPositions();
-    }
+    // additional informations
+    if (const auto* help = block->findMetadata<base::graph::BlockHelpMetadata>())
+        ret->createChild<ui::TextLabel>(help->helpString);
 
-    void GraphEditorBlockNode::virtualPosition(const VirtualPosition& pos, bool updateInContainer /*= true*/)
-    {
-        TBaseClass::virtualPosition(pos, updateInContainer);
-        m_block->position(pos);
-    }
+    return ret;
+}
 
-    base::RefPtr<GraphEditorBlockSocketTracker> GraphEditorBlockNode::createSocketTracker(const base::graph::Socket* socket)
-    {
-        for (const auto& tracker : m_trackers)  
-            if (tracker->socket() == socket)
-                return tracker;
+//--
 
-        auto tracker = base::RefNew<GraphEditorBlockSocketTracker>(socket);
-        m_trackers.pushBack(tracker);
-        return nullptr;
-    }
-
-    void GraphEditorBlockNode::invalidateBlockLayout()
-    {
-        if (m_layout.valid)
-        {
-            m_layout.valid = false;
-            invalidateLayout();
-        }
-    }
-
-    //--
-
-    ElementPtr CreateGraphBlockTooltip(base::SpecificClassType<base::graph::Block> block)
-    {
-        ElementPtr ret = base::RefNew<IElement>();
-        ret->layoutVertical();
-        ret->customPadding(5, 5, 5, 5);
-
-        // block info
-        ret->createChild<ui::TextLabel>(FormatBlockClassDisplayString(block));
-
-        // block preview
-        if (auto tempBlock = block.create())
-        {
-            // create default sockets
-            tempBlock->rebuildLayout();
-
-            // create a nice container
-            auto conainer = ret->createChildWithType<IElement>("GraphNodePreviewContainer"_id);
-            conainer->customHorizontalAligment(ElementHorizontalLayout::Expand);
-            conainer->layoutVertical();
-
-            // create node visualization
-            auto node = conainer->createChild<GraphEditorBlockNode>(tempBlock);
-            node->overlay(false);
-            node->hitTest(false);
-            node->refreshBlockStyle();
-            node->refreshBlockSockets();
-            node->customHorizontalAligment(ElementHorizontalLayout::Center);
-            node->customVerticalAligment(ElementVerticalLayout::Middle);
-            node->customProportion(1.0f);            
-        }
-
-        // additional informations
-        if (const auto* help = block->findMetadata<base::graph::BlockHelpMetadata>())
-            ret->createChild<ui::TextLabel>(help->helpString);
-
-        return ret;
-    }
-
-    //--
-
-} // ui
+END_BOOMER_NAMESPACE(ui)

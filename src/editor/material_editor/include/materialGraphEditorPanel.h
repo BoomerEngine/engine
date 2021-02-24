@@ -10,57 +10,57 @@
 
 #include "base/ui/include/uiGraphEditor.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+DECLARE_UI_EVENT(EVENT_MATERIAL_BLOCK_SELECTION_CHANGED);
+
+//--
+
+// inner material graph panel
+class EDITOR_MATERIAL_EDITOR_API MaterialGraphInnerEditorPanel : public ui::GraphEditor
 {
-    //--
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphInnerEditorPanel, ui::GraphEditor);
 
-    DECLARE_UI_EVENT(EVENT_MATERIAL_BLOCK_SELECTION_CHANGED);
+public:
+    MaterialGraphInnerEditorPanel();
 
-    //--
+};
 
-    // inner material graph panel
-    class EDITOR_MATERIAL_EDITOR_API MaterialGraphInnerEditorPanel : public ui::GraphEditor
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphInnerEditorPanel, ui::GraphEditor);
+//--
 
-    public:
-        MaterialGraphInnerEditorPanel();
+// material specific graph editor
+class EDITOR_MATERIAL_EDITOR_API MaterialGraphEditorPanel : public ui::IElement
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphEditorPanel, ui::IElement);
 
-    };
+public:
+    MaterialGraphEditorPanel(const base::ActionHistoryPtr& actions);
+    virtual ~MaterialGraphEditorPanel();
 
-    //--
+    // get current selection
+    INLINE const base::Array<base::RefPtr<rendering::MaterialGraphBlock>>& selectedBlocks() const { return m_selectedBlocks; }
 
-    // material specific graph editor
-    class EDITOR_MATERIAL_EDITOR_API MaterialGraphEditorPanel : public ui::IElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphEditorPanel, ui::IElement);
+    // set graph
+    void bindGraph(const rendering::MaterialGraphPtr& graph);
 
-    public:
-        MaterialGraphEditorPanel(const base::ActionHistoryPtr& actions);
-        virtual ~MaterialGraphEditorPanel();
+    // actions
+    void actionCopySelection();
+    void actionCutSelection();
+    void actionPasteSelection();
+    void actionDeleteSelection();
+    bool hasDataToPaste() const;
+    bool hasSelection() const;
 
-        // get current selection
-        INLINE const base::Array<base::RefPtr<rendering::MaterialGraphBlock>>& selectedBlocks() const { return m_selectedBlocks; }
+private:
+    base::RefPtr<MaterialGraphInnerEditorPanel> m_graphEditor;
+    base::Array<base::RefPtr<rendering::MaterialGraphBlock>> m_selectedBlocks;
 
-        // set graph
-        void bindGraph(const rendering::MaterialGraphPtr& graph);
+    rendering::MaterialGraphPtr m_graph;
+    bool m_hasValidSelection = false;
+};
 
-        // actions
-        void actionCopySelection();
-        void actionCutSelection();
-        void actionPasteSelection();
-        void actionDeleteSelection();
-        bool hasDataToPaste() const;
-        bool hasSelection() const;
+//--
 
-    private:
-        base::RefPtr<MaterialGraphInnerEditorPanel> m_graphEditor;
-        base::Array<base::RefPtr<rendering::MaterialGraphBlock>> m_selectedBlocks;
-
-        rendering::MaterialGraphPtr m_graph;
-        bool m_hasValidSelection = false;
-    };
-
-    //--
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

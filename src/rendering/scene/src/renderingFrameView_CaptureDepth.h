@@ -12,56 +12,50 @@
 
 #include "rendering/device/include/renderingCommandWriter.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
+
+//--
+
+/// command buffers to write to when recording depth buffer for capture
+struct FrameViewCaptureDepthRecorder : public FrameViewRecorder
 {
-    namespace scene
+    GPUCommandWriter viewBegin; // run at the start of the view rendering
+    GPUCommandWriter viewEnd; // run at the end of the view rendering
+
+    GPUCommandWriter depth; // depth pre pass, used to filter foreground fragments
+
+    FrameViewCaptureDepthRecorder();
+};
+
+//--
+
+/// helper recorder class
+class RENDERING_SCENE_API FrameViewCaptureDepth : public FrameViewSingleCamera
+{
+public:
+    struct Setup
     {
+        Camera camera;
+        base::Rect viewport;
 
-        //--
+        base::Rect captureRegion;
+        DownloadDataSinkPtr captureSink;
+    };
 
-        /// command buffers to write to when recording depth buffer for capture
-        struct FrameViewCaptureDepthRecorder : public FrameViewRecorder
-        {
-            command::CommandWriter viewBegin; // run at the start of the view rendering
-            command::CommandWriter viewEnd; // run at the end of the view rendering
+    //--
 
-            command::CommandWriter depth; // depth pre pass, used to filter foreground fragments
+    FrameViewCaptureDepth(const FrameRenderer& frame, const Setup& setup);
 
-            FrameViewCaptureDepthRecorder();
-        };
+    void render(GPUCommandWriter& cmd);
 
-        //--
+    //--
 
-        /// helper recorder class
-        class RENDERING_SCENE_API FrameViewCaptureDepth : public FrameViewSingleCamera
-        {
-        public:
-            struct Setup
-            {
-                Camera camera;
-                base::Rect viewport;
+private:
+    const Setup& m_setup;
 
-                base::Rect captureRegion;
-                DownloadDataSinkPtr captureSink;
-            };
+    void initializeCommandStreams(GPUCommandWriter& cmd, FrameViewCaptureDepthRecorder& rec);
+};
 
-            //--
+//--
 
-            FrameViewCaptureDepth(const FrameRenderer& frame, const Setup& setup);
-
-            void render(command::CommandWriter& cmd);
-
-            //--
-
-        private:
-            const Setup& m_setup;
-
-            void initializeCommandStreams(command::CommandWriter& cmd, FrameViewCaptureDepthRecorder& rec);
-        };
-
-        //--
-
-
-    } // scene
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::scene)

@@ -14,56 +14,54 @@
 #include "base/system/include/thread.h"
 #include "base/system/include/timing.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::io)
+
+namespace prv
 {
-    namespace io
+
+    /// POSIX implementation of the watcher
+    class WinDirectoryWatcher : public IDirectoryWatcher
     {
-        namespace prv
+    public:
+        WinDirectoryWatcher(Array<wchar_t> rootPath);
+        virtual ~WinDirectoryWatcher();
+
+        //! attach listener
+        virtual void attachListener(IDirectoryWatcherListener* listener) override;
+        virtual void dettachListener(IDirectoryWatcherListener* listener) override;
+
+    private:
+        Array<wchar_t> m_watchedPath;
+
+        Mutex m_listenersLock;
+        Array<IDirectoryWatcherListener*> m_listeners;
+        bool m_listenersIterated = false;
+
+        Thread m_localThread;
+        Thread m_dispatchThread;
+
+        OVERLAPPED m_waitCondition;
+        HANDLE m_directoryHandle;
+
+        std::atomic<bool> m_requestExit = false;
+
+        Array<DirectoryWatcherEvent> m_pendingEvents;
+        SpinLock m_pendingEventsLock;
+
+        struct PendingModification
         {
+            StringBuf path;
+            NativeTimePoint time;
+            NativeTimePoint expires;
+        };
 
-            /// POSIX implementation of the watcher
-            class WinDirectoryWatcher : public IDirectoryWatcher
-            {
-            public:
-                WinDirectoryWatcher(Array<wchar_t> rootPath);
-                virtual ~WinDirectoryWatcher();
+        Array<PendingModification> m_pendingModifications;
+        SpinLock m_pendingModificationsLock;
 
-                //! attach listener
-                virtual void attachListener(IDirectoryWatcherListener* listener) override;
-                virtual void dettachListener(IDirectoryWatcherListener* listener) override;
+        void watch();
+        void dispatch();
+    };
 
-            private:
-                Array<wchar_t> m_watchedPath;
+} // prv
 
-                Mutex m_listenersLock;
-                Array<IDirectoryWatcherListener*> m_listeners;
-                bool m_listenersIterated = false;
-
-                Thread m_localThread;
-                Thread m_dispatchThread;
-
-                OVERLAPPED m_waitCondition;
-                HANDLE m_directoryHandle;
-
-                std::atomic<bool> m_requestExit = false;
-
-                Array<DirectoryWatcherEvent> m_pendingEvents;
-                SpinLock m_pendingEventsLock;
-
-                struct PendingModification
-                {
-                    StringBuf path;
-                    NativeTimePoint time;
-                    NativeTimePoint expires;
-                };
-
-                Array<PendingModification> m_pendingModifications;
-                SpinLock m_pendingModificationsLock;
-
-                void watch();
-                void dispatch();
-            };
-
-        } // prv
-    } // io
-} // base
+END_BOOMER_NAMESPACE(base::io)

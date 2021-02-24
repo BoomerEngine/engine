@@ -8,84 +8,80 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::process)
+
+//-----------------------------------------------------------------------------
+
+/// Callback for processing process data
+/// Used for both pipe and stdout
+class BASE_PROCESS_API IOutputCallback
 {
-    namespace process
-    {
+public:
+    virtual ~IOutputCallback();
 
-        //-----------------------------------------------------------------------------
+    virtual void processData(const void* data, uint32_t dataSize) = 0;
+};
 
-        /// Callback for processing process data
-        /// Used for both pipe and stdout
-        class BASE_PROCESS_API IOutputCallback
-        {
-        public:
-            virtual ~IOutputCallback();
+//-----------------------------------------------------------------------------
 
-            virtual void processData(const void* data, uint32_t dataSize) = 0;
-        };
+/// SetupMetadata for running the process
+struct BASE_PROCESS_API ProcessSetup
+{
+    // path to process to run (copied out of the pointer)
+    // NOTE: if no process specified we will run ourselves
+    StringBuf m_processPath;
 
-        //-----------------------------------------------------------------------------
+    // optional arguments to pass to process
+    Array<StringBuf> m_arguments;
 
-        /// SetupMetadata for running the process
-        struct BASE_PROCESS_API ProcessSetup
-        {
-            // path to process to run (copied out of the pointer)
-            // NOTE: if no process specified we will run ourselves
-            StringBuf m_processPath;
+    // asynchronous callback for the process communication via stdout
+    // callback gets notified whenever we receive any data from the process via it's stdout
+    // NOTE: if not specified than no std output will be observed
+    IOutputCallback* m_stdOutCallback = nullptr;
 
-            // optional arguments to pass to process
-            Array<StringBuf> m_arguments;
+    // show the window of the process or not
+    bool m_showWindow = false;
 
-            // asynchronous callback for the process communication via stdout
-            // callback gets notified whenever we receive any data from the process via it's stdout
-            // NOTE: if not specified than no std output will be observed
-            IOutputCallback* m_stdOutCallback = nullptr;
+    //--
 
-            // show the window of the process or not
-            bool m_showWindow = false;
+    ProcessSetup();
+};
 
-            //--
+//-----------------------------------------------------------------------------
 
-            ProcessSetup();
-        };
+/// This is the abstraction of a running external process
+/// NOTE: this interface is fully asynchronous as most of the usages are like that
+class BASE_PROCESS_API IProcess : public base::NoCopy
+{
+    RTTI_DECLARE_POOL(POOL_PROCESS)
 
-        //-----------------------------------------------------------------------------
+public:
+    virtual ~IProcess();
 
-        /// This is the abstraction of a running external process
-        /// NOTE: this interface is fully asynchronous as most of the usages are like that
-        class BASE_PROCESS_API IProcess : public base::NoCopy
-        {
-            RTTI_DECLARE_POOL(POOL_PROCESS)
+    //! Wait for the process to finish in given time (ms)
+    //! returns false if process was not finished in given time
+    virtual bool wait(uint32_t timeoutMS) = 0;
 
-        public:
-            virtual ~IProcess();
+    //! Terminate the process, without waiting
+    virtual void terminate() = 0;
 
-            //! Wait for the process to finish in given time (ms)
-            //! returns false if process was not finished in given time
-            virtual bool wait(uint32_t timeoutMS) = 0;
+    //! Get internal (system) ID of the thread
+    virtual ProcessID id() const = 0;
 
-            //! Terminate the process, without waiting
-            virtual void terminate() = 0;
+    //! Are we running ?
+    /// NOTE: false if the process has finished
+    virtual bool isRunning() const = 0;
 
-            //! Get internal (system) ID of the thread
-            virtual ProcessID id() const = 0;
+    //! Get the exit code of the process
+    //! NOTE: returns false if process has not yet completed
+    virtual bool exitCode(int& outExitCode) const = 0;
 
-            //! Are we running ?
-            /// NOTE: false if the process has finished
-            virtual bool isRunning() const = 0;
+    //---
 
-            //! Get the exit code of the process
-            //! NOTE: returns false if process has not yet completed
-            virtual bool exitCode(int& outExitCode) const = 0;
+    //! Spawn a process
+    static IProcess* Create(const ProcessSetup& setup);
+};
 
-            //---
+//-----------------------------------------------------------------------------
 
-            //! Spawn a process
-            static IProcess* Create(const ProcessSetup& setup);
-        };
-
-        //-----------------------------------------------------------------------------
-
-    } // process
-} // base
+END_BOOMER_NAMESPACE(base::process)

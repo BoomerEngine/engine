@@ -15,24 +15,24 @@
     #include "orderedQueuePOSIX.h"
 #endif
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//---
+
+IOrderedQueue::~IOrderedQueue()
+{}
+
+IOrderedQueue* IOrderedQueue::Create()
 {
-    //---
-
-    IOrderedQueue::~IOrderedQueue()
-    {}
-
-    IOrderedQueue* IOrderedQueue::Create()
-    {
 #if defined(PLATFORM_WINDOWS)
-        return prv::WinOrderedQueue::Create();
+    return prv::WinOrderedQueue::Create();
 #elif defined(PLATFORM_POSIX)
-        return prv::POSIXOrderedQueue::Create();
+    return prv::POSIXOrderedQueue::Create();
 #else
-        return nullptr; // no thread needed apparently :P
+    return nullptr; // no thread needed apparently :P
 #endif
-    }
+}
 
-    //---
+//---
 
-} // inf
+END_BOOMER_NAMESPACE(base)

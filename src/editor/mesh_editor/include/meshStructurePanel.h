@@ -11,79 +11,79 @@
 #include "base/ui/include/uiSimpleTreeModel.h"
 #include "base/ui/include/uiElement.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+// mesh structure node
+class EDITOR_MESH_EDITOR_API MeshStructureNode : public base::IReferencable
 {
-    //--
+    RTTI_DECLARE_VIRTUAL_ROOT_CLASS(MeshStructureNode);
 
-    // mesh structure node
-    class EDITOR_MESH_EDITOR_API MeshStructureNode : public base::IReferencable
+public:
+    struct Data
     {
-        RTTI_DECLARE_VIRTUAL_ROOT_CLASS(MeshStructureNode);
+        uint32_t index = 0;
+        uint32_t subIndex = 0;
 
-    public:
-        struct Data
-        {
-            uint32_t index = 0;
-            uint32_t subIndex = 0;
+        INLINE Data() {};
+        INLINE Data(const Data& other) = default;
+        INLINE Data& operator=(const Data& other) = default;
 
-            INLINE Data() {};
-            INLINE Data(const Data& other) = default;
-            INLINE Data& operator=(const Data& other) = default;
-
-            INLINE Data(uint32_t index_)
-                : index(index_)
-            {}
-        };
-
-        MeshStructureNode(base::StringView txt, base::StringID type, Data data = Data());
-        virtual ~MeshStructureNode();
-
-        INLINE const base::StringBuf& caption() const { return m_caption; }
-        INLINE base::StringID type() const { return m_type; }
-        INLINE const Data& data() const { return m_data; }
-
-    private:
-        base::StringBuf m_caption;
-        base::StringID m_type;
-        Data m_data;
+        INLINE Data(uint32_t index_)
+            : index(index_)
+        {}
     };
 
-    typedef base::RefPtr<MeshStructureNode> MeshStructureNodePtr;
+    MeshStructureNode(base::StringView txt, base::StringID type, Data data = Data());
+    virtual ~MeshStructureNode();
 
-    //--
+    INLINE const base::StringBuf& caption() const { return m_caption; }
+    INLINE base::StringID type() const { return m_type; }
+    INLINE const Data& data() const { return m_data; }
 
-    // model for a mesh structure tree
-    class EDITOR_MESH_EDITOR_API MeshStructureTreeModel : public ui::SimpleTreeModel<MeshStructureNodePtr>
-    {
-    public:
-        MeshStructureTreeModel();
-        virtual ~MeshStructureTreeModel();
+private:
+    base::StringBuf m_caption;
+    base::StringID m_type;
+    Data m_data;
+};
 
-        virtual bool compare(const MeshStructureNodePtr& a, const MeshStructureNodePtr& b, int colIndex) const override final;
-        virtual bool filter(const MeshStructureNodePtr& data, const ui::SearchPattern& filter, int colIndex = 0) const override final;
-        virtual base::StringBuf displayContent(const MeshStructureNodePtr& data, int colIndex = 0) const override final;
-    };
+typedef base::RefPtr<MeshStructureNode> MeshStructureNodePtr;
 
-    //--
+//--
 
-    // a preview panel for an image
-    class EDITOR_MESH_EDITOR_API MeshStructurePanel : public ui::IElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MeshStructurePanel, ui::IElement);
+// model for a mesh structure tree
+class EDITOR_MESH_EDITOR_API MeshStructureTreeModel : public ui::SimpleTreeModel<MeshStructureNodePtr>
+{
+public:
+    MeshStructureTreeModel();
+    virtual ~MeshStructureTreeModel();
 
-    public:
-        MeshStructurePanel();
-        virtual ~MeshStructurePanel();
+    virtual bool compare(const MeshStructureNodePtr& a, const MeshStructureNodePtr& b, int colIndex) const override final;
+    virtual bool filter(const MeshStructureNodePtr& data, const ui::SearchPattern& filter, int colIndex = 0) const override final;
+    virtual base::StringBuf displayContent(const MeshStructureNodePtr& data, int colIndex = 0) const override final;
+};
 
-        void bindResource(const rendering::MeshPtr& mesh);
+//--
 
-    private:
-        rendering::MeshPtr m_mesh;
+// a preview panel for an image
+class EDITOR_MESH_EDITOR_API MeshStructurePanel : public ui::IElement
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(MeshStructurePanel, ui::IElement);
 
-        ui::TreeViewPtr m_tree;
-        base::RefPtr<MeshStructureTreeModel> m_treeModel;
-    };
+public:
+    MeshStructurePanel();
+    virtual ~MeshStructurePanel();
 
-    //--
+    void bindResource(const rendering::MeshPtr& mesh);
 
-} // ed
+private:
+    rendering::MeshPtr m_mesh;
+
+    ui::TreeViewPtr m_tree;
+    base::RefPtr<MeshStructureTreeModel> m_treeModel;
+};
+
+//--
+
+END_BOOMER_NAMESPACE(ed)

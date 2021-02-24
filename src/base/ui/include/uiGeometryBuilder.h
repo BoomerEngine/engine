@@ -12,44 +12,44 @@
 #include "base/font/include/fontInputText.h"
 #include "base/canvas/include/canvasGeometryBuilder.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+/// extension of the canvas geometry builder, contains support for fonts and icons from atlas
+class BASE_UI_API GeometryBuilder : public base::canvas::GeometryBuilder
 {
-    /// extension of the canvas geometry builder, contains support for fonts and icons from atlas
-    class BASE_UI_API GeometryBuilder : public base::canvas::GeometryBuilder
-    {
-    public:
-        GeometryBuilder(base::canvas::Geometry& outGeometry);
+public:
+    GeometryBuilder(base::canvas::Geometry& outGeometry);
 
-        //---
+    //---
 
-        // Select font by object
-        void font(const base::FontPtr& fontPtr);
+    // Select font by object
+    void font(const base::FontPtr& fontPtr);
 
-        // Set vertical text alignment mode
-        void textVerticalAlignment(const base::font::FontAlignmentVertical alignment);
+    // Set vertical text alignment mode
+    void textVerticalAlignment(const base::font::FontAlignmentVertical alignment);
 
-        // Set horizontal text alignment mode
-        void textHorizontalAlignment(const base::font::FontAlignmentHorizontal alignment);
+    // Set horizontal text alignment mode
+    void textHorizontalAlignment(const base::font::FontAlignmentHorizontal alignment);
 
-        // Select font size
-        void fontSize(uint32_t size);
+    // Select font size
+    void fontSize(uint32_t size);
 
-        // Get size of line of text under currently selected fonts
-        uint32_t textLineHeight() const;
+    // Get size of line of text under currently selected fonts
+    uint32_t textLineHeight() const;
 
-        // Get width of line of text under currently selected fonts
-        uint32_t textLineWidth(const base::font::FontInputText& text) const;
+    // Get width of line of text under currently selected fonts
+    uint32_t textLineWidth(const base::font::FontInputText& text) const;
 
-        // Print text, uses only the fill color and current
-        void drawText(const base::font::FontInputText& text);
+    // Print text, uses only the fill color and current
+    void drawText(const base::font::FontInputText& text);
 
-        //---
+    //---
 
-    private:
-        base::FontPtr m_currentFont; // current font
-        base::font::FontAlignmentVertical m_currentVerticalAlignment;
-        base::font::FontAlignmentHorizontal m_currentHorizontalAlignment;
-        uint32_t m_currentSize;
-    };
+private:
+    base::FontPtr m_currentFont; // current font
+    base::font::FontAlignmentVertical m_currentVerticalAlignment;
+    base::font::FontAlignmentHorizontal m_currentHorizontalAlignment;
+    uint32_t m_currentSize;
+};
 
-} // ui
+END_BOOMER_NAMESPACE(ui)

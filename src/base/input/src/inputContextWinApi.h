@@ -14,90 +14,86 @@
 
 #include <Windows.h>
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::input)
+
+class ContextWinApi;
+
+///---
+
+/// RawInput keyboard
+class RawKeyboard : public GenericKeyboard
 {
-    namespace input
-    {
+public:
+    RawKeyboard(IContext* context);
+    ~RawKeyboard();
 
-        class ContextWinApi;
+    void interpretChar(HWND hWnd, WPARAM charCode);
+    void interpretRawInput(HWND hWnd, const RID_DEVICE_INFO* deviceInfo, const RAWINPUT* inputData);
+    void interpretKeyDown(HWND hWnd, WPARAM keyCode, LPARAM flags);
+    void interpretKeyUp(HWND hWnd, WPARAM keyCode, LPARAM flags);
 
-        ///---
+    KeyCode mapKeyCode(USHORT virtualKey, bool extendedKey) const;
 
-        /// RawInput keyboard
-        class RawKeyboard : public GenericKeyboard
-        {
-        public:
-            RawKeyboard(IContext* context);
-            ~RawKeyboard();
+    KeyCode m_windowsKeyMapping[256];
+};
 
-            void interpretChar(HWND hWnd, WPARAM charCode);
-            void interpretRawInput(HWND hWnd, const RID_DEVICE_INFO* deviceInfo, const RAWINPUT* inputData);
-            void interpretKeyDown(HWND hWnd, WPARAM keyCode, LPARAM flags);
-            void interpretKeyUp(HWND hWnd, WPARAM keyCode, LPARAM flags);
+///---
 
-            KeyCode mapKeyCode(USHORT virtualKey, bool extendedKey) const;
+/// RawInput mouse implementation
+class RawMouse : public GenericMouse
+{
+public:
+    RawMouse(ContextWinApi* context, RawKeyboard* keyboard);
+    ~RawMouse();
 
-            KeyCode m_windowsKeyMapping[256];
-        };
+    void interpretRawInput(HWND hWnd, const RID_DEVICE_INFO* deviceInfo, const RAWINPUT* inputData);
 
-        ///---
+private:
+    static Point GetMousePositionInWindow(HWND hWnd);
+    static Point GetMousePositionAbsolute();
+    static Rect GetWindowClientRect(HWND hWnd);
+    static bool IsCaptureWindow(HWND hWnd);
 
-        /// RawInput mouse implementation
-        class RawMouse : public GenericMouse
-        {
-        public:
-            RawMouse(ContextWinApi* context, RawKeyboard* keyboard);
-            ~RawMouse();
+    bool m_isCaptured;
+    ContextWinApi* m_context;
+};
 
-            void interpretRawInput(HWND hWnd, const RID_DEVICE_INFO* deviceInfo, const RAWINPUT* inputData);
+///---
 
-        private:
-            static Point GetMousePositionInWindow(HWND hWnd);
-            static Point GetMousePositionAbsolute();
-            static Rect GetWindowClientRect(HWND hWnd);
-            static bool IsCaptureWindow(HWND hWnd);
+/// WinAPI input context
+class BASE_INPUT_API ContextWinApi : public IContext
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ContextWinApi, IContext);
 
-            bool m_isCaptured;
-            ContextWinApi* m_context;
-        };
+public:
+    ContextWinApi(uint64_t nativeWindow, uint64_t nativeDisplay, bool gameMode);
 
-        ///---
+    INLINE HWND hWND() const { return m_hWnd; }
 
-        /// WinAPI input context
-        class BASE_INPUT_API ContextWinApi : public IContext
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ContextWinApi, IContext);
+    //--
 
-        public:
-            ContextWinApi(uint64_t nativeWindow, uint64_t nativeDisplay, bool gameMode);
+    virtual void resetInput() override final;
+    virtual void processState() override final;
+    virtual void processMessage(const void* msg) override final;
+    virtual void requestCapture(int captureMode) override final;
 
-            INLINE HWND hWND() const { return m_hWnd; }
+protected:
+    HWND m_hWnd;
 
-            //--
+    POINT m_activeCaptureInitialMousePos = { 0,0 };
+    POINT m_activeCaptureLastMousePos = { 0,0 };
+    int m_activeCaptureMode = 0;
 
-            virtual void resetInput() override final;
-            virtual void processState() override final;
-            virtual void processMessage(const void* msg) override final;
-            virtual void requestCapture(int captureMode) override final;
+    RawKeyboard m_keyboard;
+    RawMouse m_mouse;
+    bool m_useRawInput;
 
-        protected:
-            HWND m_hWnd;
+    void releaseCapture();
 
-            POINT m_activeCaptureInitialMousePos = { 0,0 };
-            POINT m_activeCaptureLastMousePos = { 0,0 };
-            int m_activeCaptureMode = 0;
+    uint64_t windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool& processed);
+    void processRawInput(HWND hWnd, HRAWINPUT hRawInput);
+};
 
-            RawKeyboard m_keyboard;
-            RawMouse m_mouse;
-            bool m_useRawInput;
+//--
 
-            void releaseCapture();
-
-            uint64_t windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool& processed);
-            void processRawInput(HWND hWnd, HRAWINPUT hRawInput);
-        };
-
-        //--
-
-    } // input
-} // base
+END_BOOMER_NAMESPACE(base::input)

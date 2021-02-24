@@ -11,25 +11,18 @@
 #include "dx11ObjectCache.h"
 #include "dx11GraphicsPipeline.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
+
+//--
+
+GraphicsPipeline::GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates)
+	: IBaseGraphicsPipeline(owner, shaders, mergedRenderStates)
 {
-    namespace api
-    {
-		namespace dx11
-		{
+}
 
-			//--
+GraphicsPipeline::~GraphicsPipeline()
+{}
 
-			GraphicsPipeline::GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates)
-				: IBaseGraphicsPipeline(owner, shaders, mergedRenderStates)
-			{
-			}
+//--
 
-			GraphicsPipeline::~GraphicsPipeline()
-			{}
-
-			//--
-
-		} // dx11
-    } // gl4
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::dx11)

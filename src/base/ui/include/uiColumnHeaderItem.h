@@ -10,30 +10,29 @@
 
 #include "uiButton.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+//--
+
+/// element in the column header
+class BASE_UI_API ColumnHeader : public Button
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(ColumnHeader, Button);
 
-    //--
+public:
+    ColumnHeader(base::StringView text, bool canResize=true, bool canSort=true);
 
-    /// element in the column header
-    class BASE_UI_API ColumnHeader : public Button
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(ColumnHeader, Button);
+    void refreshSortingVisualization(bool active, bool desc);
 
-    public:
-        ColumnHeader(base::StringView text, bool canResize=true, bool canSort=true);
+private:
+    ColumnHeader();
 
-        void refreshSortingVisualization(bool active, bool desc);
+    bool m_canSort;
+    bool m_canResize;
 
-    private:
-        ColumnHeader();
+    base::RefPtr<TextLabel> m_sortingIcon;
+};
 
-        bool m_canSort;
-        bool m_canResize;
+//--
 
-        base::RefPtr<TextLabel> m_sortingIcon;
-    };
-
-    //--
-
-} // ui
+END_BOOMER_NAMESPACE(ui)

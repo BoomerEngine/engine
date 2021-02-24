@@ -10,67 +10,67 @@
 
 #include "base/reflection/include/reflectionMacros.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//--
+
+// Absolute (world space) position
+// Used to represent XYZ placement of objects in the world with enough precission for even big worlds
+// NOTE: it's implemented as 2 normal vectors because there are many places where this is more sensible than doubles
+class BASE_MATH_API AbsolutePosition
 {
+    RTTI_DECLARE_NONVIRTUAL_CLASS(AbsolutePosition);
+
+public:
+    INLINE AbsolutePosition();
+    INLINE AbsolutePosition(double x, double y, double z);
+    INLINE AbsolutePosition(const Vector3& primary, const Vector3& error = base::Vector3::ZERO());
+
+    INLINE AbsolutePosition(const AbsolutePosition& other) = default;
+    INLINE AbsolutePosition(AbsolutePosition&& other) = default;
+    INLINE AbsolutePosition& operator=(const AbsolutePosition& other) = default;
+    INLINE AbsolutePosition& operator=(AbsolutePosition&& other) = default;
+    INLINE ~AbsolutePosition() = default;
+
+    ///--
+
+    INLINE AbsolutePosition operator+(const Vector3& offset) const;
+    INLINE AbsolutePosition& operator+=(const Vector3& offset);
+    INLINE AbsolutePosition operator-(const Vector3& offset) const;
+    INLINE AbsolutePosition& operator-=(const Vector3& offset);
+
+    INLINE bool operator==(const AbsolutePosition& other) const;
+    INLINE bool operator!=(const AbsolutePosition& other) const;
+
+    INLINE Vector3 operator-(const AbsolutePosition& base) const;
+
     //--
 
-    // Absolute (world space) position
-    // Used to represent XYZ placement of objects in the world with enough precission for even big worlds
-    // NOTE: it's implemented as 2 normal vectors because there are many places where this is more sensible than doubles
-    class BASE_MATH_API AbsolutePosition
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(AbsolutePosition);
+    //! expand into doubles
+    INLINE void expand(double& x, double& y, double& z) const;
 
-    public:
-        INLINE AbsolutePosition();
-        INLINE AbsolutePosition(double x, double y, double z);
-        INLINE AbsolutePosition(const Vector3& primary, const Vector3& error = base::Vector3::ZERO());
+    //! calculate the approximate distance between position
+    INLINE float distance(const AbsolutePosition& base) const;
 
-        INLINE AbsolutePosition(const AbsolutePosition& other) = default;
-        INLINE AbsolutePosition(AbsolutePosition&& other) = default;
-        INLINE AbsolutePosition& operator=(const AbsolutePosition& other) = default;
-        INLINE AbsolutePosition& operator=(AbsolutePosition&& other) = default;
-        INLINE ~AbsolutePosition() = default;
+    //! calculate the exact distance between position
+    INLINE double exactDistance(const AbsolutePosition& base) const;
 
-        ///--
+    //! get approximated position, NOTE: zero cost, no cast
+    INLINE const Vector3& approximate() const;
 
-        INLINE AbsolutePosition operator+(const Vector3& offset) const;
-        INLINE AbsolutePosition& operator+=(const Vector3& offset);
-        INLINE AbsolutePosition operator-(const Vector3& offset) const;
-        INLINE AbsolutePosition& operator-=(const Vector3& offset);
+    //! get the error term for position approximation, NOTE: zero cost, no cast
+    INLINE const Vector3& error() const;
 
-        INLINE bool operator==(const AbsolutePosition& other) const;
-        INLINE bool operator!=(const AbsolutePosition& other) const;
+    //--
 
-        INLINE Vector3 operator-(const AbsolutePosition& base) const;
+    //! get the root position of the world (0,0,0)
+    static const AbsolutePosition& ROOT();
 
-        //--
+private:
+    Vector3 m_primary;
+    Vector3 m_error;
 
-        //! expand into doubles
-        INLINE void expand(double& x, double& y, double& z) const;
+    void normalize();
+};
 
-        //! calculate the approximate distance between position
-        INLINE float distance(const AbsolutePosition& base) const;
-
-        //! calculate the exact distance between position
-        INLINE double exactDistance(const AbsolutePosition& base) const;
-
-        //! get approximated position, NOTE: zero cost, no cast
-        INLINE const Vector3& approximate() const;
-
-        //! get the error term for position approximation, NOTE: zero cost, no cast
-        INLINE const Vector3& error() const;
-
-        //--
-
-        //! get the root position of the world (0,0,0)
-        static const AbsolutePosition& ROOT();
-
-    private:
-        Vector3 m_primary;
-        Vector3 m_error;
-
-        void normalize();
-    };
-
-} // base
+BEGIN_BOOMER_NAMESPACE(base)

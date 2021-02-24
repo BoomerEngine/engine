@@ -11,25 +11,26 @@
 #include "thread.h"
 #include "atomic.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+namespace prv
 {
-    namespace prv
+    //--
+
+    /// WinAPI based thread
+    class WinThread : public NoCopy
     {
-        //--
+    public:
+        static void Init(void* ptr, const ThreadSetup& setup);
+        static void Close(void* ptr);
 
-        /// WinAPI based thread
-        class WinThread : public NoCopy
-        {
-        public:
-            static void Init(void* ptr, const ThreadSetup& setup);
-            static void Close(void* ptr);
+        //---
 
-            //---
+        static DWORD __stdcall StaticEntry(LPVOID lpThreadParameter);
+    };
 
-            static DWORD __stdcall StaticEntry(LPVOID lpThreadParameter);
-        };
+    //--
 
-        //--
+} // prv
 
-    } // prv
-} // base
+END_BOOMER_NAMESPACE(base)

@@ -8,11 +8,8 @@
 
 #include "physics_compiler_glue.inl"
 
-namespace physics
-{
-    namespace compiler
-    {
-		extern PHYSICS_COMPILER_API void Dupa();
+BEGIN_BOOMER_NAMESPACE(boomer)
 
-    } // compiler
-} // physics
+extern PHYSICS_COMPILER_API void Dupa();
+
+END_BOOMER_NAMESPACE(boomer)

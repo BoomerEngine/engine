@@ -12,172 +12,159 @@
 #include "reflectionPropertyBuilder.h"
 #include "reflectionFunctionBuilder.h"
 
-namespace base
-{ 
-    namespace rtti
+BEGIN_BOOMER_NAMESPACE(base::reflection)
+
+class PropertyBuilder;
+class FunctionBuilder;
+class InterfaceBuilder;
+class ClassBuilder;
+class CustomTypeBuilder;
+
+// trait builder
+class BASE_REFLECTION_API TypeTraitBuilder : public NoCopy
+{
+public:
+    TypeTraitBuilder();
+
+    INLINE TypeTraitBuilder& zeroInitializationValid()
     {
-        class IClassType;
-        class Property;
-        class IMetadata;
-        class NativeClass;
+        m_traitZeroInit = true;
+        return *this;
     }
 
-    namespace reflection    
+    INLINE TypeTraitBuilder& noConstructor()
     {
-        class PropertyBuilder;
-        class FunctionBuilder;
-        class InterfaceBuilder;
-        class ClassBuilder;
-        class CustomTypeBuilder;
+        m_traitNoConstructor = true;
+        return *this;
+    }
 
-        // trait builder
-        class BASE_REFLECTION_API TypeTraitBuilder : public NoCopy
-        {
-        public:
-            TypeTraitBuilder();
+    INLINE TypeTraitBuilder& noDestructor()
+    {
+        m_traitNoDestructor = true;
+        return *this;
+    }
 
-            INLINE TypeTraitBuilder& zeroInitializationValid()
-            {
-                m_traitZeroInit = true;
-                return *this;
-            }
+    INLINE TypeTraitBuilder& fastCopyCompare()
+    {
+        m_traitFastCopyCompare = true;
+        return *this;
+    }
 
-            INLINE TypeTraitBuilder& noConstructor()
-            {
-                m_traitNoConstructor = true;
-                return *this;
-            }
+private:
+    bool m_traitZeroInit;
+    bool m_traitNoConstructor;
+    bool m_traitNoDestructor;
+    bool m_traitFastCopyCompare;
 
-            INLINE TypeTraitBuilder& noDestructor()
-            {
-                m_traitNoDestructor = true;
-                return *this;
-            }
+    void apply(rtti::TypeRuntimeTraits& traits);
 
-            INLINE TypeTraitBuilder& fastCopyCompare()
-            {
-                m_traitFastCopyCompare = true;
-                return *this;
-            }
+    friend class ClassBuilder;
+    friend class CustomTypeBuilder;
+};
 
-        private:
-            bool m_traitZeroInit;
-            bool m_traitNoConstructor;
-            bool m_traitNoDestructor;
-            bool m_traitFastCopyCompare;
+// helper class that can add stuff to the class type
+class BASE_REFLECTION_API ClassBuilder : public NoCopy
+{
+    RTTI_DECLARE_POOL(POOL_RTTI)
 
-            void apply(rtti::TypeRuntimeTraits& traits);
+public:
+    ClassBuilder(rtti::NativeClass* classPtr);
+    ~ClassBuilder();
 
-            friend class ClassBuilder;
-            friend class CustomTypeBuilder;
-        };
+    // apply changes to target class
+    // this atomically sets up the base class and the properties
+    void submit(); 
 
-        // helper class that can add stuff to the class type
-        class BASE_REFLECTION_API ClassBuilder : public NoCopy
-        {
-            RTTI_DECLARE_POOL(POOL_RTTI)
+    // set current property category
+    void category(const char* category);
 
-        public:
-            ClassBuilder(rtti::NativeClass* classPtr);
-            ~ClassBuilder();
+    // create a builder for a class property 
+    PropertyBuilder& addProperty(const char* rawName, Type type, uint32_t dataOffset);
 
-            // apply changes to target class
-            // this atomically sets up the base class and the properties
-            void submit(); 
+    // create metadata
+    rtti::IMetadata& addMetadata(ClassType classType);
 
-            // set current property category
-            void category(const char* category);
+    // create function builder
+    FunctionBuilder& addFunction(const char* rawName);
 
-            // create a builder for a class property 
-            PropertyBuilder& addProperty(const char* rawName, Type type, uint32_t dataOffset);
+    //---
 
-            // create metadata
-            rtti::IMetadata& addMetadata(ClassType classType);
+    template< typename T >
+    INLINE PropertyBuilder& addProperty(const char* rawName, T& ptr)
+    {
+        auto offset = range_cast<uint32_t>((uint64_t)&ptr);
+        return addProperty(rawName, GetTypeObject<T>(), offset);
+    }
 
-            // create function builder
-            FunctionBuilder& addFunction(const char* rawName);
+    template< typename T >
+    INLINE T& addMetadata()
+    {
+        static_assert(std::is_base_of<rtti::IMetadata, T>::value, "Not a metadata class");
+        return static_cast<T&>(addMetadata(ClassID<T>()));
+    }
 
-            //---
+    template< typename T >
+    INLINE FunctionBuilderClass<T> addFunction(const char* name)
+    {
+        return FunctionBuilderClass<T>(addFunction(name));
+    }
 
-            template< typename T >
-            INLINE PropertyBuilder& addProperty(const char* rawName, T& ptr)
-            {
-                auto offset = range_cast<uint32_t>((uint64_t)&ptr);
-                return addProperty(rawName, GetTypeObject<T>(), offset);
-            }
+    INLINE FunctionBuilderStatic addStaticFunction(const char* name)
+    {
+        return FunctionBuilderStatic(addFunction(name));
+    }
 
-            template< typename T >
-            INLINE T& addMetadata()
-            {
-                static_assert(std::is_base_of<rtti::IMetadata, T>::value, "Not a metadata class");
-                return static_cast<T&>(addMetadata(ClassID<T>()));
-            }
+    INLINE TypeTraitBuilder& addTrait()
+    {
+        return m_traits;
+    }
 
-            template< typename T >
-            INLINE FunctionBuilderClass<T> addFunction(const char* name)
-            {
-                return FunctionBuilderClass<T>(addFunction(name));
-            }
+    INLINE rtti::NativeClass& type()
+    {
+        return *m_classPtr;
+    }
 
-            INLINE FunctionBuilderStatic addStaticFunction(const char* name)
-            {
-                return FunctionBuilderStatic(addFunction(name));
-            }
+    void addOldName(const char* oldName);
 
-            INLINE TypeTraitBuilder& addTrait()
-            {
-                return m_traits;
-            }
+private:
+    rtti::NativeClass* m_classPtr;
+    Array< PropertyBuilder > m_properties;
+    Array< FunctionBuilder* > m_functions;
+    Array< StringID > m_oldNames;
+    StringBuf m_categoryName;
+    TypeTraitBuilder m_traits;
+};
 
-            INLINE rtti::NativeClass& type()
-            {
-                return *m_classPtr;
-            }
+//--
 
-            void addOldName(const char* oldName);
+// helper class that can add stuff to the custom type
+class BASE_REFLECTION_API CustomTypeBuilder : public NoCopy
+{
+public:
+    CustomTypeBuilder(rtti::CustomType* customType);
+    ~CustomTypeBuilder();
 
-        private:
-            rtti::NativeClass* m_classPtr;
-            Array< PropertyBuilder > m_properties;
-            Array< FunctionBuilder* > m_functions;
-            Array< StringID > m_oldNames;
-            StringBuf m_categoryName;
-            TypeTraitBuilder m_traits;
-        };
+    // apply changes to target class
+    // this atomically sets up the base class and the properties
+    void submit();
 
-        //--
+    //--
 
-        // helper class that can add stuff to the custom type
-        class BASE_REFLECTION_API CustomTypeBuilder : public NoCopy
-        {
-        public:
-            CustomTypeBuilder(rtti::CustomType* customType);
-            ~CustomTypeBuilder();
+    INLINE TypeTraitBuilder& addTrait()
+    {
+        return m_traits;
+    }
 
-            // apply changes to target class
-            // this atomically sets up the base class and the properties
-            void submit();
+    INLINE rtti::CustomType& type()
+    {
+        return *m_type;
+    }
 
-            //--
+    //--
 
-            INLINE TypeTraitBuilder& addTrait()
-            {
-                return m_traits;
-            }
+private:
+    rtti::CustomType* m_type;
+    TypeTraitBuilder m_traits;
+};
 
-            INLINE rtti::CustomType& type()
-            {
-                return *m_type;
-            }
-
-            //--
-
-        private:
-            rtti::CustomType* m_type;
-            TypeTraitBuilder m_traits;
-        };
-
-
-    } // reflection
-
-} // base
+END_BOOMER_NAMESPACE(base::reflection)

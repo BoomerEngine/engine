@@ -12,54 +12,45 @@
 
 #include "base/object/include/rttiEnumType.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::reflection)
+
+// helper class that can add stuff to the enum type
+class BASE_REFLECTION_API EnumBuilder
 {
-    namespace rtti
+public:
+    EnumBuilder(rtti::EnumType* enumPtr);
+    ~EnumBuilder();
+
+    // apply changes to target class
+    // this atomically sets up the base class and the properties
+    void submit();
+
+    // add enum option
+    void addOption(const char* rawName, int64_t value, const char* hint = nullptr);
+
+    // add typed value option
+    template< typename T>
+    INLINE void addOption(const char* rawName, T value, const char* hint = nullptr)
     {
-        class EnumType;
+        addOption(rawName, (int64_t)value, hint);
     }
 
-    namespace reflection
+    void addOldName(const char* oldName);
+
+private:
+    struct Option
     {
-        // helper class that can add stuff to the enum type
-        class BASE_REFLECTION_API EnumBuilder
-        {
-        public:
-            EnumBuilder(rtti::EnumType* enumPtr);
-            ~EnumBuilder();
+        StringID m_name;
+        int64_t m_value;
+        StringBuf m_hint;
+    };
 
-            // apply changes to target class
-            // this atomically sets up the base class and the properties
-            void submit();
+    typedef Array<Option> TOptions;
+    TOptions m_options;
 
-            // add enum option
-            void addOption(const char* rawName, int64_t value, const char* hint = nullptr);
+    rtti::EnumType* m_enumType;
 
-            // add typed value option
-            template< typename T>
-            INLINE void addOption(const char* rawName, T value, const char* hint = nullptr)
-            {
-                addOption(rawName, (int64_t)value, hint);
-            }
+    base::Array<base::StringID> m_oldNames;
+};
 
-            void addOldName(const char* oldName);
-
-        private:
-            struct Option
-            {
-                StringID m_name;
-                int64_t m_value;
-                StringBuf m_hint;
-            };
-
-            typedef Array<Option> TOptions;
-            TOptions m_options;
-
-            rtti::EnumType* m_enumType;
-
-            base::Array<base::StringID> m_oldNames;
-        };
-
-    } // reflection
-
-} // base
+END_BOOMER_NAMESPACE(base::reflection)

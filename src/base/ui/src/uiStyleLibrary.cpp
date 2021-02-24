@@ -18,162 +18,158 @@
 #include "base/font/include/fontGlyphCache.h"
 #include "base/resource/include/resourceTags.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui::style)
+
+//---
+
+RTTI_BEGIN_TYPE_CLASS(Library);
+    RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4styles");
+    RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("UI Styles");
+    RTTI_PROPERTY(m_selectors);
+    RTTI_PROPERTY(m_values);
+RTTI_END_TYPE();
+
+//---
+
+Library::Library()
 {
-    namespace style
+    m_emptyParams = base::RefNew<style::ParamTable>();
+}
+
+void Library::ParentValueTable(base::Array<base::Variant>& values, base::IObject* parent)
+{
+    for (auto& value : values)
     {
-
-        //---
-
-        RTTI_BEGIN_TYPE_CLASS(Library);
-            RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4styles");
-            RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("UI Styles");
-            RTTI_PROPERTY(m_selectors);
-            RTTI_PROPERTY(m_values);
-        RTTI_END_TYPE();
-
-        //---
-
-        Library::Library()
+        if (value.type() == base::reflection::GetTypeObject<base::FontPtr>())
         {
-            m_emptyParams = base::RefNew<style::ParamTable>();
+            auto& val = *(base::FontPtr*)value.data();
+            val->parent(parent);
         }
-
-        void Library::ParentValueTable(base::Array<base::Variant>& values, base::IObject* parent)
+        else if (value.type() == base::reflection::GetTypeObject<RenderStyle>())
         {
-            for (auto& value : values)
-            {
-                if (value.type() == base::reflection::GetTypeObject<base::FontPtr>())
-                {
-                    auto& val = *(base::FontPtr*)value.data();
-                    val->parent(parent);
-                }
-                else if (value.type() == base::reflection::GetTypeObject<RenderStyle>())
-                {
-                    auto& val = *(RenderStyle*)value.data();
-                    if (val.image)
-                        val.image->parent(parent);
-                }
-            }
+            auto& val = *(RenderStyle*)value.data();
+            if (val.image)
+                val.image->parent(parent);
         }
+    }
+}
 
-        Library::Library(base::Array<SelectorNode>&& selectorNodes, base::Array<base::Variant>&& values)
+Library::Library(base::Array<SelectorNode>&& selectorNodes, base::Array<base::Variant>&& values)
+{
+    m_emptyParams = base::RefNew<style::ParamTable>();
+    m_selectors = std::move(selectorNodes);
+    m_values = std::move(values);
+
+    ParentValueTable(m_values, this);
+}
+
+const SelectorMatch* Library::matchSelectors(const SelectorMatchContext& context) const
+{
+    base::ScopeLock<base::SpinLock> lock(m_selectorMapLock);
+
+    // compute hash and use existing selector if possible
+    auto hash = context.key();
+    const SelectorMatch* selector = nullptr;
+    if (m_selectorMap.find(hash, selector))
+        return selector;
+
+    // collect selectors matching given context
+    // TODO: optimize
+    base::Array<SelectorID> matchingSelectors;
+    for (uint32_t i = 0; i < m_selectors.size(); ++i)
+    {
+        const auto& selector = m_selectors[i];
+        if (selector.matchParameters().matches(context))
         {
-            m_emptyParams = base::RefNew<style::ParamTable>();
-            m_selectors = std::move(selectorNodes);
-            m_values = std::move(values);
-
-            ParentValueTable(m_values, this);
+            matchingSelectors.pushBack(range_cast<SelectorID>(i));
         }
+    }
 
-        const SelectorMatch* Library::matchSelectors(const SelectorMatchContext& context) const
-        {
-            base::ScopeLock<base::SpinLock> lock(m_selectorMapLock);
+    // create the match wrapper
+    auto newSelector = new SelectorMatch(std::move(matchingSelectors), hash);
+    m_selectorMap.set(hash, newSelector);
+    return newSelector;
+}
 
-            // compute hash and use existing selector if possible
-            auto hash = context.key();
-            const SelectorMatch* selector = nullptr;
-            if (m_selectorMap.find(hash, selector))
-                return selector;
+bool Library::testRule(SelectorID selectorId, const SelectorMatch* const* selectorList, uint32_t selectorStride, int selectorIndex) const
+{
+    // invalid node, test failed
+    if (selectorIndex < 0)
+        return false;
 
-            // collect selectors matching given context
-            // TODO: optimize
-            base::Array<SelectorID> matchingSelectors;
-            for (uint32_t i = 0; i < m_selectors.size(); ++i)
-            {
-                const auto& selector = m_selectors[i];
-                if (selector.matchParameters().matches(context))
-                {
-                    matchingSelectors.pushBack(range_cast<SelectorID>(i));
-                }
-            }
+    // get all selectors that are matched at this node
+    // for a rule to match we need to have a matched selector for a given node in the hierarchy
+    const auto* selectorMatch = selectorList[selectorIndex * selectorStride];
+    if (!selectorMatch->selectors().contains(selectorId))
+        return false;
 
-            // create the match wrapper
-            auto newSelector = new SelectorMatch(std::move(matchingSelectors), hash);
-            m_selectorMap.set(hash, newSelector);
-            return newSelector;
-        }
+    // if we got here and there are no more selector rules to check we are done 
+    const auto& selector = m_selectors[selectorId];
+    auto parentSelectorId = selector.parentId();
+    if (parentSelectorId == 0)
+        return true;
 
-        bool Library::testRule(SelectorID selectorId, const SelectorMatch* const* selectorList, uint32_t selectorStride, int selectorIndex) const
-        {
-            // invalid node, test failed
-            if (selectorIndex < 0)
-                return false;
-
-            // get all selectors that are matched at this node
-            // for a rule to match we need to have a matched selector for a given node in the hierarchy
-            const auto* selectorMatch = selectorList[selectorIndex * selectorStride];
-            if (!selectorMatch->selectors().contains(selectorId))
-                return false;
-
-            // if we got here and there are no more selector rules to check we are done 
-            const auto& selector = m_selectors[selectorId];
-            auto parentSelectorId = selector.parentId();
-            if (parentSelectorId == 0)
+    // get the way we need to combine the selector
+    auto combiner = selector.relation();
+    if (combiner == SelectorCombinatorType::AnyParent)
+    {
+        // any parent will do
+        while (--selectorIndex >= 0)
+            if (testRule(parentSelectorId, selectorList, selectorStride, selectorIndex))
                 return true;
+    }
+    else if (combiner == SelectorCombinatorType::DirectParent)
+    {
+        // our direct parent must match
+        return testRule(parentSelectorId, selectorList, selectorStride, selectorIndex-1);
+    }
+    else if (combiner == SelectorCombinatorType::AdjecentSibling)
+    {
+        // TODO: hopefully never
+    }
+    else if (combiner == SelectorCombinatorType::GeneralSibling)
+    {
+        // TODO: hopefully never
+    }
 
-            // get the way we need to combine the selector
-            auto combiner = selector.relation();
-            if (combiner == SelectorCombinatorType::AnyParent)
-            {
-                // any parent will do
-                while (--selectorIndex >= 0)
-                    if (testRule(parentSelectorId, selectorList, selectorStride, selectorIndex))
-                        return true;
-            }
-            else if (combiner == SelectorCombinatorType::DirectParent)
-            {
-                // our direct parent must match
-                return testRule(parentSelectorId, selectorList, selectorStride, selectorIndex-1);
-            }
-            else if (combiner == SelectorCombinatorType::AdjecentSibling)
-            {
-                // TODO: hopefully never
-            }
-            else if (combiner == SelectorCombinatorType::GeneralSibling)
-            {
-                // TODO: hopefully never
-            }
-
-            // rule is invalid
-            return false;
-        }
+    // rule is invalid
+    return false;
+}
         
-        ParamTablePtr Library::compileParamTable(uint64_t compoundHash, const SelectorMatch* const* selectorList, uint32_t selectorStride, uint32_t selectorCount) const
+ParamTablePtr Library::compileParamTable(uint64_t compoundHash, const SelectorMatch* const* selectorList, uint32_t selectorStride, uint32_t selectorCount) const
+{
+    // no data
+    if (!selectorCount)
+        return m_emptyParams;
+
+    // lookup in local cache
+    ParamTablePtr ret;
+    if (m_paramTableCache.find(compoundHash, ret))
+        return ret;
+
+    // return table
+    ret = base::RefNew<ParamTable>();
+    m_paramTableCache.set(compoundHash, ret);
+
+    // get the styles for the entry node
+    int selectorIndex = (int)selectorCount - 1;
+    const auto* startSelectors = selectorList[selectorStride * selectorIndex];
+    for (const auto selectorId : startSelectors->selectors())
+    {
+        // aggregate parameters only from rules that match
+        if (testRule(selectorId, selectorList, selectorStride, selectorIndex))
         {
-            // no data
-            if (!selectorCount)
-                return m_emptyParams;
-
-            // lookup in local cache
-            ParamTablePtr ret;
-            if (m_paramTableCache.find(compoundHash, ret))
-                return ret;
-
-            // return table
-            ret = base::RefNew<ParamTable>();
-            m_paramTableCache.set(compoundHash, ret);
-
-            // get the styles for the entry node
-            int selectorIndex = (int)selectorCount - 1;
-            const auto* startSelectors = selectorList[selectorStride * selectorIndex];
-            for (const auto selectorId : startSelectors->selectors())
+            const auto& selector = m_selectors[selectorId];
+            for (const auto& param : selector.parameters())
             {
-                // aggregate parameters only from rules that match
-                if (testRule(selectorId, selectorList, selectorStride, selectorIndex))
-                {
-                    const auto& selector = m_selectors[selectorId];
-                    for (const auto& param : selector.parameters())
-                    {
-                        const auto& value = m_values[param.valueId()];
-                        ret->values.setVariant(param.paramName(), value);
-                        //TRACE_INFO("Style param '{}': '{}'", param.paramName(), value);
-                    }
-                }
+                const auto& value = m_values[param.valueId()];
+                ret->values.setVariant(param.paramName(), value);
+                //TRACE_INFO("Style param '{}': '{}'", param.paramName(), value);
             }
-
-            return ret;
         }
+    }
 
-    } // style
-} // ui
+    return ret;
+}
+
+END_BOOMER_NAMESPACE(ui::style)

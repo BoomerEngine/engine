@@ -8,37 +8,37 @@
 
 #pragma once
 
-namespace ui
-{
-    ///--
+BEGIN_BOOMER_NAMESPACE(ui)
 
-    /// make a simple validation function that accepts only range of chars
-    extern BASE_UI_API TInputValidationFunction MakeCustomValidationFunction(base::StringView validChars);
+///--
 
-    /// make a alpha numerical identifier validation function (A-Za-z0-9_), we can't start from number, typical GOOD identifier
-    extern BASE_UI_API TInputValidationFunction MakeAlphaNumValidationFunction(base::StringView additionalChars = "");
+/// make a simple validation function that accepts only range of chars
+extern BASE_UI_API TInputValidationFunction MakeCustomValidationFunction(base::StringView validChars);
 
-    /// make a filename validation function (allows only valid filename characters + tests for invalid names)
-    extern BASE_UI_API TInputValidationFunction MakeFilenameValidationFunction(bool withExtension = false);
+/// make a alpha numerical identifier validation function (A-Za-z0-9_), we can't start from number, typical GOOD identifier
+extern BASE_UI_API TInputValidationFunction MakeAlphaNumValidationFunction(base::StringView additionalChars = "");
 
-    /// make a directory validation function - must use valid names + end with path separator
-    extern BASE_UI_API TInputValidationFunction MakeDirectoryValidationFunction(bool allowRelative = false);
+/// make a filename validation function (allows only valid filename characters + tests for invalid names)
+extern BASE_UI_API TInputValidationFunction MakeFilenameValidationFunction(bool withExtension = false);
 
-    /// make a whole path validation function (allows only path characters) but whole thing must be a valid path
-    extern BASE_UI_API TInputValidationFunction MakePathValidationFunction(bool allowRelative = false);
+/// make a directory validation function - must use valid names + end with path separator
+extern BASE_UI_API TInputValidationFunction MakeDirectoryValidationFunction(bool allowRelative = false);
 
-    /// make a function to validate integer numbers
-    extern BASE_UI_API TInputValidationFunction MakeIntegerNumbersValidationFunction(bool allowNegative = true, bool allowZero = true);
+/// make a whole path validation function (allows only path characters) but whole thing must be a valid path
+extern BASE_UI_API TInputValidationFunction MakePathValidationFunction(bool allowRelative = false);
 
-    /// make a function to validate integer numbers that must be in specified range
-    extern BASE_UI_API TInputValidationFunction MakeIntegerNumbersInRangeValidationFunction(int64_t minValue, int64_t maxValue);
+/// make a function to validate integer numbers
+extern BASE_UI_API TInputValidationFunction MakeIntegerNumbersValidationFunction(bool allowNegative = true, bool allowZero = true);
 
-    /// make a function to validate real numbers
-    extern BASE_UI_API TInputValidationFunction MakeRealNumbersValidationFunction(bool allowNegative = true);
+/// make a function to validate integer numbers that must be in specified range
+extern BASE_UI_API TInputValidationFunction MakeIntegerNumbersInRangeValidationFunction(int64_t minValue, int64_t maxValue);
 
-    /// make a function to validate real numbers
-    extern BASE_UI_API TInputValidationFunction MakeRealNumbersInRangeValidationFunction(double minValue, double maxValue);
+/// make a function to validate real numbers
+extern BASE_UI_API TInputValidationFunction MakeRealNumbersValidationFunction(bool allowNegative = true);
 
-    ///--
+/// make a function to validate real numbers
+extern BASE_UI_API TInputValidationFunction MakeRealNumbersInRangeValidationFunction(double minValue, double maxValue);
 
-} // ui
+///--
+
+END_BOOMER_NAMESPACE(ui)

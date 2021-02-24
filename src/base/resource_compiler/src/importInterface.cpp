@@ -11,183 +11,179 @@
 #include "base/resource/include/resourceTags.h"
 #include "base/resource/include/resourceMetadata.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+//--
+
+IResourceImporterInterface::~IResourceImporterInterface()
+{}
+
+//--
+
+RTTI_BEGIN_TYPE_CLASS(ResourceImporterConfigurationClassMetadata);
+RTTI_END_TYPE();
+
+ResourceImporterConfigurationClassMetadata::ResourceImporterConfigurationClassMetadata()
 {
-    namespace res
+
+}
+//--
+
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IResourceImporter);
+    RTTI_METADATA(res::ResourceCookerVersionMetadata).version(1);
+    RTTI_METADATA(ResourceImporterConfigurationClassMetadata).configurationClass<ResourceConfiguration>(); // we ALWAYS have a config class
+RTTI_END_TYPE();
+
+IResourceImporter::~IResourceImporter()
+{}
+
+/// TODO: add sensible caching
+
+static const Array<SpecificClassType<IResourceImporter>>& AllImporterClasses()
+{
+    static InplaceArray<SpecificClassType<IResourceImporter>, 64> allImporters;
+    if (allImporters.empty())
+        RTTI::GetInstance().enumClasses(allImporters);
+    return allImporters;
+}
+
+void IResourceImporter::ListImportableResourceClasses(Array<SpecificClassType<IResource>>& outResourceClasses)
+{
+    for (const auto& cls : AllImporterClasses())
     {
-
-        //--
-
-        IResourceImporterInterface::~IResourceImporterInterface()
-        {}
-
-        //--
-
-        RTTI_BEGIN_TYPE_CLASS(ResourceImporterConfigurationClassMetadata);
-        RTTI_END_TYPE();
-
-        ResourceImporterConfigurationClassMetadata::ResourceImporterConfigurationClassMetadata()
+        if (const auto mtd = cls->findMetadata<base::res::ResourceCookedClassMetadata>())
         {
-
+            for (const auto& resoureCls : mtd->classList())
+                outResourceClasses.pushBackUnique(resoureCls);
         }
-        //--
+    }
+}
 
-        RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IResourceImporter);
-            RTTI_METADATA(res::ResourceCookerVersionMetadata).version(1);
-            RTTI_METADATA(ResourceImporterConfigurationClassMetadata).configurationClass<ResourceConfiguration>(); // we ALWAYS have a config class
-        RTTI_END_TYPE();
-
-        IResourceImporter::~IResourceImporter()
-        {}
-
-        /// TODO: add sensible caching
-
-        static const Array<SpecificClassType<IResourceImporter>>& AllImporterClasses()
+bool IResourceImporter::ListImportableResourceClassesForExtension(StringView fileExtension, Array<SpecificClassType<IResource>>& outResourceClasses)
+{
+    bool somethingAdded = false;
+    for (const auto& cls : AllImporterClasses())
+    {
+        if (const auto mtd = cls->findMetadata<base::res::ResourceSourceFormatMetadata>())
         {
-            static InplaceArray<SpecificClassType<IResourceImporter>, 64> allImporters;
-            if (allImporters.empty())
-                RTTI::GetInstance().enumClasses(allImporters);
-            return allImporters;
-        }
+            bool hasExtension = false;
+            for (const auto& ext : mtd->extensions())
+            {
+                if (0 == ext.caseCmp(fileExtension))
+                {
+                    hasExtension = true;
+                    break;
+                }
+            }
 
-        void IResourceImporter::ListImportableResourceClasses(Array<SpecificClassType<IResource>>& outResourceClasses)
-        {
-            for (const auto& cls : AllImporterClasses())
+            if (hasExtension)
             {
                 if (const auto mtd = cls->findMetadata<base::res::ResourceCookedClassMetadata>())
                 {
                     for (const auto& resoureCls : mtd->classList())
+                    {
                         outResourceClasses.pushBackUnique(resoureCls);
+                        somethingAdded = true;
+                    }
                 }
             }
         }
+    }
 
-        bool IResourceImporter::ListImportableResourceClassesForExtension(StringView fileExtension, Array<SpecificClassType<IResource>>& outResourceClasses)
+    return somethingAdded;
+}
+
+bool IResourceImporter::ListImportConfigurationForExtension(StringView fileExtension, SpecificClassType<IResource> targetClass, SpecificClassType<ResourceConfiguration>& outConfigurationClass)
+{
+    bool somethingAdded = false;
+    for (const auto& cls : AllImporterClasses())
+    {
+        if (const auto mtd = cls->findMetadata<base::res::ResourceSourceFormatMetadata>())
         {
-            bool somethingAdded = false;
-            for (const auto& cls : AllImporterClasses())
+            bool hasExtension = false;
+            for (const auto& ext : mtd->extensions())
             {
-                if (const auto mtd = cls->findMetadata<base::res::ResourceSourceFormatMetadata>())
+                if (0 == ext.caseCmp(fileExtension))
                 {
-                    bool hasExtension = false;
-                    for (const auto& ext : mtd->extensions())
-                    {
-                        if (0 == ext.caseCmp(fileExtension))
-                        {
-                            hasExtension = true;
-                            break;
-                        }
-                    }
-
-                    if (hasExtension)
-                    {
-                        if (const auto mtd = cls->findMetadata<base::res::ResourceCookedClassMetadata>())
-                        {
-                            for (const auto& resoureCls : mtd->classList())
-                            {
-                                outResourceClasses.pushBackUnique(resoureCls);
-                                somethingAdded = true;
-                            }
-                        }
-                    }
+                    hasExtension = true;
+                    break;
                 }
             }
 
-            return somethingAdded;
-        }
-
-        bool IResourceImporter::ListImportConfigurationForExtension(StringView fileExtension, SpecificClassType<IResource> targetClass, SpecificClassType<ResourceConfiguration>& outConfigurationClass)
-        {
-            bool somethingAdded = false;
-            for (const auto& cls : AllImporterClasses())
+            if (hasExtension)
             {
-                if (const auto mtd = cls->findMetadata<base::res::ResourceSourceFormatMetadata>())
-                {
-                    bool hasExtension = false;
-                    for (const auto& ext : mtd->extensions())
-                    {
-                        if (0 == ext.caseCmp(fileExtension))
-                        {
-                            hasExtension = true;
-                            break;
-                        }
-                    }
-
-                    if (hasExtension)
-                    {
-                        if (const auto mtd = cls->findMetadata<base::res::ResourceCookedClassMetadata>())
-                        {
-                            for (const auto& resoureCls : mtd->classList())
-                            {
-                                if (targetClass == resoureCls)
-                                {
-                                    if (const auto mtd = cls->findMetadata<base::res::ResourceImporterConfigurationClassMetadata>())
-                                    {
-                                        if (mtd->configurationClass())
-                                        {
-                                            outConfigurationClass = mtd->configurationClass();
-                                            somethingAdded = true;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            return somethingAdded;
-        }
-
-        bool IResourceImporter::ListImportableExtensionsForClass(SpecificClassType<IResource> resourceClasses, Array<StringView>& outExtensions)
-        {
-            bool somethingAdded = false;
-            for (const auto& cls : AllImporterClasses())
-            {
-                bool hasClass = false;
                 if (const auto mtd = cls->findMetadata<base::res::ResourceCookedClassMetadata>())
                 {
                     for (const auto& resoureCls : mtd->classList())
                     {
-                        if (!resourceClasses || resoureCls.is(resourceClasses))
+                        if (targetClass == resoureCls)
                         {
-                            hasClass = true;
-                            break;
-                        }
-                    }
-                }
-
-                if (hasClass)
-                {
-                    if (const auto mtd = cls->findMetadata<base::res::ResourceSourceFormatMetadata>())
-                    {
-                        for (const auto& ext : mtd->extensions())
-                        {
-                            bool addExtension = true;
-
-                            for (const auto& existingExt : outExtensions)
+                            if (const auto mtd = cls->findMetadata<base::res::ResourceImporterConfigurationClassMetadata>())
                             {
-                                if (0 == ext.caseCmp(existingExt))
+                                if (mtd->configurationClass())
                                 {
-                                    addExtension = false;
-                                    break;
+                                    outConfigurationClass = mtd->configurationClass();
+                                    somethingAdded = true;
                                 }
-                            }
-
-                            if (addExtension)
-                            {
-                                outExtensions.pushBack(ext);
-                                somethingAdded = true;
                             }
                         }
                     }
                 }
             }
+        }
+    }
 
-            return somethingAdded;
+    return somethingAdded;
+}
+
+bool IResourceImporter::ListImportableExtensionsForClass(SpecificClassType<IResource> resourceClasses, Array<StringView>& outExtensions)
+{
+    bool somethingAdded = false;
+    for (const auto& cls : AllImporterClasses())
+    {
+        bool hasClass = false;
+        if (const auto mtd = cls->findMetadata<base::res::ResourceCookedClassMetadata>())
+        {
+            for (const auto& resoureCls : mtd->classList())
+            {
+                if (!resourceClasses || resoureCls.is(resourceClasses))
+                {
+                    hasClass = true;
+                    break;
+                }
+            }
         }
 
-        //--
+        if (hasClass)
+        {
+            if (const auto mtd = cls->findMetadata<base::res::ResourceSourceFormatMetadata>())
+            {
+                for (const auto& ext : mtd->extensions())
+                {
+                    bool addExtension = true;
 
-    } // res
-} // base
+                    for (const auto& existingExt : outExtensions)
+                    {
+                        if (0 == ext.caseCmp(existingExt))
+                        {
+                            addExtension = false;
+                            break;
+                        }
+                    }
+
+                    if (addExtension)
+                    {
+                        outExtensions.pushBack(ext);
+                        somethingAdded = true;
+                    }
+                }
+            }
+        }
+    }
+
+    return somethingAdded;
+}
+
+//--
+
+END_BOOMER_NAMESPACE(base::res)

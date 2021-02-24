@@ -10,115 +10,115 @@
 
 #include "base/ui/include/uiElement.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+class AssetFileSmallImportIndicator;
+
+// general visualization element for normal file or directory
+class IAssetBrowserVisItem : public ui::IElement
 {
-    //--
+    RTTI_DECLARE_VIRTUAL_CLASS(IAssetBrowserVisItem, ui::IElement);
 
-    class AssetFileSmallImportIndicator;
+public:
+    IAssetBrowserVisItem(ManagedItem* item, uint32_t size);
 
-    // general visualization element for normal file or directory
-    class IAssetBrowserVisItem : public ui::IElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(IAssetBrowserVisItem, ui::IElement);
+    INLINE ManagedItem* item() const { return m_item; }
 
-    public:
-        IAssetBrowserVisItem(ManagedItem* item, uint32_t size);
+    virtual void resizeIcon(uint32_t size) = 0;
 
-        INLINE ManagedItem* item() const { return m_item; }
+protected:
+    ManagedItem* m_item = nullptr;
+    uint32_t m_size = 100;
+};
 
-        virtual void resizeIcon(uint32_t size) = 0;
+//--
 
-    protected:
-        ManagedItem* m_item = nullptr;
-        uint32_t m_size = 100;
-    };
+// general visualization element for normal file
+class AssetBrowserFileVis : public IAssetBrowserVisItem
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserFileVis, IAssetBrowserVisItem);
 
-    //--
+public:
+    AssetBrowserFileVis(ManagedFile* item, uint32_t size);
 
-    // general visualization element for normal file
-    class AssetBrowserFileVis : public IAssetBrowserVisItem
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserFileVis, IAssetBrowserVisItem);
+    INLINE ManagedFile* file() const { return m_file; }
 
-    public:
-        AssetBrowserFileVis(ManagedFile* item, uint32_t size);
+    virtual void resizeIcon(uint32_t size) override;
 
-        INLINE ManagedFile* file() const { return m_file; }
+protected:
+    ManagedFile* m_file = nullptr;
 
-        virtual void resizeIcon(uint32_t size) override;
+    ui::ImagePtr m_icon;
+    ui::TextLabelPtr m_label;
 
-    protected:
-        ManagedFile* m_file = nullptr;
+    RefPtr<AssetFileSmallImportIndicator> m_importIndicator;
+};
 
-        ui::ImagePtr m_icon;
-        ui::TextLabelPtr m_label;
+//--
 
-        RefPtr<AssetFileSmallImportIndicator> m_importIndicator;
-    };
+// general visualization element for normal directory
+class AssetBrowserDirectoryVis : public IAssetBrowserVisItem
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserDirectoryVis, IAssetBrowserVisItem);
 
-    //--
+public:
+    AssetBrowserDirectoryVis(ManagedDirectory* dir, uint32_t size, bool parentDirectory = false);
 
-    // general visualization element for normal directory
-    class AssetBrowserDirectoryVis : public IAssetBrowserVisItem
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserDirectoryVis, IAssetBrowserVisItem);
+    INLINE ManagedDirectory* directory() const { return m_directory; }
 
-    public:
-        AssetBrowserDirectoryVis(ManagedDirectory* dir, uint32_t size, bool parentDirectory = false);
+    virtual void resizeIcon(uint32_t size) override;
 
-        INLINE ManagedDirectory* directory() const { return m_directory; }
+protected:
+    ManagedDirectory* m_directory = nullptr;
 
-        virtual void resizeIcon(uint32_t size) override;
+    ui::ImagePtr m_icon;
+    ui::TextLabelPtr m_label;
+};
 
-    protected:
-        ManagedDirectory* m_directory = nullptr;
+//--
 
-        ui::ImagePtr m_icon;
-        ui::TextLabelPtr m_label;
-    };
+// general visualization element for PLACEHOLDER FILE (file being created)
+class AssetBrowserPlaceholderFileVis : public IAssetBrowserVisItem
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserPlaceholderFileVis, IAssetBrowserVisItem);
 
-    //--
+public:
+    AssetBrowserPlaceholderFileVis(ManagedFilePlaceholder* file, uint32_t size);
 
-    // general visualization element for PLACEHOLDER FILE (file being created)
-    class AssetBrowserPlaceholderFileVis : public IAssetBrowserVisItem
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserPlaceholderFileVis, IAssetBrowserVisItem);
+    INLINE ManagedFilePlaceholder* filePlaceholder() const { return m_filePlaceholder; }
 
-    public:
-        AssetBrowserPlaceholderFileVis(ManagedFilePlaceholder* file, uint32_t size);
+    virtual void resizeIcon(uint32_t size) override;
 
-        INLINE ManagedFilePlaceholder* filePlaceholder() const { return m_filePlaceholder; }
+protected:
+    ManagedFilePlaceholderPtr m_filePlaceholder;
 
-        virtual void resizeIcon(uint32_t size) override;
+    ui::ImagePtr m_icon;
+    ui::EditBoxPtr m_label;
+};
 
-    protected:
-        ManagedFilePlaceholderPtr m_filePlaceholder;
+//--
 
-        ui::ImagePtr m_icon;
-        ui::EditBoxPtr m_label;
-    };
+// general visualization element for PLACEHOLDER DIRECTORY (dir being created)
+class AssetBrowserPlaceholderDirectoryVis : public IAssetBrowserVisItem
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserPlaceholderDirectoryVis, IAssetBrowserVisItem);
 
-    //--
+public:
+    AssetBrowserPlaceholderDirectoryVis(ManagedDirectoryPlaceholder* dir, uint32_t size);
 
-    // general visualization element for PLACEHOLDER DIRECTORY (dir being created)
-    class AssetBrowserPlaceholderDirectoryVis : public IAssetBrowserVisItem
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserPlaceholderDirectoryVis, IAssetBrowserVisItem);
+    INLINE ManagedDirectoryPlaceholder* filePlaceholder() const { return m_directoryPlaceholder; }
 
-    public:
-        AssetBrowserPlaceholderDirectoryVis(ManagedDirectoryPlaceholder* dir, uint32_t size);
+    virtual void resizeIcon(uint32_t size) override;
 
-        INLINE ManagedDirectoryPlaceholder* filePlaceholder() const { return m_directoryPlaceholder; }
+protected:
+    ManagedDirectoryPlaceholderPtr m_directoryPlaceholder;
 
-        virtual void resizeIcon(uint32_t size) override;
+    ui::ImagePtr m_icon;
+    ui::EditBoxPtr m_label;
+};
 
-    protected:
-        ManagedDirectoryPlaceholderPtr m_directoryPlaceholder;
+//--
 
-        ui::ImagePtr m_icon;
-        ui::EditBoxPtr m_label;
-    };
-
-    //--
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

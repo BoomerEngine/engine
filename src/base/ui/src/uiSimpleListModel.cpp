@@ -10,11 +10,3 @@
 #include "uiSimpleListModel.h"
 #include "uiTextLabel.h"
 
-namespace ui
-{
-
-    //--
-
-    //--
-
-} // ui

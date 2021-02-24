@@ -15,67 +15,67 @@
 
 #include "freeImageLoader.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//--
+
+image::ImagePtr LoadImageFromMemory(const void* memory, uint64_t size)
 {
-    //--
+    auto loadedImage = image::LoadImageWithFreeImage(memory, size);
+    if (loadedImage)
+        return base::RefNew<base::image::Image>(loadedImage->view());
 
-    image::ImagePtr LoadImageFromMemory(const void* memory, uint64_t size)
+    return nullptr;
+}
+
+image::ImagePtr LoadImageFromMemory(Buffer ptr)
+{
+    if (ptr)
+        return LoadImageFromMemory(ptr.data(), ptr.size());
+    return nullptr;
+}
+
+image::ImagePtr LoadImageFromFile(io::IReadFileHandle* file)
+{
+    if (file)
     {
-        auto loadedImage = image::LoadImageWithFreeImage(memory, size);
-        if (loadedImage)
-            return base::RefNew<base::image::Image>(loadedImage->view());
+        const auto size = file->size();
 
-        return nullptr;
-    }
-
-    image::ImagePtr LoadImageFromMemory(Buffer ptr)
-    {
-        if (ptr)
-            return LoadImageFromMemory(ptr.data(), ptr.size());
-        return nullptr;
-    }
-
-    image::ImagePtr LoadImageFromFile(io::IReadFileHandle* file)
-    {
-        if (file)
+        auto data = Buffer::Create(POOL_IMAGE, size, 16);
+        if (data)
         {
-            const auto size = file->size();
-
-            auto data = Buffer::Create(POOL_IMAGE, size, 16);
-            if (data)
+            if (file->readSync(data.data(), size) == size)
             {
-                if (file->readSync(data.data(), size) == size)
-                {
-                    return LoadImageFromMemory(data);
-                }
-                else
-                {
-                    TRACE_WARNING("Failed to load {} bytes from file");
-                }
+                return LoadImageFromMemory(data);
             }
             else
             {
-                TRACE_WARNING("Out of memory allocating data buffer for image");
+                TRACE_WARNING("Failed to load {} bytes from file");
             }
         }
-
-        return nullptr;
+        else
+        {
+            TRACE_WARNING("Out of memory allocating data buffer for image");
+        }
     }
 
-    image::ImagePtr LoadImageFromAbsolutePath(StringView absolutePath)
-    {
-        if (const auto file = io::OpenForReading(absolutePath))
-            return LoadImageFromFile(file);
-        return nullptr;
-    }
+    return nullptr;
+}
 
-    image::ImagePtr LoadImageFromDepotPath(StringView depotPath)
-    {
-        if (const auto file = GetService<DepotService>()->createFileReader(depotPath))
-            return LoadImageFromFile(file);
-        return nullptr;
-    }
+image::ImagePtr LoadImageFromAbsolutePath(StringView absolutePath)
+{
+    if (const auto file = io::OpenForReading(absolutePath))
+        return LoadImageFromFile(file);
+    return nullptr;
+}
 
-    //--
+image::ImagePtr LoadImageFromDepotPath(StringView depotPath)
+{
+    if (const auto file = GetService<DepotService>()->createFileReader(depotPath))
+        return LoadImageFromFile(file);
+    return nullptr;
+}
 
-} // base
+//--
+
+END_BOOMER_NAMESPACE(base)

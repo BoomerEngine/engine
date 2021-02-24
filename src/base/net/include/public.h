@@ -13,119 +13,115 @@
 #define RESPONSE_FUNC const base::http::RequestResult& result
 #define REQUEST_FUNC const base::http::IncomingRequestPtr& request
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::net)
+
+//--
+
+struct Message;
+typedef RefPtr<Message> MessagePtr;
+
+class MessageReplicator;
+class MessageKnowledgeBase;
+class MessageObjectExecutor;
+
+/// stats for peer connection
+struct BASE_NET_API MessageStats
 {
-    namespace net
+public:
+    MessageStats();
+    MessageStats(const MessageStats& other);
+    MessageStats& operator=(const MessageStats& other);
+
+    void reset();
+
+    void countSentMessage(Type type, uint32_t dataSize);
+    void countReceivedMessage(Type type, uint32_t dataSize);
+
+    void print(IFormatStream& f) const;
+
+private:
+    struct PerMessageStats
     {
-        //--
+        Type m_type = nullptr;
+        uint32_t m_numMessagesSent = 0;
+        uint32_t m_numBytesSent = 0;
+        uint32_t m_numMessagesReceived = 0;
+        uint32_t m_numBytesReceived = 0;
+    };
 
-        struct Message;
-        typedef RefPtr<Message> MessagePtr;
+    uint32_t m_numTotalMessagesSent = 0;
+    uint32_t m_numTotalMessagesReceived = 0;
+    uint32_t m_numTotalBytesSent = 0;
+    uint32_t m_numTotalBytesReceived = 0;
 
-        class MessageReplicator;
-        class MessageKnowledgeBase;
-        class MessageObjectExecutor;
+    HashMap<Type, PerMessageStats> m_typeStats;
+};
 
-        /// stats for peer connection
-        struct BASE_NET_API MessageStats
-        {
-        public:
-            MessageStats();
-            MessageStats(const MessageStats& other);
-            MessageStats& operator=(const MessageStats& other);
+//--
 
-            void reset();
+class MessageReassembler;
+class IMessageReassemblerInspector;
 
-            void countSentMessage(Type type, uint32_t dataSize);
-            void countReceivedMessage(Type type, uint32_t dataSize);
+class MessageConnection;
+typedef RefPtr<MessageConnection> MessageConnectionPtr;
 
-            void print(IFormatStream& f) const;
+class TcpMessageServer;
+typedef RefPtr<TcpMessageServer> TcpMessageServerPtr;
 
-        private:
-            struct PerMessageStats
-            {
-                Type m_type = nullptr;
-                uint32_t m_numMessagesSent = 0;
-                uint32_t m_numBytesSent = 0;
-                uint32_t m_numMessagesReceived = 0;
-                uint32_t m_numBytesReceived = 0;
-            };
+class TcpMessageClient;
+typedef RefPtr<TcpMessageClient> TcpMessageClientPtr;
 
-            uint32_t m_numTotalMessagesSent = 0;
-            uint32_t m_numTotalMessagesReceived = 0;
-            uint32_t m_numTotalBytesSent = 0;
-            uint32_t m_numTotalBytesReceived = 0;
+END_BOOMER_NAMESPACE(base::net)
 
-            HashMap<Type, PerMessageStats> m_typeStats;
-        };
+//--
 
-        //--
+BEGIN_BOOMER_NAMESPACE(base::curl)
 
-        class MessageReassembler;
-        class IMessageReassemblerInspector;
+class RequestQueue;
 
-        class MessageConnection;
-        typedef RefPtr<MessageConnection> MessageConnectionPtr;
+END_BOOMER_NAMESPACE(base::curl)
 
-        class TcpMessageServer;
-        typedef RefPtr<TcpMessageServer> TcpMessageServerPtr;
+//--
 
-        class TcpMessageClient;
-        typedef RefPtr<TcpMessageClient> TcpMessageClientPtr;
+BEGIN_BOOMER_NAMESPACE(base::http)
 
-    } // net
+class RequestArgs;
+class RequestService;
+
+enum class Method : uint8_t
+{
+    POST,
+    GET,
+    DEL,
+};
+
+class Connection;
+typedef RefPtr<Connection> ConnectionPtr;
+
+struct BASE_NET_API RequestResult
+{
+    uint32_t code;
+    Buffer data; // may be string, may be not
+    NativeTimePoint scheduleTime;
+    NativeTimePoint completionTime;
 
     //--
 
-    namespace curl
-    {
-        class RequestQueue;
-    } // curl
+    RequestResult();
+    ~RequestResult();
+};
 
-    //--
+class RequestServer;
 
-    namespace http
-    {
+class IRequestHandler;
+typedef RefPtr<IRequestHandler> RequestHandlerPtr;
 
-        class RequestArgs;
-        class RequestService;
+class IncomingRequest;
+typedef RefPtr<IncomingRequest> IncomingRequestPtr;
 
-        enum class Method : uint8_t
-        {
-            POST,
-            GET,
-            DEL,
-        };
+typedef std::function<void(RESPONSE_FUNC)> TRequestResponseFunc;
+typedef std::function<void(REQUEST_FUNC)> TRequestHandlerFunc;
 
-        class Connection;
-        typedef RefPtr<Connection> ConnectionPtr;
+END_BOOMER_NAMESPACE(base::http)
 
-        struct BASE_NET_API RequestResult
-        {
-            uint32_t code;
-            Buffer data; // may be string, may be not
-            NativeTimePoint scheduleTime;
-            NativeTimePoint completionTime;
-
-            //--
-
-            RequestResult();
-            ~RequestResult();
-        };
-
-        class RequestServer;
-
-        class IRequestHandler;
-        typedef RefPtr<IRequestHandler> RequestHandlerPtr;
-
-        class IncomingRequest;
-        typedef RefPtr<IncomingRequest> IncomingRequestPtr;
-
-        typedef std::function<void(RESPONSE_FUNC)> TRequestResponseFunc;
-        typedef std::function<void(REQUEST_FUNC)> TRequestHandlerFunc;
-
-    } // http       
-
-    //--
-
-} // base
+//--

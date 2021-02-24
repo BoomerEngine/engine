@@ -125,12 +125,12 @@ public:
 
 namespace helper
 {
-    static uint32_t CountGridElements(const base::containers::StreamingGrid& grid)
+    static uint32_t CountGridElements(const base::StreamingGrid& grid)
     {
         uint32_t numTotalElems = 0;
         for ( uint32_t i=0; i<NUM_GRID_LEVELS; ++i )
         {
-            base::containers::StreamingGridDebugInfo data;
+            base::StreamingGridDebugInfo data;
             grid.debugInfo(i, data);
             numTotalElems += data.numElements;
         }

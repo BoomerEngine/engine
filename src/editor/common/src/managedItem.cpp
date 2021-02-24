@@ -12,104 +12,103 @@
 #include "managedDepot.h"
 #include "editorService.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedItem);
+RTTI_END_TYPE();
+
+ManagedItem::ManagedItem(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName)
+    : m_directory(parentDir)
+    , m_name(fileName)
+    , m_depot(depot)
+    , m_isDeleted(false)
 {
+}
 
-    //--
+ManagedItem::~ManagedItem()
+{}
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedItem);
-    RTTI_END_TYPE();
+StringBuf ManagedItem::depotPath() const
+{
+    StringBuilder ret;
+    ret.append(m_directory->depotPath());
+    ret.append(name());
+    return ret.toString();
+}
 
-    ManagedItem::ManagedItem(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName)
-        : m_directory(parentDir)
-        , m_name(fileName)
-        , m_depot(depot)
-        , m_isDeleted(false)
+StringBuf ManagedItem::absolutePath() const
+{
+    StringBuf ret;
+    m_depot->depot().queryFileAbsolutePath(depotPath(), ret);
+    return ret;
+}
+
+static bool IsValidChar(wchar_t ch)
+{
+    if (ch <= 31)
+        return false;
+
+    switch (ch)
     {
+    case '<':
+    case '>':
+    case ':':
+    case '\"':
+    case '/':
+    case '\\':
+    case '|':
+    case '?':
+    case '*':
+        return false;
+
+    case '.': // disallow dot in file names - it's confusing AF
+        return false;
+
+    case 0:
+        return false;
     }
 
-    ManagedItem::~ManagedItem()
-    {}
+    return true;
+}
 
-    StringBuf ManagedItem::depotPath() const
-    {
-        StringBuilder ret;
-        ret.append(m_directory->depotPath());
-        ret.append(name());
-        return ret.toString();
-    }
+static const wchar_t* InvalidFileNames[] = { 
+    L"CON", L"PRN", L"AUX", L"NUL", L"COM1", L"COM2", L"COM3", L"COM4", L"COM5", L"COM6", L"COM7", L"COM8", L"COM9", L"LPT1", L"LPT2", L"LPT3", L"LPT4", L"LPT5", L"LPT6", L"LPT7", L"LPT8", L"LPT9"
+};
 
-    StringBuf ManagedItem::absolutePath() const
-    {
-        StringBuf ret;
-        m_depot->depot().queryFileAbsolutePath(depotPath(), ret);
-        return ret;
-    }
-
-    static bool IsValidChar(wchar_t ch)
-    {
-        if (ch <= 31)
+static bool IsValidName(BaseStringView<wchar_t> name)
+{
+    for (const auto testName : InvalidFileNames)
+        if (name == testName)
             return false;
 
-        switch (ch)
-        {
-        case '<':
-        case '>':
-        case ':':
-        case '\"':
-        case '/':
-        case '\\':
-        case '|':
-        case '?':
-        case '*':
-            return false;
+    return true;
+}
 
-        case '.': // disallow dot in file names - it's confusing AF
-            return false;
+bool ManagedItem::ValidateFileName(StringView txt)
+{
+    UTF16StringVector wide(txt);
 
-        case 0:
-            return false;
-        }
+    if (txt.empty())
+        return false;
 
-        return true;
-    }
+    if (!IsValidName(wide))
+        return false;
 
-    static const wchar_t* InvalidFileNames[] = { 
-        L"CON", L"PRN", L"AUX", L"NUL", L"COM1", L"COM2", L"COM3", L"COM4", L"COM5", L"COM6", L"COM7", L"COM8", L"COM9", L"LPT1", L"LPT2", L"LPT3", L"LPT4", L"LPT5", L"LPT6", L"LPT7", L"LPT8", L"LPT9"
-    };
+    for (auto wch : wide.view()) // we iterate over view to get rid of the TZ
+        if (!IsValidChar(wch)) return false;
 
-    static bool IsValidName(BaseStringView<wchar_t> name)
-    {
-        for (const auto testName : InvalidFileNames)
-            if (name == testName)
-                return false;
+    return true;
+}
 
-        return true;
-    }
+bool ManagedItem::ValidateDirectoryName(StringView txt)
+{
+    return ValidateFileName(txt);
+}
 
-    bool ManagedItem::ValidateFileName(StringView txt)
-    {
-        UTF16StringVector wide(txt);
+//--
 
-        if (txt.empty())
-            return false;
-
-        if (!IsValidName(wide))
-            return false;
-
-        for (auto wch : wide.view()) // we iterate over view to get rid of the TZ
-            if (!IsValidChar(wch)) return false;
-
-        return true;
-    }
-
-    bool ManagedItem::ValidateDirectoryName(StringView txt)
-    {
-        return ValidateFileName(txt);
-    }
-
-    //--
-
-} // depot
+END_BOOMER_NAMESPACE(ed)
 
 

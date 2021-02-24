@@ -19,108 +19,103 @@
 #include "base/memory/include/pageCollection.h"
 #include "renderingSceneStats.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
+
+///---
+
+struct FragmentRenderContext;
+struct FrameCompositionTarget;
+class FrameResources;
+
+///---
+
+struct FrameViewRecorder
 {
-    namespace scene
-    {
+    FrameViewRecorder(FrameViewRecorder* parentView);
 
-        ///---
+    void finishRendering(); // waits for all posted fences
+    void postFence(base::fibers::WaitCounter fence, bool localFence=false);
 
-        struct FragmentRenderContext;
-		struct FrameCompositionTarget;
-		class FrameResources;
+private:
+    FrameViewRecorder* m_parentView = nullptr;
 
-        ///---
+    base::SpinLock m_fenceListLock;
+    base::Array<base::fibers::WaitCounter> m_fences;
+};
 
-        struct FrameViewRecorder
-        {
-            FrameViewRecorder(FrameViewRecorder* parentView);
+///---
 
-            void finishRendering(); // waits for all posted fences
-            void postFence(base::fibers::WaitCounter fence, bool localFence=false);
+class FrameHelperDebug;
+class FrameHelperCompose;
+class FrameHelperOutline;
 
-        private:
-            FrameViewRecorder* m_parentView = nullptr;
+class FrameHelper : public base::NoCopy
+{
+public:
+	FrameHelper(IDevice* dev);
+	~FrameHelper();
 
-            base::SpinLock m_fenceListLock;
-            base::Array<base::fibers::WaitCounter> m_fences;
-        };
+	const FrameHelperDebug* debug = nullptr;
+	const FrameHelperCompose* compose = nullptr;
+    const FrameHelperOutline* outline = nullptr;
+};
 
-		///---
+///---
 
-		class FrameHelperDebug;
-		class FrameHelperCompose;
-        class FrameHelperOutline;
+/// a stack-based renderer created to facilitate rendering of a single frame
+class RENDERING_SCENE_API FrameRenderer : public base::NoCopy
+{
+public:
+    FrameRenderer(const FrameParams& frame, const FrameCompositionTarget& target, const FrameResources& resources, const FrameHelper& helpers);
+    ~FrameRenderer();
 
-		class FrameHelper : public base::NoCopy
-		{
-		public:
-			FrameHelper(IDevice* dev);
-			~FrameHelper();
+    //--
 
-			const FrameHelperDebug* debug = nullptr;
-			const FrameHelperCompose* compose = nullptr;
-            const FrameHelperOutline* outline = nullptr;
-		};
+    INLINE base::mem::LinearAllocator& allocator() { return m_allocator; }
 
-        ///---
+    INLINE const FrameParams& frame() const { return m_frame; }
 
-        /// a stack-based renderer created to facilitate rendering of a single frame
-        class RENDERING_SCENE_API FrameRenderer : public base::NoCopy
-        {
-        public:
-            FrameRenderer(const FrameParams& frame, const FrameCompositionTarget& target, const FrameResources& resources, const FrameHelper& helpers);
-            ~FrameRenderer();
+	INLINE const FrameCompositionTarget& target() const { return m_target; }
 
-            //--
+    INLINE const FrameResources& resources() const { return m_resources; }
+	INLINE const FrameHelper& helpers() const { return m_helpers; }
 
-            INLINE base::mem::LinearAllocator& allocator() { return m_allocator; }
+    INLINE const FrameStats& frameStats() const { return m_frameStats; } // frame only stats
+    INLINE const SceneStats& scenesStats() const { return m_mergedSceneStats; } // merged from all scenes
 
-            INLINE const FrameParams& frame() const { return m_frame; }
+    INLINE uint32_t width() const { return m_frame.resolution.width; }
+    INLINE uint32_t height() const { return m_frame.resolution.height; }
 
-			INLINE const FrameCompositionTarget& target() const { return m_target; }
+    //--
 
-            INLINE const FrameResources& resources() const { return m_resources; }
-			INLINE const FrameHelper& helpers() const { return m_helpers; }
+    bool usesMultisamping() const;
 
-            INLINE const FrameStats& frameStats() const { return m_frameStats; } // frame only stats
-            INLINE const SceneStats& scenesStats() const { return m_mergedSceneStats; } // merged from all scenes
+    //--
 
-            INLINE uint32_t width() const { return m_frame.resolution.width; }
-            INLINE uint32_t height() const { return m_frame.resolution.height; }
+    void prepareFrame(GPUCommandWriter& cmd);
+    void finishFrame();
 
-            //--
-
-            bool usesMultisamping() const;
-
-            //--
-
-            void prepareFrame(command::CommandWriter& cmd);
-            void finishFrame();
-
-            //--
+    //--
 
 
-            void bindFrameParameters(command::CommandWriter& cmd) const;
+    void bindFrameParameters(GPUCommandWriter& cmd) const;
 
-        private:
-            bool m_msaa = false;
+private:
+    bool m_msaa = false;
 
-            base::mem::LinearAllocator m_allocator;
+    base::mem::LinearAllocator m_allocator;
 
-            const FrameParams& m_frame;
-			const FrameCompositionTarget& m_target;
-			const FrameResources& m_resources;
-			const FrameHelper& m_helpers;
+    const FrameParams& m_frame;
+	const FrameCompositionTarget& m_target;
+	const FrameResources& m_resources;
+	const FrameHelper& m_helpers;
 
-            FrameStats m_frameStats;
-            SceneStats m_mergedSceneStats;
+    FrameStats m_frameStats;
+    SceneStats m_mergedSceneStats;
 
-            //--
-        };
+    //--
+};
 
-        ///---
+///---
 
-    } // scene
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::scene)

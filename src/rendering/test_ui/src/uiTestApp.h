@@ -10,28 +10,25 @@
 
 #include "base/app/include/application.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::test)
+
+/// boilerplate for test app
+/// contains basic scene initialization and other shit
+class UIApp : public base::app::IApplication
 {
-    namespace test
-    {
-        /// boilerplate for rendering scene test
-        /// contains basic scene initialization and other shit
-        class UIApp : public base::app::IApplication
-        {
-        public:
-            UIApp();
-            virtual ~UIApp();
+public:
+    UIApp();
+    virtual ~UIApp();
 
-        protected:
-            virtual bool initialize(const base::app::CommandLine& commandline) override;
-            virtual void update() override;
-            virtual void cleanup() override;
+protected:
+    virtual bool initialize(const base::app::CommandLine& commandline) override;
+    virtual void update() override;
+    virtual void cleanup() override;
 
-            base::UniquePtr<ui::Renderer> m_renderer;
-            base::RefPtr<ui::DataStash> m_dataStash;
-            base::UniquePtr<NativeWindowRenderer> m_nativeRenderer;
-            base::NativeTimePoint m_lastUpdateTime;
-        };      
+    base::UniquePtr<ui::Renderer> m_renderer;
+    base::RefPtr<ui::DataStash> m_dataStash;
+    base::UniquePtr<NativeWindowRenderer> m_nativeRenderer;
+    base::NativeTimePoint m_lastUpdateTime;
+};      
 
-    } // test
-} // scene
+END_BOOMER_NAMESPACE(rendering::test)

@@ -11,35 +11,27 @@
 #include "rendering/api_common/include/apiShaders.h"
 #include "dx11Thread.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
+
+/// loaded shaders, this object mainly servers as caching interface to object cache
+class Shaders : public IBaseShaders
 {
-    namespace api
-    {
-		namespace dx11
-		{
+public:
+	Shaders(Thread* drv, const ShaderData* data);
+	virtual ~Shaders();
 
-			/// loaded shaders, this object mainly servers as caching interface to object cache
-			class Shaders : public IBaseShaders
-			{
-			public:
-				Shaders(Thread* drv, const ShaderData* data);
-				virtual ~Shaders();
+	//--
 
-				//--
+	INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
 
-				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
+	//--
 
-				//--
+	virtual IBaseGraphicsPipeline* createGraphicsPipeline_ClientApi(const GraphicsRenderStatesSetup& mergedRenderStates) override;
+	virtual IBaseComputePipeline* createComputePipeline_ClientApi() override;
 
-				virtual IBaseGraphicsPipeline* createGraphicsPipeline_ClientApi(const GraphicsRenderStatesSetup& mergedRenderStates) override;
-				virtual IBaseComputePipeline* createComputePipeline_ClientApi() override;
+	//--
 
-				//--            
+private:
+};
 
-			private:
-			};
-
-		} // null
-    } // api
-} // rendering
-        
+END_BOOMER_NAMESPACE(rendering::api::dx11)

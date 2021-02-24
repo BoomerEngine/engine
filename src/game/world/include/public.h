@@ -8,9 +8,6 @@
 
 #include "game_world_glue.inl"
 
-namespace game
-{
+BEGIN_BOOMER_NAMESPACE(game)
 
-
-
-} // rendering
+END_BOOMER_NAMESPACE(game)

@@ -8,74 +8,70 @@
 
 #pragma once
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+///--
+
+struct RENDERING_SCENE_API SceneViewStats
 {
-    namespace scene
-    {
-        ///--
-
-        struct RENDERING_SCENE_API SceneViewStats
-        {
-            uint32_t numViews = 0; // actual counts for this view type
-            double cullingTime = 0.0; // total culling time in this view(s)
-            double fragmentsTime = 0.0; // total fragment generation time in this view(s)
+    uint32_t numViews = 0; // actual counts for this view type
+    double cullingTime = 0.0; // total culling time in this view(s)
+    double fragmentsTime = 0.0; // total fragment generation time in this view(s)
             
-            base::SpinLock mergeLock;
+    base::SpinLock mergeLock;
 
-            //--
+    //--
 
-            SceneViewStats();
-            void merge(const SceneViewStats& view);
-        };
+    SceneViewStats();
+    void merge(const SceneViewStats& view);
+};
 
-        struct RENDERING_SCENE_API SceneStats
-        {
-            uint32_t numScenes = 0;
-            SceneViewStats mainViews;
+struct RENDERING_SCENE_API SceneStats
+{
+    uint32_t numScenes = 0;
+    SceneViewStats mainViews;
 
-            //--
+    //--
 
-            SceneStats();
+    SceneStats();
 
-            void reset();
-            void merge(const SceneStats& other);
-        };
+    void reset();
+    void merge(const SceneStats& other);
+};
 
-        ///--
+///--
 
-        struct RENDERING_SCENE_API FrameViewStats
-        {
-            base::SpinLock mergeLock;
+struct RENDERING_SCENE_API FrameViewStats
+{
+    base::SpinLock mergeLock;
 
-            uint32_t numViews = 0; // actual counts for this view type
-            double recordTime = 0.0; // total command buffer recording time in this view(s)
+    uint32_t numViews = 0; // actual counts for this view type
+    double recordTime = 0.0; // total command buffer recording time in this view(s)
 
-            //--
+    //--
 
-            FrameViewStats();
+    FrameViewStats();
 
-            void merge(const FrameViewStats& other);
-        };
+    void merge(const FrameViewStats& other);
+};
 
-        struct RENDERING_SCENE_API FrameStats
-        {
-            FrameViewStats mainViews;
+struct RENDERING_SCENE_API FrameStats
+{
+    FrameViewStats mainViews;
 
-            //--
+    //--
 
-            FrameStats();
+    FrameStats();
 
-            void reset();
-            void merge(const FrameStats& other);
-        };
+    void reset();
+    void merge(const FrameStats& other);
+};
 
-        //--
+//--
 
-        // render scene stats gui (ImGui)
-        extern RENDERING_SCENE_API void RenderStatsGui(const FrameStats& frameStats, const SceneStats& mergedSceneStats);
+// render scene stats gui (ImGui)
+extern RENDERING_SCENE_API void RenderStatsGui(const FrameStats& frameStats, const SceneStats& mergedSceneStats);
 
-        //--
+//--
 
-    } // scene
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering)

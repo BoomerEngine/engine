@@ -11,99 +11,96 @@
 
 #include "imageRect.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::image)
+
+//--
+
+ImageRect ImageRect::downsampled() const
 {
-    namespace image
-    {
-        //--
+	ImageRect ret;
 
-		ImageRect ImageRect::downsampled() const
+	if (!empty())
+	{
+		ret.offsetX = offsetX / 2;
+		ret.offsetY = offsetY / 2;
+		ret.offsetZ = offsetZ / 2;
+		ret.sizeX = std::max<uint32_t>(1, sizeX / 2);
+		ret.sizeY = std::max<uint32_t>(1, sizeY / 2);
+		ret.sizeZ = std::max<uint32_t>(1, sizeZ / 2);
+	}
+
+	return ret;
+}
+
+ImageRect& ImageRect::merge(const ImageRect& other)
+{
+	if (other)
+	{
+		if (!empty())
 		{
-			ImageRect ret;
+			auto maxX = std::max<uint32_t>(offsetX + sizeX, other.offsetX + other.sizeX);
+			auto maxY = std::max<uint32_t>(offsetY + sizeY, other.offsetY + other.sizeY);
+			auto maxZ = std::max<uint32_t>(offsetZ + sizeZ, other.offsetZ + other.sizeZ);
 
-			if (!empty())
-			{
-				ret.offsetX = offsetX / 2;
-				ret.offsetY = offsetY / 2;
-				ret.offsetZ = offsetZ / 2;
-				ret.sizeX = std::max<uint32_t>(1, sizeX / 2);
-				ret.sizeY = std::max<uint32_t>(1, sizeY / 2);
-				ret.sizeZ = std::max<uint32_t>(1, sizeZ / 2);
-			}
+			offsetX = std::min<uint32_t>(offsetX, other.offsetX);
+			offsetY = std::min<uint32_t>(offsetY, other.offsetY);
+			offsetZ = std::min<uint32_t>(offsetZ, other.offsetZ);
 
-			return ret;
+			sizeX = maxX - offsetX;
+			sizeY = maxY - offsetY;
+			sizeZ = maxZ - offsetZ;
 		}
-
-		ImageRect& ImageRect::merge(const ImageRect& other)
+		else
 		{
-			if (other)
-			{
-				if (!empty())
-				{
-					auto maxX = std::max<uint32_t>(offsetX + sizeX, other.offsetX + other.sizeX);
-					auto maxY = std::max<uint32_t>(offsetY + sizeY, other.offsetY + other.sizeY);
-					auto maxZ = std::max<uint32_t>(offsetZ + sizeZ, other.offsetZ + other.sizeZ);
-
-					offsetX = std::min<uint32_t>(offsetX, other.offsetX);
-					offsetY = std::min<uint32_t>(offsetY, other.offsetY);
-					offsetZ = std::min<uint32_t>(offsetZ, other.offsetZ);
-
-					sizeX = maxX - offsetX;
-					sizeY = maxY - offsetY;
-					sizeZ = maxZ - offsetZ;
-				}
-				else
-				{
-					*this = other;
-				}
-			}
-
-			return *this;
+			*this = other;
 		}
+	}
 
-		bool ImageRect::touches(const ImageRect& other) const
-		{
-			auto maxX = offsetX + sizeX;
-			auto maxY = offsetY + sizeY;
-			auto maxZ = offsetZ + sizeZ;
+	return *this;
+}
 
-			auto otherMaxX = other.offsetX + other.sizeX;
-			auto otherMaxY = other.offsetY + other.sizeY;
-			auto otherMaxZ = other.offsetZ + other.sizeZ;
+bool ImageRect::touches(const ImageRect& other) const
+{
+	auto maxX = offsetX + sizeX;
+	auto maxY = offsetY + sizeY;
+	auto maxZ = offsetZ + sizeZ;
 
-			if (maxX <= other.offsetX || maxY <= other.offsetY || maxZ <= other.offsetZ)
-				return false;
+	auto otherMaxX = other.offsetX + other.sizeX;
+	auto otherMaxY = other.offsetY + other.sizeY;
+	auto otherMaxZ = other.offsetZ + other.sizeZ;
 
-			if (otherMaxX <= offsetX || otherMaxY <= offsetY || otherMaxZ <= offsetZ)
-				return false;
+	if (maxX <= other.offsetX || maxY <= other.offsetY || maxZ <= other.offsetZ)
+		return false;
 
-			return true;
-		}
+	if (otherMaxX <= offsetX || otherMaxY <= offsetY || otherMaxZ <= offsetZ)
+		return false;
 
-		bool ImageRect::contains(int x, int y, int z) const
-		{
-			return (x >= offsetX && x < offsetX + sizeX) &&
-				(y >= offsetY && y < offsetY + sizeY) &&
-				(z >= offsetZ && z < offsetZ + sizeZ);
-		}
+	return true;
+}
 
-		bool ImageRect::within(uint32_t width /*= 1*/, uint32_t height /*= 1*/, uint32_t depth /*= 1*/) const
-		{
-			return (offsetX < width && offsetY < height && offsetZ < depth) &&
-				(offsetX + sizeX <= width && offsetY + sizeY <= height && offsetZ + sizeZ <= depth);
-		}
+bool ImageRect::contains(int x, int y, int z) const
+{
+	return (x >= offsetX && x < offsetX + sizeX) &&
+		(y >= offsetY && y < offsetY + sizeY) &&
+		(z >= offsetZ && z < offsetZ + sizeZ);
+}
 
-		//--
+bool ImageRect::within(uint32_t width /*= 1*/, uint32_t height /*= 1*/, uint32_t depth /*= 1*/) const
+{
+	return (offsetX < width && offsetY < height && offsetZ < depth) &&
+		(offsetX + sizeX <= width && offsetY + sizeY <= height && offsetZ + sizeZ <= depth);
+}
 
-		void ImageRect::print(base::IFormatStream& f) const
-		{
-			if (offsetX == 0 && offsetY == 0 && offsetZ == 0)
-				f.appendf("[{}x{}x{}]", sizeX, sizeY, sizeZ);
-			else
-				f.appendf("[{}x{}x{}] @ ({},{},{})", sizeX, sizeY, sizeZ, offsetX, offsetY, offsetZ);
-		}
+//--
 
-		//--
+void ImageRect::print(base::IFormatStream& f) const
+{
+	if (offsetX == 0 && offsetY == 0 && offsetZ == 0)
+		f.appendf("[{}x{}x{}]", sizeX, sizeY, sizeZ);
+	else
+		f.appendf("[{}x{}x{}] @ ({},{},{})", sizeX, sizeY, sizeZ, offsetX, offsetY, offsetZ);
+}
 
-    } // image
-} // base
+//--
+
+END_BOOMER_NAMESPACE(base::image)

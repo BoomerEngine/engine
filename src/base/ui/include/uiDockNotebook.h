@@ -13,39 +13,39 @@
 #include "uiSplitter.h"
 #include "uiWindow.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+//---
+
+class DockLayoutNode;
+class DockPanel;
+
+// notebook used in the docking system
+class BASE_UI_API DockNotebook : public Notebook
 {
-    //---
+    RTTI_DECLARE_VIRTUAL_CLASS(DockNotebook, Notebook);
 
-    class DockLayoutNode;
-    class DockPanel;
+public:
+    DockNotebook(DockLayoutNode* layoutNode);
 
-    // notebook used in the docking system
-    class BASE_UI_API DockNotebook : public Notebook
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(DockNotebook, Notebook);
+    DockLayoutNode* layoutNode() const;
 
-    public:
-        DockNotebook(DockLayoutNode* layoutNode);
+    ui::DockPanel* activeTab() const;
 
-        DockLayoutNode* layoutNode() const;
+    void updateHeaderButtons();
+    void closeTab(DockPanel* tab);
 
-        ui::DockPanel* activeTab() const;
+    virtual void attachTab(IElement* tab, IElement* afterTab = nullptr, bool activate = true) override;
+    virtual void detachTab(IElement* tab, IElement* otherTabToActive = nullptr) override;
 
-        void updateHeaderButtons();
-        void closeTab(DockPanel* tab);
+protected:
+    base::RefWeakPtr<DockLayoutNode> m_layoutNode;
 
-        virtual void attachTab(IElement* tab, IElement* afterTab = nullptr, bool activate = true) override;
-        virtual void detachTab(IElement* tab, IElement* otherTabToActive = nullptr) override;
-
-    protected:
-        base::RefWeakPtr<DockLayoutNode> m_layoutNode;
-
-        virtual base::StringBuf tabTitle(IElement* tab) override;
-        virtual bool tabHasCloseButton(IElement* tab) override;
-        virtual void tabHandleCloseRequest(IElement* tab) override;
-    };
+    virtual base::StringBuf tabTitle(IElement* tab) override;
+    virtual bool tabHasCloseButton(IElement* tab) override;
+    virtual void tabHandleCloseRequest(IElement* tab) override;
+};
    
-    //---
+//---
 
-} // ui
+END_BOOMER_NAMESPACE(ui)

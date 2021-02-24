@@ -10,8 +10,7 @@
 #include "renderingMeshChunkProxy.h"
 #include "rendering/device/include/renderingCommandWriter.h"
 
-namespace rendering
-{
+BEGIN_BOOMER_NAMESPACE(rendering)
 	//---
 
 	RTTI_BEGIN_TYPE_ENUM(MeshChunkType);
@@ -62,7 +61,7 @@ namespace rendering
 	MeshChunkProxy_Standalone::~MeshChunkProxy_Standalone()
 	{}
 
-	void MeshChunkProxy_Standalone::bind(command::CommandWriter& cmd) const
+	void MeshChunkProxy_Standalone::bind(GPUCommandWriter& cmd) const
 	{
 		cmd.opBindVertexBuffer(m_vertexBindPoint, m_vertexBuffer, m_offsetInVertexBuffer);
 
@@ -70,7 +69,7 @@ namespace rendering
 			cmd.opBindIndexBuffer(m_indexBuffer, ImageFormat::R32_UINT, m_offsetInIndexBuffer);
 	}
 
-	void MeshChunkProxy_Standalone::draw(const GraphicsPipelineObject* pso, command::CommandWriter& cmd, uint32_t numInstances/* = 1*/, uint32_t firstInstance /*= 0*/) const
+	void MeshChunkProxy_Standalone::draw(const GraphicsPipelineObject* pso, GPUCommandWriter& cmd, uint32_t numInstances/* = 1*/, uint32_t firstInstance /*= 0*/) const
 	{
 		if (m_indexBuffer)
 			cmd.opDrawIndexedInstanced(pso, 0, 0, m_indexCount, firstInstance, numInstances);

@@ -10,21 +10,18 @@
 
 #include "base/app/include/command.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+//--
+
+class CommandFingerprint : public app::ICommand
 {
-    namespace res
-    {
-        //--
+    RTTI_DECLARE_VIRTUAL_CLASS(CommandFingerprint, app::ICommand);
 
-        class CommandFingerprint : public app::ICommand
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(CommandFingerprint, app::ICommand);
+public:
+    virtual bool run(IProgressTracker* progress, const app::CommandLine& commandline) override final;
+};
 
-        public:
-            virtual bool run(IProgressTracker* progress, const app::CommandLine& commandline) override final;
-        };
+//--
 
-        //--
-
-    } // res
-} // base
+END_BOOMER_NAMESPACE(base::res)

@@ -12,57 +12,54 @@
 #include "base/io/include/ioFileHandle.h"
 #include "base/resource/include/depotService.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//--
+
+FontPtr LoadFontFromMemory(Buffer ptr)
 {
+    return RefNew<font::Font>(ptr);
+}
 
-    //--
-
-    FontPtr LoadFontFromMemory(Buffer ptr)
+FontPtr LoadFontFromFile(io::IReadFileHandle* file)
+{
+    if (file)
     {
-        return RefNew<font::Font>(ptr);
-    }
+        const auto size = file->size();
 
-    FontPtr LoadFontFromFile(io::IReadFileHandle* file)
-    {
-        if (file)
+        auto data = Buffer::Create(POOL_IMAGE, size, 16);
+        if (data)
         {
-            const auto size = file->size();
-
-            auto data = Buffer::Create(POOL_IMAGE, size, 16);
-            if (data)
+            if (file->readSync(data.data(), size) == size)
             {
-                if (file->readSync(data.data(), size) == size)
-                {
-                    return LoadFontFromMemory(data);
-                }
-                else
-                {
-                    TRACE_WARNING("Failed to load {} bytes from file");
-                }
+                return LoadFontFromMemory(data);
             }
             else
             {
-                TRACE_WARNING("Out of memory allocating data buffer for font");
+                TRACE_WARNING("Failed to load {} bytes from file");
             }
         }
-
-        return nullptr;
+        else
+        {
+            TRACE_WARNING("Out of memory allocating data buffer for font");
+        }
     }
 
-    FontPtr LoadFontFromAbsolutePath(StringView absolutePath)
-    {
-        if (const auto file = io::OpenForReading(absolutePath))
-            return LoadFontFromFile(file);
-        return nullptr;
-    }
+    return nullptr;
+}
 
-    FontPtr LoadFontFromDepotPath(StringView depotPath)
-    {
-        if (const auto file = GetService<DepotService>()->createFileReader(depotPath))
-            return LoadFontFromFile(file);
-        return nullptr;
-    }
+FontPtr LoadFontFromAbsolutePath(StringView absolutePath)
+{
+    if (const auto file = io::OpenForReading(absolutePath))
+        return LoadFontFromFile(file);
+    return nullptr;
+}
 
-    //--
+FontPtr LoadFontFromDepotPath(StringView depotPath)
+{
+    if (const auto file = GetService<DepotService>()->createFileReader(depotPath))
+        return LoadFontFromFile(file);
+    return nullptr;
+}
 
-} // base
+END_BOOMER_NAMESPACE(base)

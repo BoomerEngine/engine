@@ -11,134 +11,134 @@
 #include "base/ui/include/uiTreeView.h"
 #include "rendering/mesh/include/renderingMesh.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshStructureNode);
+RTTI_END_TYPE();
+
+MeshStructureNode::MeshStructureNode(base::StringView txt, base::StringID type, Data data)
+    : m_caption(txt)
+    , m_type(type)
+    , m_data(data)
+{}
+
+MeshStructureNode::~MeshStructureNode()
+{}
+
+//--
+
+MeshStructureTreeModel::MeshStructureTreeModel()
+{}
+
+MeshStructureTreeModel::~MeshStructureTreeModel()
+{}
+
+bool MeshStructureTreeModel::compare(const MeshStructureNodePtr& a, const MeshStructureNodePtr& b, int colIndex) const
 {
-    //--
+    return a->caption() < b->caption();
+}
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshStructureNode);
-    RTTI_END_TYPE();
+bool MeshStructureTreeModel::filter(const MeshStructureNodePtr& data, const ui::SearchPattern& filter, int colIndex /*= 0*/) const
+{
+    return filter.testString(data->caption());
+}
 
-    MeshStructureNode::MeshStructureNode(base::StringView txt, base::StringID type, Data data)
-        : m_caption(txt)
-        , m_type(type)
-        , m_data(data)
-    {}
+base::StringBuf MeshStructureTreeModel::displayContent(const MeshStructureNodePtr& data, int colIndex /*= 0*/) const
+{
+    return data->caption();
+}
 
-    MeshStructureNode::~MeshStructureNode()
-    {}
+//--
 
-    //--
+RTTI_BEGIN_TYPE_CLASS(MeshStructurePanel);
+RTTI_END_TYPE();
 
-    MeshStructureTreeModel::MeshStructureTreeModel()
-    {}
+MeshStructurePanel::MeshStructurePanel()
+{
+    layoutVertical();
 
-    MeshStructureTreeModel::~MeshStructureTreeModel()
-    {}
+    m_tree = createChild<ui::TreeView>();
+    m_tree->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+    m_tree->customVerticalAligment(ui::ElementVerticalLayout::Expand);
+}
 
-    bool MeshStructureTreeModel::compare(const MeshStructureNodePtr& a, const MeshStructureNodePtr& b, int colIndex) const
+MeshStructurePanel::~MeshStructurePanel()
+{}
+
+void MeshStructurePanel::bindResource(const rendering::MeshPtr& meshPtr)
+{
+    m_mesh = meshPtr;
+    m_treeModel = base::RefNew<MeshStructureTreeModel>();
+
     {
-        return a->caption() < b->caption();
+        auto boundsNode = base::RefNew<MeshStructureNode>("[img:wireframe] Bounds", "Bounds"_id);
+        m_treeModel->addRootNode(boundsNode);
     }
 
-    bool MeshStructureTreeModel::filter(const MeshStructureNodePtr& data, const ui::SearchPattern& filter, int colIndex /*= 0*/) const
     {
-        return filter.testString(data->caption());
-    }
+        auto materials = base::RefNew<MeshStructureNode>("[img:color_swatch] Materials", "Materials"_id);
+        auto id = m_treeModel->addRootNode(materials);
 
-    base::StringBuf MeshStructureTreeModel::displayContent(const MeshStructureNodePtr& data, int colIndex /*= 0*/) const
-    {
-        return data->caption();
-    }
-
-    //--
-
-    RTTI_BEGIN_TYPE_CLASS(MeshStructurePanel);
-    RTTI_END_TYPE();
-
-    MeshStructurePanel::MeshStructurePanel()
-    {
-        layoutVertical();
-
-        m_tree = createChild<ui::TreeView>();
-        m_tree->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-        m_tree->customVerticalAligment(ui::ElementVerticalLayout::Expand);
-    }
-
-    MeshStructurePanel::~MeshStructurePanel()
-    {}
-
-    void MeshStructurePanel::bindResource(const rendering::MeshPtr& meshPtr)
-    {
-        m_mesh = meshPtr;
-        m_treeModel = base::RefNew<MeshStructureTreeModel>();
-
+        for (uint32_t i=0; i<meshPtr->materials().size(); i++)
         {
-            auto boundsNode = base::RefNew<MeshStructureNode>("[img:wireframe] Bounds", "Bounds"_id);
-            m_treeModel->addRootNode(boundsNode);
+            const auto& mat = meshPtr->materials().typedData()[i];
+
+            auto matNode = base::RefNew<MeshStructureNode>(base::TempString("[img:material] {}", mat.name), "Material"_id, i);
+            m_treeModel->addChildNode(id, matNode);
+
         }
+    }
 
+    for (uint32_t detailIndex = 0; detailIndex<meshPtr->detailLevels().size(); ++detailIndex)
+    {
+        uint32_t numChunks = 0;
+        for (const auto& chunk : meshPtr->chunks())
+            if (chunk.detailMask & (1U << detailIndex))
+                numChunks += 1;
+
+        const auto& detail = meshPtr->detailLevels()[detailIndex];
+        auto caption = base::StringBuf(base::TempString("[img:house] LOD {}-{} ({} chunks)", (int)detail.rangeMin, (int)detail.rangeMax, numChunks));
+        auto geometry = base::RefNew<MeshStructureNode>(caption, "LOD"_id, detailIndex);
+        auto id = m_treeModel->addRootNode(geometry);
+
+        for (const auto& chunk : meshPtr->chunks())
         {
-            auto materials = base::RefNew<MeshStructureNode>("[img:color_swatch] Materials", "Materials"_id);
-            auto id = m_treeModel->addRootNode(materials);
+            // only chunks belonging to that detail level
+            if (0 == (chunk.detailMask & (1U << detailIndex)))
+                continue;
 
-            for (uint32_t i=0; i<meshPtr->materials().size(); i++)
-            {
-                const auto& mat = meshPtr->materials().typedData()[i];
+            // material name
+            base::StringView materialName = "Unknown Material";
+            if (chunk.materialIndex < meshPtr->materials().size())
+                materialName = meshPtr->materials()[chunk.materialIndex].name.view();
 
-                auto matNode = base::RefNew<MeshStructureNode>(base::TempString("[img:material] {}", mat.name), "Material"_id, i);
-                m_treeModel->addChildNode(id, matNode);
-
-            }
-        }
-
-        for (uint32_t detailIndex = 0; detailIndex<meshPtr->detailLevels().size(); ++detailIndex)
-        {
-            uint32_t numChunks = 0;
-            for (const auto& chunk : meshPtr->chunks())
-                if (chunk.detailMask & (1U << detailIndex))
-                    numChunks += 1;
-
-            const auto& detail = meshPtr->detailLevels()[detailIndex];
-            auto caption = base::StringBuf(base::TempString("[img:house] LOD {}-{} ({} chunks)", (int)detail.rangeMin, (int)detail.rangeMax, numChunks));
-            auto geometry = base::RefNew<MeshStructureNode>(caption, "LOD"_id, detailIndex);
-            auto id = m_treeModel->addRootNode(geometry);
-
-            for (const auto& chunk : meshPtr->chunks())
-            {
-                // only chunks belonging to that detail level
-                if (0 == (chunk.detailMask & (1U << detailIndex)))
-                    continue;
-
-                // material name
-                base::StringView materialName = "Unknown Material";
-                if (chunk.materialIndex < meshPtr->materials().size())
-                    materialName = meshPtr->materials()[chunk.materialIndex].name.view();
-
-                // chunk node
-                auto caption = base::StringBuf(base::TempString("[img:house] Chunk '{}' ({}f, {}v, {})", materialName, chunk.indexCount / 3, chunk.vertexCount, chunk.vertexFormat));
-                auto chunkNode = base::RefNew<MeshStructureNode>(base::TempString("[img:teapot] {}", caption), "Chunk"_id);
-                auto id2 = m_treeModel->addChildNode(id, chunkNode);
+            // chunk node
+            auto caption = base::StringBuf(base::TempString("[img:house] Chunk '{}' ({}f, {}v, {})", materialName, chunk.indexCount / 3, chunk.vertexCount, chunk.vertexFormat));
+            auto chunkNode = base::RefNew<MeshStructureNode>(base::TempString("[img:teapot] {}", caption), "Chunk"_id);
+            auto id2 = m_treeModel->addChildNode(id, chunkNode);
                 
-                /*for (const auto& chunk : model.chunks)
+            /*for (const auto& chunk : model.chunks)
+            {
                 {
-                    {
-                        auto matName = meshPtr->materials()[chunk.materialIndex].name;
-                        auto chunkMatNode = base::RefNew<MeshStructureNode>(base::TempString("[img:material] {}", matName), "ChunkMaterial"_id);
-                        m_treeModel->addChildNode(id3, chunkMatNode);
-                    }
+                    auto matName = meshPtr->materials()[chunk.materialIndex].name;
+                    auto chunkMatNode = base::RefNew<MeshStructureNode>(base::TempString("[img:material] {}", matName), "ChunkMaterial"_id);
+                    m_treeModel->addChildNode(id3, chunkMatNode);
+                }
 
-                    for (const auto& stream : chunk.streams)
-                    {
-                        auto chunkNode = base::RefNew<MeshStructureNode>(base::TempString("[img:table] Stream {}", stream.type), "ChunkStream"_id);
-                        auto id4 = m_treeModel->addChildNode(id3, chunkNode);
-                    }
-                }*/
-            }
+                for (const auto& stream : chunk.streams)
+                {
+                    auto chunkNode = base::RefNew<MeshStructureNode>(base::TempString("[img:table] Stream {}", stream.type), "ChunkStream"_id);
+                    auto id4 = m_treeModel->addChildNode(id3, chunkNode);
+                }
+            }*/
         }
-
-        m_tree->model(m_treeModel);
     }
 
-    //--
+    m_tree->model(m_treeModel);
+}
+
+//--
     
-} // ed
+END_BOOMER_NAMESPACE(ed)

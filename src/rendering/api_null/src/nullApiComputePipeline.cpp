@@ -9,24 +9,17 @@
 #include "build.h"
 #include "nullApiComputePipeline.h"
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace nul
-		{
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
 
-			//--
+//--
 
-			ComputePipeline::ComputePipeline(Thread* owner, const Shaders* shaders)
-				: IBaseComputePipeline(owner, shaders)
-			{}
+ComputePipeline::ComputePipeline(Thread* owner, const Shaders* shaders)
+	: IBaseComputePipeline(owner, shaders)
+{}
 
-			ComputePipeline::~ComputePipeline()
-			{}
+ComputePipeline::~ComputePipeline()
+{}
 
-			//--
+//--
 
-		} // nul
-    } // gl4
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

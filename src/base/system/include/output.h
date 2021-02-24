@@ -11,131 +11,123 @@
 #include "debug.h"
 #include "format.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::logging)
+
+//-----------------------------------------------------------------------------
+
+class LogLineAssembler;
+
+//-----------------------------------------------------------------------------
+
+//! severity level of the output message
+enum class OutputLevel : uint8_t
 {
-    namespace logging
-    {
-        //-----------------------------------------------------------------------------
+    Spam, // deep debug message
+    Info, // general info
+    Warning, // non critical warning
+    Error, // non critical error (bad but we can continue)
+    Fatal, // fatal error, we cannot continue, printing anything here stops the app
+    Meta, // meta text for log, should not be displayed but may be used by the sinks, NOT FORMATED INTO LINES!!!!!!
 
-        class LogLineAssembler;
+    MAX,
+};
 
-        //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-        //! severity level of the output message
-        enum class OutputLevel : uint8_t
-        {
-            Spam, // deep debug message
-            Info, // general info
-            Warning, // non critical warning
-            Error, // non critical error (bad but we can continue)
-            Fatal, // fatal error, we cannot continue, printing anything here stops the app
-            Meta, // meta text for log, should not be displayed but may be used by the sinks, NOT FORMATED INTO LINES!!!!!!
+// log sink, receives lines and lines only
+class BASE_SYSTEM_API ILogSink : public base::NoCopy
+{
+public:
+    virtual ~ILogSink();
 
-            MAX,
-        };
+    // process a single (atomic) line of log message
+    // NOTE: this function may be called from many threads and must be internally thread safe
+    // NOTE: the function returns "consumed" flag and the local sinks may return true to stop propagation to GLOBAL log sink (ie. printing in log window/writing to log file)
+    virtual bool print(OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text) = 0;
+};
 
-        //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-        // log sink, receives lines and lines only
-        class BASE_SYSTEM_API ILogSink : public base::NoCopy
-        {
-        public:
-            virtual ~ILogSink();
+// helper class that implements RAII local log sink
+class BASE_SYSTEM_API LocalLogSink : public ILogSink
+{
+public:
+    LocalLogSink();
+    virtual ~LocalLogSink();
 
-            // process a single (atomic) line of log message
-            // NOTE: this function may be called from many threads and must be internally thread safe
-            // NOTE: the function returns "consumed" flag and the local sinks may return true to stop propagation to GLOBAL log sink (ie. printing in log window/writing to log file)
-            virtual bool print(OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text) = 0;
-        };
+    // default version of this function just passes the log line to parent local sink and does not consume anything
+    virtual bool print(OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text) override;
 
-        //-----------------------------------------------------------------------------
+private:
+    ILogSink* m_previousLocalSink = nullptr;
+};
 
-        // helper class that implements RAII local log sink
-        class BASE_SYSTEM_API LocalLogSink : public ILogSink
-        {
-        public:
-            LocalLogSink();
-            virtual ~LocalLogSink();
+//-----------------------------------------------------------------------------
 
-            // default version of this function just passes the log line to parent local sink and does not consume anything
-            virtual bool print(OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text) override;
+// helper class that implements RAII global log sink
+class BASE_SYSTEM_API GlobalLogSink : public ILogSink
+{
+public:
+    GlobalLogSink();
+    virtual ~GlobalLogSink();
+};
 
-        private:
-            ILogSink* m_previousLocalSink = nullptr;
-        };
+//-----------------------------------------------------------------------------
 
-        //-----------------------------------------------------------------------------
+//! logging "system"
+class BASE_SYSTEM_API Log : public NoCopy
+{
+public:
+    /// report a log line to all global sink sources, can be called used to integrate better with other log sources that we don't want to route through the line assembler
+    static void Print(OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text);
 
-        // helper class that implements RAII global log sink
-        class BASE_SYSTEM_API GlobalLogSink : public ILogSink
-        {
-        public:
-            GlobalLogSink();
-            virtual ~GlobalLogSink();
-        };
+    /// get a log stream to print line(s) to the log stream, if text contains multiple lines they are split, current indentation (spaces before first char) is preserved for each line
+    static IFormatStream& Stream(OutputLevel level = OutputLevel::Info, const char* moduleName = nullptr, const char* contextFile = nullptr, uint32_t contextLine = 0);
 
-        //-----------------------------------------------------------------------------
+    /// insert a local (thread only) log sink, returns previous sink (that we may choose to ignore or to forward data to)
+    static ILogSink* MountLocalSink(ILogSink* sink);
 
-        //! logging "system"
-        class BASE_SYSTEM_API Log : public NoCopy
-        {
-        public:
-            /// report a log line to all global sink sources, can be called used to integrate better with other log sources that we don't want to route through the line assembler
-            static void Print(OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text);
+    /// get current local sink
+    static ILogSink* GetCurrentLocalSink();
 
-            /// get a log stream to print line(s) to the log stream, if text contains multiple lines they are split, current indentation (spaces before first char) is preserved for each line
-            static IFormatStream& Stream(OutputLevel level = OutputLevel::Info, const char* moduleName = nullptr, const char* contextFile = nullptr, uint32_t contextLine = 0);
+    /// set current context name (usually a fiber name)
+    static void SetThreadContextName(const char* name);
 
-            /// insert a local (thread only) log sink, returns previous sink (that we may choose to ignore or to forward data to)
-            static ILogSink* MountLocalSink(ILogSink* sink);
+    /// attach global log sink
+    static void AttachGlobalSink(ILogSink* sink);
 
-            /// get current local sink
-            static ILogSink* GetCurrentLocalSink();
+    /// detach global log sink
+    static void DetachGlobalSink(ILogSink* sink);
+};
 
-            /// set current context name (usually a fiber name)
-            static void SetThreadContextName(const char* name);
+//-----------------------------------------------------------------------------
 
-            /// attach global log sink
-            static void AttachGlobalSink(ILogSink* sink);
-
-            /// detach global log sink
-            static void DetachGlobalSink(ILogSink* sink);
-        };
-
-        //-----------------------------------------------------------------------------
-
-        /// General error handler
-        class BASE_SYSTEM_API IErrorHandler
-        {
-        public:
-            virtual ~IErrorHandler() {};
-
-            //---
-
-            // bind error listener
-            static void BindListener(IErrorHandler* listener);
-
-            // throw assertion
-            static void Assert(bool isFatal, const char *fileName, uint32_t fileLine, const char* expr, const char* message, bool* isEnabled);
-
-            // report fatal error
-            static void FatalError(const char* fileName, uint32_t fileLine, const char *txt);
-
-        protected:
-            //! called to intercept general engine error
-            virtual void handleFatalError(const char* fileName, uint32_t fileLine, const char* txt) = 0;
-
-            //! called to intercept engine assertion
-            virtual void handleAssert(bool isFatal, const char* fileName, uint32_t fileLine, const char* expr, const char* msg, bool* isEnabled) = 0;
-        };
-
-        //-----------------------------------------------------------------------------
-        
-    } // log
+/// General error handler
+class BASE_SYSTEM_API IErrorHandler
+{
+public:
+    virtual ~IErrorHandler() {};
 
     //---
 
-} // base
+    // bind error listener
+    static void BindListener(IErrorHandler* listener);
+
+    // throw assertion
+    static void Assert(bool isFatal, const char *fileName, uint32_t fileLine, const char* expr, const char* message, bool* isEnabled);
+
+    // report fatal error
+    static void FatalError(const char* fileName, uint32_t fileLine, const char *txt);
+
+protected:
+    //! called to intercept general engine error
+    virtual void handleFatalError(const char* fileName, uint32_t fileLine, const char* txt) = 0;
+
+    //! called to intercept engine assertion
+    virtual void handleAssert(bool isFatal, const char* fileName, uint32_t fileLine, const char* expr, const char* msg, bool* isEnabled) = 0;
+};
+
+END_BOOMER_NAMESPACE(base::logging)
 
 //-----------------------------------------------------------------------------
 

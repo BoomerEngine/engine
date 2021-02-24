@@ -10,26 +10,19 @@
 
 #include "rendering/api_common/include/apiBackgroundJobs.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
+
+//---
+
+class BackgroundQueue : public IBaseBackgroundQueue
 {
-    namespace api
-    {
-		namespace nul
-		{
+public:
+	BackgroundQueue();
 
-			//---
+	virtual bool createWorkerThreads(uint32_t requestedCount, uint32_t& outNumCreated) override final;
+	virtual void stopWorkerThreads() override final;
+};
 
-			class BackgroundQueue : public IBaseBackgroundQueue
-			{
-			public:
-				BackgroundQueue();
+//---
 
-				virtual bool createWorkerThreads(uint32_t requestedCount, uint32_t& outNumCreated) override final;
-				virtual void stopWorkerThreads() override final;
-			};
-
-			//---
-
-		} // nul
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

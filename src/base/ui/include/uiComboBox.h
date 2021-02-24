@@ -10,57 +10,57 @@
 
 #include "uiElement.h"
 
-namespace ui
-{
-    ///---
+BEGIN_BOOMER_NAMESPACE(ui)
 
-    DECLARE_UI_EVENT(EVENT_COMBO_SELECTED, int) // value in the combo box was selected (data: int)
+///---
 
-    ///---
+DECLARE_UI_EVENT(EVENT_COMBO_SELECTED, int) // value in the combo box was selected (data: int)
+
+///---
     
-    /// VERY simple text based combo box
-    class BASE_UI_API ComboBox : public IElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(ComboBox, IElement);
+/// VERY simple text based combo box
+class BASE_UI_API ComboBox : public IElement
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ComboBox, IElement);
 
-    public:
-        ComboBox();
-        virtual ~ComboBox();
+public:
+    ComboBox();
+    virtual ~ComboBox();
 
-        //---
+    //---
 
-        int numOptions() const;
+    int numOptions() const;
 
-        void clearOptions();
-        void addOption(const base::StringBuf& txt);
+    void clearOptions();
+    void addOption(const base::StringBuf& txt);
 
-        bool removeOption(int option);
-        bool removeOption(base::StringView txt);
+    bool removeOption(int option);
+    bool removeOption(base::StringView txt);
 
-        void selectOption(int option);
-        void selectOption(base::StringView text);
+    void selectOption(int option);
+    void selectOption(base::StringView text);
 
-        int selectedOption() const;
-        base::StringBuf selectedOptionText() const;
+    int selectedOption() const;
+    base::StringBuf selectedOptionText() const;
 
 
-        //--
+    //--
 
-        void closePopupList();
-        void showPopupList();
+    void closePopupList();
+    void showPopupList();
 
-    private:
-        ButtonPtr m_area;
-        TextLabelPtr m_text;
-        PopupPtr m_popup;
+private:
+    ButtonPtr m_area;
+    TextLabelPtr m_text;
+    PopupPtr m_popup;
 
-        base::Array<base::StringBuf> m_options;
-        int m_selectedOption;
+    base::Array<base::StringBuf> m_options;
+    int m_selectedOption;
 
-        virtual void handleEnableStateChange(bool isEnabled) override;
-        virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
-    };
+    virtual void handleEnableStateChange(bool isEnabled) override;
+    virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
+};
 
-    ///--
+///--
 
-} // ui
+END_BOOMER_NAMESPACE(ui)

@@ -12,29 +12,26 @@
 #include "apiGraphicsRenderStates.h"
 #include "apiShaders.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api)
+
+//--
+
+IBaseGraphicsPipeline::IBaseGraphicsPipeline(IBaseThread* owner, const IBaseShaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates)
+	: IBaseObject(owner, ObjectType::GraphicsPipelineObject)
+	, m_mergedRenderStates(mergedRenderStates)
+	, m_shaders(shaders)
 {
-    namespace api
-    {
-		//--
+	m_mergedRenderStatesKey = mergedRenderStates.key();
 
-		IBaseGraphicsPipeline::IBaseGraphicsPipeline(IBaseThread* owner, const IBaseShaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates)
-			: IBaseObject(owner, ObjectType::GraphicsPipelineObject)
-			, m_mergedRenderStates(mergedRenderStates)
-			, m_shaders(shaders)
-		{
-			m_mergedRenderStatesKey = mergedRenderStates.key();
+	base::CRC64 crc;
+	crc << m_shaders->key();
+	crc << m_mergedRenderStatesKey;
+	m_key = crc;
+}
 
-			base::CRC64 crc;
-			crc << m_shaders->key();
-			crc << m_mergedRenderStatesKey;
-			m_key = crc;
-		}
+IBaseGraphicsPipeline::~IBaseGraphicsPipeline()
+{}
 
-		IBaseGraphicsPipeline::~IBaseGraphicsPipeline()
-		{}
+//--
 
-		//--
-
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api)

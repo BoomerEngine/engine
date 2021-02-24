@@ -10,10 +10,3 @@
 
 #include "managedFile.h"
 
-namespace ed
-{
-
-    ///---
-
-} // ed
-

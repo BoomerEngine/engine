@@ -26,56 +26,53 @@
 #include "base/ui/include/uiStyleLibrary.h"
 #include "base/ui/include/uiDataStash.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::test)
+
+//--
+
+UIApp::UIApp()
+{}
+
+UIApp::~UIApp()
 {
-    namespace test
-    {
-        //--
+}
 
-        UIApp::UIApp()
-        {}
+bool UIApp::initialize(const base::app::CommandLine& commandline)
+{
+	auto dev = base::GetService<DeviceService>();
+	if (!dev)
+		return false;
 
-        UIApp::~UIApp()
-        {
-        }
+	m_nativeRenderer.create();
+    m_dataStash = base::RefNew<ui::DataStash>();
 
-        bool UIApp::initialize(const base::app::CommandLine& commandline)
-        {
-			auto dev = base::GetService<DeviceService>();
-			if (!dev)
-				return false;
+    m_renderer.create(m_dataStash.get(), m_nativeRenderer.get());
+    m_lastUpdateTime.resetToNow();
 
-			m_nativeRenderer.create();
-            m_dataStash = base::RefNew<ui::DataStash>();
+    auto window = base::RefNew<TestWindow>();
+    m_renderer->attachWindow(window.get());
 
-            m_renderer.create(m_dataStash.get(), m_nativeRenderer.get());
-            m_lastUpdateTime.resetToNow();
+    return true;
+}
 
-            auto window = base::RefNew<TestWindow>();
-            m_renderer->attachWindow(window.get());
+void UIApp::cleanup()
+{
+    m_renderer.reset();
+    m_nativeRenderer.reset();
+    m_dataStash.reset();
+}
 
-            return true;
-        }
+void UIApp::update()
+{
+    auto dt = std::clamp<float>(m_lastUpdateTime.timeTillNow().toSeconds(), 0.0001f, 0.1f);
+    m_lastUpdateTime.resetToNow();
+    m_renderer->updateAndRender(dt);
 
-        void UIApp::cleanup()
-        {
-            m_renderer.reset();
-            m_nativeRenderer.reset();
-            m_dataStash.reset();
-        }
+    if (m_renderer->windows().empty())
+        base::platform::GetLaunchPlatform().requestExit("All windows closed");
+}
 
-        void UIApp::update()
-        {
-            auto dt = std::clamp<float>(m_lastUpdateTime.timeTillNow().toSeconds(), 0.0001f, 0.1f);
-            m_lastUpdateTime.resetToNow();
-            m_renderer->updateAndRender(dt);
-
-            if (m_renderer->windows().empty())
-                base::platform::GetLaunchPlatform().requestExit("All windows closed");
-        }
-
-    } // test
-} // rendering
+END_BOOMER_NAMESPACE(rendering::test)
 
 base::app::IApplication& GetApplicationInstance()
 {

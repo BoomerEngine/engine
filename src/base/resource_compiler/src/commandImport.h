@@ -10,28 +10,25 @@
 
 #include "base/app/include/command.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+//--
+
+struct ImportQueueFileCancel;
+
+//--
+
+class CommandImport : public app::ICommand
 {
-    namespace res
-    {
-        //--
+    RTTI_DECLARE_VIRTUAL_CLASS(CommandImport, app::ICommand);
 
-        struct ImportQueueFileCancel;
+public:
+    CommandImport();
+    virtual ~CommandImport();
 
-        //--
+    virtual bool run(IProgressTracker* progress, const app::CommandLine& commandline) override final;
+};
 
-        class CommandImport : public app::ICommand
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(CommandImport, app::ICommand);
+//--
 
-        public:
-            CommandImport();
-            virtual ~CommandImport();
-
-            virtual bool run(IProgressTracker* progress, const app::CommandLine& commandline) override final;
-        };
-
-        //--
-
-    } // res
-} // base
+END_BOOMER_NAMESPACE(base::res)

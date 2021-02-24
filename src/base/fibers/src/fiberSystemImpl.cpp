@@ -9,23 +9,21 @@
 #include "build.h"
 #include "fiberSystemImpl.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::fibers)
+
+namespace prv
 {
-    namespace fibers
-    {
-        namespace prv
-        {
 
-            ///---
+    ///---
 
-            IFiberScheduler::IFiberScheduler()
-            {}
+    IFiberScheduler::IFiberScheduler()
+    {}
 
-            IFiberScheduler::~IFiberScheduler()
-            {}
+    IFiberScheduler::~IFiberScheduler()
+    {}
 
-            ///---
+    ///---
 
-        } // prv
-    } // fibers
-} // base
+} // prv
+
+END_BOOMER_NAMESPACE(base::fibers)

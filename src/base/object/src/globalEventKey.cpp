@@ -9,79 +9,79 @@
 #include "build.h"
 #include "globalEventKey.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//---
+
+std::atomic<uint64_t> GGlobalEventKeyCounter = 1;
+
+//---
+
+void GlobalEventKey::print(IFormatStream& f) const
 {
-    //---
-
-    std::atomic<uint64_t> GGlobalEventKeyCounter = 1;
-
-    //---
-
-    void GlobalEventKey::print(IFormatStream& f) const
+    if (m_key)
     {
-        if (m_key)
-        {
-            f.appendf("event key {}", m_key);
+        f.appendf("event key {}", m_key);
 
 #ifdef GLOBAL_EVENTS_DEBUG_INFO
-            if (m_debugInfo)
-                f.appendf(" ({})", m_debugInfo);
+        if (m_debugInfo)
+            f.appendf(" ({})", m_debugInfo);
 #endif
-        }
-        else
-        {
-            f.append("empty");
-        }
     }
-
-    //--
-
-    GlobalEventKey MakeUniqueEventKey(StringView debugInfo)
+    else
     {
-        GlobalEventKey ret;
-        ret.m_key = GGlobalEventKeyCounter++;
+        f.append("empty");
+    }
+}
+
+//--
+
+GlobalEventKey MakeUniqueEventKey(StringView debugInfo)
+{
+    GlobalEventKey ret;
+    ret.m_key = GGlobalEventKeyCounter++;
 #ifdef GLOBAL_EVENTS_DEBUG_INFO
-        ret.m_debugInfo = StringBuf(debugInfo);
+    ret.m_debugInfo = StringBuf(debugInfo);
 #endif
+    return ret;
+}
+
+class SharedEventKeyRepository : public ISingleton
+{
+    DECLARE_SINGLETON(SharedEventKeyRepository);
+
+public:
+    GlobalEventKey mapPathToKey(StringView path)
+    {
+        auto lock = CreateLock(m_keysMapLock);
+
+        GlobalEventKey ret;
+        if (!m_keysMap.find(path, ret))
+        {
+            auto str = StringBuf(path);
+            ret = MakeUniqueEventKey(str);
+            m_keysMap[str] = ret;
+        }
+
         return ret;
     }
 
-    class SharedEventKeyRepository : public ISingleton
+private:
+    SpinLock m_keysMapLock;
+    HashMap<StringBuf, GlobalEventKey> m_keysMap;
+
+    virtual void deinit() override
     {
-        DECLARE_SINGLETON(SharedEventKeyRepository);
-
-    public:
-        GlobalEventKey mapPathToKey(StringView path)
-        {
-            auto lock = CreateLock(m_keysMapLock);
-
-            GlobalEventKey ret;
-            if (!m_keysMap.find(path, ret))
-            {
-                auto str = StringBuf(path);
-                ret = MakeUniqueEventKey(str);
-                m_keysMap[str] = ret;
-            }
-
-            return ret;
-        }
-
-    private:
-        SpinLock m_keysMapLock;
-        HashMap<StringBuf, GlobalEventKey> m_keysMap;
-
-        virtual void deinit() override
-        {
-            m_keysMap.clear();
-        }
-    };
-
-    GlobalEventKey MakeSharedEventKey(StringView path)
-    {
-        return SharedEventKeyRepository::GetInstance().mapPathToKey(path);
+        m_keysMap.clear();
     }
+};
 
-    //--
+GlobalEventKey MakeSharedEventKey(StringView path)
+{
+    return SharedEventKeyRepository::GetInstance().mapPathToKey(path);
+}
 
-} // base
+//--
+
+END_BOOMER_NAMESPACE(base)
 

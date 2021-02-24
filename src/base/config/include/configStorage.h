@@ -10,75 +10,71 @@
 
 #include "base/containers/include/hashMap.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::config)
+
+///----
+
+/// config storage contains a PERSISTENT group and entries maps
+/// NOTE: a group or entry that is once created is not deleted until the storage itself is deleted
+class BASE_CONFIG_API Storage : public base::NoCopy
 {
-    namespace config
-    {
+    RTTI_DECLARE_POOL(POOL_CONFIG)
 
-        ///----
+public:
+    Storage();
+    ~Storage();
 
-        /// config storage contains a PERSISTENT group and entries maps
-        /// NOTE: a group or entry that is once created is not deleted until the storage itself is deleted
-        class BASE_CONFIG_API Storage : public base::NoCopy
-        {
-            RTTI_DECLARE_POOL(POOL_CONFIG)
+    //--
 
-        public:
-            Storage();
-            ~Storage();
+    // remove all groups and entries
+    void clear();
 
-            //--
+    //--
 
-            // remove all groups and entries
-            void clear();
+    // get group, creates an empty new one if not found
+    Group& group(StringView name);
 
-            //--
+    // find group, does not create a new one
+    const Group* findGroup(StringView name) const;
 
-            // get group, creates an empty new one if not found
-            Group& group(StringView name);
+    // remove group and all stored entries from the storage
+    bool removeGroup(StringView name);
 
-            // find group, does not create a new one
-            const Group* findGroup(StringView name) const;
+    // remove entry in group
+    bool removeEntry(StringView groupName, StringView varName);
 
-            // remove group and all stored entries from the storage
-            bool removeGroup(StringView name);
+    // find all groups starting with given start string
+    Array<const Group*> findAllGroups(StringView groupNameSubString) const;
 
-            // remove entry in group
-            bool removeEntry(StringView groupName, StringView varName);
+    //---
 
-            // find all groups starting with given start string
-            Array<const Group*> findAllGroups(StringView groupNameSubString) const;
+    // load from a text content
+    static bool Load(StringView txt, Storage& ret);
 
-            //---
+    // save settings to string, filter out settings that are the same as in base
+    static void Save(IFormatStream& f, const Storage& cur, const Storage& base);
 
-            // load from a text content
-            static bool Load(StringView txt, Storage& ret);
+    // apply values from other storage
+    static void Merge(Storage& target, const Storage& from);
 
-            // save settings to string, filter out settings that are the same as in base
-            static void Save(IFormatStream& f, const Storage& cur, const Storage& base);
+    //---
 
-            // apply values from other storage
-            static void Merge(Storage& target, const Storage& from);
+    // get the data version, changed every time we are modified
+    INLINE uint32_t currentVersion() const { return m_version.load(); }
 
-            //---
+private:
+    friend class Group;
 
-            // get the data version, changed every time we are modified
-            INLINE uint32_t currentVersion() const { return m_version.load(); }
+    HashMap<StringBuf, Group*> m_groups;
+    std::atomic<uint32_t> m_version;
 
-        private:
-            friend class Group;
+    SpinLock m_lock;
 
-            HashMap<StringBuf, Group*> m_groups;
-            std::atomic<uint32_t> m_version;
+    Group* group_NoLock(StringView name);
+    const Group* findGroup_NoLock(StringView name) const;
+    Array<const Group*> findAllGroups_NoLock(StringView groupNameSubString) const;
 
-            SpinLock m_lock;
+    void modified();
+};
 
-            Group* group_NoLock(StringView name);
-            const Group* findGroup_NoLock(StringView name) const;
-            Array<const Group*> findAllGroups_NoLock(StringView groupNameSubString) const;
-
-            void modified();
-        };
-
-    } // config
-} // base
+END_BOOMER_NAMESPACE(base::config)

@@ -8,43 +8,40 @@
 
 #pragma once
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
+
+///---
+
+class RENDERING_SCENE_API FrameHelperCompose : public base::NoCopy
 {
-    namespace scene
-    {
-		///---
+public:
+	FrameHelperCompose(IDevice* api); // initialized to the max resolution of the device
+	~FrameHelperCompose();
 
-		class RENDERING_SCENE_API FrameHelperCompose : public base::NoCopy
-		{
-		public:
-			FrameHelperCompose(IDevice* api); // initialized to the max resolution of the device
-			~FrameHelperCompose();
+	struct Setup
+	{
+		// game viewport
+		uint32_t gameWidth = 0;
+		uint32_t gameHeight = 0;
+		ImageSampledView* gameView = nullptr;
 
-			struct Setup
-			{
-				// game viewport
-				uint32_t gameWidth = 0;
-				uint32_t gameHeight = 0;
-				ImageSampledView* gameView = nullptr;
+		// output presentation area
+		base::Rect presentRect;
+		const RenderTargetView* presentTarget = nullptr;
 
-				// output presentation area
-				base::Rect presentRect;
-				const RenderTargetView* presentTarget = nullptr;
+		float gamma = 1.0f;
+	};
 
-				float gamma = 1.0f;
-			};
+	void finalCompose(GPUCommandWriter& cmd, const Setup& setup) const;
 
-			void finalCompose(command::CommandWriter& cmd, const Setup& setup) const;
+private:
+    GraphicsPipelineObjectPtr m_blitShadersPSO;
 
-		private:
-            GraphicsPipelineObjectPtr m_blitShadersPSO;
+	//--
 
-			//--
-
-			IDevice* m_device = nullptr;
-		};		
+	IDevice* m_device = nullptr;
+};		
 	
-        ///---
+///---
 
-    } // scene
-} // rendering
+END_BOOMER_NAMESPACE(rendering::scene)

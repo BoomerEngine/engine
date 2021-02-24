@@ -10,35 +10,35 @@
 
 #include "renderingMaterialGraphBlock_OutputCommon.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//--
+
+/// lit output using PBR shader
+class RENDERING_MATERIAL_GRAPH_API MaterialGraphBlockOutput_PBR : public MaterialGraphBlockOutputCommon
 {
-    //--
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlockOutput_PBR, MaterialGraphBlockOutputCommon);
 
-    /// lit output using PBR shader
-    class RENDERING_MATERIAL_GRAPH_API MaterialGraphBlockOutput_PBR : public MaterialGraphBlockOutputCommon
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlockOutput_PBR, MaterialGraphBlockOutputCommon);
+public:
+    MaterialGraphBlockOutput_PBR();
 
-    public:
-        MaterialGraphBlockOutput_PBR();
+private:
+    virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override;
+    virtual CodeChunk compileMainColor(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const override;
 
-    private:
-        virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override;
-        virtual CodeChunk compileMainColor(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const override;
-
-        bool m_twoSidedLighting = false;
+    bool m_twoSidedLighting = false;
         
-        bool m_applyGlobalAmbient = true;
-        bool m_applyGlobalDirectionalLighting = true;
-        bool m_applyAmbientOcclusion = true;
-        bool m_applyReflectionProbes = true;
-        bool m_applyLocalLighting = true;
+    bool m_applyGlobalAmbient = true;
+    bool m_applyGlobalDirectionalLighting = true;
+    bool m_applyAmbientOcclusion = true;
+    bool m_applyReflectionProbes = true;
+    bool m_applyLocalLighting = true;
 
-        bool m_receiveGlobalShadows = true;
-        bool m_receiveTerrainShadows = true;
-        bool m_receiveLocalShadows = true;
-    };
+    bool m_receiveGlobalShadows = true;
+    bool m_receiveTerrainShadows = true;
+    bool m_receiveLocalShadows = true;
+};
 
-    //--
+//--
     
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

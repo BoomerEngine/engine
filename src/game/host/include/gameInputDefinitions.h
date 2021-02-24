@@ -10,30 +10,30 @@
 
 #include "base/resource/include/resource.h"
 
-namespace game
+BEGIN_BOOMER_NAMESPACE(game)
+
+//---
+
+/// file with input mapping definitions
+class GAME_HOST_API InputDefinitions : public base::res::IResource
 {
-    //---
+    RTTI_DECLARE_VIRTUAL_CLASS(InputDefinitions, base::res::IResource);
 
-    /// file with input mapping definitions
-    class GAME_HOST_API InputDefinitions : public base::res::IResource
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(InputDefinitions, base::res::IResource);
+public:
+    InputDefinitions();
 
-    public:
-        InputDefinitions();
+    // get root context
+    INLINE const InputActionTablePtr& root() const { return m_root; }
 
-        // get root context
-        INLINE const InputActionTablePtr& root() const { return m_root; }
+    //--
 
-        //--
+    // find input table by name
+    InputActionTablePtr findTable(base::StringView name) const;
 
-        // find input table by name
-        InputActionTablePtr findTable(base::StringView name) const;
+public:
+    InputActionTablePtr m_root; // root context
+};
 
-    public:
-        InputActionTablePtr m_root; // root context
-    };
+//---
 
-    //---
-
-} // game
+END_BOOMER_NAMESPACE(game)

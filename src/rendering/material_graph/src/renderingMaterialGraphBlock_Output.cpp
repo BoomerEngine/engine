@@ -10,33 +10,33 @@
 #include "renderingMaterialGraph.h"
 #include "renderingMaterialGraphBlock_Output.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+///---
+
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(MaterialGraphBlockOutput);
+    RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialOutput");
+RTTI_END_TYPE();
+
+MaterialGraphBlockOutput::MaterialGraphBlockOutput()
+{}
+
+void MaterialGraphBlockOutput::resolveMetadata(MaterialTemplateMetadata& outMetadata) const
 {
-    ///---
+    // nothing specific
+}
 
-    RTTI_BEGIN_TYPE_ABSTRACT_CLASS(MaterialGraphBlockOutput);
-        RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialOutput");
-    RTTI_END_TYPE();
+CodeChunk MaterialGraphBlockOutput::compile(MaterialStageCompiler& compiler, base::StringID outputName) const
+{
+    DEBUG_CHECK(!"Should not be called");
+    return CodeChunk();
+}
 
-    MaterialGraphBlockOutput::MaterialGraphBlockOutput()
-    {}
+void MaterialGraphBlockOutput::compileVertexFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const
+{
+    // nothing here by default
+}
 
-    void MaterialGraphBlockOutput::resolveMetadata(MaterialTemplateMetadata& outMetadata) const
-    {
-        // nothing specific
-    }
+///---
 
-    CodeChunk MaterialGraphBlockOutput::compile(MaterialStageCompiler& compiler, base::StringID outputName) const
-    {
-        DEBUG_CHECK(!"Should not be called");
-        return CodeChunk();
-    }
-
-    void MaterialGraphBlockOutput::compileVertexFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const
-    {
-        // nothing here by default
-    }
-
-    ///---
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

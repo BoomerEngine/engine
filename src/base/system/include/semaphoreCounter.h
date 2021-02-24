@@ -10,34 +10,34 @@
 
 #include "algorithms.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//-----------------------------------------------------------------------------
+
+/// Semaphore
+class BASE_SYSTEM_API Semaphore : public base::NoCopy
 {
-    //-----------------------------------------------------------------------------
+public:
+    Semaphore(uint32_t initialCount, uint32_t maxCount);
+    ~Semaphore();
 
-    /// Semaphore
-    class BASE_SYSTEM_API Semaphore : public base::NoCopy
-    {
-    public:
-        Semaphore(uint32_t initialCount, uint32_t maxCount);
-        ~Semaphore();
+    //! Release semaphore
+    uint32_t release(uint32_t count = 1);
 
-        //! Release semaphore
-        uint32_t release(uint32_t count = 1);
+    //! Wait for semaphore, passing 0
+    bool wait(uint32_t waitTime = INFINITE_TIME);
 
-        //! Wait for semaphore, passing 0
-        bool wait(uint32_t waitTime = INFINITE_TIME);
+    //--
 
-        //--
+    //! Wait for multiple semaphores, return the index of the signalled semaphore or -1 if timeout happened
+    static int WaitMultiple(Semaphore** semaphores, uint32_t numSemaphores, uint32_t waitTime = INFINITE_TIME);
 
-        //! Wait for multiple semaphores, return the index of the signalled semaphore or -1 if timeout happened
-        static int WaitMultiple(Semaphore** semaphores, uint32_t numSemaphores, uint32_t waitTime = INFINITE_TIME);
+private:
+    INLINE Semaphore() {};
 
-    private:
-        INLINE Semaphore() {};
+    void* m_handle;     // Internal handle
+};
 
-        void* m_handle;     // Internal handle
-    };
+//-----------------------------------------------------------------------------
 
-    //-----------------------------------------------------------------------------
-
-} // base
+END_BOOMER_NAMESPACE(base)

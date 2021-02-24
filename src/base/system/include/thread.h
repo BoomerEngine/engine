@@ -12,78 +12,77 @@
 #undef Yield
 #endif
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//-----------------------------------------------------------------------------
+
+/// Thread priority
+enum class ThreadPriority : uint8_t
 {
+    Normal,
+    AboveNormal,
+    BelowNormal,
+};
 
-    //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-    /// Thread priority
-    enum class ThreadPriority : uint8_t
-    {
-        Normal,
-        AboveNormal,
-        BelowNormal,
-    };
+/// Thread function
+typedef std::function<void()> TThreadFunc;
 
-    //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-    /// Thread function
-    typedef std::function<void()> TThreadFunc;
+// thread setup
+struct BASE_SYSTEM_API ThreadSetup : public base::NoCopy
+{
+    const char* m_name;  // debug name of the thread
 
-    //-----------------------------------------------------------------------------
+    ThreadPriority m_priority; //  thread priority
+    uint32_t m_stackSize; // thead stack size
+    uint32_t m_affinity; // affinity to CPU cores on the system
 
-    // thread setup
-    struct BASE_SYSTEM_API ThreadSetup : public base::NoCopy
-    {
-        const char* m_name;  // debug name of the thread
+    TThreadFunc m_function; // thread function to run
 
-        ThreadPriority m_priority; //  thread priority
-        uint32_t m_stackSize; // thead stack size
-        uint32_t m_affinity; // affinity to CPU cores on the system
+    ThreadSetup();
+};
 
-        TThreadFunc m_function; // thread function to run
+//-----------------------------------------------------------------------------
 
-        ThreadSetup();
-    };
+/// This is the base thread interface for all runnable thread classes
+class BASE_SYSTEM_API Thread : public base::NoCopy
+{
+public:
+    Thread();
+    Thread(Thread&& other);
+    Thread& operator=(Thread&& other);
+    ~Thread(); // NOTE: closes automatically
 
-    //-----------------------------------------------------------------------------
+    //! initialize thread
+    void init(const ThreadSetup& setup);
 
-    /// This is the base thread interface for all runnable thread classes
-    class BASE_SYSTEM_API Thread : public base::NoCopy
-    {
-    public:
-        Thread();
-        Thread(Thread&& other);
-        Thread& operator=(Thread&& other);
-        ~Thread(); // NOTE: closes automatically
+    //! close this thread, waits for the thread to finish, allows to call init again
+    void close();
 
-        //! initialize thread
-        void init(const ThreadSetup& setup);
+protected:
+    uint64_t m_systemThreadHandle;
+};
 
-        //! close this thread, waits for the thread to finish, allows to call init again
-        void close();
+//--
 
-    protected:
-        uint64_t m_systemThreadHandle;
-    };
+//! Get ID of current thread
+extern BASE_SYSTEM_API ThreadID GetCurrentThreadID();
 
-    //--
+//! Get number of cores in the system
+extern BASE_SYSTEM_API uint32_t GetNumberOfCores();
 
-    //! Get ID of current thread
-    extern BASE_SYSTEM_API ThreadID GetCurrentThreadID();
+//! Change name of current thread
+extern BASE_SYSTEM_API void SetThreadName(const char* name);
 
-    //! Get number of cores in the system
-    extern BASE_SYSTEM_API uint32_t GetNumberOfCores();
+//! Wait some time, time is in ms
+extern BASE_SYSTEM_API void Sleep(uint32_t ms);
 
-    //! Change name of current thread
-    extern BASE_SYSTEM_API void SetThreadName(const char* name);
+//! Yield current thread
+extern BASE_SYSTEM_API void Yield();
 
-    //! Wait some time, time is in ms
-    extern BASE_SYSTEM_API void Sleep(uint32_t ms);
+//--
 
-    //! Yield current thread
-    extern BASE_SYSTEM_API void Yield();
-
-    //--
-
-} // base
+END_BOOMER_NAMESPACE(base)

@@ -9,21 +9,18 @@
 #include "build.h"
 #include "apiSampler.h"
 
-namespace rendering
-{
-    namespace api
-    {
-		//--
+BEGIN_BOOMER_NAMESPACE(rendering::api)
 
-		IBaseSampler::IBaseSampler(IBaseThread* owner, const SamplerState& setup)
-			: IBaseObject(owner, ObjectType::Sampler)
-			, m_state(setup)
-		{}
+//--
 
-		IBaseSampler::~IBaseSampler()
-		{}
+IBaseSampler::IBaseSampler(IBaseThread* owner, const SamplerState& setup)
+	: IBaseObject(owner, ObjectType::Sampler)
+	, m_state(setup)
+{}
 
-		//--
+IBaseSampler::~IBaseSampler()
+{}
 
-    } // api
-} // rendering
+//--
+
+END_BOOMER_NAMESPACE(rendering::api)

@@ -11,64 +11,63 @@
 #include "base/app/include/localService.h"
 #include "base/app/include/commandline.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+///---
+
+class DeviceGlobalObjects;
+
+/// service that manages and controls rendering device
+class RENDERING_DEVICE_API DeviceService : public base::app::ILocalService
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(DeviceService, base::app::ILocalService);
 
-    ///---
+public:
+    DeviceService();
+    virtual ~DeviceService();
 
-	class DeviceGlobalObjects;
+    //--
 
-    /// service that manages and controls rendering device
-    class RENDERING_DEVICE_API DeviceService : public base::app::ILocalService
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(DeviceService, base::app::ILocalService);
+    /// get API for created rendering device
+    /// NOTE: once created the device is never recreated
+    INLINE IDevice* device() const { return m_device; }
 
-    public:
-        DeviceService();
-        virtual ~DeviceService();
+	/// device caps
+	INLINE const DeviceCaps& caps() const { return m_caps; }
 
-        //--
+	/// get global object (common textures, samplers and other resources)
+	INLINE const DeviceGlobalObjects& globals() const { return *m_globals; }
 
-        /// get API for created rendering device
-        /// NOTE: once created the device is never recreated
-        INLINE IDevice* device() const { return m_device; }
+    //--
 
-		/// device caps
-		INLINE const DeviceCaps& caps() const { return m_caps; }
+    /// flush any scheduled/stalled operations and wait for all rendering to finish
+    /// after this call all that was scheduled to render was rendered, all queries should be complete, all data uploads finished, etc
+    void sync();
 
-		/// get global object (common textures, samplers and other resources)
-		INLINE const DeviceGlobalObjects& globals() const { return *m_globals; }
+    //--
 
-        //--
+private:
+    virtual base::app::ServiceInitializationResult onInitializeService(const base::app::CommandLine& cmdLine) override final;
+    virtual void onShutdownService() override final;
+    virtual void onSyncUpdate() override final;
 
-        /// flush any scheduled/stalled operations and wait for all rendering to finish
-        /// after this call all that was scheduled to render was rendered, all queries should be complete, all data uploads finished, etc
-        void sync();
+	//--
 
-        //--
+    IDevice* m_device = nullptr;
 
-    private:
-        virtual base::app::ServiceInitializationResult onInitializeService(const base::app::CommandLine& cmdLine) override final;
-        virtual void onShutdownService() override final;
-        virtual void onSyncUpdate() override final;
+	DeviceGlobalObjects* m_globals = nullptr;
 
-		//--
+	DeviceCaps m_caps;
 
-        IDevice* m_device = nullptr;
+	//--
 
-		DeviceGlobalObjects* m_globals = nullptr;
+    void reloadShaders();
 
-		DeviceCaps m_caps;
+    //--
+};
 
-		//--
+//---
 
-        void reloadShaders();
-
-        //--
-    };
-
-    //---
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)
 
 using DeviceService = rendering::DeviceService;

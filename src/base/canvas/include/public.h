@@ -8,161 +8,156 @@
 
 #include "base_canvas_glue.inl"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::command)
+
+class GPUCommandWriter;
+
+END_BOOMER_NAMESPACE(rendering::command)
+
+BEGIN_BOOMER_NAMESPACE(base::canvas)
+
+//--
+
+/// polygon winding
+enum class Winding : uint8_t
 {
-	namespace command
-	{
-		class CommandWriter;
-	}
-}
+    CCW = 1, // Winding for solid shapes
+    CW = 2, // Winding for holes
+};
 
-namespace base
+//--
+
+/// raster composite operation - determines how pixels are mixed
+/// implemented using classical blending scheme
+enum class BlendOp : uint8_t
 {
-    namespace canvas
-    {
-		//--
+	Copy, // blending disabled, NOTE: scissor done using discard only
+	AlphaPremultiplied, // src*1 + dest*(1-srcAlpha)
+	AlphaBlend, // LEGACY ONLY: src*srcAlpha + dest*(1-srcAlpha)
+	Addtive, // LEGACY ONLY: src*1 + dest*1
 
-        /// polygon winding
-        enum class Winding : uint8_t
-        {
-            CCW = 1, // Winding for solid shapes
-            CW = 2, // Winding for holes
-        };
+	MAX,
+};
 
-		//--
+//--
 
-		/// raster composite operation - determines how pixels are mixed
-		/// implemented using classical blending scheme
-		enum class BlendOp : uint8_t
-		{
-			Copy, // blending disabled, NOTE: scissor done using discard only
-			AlphaPremultiplied, // src*1 + dest*(1-srcAlpha)
-			AlphaBlend, // LEGACY ONLY: src*srcAlpha + dest*(1-srcAlpha)
-			Addtive, // LEGACY ONLY: src*1 + dest*1
+struct RenderStyle;
 
-			MAX,
-		};
+struct Geometry;
+class GeometryBuilder;
 
-		//--
+class ICanvasAtlasSync;
 
-        struct RenderStyle;
+class Canvas;
+class CanvasService;
 
-        struct Geometry;
-        class GeometryBuilder;
+class IAtlas;
 
-		class ICanvasAtlasSync;
+class DynamicAtlas;
+typedef RefPtr<DynamicAtlas> DynamicAtlasPtr;
 
-		class Canvas;
-		class CanvasService;
+class GlyphCache;
 
-		class IAtlas;
+struct ImageAtlasEntryInfo;
 
-		class DynamicAtlas;
-		typedef RefPtr<DynamicAtlas> DynamicAtlasPtr;
+//--
 
-		class GlyphCache;
+typedef uint16_t ImageAtlasIndex;
+typedef uint16_t ImageEntryIndex;
 
-		struct ImageAtlasEntryInfo;
+struct BASE_CANVAS_API ImageEntry
+{
+	ImageAtlasIndex atlasIndex = 0; // index of the atlas
+	ImageEntryIndex entryIndex = 0; // index of entry in the atlas
+	uint16_t width = 0; // width of the registered image
+	uint16_t height = 0; // height of the registered image
 
-		//--
+	INLINE ImageEntry() {};
+	INLINE operator bool() const { return atlasIndex != 0; }
 
-		typedef uint16_t ImageAtlasIndex;
-		typedef uint16_t ImageEntryIndex;
+	INLINE bool operator==(const ImageEntry& other) const { return atlasIndex == other.atlasIndex && entryIndex == other.entryIndex; }
+	INLINE bool operator!=(const ImageEntry& other) const { return !operator==(other); }
 
-		struct BASE_CANVAS_API ImageEntry
-		{
-			ImageAtlasIndex atlasIndex = 0; // index of the atlas
-			ImageEntryIndex entryIndex = 0; // index of entry in the atlas
-			uint16_t width = 0; // width of the registered image
-			uint16_t height = 0; // height of the registered image
+	static uint32_t CalcHash(const ImageEntry& entry);
+};
 
-			INLINE ImageEntry() {};
-			INLINE operator bool() const { return atlasIndex != 0; }
+//--
 
-			INLINE bool operator==(const ImageEntry& other) const { return atlasIndex == other.atlasIndex && entryIndex == other.entryIndex; }
-			INLINE bool operator!=(const ImageEntry& other) const { return !operator==(other); }
+/// type of geometry path in canvas rendering
+enum class BatchType : uint8_t
+{
+	FillConvex, // convex polygon fill, no stencil, just fill
+	FillConcave, // concave polygon fill, previously masked with FillConcave, contains 4 corner vertices
+	ConcaveMask, // stencil masking for concave fill (ends with FillConcave)
+};
 
-			static uint32_t CalcHash(const ImageEntry& entry);
-		};
+/// vertices in batch
+enum class BatchPacking : uint8_t
+{
+	TriangleList,
+	TriangleFan,
+	TriangleStrip,
+	Quads,
+};
 
-		//--
-
-		/// type of geometry path in canvas rendering
-		enum class BatchType : uint8_t
-		{
-			FillConvex, // convex polygon fill, no stencil, just fill
-			FillConcave, // concave polygon fill, previously masked with FillConcave, contains 4 corner vertices
-			ConcaveMask, // stencil masking for concave fill (ends with FillConcave)
-		};
-
-		/// vertices in batch
-		enum class BatchPacking : uint8_t
-		{
-			TriangleList,
-			TriangleFan,
-			TriangleStrip,
-			Quads,
-		};
-
-		//--
+//--
 
 #pragma pack(push)
 #pragma pack(1)
-		struct Vertex
-		{
-			static const uint8_t MASK_FILL = 1; // we are a fill
-			static const uint8_t MASK_STROKE = 2; // we are a stroke
-			static const uint8_t MASK_GLYPH = 4; // we are a glyph
-			static const uint8_t MASK_HAS_IMAGE = 8; // we have image
-			static const uint8_t MASK_HAS_WRAP_U = 16; // do U wrapping
-			static const uint8_t MASK_HAS_WRAP_V = 32; // do V wrapping
-			static const uint8_t MASK_HAS_FRINGE = 64; // we have an extra fringe extrusion
-			static const uint8_t MASK_IS_CONVEX = 128; // what we are rendering is convex
+struct Vertex
+{
+	static const uint8_t MASK_FILL = 1; // we are a fill
+	static const uint8_t MASK_STROKE = 2; // we are a stroke
+	static const uint8_t MASK_GLYPH = 4; // we are a glyph
+	static const uint8_t MASK_HAS_IMAGE = 8; // we have image
+	static const uint8_t MASK_HAS_WRAP_U = 16; // do U wrapping
+	static const uint8_t MASK_HAS_WRAP_V = 32; // do V wrapping
+	static const uint8_t MASK_HAS_FRINGE = 64; // we have an extra fringe extrusion
+	static const uint8_t MASK_IS_CONVEX = 128; // what we are rendering is convex
 
-			Vector2 pos; // transformed original geometry vertex
-			Vector2 uv; // original uv
-			Vector2 clipUV; // UV from the scissor, calculated when placing vertices
-			Color color; // original color
+	Vector2 pos; // transformed original geometry vertex
+	Vector2 uv; // original uv
+	Vector2 clipUV; // UV from the scissor, calculated when placing vertices
+	Color color; // original color
 
-			uint16_t attributeIndex = 0; // attributes table entry
-			uint16_t attributeFlags = 0; // cached styling information in form of flags
-			uint16_t imageEntryIndex = 0; // entry in the image table
-			uint16_t imagePageIndex = 0; // page index of the image
-		};
+	uint16_t attributeIndex = 0; // attributes table entry
+	uint16_t attributeFlags = 0; // cached styling information in form of flags
+	uint16_t imageEntryIndex = 0; // entry in the image table
+	uint16_t imagePageIndex = 0; // page index of the image
+};
 #pragma pack(pop)
 
 	
-		//--
+//--
 
-		struct Batch
-		{
-			uint32_t vertexOffset = 0;
-			uint32_t vertexCount = 0;
+struct Batch
+{
+	uint32_t vertexOffset = 0;
+	uint32_t vertexCount = 0;
 
-			BatchType type = BatchType::FillConvex;
-			BatchPacking packing = BatchPacking::TriangleList;
-			BlendOp op = BlendOp::AlphaPremultiplied;
-			uint8_t atlasIndex = 0;
+	BatchType type = BatchType::FillConvex;
+	BatchPacking packing = BatchPacking::TriangleList;
+	BlendOp op = BlendOp::AlphaPremultiplied;
+	uint8_t atlasIndex = 0;
 
-			uint64_t glyphPageMask = 0;
+	uint64_t glyphPageMask = 0;
 
-			uint16_t renderDataOffset = 0;
-			uint8_t renderDataSize = 0;
-			uint8_t rendererIndex = 0;
-		};
+	uint16_t renderDataOffset = 0;
+	uint8_t renderDataSize = 0;
+	uint8_t rendererIndex = 0;
+};
 
-		//--
+//--
 
-		struct ImageAtlasEntryInfo
-		{
-			Vector2 uvOffset;
-			Vector2 uvScale;
-			Vector2 uvMax;
-			char pageIndex = -1; // -1 - not placed
-			bool wrap = false;
-		};
+struct ImageAtlasEntryInfo
+{
+	Vector2 uvOffset;
+	Vector2 uvScale;
+	Vector2 uvMax;
+	char pageIndex = -1; // -1 - not placed
+	bool wrap = false;
+};
 
-		//--
+//--
 
-    } // canvas
-} // base
+END_BOOMER_NAMESPACE(base::canvas)

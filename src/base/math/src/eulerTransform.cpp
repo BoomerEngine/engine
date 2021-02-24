@@ -13,130 +13,130 @@
 #include "base/object/include/streamOpcodeReader.h"
 #include "base/system/include/format.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+RTTI_BEGIN_TYPE_CLASS(EulerTransform);
+    RTTI_TYPE_TRAIT().noDestructor().fastCopyCompare();
+    RTTI_PROPERTY(T).editable();
+    RTTI_PROPERTY(R).editable();
+    RTTI_PROPERTY(S).editable();
+RTTI_END_TYPE();
+
+bool EulerTransform::isIdentity() const
 {
-    RTTI_BEGIN_TYPE_CLASS(EulerTransform);
-        RTTI_TYPE_TRAIT().noDestructor().fastCopyCompare();
-        RTTI_PROPERTY(T).editable();
-        RTTI_PROPERTY(R).editable();
-        RTTI_PROPERTY(S).editable();
-    RTTI_END_TYPE();
+    return (T == Translation::ZERO()) && (R == Rotation::ZERO()) && (S == Scale::ONE());
+}
 
-    bool EulerTransform::isIdentity() const
+Transform EulerTransform::toTransform() const
+{
+    const auto quat = R.toQuat();
+    return Transform(T, quat, S);
+}
+
+static EulerTransform IDENTITY_TRANSFORM;
+
+const EulerTransform& EulerTransform::IDENTITY()
+{
+    return IDENTITY_TRANSFORM;
+}
+
+base::Matrix EulerTransform::toMatrix() const
+{
+    base::Matrix ret = R.toMatrix();
+    ret.translation(T);
+    ret.scaleColumns(S);
+    return ret;
+}
+
+Matrix EulerTransform::toMatrixNoScale() const
+{
+    base::Matrix ret = R.toMatrix();
+    ret.translation(T);
+    return ret;
+}
+
+///----
+
+void EulerTransform::print(base::IFormatStream& f) const
+{
+    bool hasSomething = false;
+
+    f << "{";
+
+    if (T != Translation::ZERO())
     {
-        return (T == Translation::ZERO()) && (R == Rotation::ZERO()) && (S == Scale::ONE());
+        f.appendf("T={}", T);
+        hasSomething = true;
     }
 
-    Transform EulerTransform::toTransform() const
+    if (R != Rotation::ZERO())
     {
-        const auto quat = R.toQuat();
-        return Transform(T, quat, S);
+        if (hasSomething)
+            f << ", ";
+        f.appendf("R={}", R);
+        hasSomething = true;
     }
 
-    static EulerTransform IDENTITY_TRANSFORM;
-
-    const EulerTransform& EulerTransform::IDENTITY()
+    if (S != Scale::ZERO())
     {
-        return IDENTITY_TRANSFORM;
+        if (hasSomething)
+            f << ", ";
+        f.appendf("S={}", S);
+        hasSomething = true;
     }
 
-    base::Matrix EulerTransform::toMatrix() const
-    {
-        base::Matrix ret = R.toMatrix();
-        ret.translation(T);
-        ret.scaleColumns(S);
-        return ret;
-    }
+    if (!hasSomething)
+        f << "Identity";
 
-    Matrix EulerTransform::toMatrixNoScale() const
-    {
-        base::Matrix ret = R.toMatrix();
-        ret.translation(T);
-        return ret;
-    }
+    f << "}";
+}
 
-    ///----
+///----
 
-    void EulerTransform::print(base::IFormatStream& f) const
-    {
-        bool hasSomething = false;
+/*void EulerTransform::writeBinary(base::stream::OpcodeWriter& stream) const
+{
+    uint8_t flags = 0;
 
-        f << "{";
+    if (T != Translation::ZERO())
+        flags |= 1;
+    if (R != Rotation::ZERO())
+        flags |= 2;
+    if (S != Scale::ONE())
+        flags |= 4;
 
-        if (T != Translation::ZERO())
-        {
-            f.appendf("T={}", T);
-            hasSomething = true;
-        }
+    stream.writeTypedData(flags);
 
-        if (R != Rotation::ZERO())
-        {
-            if (hasSomething)
-                f << ", ";
-            f.appendf("R={}", R);
-            hasSomething = true;
-        }
+    if (flags & 1)
+        stream.writeTypedData(T);
 
-        if (S != Scale::ZERO())
-        {
-            if (hasSomething)
-                f << ", ";
-            f.appendf("S={}", S);
-            hasSomething = true;
-        }
+    if (flags & 2)
+        stream.writeTypedData(R);
 
-        if (!hasSomething)
-            f << "Identity";
+    if (flags & 4)
+        stream.writeTypedData(S);
+}
 
-        f << "}";
-    }
+void EulerTransform::readBinary(base::stream::OpcodeReader& stream)
+{
+    uint8_t flags = 0;
+    stream.readTypedData(flags);
 
-    ///----
+    if (flags & 1)
+        stream.readTypedData(T);
+    else
+        T = Translation::ZERO();
 
-    /*void EulerTransform::writeBinary(base::stream::OpcodeWriter& stream) const
-    {
-        uint8_t flags = 0;
+    if (flags & 2)
+        stream.readTypedData(R);
+    else
+        R = Rotation::ZERO();
 
-        if (T != Translation::ZERO())
-            flags |= 1;
-        if (R != Rotation::ZERO())
-            flags |= 2;
-        if (S != Scale::ONE())
-            flags |= 4;
+    if (flags & 4)
+        stream.readTypedData(S);
+    else
+        S = Scale::ONE();
+}*/
 
-        stream.writeTypedData(flags);
+//--
 
-        if (flags & 1)
-            stream.writeTypedData(T);
-
-        if (flags & 2)
-            stream.writeTypedData(R);
-
-        if (flags & 4)
-            stream.writeTypedData(S);
-    }
-
-    void EulerTransform::readBinary(base::stream::OpcodeReader& stream)
-    {
-        uint8_t flags = 0;
-        stream.readTypedData(flags);
-
-        if (flags & 1)
-            stream.readTypedData(T);
-        else
-            T = Translation::ZERO();
-
-        if (flags & 2)
-            stream.readTypedData(R);
-        else
-            R = Rotation::ZERO();
-
-        if (flags & 4)
-            stream.readTypedData(S);
-        else
-            S = Scale::ONE();
-    }*/
-
-    //--
-
-} // base
+END_BOOMER_NAMESPACE(base)

@@ -8,67 +8,67 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//---
+
+class StubFactory;
+
+// linear allocator based factory, used when building the stubs
+class BASE_OBJECT_API StubBuilder : public NoCopy
 {
-	//---
+public:
+	StubBuilder(mem::LinearAllocator& mem, const StubFactory& factory);
+	~StubBuilder();
 
-	class StubFactory;
+	// remove all created stubs
+	void clear();
 
-	// linear allocator based factory, used when building the stubs
-	class BASE_OBJECT_API StubBuilder : public NoCopy
+	//--
+
+	void* createData(uint32_t size);
+
+	template< typename T >
+	INLINE T* createStub()
 	{
-	public:
-		StubBuilder(mem::LinearAllocator& mem, const StubFactory& factory);
-		~StubBuilder();
+		return static_cast<T*>(createStub(T::StaticType()));
+	}
 
-		// remove all created stubs
-		void clear();
+	template< typename T >
+	INLINE StubPseudoArray<T> createArray(const Array<const T*>& stubs)
+	{
+		StubPseudoArray<T> ret;
 
-		//--
-
-		void* createData(uint32_t size);
-
-		template< typename T >
-		INLINE T* createStub()
+		if (!stubs.empty())
 		{
-			return static_cast<T*>(createStub(T::StaticType()));
-		}
-
-		template< typename T >
-		INLINE StubPseudoArray<T> createArray(const Array<const T*>& stubs)
-		{
-			StubPseudoArray<T> ret;
-
-			if (!stubs.empty())
-			{
-				ret.elemCount = stubs.size();
-				ret.elems = (const T* const*)allocateInternal(sizeof(base::IStub*) * stubs.size());
-				memcpy((void*)ret.elems, stubs.data(), stubs.dataSize());
-			}
-
-			return ret;
-		}
-
-		template< typename T >
-		INLINE StubPseudoArray<T> createArray(const Array<T*>& stubs)
-		{
-			StubPseudoArray<T> ret;
 			ret.elemCount = stubs.size();
 			ret.elems = (const T* const*)allocateInternal(sizeof(base::IStub*) * stubs.size());
 			memcpy((void*)ret.elems, stubs.data(), stubs.dataSize());
-			return ret;
 		}
 
-	protected:
-		mem::LinearAllocator& m_mem;
-		const StubFactory& m_factory;
+		return ret;
+	}
 
-		Array<IStub*> m_stubsToDestroy;
+	template< typename T >
+	INLINE StubPseudoArray<T> createArray(const Array<T*>& stubs)
+	{
+		StubPseudoArray<T> ret;
+		ret.elemCount = stubs.size();
+		ret.elems = (const T* const*)allocateInternal(sizeof(base::IStub*) * stubs.size());
+		memcpy((void*)ret.elems, stubs.data(), stubs.dataSize());
+		return ret;
+	}
 
-		IStub* createStub(StubTypeValue id);
-		void* allocateInternal(uint32_t size);
-	};
+protected:
+	mem::LinearAllocator& m_mem;
+	const StubFactory& m_factory;
 
-	//---
+	Array<IStub*> m_stubsToDestroy;
 
-} // base
+	IStub* createStub(StubTypeValue id);
+	void* allocateInternal(uint32_t size);
+};
+
+//---
+
+END_BOOMER_NAMESPACE(base)

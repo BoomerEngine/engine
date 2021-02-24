@@ -13,96 +13,95 @@
 #include <windows.h>
 #include <Lmcons.h>
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+class UserNameString
 {
-
-    class UserNameString
+public:
+    UserNameString()
     {
-    public:
-        UserNameString()
-        {
-            DWORD size = UNLEN;
-            memset(m_text, 0, sizeof(m_text));
-            GetUserNameA(m_text, &size);
-            m_text[size] = 0;
+        DWORD size = UNLEN;
+        memset(m_text, 0, sizeof(m_text));
+        GetUserNameA(m_text, &size);
+        m_text[size] = 0;
             
-            for (uint32_t i=0; i<size; ++i)
-                if (m_text[i] && m_text[i] <= ' ')
-                    m_text[i] = '_';
-        }
+        for (uint32_t i=0; i<size; ++i)
+            if (m_text[i] && m_text[i] <= ' ')
+                m_text[i] = '_';
+    }
 
-        INLINE const char* c_str() const
-        {
-            return m_text;
-        }
+    INLINE const char* c_str() const
+    {
+        return m_text;
+    }
 
-    private:
-        char m_text[UNLEN+1];
-    };
+private:
+    char m_text[UNLEN+1];
+};
 
 #undef GetUserName
-    const char* GetUserName()
+const char* GetUserName()
+{
+    static UserNameString theData;
+    return theData.c_str();
+}
+
+//--
+
+class HostNameString
+{
+public:
+    HostNameString()
     {
-        static UserNameString theData;
-        return theData.c_str();
+        DWORD size = 256;
+        memset(m_text, 0, sizeof(m_text));
+        GetComputerNameExA(ComputerNameDnsHostname, m_text, &size);
+        m_text[size] = 0;
+
+        for (uint32_t i=0; i<size; ++i)
+            if (m_text[i] && m_text[i] <= ' ')
+                m_text[i] = '_';
     }
 
-    //--
-
-    class HostNameString
+    INLINE const char* c_str() const
     {
-    public:
-        HostNameString()
-        {
-            DWORD size = 256;
-            memset(m_text, 0, sizeof(m_text));
-            GetComputerNameExA(ComputerNameDnsHostname, m_text, &size);
-            m_text[size] = 0;
-
-            for (uint32_t i=0; i<size; ++i)
-                if (m_text[i] && m_text[i] <= ' ')
-                    m_text[i] = '_';
-        }
-
-        INLINE const char* c_str() const
-        {
-            return m_text;
-        }
-
-    private:
-        char m_text[256+1];
-    };
-
-    const char* GetHostName()
-    {
-        static HostNameString theData;
-        return theData.c_str();
+        return m_text;
     }
 
-    //--
+private:
+    char m_text[256+1];
+};
 
-    const char* GetSystemName()
+const char* GetHostName()
+{
+    static HostNameString theData;
+    return theData.c_str();
+}
+
+//--
+
+const char* GetSystemName()
+{
+    return "Windows";
+}
+
+const char* GetEnv(const char* key)
+{
+    auto value = getenv(key);
+    return value ? value : "";
+}
+
+bool GetRegistryKey(const char* path, const char* key, char* outBuffer, uint32_t& outBufferSize)
+{
+    HKEY hKey;
+    LONG lRes = RegOpenKeyExA(HKEY_LOCAL_MACHINE, path, 0, KEY_READ, &hKey);
+    if (lRes == ERROR_SUCCESS)
     {
-        return "Windows";
+        auto nError = RegQueryValueExA(hKey, key, 0, NULL, (LPBYTE)outBuffer, (DWORD*)&outBufferSize);
+        return ERROR_SUCCESS == nError;
     }
 
-    const char* GetEnv(const char* key)
-    {
-        auto value = getenv(key);
-        return value ? value : "";
-    }
+    return false;
+}
 
-    bool GetRegistryKey(const char* path, const char* key, char* outBuffer, uint32_t& outBufferSize)
-    {
-        HKEY hKey;
-        LONG lRes = RegOpenKeyExA(HKEY_LOCAL_MACHINE, path, 0, KEY_READ, &hKey);
-        if (lRes == ERROR_SUCCESS)
-        {
-            auto nError = RegQueryValueExA(hKey, key, 0, NULL, (LPBYTE)outBuffer, (DWORD*)&outBufferSize);
-            return ERROR_SUCCESS == nError;
-        }
-
-        return false;
-    }
-
-} // base
+END_BOOMER_NAMESPACE(base)

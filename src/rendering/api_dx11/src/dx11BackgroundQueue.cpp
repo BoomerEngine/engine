@@ -11,86 +11,79 @@
 #include "dx11BackgroundQueue.h"
 #include "base/system/include/thread.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
+
+//--
+
+BackgroundQueue::BackgroundQueue(Thread* owner)
+	: m_owner(owner)
+{}
+
+bool BackgroundQueue::createWorkerThreads(uint32_t requestedCount, uint32_t& outNumCreated)
 {
-    namespace api
-    {
-		namespace dx11
+	/*for (uint32_t i = 0; i < requestedCount; ++i)
+	{
+		if (auto* sharedContext = m_owner->createSharedContext())
 		{
+			auto* threadState = new ThreadState();
 
-	        //--
+			base::ThreadSetup setup;
+			setup.m_function = [this, threadState]() { threadFunc(threadState); };
+			setup.m_name = "RenderingBackgroundJobThread";
+			setup.m_stackSize = 256 << 10;
+			setup.m_priority = base::ThreadPriority::BelowNormal;
 
-			BackgroundQueue::BackgroundQueue(Thread* owner)
-				: m_owner(owner)
-			{}
+			threadState->context = sharedContext;
+			threadState->thread.init(setup);
 
-			bool BackgroundQueue::createWorkerThreads(uint32_t requestedCount, uint32_t& outNumCreated)
-			{
-				/*for (uint32_t i = 0; i < requestedCount; ++i)
-				{
-					if (auto* sharedContext = m_owner->createSharedContext())
-					{
-						auto* threadState = new ThreadState();
+			m_workerThreads.pushBack(threadState);
+			outNumCreated += 1;
+		}
+	}*/
 
-						base::ThreadSetup setup;
-						setup.m_function = [this, threadState]() { threadFunc(threadState); };
-						setup.m_name = "RenderingBackgroundJobThread";
-						setup.m_stackSize = 256 << 10;
-						setup.m_priority = base::ThreadPriority::BelowNormal;
+	return true;
+}
 
-						threadState->context = sharedContext;
-						threadState->thread.init(setup);
+void BackgroundQueue::stopWorkerThreads()
+{
+	base::ScopeTimer timer;
 
-						m_workerThreads.pushBack(threadState);
-						outNumCreated += 1;
-					}
-				}*/
+	for (auto* state : m_workerThreads)
+	{
+		state->thread.close();
+		delete state;
+	}
 
-				return true;
-			}
+	TRACE_INFO("Stopped {} background processing threads in {}", m_workerThreads.size(), timer);
+	m_workerThreads.clear();
+}
 
-			void BackgroundQueue::stopWorkerThreads()
-			{
-				base::ScopeTimer timer;
+void BackgroundQueue::threadFunc(ThreadState* state)
+{
+	base::ScopeTimer timer;
 
-				for (auto* state : m_workerThreads)
-				{
-					state->thread.close();
-					delete state;
-				}
+	TRACE_INFO("Started background processing thread");
 
-				TRACE_INFO("Stopped {} background processing threads in {}", m_workerThreads.size(), timer);
-				m_workerThreads.clear();
-			}
+	uint32_t jobCounter = 0;
+	base::NativeTimeInterval jobBusyTimer;
+	bool run = true;
+	while (run)
+	{
+		if (auto* job = popNextJob(run))
+		{
+			const auto startTime = base::NativeTimePoint::Now();
 
-			void BackgroundQueue::threadFunc(ThreadState* state)
-			{
-				base::ScopeTimer timer;
+			processJob(job);
 
-				TRACE_INFO("Started background processing thread");
+			jobBusyTimer += startTime.timeTillNow();
+			jobCounter += 1;
+		}
+	}
 
-				uint32_t jobCounter = 0;
-				base::NativeTimeInterval jobBusyTimer;
-				bool run = true;
-				while (run)
-				{
-					if (auto* job = popNextJob(run))
-					{
-						const auto startTime = base::NativeTimePoint::Now();
+	TRACE_INFO("Stopped background processing thread after {}, processed {} jobs in {} ({}% utilization)",
+		timer, jobCounter, jobBusyTimer, Prec((jobBusyTimer.toSeconds() / timer.timeElapsed()) * 100.0, 2));
+}
 
-						processJob(job);
-
-						jobBusyTimer += startTime.timeTillNow();
-						jobCounter += 1;
-					}
-				}
-
-				TRACE_INFO("Stopped background processing thread after {}, processed {} jobs in {} ({}% utilization)",
-					timer, jobCounter, jobBusyTimer, Prec((jobBusyTimer.toSeconds() / timer.timeElapsed()) * 100.0, 2));
-			}
-
-			//--
+//--
 	
-		} // dx11
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::dx11)

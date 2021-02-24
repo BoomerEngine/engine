@@ -6,13 +6,6 @@
 * [#filter: utils #]
 ***/
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace nul
-		{
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
 
-		} // nul
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

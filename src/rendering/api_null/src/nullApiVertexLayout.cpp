@@ -11,24 +11,17 @@
 #include "nullApiObjectCache.h"
 #include "nullApiVertexLayout.h"
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace nul
-		{
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
 
-			//--
+//--
 
-			VertexBindingLayout::VertexBindingLayout(Thread* owner, const base::Array<ShaderVertexStreamMetadata>& streams)
-				: IBaseVertexBindingLayout(owner->objectCache(), streams)
-			{}
+VertexBindingLayout::VertexBindingLayout(Thread* owner, const base::Array<ShaderVertexStreamMetadata>& streams)
+	: IBaseVertexBindingLayout(owner->objectCache(), streams)
+{}
 
-			VertexBindingLayout::~VertexBindingLayout()
-			{}
+VertexBindingLayout::~VertexBindingLayout()
+{}
 
-			//--
+//--
 
-		} // nul
-    } // gl4
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

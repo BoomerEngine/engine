@@ -31,270 +31,270 @@
 #include "rendering/device/include/renderingImage.h"
 #include "editor/common/include/managedFileNativeResource.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//---
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(StaticTextureEditor);
+RTTI_END_TYPE();
+
+StaticTextureEditor::StaticTextureEditor(ManagedFileNativeResource* file)
+    : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::Imported })
+    , m_histogramCheckTimer(this, "HistogramCheckTimer"_id)
 {
-    //---
+    createInterface();
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(StaticTextureEditor);
-    RTTI_END_TYPE();
+    m_histogramCheckTimer = [this]() { checkHistograms(); };
+    m_histogramCheckTimer.startRepeated(0.1f);
+}
 
-    StaticTextureEditor::StaticTextureEditor(ManagedFileNativeResource* file)
-        : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::Imported })
-        , m_histogramCheckTimer(this, "HistogramCheckTimer"_id)
+StaticTextureEditor::~StaticTextureEditor()
+{}
+
+void StaticTextureEditor::createInterface()
+{
     {
-        createInterface();
+        auto tab = base::RefNew<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
+        m_previewTab = tab;
+        m_previewTab->layoutVertical();
 
-        m_histogramCheckTimer = [this]() { checkHistograms(); };
-        m_histogramCheckTimer.startRepeated(0.1f);
-    }
-
-    StaticTextureEditor::~StaticTextureEditor()
-    {}
-
-    void StaticTextureEditor::createInterface()
-    {
-        {
-            auto tab = base::RefNew<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
-            m_previewTab = tab;
-            m_previewTab->layoutVertical();
-
-            m_previewPanel = m_previewTab->createChild<ImagePreviewPanelWithToolbar>();
-            m_previewPanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-            m_previewPanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
+        m_previewPanel = m_previewTab->createChild<ImagePreviewPanelWithToolbar>();
+        m_previewPanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+        m_previewPanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
             
-            dockLayout().attachPanel(tab);
-        }
-
-        {
-            auto panel = base::RefNew<ui::DockPanel>("[img:table] Image", "ImageInfoPanel");
-            panel->layoutVertical();
-
-            auto splitter = panel->createChild<ui::Splitter>(ui::Direction::Horizontal, 0.33f);
-
-            {
-                auto notebook = splitter->createChild<ui::Notebook>();
-
-                auto colorHistogram = base::RefNew<ImageHistogramWidget>();
-                m_colorHistogram = colorHistogram;
-                m_colorHistogram->customStyle<base::StringBuf>("title"_id, "[img:color_wheel]RGB");
-                notebook->attachTab(m_colorHistogram, nullptr, true);
-
-                auto lumHistogram = base::RefNew<ImageHistogramWidget>();
-                m_lumHistogram = lumHistogram;
-                m_lumHistogram->customStyle<base::StringBuf>("title"_id, "[img:lightbulb]Luminance");
-                notebook->attachTab(m_lumHistogram, nullptr, false);
-            }
-
-            {
-                m_imageInfoLabel = splitter->createChild<ui::TextLabel>();
-                m_imageInfoLabel->customMargins(5);
-            }
-
-            dockLayout().right().attachPanel(panel);
-        }
+        dockLayout().attachPanel(tab);
     }
 
-    void StaticTextureEditor::updateHistogram()
     {
-        m_pendingHistograms.clear();
+        auto panel = base::RefNew<ui::DockPanel>("[img:table] Image", "ImageInfoPanel");
+        panel->layoutVertical();
 
-        if (auto data = texture())
+        auto splitter = panel->createChild<ui::Splitter>(ui::Direction::Horizontal, 0.33f);
+
         {
-            if (auto view = data->view())
+            auto notebook = splitter->createChild<ui::Notebook>();
+
+            auto colorHistogram = base::RefNew<ImageHistogramWidget>();
+            m_colorHistogram = colorHistogram;
+            m_colorHistogram->customStyle<base::StringBuf>("title"_id, "[img:color_wheel]RGB");
+            notebook->attachTab(m_colorHistogram, nullptr, true);
+
+            auto lumHistogram = base::RefNew<ImageHistogramWidget>();
+            m_lumHistogram = lumHistogram;
+            m_lumHistogram->customStyle<base::StringBuf>("title"_id, "[img:lightbulb]Luminance");
+            notebook->attachTab(m_lumHistogram, nullptr, false);
+        }
+
+        {
+            m_imageInfoLabel = splitter->createChild<ui::TextLabel>();
+            m_imageInfoLabel->customMargins(5);
+        }
+
+        dockLayout().right().attachPanel(panel);
+    }
+}
+
+void StaticTextureEditor::updateHistogram()
+{
+    m_pendingHistograms.clear();
+
+    if (auto data = texture())
+    {
+        if (auto view = data->view())
+        {
+            const auto numChannels = rendering::GetImageFormatInfo(view->image()->format()).numComponents;
+
+            for (int i = 0; i < std::min<int>(numChannels, 3); ++i)
             {
-                const auto numChannels = rendering::GetImageFormatInfo(view->image()->format()).numComponents;
+                ImageComputationSettings settings;
+                settings.alphaThreshold = 0.5f;
+                settings.channel = i;
+                settings.mipIndex = 0;
+                settings.sliceIndex = 0;
 
-                for (int i = 0; i < std::min<int>(numChannels, 3); ++i)
-                {
-                    ImageComputationSettings settings;
-                    settings.alphaThreshold = 0.5f;
-                    settings.channel = i;
-                    settings.mipIndex = 0;
-                    settings.sliceIndex = 0;
-
-                    if (auto pendingHistogram = ComputeHistogram(view, settings))
-                        m_pendingHistograms.pushBack(pendingHistogram);
-                }
+                if (auto pendingHistogram = ComputeHistogram(view, settings))
+                    m_pendingHistograms.pushBack(pendingHistogram);
             }
         }
     }
+}
 
-    void StaticTextureEditor::checkHistograms()
+void StaticTextureEditor::checkHistograms()
+{
+    if (!m_pendingHistograms.empty())
     {
-        if (!m_pendingHistograms.empty())
+        bool allHistogramsReady = true;
+        for (const auto& hist : m_pendingHistograms)
+            if (!hist->fetchDataIfReady())
+                allHistogramsReady = false;
+
+        if (allHistogramsReady)
         {
-            bool allHistogramsReady = true;
+            if (m_colorHistogram)
+                m_colorHistogram->removeHistograms();
+
+            if (m_lumHistogram)
+                m_lumHistogram->removeHistograms();
+
             for (const auto& hist : m_pendingHistograms)
-                if (!hist->fetchDataIfReady())
-                    allHistogramsReady = false;
-
-            if (allHistogramsReady)
             {
-                if (m_colorHistogram)
-                    m_colorHistogram->removeHistograms();
-
-                if (m_lumHistogram)
-                    m_lumHistogram->removeHistograms();
-
-                for (const auto& hist : m_pendingHistograms)
+                if (auto data = hist->fetchDataIfReady())
                 {
-                    if (auto data = hist->fetchDataIfReady())
-                    {
-                        if (data->channel == 0 && m_colorHistogram)
-                            m_colorHistogram->addHistogram(data, base::Color::RED, "Red");
-                        else if (data->channel == 1 && m_colorHistogram)
-                            m_colorHistogram->addHistogram(data, base::Color::GREEN, "Green");
-                        else if (data->channel == 2 && m_colorHistogram)
-                            m_colorHistogram->addHistogram(data, base::Color::BLUE, "Blue");
-                        else if (data->channel == 3 && m_lumHistogram)
-                            m_lumHistogram->addHistogram(data, base::Color::WHITE, "Luminance");
-                    }
+                    if (data->channel == 0 && m_colorHistogram)
+                        m_colorHistogram->addHistogram(data, base::Color::RED, "Red");
+                    else if (data->channel == 1 && m_colorHistogram)
+                        m_colorHistogram->addHistogram(data, base::Color::GREEN, "Green");
+                    else if (data->channel == 2 && m_colorHistogram)
+                        m_colorHistogram->addHistogram(data, base::Color::BLUE, "Blue");
+                    else if (data->channel == 3 && m_lumHistogram)
+                        m_lumHistogram->addHistogram(data, base::Color::WHITE, "Luminance");
                 }
             }
         }
     }
+}
 
-    void StaticTextureEditor::updateImageInfoText()
+void StaticTextureEditor::updateImageInfoText()
+{
+    base::StringBuilder txt;
+
+    if (auto data = texture())
     {
-        base::StringBuilder txt;
+        const auto info = data->info();
 
-        if (auto data = texture())
-        {
-            const auto info = data->info();
+        if (info.compressed)
+            txt.append("[color:#AFA][b]COMPRESSED![/b][/color]\n \n");
+        else
+            txt.append("[color:#FAA][b]UNCOMPRESSED![/b][/color]\n \n");
 
-            if (info.compressed)
-                txt.append("[color:#AFA][b]COMPRESSED![/b][/color]\n \n");
-            else
-                txt.append("[color:#FAA][b]UNCOMPRESSED![/b][/color]\n \n");
+        txt.appendf("Type: [b]{}[/b]\n", info.type);
 
-            txt.appendf("Type: [b]{}[/b]\n", info.type);
+        txt.appendf("Size: [b]");
+        if (info.type == rendering::ImageViewType::View3D)
+            txt.appendf("{}x{}x{}", info.width, info.height, info.depth);
+        else if (info.type == rendering::ImageViewType::View2D || info.type == rendering::ImageViewType::View2DArray)
+            txt.appendf("{}x{}", info.width, info.height);
+        else if (info.type == rendering::ImageViewType::ViewCube || info.type == rendering::ImageViewType::ViewCubeArray)
+            txt.appendf("{}x{}", info.width, info.height);
+        else if (info.type == rendering::ImageViewType::View1D)
+            txt.appendf("{}", info.width);
+        txt.append("[/b]\n");
 
-            txt.appendf("Size: [b]");
-            if (info.type == rendering::ImageViewType::View3D)
-                txt.appendf("{}x{}x{}", info.width, info.height, info.depth);
-            else if (info.type == rendering::ImageViewType::View2D || info.type == rendering::ImageViewType::View2DArray)
-                txt.appendf("{}x{}", info.width, info.height);
-            else if (info.type == rendering::ImageViewType::ViewCube || info.type == rendering::ImageViewType::ViewCubeArray)
-                txt.appendf("{}x{}", info.width, info.height);
-            else if (info.type == rendering::ImageViewType::View1D)
-                txt.appendf("{}", info.width);
-            txt.append("[/b]\n");
+        txt.appendf("Format: [b]{}[/b] [color:#888](BPP: {})[/color]\n", rendering::GetImageFormatInfo(info.format).name,
+            rendering::GetImageFormatInfo(info.format).bitsPerPixel);
 
-            txt.appendf("Format: [b]{}[/b] [color:#888](BPP: {})[/color]\n", rendering::GetImageFormatInfo(info.format).name,
-                rendering::GetImageFormatInfo(info.format).bitsPerPixel);
+        if (info.type == rendering::ImageViewType::ViewCubeArray || info.type == rendering::ImageViewType::View2DArray)
+            txt.appendf("Array slices: [b]{}[/b]\n", info.slices);
 
-            if (info.type == rendering::ImageViewType::ViewCubeArray || info.type == rendering::ImageViewType::View2DArray)
-                txt.appendf("Array slices: [b]{}[/b]\n", info.slices);
+        txt.appendf("Color space: [b]{}[/b]\n", info.colorSpace);
 
-            txt.appendf("Color space: [b]{}[/b]\n", info.colorSpace);
+        if (info.premultipliedAlpha)
+            txt.appendf("Alpha: [b]Premultiplied[/b]\n");
+        else if (rendering::GetImageFormatInfo(info.format).numComponents == 4)
+            txt.appendf("Alpha: [b]Linear[/b]\n");
+        else
+            txt.appendf("Alpha: [b]None[/b]\n");
 
-            if (info.premultipliedAlpha)
-                txt.appendf("Alpha: [b]Premultiplied[/b]\n");
-            else if (rendering::GetImageFormatInfo(info.format).numComponents == 4)
-                txt.appendf("Alpha: [b]Linear[/b]\n");
-            else
-                txt.appendf("Alpha: [b]None[/b]\n");
+        txt.appendf("Mipmaps: [b]{}[/b]\n", info.mips);
 
-            txt.appendf("Mipmaps: [b]{}[/b]\n", info.mips);
+        txt.appendf(" \n");
+        txt.appendf("\nTotal data size: [b]{}[/b]\n", MemSize(data->persistentData().size()));
 
-            txt.appendf(" \n");
-            txt.appendf("\nTotal data size: [b]{}[/b]\n", MemSize(data->persistentData().size()));
+        m_imageInfoLabel->text(txt.toString());
+    }
+}
 
-            m_imageInfoLabel->text(txt.toString());
-        }
+/*void StaticTextureEditor::updateImageInfo(const base::image::ImagePtr& image)
+{
+    base::StringBuilder txt;
+
+    if (image->depth() > 1)
+        txt.appendf("3D Image [{}x{}x{}]", image->width(), image->height(), image->depth());
+    else if (image->height() > 1)
+        txt.appendf("2D Image [{}x{}]", image->width(), image->height());
+    else if (image->width() > 1)
+        txt.appendf("1D Image [{}x{}]", image->width(), image->height());
+    else if (image->width() > 1)
+        txt.appendf("Pixel Image");
+
+    txt.append("\n");
+    txt.appendf("Data size: {}\n\n", MemSize(image->view().dataSize()));
+
+    m_uncompressionStatusText = txt.toString();
+
+    updateImageInfoText();
+}*/
+
+static rendering::ImageContentColorSpace ConvertColorSpace(base::image::ColorSpace space)
+{
+    switch (space)
+    {
+    case base::image::ColorSpace::SRGB: return rendering::ImageContentColorSpace::SRGB;
+    case base::image::ColorSpace::Linear: return rendering::ImageContentColorSpace::Linear;
+    case base::image::ColorSpace::Normals: return rendering::ImageContentColorSpace::Normals;
+    case base::image::ColorSpace::HDR: return rendering::ImageContentColorSpace::HDR;
     }
 
-    /*void StaticTextureEditor::updateImageInfo(const base::image::ImagePtr& image)
+    return rendering::ImageContentColorSpace::Linear;
+}
+
+bool StaticTextureEditor::initialize()
+{
+    if (!TBaseClass::initialize())
+        return false;
+
+    m_texture = rtti_cast<rendering::StaticTexture>(resource());
+    if (!m_texture)
+        return false;
+
+    updateHistogram();
+    updateImageInfoText();
+
+    if (auto data = texture())
+        m_previewPanel->bindImageView(data->view(), ConvertColorSpace(data->info().colorSpace));
+
+    return true;
+}
+
+void StaticTextureEditor::handleLocalReimport(const res::ResourcePtr& ptr)
+{
+    if (auto newTexture = rtti_cast<rendering::StaticTexture>(ptr))
     {
-        base::StringBuilder txt;
-
-        if (image->depth() > 1)
-            txt.appendf("3D Image [{}x{}x{}]", image->width(), image->height(), image->depth());
-        else if (image->height() > 1)
-            txt.appendf("2D Image [{}x{}]", image->width(), image->height());
-        else if (image->width() > 1)
-            txt.appendf("1D Image [{}x{}]", image->width(), image->height());
-        else if (image->width() > 1)
-            txt.appendf("Pixel Image");
-
-        txt.append("\n");
-        txt.appendf("Data size: {}\n\n", MemSize(image->view().dataSize()));
-
-        m_uncompressionStatusText = txt.toString();
-
-        updateImageInfoText();
-    }*/
-
-    static rendering::ImageContentColorSpace ConvertColorSpace(base::image::ColorSpace space)
-    {
-        switch (space)
-        {
-        case base::image::ColorSpace::SRGB: return rendering::ImageContentColorSpace::SRGB;
-        case base::image::ColorSpace::Linear: return rendering::ImageContentColorSpace::Linear;
-        case base::image::ColorSpace::Normals: return rendering::ImageContentColorSpace::Normals;
-        case base::image::ColorSpace::HDR: return rendering::ImageContentColorSpace::HDR;
-        }
-
-        return rendering::ImageContentColorSpace::Linear;
-    }
-
-    bool StaticTextureEditor::initialize()
-    {
-        if (!TBaseClass::initialize())
-            return false;
-
-        m_texture = rtti_cast<rendering::StaticTexture>(resource());
-        if (!m_texture)
-            return false;
+        m_texture = newTexture;
 
         updateHistogram();
         updateImageInfoText();
 
-        if (auto data = texture())
-            m_previewPanel->bindImageView(data->view(), ConvertColorSpace(data->info().colorSpace));
-
-        return true;
-    }
-
-    void StaticTextureEditor::handleLocalReimport(const res::ResourcePtr& ptr)
-    {
-        if (auto newTexture = rtti_cast<rendering::StaticTexture>(ptr))
-        {
-            m_texture = newTexture;
-
-            updateHistogram();
-            updateImageInfoText();
-
-            m_previewPanel->bindImageView(newTexture->view(), ConvertColorSpace(newTexture->info().colorSpace));
+        m_previewPanel->bindImageView(newTexture->view(), ConvertColorSpace(newTexture->info().colorSpace));
 
             
-        }     
+    }     
+}
+
+//---
+
+class StaticTextureResourceEditorOpener : public IResourceEditorOpener
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureResourceEditorOpener, IResourceEditorOpener);
+
+public:
+    virtual bool canOpen(const ManagedFileFormat& format) const override
+    {
+        return format.nativeResourceClass() == rendering::StaticTexture::GetStaticClass();
     }
 
-    //---
-
-    class StaticTextureResourceEditorOpener : public IResourceEditorOpener
+    virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureResourceEditorOpener, IResourceEditorOpener);
+        if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
+            return base::RefNew<StaticTextureEditor>(nativeFile);
 
-    public:
-        virtual bool canOpen(const ManagedFileFormat& format) const override
-        {
-            return format.nativeResourceClass() == rendering::StaticTexture::GetStaticClass();
-        }
+        return nullptr;
+    }
+};
 
-        virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
-        {
-            if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-                return base::RefNew<StaticTextureEditor>(nativeFile);
+RTTI_BEGIN_TYPE_CLASS(StaticTextureResourceEditorOpener);
+RTTI_END_TYPE();
 
-            return nullptr;
-        }
-    };
+//---
 
-    RTTI_BEGIN_TYPE_CLASS(StaticTextureResourceEditorOpener);
-    RTTI_END_TYPE();
-
-    //---
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

@@ -8,16 +8,15 @@
 
 #include "rendering_texture_glue.inl"
 
-namespace rendering
-{
+BEGIN_BOOMER_NAMESPACE(rendering)
 
-    class ITexture;
-    typedef base::RefPtr<ITexture> TexturePtr;
-    typedef base::res::Ref<ITexture> TextureRef;
+class ITexture;
+typedef base::RefPtr<ITexture> TexturePtr;
+typedef base::res::Ref<ITexture> TextureRef;
 
-    class StaticTexture;
-    typedef base::RefPtr<StaticTexture> StaticTexturePtr;
-    typedef base::res::Ref<StaticTexture> StaticTextureRef;
+class StaticTexture;
+typedef base::RefPtr<StaticTexture> StaticTexturePtr;
+typedef base::res::Ref<StaticTexture> StaticTextureRef;
 
-} // rendering
+END_BOOMER_NAMESPACE(rendering)
 

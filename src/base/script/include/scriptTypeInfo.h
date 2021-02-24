@@ -10,399 +10,397 @@
 
 #include "base/app/include/localService.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+//----
+
+struct ClassTypeInfo;
+struct ArrayTypeInfo;
+struct EnumTypeInfo;
+struct PropertyInfo;
+struct FunctionInfo;
+
+//----
+
+// generic type information wrapper for scripts
+struct BASE_SCRIPT_API TypeInfo
 {
-    namespace script
-    {
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TypeInfo)
 
-        //----
+public:
+    TypeInfo(Type type = nullptr);
+    INLINE TypeInfo(const TypeInfo& other) = default;
+    INLINE TypeInfo& operator=(const TypeInfo& other) = default;
 
-        struct ClassTypeInfo;
-        struct ArrayTypeInfo;
-        struct EnumTypeInfo;
-        struct PropertyInfo;
-        struct FunctionInfo;
+    // get the engine name of the type
+    StringID name() const;
 
-        //----
+    // is this a valid type ?
+    bool valid() const;
 
-        // generic type information wrapper for scripts
-        struct BASE_SCRIPT_API TypeInfo
-        {
-            RTTI_DECLARE_NONVIRTUAL_CLASS(TypeInfo)
+    // was this type defined in scripts ?
+    bool scripted() const;
 
-        public:
-            TypeInfo(Type type = nullptr);
-            INLINE TypeInfo(const TypeInfo& other) = default;
-            INLINE TypeInfo& operator=(const TypeInfo& other) = default;
+    // is this a simple value type ? (bool/float, etc)
+    bool isSimple() const;
 
-            // get the engine name of the type
-            StringID name() const;
+    // is this a structure/class type
+    bool isClass() const;
 
-            // is this a valid type ?
-            bool valid() const;
+    // is this an enum type
+    bool isEnum() const;
 
-            // was this type defined in scripts ?
-            bool scripted() const;
+    // is this a general pointer type
+    bool isPointer() const;
 
-            // is this a simple value type ? (bool/float, etc)
-            bool isSimple() const;
+    // is this a shared pointer type
+    bool isStrongPointer() const;
 
-            // is this a structure/class type
-            bool isClass() const;
+    // is this a weak pointer type
+    bool isWeakPointer() const;
 
-            // is this an enum type
-            bool isEnum() const;
+    // is this a generic array
+    bool isArray() const;
 
-            // is this a general pointer type
-            bool isPointer() const;
+    // is this a dynamic array
+    bool isDynamicArray() const;
 
-            // is this a shared pointer type
-            bool isStrongPointer() const;
+    // is this a static array
+    bool isStaticArray() const;
 
-            // is this a weak pointer type
-            bool isWeakPointer() const;
+    //--
 
-            // is this a generic array
-            bool isArray() const;
+    // get as class type info
+    ClassTypeInfo asClass() const;
 
-            // is this a dynamic array
-            bool isDynamicArray() const;
+    // get as class type info
+    ArrayTypeInfo asArray() const;
 
-            // is this a static array
-            bool isStaticArray() const;
+    // get as enum type info
+    EnumTypeInfo asEnum() const;
 
-            //--
+    // for pointers get the pointer class
+    ClassTypeInfo pointedClass() const;
 
-            // get as class type info
-            ClassTypeInfo asClass() const;
+    //--
 
-            // get as class type info
-            ArrayTypeInfo asArray() const;
+    INLINE bool operator==(const TypeInfo& other) const { return nativeType == other.nativeType; }
+    INLINE bool operator!=(const TypeInfo& other) const { return nativeType != other.nativeType; }
 
-            // get as enum type info
-            EnumTypeInfo asEnum() const;
+    INLINE Type rawType() const { return nativeType; }
 
-            // for pointers get the pointer class
-            ClassTypeInfo pointedClass() const;
+private:
+    Type nativeType;
+};
 
-            //--
+//----
 
-            INLINE bool operator==(const TypeInfo& other) const { return nativeType == other.nativeType; }
-            INLINE bool operator!=(const TypeInfo& other) const { return nativeType != other.nativeType; }
+// class type information wrapper for scripts
+struct BASE_SCRIPT_API ClassTypeInfo
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(ClassTypeInfo)
 
-            INLINE Type rawType() const { return nativeType; }
+public:
+    ClassTypeInfo(ClassType type = nullptr);
+    INLINE ClassTypeInfo(const ClassTypeInfo& other) = default;
+    INLINE ClassTypeInfo& operator=(const ClassTypeInfo& other) = default;
 
-        private:
-            Type nativeType;
-        };
+    //--
 
-        //----
+    // is this a valid type ?
+    bool valid() const;
 
-        // class type information wrapper for scripts
-        struct BASE_SCRIPT_API ClassTypeInfo
-        {
-            RTTI_DECLARE_NONVIRTUAL_CLASS(ClassTypeInfo)
+    // is this abstract class ?
+    bool isAbstract() const;
 
-        public:
-            ClassTypeInfo(ClassType type = nullptr);
-            INLINE ClassTypeInfo(const ClassTypeInfo& other) = default;
-            INLINE ClassTypeInfo& operator=(const ClassTypeInfo& other) = default;
+    // is this a structure type ? (not an object type)
+    bool isStruct() const;
 
-            //--
+    // is this a structure type ? (not an object type)
+    bool scripted() const;
 
-            // is this a valid type ?
-            bool valid() const;
+    // get the engine name of the class
+    StringID name() const;
 
-            // is this abstract class ?
-            bool isAbstract() const;
+    // get type info for this class
+    TypeInfo typeInfo() const;
 
-            // is this a structure type ? (not an object type)
-            bool isStruct() const;
+    // get base class
+    ClassTypeInfo baseClassInfo() const;
 
-            // is this a structure type ? (not an object type)
-            bool scripted() const;
+    //--
 
-            // get the engine name of the class
-            StringID name() const;
+    // get class type, valid only for classes deriving from object
+    SpecificClassType<IObject> classType() const;
 
-            // get type info for this class
-            TypeInfo typeInfo() const;
+    //--
 
-            // get base class
-            ClassTypeInfo baseClassInfo() const;
+    // get all properties
+    Array<PropertyInfo> properties() const;
 
-            //--
+    // get local properties of this class only
+    Array<PropertyInfo> localProperties() const;
 
-            // get class type, valid only for classes deriving from object
-            SpecificClassType<IObject> classType() const;
+    // find property
+    PropertyInfo findProperty(StringID name) const;
 
-            //--
+    //--
 
-            // get all properties
-            Array<PropertyInfo> properties() const;
+    // get all functions
+    Array<FunctionInfo> functions() const;
 
-            // get local properties of this class only
-            Array<PropertyInfo> localProperties() const;
+    // get local functions of this class only
+    Array<FunctionInfo> localFunctions() const;
 
-            // find property
-            PropertyInfo findProperty(StringID name) const;
+    // find function
+    FunctionInfo findFunction(StringID name) const;
 
-            //--
+    //--
 
-            // get all functions
-            Array<FunctionInfo> functions() const;
+    // check if this object implements given class by name (SLOWEST)
+    bool derivesFromClassName(StringID className) const;
 
-            // get local functions of this class only
-            Array<FunctionInfo> localFunctions() const;
+    // check if this object implements given class
+    bool derivesFromClassInfo(const ClassTypeInfo& classInfo) const;
 
-            // find function
-            FunctionInfo findFunction(StringID name) const;
+    // check if this object implements given class
+    bool derivesFromClass(SpecificClassType<IObject> classType) const;
 
-            //--
+    //--
 
-            // check if this object implements given class by name (SLOWEST)
-            bool derivesFromClassName(StringID className) const;
+    INLINE bool operator==(const ClassTypeInfo& other) const { return nativeType == other.nativeType; }
+    INLINE bool operator!=(const ClassTypeInfo& other) const { return nativeType != other.nativeType; }
 
-            // check if this object implements given class
-            bool derivesFromClassInfo(const ClassTypeInfo& classInfo) const;
+    INLINE ClassType rawType() const { return nativeType; }
 
-            // check if this object implements given class
-            bool derivesFromClass(SpecificClassType<IObject> classType) const;
+    //--
 
-            //--
+private:
+    ClassType nativeType;
+};
 
-            INLINE bool operator==(const ClassTypeInfo& other) const { return nativeType == other.nativeType; }
-            INLINE bool operator!=(const ClassTypeInfo& other) const { return nativeType != other.nativeType; }
+//----
 
-            INLINE ClassType rawType() const { return nativeType; }
+/// wrapper for property
+struct BASE_SCRIPT_API PropertyInfo
+{
+public:
+    RTTI_DECLARE_NONVIRTUAL_CLASS(PropertyInfo)
 
-            //--
+public:
+    PropertyInfo(const rtti::Property* prop = nullptr);
+    INLINE PropertyInfo(const PropertyInfo& other) = default;
+    INLINE PropertyInfo& operator=(const PropertyInfo& other) = default;
 
-        private:
-            ClassType nativeType;
-        };
+    // is this property valid ?
+    bool valid() const;
 
-        //----
+    // is this property scripted ?
+    bool scripted() const;
 
-        /// wrapper for property
-        struct BASE_SCRIPT_API PropertyInfo
-        {
-        public:
-            RTTI_DECLARE_NONVIRTUAL_CLASS(PropertyInfo)
+    // is this property editable ?
+    bool isEditable() const;
 
-        public:
-            PropertyInfo(const rtti::Property* prop = nullptr);
-            INLINE PropertyInfo(const PropertyInfo& other) = default;
-            INLINE PropertyInfo& operator=(const PropertyInfo& other) = default;
+    // is this property readonly ?
+    bool isReadonly() const;
 
-            // is this property valid ?
-            bool valid() const;
+    // get the class this property was defined at
+    ClassTypeInfo parentClassTypeInfo() const;
 
-            // is this property scripted ?
-            bool scripted() const;
+    // get name of the property
+    StringID name() const;
 
-            // is this property editable ?
-            bool isEditable() const;
+    // get display category of the property
+    StringID category() const;
 
-            // is this property readonly ?
-            bool isReadonly() const;
+    // get type of the property
+    TypeInfo typeInfo() const;
 
-            // get the class this property was defined at
-            ClassTypeInfo parentClassTypeInfo() const;
+    //--
 
-            // get name of the property
-            StringID name() const;
+    INLINE bool operator==(const PropertyInfo& other) const { return nativeProperty == other.nativeProperty; }
+    INLINE bool operator!=(const PropertyInfo& other) const { return nativeProperty != other.nativeProperty; }
 
-            // get display category of the property
-            StringID category() const;
+    INLINE const rtti::Property* rawProperty() const { return nativeProperty; }
 
-            // get type of the property
-            TypeInfo typeInfo() const;
+    //--
 
-            //--
+private:
+    const rtti::Property* nativeProperty;
+};
 
-            INLINE bool operator==(const PropertyInfo& other) const { return nativeProperty == other.nativeProperty; }
-            INLINE bool operator!=(const PropertyInfo& other) const { return nativeProperty != other.nativeProperty; }
+//----
 
-            INLINE const rtti::Property* rawProperty() const { return nativeProperty; }
+// array type information wrapper for scripts
+struct BASE_SCRIPT_API ArrayTypeInfo
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(ArrayTypeInfo)
 
-            //--
+public:
+    ArrayTypeInfo(const rtti::IArrayType* type = nullptr);
+    INLINE ArrayTypeInfo(const ArrayTypeInfo& other) = default;
+    INLINE ArrayTypeInfo& operator=(const ArrayTypeInfo& other) = default;
 
-        private:
-            const rtti::Property* nativeProperty;
-        };
+    //--
 
-        //----
+    // is this a valid type ?
+    bool valid() const;
 
-        // array type information wrapper for scripts
-        struct BASE_SCRIPT_API ArrayTypeInfo
-        {
-            RTTI_DECLARE_NONVIRTUAL_CLASS(ArrayTypeInfo)
+    // get type info for this class
+    TypeInfo typeInfo() const;
 
-        public:
-            ArrayTypeInfo(const rtti::IArrayType* type = nullptr);
-            INLINE ArrayTypeInfo(const ArrayTypeInfo& other) = default;
-            INLINE ArrayTypeInfo& operator=(const ArrayTypeInfo& other) = default;
+    // get the inner type of the array
+    TypeInfo innerTypeInfo() const;
 
-            //--
+    // get the engine name of the type
+    StringID name() const;
 
-            // is this a valid type ?
-            bool valid() const;
+    // is this an array with static size ?
+    bool isStaticSize() const;
 
-            // get type info for this class
-            TypeInfo typeInfo() const;
+    // get the static size for the array
+    int staticSize() const;
 
-            // get the inner type of the array
-            TypeInfo innerTypeInfo() const;
+    //--
 
-            // get the engine name of the type
-            StringID name() const;
+    INLINE bool operator==(const ArrayTypeInfo& other) const { return nativeType == other.nativeType; }
+    INLINE bool operator!=(const ArrayTypeInfo& other) const { return nativeType != other.nativeType; }
 
-            // is this an array with static size ?
-            bool isStaticSize() const;
+    INLINE const rtti::IArrayType* rawType() const { return nativeType; }
 
-            // get the static size for the array
-            int staticSize() const;
+    //--
 
-            //--
+private:
+    const rtti::IArrayType* nativeType;
+};
 
-            INLINE bool operator==(const ArrayTypeInfo& other) const { return nativeType == other.nativeType; }
-            INLINE bool operator!=(const ArrayTypeInfo& other) const { return nativeType != other.nativeType; }
+//--
 
-            INLINE const rtti::IArrayType* rawType() const { return nativeType; }
+/// type wrapper for enums
+struct BASE_SCRIPT_API EnumTypeInfo
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(EnumTypeInfo)
 
-            //--
+public:
+    EnumTypeInfo(const rtti::EnumType* type = nullptr);
+    INLINE EnumTypeInfo(const EnumTypeInfo& other) = default;
+    INLINE EnumTypeInfo& operator=(const EnumTypeInfo& other) = default;
 
-        private:
-            const rtti::IArrayType* nativeType;
-        };
+    //--
 
-        //--
+    // is this enum type valid ?
+    bool valid() const;
 
-        /// type wrapper for enums
-        struct BASE_SCRIPT_API EnumTypeInfo
-        {
-            RTTI_DECLARE_NONVIRTUAL_CLASS(EnumTypeInfo)
+    // is this enum defined in scripts
+    bool scripted() const;
 
-        public:
-            EnumTypeInfo(const rtti::EnumType* type = nullptr);
-            INLINE EnumTypeInfo(const EnumTypeInfo& other) = default;
-            INLINE EnumTypeInfo& operator=(const EnumTypeInfo& other) = default;
+    // get name of the enum
+    StringID name() const;
 
-            //--
+    // get back the generic type info
+    TypeInfo typeInfo() const;
 
-            // is this enum type valid ?
-            bool valid() const;
+    //--
 
-            // is this enum defined in scripts
-            bool scripted() const;
+    // get maximum enum value
+    int maxValue() const;
 
-            // get name of the enum
-            StringID name() const;
+    // get minumum enum value
+    int minValue() const;
 
-            // get back the generic type info
-            TypeInfo typeInfo() const;
+    // get all enum names
+    Array<StringID> options() const;
 
-            //--
+    // find value for given option name, returns default value if not found
+    int value(StringID optionName, int defaultValue);
 
-            // get maximum enum value
-            int maxValue() const;
+    // get name for given value, returns empty name if not found
+    StringID optionName(int value) const;
 
-            // get minumum enum value
-            int minValue() const;
+    // find value for given option name, returns false if not found
+    bool valueSafe(StringID optionName, int& outValue) const;
 
-            // get all enum names
-            Array<StringID> options() const;
+    //--
 
-            // find value for given option name, returns default value if not found
-            int value(StringID optionName, int defaultValue);
+    // find value for given option name, returns default value if not found
+    int64_t value64(StringID optionName, int64_t defaultValue);
 
-            // get name for given value, returns empty name if not found
-            StringID optionName(int value) const;
+    // get name for given value, returns empty name if not found
+    StringID optionName64(int64_t value) const;
 
-            // find value for given option name, returns false if not found
-            bool valueSafe(StringID optionName, int& outValue) const;
+    // find value for given option name, returns false if not found
+    bool valueSafe64(StringID optionName, int64_t& outValue) const;
 
-            //--
+    //--
 
-            // find value for given option name, returns default value if not found
-            int64_t value64(StringID optionName, int64_t defaultValue);
+    INLINE bool operator==(const EnumTypeInfo& other) const { return nativeType == other.nativeType; }
+    INLINE bool operator!=(const EnumTypeInfo& other) const { return nativeType != other.nativeType; }
 
-            // get name for given value, returns empty name if not found
-            StringID optionName64(int64_t value) const;
+    INLINE const rtti::EnumType* rawType() const { return nativeType; }
 
-            // find value for given option name, returns false if not found
-            bool valueSafe64(StringID optionName, int64_t& outValue) const;
+    //--
 
-            //--
+private:
+    const rtti::EnumType* nativeType;
+};
 
-            INLINE bool operator==(const EnumTypeInfo& other) const { return nativeType == other.nativeType; }
-            INLINE bool operator!=(const EnumTypeInfo& other) const { return nativeType != other.nativeType; }
+//--
 
-            INLINE const rtti::EnumType* rawType() const { return nativeType; }
+/// type wrapper for function
+struct BASE_SCRIPT_API FunctionInfo
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(FunctionInfo)
 
-            //--
+public:
+    FunctionInfo(const rtti::Function* func = nullptr);
+    INLINE FunctionInfo(const FunctionInfo& other) = default;
+    INLINE FunctionInfo& operator=(const FunctionInfo& other) = default;
 
-        private:
-            const rtti::EnumType* nativeType;
-        };
+    //--
 
-        //--
+    // is this function valid ?
+    bool valid() const;
 
-        /// type wrapper for function
-        struct BASE_SCRIPT_API FunctionInfo
-        {
-            RTTI_DECLARE_NONVIRTUAL_CLASS(FunctionInfo)
+    // is this function defined in scripts
+    bool scripted() const;
 
-        public:
-            FunctionInfo(const rtti::Function* func = nullptr);
-            INLINE FunctionInfo(const FunctionInfo& other) = default;
-            INLINE FunctionInfo& operator=(const FunctionInfo& other) = default;
+    // is this function static ?
+    bool isStatic() const;
 
-            //--
+    // is this function global ?
+    bool isGlobal() const;
 
-            // is this function valid ?
-            bool valid() const;
+    // get name of the function
+    StringID name() const;
 
-            // is this function defined in scripts
-            bool scripted() const;
+    // get the owning class, invalid for global functions
+    ClassTypeInfo parentClassTypeInfo() const;
 
-            // is this function static ?
-            bool isStatic() const;
+    //--
 
-            // is this function global ?
-            bool isGlobal() const;
+    // get return type
+    TypeInfo returnType() const;
 
-            // get name of the function
-            StringID name() const;
+    // get number of arguments
+    int argumentCount() const;
 
-            // get the owning class, invalid for global functions
-            ClassTypeInfo parentClassTypeInfo() const;
+    // get type of n-th argument
+    TypeInfo argumentTypeInfo(int index) const;
 
-            //--
+    //--
 
-            // get return type
-            TypeInfo returnType() const;
+    INLINE bool operator==(const FunctionInfo& other) const { return nativeFunction == other.nativeFunction; }
+    INLINE bool operator!=(const FunctionInfo& other) const { return nativeFunction != other.nativeFunction; }
 
-            // get number of arguments
-            int argumentCount() const;
+    INLINE const rtti::Function* rawFunction() const { return nativeFunction; }
 
-            // get type of n-th argument
-            TypeInfo argumentTypeInfo(int index) const;
+    //--
 
-            //--
+private:
+    const rtti::Function* nativeFunction;
+};
 
-            INLINE bool operator==(const FunctionInfo& other) const { return nativeFunction == other.nativeFunction; }
-            INLINE bool operator!=(const FunctionInfo& other) const { return nativeFunction != other.nativeFunction; }
+//--
 
-            INLINE const rtti::Function* rawFunction() const { return nativeFunction; }
 
-            //--
-
-        private:
-            const rtti::Function* nativeFunction;
-        };
-
-
-    } // script
-} // base
+END_BOOMER_NAMESPACE(base::script)

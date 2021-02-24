@@ -11,50 +11,46 @@
 #include "apiObject.h"
 #include "rendering/device/include/renderingGraphicsStates.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api)
+
+//---
+
+/// graphics pipeline setup - all you need to draw (besides dynamic states...)
+class RENDERING_API_COMMON_API IBaseGraphicsPipeline : public IBaseObject
 {
-	namespace api
-	{
+public:
+	IBaseGraphicsPipeline(IBaseThread* owner, const IBaseShaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates);
+	virtual ~IBaseGraphicsPipeline();
 
-		//---
+	//--
 
-		/// graphics pipeline setup - all you need to draw (besides dynamic states...)
-		class RENDERING_API_COMMON_API IBaseGraphicsPipeline : public IBaseObject
-		{
-		public:
-			IBaseGraphicsPipeline(IBaseThread* owner, const IBaseShaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates);
-			virtual ~IBaseGraphicsPipeline();
+	static const auto STATIC_TYPE = ObjectType::GraphicsPipelineObject;
 
-			//--
+	//--
 
-			static const auto STATIC_TYPE = ObjectType::GraphicsPipelineObject;
+	// internal unique key (can be used to find compiled data in cache)
+	INLINE uint64_t key() const { return m_key; }
 
-			//--
+	// render state key
+	INLINE uint64_t mergedRenderStateKey() const { return m_mergedRenderStatesKey; }
 
-			// internal unique key (can be used to find compiled data in cache)
-			INLINE uint64_t key() const { return m_key; }
+	// shaders used to build the pipeline
+	INLINE const IBaseShaders* shaders() const { return m_shaders; }
 
-			// render state key
-			INLINE uint64_t mergedRenderStateKey() const { return m_mergedRenderStatesKey; }
+	// rendering states
+	INLINE const GraphicsRenderStatesSetup& mergedRenderStates() const { return m_mergedRenderStates; }
 
-			// shaders used to build the pipeline
-			INLINE const IBaseShaders* shaders() const { return m_shaders; }
+	//--
 
-			// rendering states
-			INLINE const GraphicsRenderStatesSetup& mergedRenderStates() const { return m_mergedRenderStates; }
-
-			//--
-
-		private:
-			uint64_t m_key = 0;
+private:
+	uint64_t m_key = 0;
 			
-			const IBaseShaders* m_shaders = nullptr;
+	const IBaseShaders* m_shaders = nullptr;
 			
-			GraphicsRenderStatesSetup m_mergedRenderStates;
-			uint64_t m_mergedRenderStatesKey;
-		};
+	GraphicsRenderStatesSetup m_mergedRenderStates;
+	uint64_t m_mergedRenderStatesKey;
+};
 
-		//---
+//---
 
-	} // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api)

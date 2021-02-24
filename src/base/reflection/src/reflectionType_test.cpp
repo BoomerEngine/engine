@@ -12,37 +12,35 @@
 #include "base/object/include/object.h"
 #include "base/object/include/rttiClassRefType.h"
 
-using namespace base;
-
 DECLARE_TEST_FILE(ReflectionType);
 
-namespace tests
+BEGIN_BOOMER_NAMESPACE(base::test)
+
+class BaseClassA : public IObject
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(BaseClassA, IObject);
+};
 
-    class BaseClassA : public IObject
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(BaseClassA, IObject);
-    };
+class DevClassB : public BaseClassA
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(DevClassB, BaseClassA);
+};
 
-    class DevClassB : public BaseClassA
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(DevClassB, BaseClassA);
-    };
+class DevClassC : public BaseClassA
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(DevClassC, BaseClassA);
+};
 
-    class DevClassC : public BaseClassA
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(DevClassC, BaseClassA);
-    };
+RTTI_BEGIN_TYPE_CLASS(BaseClassA);
+RTTI_END_TYPE();
 
-    RTTI_BEGIN_TYPE_CLASS(BaseClassA);
-    RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_CLASS(DevClassB);
+RTTI_END_TYPE();
 
-    RTTI_BEGIN_TYPE_CLASS(DevClassB);
-    RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_CLASS(DevClassC);
+RTTI_END_TYPE();
 
-    RTTI_BEGIN_TYPE_CLASS(DevClassC);
-    RTTI_END_TYPE();
-}
+//--
 
 template< typename SrcType, typename DestType>
 static bool Convert(const SrcType& a, const DestType& b)
@@ -656,84 +654,86 @@ TEST(TypeConversion, HandleToBool)
     ObjectPtr nullHandle;
     TestConvert<ObjectPtr, bool>(nullHandle, false);
 
-    ObjectPtr validHandle = RefNew<tests::BaseClassA>();
+    ObjectPtr validHandle = RefNew<BaseClassA>();
     TestConvert<ObjectPtr, bool>(validHandle, true);
 }
 
 TEST(TypeConversion, HandleUpCast)
 {
-    RefPtr<tests::DevClassB> handleB = RefNew<tests::DevClassB>();
-    RefPtr<tests::BaseClassA> handleBase(handleB);
+    RefPtr<DevClassB> handleB = RefNew<DevClassB>();
+    RefPtr<BaseClassA> handleBase(handleB);
 
     TestConvert(handleB, handleBase);
 }
 
 TEST(TypeConversion, HandleDownCast)
 {
-    RefPtr<tests::BaseClassA> handleBase = RefNew<tests::DevClassB>();
-    RefPtr<tests::DevClassB> handleB = rtti_cast<tests::DevClassB>(handleBase);
+    RefPtr<BaseClassA> handleBase = RefNew<DevClassB>();
+    RefPtr<DevClassB> handleB = rtti_cast<DevClassB>(handleBase);
 
     TestConvert(handleBase, handleB);
 }
 
 TEST(TypeConversion, HandleUnrelatedDownCast)
 {
-    RefPtr<tests::BaseClassA> handleBase = RefNew<tests::DevClassB>();
-    RefPtr<tests::DevClassC> handleC = rtti_cast<tests::DevClassC>(handleBase);
+    RefPtr<BaseClassA> handleBase = RefNew<DevClassB>();
+    RefPtr<DevClassC> handleC = rtti_cast<DevClassC>(handleBase);
 
     TestConvert(handleBase, handleC, false);
 }
 
 TEST(TypeConversion, HandleUnrelatedClasses)
 {
-    RefPtr<tests::DevClassB> handleB = RefNew<tests::DevClassB>();
-    TestNotConvert< RefPtr<tests::DevClassB>, RefPtr<tests::DevClassC> >(handleB);
+    RefPtr<DevClassB> handleB = RefNew<DevClassB>();
+    TestNotConvert< RefPtr<DevClassB>, RefPtr<DevClassC> >(handleB);
 }
 
 TEST(TypeConversion, BaseClassRefCast)
 {
-    SpecificClassType<tests::BaseClassA> handleA(reflection::ClassID<tests::DevClassB>());
-    SpecificClassType<tests::DevClassB> handleB = rtti_cast<tests::DevClassB>(handleA);
+    SpecificClassType<BaseClassA> handleA(reflection::ClassID<DevClassB>());
+    SpecificClassType<DevClassB> handleB = rtti_cast<DevClassB>(handleA);
     EXPECT_EQ(handleA.ptr(), handleB.ptr());
 }
 
 TEST(TypeConversion, BaseClassRefFailedCast)
 {
-    SpecificClassType<tests::BaseClassA> handleA(reflection::ClassID<tests::DevClassC>());
-    SpecificClassType<tests::DevClassB> handleB = rtti_cast<tests::DevClassB>(handleA);
+    SpecificClassType<BaseClassA> handleA(reflection::ClassID<DevClassC>());
+    SpecificClassType<DevClassB> handleB = rtti_cast<DevClassB>(handleA);
     EXPECT_EQ(nullptr, handleB.ptr());
 }
 
 TEST(TypeConversion, BaseClassUpCast)
 {
-    SpecificClassType<tests::DevClassB> handleA(reflection::ClassID<tests::DevClassB>());
-    SpecificClassType<tests::BaseClassA> handleB = rtti_cast<tests::BaseClassA>(handleA);
+    SpecificClassType<DevClassB> handleA(reflection::ClassID<DevClassB>());
+    SpecificClassType<BaseClassA> handleB = rtti_cast<BaseClassA>(handleA);
     EXPECT_EQ(handleA.ptr(), handleB.ptr());
 }
 
 TEST(TypeConversion, BaseClassRefCastRTTI)
 {
-    SpecificClassType<tests::BaseClassA> handleA(reflection::ClassID<tests::DevClassB>());
-    SpecificClassType<tests::DevClassB> handleB = rtti_cast<tests::DevClassB>(handleA);
+    SpecificClassType<BaseClassA> handleA(reflection::ClassID<DevClassB>());
+    SpecificClassType<DevClassB> handleB = rtti_cast<DevClassB>(handleA);
     TestConvert(handleA, handleB);
 }
 
 TEST(TypeConversion, BaseClassRefNotRelatedCastRTTI)
 {
-    SpecificClassType<tests::DevClassC> handleA(reflection::ClassID<tests::DevClassC>());
-    TestNotConvert< SpecificClassType<tests::DevClassC>, SpecificClassType<tests::DevClassB> >(handleA);
+    SpecificClassType<DevClassC> handleA(reflection::ClassID<DevClassC>());
+    TestNotConvert< SpecificClassType<DevClassC>, SpecificClassType<DevClassB> >(handleA);
 }
 
 TEST(TypeConversion, BaseClassRefNotCompataibleCastRTTI)
 {
-    SpecificClassType<tests::BaseClassA> handleA(reflection::ClassID<tests::BaseClassA>());
-    SpecificClassType<tests::DevClassB> handleB = rtti_cast<tests::DevClassB>(handleA); // null
+    SpecificClassType<BaseClassA> handleA(reflection::ClassID<BaseClassA>());
+    SpecificClassType<DevClassB> handleB = rtti_cast<DevClassB>(handleA); // null
     TestConvert(handleA, handleB, false);
 }
 
 TEST(TypeConversion, BaseClassUpCastRTTI)
 {
-    SpecificClassType<tests::DevClassB> handleA(reflection::ClassID<tests::DevClassB>());
-    SpecificClassType<tests::BaseClassA> handleB = rtti_cast<tests::BaseClassA>(handleA);
+    SpecificClassType<DevClassB> handleA(reflection::ClassID<DevClassB>());
+    SpecificClassType<BaseClassA> handleB = rtti_cast<BaseClassA>(handleA);
     TestConvert(handleA, handleB);
 }
+
+END_BOOMER_NAMESPACE(base::test)

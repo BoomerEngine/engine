@@ -9,10 +9,8 @@
 #include "build.h"
 #include "renderingFrameParams.h"
 
-namespace rendering
-{
-    namespace scene
-    {
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
+
         //--
 
         base::ConfigProperty<float> cvFrameResolutionScaleFactor("Rendering.Viewport", "ResolutionScaleFactor", 1.0f);

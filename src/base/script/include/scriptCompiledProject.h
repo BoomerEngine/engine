@@ -11,35 +11,32 @@
 #include "base/resource/include/resource.h"
 #include "scriptPortableData.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+//---
+
+class PortableData;
+
+// compiled script project, contains metadata
+class BASE_SCRIPT_API CompiledProject : public base::res::IResource
 {
-    namespace script
-    {
-       //---
+    RTTI_DECLARE_VIRTUAL_CLASS(CompiledProject, base::res::IResource);
 
-       class PortableData;
+public:
+    CompiledProject();
+    CompiledProject(const RefPtr<PortableData>& data);
 
-        // compiled script project, contains metadata
-        class BASE_SCRIPT_API CompiledProject : public base::res::IResource
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(CompiledProject, base::res::IResource);
+    //--
 
-        public:
-            CompiledProject();
-            CompiledProject(const RefPtr<PortableData>& data);
+    // get compiled script data
+    INLINE const RefPtr<PortableData>& data() const { return m_data; }
 
-            //--
+    //--
 
-            // get compiled script data
-            INLINE const RefPtr<PortableData>& data() const { return m_data; }
+private:
+    RefPtr<PortableData> m_data;
+};
 
-            //--
+//---
 
-        private:
-            RefPtr<PortableData> m_data;
-        };
-
-        //---
-
-    } // script
-} // base
+END_BOOMER_NAMESPACE(base::script)

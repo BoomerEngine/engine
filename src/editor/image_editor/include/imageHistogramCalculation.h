@@ -11,60 +11,59 @@
 #include "base/ui/include/uiElement.h"
 #include "rendering/device/include/renderingResources.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+// computed histogram
+struct ImageHistogramData : public base::IReferencable
 {
+    uint8_t channel = 0;
+    float minValue = 0.0f;
+    float maxValue = 1.0f;
+    uint32_t totalPixelCount = 0;
+    uint32_t maxBucketValue = 0;
+    base::Array<uint32_t> buckets;
+};
 
-    //--
+//--
 
-    // computed histogram
-    struct ImageHistogramData : public base::IReferencable
-    {
-        uint8_t channel = 0;
-        float minValue = 0.0f;
-        float maxValue = 1.0f;
-        uint32_t totalPixelCount = 0;
-        uint32_t maxBucketValue = 0;
-        base::Array<uint32_t> buckets;
-    };
+// histogram computation pending job
+class EDITOR_IMAGE_EDITOR_API ImageHistogramPendingData : public rendering::IDownloadDataSink
+{
+public:
+    ImageHistogramPendingData(uint32_t totalPixelCount, uint32_t numBuckets, uint8_t channel);
+    ~ImageHistogramPendingData();
 
-    //--
+    // get the computed histogram data, valid only after some time
+    const base::RefPtr<ImageHistogramData> fetchDataIfReady();
 
-    // histogram computation pending job
-    class EDITOR_IMAGE_EDITOR_API ImageHistogramPendingData : public rendering::IDownloadDataSink
-    {
-    public:
-        ImageHistogramPendingData(uint32_t totalPixelCount, uint32_t numBuckets, uint8_t channel);
-        ~ImageHistogramPendingData();
+private:
+    base::SpinLock m_lock;
+    base::RefPtr<ImageHistogramData> m_data;
 
-        // get the computed histogram data, valid only after some time
-        const base::RefPtr<ImageHistogramData> fetchDataIfReady();
+    uint32_t m_totalPixelCount = 0;
+    uint32_t m_numBuckets = 0;
+    uint8_t m_channel = 0;
 
-    private:
-        base::SpinLock m_lock;
-        base::RefPtr<ImageHistogramData> m_data;
+	//--
 
-        uint32_t m_totalPixelCount = 0;
-        uint32_t m_numBuckets = 0;
-        uint8_t m_channel = 0;
+	virtual void processRetreivedData(const void* dataPtr, uint32_t dataSize, const rendering::ResourceCopyRange& info) override final;
+};
 
-		//--
+//--
 
-		virtual void processRetreivedData(const void* dataPtr, uint32_t dataSize, const rendering::ResourceCopyRange& info) override final;
-    };
+struct ImageComputationSettings
+{
+    float alphaThreshold = 0.0f;
+    int mipIndex = 0;
+    int sliceIndex = 0;
+    uint8_t channel = 0;        
+};
 
-    //--
+/// compute histogram from rendering image, uses GPU compute shaders
+extern EDITOR_IMAGE_EDITOR_API base::RefPtr<ImageHistogramPendingData> ComputeHistogram(const rendering::ImageSampledView* view, const ImageComputationSettings& settings);
 
-    struct ImageComputationSettings
-    {
-        float alphaThreshold = 0.0f;
-        int mipIndex = 0;
-        int sliceIndex = 0;
-        uint8_t channel = 0;        
-    };
+//--
 
-    /// compute histogram from rendering image, uses GPU compute shaders
-    extern EDITOR_IMAGE_EDITOR_API base::RefPtr<ImageHistogramPendingData> ComputeHistogram(const rendering::ImageSampledView* view, const ImageComputationSettings& settings);
-
-    //--
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

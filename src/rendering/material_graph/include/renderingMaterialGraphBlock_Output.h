@@ -10,31 +10,31 @@
 
 #include "renderingMaterialGraphBlock.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//--
+
+/// an output block for the material graph
+class RENDERING_MATERIAL_GRAPH_API MaterialGraphBlockOutput : public MaterialGraphBlock
 {
-    //--
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlockOutput, MaterialGraphBlock);
 
-    /// an output block for the material graph
-    class RENDERING_MATERIAL_GRAPH_API MaterialGraphBlockOutput : public MaterialGraphBlock
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlockOutput, MaterialGraphBlock);
-
-    public:
-        MaterialGraphBlockOutput();
+public:
+    MaterialGraphBlockOutput();
         
-        // determine material metadata based on the output block
-        virtual void resolveMetadata(MaterialTemplateMetadata& outMetadata) const;
+    // determine material metadata based on the output block
+    virtual void resolveMetadata(MaterialTemplateMetadata& outMetadata) const;
 
-        // compile the pixel shader side of the material block
-        virtual void compilePixelFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const = 0;
+    // compile the pixel shader side of the material block
+    virtual void compilePixelFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const = 0;
 
-        // compile the vertex shader side of this material block
-        virtual void compileVertexFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const;
+    // compile the vertex shader side of this material block
+    virtual void compileVertexFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const;
 
-    private:
-        virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override;
-    };
+private:
+    virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override;
+};
 
-    //--
+//--
     
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

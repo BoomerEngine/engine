@@ -8,33 +8,28 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::mem)
+
+/// ANSI pass-through allocator
+class AnsiAllocator
 {
-    namespace mem
-    {
+public:
+    static const uint32_t DEFAULT_ALIGNMNET = 8;
 
-        /// ANSI pass-through allocator
-        class AnsiAllocator
-        {
-        public:
-            static const uint32_t DEFAULT_ALIGNMNET = 8;
+    // allocate memory block
+    static void* allocate(PoolTag id, size_t size, size_t alignmemnt, const char* typeName);
 
-            // allocate memory block
-            static void* allocate(PoolTag id, size_t size, size_t alignmemnt, const char* typeName);
+    // deallocate memory block
+    static void deallocate(void* mem);
 
-            // deallocate memory block
-            static void deallocate(void* mem);
+    // resize allocated memory block
+    static void* reallocate(PoolTag id, void* mem, size_t newSize, size_t alignmemnt, const char* typeName);
 
-            // resize allocated memory block
-            static void* reallocate(PoolTag id, void* mem, size_t newSize, size_t alignmemnt, const char* typeName);
+    // print memory leaks
+    static void printLeaks();
 
-            // print memory leaks
-            static void printLeaks();
+    // validate heap status
+    static void validateHeap(void* freedPtr);
+};
 
-            // validate heap status
-            static void validateHeap(void* freedPtr);
-        };
-
-    } // mem
-
-} // base
+END_BOOMER_NAMESPACE(base::mem)

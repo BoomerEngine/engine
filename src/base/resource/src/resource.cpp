@@ -14,137 +14,133 @@
 #include "resourcePath.h"
 #include "resourceTags.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+//---
+
+static std::atomic<ResourceUniqueID> GResourceUniqueID(1);
+
+//---
+
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IResource);
+    RTTI_METADATA(ResourceDataVersionMetadata).version(0);
+    RTTI_PROPERTY(m_metadata);
+RTTI_END_TYPE();
+
+IResource::IResource()
+    : m_runtimeUniqueId(++GResourceUniqueID)
+    , m_runtimeVersion(0)
+    , m_loader(nullptr)
+{}
+
+IResource::~IResource()
 {
-    namespace res
+    if (auto loader = m_loader.lock())
     {
+        TRACE_INFO("Destroying resource 0x{} '{}'", Hex(this), path());
+        loader->notifyResourceUnloaded(path());
+    }
+}
 
-        //---
+//DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_RELOADED, m_reloadedData);
 
-        static std::atomic<ResourceUniqueID> GResourceUniqueID(1);
+void IResource::metadata(const MetadataPtr& data)
+{
+    DEBUG_CHECK_EX(!data->parent(), "Metadata is already parented");
+    m_metadata = data;
+    m_metadata->parent(this);
+}
 
-        //---
+void IResource::markModified()
+{
+    // invalidate runtime version of the resource, this may cause refresh of the preview panels or other cached data
+    invalidateRuntimeVersion();
 
-        RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IResource);
-            RTTI_METADATA(ResourceDataVersionMetadata).version(0);
-            RTTI_PROPERTY(m_metadata);
-        RTTI_END_TYPE();
+    // this resource may be contained inside other file, we still need to propagate
+    TBaseClass::markModified();
 
-        IResource::IResource()
-            : m_runtimeUniqueId(++GResourceUniqueID)
-            , m_runtimeVersion(0)
-            , m_loader(nullptr)
-        {}
+    // mark as modified only if we are standalone resource
+    if (!parent() && m_path)
+    {
+        auto selfRef = ResourcePtr(AddRef(this));
+        DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_MODIFIED, selfRef);
+    }
+}
 
-        IResource::~IResource()
-        {
-            if (auto loader = m_loader.lock())
-            {
-                TRACE_INFO("Destroying resource 0x{} '{}'", Hex(this), path());
-                loader->notifyResourceUnloaded(path());
-            }
-        }
+void IResource::invalidateRuntimeVersion()
+{
+    m_runtimeVersion += 1;
+}
 
-        //DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_RELOADED, m_reloadedData);
+//--
 
-        void IResource::metadata(const MetadataPtr& data)
-        {
-            DEBUG_CHECK_EX(!data->parent(), "Metadata is already parented");
-            m_metadata = data;
-            m_metadata->parent(this);
-        }
+SpecificClassType<IResource> IResource::FindResourceClassByHash(ResourceClassHash hash)
+{
+    return prv::ResourceClassLookup::GetInstance().resolveResourceClassHash(hash);
+}
 
-        void IResource::markModified()
-        {
-            // invalidate runtime version of the resource, this may cause refresh of the preview panels or other cached data
-            invalidateRuntimeVersion();
+SpecificClassType<IResource> IResource::FindResourceClassByExtension(StringView extension)
+{
+    return prv::ResourceClassLookup::GetInstance().resolveResourceExtension(extension);
+}
 
-            // this resource may be contained inside other file, we still need to propagate
-            TBaseClass::markModified();
+SpecificClassType<IResource> IResource::FindResourceClassByPath(StringView path)
+{
+    if (path.empty())
+        return nullptr;
 
-            // mark as modified only if we are standalone resource
-            if (!parent() && m_path)
-            {
-                auto selfRef = ResourcePtr(AddRef(this));
-                DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_MODIFIED, selfRef);
-            }
-        }
+    auto ext = path.afterFirst(".");
+    if (ext.empty())
+        return nullptr;
 
-        void IResource::invalidateRuntimeVersion()
-        {
-            m_runtimeVersion += 1;
-        }
+    return FindResourceClassByExtension(ext);
+}
 
-        //--
+StringBuf IResource::GetResourceDescriptionForClass(ClassType resourceClass)
+{
+    if (!resourceClass)
+        return StringBuf("None");
 
-        SpecificClassType<IResource> IResource::FindResourceClassByHash(ResourceClassHash hash)
-        {
-            return prv::ResourceClassLookup::GetInstance().resolveResourceClassHash(hash);
-        }
+    auto descMetaData  = resourceClass->findMetadata<ResourceDescriptionMetadata>();
+    if (descMetaData && descMetaData->description() && *descMetaData->description())
+        return StringBuf(descMetaData->description());
 
-        SpecificClassType<IResource> IResource::FindResourceClassByExtension(StringView extension)
-        {
-            return prv::ResourceClassLookup::GetInstance().resolveResourceExtension(extension);
-        }
+    if (resourceClass->shortName())
+        return StringBuf(resourceClass->shortName().view());
 
-        SpecificClassType<IResource> IResource::FindResourceClassByPath(StringView path)
-        {
-            if (path.empty())
-                return nullptr;
+    return StringBuf(resourceClass->name().view().afterLast("::"));
+}
 
-            auto ext = path.afterFirst(".");
-            if (ext.empty())
-                return nullptr;
+StringBuf IResource::GetResourceExtensionForClass(ClassType resourceClass)
+{
+    if (!resourceClass)
+        return StringBuf::EMPTY();
 
-            return FindResourceClassByExtension(ext);
-        }
+    auto extMetaData = resourceClass->findMetadata<ResourceExtensionMetadata>();
+    if (extMetaData)
+        return StringBuf(extMetaData->extension());
 
-        StringBuf IResource::GetResourceDescriptionForClass(ClassType resourceClass)
-        {
-            if (!resourceClass)
-                return StringBuf("None");
+    return StringBuf::EMPTY();
+}
 
-            auto descMetaData  = resourceClass->findMetadata<ResourceDescriptionMetadata>();
-            if (descMetaData && descMetaData->description() && *descMetaData->description())
-                return StringBuf(descMetaData->description());
+void IResource::discardEditorData()
+{
+}
 
-            if (resourceClass->shortName())
-                return StringBuf(resourceClass->shortName().view());
+bool IResource::calcResourceStreamingDistance(float& outDistance) const
+{
+    return false;
+}
 
-            return StringBuf(resourceClass->name().view().afterLast("::"));
-        }
+void IResource::bindToLoader(ResourceLoader* loader, const ResourcePath& path)
+{
+    DEBUG_CHECK_RETURN_EX(m_loader == nullptr, "Resource already has a loader");
+    DEBUG_CHECK_RETURN_EX(!m_path, "Resource already has a loading path");
 
-        StringBuf IResource::GetResourceExtensionForClass(ClassType resourceClass)
-        {
-            if (!resourceClass)
-                return StringBuf::EMPTY();
+    m_loader = loader;
+    m_path = path;
+}
 
-            auto extMetaData = resourceClass->findMetadata<ResourceExtensionMetadata>();
-            if (extMetaData)
-                return StringBuf(extMetaData->extension());
+//--
 
-            return StringBuf::EMPTY();
-        }
-
-        void IResource::discardEditorData()
-        {
-        }
-
-        bool IResource::calcResourceStreamingDistance(float& outDistance) const
-        {
-            return false;
-        }
-
-        void IResource::bindToLoader(ResourceLoader* loader, const ResourcePath& path)
-        {
-            DEBUG_CHECK_RETURN_EX(m_loader == nullptr, "Resource already has a loader");
-            DEBUG_CHECK_RETURN_EX(!m_path, "Resource already has a loading path");
-
-            m_loader = loader;
-            m_path = path;
-        }
-
-        //--
-
-    } // res
-} // base
+END_BOOMER_NAMESPACE(base::res)

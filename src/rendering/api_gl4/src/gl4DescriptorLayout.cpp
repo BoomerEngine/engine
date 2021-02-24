@@ -11,10 +11,7 @@
 #include "gl4ObjectCache.h"
 #include "gl4Thread.h"
 
-namespace rendering
-{
-    namespace api
-    {
+BEGIN_BOOMER_NAMESPACE(rendering::api)
         namespace gl4
         {
             //--

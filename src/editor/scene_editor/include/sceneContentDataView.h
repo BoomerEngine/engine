@@ -9,20 +9,20 @@
 #pragma once
 #include "base/object/include/dataView.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+struct SceneContentEditableObject
 {
-    //--
+    StringBuf name;
+    SceneContentEntityNodePtr owningNode;
+    ObjectIndirectTemplatePtr editableData;
+    Array<ObjectIndirectTemplatePtr> baseData;
 
-    struct SceneContentEditableObject
-    {
-        StringBuf name;
-        SceneContentEntityNodePtr owningNode;
-        ObjectIndirectTemplatePtr editableData;
-        Array<ObjectIndirectTemplatePtr> baseData;
+    DataViewPtr createDataView() const;
+};
 
-        DataViewPtr createDataView() const;
-    };
+//--
 
-    //--
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

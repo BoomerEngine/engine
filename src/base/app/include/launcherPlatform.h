@@ -8,70 +8,66 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::app)
+
+class IApplication;
+class CommandLine;
+
+END_BOOMER_NAMESPACE(base::app);
+
+BEGIN_BOOMER_NAMESPACE(base::platform)
+
+// platform helper object - deals with initialization, ticking and everything else
+class BASE_APP_API Platform
 {
-    namespace app
-    {
-        class IApplication;
-        class CommandLine;
-    }
+public:
+    //--
 
-    namespace platform
-    {
+    /// start application, returns true if application was initialized or false if it failed
+    /// if application is start than the update can be started
+    bool platformStart(const app::CommandLine& cmdline, app::IApplication* localApplication);
 
-        // platform helper object - deals with initialization, ticking and everything else
-        class BASE_APP_API Platform
-        {
-        public:
-            //--
+    /// perform a single step of application update
+    /// will return false if application or anybody else requested exit via requestExit function
+    bool platformUpdate();
 
-            /// start application, returns true if application was initialized or false if it failed
-            /// if application is start than the update can be started
-            bool platformStart(const app::CommandLine& cmdline, app::IApplication* localApplication);
+    /// called between platform updates, can be used to throttle the execution
+    void platformIdle();
 
-            /// perform a single step of application update
-            /// will return false if application or anybody else requested exit via requestExit function
-            bool platformUpdate();
+    /// shutdown application and cleanup
+    /// should be called to avoid nasty implicit call from automatic destructor
+    void platformCleanup();
 
-            /// called between platform updates, can be used to throttle the execution
-            void platformIdle();
+    //--
 
-            /// shutdown application and cleanup
-            /// should be called to avoid nasty implicit call from automatic destructor
-            void platformCleanup();
+    /// request application exit, this will cause update() to return false on next call
+    void requestExit(const char* reason);
 
-            //--
+    //--
 
-            /// request application exit, this will cause update() to return false on next call
-            void requestExit(const char* reason);
+    /// get the application we are running
+    /// NOTE: can be used to access the "App Singleton":  (MyApp*)base::platform::GetLaunchPlatform().application()
+    /// NOTE: this MAY be null when running in a "service only" mode
+    INLINE app::IApplication* application() const { return m_application; }
 
-            //--
+    ///--
 
-            /// get the application we are running
-            /// NOTE: can be used to access the "App Singleton":  (MyApp*)base::platform::GetLaunchPlatform().application()
-            /// NOTE: this MAY be null when running in a "service only" mode
-            INLINE app::IApplication* application() const { return m_application; }
-
-            ///--
-
-            /// do we have debugger attached ?
-            static bool HasDebuggerAttached();
+    /// do we have debugger attached ?
+    static bool HasDebuggerAttached();
             
-        protected:
-            virtual ~Platform(); // NEVER CALLED!
-            Platform();
+protected:
+    virtual ~Platform(); // NEVER CALLED!
+    Platform();
 
-            virtual bool handleStart(const app::CommandLine& cmdline, app::IApplication* localApplication) = 0;
-            virtual void handleUpdate() = 0;
-            virtual void handleCleanup() = 0;
+    virtual bool handleStart(const app::CommandLine& cmdline, app::IApplication* localApplication) = 0;
+    virtual void handleUpdate() = 0;
+    virtual void handleCleanup() = 0;
 
-            std::atomic<uint32_t> m_exitRequestsed;
-            app::IApplication* m_application;
-        };
+    std::atomic<uint32_t> m_exitRequestsed;
+    app::IApplication* m_application;
+};
 
-        // get the platform launcher object, there's only one per-platform so there's no point in dynamically instancing it
-        extern BASE_APP_API Platform& GetLaunchPlatform();
+// get the platform launcher object, there's only one per-platform so there's no point in dynamically instancing it
+extern BASE_APP_API Platform& GetLaunchPlatform();
 
-    } // platform
-
-} // base
+END_BOOMER_NAMESPACE(base::platform);

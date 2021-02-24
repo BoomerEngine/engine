@@ -11,29 +11,29 @@
 #include "rttiNativeClassType.h"
 #include "rttiTypeSystem.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//----
+
+static std::atomic<uint32_t> GActionSequenceNumber(1);
+
+//----
+
+IAction::IAction()
+    : m_sequenceNumber(GActionSequenceNumber.load())
+{}
+
+IAction::~IAction()
+{}
+
+//--
+
+void IAction::BumpSequenceNumber()
 {
-    //----
+    GActionSequenceNumber++;
+}
 
-    static std::atomic<uint32_t> GActionSequenceNumber(1);
+//----
 
-    //----
-
-    IAction::IAction()
-        : m_sequenceNumber(GActionSequenceNumber.load())
-    {}
-
-    IAction::~IAction()
-    {}
-
-    //--
-
-    void IAction::BumpSequenceNumber()
-    {
-        GActionSequenceNumber++;
-    }
-
-    //----
-
-} // base
+END_BOOMER_NAMESPACE(base)
 

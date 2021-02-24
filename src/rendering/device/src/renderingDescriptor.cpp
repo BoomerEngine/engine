@@ -10,105 +10,104 @@
 #include "renderingDescriptor.h"
 #include "renderingObject.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//--
+
+void DescriptorEntry::view(const IDeviceObjectView* ptr, uint32_t offset/*= 0*/)
 {
-
-    //--
-
-    void DescriptorEntry::view(const IDeviceObjectView* ptr, uint32_t offset/*= 0*/)
-    {
-        DEBUG_CHECK_RETURN_EX(ptr != nullptr, "Trying to bind NULL view to descriptor");
-        DEBUG_CHECK_RETURN_EX(id.empty(), "Entry is already bound");
-        DEBUG_CHECK_RETURN_EX(type == DeviceObjectViewType::Invalid, "Entry is already bound");
+    DEBUG_CHECK_RETURN_EX(ptr != nullptr, "Trying to bind NULL view to descriptor");
+    DEBUG_CHECK_RETURN_EX(id.empty(), "Entry is already bound");
+    DEBUG_CHECK_RETURN_EX(type == DeviceObjectViewType::Invalid, "Entry is already bound");
         
 #ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
-		viewPtr = ptr;
+	viewPtr = ptr;
 #endif
 
-        this->id = ptr->viewId();
-        this->type = ptr->viewType();
-        this->offset = offset;
-    }
+    this->id = ptr->viewId();
+    this->type = ptr->viewType();
+    this->offset = offset;
+}
 
-	void DescriptorEntry::sampler(const SamplerObject* ptr)
-	{
-		DEBUG_CHECK_RETURN_EX(id.empty(), "Entry is already bound");
-		DEBUG_CHECK_RETURN_EX(type == DeviceObjectViewType::Invalid, "Entry is already bound");
-		DEBUG_CHECK_RETURN_EX(ptr != nullptr, "Trying to bind NULL sampler to descriptor");
+void DescriptorEntry::sampler(const SamplerObject* ptr)
+{
+	DEBUG_CHECK_RETURN_EX(id.empty(), "Entry is already bound");
+	DEBUG_CHECK_RETURN_EX(type == DeviceObjectViewType::Invalid, "Entry is already bound");
+	DEBUG_CHECK_RETURN_EX(ptr != nullptr, "Trying to bind NULL sampler to descriptor");
 
-		this->id = ptr->id();
+	this->id = ptr->id();
 #ifdef VALIDATE_DESCRIPTOR_BOUND_RESOURCES
-        this->objectPtr = ptr;
+    this->objectPtr = ptr;
 #endif
-		this->type = DeviceObjectViewType::Sampler;
-	}
+	this->type = DeviceObjectViewType::Sampler;
+}
 
-    void DescriptorEntry::constants(const void* data, uint32_t size)
+void DescriptorEntry::constants(const void* data, uint32_t size)
+{
+	DEBUG_CHECK_RETURN_EX(id.empty(), "Entry is already bound");
+	DEBUG_CHECK_RETURN_EX(type == DeviceObjectViewType::Invalid, "Entry is already bound");
+    DEBUG_CHECK_RETURN_EX(data != nullptr, "No data in inlined constants buffer");
+    DEBUG_CHECK_RETURN_EX(size != 0, "No data in inlined constants buffer");
+
+    this->id = ObjectID();
+	this->type = DeviceObjectViewType::ConstantBuffer;
+	this->size = size;
+	this->inlinedConstants.sourceDataPtr = data;
+}
+
+void DescriptorEntry::print(base::IFormatStream& f) const
+{
+    switch (type)
     {
-		DEBUG_CHECK_RETURN_EX(id.empty(), "Entry is already bound");
-		DEBUG_CHECK_RETURN_EX(type == DeviceObjectViewType::Invalid, "Entry is already bound");
-        DEBUG_CHECK_RETURN_EX(data != nullptr, "No data in inlined constants buffer");
-        DEBUG_CHECK_RETURN_EX(size != 0, "No data in inlined constants buffer");
+        case DeviceObjectViewType::ConstantBuffer:
+            f << "CBV";
+            if (id.empty())
+                f.append(" ({}B)", size);
+            else
+                f.appendf(" {}", id);
+            break;
 
-        this->id = ObjectID();
-		this->type = DeviceObjectViewType::ConstantBuffer;
-		this->size = size;
-		this->inlinedConstants.sourceDataPtr = data;
+        case DeviceObjectViewType::Buffer:
+            f.appendf("BSRV {}", id);
+            break;
+
+        case DeviceObjectViewType::BufferWritable:
+            f.appendf("BUAV {}", id);
+            break;
+
+        case DeviceObjectViewType::BufferStructured:
+            f.appendf("SBSRV {}", id);
+            break;
+
+        case DeviceObjectViewType::BufferStructuredWritable:
+            f.appendf("SBUAV {}", id);
+            break;
+
+		case DeviceObjectViewType::SampledImage:
+			f.appendf("SSRV {}", id);
+			break;
+
+        case DeviceObjectViewType::Image:
+            f.appendf("ISRV {}", id);
+            break;
+
+        case DeviceObjectViewType::ImageWritable:
+            f.appendf("IUAV {}", id);
+            break;
+
+        case DeviceObjectViewType::RenderTarget:
+            f.appendf("RTV {}", id);
+            break;
+
+        case DeviceObjectViewType::Sampler:
+            f.appendf("SMPL {}", id);
+            break;
     }
 
-    void DescriptorEntry::print(base::IFormatStream& f) const
-    {
-        switch (type)
-        {
-            case DeviceObjectViewType::ConstantBuffer:
-                f << "CBV";
-                if (id.empty())
-                    f.append(" ({}B)", size);
-                else
-                    f.appendf(" {}", id);
-                break;
+    if (offset)
+        f.appendf("+{}", offset);
+}
 
-            case DeviceObjectViewType::Buffer:
-                f.appendf("BSRV {}", id);
-                break;
+//----
 
-            case DeviceObjectViewType::BufferWritable:
-                f.appendf("BUAV {}", id);
-                break;
-
-            case DeviceObjectViewType::BufferStructured:
-                f.appendf("SBSRV {}", id);
-                break;
-
-            case DeviceObjectViewType::BufferStructuredWritable:
-                f.appendf("SBUAV {}", id);
-                break;
-
-			case DeviceObjectViewType::SampledImage:
-				f.appendf("SSRV {}", id);
-				break;
-
-            case DeviceObjectViewType::Image:
-                f.appendf("ISRV {}", id);
-                break;
-
-            case DeviceObjectViewType::ImageWritable:
-                f.appendf("IUAV {}", id);
-                break;
-
-            case DeviceObjectViewType::RenderTarget:
-                f.appendf("RTV {}", id);
-                break;
-
-            case DeviceObjectViewType::Sampler:
-                f.appendf("SMPL {}", id);
-                break;
-        }
-
-        if (offset)
-            f.appendf("+{}", offset);
-    }
-
-    //----
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

@@ -12,35 +12,31 @@
 
 #include "rendering/device/include/renderingGraphicsStates.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api)
+
+//---
+
+/// general object for complete static render states setup for graphics pipeline
+class RENDERING_API_COMMON_API IBaseGraphicsRenderStates : public IBaseObject
 {
-	namespace api
-	{
+public:
+	IBaseGraphicsRenderStates(IBaseThread* owner, const rendering::GraphicsRenderStatesSetup& setup);
+	virtual ~IBaseGraphicsRenderStates();
 
-		//---
+	static const auto STATIC_TYPE = ObjectType::GraphicsRenderStates;
 
-		/// general object for complete static render states setup for graphics pipeline
-		class RENDERING_API_COMMON_API IBaseGraphicsRenderStates : public IBaseObject
-		{
-		public:
-			IBaseGraphicsRenderStates(IBaseThread* owner, const rendering::GraphicsRenderStatesSetup& setup);
-			virtual ~IBaseGraphicsRenderStates();
+	//--
 
-			static const auto STATIC_TYPE = ObjectType::GraphicsRenderStates;
+	INLINE const uint64_t key() const { return m_key; }
+	INLINE const GraphicsRenderStatesSetup& setup() const { return m_setup; }
 
-			//--
+	//--
 
-			INLINE const uint64_t key() const { return m_key; }
-			INLINE const GraphicsRenderStatesSetup& setup() const { return m_setup; }
+private:
+	uint64_t m_key = 0;
+	GraphicsRenderStatesSetup m_setup;
+};
 
-			//--
+//---
 
-		private:
-			uint64_t m_key = 0;
-			GraphicsRenderStatesSetup m_setup;
-		};
-
-		//---
-
-	} // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api)

@@ -9,28 +9,24 @@
 #include "build.h"
 #include "messageConnection.h"
 
-namespace base
-{
-    namespace net
-    {
+BEGIN_BOOMER_NAMESPACE(base::net)
 
-        //--
+//--
 
-        RTTI_BEGIN_TYPE_ABSTRACT_CLASS(MessageConnection);
-            RTTI_FUNCTION("getConnectionId", connectionId);
-            RTTI_FUNCTION("getLocalAddress", localAddress);
-            RTTI_FUNCTION("getRemoteAddress", remoteAddress);
-            RTTI_FUNCTION("isConnected", isConnected);
-            //RTTI_FUNCTION("send", sendScripted);
-        RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(MessageConnection);
+    RTTI_FUNCTION("getConnectionId", connectionId);
+    RTTI_FUNCTION("getLocalAddress", localAddress);
+    RTTI_FUNCTION("getRemoteAddress", remoteAddress);
+    RTTI_FUNCTION("isConnected", isConnected);
+    //RTTI_FUNCTION("send", sendScripted);
+RTTI_END_TYPE();
 
-        MessageConnection::MessageConnection()
-        {}
+MessageConnection::MessageConnection()
+{}
 
-        MessageConnection::~MessageConnection()
-        {}
+MessageConnection::~MessageConnection()
+{}
 
-        //--
+//--
 
-    } // net
-} // base
+END_BOOMER_NAMESPACE(base::net)

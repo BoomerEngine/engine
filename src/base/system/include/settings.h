@@ -248,3 +248,7 @@
 
 // magic
 #define memzero(ptr, size) memset(ptr, 0, size)
+
+// namespace macros, needed for reflection tools as well as parsing the "namespace X {" is tedious
+#define BEGIN_BOOMER_NAMESPACE(name) namespace name {
+#define END_BOOMER_NAMESPACE(name) }

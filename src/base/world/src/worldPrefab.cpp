@@ -16,108 +16,104 @@
 #include "base/resource/include/resourceTags.h"
 #include "base/resource/include/objectIndirectTemplate.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::world)
+
+///----
+
+ConfigProperty<float> cvPrefabUpdateDelay("Scene.Prefab", "UpdateDelay", 0.5f);
+
+///----
+
+// factory class for the scene template
+class ScenePrefabFactory : public res::IFactory
 {
-    namespace world
+    RTTI_DECLARE_VIRTUAL_CLASS(ScenePrefabFactory, res::IFactory);
+
+public:
+    virtual res::ResourceHandle createResource() const override final
     {
+        const auto seed = rand(); // TODO!
 
-        ///----
+        auto prefab = RefNew<Prefab>(seed);
+        prefab->setup(nullptr);
 
-        ConfigProperty<float> cvPrefabUpdateDelay("Scene.Prefab", "UpdateDelay", 0.5f);
+        return prefab;
+    }
+};
 
-        ///----
+RTTI_BEGIN_TYPE_CLASS(ScenePrefabFactory);
+    RTTI_METADATA(res::FactoryClassMetadata).bindResourceClass<Prefab>();
+RTTI_END_TYPE();
 
-        // factory class for the scene template
-        class ScenePrefabFactory : public res::IFactory
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ScenePrefabFactory, res::IFactory);
+///----
 
-        public:
-            virtual res::ResourceHandle createResource() const override final
-            {
-                const auto seed = rand(); // TODO!
+RTTI_BEGIN_TYPE_CLASS(PrefabAppearance);
+    RTTI_PROPERTY(name);
+    RTTI_PROPERTY(randomWeight);
+RTTI_END_TYPE();
 
-                auto prefab = RefNew<Prefab>(seed);
-                prefab->setup(nullptr);
+PrefabAppearance::PrefabAppearance()
+{}
 
-                return prefab;
-            }
-        };
+///----
 
-        RTTI_BEGIN_TYPE_CLASS(ScenePrefabFactory);
-            RTTI_METADATA(res::FactoryClassMetadata).bindResourceClass<Prefab>();
-        RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_CLASS(Prefab);
+    RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4prefab");
+    RTTI_METADATA(res::ResourceDescriptionMetadata).description("Prefab");
+    RTTI_METADATA(res::ResourceTagColorMetadata).color(0x86, 0x6b, 0xed);
+    RTTI_PROPERTY(m_root);
+    RTTI_PROPERTY(m_appearances);
+    RTTI_PROPERTY(m_internalSeed);
+RTTI_END_TYPE();
 
-        ///----
+Prefab::Prefab(uint64_t seed)
+    : m_internalSeed(seed)
+{
+}
 
-        RTTI_BEGIN_TYPE_CLASS(PrefabAppearance);
-            RTTI_PROPERTY(name);
-            RTTI_PROPERTY(randomWeight);
-        RTTI_END_TYPE();
+void Prefab::setup(NodeTemplate* root)
+{
+    if (root)
+    {
+        m_root = AddRef(root);
+        m_root->parent(this);
+    }
+    else
+    {
+        m_root = RefNew<NodeTemplate>();
+        m_root->m_name = "default"_id;
+        m_root->parent(this);
 
-        PrefabAppearance::PrefabAppearance()
-        {}
+        m_root->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
+        m_root->m_entityTemplate->parent(m_root);
+    }
 
-        ///----
+    markModified();
+}
 
-	    RTTI_BEGIN_TYPE_CLASS(Prefab);
-            RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4prefab");
-            RTTI_METADATA(res::ResourceDescriptionMetadata).description("Prefab");
-            RTTI_METADATA(res::ResourceTagColorMetadata).color(0x86, 0x6b, 0xed);
-            RTTI_PROPERTY(m_root);
-            RTTI_PROPERTY(m_appearances);
-            RTTI_PROPERTY(m_internalSeed);
-        RTTI_END_TYPE();
+EntityPtr Prefab::compile(StringID appearance, const base::AbsoluteTransform& placement, Array<EntityPtr>& outAllEntities) const
+{
+    if (!m_root)
+        return nullptr;
 
-        Prefab::Prefab(uint64_t seed)
-            : m_internalSeed(seed)
-        {
-        }
+    NodePathBuilder path;
+    if (auto data = CompileEntityHierarchy(path, m_root, &placement, GlobalLoader()))
+    {
+        data->collectEntities(outAllEntities);
+        return outAllEntities[0];
+    }
 
-        void Prefab::setup(NodeTemplate* root)
-        {
-            if (root)
-            {
-                m_root = AddRef(root);
-                m_root->parent(this);
-            }
-            else
-            {
-                m_root = RefNew<NodeTemplate>();
-                m_root->m_name = "default"_id;
-                m_root->parent(this);
+    return nullptr;
+}
 
-                m_root->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
-                m_root->m_entityTemplate->parent(m_root);
-            }
+void Prefab::onPostLoad()
+{
+    TBaseClass::onPostLoad();
 
-            markModified();
-        }
+    if (!m_root)
+        setup(nullptr);
+}
 
-        EntityPtr Prefab::compile(StringID appearance, const base::AbsoluteTransform& placement, Array<EntityPtr>& outAllEntities) const
-        {
-            if (!m_root)
-                return nullptr;
+//--
 
-            NodePathBuilder path;
-            if (auto data = CompileEntityHierarchy(path, m_root, &placement, GlobalLoader()))
-            {
-                data->collectEntities(outAllEntities);
-                return outAllEntities[0];
-            }
-
-            return nullptr;
-        }
-
-        void Prefab::onPostLoad()
-        {
-            TBaseClass::onPostLoad();
-
-            if (!m_root)
-                setup(nullptr);
-        }
-
-        //--
-
-    } // world
-} // game
+END_BOOMER_NAMESPACE(base::world)

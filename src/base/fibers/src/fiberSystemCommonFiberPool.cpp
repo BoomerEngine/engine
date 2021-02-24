@@ -20,127 +20,125 @@
     #pragma optimize("",off)
 #endif
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::fibers)
+
+namespace prv
 {
-    namespace fibers
+
+    ///---
+
+    BaseScheduler::FiberState* BaseScheduler::FiberPool::allocFiber()
     {
-        namespace prv
+        auto lock = CreateLock(m_lock);
+
+        // pop fiber from the free list
+        FiberState* ret = nullptr;
+        if (freeFibers)
         {
+            ret = freeFibers;
+            ASSERT(freeFibers->listPrev == nullptr);
+            freeFibers = freeFibers->listNext;
+            auto numFree = --numFreeFibers;
+            ASSERT(numFree >= 0);
+        }
+        else
+        {
+            ret = refill();
+        }
 
-            ///---
-
-            BaseScheduler::FiberState* BaseScheduler::FiberPool::allocFiber()
+        // add fiber to the used list
+        {
+            ret->listNext = activeFibers;
+            ASSERT(ret->listPrev == nullptr);
+            if (activeFibers)
             {
-                auto lock = CreateLock(m_lock);
-
-                // pop fiber from the free list
-                FiberState* ret = nullptr;
-                if (freeFibers)
-                {
-                    ret = freeFibers;
-                    ASSERT(freeFibers->listPrev == nullptr);
-                    freeFibers = freeFibers->listNext;
-                    auto numFree = --numFreeFibers;
-                    ASSERT(numFree >= 0);
-                }
-                else
-                {
-                    ret = refill();
-                }
-
-                // add fiber to the used list
-                {
-                    ret->listNext = activeFibers;
-                    ASSERT(ret->listPrev == nullptr);
-                    if (activeFibers)
-                    {
-                        ASSERT(activeFibers->listPrev == nullptr);
-                        activeFibers->listPrev = ret;
-                    }
-                    activeFibers = ret;
-                    ++numUsedFibers;
-                }
-
-                // mark as allocated
-                ASSERT(ret->isAllocated == false);
-                ret->isAllocated = true;
-
-                return ret;
+                ASSERT(activeFibers->listPrev == nullptr);
+                activeFibers->listPrev = ret;
             }
+            activeFibers = ret;
+            ++numUsedFibers;
+        }
 
-            void BaseScheduler::FiberPool::releaseFiber(FiberState* state)
+        // mark as allocated
+        ASSERT(ret->isAllocated == false);
+        ret->isAllocated = true;
+
+        return ret;
+    }
+
+    void BaseScheduler::FiberPool::releaseFiber(FiberState* state)
+    {
+        auto lock = CreateLock(m_lock);
+
+        ASSERT_EX(!state->isMainThreadFiber, "Cannot release main fiber");
+        ASSERT_EX(state->currentJob.load() == nullptr, "Freeing fiber that is in use");
+        ASSERT_EX(state->isAllocated == true, "Trying to release fiber that is allocated");
+
+        // remove fiber from active list
+        if (state->listNext)
+            state->listNext->listPrev = state->listPrev;
+        if (state->listPrev)
+            state->listPrev->listNext = state->listNext;
+        else
+            activeFibers = state->listNext;
+        auto numActive = --numUsedFibers;
+        ASSERT(numActive >= 0);
+
+        // add to free list
+        state->listPrev = nullptr;
+        state->listNext = freeFibers;
+        freeFibers = state;
+        numFreeFibers++;
+
+        // mark as not allocated
+        ASSERT(state->isAllocated == true);
+        state->isAllocated = false;
+    }
+
+    void BaseScheduler::FiberPool::validate()
+    {
+        auto lock = CreateLock(m_lock);
+
+        {
+            uint32_t numFibers = 0;
+            for (auto cur  = freeFibers; cur; cur = cur->listNext)
             {
-                auto lock = CreateLock(m_lock);
-
-                ASSERT_EX(!state->isMainThreadFiber, "Cannot release main fiber");
-                ASSERT_EX(state->currentJob.load() == nullptr, "Freeing fiber that is in use");
-                ASSERT_EX(state->isAllocated == true, "Trying to release fiber that is allocated");
-
-                // remove fiber from active list
-                if (state->listNext)
-                    state->listNext->listPrev = state->listPrev;
-                if (state->listPrev)
-                    state->listPrev->listNext = state->listNext;
-                else
-                    activeFibers = state->listNext;
-                auto numActive = --numUsedFibers;
-                ASSERT(numActive >= 0);
-
-                // add to free list
-                state->listPrev = nullptr;
-                state->listNext = freeFibers;
-                freeFibers = state;
-                numFreeFibers++;
-
-                // mark as not allocated
-                ASSERT(state->isAllocated == true);
-                state->isAllocated = false;
+                ASSERT(cur->isAllocated == false);
+                ASSERT(cur->listPrev == nullptr);
+                ASSERT(cur->isMainThreadFiber == false);
+                ASSERT(cur->currentJob.load() == nullptr);
+                numFibers += 1;
             }
+            ASSERT(numFibers == (uint32_t)numFreeFibers.load());
+        }
 
-            void BaseScheduler::FiberPool::validate()
+        {
+            uint32_t numFibers = 0;
+            for (auto cur  = activeFibers; cur; cur = cur->listNext)
             {
-                auto lock = CreateLock(m_lock);
-
-                {
-                    uint32_t numFibers = 0;
-                    for (auto cur  = freeFibers; cur; cur = cur->listNext)
-                    {
-                        ASSERT(cur->isAllocated == false);
-                        ASSERT(cur->listPrev == nullptr);
-                        ASSERT(cur->isMainThreadFiber == false);
-                        ASSERT(cur->currentJob.load() == nullptr);
-                        numFibers += 1;
-                    }
-                    ASSERT(numFibers == (uint32_t)numFreeFibers.load());
-                }
-
-                {
-                    uint32_t numFibers = 0;
-                    for (auto cur  = activeFibers; cur; cur = cur->listNext)
-                    {
-                        ASSERT(cur->isAllocated == true);
-                        ASSERT(cur->currentJob.load() != nullptr);
-                        numFibers += 1;
-                    }
-                    ASSERT(numFibers == (uint32_t)numUsedFibers.load());
-                }
+                ASSERT(cur->isAllocated == true);
+                ASSERT(cur->currentJob.load() != nullptr);
+                numFibers += 1;
             }
+            ASSERT(numFibers == (uint32_t)numUsedFibers.load());
+        }
+    }
 
-            void BaseScheduler::FiberPool::inspect(const std::function<void(const FiberState* state)>& inspector)
-            {
-                auto lock = CreateLock(m_lock);
-                for (auto cur  = activeFibers; cur; cur = cur->listNext)
-                    inspector(cur);
-            }
+    void BaseScheduler::FiberPool::inspect(const std::function<void(const FiberState* state)>& inspector)
+    {
+        auto lock = CreateLock(m_lock);
+        for (auto cur  = activeFibers; cur; cur = cur->listNext)
+            inspector(cur);
+    }
 
-            ///---
+    ///---
 
-        } // prv
-    } // fibers
-} // base
-
+} // prv
+    
 #ifdef PLATFORM_GCC
     #pragma GCC pop_options
 #else
     #pragma optimize("",on)
 #endif
+
+END_BOOMER_NAMESPACE(base::fibers)

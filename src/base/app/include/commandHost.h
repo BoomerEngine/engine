@@ -11,59 +11,56 @@
 #include "base/system/include/timing.h"
 #include "localServiceContainer.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::app)
+
+//--
+
+/// wrapper that hosts a command that is executing in the background (it's own fiber)
+class BASE_APP_API CommandHost : public IReferencable, public IProgressTracker
 {
-    namespace app
-    {
-        //--
+public:
+    CommandHost(IProgressTracker* progress = nullptr);
+    virtual ~CommandHost(); // will wait for the command to finish, there's no other way
 
-        /// wrapper that hosts a command that is executing in the background (it's own fiber)
-        class BASE_APP_API CommandHost : public IReferencable, public IProgressTracker
-        {
-        public:
-            CommandHost(IProgressTracker* progress = nullptr);
-            virtual ~CommandHost(); // will wait for the command to finish, there's no other way
+    //--
 
-            //--
+    // is the command still running ?
+    INLINE bool running() const { return m_command; }
 
-            // is the command still running ?
-            INLINE bool running() const { return m_command; }
+    //--
 
-            //--
+    /// start command - by convention parameters are passed as a "commandline" object
+    bool start(const CommandLine& cmdLine);
 
-            /// start command - by convention parameters are passed as a "commandline" object
-            bool start(const CommandLine& cmdLine);
+    /// request command to stop
+    void cancel();
 
-            /// request command to stop
-            void cancel();
+    /// update command state, dispatch messages (should be called periodically)
+    /// NOTE: this function will return false once we are done
+    bool update();
 
-            /// update command state, dispatch messages (should be called periodically)
-            /// NOTE: this function will return false once we are done
-            bool update();
+    //--
 
-            //--
+private:
+    // command itself
+    base::app::CommandPtr m_command;
 
-        private:
-            // command itself
-            base::app::CommandPtr m_command;
+    // signal that is flagged once command finishes
+    base::fibers::WaitCounter m_finishedSignal;
+    std::atomic_bool m_finishedFlag = false;
 
-            // signal that is flagged once command finishes
-            base::fibers::WaitCounter m_finishedSignal;
-            std::atomic_bool m_finishedFlag = false;
+    // local cancellation flag
+    std::atomic_bool m_cancelation = false;
 
-            // local cancellation flag
-            std::atomic_bool m_cancelation = false;
+    // external progress interface
+    IProgressTracker* m_externalProgressTracker = nullptr;
 
-            // external progress interface
-            IProgressTracker* m_externalProgressTracker = nullptr;
+    //--
 
-            //--
+    virtual bool checkCancelation() const override;
+    virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override;
+};
 
-            virtual bool checkCancelation() const override;
-            virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override;
-        };
+//--
 
-        //--
-
-    } // app
-} // base
+END_BOOMER_NAMESPACE()

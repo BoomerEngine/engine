@@ -8,81 +8,81 @@
 
 #include "build.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//--
+
+RTTI_BEGIN_TYPE_STRUCT(AbsolutePosition);
+    RTTI_BIND_NATIVE_COMPARE(AbsolutePosition);
+    RTTI_PROPERTY(m_primary);
+    RTTI_PROPERTY(m_error);
+RTTI_END_TYPE();
+
+//--
+
+AbsolutePosition Snap(const AbsolutePosition& a, float grid)
 {
-    //--
+    return AbsolutePosition(Snap(a.approximate(), grid));
+}
 
-    RTTI_BEGIN_TYPE_STRUCT(AbsolutePosition);
-        RTTI_BIND_NATIVE_COMPARE(AbsolutePosition);
-        RTTI_PROPERTY(m_primary);
-        RTTI_PROPERTY(m_error);
-    RTTI_END_TYPE();
+AbsolutePosition Lerp(const AbsolutePosition& a, const AbsolutePosition& b, float frac)
+{
+    return AbsolutePosition(Lerp(a.approximate(), b.approximate(), frac), Lerp(a.error(), b.error(), frac));
+}
 
-    //--
+AbsolutePosition Min(const AbsolutePosition &a, const AbsolutePosition &b)
+{
+    double ax, ay, az;
+    a.expand(ax, ay, az);
 
-    AbsolutePosition Snap(const AbsolutePosition& a, float grid)
-    {
-        return AbsolutePosition(Snap(a.approximate(), grid));
-    }
+    double bx, by, bz;
+    b.expand(bx, by, bz);
 
-    AbsolutePosition Lerp(const AbsolutePosition& a, const AbsolutePosition& b, float frac)
-    {
-        return AbsolutePosition(Lerp(a.approximate(), b.approximate(), frac), Lerp(a.error(), b.error(), frac));
-    }
+    return AbsolutePosition(std::min(ax, bx), std::min(ay, by), std::min(az, bz));
+}
 
-    AbsolutePosition Min(const AbsolutePosition &a, const AbsolutePosition &b)
-    {
-        double ax, ay, az;
-        a.expand(ax, ay, az);
+AbsolutePosition Max(const AbsolutePosition &a, const AbsolutePosition &b)
+{
+    double ax, ay, az;
+    a.expand(ax, ay, az);
 
-        double bx, by, bz;
-        b.expand(bx, by, bz);
+    double bx, by, bz;
+    b.expand(bx, by, bz);
 
-        return AbsolutePosition(std::min(ax, bx), std::min(ay, by), std::min(az, bz));
-    }
+    return AbsolutePosition(std::max(ax, bx), std::max(ay, by), std::max(az, bz));
+}
 
-    AbsolutePosition Max(const AbsolutePosition &a, const AbsolutePosition &b)
-    {
-        double ax, ay, az;
-        a.expand(ax, ay, az);
+AbsolutePosition Clamp(const AbsolutePosition &a, const AbsolutePosition &minV, const AbsolutePosition &maxV)
+{
+    double ax, ay, az;
+    a.expand(ax, ay, az);
 
-        double bx, by, bz;
-        b.expand(bx, by, bz);
+    double minX, minY, minZ;
+    minV.expand(minX, minY, minZ);
 
-        return AbsolutePosition(std::max(ax, bx), std::max(ay, by), std::max(az, bz));
-    }
+    double maxX, maxY, maxZ;
+    maxV.expand(maxX, maxY, maxZ);
 
-    AbsolutePosition Clamp(const AbsolutePosition &a, const AbsolutePosition &minV, const AbsolutePosition &maxV)
-    {
-        double ax, ay, az;
-        a.expand(ax, ay, az);
+    return AbsolutePosition(std::clamp(ax, minX, maxX), std::clamp(ay, minY, maxY), std::clamp(az, minZ, maxZ));
+}
 
-        double minX, minY, minZ;
-        minV.expand(minX, minY, minZ);
+AbsolutePosition Clamp(const AbsolutePosition &a, double minF, double maxF)
+{
+    double ax, ay, az;
+    a.expand(ax, ay, az);
 
-        double maxX, maxY, maxZ;
-        maxV.expand(maxX, maxY, maxZ);
+    return AbsolutePosition(std::clamp(ax, minF, maxF), std::clamp(ay, minF, maxF), std::clamp(az, minF, maxF));
+}
 
-        return AbsolutePosition(std::clamp(ax, minX, maxX), std::clamp(ay, minY, maxY), std::clamp(az, minZ, maxZ));
-    }
+//--
 
-    AbsolutePosition Clamp(const AbsolutePosition &a, double minF, double maxF)
-    {
-        double ax, ay, az;
-        a.expand(ax, ay, az);
+static AbsolutePosition ROOT_ABSPOS(0.0f, 0.0f, 0.0f);
 
-        return AbsolutePosition(std::clamp(ax, minF, maxF), std::clamp(ay, minF, maxF), std::clamp(az, minF, maxF));
-    }
+const AbsolutePosition& AbsolutePosition::ROOT()
+{
+    return ROOT_ABSPOS;
+}
 
-    //--
+//--
 
-    static AbsolutePosition ROOT_ABSPOS(0.0f, 0.0f, 0.0f);
-
-    const AbsolutePosition& AbsolutePosition::ROOT()
-    {
-        return ROOT_ABSPOS;
-    }
-
-    //--
-
-} // base
+END_BOOMER_NAMESPACE(base)

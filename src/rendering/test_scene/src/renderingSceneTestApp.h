@@ -12,10 +12,8 @@
 
 #include "simpleCamera.h"
 
-namespace rendering
-{
-    namespace test
-    {
+BEGIN_BOOMER_NAMESPACE(rendering::test)
+
         class ISceneTest;
         
         /// boilerplate for rendering scene test
@@ -35,8 +33,8 @@ namespace rendering
             bool handleInputEvent(const base::input::BaseEvent& evt);
             bool handleAppInputEvent(const base::input::BaseEvent& evt);
 
-            void prepareSceneCommandBuffers(command::CommandWriter& cmd, const scene::FrameCompositionTarget& target);
-            void prepareCanvasCommandBuffers(command::CommandWriter& cmd, const scene::FrameCompositionTarget& target);
+            void prepareSceneCommandBuffers(GPUCommandWriter& cmd, const scene::FrameCompositionTarget& target);
+            void prepareCanvasCommandBuffers(GPUCommandWriter& cmd, const scene::FrameCompositionTarget& target);
             void renderCanvas(base::canvas::Canvas& c);
             void renderGui();
             

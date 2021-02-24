@@ -11,37 +11,32 @@
 
 #include "base/object/include/rttiFunction.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::reflection)
+
+FunctionBuilder::FunctionBuilder(const char* name)
+    : m_name(name)
+    , m_isConst(false)
+    , m_isStatic(false)
+    , m_functionWrapperPtr(nullptr)
 {
-    namespace reflection
-    {
+}
 
-        FunctionBuilder::FunctionBuilder(const char* name)
-            : m_name(name)
-            , m_isConst(false)
-            , m_isStatic(false)
-            , m_functionWrapperPtr(nullptr)
-        {
-        }
+FunctionBuilder::~FunctionBuilder()
+{
+}
 
-        FunctionBuilder::~FunctionBuilder()
-        {
-        }
+void FunctionBuilder::submit(rtti::IClassType* targetClass)
+{
+    ASSERT(m_functionPtr);
+    ASSERT(m_functionWrapperPtr != nullptr);
 
-        void FunctionBuilder::submit(rtti::IClassType* targetClass)
-        {
-            ASSERT(m_functionPtr);
-            ASSERT(m_functionWrapperPtr != nullptr);
+    auto func = new rtti::Function(targetClass, StringID(m_name.c_str()));
+    func->setupNative(m_returnType, m_paramTypes, m_functionPtr, m_functionWrapperPtr, m_isConst, m_isStatic);
 
-            auto func = new rtti::Function(targetClass, StringID(m_name.c_str()));
-            func->setupNative(m_returnType, m_paramTypes, m_functionPtr, m_functionWrapperPtr, m_isConst, m_isStatic);
+    if (targetClass == nullptr)
+        RTTI::GetInstance().registerGlobalFunction(func);
+    else
+        targetClass->addFunction(func);
+}
 
-            if (targetClass == nullptr)
-                RTTI::GetInstance().registerGlobalFunction(func);
-            else
-                targetClass->addFunction(func);
-        }
-
-    } // reflection
-} // base
-
+END_BOOMER_NAMESPACE(base::reflection)

@@ -8,28 +8,25 @@
 
 #include "scriptJitGeneralC.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+//--
+
+/// TCC based script JIT
+class BASE_SCRIPT_JIT_API JITTCC : public JITGeneralC
 {
-    namespace script
-    {
-        //--
+    RTTI_DECLARE_VIRTUAL_CLASS(JITTCC, JITGeneralC);
 
-        /// TCC based script JIT
-        class BASE_SCRIPT_JIT_API JITTCC : public JITGeneralC
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(JITTCC, JITGeneralC);
+public:
+    JITTCC();
 
-        public:
-            JITTCC();
+    virtual bool compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& data, StringView outputModulePath, const Settings& settings) override final;
 
-            virtual bool compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& data, StringView outputModulePath, const Settings& settings) override final;
+private:
+    static StringBuf FindTCCCompiler();
+    static StringBuf FindGCCCompiler();
+};
 
-        private:
-            static StringBuf FindTCCCompiler();
-            static StringBuf FindGCCCompiler();
-        };
+//--
 
-        //--
-
-    } // script
-} // base
+END_BOOMER_NAMESPACE(base::script)

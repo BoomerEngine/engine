@@ -10,37 +10,37 @@
 
 #include "base/world/include/worldSystem.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//---
+
+/// rendering system - contains rendering scene
+class RENDERING_WORLD_API RenderingSystem : public base::world::IWorldSystem
 {
-    //---
+    RTTI_DECLARE_VIRTUAL_CLASS(RenderingSystem, base::world::IWorldSystem);
 
-    /// rendering system - contains rendering scene
-    class RENDERING_WORLD_API RenderingSystem : public base::world::IWorldSystem
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(RenderingSystem, base::world::IWorldSystem);
+public:
+    RenderingSystem();
+    virtual ~RenderingSystem();
 
-    public:
-        RenderingSystem();
-        virtual ~RenderingSystem();
+    //--
 
-        //--
+    /// get rendering scene
+    INLINE rendering::scene::Scene* scene() const { return m_scene; }
 
-        /// get rendering scene
-        INLINE rendering::scene::Scene* scene() const { return m_scene; }
+    //--
 
-        //--
+protected:
+    // IWorldSystem
+    virtual bool handleInitialize(base::world::World& scene) override;
+    virtual void handleShutdown() override;
+    virtual void handleRendering(rendering::scene::FrameParams& info) override;
 
-    protected:
-        // IWorldSystem
-        virtual bool handleInitialize(base::world::World& scene) override;
-        virtual void handleShutdown() override;
-        virtual void handleRendering(rendering::scene::FrameParams& info) override;
+    //--
 
-        //--
+    rendering::scene::ScenePtr m_scene;
+};
 
-        rendering::scene::ScenePtr m_scene;
-    };
+//---
 
-    //---
-
-} // game
+END_BOOMER_NAMESPACE(rendering)

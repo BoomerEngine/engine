@@ -11,37 +11,36 @@
 #include "base/resource_compiler/include/importInterface.h"
 #include "import/mesh_loader/include/renderingMaterialImportConfig.h"
 
-namespace wavefront
+BEGIN_BOOMER_NAMESPACE(assets)
+
+//--
+
+/// manifest specific for importing Wavefront materials
+class IMPORT_OBJ_LOADER_API MTLMaterialImportConfig : public rendering::MaterialImportConfig
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(MTLMaterialImportConfig, rendering::MaterialImportConfig);
 
-    //--
+public:
+    MTLMaterialImportConfig();
 
-    /// manifest specific for importing Wavefront materials
-    class IMPORT_OBJ_LOADER_API MTLMaterialImportConfig : public rendering::MaterialImportConfig
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MTLMaterialImportConfig, rendering::MaterialImportConfig);
+    base::StringBuf m_materialName; // name of the material to import from MTL file
 
-    public:
-        MTLMaterialImportConfig();
+    virtual void computeConfigurationKey(base::CRC64& crc) const override;
+};
 
-        base::StringBuf m_materialName; // name of the material to import from MTL file
+//--
 
-        virtual void computeConfigurationKey(base::CRC64& crc) const override;
-    };
+/// mesh cooker for OBJ files
+class IMPORT_OBJ_LOADER_API MTLMaterialImporter : public rendering::IGeneralMaterialImporter
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(MTLMaterialImporter, rendering::IGeneralMaterialImporter);
 
-    //--
+public:
+    MTLMaterialImporter();
 
-    /// mesh cooker for OBJ files
-    class IMPORT_OBJ_LOADER_API MTLMaterialImporter : public rendering::IGeneralMaterialImporter
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MTLMaterialImporter, rendering::IGeneralMaterialImporter);
+    virtual base::res::ResourcePtr importResource(base::res::IResourceImporterInterface& importer) const override final;
+};
 
-    public:
-        MTLMaterialImporter();
+//--
 
-        virtual base::res::ResourcePtr importResource(base::res::IResourceImporterInterface& importer) const override final;
-    };
-
-    //--
-
-} // wavefront
+END_BOOMER_NAMESPACE(assets)

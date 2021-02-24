@@ -12,9 +12,9 @@
 #include "base/object/include/rttiClassRef.h"
 #include "reflectionTypeName.h"
 
-using namespace base;
-
 DECLARE_TEST_FILE(RttiClassRef);
+
+BEGIN_BOOMER_NAMESPACE(base::test);
 
 TEST(ClassRef, EmptyClassIsNull)
 {
@@ -71,52 +71,54 @@ TEST(ClassRef, UnrelatedTypesDontMatch)
     EXPECT_FALSE(y.is(x));
 }
 
-namespace tests
+//--
+
+class ClassRefA : public IObject
 {
-    class ClassRefA : public IObject
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(ClassRefA, IObject);
+    RTTI_DECLARE_VIRTUAL_CLASS(ClassRefA, IObject);
 
-    public:
-    };
+public:
+};
 
-    RTTI_BEGIN_TYPE_CLASS(ClassRefA);
-    RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_CLASS(ClassRefA);
+RTTI_END_TYPE();
 
-    class ClassRefA2 : public ClassRefA
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(ClassRefA2, ClassRefA);
+class ClassRefA2 : public ClassRefA
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ClassRefA2, ClassRefA);
 
-    public:
-    };
+public:
+};
 
-    RTTI_BEGIN_TYPE_CLASS(ClassRefA2);
-    RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_CLASS(ClassRefA2);
+RTTI_END_TYPE();
 
-    class ClassRefB : public IObject
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(ClassRefB, IObject);
+class ClassRefB : public IObject
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ClassRefB, IObject);
 
-    public:
-    };
+public:
+};
 
-    RTTI_BEGIN_TYPE_CLASS(ClassRefB);
-    RTTI_END_TYPE();   
+RTTI_BEGIN_TYPE_CLASS(ClassRefB);
+RTTI_END_TYPE();
 
-} // tests
+//--
 
 TEST(ClassRef, ObjectOfProperClassIsCreated)
 {
-    SpecificClassType<tests::ClassRefA> x = tests::ClassRefA2::GetStaticClass();
+    SpecificClassType<ClassRefA> x = test::ClassRefA2::GetStaticClass();
     auto obj = x.create();
 
-    EXPECT_EQ(obj->cls(), tests::ClassRefA2::GetStaticClass());
+    EXPECT_EQ(obj->cls(), ClassRefA2::GetStaticClass());
 }
 
 TEST(ClassRef, ObjectOfUnrelatedClassIsNotCreated)
 {
-    ClassType x = tests::ClassRefA2::GetStaticClass();
-    RefPtr<tests::ClassRefB> obj = x.create<tests::ClassRefB>();
+    ClassType x = ClassRefA2::GetStaticClass();
+    RefPtr<ClassRefB> obj = x.create<test::ClassRefB>();
 
     EXPECT_TRUE(obj.empty());
 }
+
+END_BOOMER_NAMESPACE(base::test)

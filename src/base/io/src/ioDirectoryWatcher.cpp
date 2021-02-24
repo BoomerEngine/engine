@@ -9,19 +9,15 @@
 #include "build.h"
 #include "ioDirectoryWatcher.h"
 
-namespace base
-{
-    namespace io
-    {
+BEGIN_BOOMER_NAMESPACE(base::io)
 
-        IDirectoryWatcherListener::~IDirectoryWatcherListener()
-        {}
+IDirectoryWatcherListener::~IDirectoryWatcherListener()
+{}
 
-        IDirectoryWatcher::~IDirectoryWatcher()
-        {}
+IDirectoryWatcher::~IDirectoryWatcher()
+{}
 
-        IDirectoryWatcher::IDirectoryWatcher()
-        {}
+IDirectoryWatcher::IDirectoryWatcher()
+{}
 
-    } // io
-} // base
+END_BOOMER_NAMESPACE(base::io)

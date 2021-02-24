@@ -8,38 +8,35 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+//--
+
+/// read context for loading file deserialization
+struct BASE_RESOURCE_API FileSavingContext
 {
-    namespace res
-    {
-        //--
+    //--
 
-        /// read context for loading file deserialization
-        struct BASE_RESOURCE_API FileSavingContext
-        {
-            //--
+    // save into protected token stream (more metadata to spot issues)
+    // NOTE: final version of loading code does not support the protected stream
+    bool protectedStream = true;
 
-            // save into protected token stream (more metadata to spot issues)
-            // NOTE: final version of loading code does not support the protected stream
-            bool protectedStream = true;
+    //--
 
-            //--
+    // root object to save
+    Array<ObjectPtr> rootObject;
 
-            // root object to save
-            Array<ObjectPtr> rootObject;
+    //--
 
-            //--
+    // should we save given object ?
+    bool shouldSave(const IObject* object) const;
+};
 
-            // should we save given object ?
-            bool shouldSave(const IObject* object) const;
-        };
+//--
 
-        //--
+// save objects to file
+CAN_YIELD extern BASE_RESOURCE_API bool SaveFile(io::IWriteFileHandle* file, const FileSavingContext& context, IProgressTracker* progress = nullptr);
 
-        // save objects to file
-        CAN_YIELD extern BASE_RESOURCE_API bool SaveFile(io::IWriteFileHandle* file, const FileSavingContext& context, IProgressTracker* progress = nullptr);
+//--
 
-        //--
-
-    } // res
-} // base
+END_BOOMER_NAMESPACE(base::res)

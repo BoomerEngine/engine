@@ -9,24 +9,21 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::world)
+
+//---
+
+// behavior attached to entity
+class BASE_WORLD_API IEntityBehavior : public IObject
 {
-    namespace world
-    {
-        //---
+    RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
+    RTTI_DECLARE_VIRTUAL_CLASS(IEntityBehavior, IObject);
 
-        // behavior attached to entity
-        class BASE_WORLD_API IEntityBehavior : public IObject
-        {
-            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
-            RTTI_DECLARE_VIRTUAL_CLASS(IEntityBehavior, IObject);
+public:
+    IEntityBehavior();
+    virtual ~IEntityBehavior();
+};
 
-        public:
-            IEntityBehavior();
-            virtual ~IEntityBehavior();
-        };
+//---
 
-        //---
-
-    } // world
-} // base
+END_BOOMER_NAMESPACE(base::world)

@@ -12,76 +12,75 @@
 #include "uiDataGroup.h"
 #include "base/object/include/rttiDataView.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+class ClassPickerBox;
+
+///---
+
+/// wrapper for single data property
+class BASE_UI_API DataProperty : public DataInspectorNavigationItem, public base::IDataViewObserver
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(DataProperty, DataInspectorNavigationItem);
 
-    class ClassPickerBox;
+public:
+    DataProperty(DataInspector* inspector, DataInspectorNavigationItem* parent, uint8_t indent, const base::StringBuf& path, const base::StringBuf& caption, const base::rtti::DataViewInfo& info, bool parentReadOnly, int arrayIndex=-1);
+    virtual ~DataProperty();
 
-    ///---
+    inline DataProperty* parentProperty() const { return base::rtti_cast<DataProperty>(parentItem()); }
 
-    /// wrapper for single data property
-    class BASE_UI_API DataProperty : public DataInspectorNavigationItem, public base::IDataViewObserver
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(DataProperty, DataInspectorNavigationItem);
+    bool isReadOnly() const;
+    bool isArray() const;
+    bool isDynamicArray() const;
 
-    public:
-        DataProperty(DataInspector* inspector, DataInspectorNavigationItem* parent, uint8_t indent, const base::StringBuf& path, const base::StringBuf& caption, const base::rtti::DataViewInfo& info, bool parentReadOnly, int arrayIndex=-1);
-        virtual ~DataProperty();
+protected:
+    uint8_t m_indent = 0;
+    int32_t m_arrayIndex = -1;
 
-        inline DataProperty* parentProperty() const { return base::rtti_cast<DataProperty>(parentItem()); }
+    base::rtti::DataViewInfo m_viewInfo;
+    bool m_viewDataResetableStyle = false;
+    bool m_parentReadOnly = false;
 
-        bool isReadOnly() const;
-        bool isArray() const;
-        bool isDynamicArray() const;
+    ElementPtr m_nameLine;
+    ElementPtr m_valueLine;
 
-    protected:
-        uint8_t m_indent = 0;
-        int32_t m_arrayIndex = -1;
+    TextLabelPtr m_nameText;
+    TextLabelPtr m_valueText;
+    DataBoxPtr m_valueBox;
+    ButtonPtr m_resetToBaseButton;
 
-        base::rtti::DataViewInfo m_viewInfo;
-        bool m_viewDataResetableStyle = false;
-        bool m_parentReadOnly = false;
+    base::RefPtr<ClassPickerBox> m_classPicker;
 
-        ElementPtr m_nameLine;
-        ElementPtr m_valueLine;
+    void updateValueText();
+    void updateExpandable();
 
-        TextLabelPtr m_nameText;
-        TextLabelPtr m_valueText;
-        DataBoxPtr m_valueBox;
-        ButtonPtr m_resetToBaseButton;
+    void compareWithBase();
+    void toggleResetButton();
 
-        base::RefPtr<ClassPickerBox> m_classPicker;
+    virtual void handleSelectionLost() override;
+    virtual void handleSelectionGain(bool focus) override;
+    virtual void createChildren(base::Array<base::RefPtr<DataInspectorNavigationItem>>& outCreatedChildren) override;
 
-        void updateValueText();
-        void updateExpandable();
+    virtual void handlePropertyChanged(base::StringView fullPath, bool parentNotification) override;
 
-        void compareWithBase();
-        void toggleResetButton();
+    void notifyDataChanged(bool recurseToChildren);
 
-        virtual void handleSelectionLost() override;
-        virtual void handleSelectionGain(bool focus) override;
-        virtual void createChildren(base::Array<base::RefPtr<DataInspectorNavigationItem>>& outCreatedChildren) override;
+    void initInterface(const base::StringBuf& caption);
 
-        virtual void handlePropertyChanged(base::StringView fullPath, bool parentNotification) override;
+    void arrayClear();
+    void arrayAddNew();
+    void arrayElementDelete();
+    void arrayElementInsertBefore();
 
-        void notifyDataChanged(bool recurseToChildren);
+    void inlineObjectClear();
+    void inlineObjectNew();
+    void inlineObjectNewWithClass(base::ClassType type);
 
-        void initInterface(const base::StringBuf& caption);
+    void resetToBaseValue();
 
-        void arrayClear();
-        void arrayAddNew();
-        void arrayElementDelete();
-        void arrayElementInsertBefore();
+    void dispatchAction(const base::DataViewActionResult& action);
+};
 
-        void inlineObjectClear();
-        void inlineObjectNew();
-        void inlineObjectNewWithClass(base::ClassType type);
+///---
 
-        void resetToBaseValue();
-
-        void dispatchAction(const base::DataViewActionResult& action);
-    };
-
-    ///---
-
-} // ui
+END_BOOMER_NAMESPACE(ui)

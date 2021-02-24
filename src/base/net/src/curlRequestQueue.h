@@ -17,119 +17,114 @@
 #include "base/socket/include/address.h"
 #include "base/containers/include/pagedBuffer.h"
 
+BEGIN_BOOMER_NAMESPACE(base::curl)
 
-namespace base
+//---
+
+/// a "connection" to a server, allows for reusing CURL objects
+class MultiConnection : public http::Connection
 {
-    namespace curl
-    {
+public:
+    MultiConnection(RequestQueue* queue, StringView address, StringView protocol);
+    virtual ~MultiConnection();
 
-        //---
+    // return CURL object after it's finished
+    void returnRequestObject(CURL* handle);
 
-        /// a "connection" to a server, allows for reusing CURL objects
-        class MultiConnection : public http::Connection
-        {
-        public:
-            MultiConnection(RequestQueue* queue, StringView address, StringView protocol);
-            virtual ~MultiConnection();
+    /// process a request and call a callback function once it's completed
+    virtual void send(StringView url, const http::RequestArgs& params, const http::TRequestResponseFunc& service, http::Method method, uint32_t timeOut) override final;
 
-            // return CURL object after it's finished
-            void returnRequestObject(CURL* handle);
+private:
+    Array<CURL*> m_freeHandles;
 
-            /// process a request and call a callback function once it's completed
-            virtual void send(StringView url, const http::RequestArgs& params, const http::TRequestResponseFunc& service, http::Method method, uint32_t timeOut) override final;
+    SpinLock m_freeHandlesLock;
 
-        private:
-            Array<CURL*> m_freeHandles;
+    std::atomic<uint32_t> m_totalSentRequests;
+    std::atomic<uint32_t> m_numActiveRequests;
+    std::atomic<uint32_t> m_maxConcurentRequests;
 
-            SpinLock m_freeHandlesLock;
+    StringBuf m_url;
 
-            std::atomic<uint32_t> m_totalSentRequests;
-            std::atomic<uint32_t> m_numActiveRequests;
-            std::atomic<uint32_t> m_maxConcurentRequests;
+    RequestQueue* m_queue;
 
-            StringBuf m_url;
-
-            RequestQueue* m_queue;
-
-            //--
+    //--
                 
-            CURL* allocRequestObject();
-        };
+    CURL* allocRequestObject();
+};
 
-        //---
+//---
 
-        /// a single pending CURL request
-        class Request : public base::NoCopy
-        {
-            RTTI_DECLARE_POOL(POOL_HTTP_REQUEST)
+/// a single pending CURL request
+class Request : public base::NoCopy
+{
+    RTTI_DECLARE_POOL(POOL_HTTP_REQUEST)
 
-        public:
-            Request(CURL* handle, const StringBuf& url, const StringBuf& fields, uint32_t timeout, RefWeakPtr<MultiConnection> owner, http::Method method, const http::TRequestResponseFunc& callback);
-            ~Request();
+public:
+    Request(CURL* handle, const StringBuf& url, const StringBuf& fields, uint32_t timeout, RefWeakPtr<MultiConnection> owner, http::Method method, const http::TRequestResponseFunc& callback);
+    ~Request();
 
-            INLINE CURL* handle() const { return m_handle; }
+    INLINE CURL* handle() const { return m_handle; }
                 
-            INLINE const NativeTimePoint& timeout() const { return m_timeoutTime; }
+    INLINE const NativeTimePoint& timeout() const { return m_timeoutTime; }
 
 
-            void signalTimeout();
-            void signalFinished(uint32_t code);
+    void signalTimeout();
+    void signalFinished(uint32_t code);
 
-        private:
-            StringBuf m_url;
-            StringBuf m_fields;
-            bool m_finished;
+private:
+    StringBuf m_url;
+    StringBuf m_fields;
+    bool m_finished;
 
-            http::Method m_method;
+    http::Method m_method;
 
-            NativeTimePoint m_timeoutTime;
-            NativeTimePoint m_sentTime;
+    NativeTimePoint m_timeoutTime;
+    NativeTimePoint m_sentTime;
 
-            PagedBuffer m_data;
+    PagedBuffer m_data;
 
-            CURL* m_handle;
+    CURL* m_handle;
 
-            http::TRequestResponseFunc m_callback;
+    http::TRequestResponseFunc m_callback;
 
-            RefWeakPtr<MultiConnection> m_owner;
+    RefWeakPtr<MultiConnection> m_owner;
 
-            //--
+    //--
 
-            static size_t WriteFunc(void* ptr, size_t size, size_t nmemb, Request* self);
-        };
+    static size_t WriteFunc(void* ptr, size_t size, size_t nmemb, Request* self);
+};
 
-        //---
+//---
 
-        /// CURL based request service
-        class RequestQueue : public base::NoCopy
-        {
-        public:
-            RequestQueue();
-            ~RequestQueue();
+/// CURL based request service
+class RequestQueue : public base::NoCopy
+{
+public:
+    RequestQueue();
+    ~RequestQueue();
 
-            /// initialize
-            bool init();
+    /// initialize
+    bool init();
 
-            /// add request to list, NOTE: the method takes ownership of the pointer
-            bool scheduleRequest(Request* request);
+    /// add request to list, NOTE: the method takes ownership of the pointer
+    bool scheduleRequest(Request* request);
 
-        private:
-            CURLM* m_multi;
-            Thread m_thread;
-            std::atomic<uint32_t> m_requestExit;
+private:
+    CURLM* m_multi;
+    Thread m_thread;
+    std::atomic<uint32_t> m_requestExit;
 
-            Array<Request*> m_pendingRequests;
-            SpinLock m_pendingRequestsLock;
+    Array<Request*> m_pendingRequests;
+    SpinLock m_pendingRequestsLock;
 
-            socket::udp::RawSocket m_wakeupSocket;
-            socket::udp::RawSocket m_wakeupSenderSocket;
-            socket::Address m_wakeupSocketAddress;
+    socket::udp::RawSocket m_wakeupSocket;
+    socket::udp::RawSocket m_wakeupSenderSocket;
+    socket::Address m_wakeupSocketAddress;
 
-            uint32_t calcMinTimeout() const;
+    uint32_t calcMinTimeout() const;
 
-            void wakeupThread();
-            void serviceThread();
-        };
+    void wakeupThread();
+    void serviceThread();
+};
 
-    } // curl
-} // base
+END_BOOMER_NAMESPACE(base::curl)

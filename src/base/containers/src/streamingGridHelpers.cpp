@@ -10,20 +10,16 @@
 #include "streamingGrid.h"
 #include "streamingGridHelpers.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+const __m128 StreamingPositionQuantizer::MinC = _mm_setzero_ps();
+const __m128 StreamingPositionQuantizer::MaxC = _mm_set1_ps(65535.0f);
+
+StreamingPositionQuantizer::StreamingPositionQuantizer(float worldSize)
 {
-    namespace containers
-    {
+    float ofs = worldSize / 2.0f;
+    m_offset = _mm_set_ps(0.0f, ofs, ofs, ofs);
+    m_scale = _mm_set1_ps(65535.0f / worldSize);
+}       
 
-        const __m128 StreamingPositionQuantizer::MinC = _mm_setzero_ps();
-        const __m128 StreamingPositionQuantizer::MaxC = _mm_set1_ps(65535.0f);
-
-        StreamingPositionQuantizer::StreamingPositionQuantizer(float worldSize)
-        {
-            float ofs = worldSize / 2.0f;
-            m_offset = _mm_set_ps(0.0f, ofs, ofs, ofs);
-            m_scale = _mm_set1_ps(65535.0f / worldSize);
-        }       
-
-    } // streaming
-} // base
+END_BOOMER_NAMESPACE(base)

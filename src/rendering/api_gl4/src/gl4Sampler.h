@@ -10,31 +10,24 @@
 
 #include "rendering/api_common/include/apiSampler.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+///---
+
+class Sampler : public IBaseSampler
 {
-    namespace api
-    {
-		namespace gl4
-		{
-			///---
+public:
+	Sampler(Thread* owner, const SamplerState& setup);
+	virtual ~Sampler();
 
-			class Sampler : public IBaseSampler
-			{
-			public:
-				Sampler(Thread* owner, const SamplerState& setup);
-				virtual ~Sampler();
+	INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
 
-				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
+	GLuint object();
 
-				GLuint object();
+private:
+	GLuint m_glSampler = 0;
+};
 
-			private:
-				GLuint m_glSampler = 0;
-			};
+//--
 
-			//--
-
-		} // gl4
-    } // api
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::api::gl4)

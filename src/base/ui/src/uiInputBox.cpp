@@ -16,90 +16,90 @@
 
 #include "base/containers/include/stringBuilder.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+//---
+
+InputBoxSetup::InputBoxSetup()
+    : m_title("Input text")
+{}
+
+InputBoxSetup& InputBoxSetup::fileNameValidation(bool withExt)
 {
-    //---
+    m_validation = MakeFilenameValidationFunction(withExt);
+    return *this;
+}
 
-    InputBoxSetup::InputBoxSetup()
-        : m_title("Input text")
-    {}
+//---
 
-    InputBoxSetup& InputBoxSetup::fileNameValidation(bool withExt)
+bool ShowInputBox(IElement* owner, const InputBoxSetup& setup, base::StringBuf& inOutText)
+{
+    auto window = base::RefNew<Window>(WindowFeatureFlagBit::DEFAULT_DIALOG, setup.m_title);
+    window->layoutVertical();
+
+    auto windowRef = window.get();
+    window->actions().bindCommand("Cancel"_id) = [windowRef]() { windowRef->requestClose(0); };
+    window->actions().bindShortcut("Cancel"_id, "Escape");
+
+    if (setup.m_message)
+        window->createChild<TextLabel>(setup.m_message);
+
+    EditBoxFeatureFlags editBoxFlags;
+    if (setup.m_multiline)
+        editBoxFlags |= EditBoxFeatureBit::Multiline;
+    else
+        editBoxFlags |= EditBoxFeatureBit::AcceptsEnter;
+
+    auto editText = window->createChild<EditBox>(editBoxFlags).get();
+    if (setup.m_multiline)
+        editText->customInitialSize(500, 400);
+    else
+        editText->customInitialSize(500, 20);
+    editText->customMargins(5, 5, 5, 5);
+    editText->text(inOutText);
+    editText->expand();
+
+    auto buttons = window->createChild();
+    buttons->layoutHorizontal();
+    buttons->customHorizontalAligment(ElementHorizontalLayout::Right);
+
     {
-        m_validation = MakeFilenameValidationFunction(withExt);
-        return *this;
+        auto button = buttons->createChildWithType<Button>("PushButton"_id, "OK").get();
+        button->bind(EVENT_CLICKED) = [windowRef, editText, &inOutText]() {
+            if (editText->validationResult()) {
+                inOutText = editText->text();
+                windowRef->requestClose(1);
+            }
+        };
+
+        editText->bind(EVENT_TEXT_VALIDATION_CHANGED) = [editText, button](bool valid)
+        {
+            button->enable(valid);
+        };
+
+        editText->bind(EVENT_TEXT_ACCEPTED) = [editText, button, &inOutText, windowRef]()
+        {
+            if (editText->validationResult()) {
+                inOutText = editText->text();
+                windowRef->requestClose(1);
+            }
+        };
     }
 
-    //---
-
-    bool ShowInputBox(IElement* owner, const InputBoxSetup& setup, base::StringBuf& inOutText)
     {
-        auto window = base::RefNew<Window>(WindowFeatureFlagBit::DEFAULT_DIALOG, setup.m_title);
-        window->layoutVertical();
-
-        auto windowRef = window.get();
-        window->actions().bindCommand("Cancel"_id) = [windowRef]() { windowRef->requestClose(0); };
-        window->actions().bindShortcut("Cancel"_id, "Escape");
-
-        if (setup.m_message)
-            window->createChild<TextLabel>(setup.m_message);
-
-        EditBoxFeatureFlags editBoxFlags;
-        if (setup.m_multiline)
-            editBoxFlags |= EditBoxFeatureBit::Multiline;
-        else
-            editBoxFlags |= EditBoxFeatureBit::AcceptsEnter;
-
-        auto editText = window->createChild<EditBox>(editBoxFlags).get();
-        if (setup.m_multiline)
-            editText->customInitialSize(500, 400);
-        else
-            editText->customInitialSize(500, 20);
-        editText->customMargins(5, 5, 5, 5);
-        editText->text(inOutText);
-        editText->expand();
-
-        auto buttons = window->createChild();
-        buttons->layoutHorizontal();
-        buttons->customHorizontalAligment(ElementHorizontalLayout::Right);
-
-        {
-            auto button = buttons->createChildWithType<Button>("PushButton"_id, "OK").get();
-            button->bind(EVENT_CLICKED) = [windowRef, editText, &inOutText]() {
-                if (editText->validationResult()) {
-                    inOutText = editText->text();
-                    windowRef->requestClose(1);
-                }
-            };
-
-            editText->bind(EVENT_TEXT_VALIDATION_CHANGED) = [editText, button](bool valid)
-            {
-                button->enable(valid);
-            };
-
-            editText->bind(EVENT_TEXT_ACCEPTED) = [editText, button, &inOutText, windowRef]()
-            {
-                if (editText->validationResult()) {
-                    inOutText = editText->text();
-                    windowRef->requestClose(1);
-                }
-            };
-        }
-
-        {
-            auto button = buttons->createChildWithType<Button>("PushButton"_id, "Cancel");
-            button->bind(EVENT_CLICKED) = [windowRef]() {
-                windowRef->requestClose(0);
-            };
-        }
-
-        if (setup.m_validation)
-            editText->validation(setup.m_validation);
-
-        return window->runModal(owner, editText);
+        auto button = buttons->createChildWithType<Button>("PushButton"_id, "Cancel");
+        button->bind(EVENT_CLICKED) = [windowRef]() {
+            windowRef->requestClose(0);
+        };
     }
 
-    //---
+    if (setup.m_validation)
+        editText->validation(setup.m_validation);
 
-} // ui
+    return window->runModal(owner, editText);
+}
+
+//---
+
+END_BOOMER_NAMESPACE(ui)
 

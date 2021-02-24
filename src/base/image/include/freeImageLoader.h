@@ -8,43 +8,39 @@
 
 #pragma once
 
-namespace base 
+BEGIN_BOOMER_NAMESPACE(base::image)
+
+///---
+
+/// image data loaded using the free image library
+struct BASE_IMAGE_API FreeImageLoadedData : public IReferencable
 {
-    namespace image
-    {
+    uint32_t width = 0;
+    uint32_t height = 0;
 
-        ///---
+    uint32_t pixelPitch = 0;
+    uint32_t rowPitch = 0;
 
-        /// image data loaded using the free image library
-        struct BASE_IMAGE_API FreeImageLoadedData : public IReferencable
-        {
-            uint32_t width = 0;
-            uint32_t height = 0;
+    uint8_t channels = 0;
+    PixelFormat format = PixelFormat::Uint8_Norm;
 
-            uint32_t pixelPitch = 0;
-            uint32_t rowPitch = 0;
+    uint8_t* data = nullptr;
 
-            uint8_t channels = 0;
-            PixelFormat format = PixelFormat::Uint8_Norm;
+    //-
 
-            uint8_t* data = nullptr;
+    FreeImageLoadedData(void* object);
+    ~FreeImageLoadedData();
 
-            //-
+    // get view of the whole data
+    ImageView view() const;
 
-            FreeImageLoadedData(void* object);
-            ~FreeImageLoadedData();
+protected:
+    void* object = nullptr;
+};
 
-            // get view of the whole data
-            ImageView view() const;
+/// load a image using the free image library
+extern BASE_IMAGE_API RefPtr<FreeImageLoadedData> LoadImageWithFreeImage(const void* data, uint64_t dataSize);
 
-        protected:
-            void* object = nullptr;
-        };
+///---
 
-        /// load a image using the free image library
-        extern BASE_IMAGE_API RefPtr<FreeImageLoadedData> LoadImageWithFreeImage(const void* data, uint64_t dataSize);
-
-        ///---
-
-    } // image
-} // base
+END_BOOMER_NAMESPACE(base::image)

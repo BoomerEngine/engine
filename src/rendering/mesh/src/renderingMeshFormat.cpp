@@ -10,8 +10,7 @@
 #include "renderingMeshFormat.h"
 #include "meshopt/meshoptimizer.h"
 
-namespace rendering
-{
+BEGIN_BOOMER_NAMESPACE(rendering)
 
     ///---
 

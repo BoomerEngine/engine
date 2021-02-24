@@ -10,121 +10,120 @@
 
 #include "rendering/texture/include/renderingStaticTexture.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(assets)
+
+//--
+
+enum class ImageContentType : uint8_t
 {
+    Auto,
+    Generic,
+    Albedo,
+    Specularity,
+    Metalness,
+    Mask,
+    Roughness,
+    Bumpmap,
+    CombinedMetallicSmoothness, // R-metallic, A-smoothness (1-roughness)
+    CombinedRoughnessSpecularity,
+    TangentNormalMap,
+    WorldNormalMap,
+    AmbientOcclusion,
+    Emissive,
+};
 
-    //--
+enum class ImageMipmapGenerationMode : uint8_t
+{
+    Auto,
+    None,
+    BoxFilter,
+};
 
-    enum class ImageContentType : uint8_t
-    {
-        Auto,
-        Generic,
-        Albedo,
-        Specularity,
-        Metalness,
-        Mask,
-        Roughness,
-        Bumpmap,
-        CombinedMetallicSmoothness, // R-metallic, A-smoothness (1-roughness)
-        CombinedRoughnessSpecularity,
-        TangentNormalMap,
-        WorldNormalMap,
-        AmbientOcclusion,
-        Emissive,
-    };
+enum class ImageContentColorSpace : uint8_t
+{
+    Auto,
+    Linear,
+    SRGB,
+    Normals,
+    HDR, // positive values only!
+};
 
-    enum class ImageMipmapGenerationMode : uint8_t
-    {
-        Auto,
-        None,
-        BoxFilter,
-    };
+enum class ImageCompressionFormat : uint8_t
+{
+    Auto,
+    None,
+    BC1,
+    BC2,
+    BC3,
+    BC4,
+    BC5,
+    BC6H,
+    BC7,
+};
 
-    enum class ImageContentColorSpace : uint8_t
-    {
-        Auto,
-        Linear,
-        SRGB,
-        Normals,
-        HDR, // positive values only!
-    };
+enum class ImageValidPixelsMaskingMode : uint8_t
+{
+    Auto,
+    None, // all pixels contribute
+    ByAlpha, // only pixels with non zero alpha contribute - default if image has alpha channel
+    NonBlack, // only pixels that are not 0,0,0 contribute (great for normal maps)
+};
 
-    enum class ImageCompressionFormat : uint8_t
-    {
-        Auto,
-        None,
-        BC1,
-        BC2,
-        BC3,
-        BC4,
-        BC5,
-        BC6H,
-        BC7,
-    };
+enum class ImageCompressionQuality : uint8_t
+{
+    Quick,
+    Normal,
+    Placebo,
+};
 
-    enum class ImageValidPixelsMaskingMode : uint8_t
-    {
-        Auto,
-        None, // all pixels contribute
-        ByAlpha, // only pixels with non zero alpha contribute - default if image has alpha channel
-        NonBlack, // only pixels that are not 0,0,0 contribute (great for normal maps)
-    };
+enum class ImageAlphaMode : uint8_t
+{
+    NotPremultiplied,
+    AlreadyPremultiplied,
+    Premultiply,
+    RemoveAlpha,
+};
 
-    enum class ImageCompressionQuality : uint8_t
-    {
-        Quick,
-        Normal,
-        Placebo,
-    };
+/// settings for texture compression stuff
+struct IMPORT_TEXTURE_LOADER_API ImageCompressionSettings
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(ImageCompressionSettings);
 
-    enum class ImageAlphaMode : uint8_t
-    {
-        NotPremultiplied,
-        AlreadyPremultiplied,
-        Premultiply,
-        RemoveAlpha,
-    };
+public:
+    ImageCompressionSettings();
 
-    /// settings for texture compression stuff
-    struct IMPORT_TEXTURE_LOADER_API ImageCompressionSettings
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(ImageCompressionSettings);
+    base::StringBuf m_suffix;
 
-    public:
-        ImageCompressionSettings();
+    ImageContentType m_contentType = ImageContentType::Auto;
+    ImageContentColorSpace m_contentColorSpace = ImageContentColorSpace::Auto;
+    ImageAlphaMode m_contentAlphaMode = ImageAlphaMode::NotPremultiplied;
 
-        base::StringBuf m_suffix;
+    ImageMipmapGenerationMode m_mipmapMode = ImageMipmapGenerationMode::Auto;
 
-        ImageContentType m_contentType = ImageContentType::Auto;
-        ImageContentColorSpace m_contentColorSpace = ImageContentColorSpace::Auto;
-        ImageAlphaMode m_contentAlphaMode = ImageAlphaMode::NotPremultiplied;
+    ImageCompressionFormat m_compressionMode = ImageCompressionFormat::Auto;
+    ImageValidPixelsMaskingMode m_compressionMasking = ImageValidPixelsMaskingMode::Auto;
+    ImageCompressionQuality m_compressionQuality = ImageCompressionQuality::Normal;
+};
 
-        ImageMipmapGenerationMode m_mipmapMode = ImageMipmapGenerationMode::Auto;
+//--
 
-        ImageCompressionFormat m_compressionMode = ImageCompressionFormat::Auto;
-        ImageValidPixelsMaskingMode m_compressionMasking = ImageValidPixelsMaskingMode::Auto;
-        ImageCompressionQuality m_compressionQuality = ImageCompressionQuality::Normal;
-    };
+struct IMPORT_TEXTURE_LOADER_API ImageCompressedResult : public base::IReferencable
+{
+    base::Buffer data;
+    base::Array<StaticTextureMip> mips;
+    TextureInfo info;
 
-    //--
+    ImageObjectPtr createPreviewTexture() const;
+};
 
-    struct IMPORT_TEXTURE_LOADER_API ImageCompressedResult : public base::IReferencable
-    {
-        base::Buffer data;
-        base::Array<StaticTextureMip> mips;
-        TextureInfo info;
+//--
 
-        ImageObjectPtr createPreviewTexture() const;
-    };
+/// determine storage size needed for compressed data
+extern IMPORT_TEXTURE_LOADER_API uint32_t CalcCompressedImageDataSize(const base::image::ImageView& data, ImageCompressionFormat format);
 
-    //--
+/// bake data for compressed texture (single slice)
+extern IMPORT_TEXTURE_LOADER_API base::RefPtr<ImageCompressedResult> CompressImage(const base::image::ImageView& data, const ImageCompressionSettings& settings, base::IProgressTracker& progress);
 
-    /// determine storage size needed for compressed data
-    extern IMPORT_TEXTURE_LOADER_API uint32_t CalcCompressedImageDataSize(const base::image::ImageView& data, ImageCompressionFormat format);
+//--
 
-    /// bake data for compressed texture (single slice)
-    extern IMPORT_TEXTURE_LOADER_API base::RefPtr<ImageCompressedResult> CompressImage(const base::image::ImageView& data, const ImageCompressionSettings& settings, base::IProgressTracker& progress);
-
-    //--
-
-} // rendering
+END_BOOMER_NAMESPACE(assets)

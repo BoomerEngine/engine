@@ -8,60 +8,61 @@
 
 #include "build.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+
+//--
+
+RTTI_BEGIN_TYPE_STRUCT(Point);
+    RTTI_BIND_NATIVE_COMPARE(Point);
+    RTTI_TYPE_TRAIT().zeroInitializationValid().noConstructor().noDestructor().fastCopyCompare();
+    RTTI_PROPERTY(x).editable();
+    RTTI_PROPERTY(y).editable();
+RTTI_END_TYPE();
+
+//--
+
+Vector2 Point::toVector() const
 {
-    //--
+    return Vector2((float)x, (float)y);
+}
 
-    RTTI_BEGIN_TYPE_STRUCT(Point);
-        RTTI_BIND_NATIVE_COMPARE(Point);
-        RTTI_TYPE_TRAIT().zeroInitializationValid().noConstructor().noDestructor().fastCopyCompare();
-        RTTI_PROPERTY(x).editable();
-        RTTI_PROPERTY(y).editable();
-    RTTI_END_TYPE();
+//--
 
-    //--
+static Point ZERO_P(0,0);
 
-    Vector2 Point::toVector() const
-    {
-        return Vector2((float)x, (float)y);
-    }
+const Point& Point::ZERO()
+{
+    return ZERO_P;
+}
 
-    //--
+//--
 
-    static Point ZERO_P(0,0);
+Point Lerp(const Point& a, const Point& b, float frac)
+{
+    return Lerp(a.toVector(), b.toVector(), frac);
+}
 
-    const Point& Point::ZERO()
-    {
-        return ZERO_P;
-    }
+Point Min(const Point& a, const Point& b)
+{
+    return Point(std::min(a.x, b.x), std::min(a.y, b.y));
+}
 
-    //--
+Point Max(const Point& a, const Point& b)
+{
+    return Point(std::max(a.x, b.x), std::max(a.y, b.y));
+}
 
-    Point Lerp(const Point& a, const Point& b, float frac)
-    {
-        return Lerp(a.toVector(), b.toVector(), frac);
-    }
+Point Clamp(const Point &a, const Point &minV, const Point &maxV)
+{
+    return Point(std::clamp(a.x, minV.x, maxV.x), std::clamp(a.y, minV.y, maxV.y));
+}
 
-    Point Min(const Point& a, const Point& b)
-    {
-        return Point(std::min(a.x, b.x), std::min(a.y, b.y));
-    }
+Point Clamp(const Point &a, int minF, int maxF)
+{
+    return Point(std::clamp(a.x, minF, maxF), std::clamp(a.y, minF, maxF));
+}
 
-    Point Max(const Point& a, const Point& b)
-    {
-        return Point(std::max(a.x, b.x), std::max(a.y, b.y));
-    }
+//--
 
-    Point Clamp(const Point &a, const Point &minV, const Point &maxV)
-    {
-        return Point(std::clamp(a.x, minV.x, maxV.x), std::clamp(a.y, minV.y, maxV.y));
-    }
-
-    Point Clamp(const Point &a, int minF, int maxF)
-    {
-        return Point(std::clamp(a.x, minF, maxF), std::clamp(a.y, minF, maxF));
-    }
-
-    //--
-
-} // base
+END_BOOMER_NAMESPACE(base)

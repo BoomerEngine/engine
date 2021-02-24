@@ -10,207 +10,207 @@
 #include "renderingFramebuffer.h"
 #include "renderingImage.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//--
+
+FrameBufferColorAttachmentInfo& FrameBufferColorAttachmentInfo::view(const RenderTargetView* rtv)
 {
-    //--
+    DEBUG_CHECK_RETURN_V(rtv, *this);
+    DEBUG_CHECK_RETURN_V(!rtv->depth(), *this);
+	viewPtr = rtv;
+    viewID = rtv->viewId();
+    width = rtv->width();
+    height = rtv->height();
+    slices = rtv->slices();
+    samples = rtv->samples();
+	swapchain = rtv->swapchain();
+    return *this;
+}
 
-    FrameBufferColorAttachmentInfo& FrameBufferColorAttachmentInfo::view(const RenderTargetView* rtv)
+//--
+
+FrameBufferDepthAttachmentInfo& FrameBufferDepthAttachmentInfo::view(const RenderTargetView* rtv)
+{
+    DEBUG_CHECK_RETURN_V(rtv, *this);
+    DEBUG_CHECK_RETURN_V(rtv->depth(), *this);
+	viewPtr = rtv;
+    viewID = rtv->viewId();
+    width = rtv->width();
+    height = rtv->height();
+    slices = rtv->slices();
+    samples = rtv->samples();
+	swapchain = rtv->swapchain();
+    return *this;
+}
+
+//--
+
+void FrameBufferColorAttachmentInfo::print(base::IFormatStream& f) const
+{
+    if (empty())
     {
-        DEBUG_CHECK_RETURN_V(rtv, *this);
-        DEBUG_CHECK_RETURN_V(!rtv->depth(), *this);
-		viewPtr = rtv;
-        viewID = rtv->viewId();
-        width = rtv->width();
-        height = rtv->height();
-        slices = rtv->slices();
-        samples = rtv->samples();
-		swapchain = rtv->swapchain();
-        return *this;
+        f << "empty";
     }
-
-    //--
-
-    FrameBufferDepthAttachmentInfo& FrameBufferDepthAttachmentInfo::view(const RenderTargetView* rtv)
+    else
     {
-        DEBUG_CHECK_RETURN_V(rtv, *this);
-        DEBUG_CHECK_RETURN_V(rtv->depth(), *this);
-		viewPtr = rtv;
-        viewID = rtv->viewId();
-        width = rtv->width();
-        height = rtv->height();
-        slices = rtv->slices();
-        samples = rtv->samples();
-		swapchain = rtv->swapchain();
-        return *this;
-    }
+        f.appendf("[{}x{}] ", width, height);
 
-    //--
+        if (samples)
+            f.append("{} samples", samples);
 
-    void FrameBufferColorAttachmentInfo::print(base::IFormatStream& f) const
-    {
-        if (empty())
+        if (slices)
+            f.append(", {} slices", slices);
+
+        f << ", " << loadOp;
+        f << ", " << storeOp;
+
+        if (loadOp == LoadOp::Clear)
         {
-            f << "empty";
-        }
-        else
-        {
-            f.appendf("[{}x{}] ", width, height);
-
-            if (samples)
-                f.append("{} samples", samples);
-
-            if (slices)
-                f.append(", {} slices", slices);
-
-            f << ", " << loadOp;
-            f << ", " << storeOp;
-
-            if (loadOp == LoadOp::Clear)
-            {
-                f.appendf(", Clear: {},{},{},{}", clearColorValues[0], clearColorValues[1], clearColorValues[2], clearColorValues[3]);
-            }
+            f.appendf(", Clear: {},{},{},{}", clearColorValues[0], clearColorValues[1], clearColorValues[2], clearColorValues[3]);
         }
     }
+}
 
-    //--
+//--
 
-    void FrameBufferDepthAttachmentInfo::print(base::IFormatStream& f) const
+void FrameBufferDepthAttachmentInfo::print(base::IFormatStream& f) const
+{
+    if (empty())
     {
-        if (empty())
+        f << "empty";
+    }
+    else
+    {
+        f.appendf("[{}x{}] ", width, height);
+
+        if (samples)
+            f.append("{} samples", samples);
+
+        if (slices)
+            f.append(", {} slices", slices);
+
+        f << ", " << loadOp;
+        f << ", " << storeOp;
+
+        if (loadOp == LoadOp::Clear)
         {
-            f << "empty";
-        }
-        else
-        {
-            f.appendf("[{}x{}] ", width, height);
-
-            if (samples)
-                f.append("{} samples", samples);
-
-            if (slices)
-                f.append(", {} slices", slices);
-
-            f << ", " << loadOp;
-            f << ", " << storeOp;
-
-            if (loadOp == LoadOp::Clear)
-            {
-                f.appendf(", ClearDepth: {}, ClearStencil: {}", clearDepthValue, clearStencilValue);
-            }
+            f.appendf(", ClearDepth: {}, ClearStencil: {}", clearDepthValue, clearStencilValue);
         }
     }
+}
 
-    //--
+//--
 
-    void FrameBuffer::print(base::IFormatStream& f) const
+void FrameBuffer::print(base::IFormatStream& f) const
+{
+    bool hasRenderTargets = false;
+
+    if (depth)
     {
-        bool hasRenderTargets = false;
+        hasRenderTargets = true;
+        f << "Depth: " << depth << "\n";
+    }
 
-        if (depth)
+    for (uint32_t i = 0; i < MAX_COLOR_TARGETS; ++i)
+    {
+        if (color[i])
         {
             hasRenderTargets = true;
-            f << "Depth: " << depth << "\n";
-        }
-
-        for (uint32_t i = 0; i < MAX_COLOR_TARGETS; ++i)
-        {
-            if (color[i])
-            {
-                hasRenderTargets = true;
-                f << "Color" << i << ": " << color[i] << "\n";
-            }
+            f << "Color" << i << ": " << color[i] << "\n";
         }
     }
+}
 
-    uint8_t FrameBuffer::validColorSurfaces() const
+uint8_t FrameBuffer::validColorSurfaces() const
+{
+    uint8_t ret = 0;
+
+    for (uint8_t i = 0; i < MAX_COLOR_TARGETS; ++i)
     {
-        uint8_t ret = 0;
-
-        for (uint8_t i = 0; i < MAX_COLOR_TARGETS; ++i)
-        {
-            if (!color[i])
-                break;
-            ret += 1;
-        }
-
-        return ret;
+        if (!color[i])
+            break;
+        ret += 1;
     }
 
-	uint8_t FrameBuffer::samples() const
-	{
-		if (depth.samples)
-			return depth.samples;
-		for (uint8_t i = 0; i < MAX_COLOR_TARGETS; ++i)
-			if (color[i].samples)
-				return color[i].samples;
+    return ret;
+}
 
-		return 1;
-	}
+uint8_t FrameBuffer::samples() const
+{
+	if (depth.samples)
+		return depth.samples;
+	for (uint8_t i = 0; i < MAX_COLOR_TARGETS; ++i)
+		if (color[i].samples)
+			return color[i].samples;
 
-    bool FrameBuffer::validate(uint32_t* outWidth /*= nullptr*/, uint32_t* outHeight /*= nullptr*/, uint32_t* outSampleCount /*= nullptr*/) const
+	return 1;
+}
+
+bool FrameBuffer::validate(uint32_t* outWidth /*= nullptr*/, uint32_t* outHeight /*= nullptr*/, uint32_t* outSampleCount /*= nullptr*/) const
+{
+    int w = -1;
+    int h = -1;
+    int s = -1;
+    int l = -1;
+
+    bool first = true;
+
+    for (const auto& entry : color)
     {
-        int w = -1;
-        int h = -1;
-        int s = -1;
-        int l = -1;
+        if (!entry)
+            break;
 
-        bool first = true;
-
-        for (const auto& entry : color)
+        if (first)
         {
-            if (!entry)
-                break;
-
-            if (first)
-            {
-                w = entry.width;
-                h = entry.height;
-                s = entry.samples;
-                l = entry.slices;
-                first = false;
-            }
-            else
-            {
-                DEBUG_CHECK_RETURN_V(w == entry.width, false);
-                DEBUG_CHECK_RETURN_V(h == entry.height, false);
-                DEBUG_CHECK_RETURN_V(s == entry.samples, false);
-                DEBUG_CHECK_RETURN_V(l == entry.slices, false);
-            }
+            w = entry.width;
+            h = entry.height;
+            s = entry.samples;
+            l = entry.slices;
+            first = false;
         }
-
-        if (depth)
+        else
         {
-            if (first)
-            {
-                w = depth.width;
-                h = depth.height;
-                s = depth.samples;
-                l = depth.slices;
-                first = false;
-            }
-            else
-            {
-                DEBUG_CHECK_RETURN_V(w == depth.width, false);
-                DEBUG_CHECK_RETURN_V(h == depth.height, false);
-                DEBUG_CHECK_RETURN_V(s == depth.samples, false);
-                DEBUG_CHECK_RETURN_V(l == depth.slices, false);
-            }
+            DEBUG_CHECK_RETURN_V(w == entry.width, false);
+            DEBUG_CHECK_RETURN_V(h == entry.height, false);
+            DEBUG_CHECK_RETURN_V(s == entry.samples, false);
+            DEBUG_CHECK_RETURN_V(l == entry.slices, false);
         }
-
-		if (first)
-			return false; // empty FB is not supported now
-
-		if (outWidth)
-			*outWidth = w;
-		if (outHeight)
-			*outHeight = h;
-		if (outSampleCount)
-			*outSampleCount = s;
-
-        return true;
     }
 
-    //--
+    if (depth)
+    {
+        if (first)
+        {
+            w = depth.width;
+            h = depth.height;
+            s = depth.samples;
+            l = depth.slices;
+            first = false;
+        }
+        else
+        {
+            DEBUG_CHECK_RETURN_V(w == depth.width, false);
+            DEBUG_CHECK_RETURN_V(h == depth.height, false);
+            DEBUG_CHECK_RETURN_V(s == depth.samples, false);
+            DEBUG_CHECK_RETURN_V(l == depth.slices, false);
+        }
+    }
 
- } // rendering
+	if (first)
+		return false; // empty FB is not supported now
+
+	if (outWidth)
+		*outWidth = w;
+	if (outHeight)
+		*outHeight = h;
+	if (outSampleCount)
+		*outSampleCount = s;
+
+    return true;
+}
+
+//--
+
+END_BOOMER_NAMESPACE(rendering)
 

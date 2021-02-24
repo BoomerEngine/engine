@@ -11,25 +11,25 @@
 #include "algorithms.h"
 #include "atomic.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//-----------------------------------------------------------------------------
+
+/// Simple spin lock
+/// NOTE: spin lock can't be acquired between fibers
+class BASE_SYSTEM_API SpinLock : public base::NoCopy
 {
-    //-----------------------------------------------------------------------------
+public:
+    void acquire();
+    void release();
 
-    /// Simple spin lock
-    /// NOTE: spin lock can't be acquired between fibers
-    class BASE_SYSTEM_API SpinLock : public base::NoCopy
-    {
-    public:
-        void acquire();
-        void release();
+private:
+    std::atomic<uint32_t> owner = 0;
 
-    private:
-        std::atomic<uint32_t> owner = 0;
+    static uint32_t GetThreadID();
+    static void InternalYield();
+};
 
-        static uint32_t GetThreadID();
-        static void InternalYield();
-    };
+//-----------------------------------------------------------------------------
 
-    //-----------------------------------------------------------------------------
-
-} // base
+END_BOOMER_NAMESPACE(base)

@@ -8,17 +8,16 @@
 
 #include "import_obj_loader_glue.inl"
 
-namespace wavefront
-{
+BEGIN_BOOMER_NAMESPACE(assets)
 
-    // parsed OBJ file, RAW data but in memory
-    // this the "rawest" form of data that is cookable from .OBJ files
-    class FormatOBJ;
-    typedef base::RefPtr<FormatOBJ> FormatOBJPtr;
+// parsed OBJ file, RAW data but in memory
+// this the "rawest" form of data that is cookable from .OBJ files
+class FormatOBJ;
+typedef base::RefPtr<FormatOBJ> FormatOBJPtr;
 
-    // parsed MTL file, RAW data but in memory
-    // this the "rawest" form of data that is cookable from .MTL J files
-    class FormatMTL;
-    typedef base::RefPtr<FormatMTL> FormatMTLPtr;
+// parsed MTL file, RAW data but in memory
+// this the "rawest" form of data that is cookable from .MTL J files
+class FormatMTL;
+typedef base::RefPtr<FormatMTL> FormatMTLPtr;
 
-} // wavefront
+END_BOOMER_NAMESPACE(assets)

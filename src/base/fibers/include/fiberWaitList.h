@@ -10,32 +10,28 @@
 #include "fiberSystem.h"
 #include "base/containers/include/inplaceArray.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::fibers)
+
+//---
+
+/// a collector of fences that we want to wait on, implements simple helper for WaitForMultipleObjects behavior
+class BASE_FIBERS_API WaitList : public base::NoCopy
 {
-    namespace fibers
-    {
+public:
+	WaitList();
+    ~WaitList();
 
-        //---
+    /// wait for all fences to complete, handles fences added in the mean time
+    CAN_YIELD void sync();
 
-        /// a collector of fences that we want to wait on, implements simple helper for WaitForMultipleObjects behavior
-        class BASE_FIBERS_API WaitList : public base::NoCopy
-        {
-        public:
-			WaitList();
-            ~WaitList();
+    /// push a fence to wait for
+    void pushFence(WaitCounter fence);
 
-            /// wait for all fences to complete, handles fences added in the mean time
-            CAN_YIELD void sync();
+private:
+    SpinLock m_lock;
+    base::InplaceArray<WaitCounter, 16> m_fences;
+};
 
-            /// push a fence to wait for
-            void pushFence(WaitCounter fence);
+//---
 
-        private:
-            SpinLock m_lock;
-            base::InplaceArray<WaitCounter, 16> m_fences;
-        };
-
-        //---
-
-    } // fibers	
-}// base
+END_BOOMER_NAMESPACE(base::fibers)

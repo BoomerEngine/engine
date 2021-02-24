@@ -10,9 +10,5 @@
 
 #include "renderingObject.h"
 
-namespace rendering
-{
-   
-
-} // rendering
-
+BEGIN_BOOMER_NAMESPACE(rendering)
+END_BOOMER_NAMESPACE(rendering)

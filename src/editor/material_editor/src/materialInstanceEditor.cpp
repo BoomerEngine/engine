@@ -18,95 +18,94 @@
 #include "editor/common/include/managedFileFormat.h"
 #include "editor/common/include/managedFileNativeResource.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//---
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(MaterialInstanceEditor);
+RTTI_END_TYPE();
+
+MaterialInstanceEditor::MaterialInstanceEditor(ManagedFileNativeResource* file)
+    : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::Imported })
 {
+    createInterface();
+}
 
-    //---
+MaterialInstanceEditor::~MaterialInstanceEditor()
+{}
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(MaterialInstanceEditor);
-    RTTI_END_TYPE();
-
-    MaterialInstanceEditor::MaterialInstanceEditor(ManagedFileNativeResource* file)
-        : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::Imported })
+void MaterialInstanceEditor::createInterface()
+{
     {
-        createInterface();
+        auto tab = base::RefNew<ui::DockPanel>("[img:shader] Preview", "PreviewPanel");
+        tab->layoutVertical();
+
+        m_previewPanel = tab->createChild<MaterialPreviewPanel>();
+        m_previewPanel->expand();
+
+        dockLayout().attachPanel(tab);
     }
 
-    MaterialInstanceEditor::~MaterialInstanceEditor()
-    {}
-
-    void MaterialInstanceEditor::createInterface()
     {
-        {
-            auto tab = base::RefNew<ui::DockPanel>("[img:shader] Preview", "PreviewPanel");
-            tab->layoutVertical();
+        auto tab = base::RefNew<ui::DockPanel>("[img:properties] Properties", "PropertiesPanel");
+        tab->layoutVertical();
 
-            m_previewPanel = tab->createChild<MaterialPreviewPanel>();
-            m_previewPanel->expand();
+        m_properties = tab->createChild<ui::DataInspector>();
+        m_properties->bindActionHistory(actionHistory());
+        m_properties->expand();
 
-            dockLayout().attachPanel(tab);
-        }
+        dockLayout().right(0.2f).attachPanel(tab);
+    }
+}
 
-        {
-            auto tab = base::RefNew<ui::DockPanel>("[img:properties] Properties", "PropertiesPanel");
-            tab->layoutVertical();
+bool MaterialInstanceEditor::save()
+{
+    if (!TBaseClass::save())
+        return false;
 
-            m_properties = tab->createChild<ui::DataInspector>();
-            m_properties->bindActionHistory(actionHistory());
-            m_properties->expand();
+    base::LoadResource<rendering::MaterialInstance>(file()->depotPath());
+    return true;
+}
 
-            dockLayout().right(0.2f).attachPanel(tab);
-        }
+bool MaterialInstanceEditor::initialize()
+{
+    if (!TBaseClass::initialize())
+        return false;
+
+    m_instance = rtti_cast<rendering::MaterialInstance>(resource());
+    if (!m_instance)
+        return false;
+
+    m_previewPanel->bindMaterial(m_instance);
+    m_properties->bindData(m_instance->createDataView());
+    return true;
+}
+
+//---
+
+class MaterialInstaceResourceEditorOpener : public IResourceEditorOpener
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialInstaceResourceEditorOpener, IResourceEditorOpener);
+
+public:
+    virtual bool canOpen(const ManagedFileFormat& format) const override
+    {
+        const auto graphClass = rendering::MaterialInstance::GetStaticClass();
+        return (format.nativeResourceClass() == graphClass);
     }
 
-    bool MaterialInstanceEditor::save()
+    virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
     {
-        if (!TBaseClass::save())
-            return false;
-
-        base::LoadResource<rendering::MaterialInstance>(file()->depotPath());
-        return true;
-    }
-
-    bool MaterialInstanceEditor::initialize()
-    {
-        if (!TBaseClass::initialize())
-            return false;
-
-        m_instance = rtti_cast<rendering::MaterialInstance>(resource());
-        if (!m_instance)
-            return false;
-
-        m_previewPanel->bindMaterial(m_instance);
-        m_properties->bindData(m_instance->createDataView());
-        return true;
-    }
-
-    //---
-
-    class MaterialInstaceResourceEditorOpener : public IResourceEditorOpener
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialInstaceResourceEditorOpener, IResourceEditorOpener);
-
-    public:
-        virtual bool canOpen(const ManagedFileFormat& format) const override
-        {
-            const auto graphClass = rendering::MaterialInstance::GetStaticClass();
-            return (format.nativeResourceClass() == graphClass);
-        }
-
-        virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
-        {
-            if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-                return base::RefNew<MaterialInstanceEditor>(nativeFile);
+        if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
+            return base::RefNew<MaterialInstanceEditor>(nativeFile);
                 
-            return nullptr;
-        }
-    };
+        return nullptr;
+    }
+};
 
-    RTTI_BEGIN_TYPE_CLASS(MaterialInstaceResourceEditorOpener);
-    RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_CLASS(MaterialInstaceResourceEditorOpener);
+RTTI_END_TYPE();
 
-    //---
+//---
 
-} // ed
+END_BOOMER_NAMESPACE(ed)

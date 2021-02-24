@@ -8,17 +8,13 @@
 
 #include "base_config_glue.inl"
 
-namespace base
-{
-    namespace config
-    {
+BEGIN_BOOMER_NAMESPACE(base::config)
 
-        class Entry;
-        class Group;
-        class Storage;
-        class System;
+class Entry;
+class Group;
+class Storage;
+class System;
 
-    } // config
-} // base
+END_BOOMER_NAMESPACE(base::config)
 
 #include "configSystem.h"

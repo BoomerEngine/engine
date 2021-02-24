@@ -11,23 +11,18 @@
 
 #include "meshEntity.h"
 
-namespace game
+BEGIN_BOOMER_NAMESPACE(game)
+
+// mesh entity with physics collision
+class GAME_WORLD_API SolidMeshEntity : public MeshEntity
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(SolidMeshEntity, MeshEntity);
 
-    //--
+public:
+    SolidMeshEntity();
+    virtual ~SolidMeshEntity();
 
-    // mesh entity with physics collision
-    class GAME_WORLD_API SolidMeshEntity : public MeshEntity
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(SolidMeshEntity, MeshEntity);
+protected:
+};
 
-    public:
-        SolidMeshEntity();
-        virtual ~SolidMeshEntity();
-
-    protected:
-    };
-
-    //--
-
-} // game
+END_BOOMER_NAMESPACE(game)

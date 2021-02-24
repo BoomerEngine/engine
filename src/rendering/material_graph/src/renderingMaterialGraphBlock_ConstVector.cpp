@@ -9,98 +9,97 @@
 #include "build.h"
 #include "renderingMaterialGraphBlock.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+///---
+
+class MaterialGraphBlock_ConstVector2 : public MaterialGraphBlock
 {
-    ///---
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_ConstVector2, MaterialGraphBlock);
 
-    class MaterialGraphBlock_ConstVector2 : public MaterialGraphBlock
+public:
+    virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_ConstVector2, MaterialGraphBlock);
+        builder.socket("Out"_id, MaterialOutputSocket());
+        builder.socket("X"_id, MaterialOutputSocket().swizzle("x"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
+        builder.socket("Y"_id, MaterialOutputSocket().swizzle("y"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
+    }
 
-    public:
-        virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
-        {
-            builder.socket("Out"_id, MaterialOutputSocket());
-            builder.socket("X"_id, MaterialOutputSocket().swizzle("x"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
-            builder.socket("Y"_id, MaterialOutputSocket().swizzle("y"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
-        }
-
-        virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
-        {
-            return m_value;
-        }
-
-    private:
-        base::Vector2 m_value;
-    };
-
-    RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_ConstVector2);
-        RTTI_METADATA(base::graph::BlockInfoMetadata).name("Constant Vector2").group("Constants").title("Vector2");
-        RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialConst");
-        RTTI_PROPERTY(m_value).editable("Constant vector's value");
-    RTTI_END_TYPE();
-
-    ///---
-
-    class MaterialGraphBlock_ConstVector3 : public MaterialGraphBlock
+    virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_ConstVector3, MaterialGraphBlock);
+        return m_value;
+    }
 
-    public:
-        virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
-        {
-            builder.socket("Out"_id, MaterialOutputSocket().hideCaption());
-            builder.socket("X"_id, MaterialOutputSocket().swizzle("x"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
-            builder.socket("Y"_id, MaterialOutputSocket().swizzle("y"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
-            builder.socket("Z"_id, MaterialOutputSocket().swizzle("z"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
-        }
+private:
+    base::Vector2 m_value;
+};
 
-        virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
-        {
-            return m_value;
-        }
+RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_ConstVector2);
+    RTTI_METADATA(base::graph::BlockInfoMetadata).name("Constant Vector2").group("Constants").title("Vector2");
+    RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialConst");
+    RTTI_PROPERTY(m_value).editable("Constant vector's value");
+RTTI_END_TYPE();
 
-    private:
-        base::Vector3 m_value;
-    };
+///---
 
-    RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_ConstVector3);
-        RTTI_METADATA(base::graph::BlockInfoMetadata).name("Constant Vector3").group("Constants").title("Vector3");
-        RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialConst");
-        RTTI_METADATA(base::graph::BlockShapeMetadata).rectangle();
-        RTTI_PROPERTY(m_value).editable("Constant vector's value");
-    RTTI_END_TYPE();
+class MaterialGraphBlock_ConstVector3 : public MaterialGraphBlock
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_ConstVector3, MaterialGraphBlock);
 
-    ///---
-
-    class MaterialGraphBlock_ConstVector4 : public MaterialGraphBlock
+public:
+    virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_ConstVector4, MaterialGraphBlock);
+        builder.socket("Out"_id, MaterialOutputSocket().hideCaption());
+        builder.socket("X"_id, MaterialOutputSocket().swizzle("x"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
+        builder.socket("Y"_id, MaterialOutputSocket().swizzle("y"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
+        builder.socket("Z"_id, MaterialOutputSocket().swizzle("z"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
+    }
 
-    public:
-        virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
-        {
-            builder.socket("Out"_id, MaterialOutputSocket());
-            builder.socket("X"_id, MaterialOutputSocket().swizzle("x"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
-            builder.socket("Y"_id, MaterialOutputSocket().swizzle("y"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
-            builder.socket("Z"_id, MaterialOutputSocket().swizzle("z"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
-            builder.socket("W"_id, MaterialOutputSocket().swizzle("w"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
-        }
+    virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
+    {
+        return m_value;
+    }
 
-        virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
-        {
-            return m_value;
-        }
+private:
+    base::Vector3 m_value;
+};
 
-    private:
-        base::Vector4 m_value;
-    };
+RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_ConstVector3);
+    RTTI_METADATA(base::graph::BlockInfoMetadata).name("Constant Vector3").group("Constants").title("Vector3");
+    RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialConst");
+    RTTI_METADATA(base::graph::BlockShapeMetadata).rectangle();
+    RTTI_PROPERTY(m_value).editable("Constant vector's value");
+RTTI_END_TYPE();
 
-    RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_ConstVector4);
-        RTTI_METADATA(base::graph::BlockInfoMetadata).name("Constant Vector4").group("Constants").title("Vector4");
-        RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialConst");
-        RTTI_PROPERTY(m_value).editable("Constant vector's value");
-    RTTI_END_TYPE();
+///---
 
+class MaterialGraphBlock_ConstVector4 : public MaterialGraphBlock
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_ConstVector4, MaterialGraphBlock);
 
-} // rendering
+public:
+    virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
+    {
+        builder.socket("Out"_id, MaterialOutputSocket());
+        builder.socket("X"_id, MaterialOutputSocket().swizzle("x"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
+        builder.socket("Y"_id, MaterialOutputSocket().swizzle("y"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
+        builder.socket("Z"_id, MaterialOutputSocket().swizzle("z"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
+        builder.socket("W"_id, MaterialOutputSocket().swizzle("w"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
+    }
+
+    virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
+    {
+        return m_value;
+    }
+
+private:
+    base::Vector4 m_value;
+};
+
+RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_ConstVector4);
+    RTTI_METADATA(base::graph::BlockInfoMetadata).name("Constant Vector4").group("Constants").title("Vector4");
+    RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialConst");
+    RTTI_PROPERTY(m_value).editable("Constant vector's value");
+RTTI_END_TYPE();
+
+END_BOOMER_NAMESPACE(rendering)

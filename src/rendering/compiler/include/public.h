@@ -8,62 +8,59 @@
 
 #include "rendering_compiler_glue.inl"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::shadercompiler)
+
+//--
+
+struct DataType;
+struct DataValue;
+struct DataParameter;
+class Function;
+class INativeFunction;
+class CodeNode;
+class CodeLibrary;
+class Program;
+class ProgramConstants;
+class Function;
+class ExecutionValue;
+class ParametrizedFragment;
+class CompositeType;
+class Permutation;
+class TypeLibrary;
+class ResourceTable;
+struct ResourceTableEntry;
+class CompositeType;
+struct ProgramInstanceParam;
+
+// TODO: move
+struct RENDERING_COMPILER_API AttributeList
 {
-    namespace compiler
-    {
-        //--
+    base::HashMap<base::StringID, base::StringBuf> attributes;
 
-        struct DataType;
-        struct DataValue;
-        struct DataParameter;
-        class Function;
-        class INativeFunction;
-        class CodeNode;
-        class CodeLibrary;
-        class Program;
-        class ProgramConstants;
-        class Function;
-        class ExecutionValue;
-        class ParametrizedFragment;
-        class CompositeType;
-        class Permutation;
-        class TypeLibrary;
-        class ResourceTable;
-        struct ResourceTableEntry;
-        class CompositeType;
-        struct ProgramInstanceParam;
+    INLINE bool empty() const { return attributes.empty(); }
+    INLINE operator bool() const { return !attributes.empty(); }
 
-        // TODO: move
-        struct RENDERING_COMPILER_API AttributeList
-        {
-            base::HashMap<base::StringID, base::StringBuf> attributes;
+    AttributeList& clear();
+    AttributeList& add(base::StringID key, base::StringView txt = "");
+    AttributeList& merge(const AttributeList& attr);
 
-            INLINE bool empty() const { return attributes.empty(); }
-            INLINE operator bool() const { return !attributes.empty(); }
+    bool has(base::StringID key) const;
+    base::StringView value(base::StringID key) const;
+    base::StringView valueOrDefault(base::StringID key, base::StringView defaultValue = "") const;
+    int valueAsIntOrDefault(base::StringID key, int defaultValue = 0) const;
 
-            AttributeList& clear();
-            AttributeList& add(base::StringID key, base::StringView txt = "");
-            AttributeList& merge(const AttributeList& attr);
+    void print(base::IFormatStream& f) const;
+    void calcTypeHash(base::CRC64& crc) const;
+};
 
-            bool has(base::StringID key) const;
-            base::StringView value(base::StringID key) const;
-            base::StringView valueOrDefault(base::StringID key, base::StringView defaultValue = "") const;
-            int valueAsIntOrDefault(base::StringID key, int defaultValue = 0) const;
+//--
 
-            void print(base::IFormatStream& f) const;
-            void calcTypeHash(base::CRC64& crc) const;
-        };
+struct ExtraAttribute
+{
+	base::StringView key;
+	base::StringView value;
+};
 
-        //--
+//--
 
-		struct ExtraAttribute
-		{
-			base::StringView key;
-			base::StringView value;
-		};
-
-		//--
-
-    } // shader
-} // rendering
+END_BOOMER_NAMESPACE(rendering::shadercompiler)

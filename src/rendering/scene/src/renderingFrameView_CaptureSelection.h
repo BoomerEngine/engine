@@ -12,57 +12,51 @@
 
 #include "rendering/device/include/renderingCommandWriter.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
+
+//--
+
+/// command buffers to write to when recording selection fragments
+struct FrameViewCaptureSelectionRecorder : public FrameViewRecorder
 {
-    namespace scene
+    GPUCommandWriter viewBegin; // run at the start of the view rendering
+    GPUCommandWriter viewEnd; // run at the end of the view rendering
+
+    GPUCommandWriter depthPrePass; // depth pre pass, used to filter foreground fragments
+    GPUCommandWriter mainFragments; // selection emitting fragments
+
+    FrameViewCaptureSelectionRecorder();
+};
+
+//--
+
+/// helper recorder class
+class RENDERING_SCENE_API FrameViewCaptureSelection : public FrameViewSingleCamera
+{
+public:
+    struct Setup
     {
+        Camera camera;
+        base::Rect viewport;
 
-        //--
+        base::Rect captureRegion;
+        DownloadDataSinkPtr captureSink;
+    };
 
-        /// command buffers to write to when recording selection fragments
-        struct FrameViewCaptureSelectionRecorder : public FrameViewRecorder
-        {
-            command::CommandWriter viewBegin; // run at the start of the view rendering
-            command::CommandWriter viewEnd; // run at the end of the view rendering
+    //--
 
-            command::CommandWriter depthPrePass; // depth pre pass, used to filter foreground fragments
-            command::CommandWriter mainFragments; // selection emitting fragments
+    FrameViewCaptureSelection(const FrameRenderer& frame, const Setup& setup);
 
-            FrameViewCaptureSelectionRecorder();
-        };
+    void render(GPUCommandWriter& cmd);
 
-        //--
+    //--
 
-        /// helper recorder class
-        class RENDERING_SCENE_API FrameViewCaptureSelection : public FrameViewSingleCamera
-        {
-        public:
-            struct Setup
-            {
-                Camera camera;
-                base::Rect viewport;
+private:
+    const Setup& m_setup;
 
-                base::Rect captureRegion;
-                DownloadDataSinkPtr captureSink;
-            };
+    void initializeCommandStreams(GPUCommandWriter& cmd, FrameViewCaptureSelectionRecorder& rec);
+};
 
-            //--
+//--
 
-            FrameViewCaptureSelection(const FrameRenderer& frame, const Setup& setup);
-
-            void render(command::CommandWriter& cmd);
-
-            //--
-
-        private:
-            const Setup& m_setup;
-
-            void initializeCommandStreams(command::CommandWriter& cmd, FrameViewCaptureSelectionRecorder& rec);
-        };
-
-        //--
-
-
-    } // scene
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::scene)

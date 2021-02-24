@@ -10,36 +10,36 @@
 
 #include "renderingMaterialGraphBlock_Output.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//--
+
+/// lit output using PBR shader
+class RENDERING_MATERIAL_GRAPH_API MaterialGraphBlockOutputCommon : public MaterialGraphBlockOutput
 {
-    //--
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlockOutputCommon, MaterialGraphBlockOutput);
 
-    /// lit output using PBR shader
-    class RENDERING_MATERIAL_GRAPH_API MaterialGraphBlockOutputCommon : public MaterialGraphBlockOutput
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlockOutputCommon, MaterialGraphBlockOutput);
+public:
+    MaterialGraphBlockOutputCommon();
 
-    public:
-        MaterialGraphBlockOutputCommon();
+protected:
+    virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override;
 
-    protected:
-        virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override;
+    virtual void resolveMetadata(MaterialTemplateMetadata& outMetadata) const override final;
+    virtual void compilePixelFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const override final;
+    virtual void compileVertexFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const override final;
 
-        virtual void resolveMetadata(MaterialTemplateMetadata& outMetadata) const override final;
-        virtual void compilePixelFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const override final;
-        virtual void compileVertexFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const override final;
+    virtual CodeChunk compileMainColor(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const = 0;
 
-        virtual CodeChunk compileMainColor(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const = 0;
+    bool m_applyFog = true;
+    bool m_twoSided = false;
+    bool m_maskAlphaToCoverage = false;
+    bool m_depthWrite = true; // can be set to false even for "solid" materials
+    bool m_premultiplyAlpha = true;
+    float m_maskThreshold = 0.5f;
+    bool m_transparent = false;
+};
 
-        bool m_applyFog = true;
-        bool m_twoSided = false;
-        bool m_maskAlphaToCoverage = false;
-        bool m_depthWrite = true; // can be set to false even for "solid" materials
-        bool m_premultiplyAlpha = true;
-        float m_maskThreshold = 0.5f;
-        bool m_transparent = false;
-    };
-
-    //--
+//--
     
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

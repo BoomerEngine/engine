@@ -10,287 +10,284 @@
 
 #include "rendering/device/include/renderingCommands.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api)
+
+//---
+
+/// helper class to extract temp data from command buffers
+class RENDERING_API_COMMON_API FrameExecutionData : public base::NoCopy
 {
-    namespace api
-    {
-		//---
+public:
+	FrameExecutionData();
 
-		/// helper class to extract temp data from command buffers
-		class RENDERING_API_COMMON_API FrameExecutionData : public base::NoCopy
+	//--
+
+	struct ConstantBuffer
+	{
+		uint32_t usedSize = 0; // <= 64K
+
+		mutable union
 		{
-		public:
-			FrameExecutionData();
+			void* ptr; // pointer to actual data
+			uint64_t handle;
+		} resource;
+	};
 
-			//--
+	struct ConstantBufferCopy
+	{
+		uint16_t bufferIndex = 0;
+		uint16_t bufferOffset = 0;
+		uint16_t srcDataSize = 0;
+		const void* srcData = nullptr;
+	};
 
-			struct ConstantBuffer
-			{
-				uint32_t usedSize = 0; // <= 64K
+	struct StagingArea
+	{
+		const OpUpdate* op = nullptr; // update opcode
+	};
 
-				mutable union
-				{
-					void* ptr; // pointer to actual data
-					uint64_t handle;
-				} resource;
-			};
+	//--
 
-			struct ConstantBufferCopy
-			{
-				uint16_t bufferIndex = 0;
-				uint16_t bufferOffset = 0;
-				uint16_t srcDataSize = 0;
-				const void* srcData = nullptr;
-			};
+	uint32_t m_constantBufferSize = 0;
+	uint32_t m_constantBufferAlignment = 0;
+	base::InplaceArray<ConstantBuffer, 256> m_constantBuffers;
+	base::InplaceArray<ConstantBufferCopy, 8192> m_constantBufferCopies;
 
-			struct StagingArea
-			{
-				const command::OpUpdate* op = nullptr; // update opcode
-			};
+	base::InplaceArray<StagingArea, 256> m_stagingAreas;
 
-			//--
+	//--
+};
 
-			uint32_t m_constantBufferSize = 0;
-			uint32_t m_constantBufferAlignment = 0;
-			base::InplaceArray<ConstantBuffer, 256> m_constantBuffers;
-			base::InplaceArray<ConstantBufferCopy, 8192> m_constantBufferCopies;
+//---
 
-			base::InplaceArray<StagingArea, 256> m_stagingAreas;
+enum class DynamicRenderStatesDirtyBit : uint16_t
+{
+	LineWidth,
+	DepthBiasValues,
+	DepthClampValues,
+	StencilFrontCompareMask,
+	StencilFrontWriteMask,
+	StencilFrontRef,
+	StencilBackCompareMask,
+	StencilBackWriteMask,
+	StencilBackRef,
+	BlendColor,
+	ViewportRects,
+	ScissorRects,
+};
 
-			//--
-		};
+typedef base::BitFlags<DynamicRenderStatesDirtyBit> DynamicRenderStatesDirtyFlags;
 
-        //---
+//---
 
-		enum class DynamicRenderStatesDirtyBit : uint16_t
-		{
-			LineWidth,
-			DepthBiasValues,
-			DepthClampValues,
-			StencilFrontCompareMask,
-			StencilFrontWriteMask,
-			StencilFrontRef,
-			StencilBackCompareMask,
-			StencilBackWriteMask,
-			StencilBackRef,
-			BlendColor,
-			ViewportRects,
-			ScissorRects,
-		};
+struct RENDERING_API_COMMON_API GeometryBufferBinding
+{
+	ObjectID id; // buffer ID
+	uint32_t offset = 0;
 
-		typedef base::BitFlags<DynamicRenderStatesDirtyBit> DynamicRenderStatesDirtyFlags;
+	///--
 
-		//---
+	GeometryBufferBinding();
 
-		struct RENDERING_API_COMMON_API GeometryBufferBinding
-		{
-			ObjectID id; // buffer ID
-			uint32_t offset = 0;
+	void print(base::IFormatStream& f) const;
+};
 
-			///--
+struct RENDERING_API_COMMON_API GeometryStates
+{
+	GeometryBufferBinding indexBinding;
+	base::Array<GeometryBufferBinding> vertexBindings;
 
-			GeometryBufferBinding();
+	ImageFormat indexFormat = ImageFormat::UNKNOWN;
 
-			void print(base::IFormatStream& f) const;
-		};
+	uint8_t maxBoundVertexStreams = 0;
+	uint32_t finalIndexStreamOffset = 0;
 
-		struct RENDERING_API_COMMON_API GeometryStates
-		{
-			GeometryBufferBinding indexBinding;
-			base::Array<GeometryBufferBinding> vertexBindings;
+	//--
 
-			ImageFormat indexFormat = ImageFormat::UNKNOWN;
+	GeometryStates();
 
-			uint8_t maxBoundVertexStreams = 0;
-			uint32_t finalIndexStreamOffset = 0;
+	void print(base::IFormatStream& f) const;
+};
 
-			//--
+struct RENDERING_API_COMMON_API DescriptorBinding
+{
+	base::StringID name;
 
-			GeometryStates();
+	const DescriptorEntry* dataPtr = nullptr;
+	const DescriptorInfo* layoutPtr = nullptr;
 
-			void print(base::IFormatStream& f) const;
-		};
+	INLINE operator bool() const { return dataPtr != nullptr; }
 
-		struct RENDERING_API_COMMON_API DescriptorBinding
-		{
-			base::StringID name;
+	DescriptorBinding();
 
-			const DescriptorEntry* dataPtr = nullptr;
-			const DescriptorInfo* layoutPtr = nullptr;
+	void print(base::IFormatStream& f) const;
+};
 
-			INLINE operator bool() const { return dataPtr != nullptr; }
+struct RENDERING_API_COMMON_API DescriptorState
+{
+	base::Array<DescriptorBinding> descriptors;
 
-			DescriptorBinding();
+	INLINE DescriptorState() {};
+	INLINE DescriptorState(const DescriptorState& other) : descriptors(other.descriptors) {};
+	INLINE DescriptorState(DescriptorState&& other) : descriptors(std::move(other.descriptors)) {};
+	INLINE DescriptorState& operator=(const DescriptorState& other) { descriptors = other.descriptors; return *this; }
+	INLINE DescriptorState& operator=(DescriptorState&& other) { descriptors = std::move(other.descriptors); return *this; }
 
-			void print(base::IFormatStream& f) const;
-		};
-
-		struct RENDERING_API_COMMON_API DescriptorState
-		{
-			base::Array<DescriptorBinding> descriptors;
-
-			INLINE DescriptorState() {};
-			INLINE DescriptorState(const DescriptorState& other) : descriptors(other.descriptors) {};
-			INLINE DescriptorState(DescriptorState&& other) : descriptors(std::move(other.descriptors)) {};
-			INLINE DescriptorState& operator=(const DescriptorState& other) { descriptors = other.descriptors; return *this; }
-			INLINE DescriptorState& operator=(DescriptorState&& other) { descriptors = std::move(other.descriptors); return *this; }
-
-			void print(base::IFormatStream& f) const;
-		};
+	void print(base::IFormatStream& f) const;
+};
 		
-		struct RENDERING_API_COMMON_API PassAttachmentBinding
-		{
-			ObjectID viewId; // RTV!
+struct RENDERING_API_COMMON_API PassAttachmentBinding
+{
+	ObjectID viewId; // RTV!
 
-			uint32_t width = 0;
-			uint32_t height = 0;
+	uint32_t width = 0;
+	uint32_t height = 0;
 
-			uint8_t samples = 0;
-			ImageFormat format = ImageFormat::UNKNOWN;
-			LoadOp loadOp = LoadOp::Keep;
-			StoreOp storeOp = StoreOp::Store;
+	uint8_t samples = 0;
+	ImageFormat format = ImageFormat::UNKNOWN;
+	LoadOp loadOp = LoadOp::Keep;
+	StoreOp storeOp = StoreOp::Store;
 
-			union
-			{
-				float valueFloat[4];
-				uint32_t valueUint[4];
-			} clearValue;
+	union
+	{
+		float valueFloat[4];
+		uint32_t valueUint[4];
+	} clearValue;
 
-			//--
+	//--
 
-			PassAttachmentBinding();
+	PassAttachmentBinding();
 
-			INLINE operator bool() const { return !viewId.empty(); }
+	INLINE operator bool() const { return !viewId.empty(); }
 
-			void print(base::IFormatStream& f) const;
-		};
+	void print(base::IFormatStream& f) const;
+};
 
-		struct RENDERING_API_COMMON_API PassState
-		{
-			const command::OpBeginPass* passOp = nullptr;
+struct RENDERING_API_COMMON_API PassState
+{
+	const OpBeginPass* passOp = nullptr;
 
-			bool m_valid = false;
+	bool m_valid = false;
 
-			//uint32_t m_glFrameBuffer = 0;
+	//uint32_t m_glFrameBuffer = 0;
 
-			uint8_t samples = 0;
-			uint32_t width = 0;
-			uint32_t height = 0;
+	uint8_t samples = 0;
+	uint32_t width = 0;
+	uint32_t height = 0;
 
-			uint8_t viewportCount = 0;
-			uint8_t colorCount = 0;
+	uint8_t viewportCount = 0;
+	uint8_t colorCount = 0;
 			
-			base::Rect area;
+	base::Rect area;
 
-			bool swapchain = false; // we are rendering to a swapchain
+	bool swapchain = false; // we are rendering to a swapchain
 
-			PassAttachmentBinding color[FrameBuffer::MAX_COLOR_TARGETS];
-			PassAttachmentBinding depth;
+	PassAttachmentBinding color[FrameBuffer::MAX_COLOR_TARGETS];
+	PassAttachmentBinding depth;
 
-			PassState();
+	PassState();
 
-			void print(base::IFormatStream& f) const;
-		};
+	void print(base::IFormatStream& f) const;
+};
 
-		//---
+//---
 
-		class RENDERING_API_COMMON_API IBaseFrameExecutor : public base::NoCopy
-		{
-			RTTI_DECLARE_POOL(POOL_API_RUNTIME)
+class RENDERING_API_COMMON_API IBaseFrameExecutor : public base::NoCopy
+{
+	RTTI_DECLARE_POOL(POOL_API_RUNTIME)
 
-		public:
-			IBaseFrameExecutor(IBaseThread* thread, PerformanceStats* stats);
-			virtual ~IBaseFrameExecutor();
+public:
+	IBaseFrameExecutor(IBaseThread* thread, PerformanceStats* stats);
+	virtual ~IBaseFrameExecutor();
 
-			INLINE IBaseThread* thread() const { return m_thread; }
-			INLINE PerformanceStats* stats() const { return m_stats; }
-			INLINE ObjectRegistry* objects() const { return m_objectRegistry; }
-			INLINE IBaseObjectCache* cache() const { return m_objectCache; }
+	INLINE IBaseThread* thread() const { return m_thread; }
+	INLINE PerformanceStats* stats() const { return m_stats; }
+	INLINE ObjectRegistry* objects() const { return m_objectRegistry; }
+	INLINE IBaseObjectCache* cache() const { return m_objectCache; }
 
-#define RENDER_COMMAND_OPCODE(x) virtual void run##x(const command::Op##x& op) = 0;
+#define RENDER_COMMAND_OPCODE(x) virtual void run##x(const Op##x& op) = 0;
 #include "rendering/device/include/renderingCommandOpcodes.inl"
 #undef RENDER_COMMAND_OPCODE
 
-			void execute(command::CommandBuffer* commandBuffer);
+	void execute(GPUCommandBuffer* commandBuffer);
 
-		protected:
-			void executeSingle(command::CommandBuffer* commandBuffer);
+protected:
+	void executeSingle(GPUCommandBuffer* commandBuffer);
 
-		private:
-			IBaseThread* m_thread = nullptr;
+private:
+	IBaseThread* m_thread = nullptr;
 
-			ObjectRegistry* m_objectRegistry = nullptr;
-			IBaseObjectCache* m_objectCache = nullptr;
+	ObjectRegistry* m_objectRegistry = nullptr;
+	IBaseObjectCache* m_objectCache = nullptr;
 
-			PerformanceStats* m_stats = nullptr;
+	PerformanceStats* m_stats = nullptr;
 
-		};
+};
 
-		//---
+//---
 
-		/// state tracker for the executed command buffer
-		class RENDERING_API_COMMON_API IFrameExecutor : public IBaseFrameExecutor
-		{
-		public:
-			IFrameExecutor(IBaseThread* thread, PerformanceStats* stats);
-			virtual ~IFrameExecutor();
+/// state tracker for the executed command buffer
+class RENDERING_API_COMMON_API IFrameExecutor : public IBaseFrameExecutor
+{
+public:
+	IFrameExecutor(IBaseThread* thread, PerformanceStats* stats);
+	virtual ~IFrameExecutor();
 
-		protected:
-			PassState m_pass;
-			GeometryStates m_geometry;
-			DescriptorState m_descriptors;
+protected:
+	PassState m_pass;
+	GeometryStates m_geometry;
+	DescriptorState m_descriptors;
 
-			base::InplaceArray<DescriptorState, 8> m_descriptorStateStack; // pushed descriptors (for child command buffer processing so nothing leaks)
+	base::InplaceArray<DescriptorState, 8> m_descriptorStateStack; // pushed descriptors (for child command buffer processing so nothing leaks)
 
-			ObjectID m_activeSwapchain;
-			bool m_activeSwapchainAcquired = false;
+	ObjectID m_activeSwapchain;
+	bool m_activeSwapchainAcquired = false;
 
-			//--
+	//--
 
-			bool m_dirtyVertexBuffers = false;
-			bool m_dirtyIndexBuffer = false;
-			bool m_dirtyDescriptors = false;
+	bool m_dirtyVertexBuffers = false;
+	bool m_dirtyIndexBuffer = false;
+	bool m_dirtyDescriptors = false;
 
-			uint64_t m_currentPassKey = 0;
-			uint64_t m_currentVertexBindingKey = 0;
-			uint64_t m_currentDescriptorBindingKey = 0;
-			uint64_t m_currentRenderStateKey = 0;
+	uint64_t m_currentPassKey = 0;
+	uint64_t m_currentVertexBindingKey = 0;
+	uint64_t m_currentDescriptorBindingKey = 0;
+	uint64_t m_currentRenderStateKey = 0;
 
-			//--
+	//--
 
-			void pushDescriptorState(bool inheritCurrentParameters);
-			void popDescriptorState();
+	void pushDescriptorState(bool inheritCurrentParameters);
+	void popDescriptorState();
 
-			uint32_t printBoundDescriptors() const;
+	uint32_t printBoundDescriptors() const;
 
-			//--
+	//--
 
-			static void ExtractPassAttachment(PassState& state, int index, PassAttachmentBinding& att, const FrameBufferColorAttachmentInfo& src);
-			static void ExtractPassAttachment(PassState& state, PassAttachmentBinding& att, const FrameBufferDepthAttachmentInfo& src);
+	static void ExtractPassAttachment(PassState& state, int index, PassAttachmentBinding& att, const FrameBufferColorAttachmentInfo& src);
+	static void ExtractPassAttachment(PassState& state, PassAttachmentBinding& att, const FrameBufferDepthAttachmentInfo& src);
 
-			virtual void runNop(const command::OpNop& op) override final;
-			virtual void runHello(const command::OpHello& op) override final;
-			virtual void runNewBuffer(const command::OpNewBuffer& op) override final;
-			virtual void runTriggerCapture(const command::OpTriggerCapture& op) override final;
-			virtual void runChildBuffer(const command::OpChildBuffer& op) override final;
-			virtual void runAcquireOutput(const command::OpAcquireOutput& op) override final;
-			virtual void runSwapOutput(const command::OpSwapOutput& op) override final;
+	virtual void runNop(const OpNop& op) override final;
+	virtual void runHello(const OpHello& op) override final;
+	virtual void runNewBuffer(const OpNewBuffer& op) override final;
+	virtual void runTriggerCapture(const OpTriggerCapture& op) override final;
+	virtual void runChildBuffer(const OpChildBuffer& op) override final;
+	virtual void runAcquireOutput(const OpAcquireOutput& op) override final;
+	virtual void runSwapOutput(const OpSwapOutput& op) override final;
 
-			virtual void runBindVertexBuffer(const command::OpBindVertexBuffer& op) override final;
-			virtual void runBindIndexBuffer(const command::OpBindIndexBuffer& op) override final;
-			virtual void runBindDescriptor(const command::OpBindDescriptor& op) override final;
+	virtual void runBindVertexBuffer(const OpBindVertexBuffer& op) override final;
+	virtual void runBindIndexBuffer(const OpBindIndexBuffer& op) override final;
+	virtual void runBindDescriptor(const OpBindDescriptor& op) override final;
 
-			virtual void runUploadConstants(const command::OpUploadConstants& op) override final;
-			virtual void runUploadDescriptor(const command::OpUploadDescriptor& op) override final;
+	virtual void runUploadConstants(const OpUploadConstants& op) override final;
+	virtual void runUploadDescriptor(const OpUploadDescriptor& op) override final;
 
-			virtual void runUpdate(const command::OpUpdate&) override final;
-			virtual void runCopy(const command::OpCopy&) override final;
+	virtual void runUpdate(const OpUpdate&) override final;
+	virtual void runCopy(const OpCopy&) override final;
 
-			virtual void runBeginPass(const command::OpBeginPass& op) override; // NOT FINAL
-			virtual void runEndPass(const command::OpEndPass& op) override; // NOT FINAL
-		};
+	virtual void runBeginPass(const OpBeginPass& op) override; // NOT FINAL
+	virtual void runEndPass(const OpEndPass& op) override; // NOT FINAL
+};
 
-		//--
+//--
 
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api)

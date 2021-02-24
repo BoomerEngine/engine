@@ -11,35 +11,33 @@
 #include "resourceReference.h"
 #include "resourceAsyncReference.h"
 
-namespace base
-{   
-    namespace reflection
+BEGIN_BOOMER_NAMESPACE(base::reflection)
+
+namespace resolve
+{
+
+    // type name resolve for strong handles
+    template<typename T>
+    struct TypeName<res::Ref<T>>
     {
-        namespace resolve
+        static StringID GetTypeName()
         {
+            static auto cachedTypeName = res::FormatRefTypeName(TypeName<T>::GetTypeName());
+            return cachedTypeName;
+        }
+    };
 
-            // type name resolve for strong handles
-            template<typename T>
-            struct TypeName<res::Ref<T>>
-            {
-                static StringID GetTypeName()
-                {
-                    static auto cachedTypeName = res::FormatRefTypeName(TypeName<T>::GetTypeName());
-                    return cachedTypeName;
-                }
-            };
+    // type name resolve for strong handles
+    template<typename T>
+    struct TypeName<res::AsyncRef<T>>
+    {
+        static StringID GetTypeName()
+        {
+            static auto cachedTypeName = res::FormatAsyncRefTypeName(TypeName<T>::GetTypeName());
+            return cachedTypeName;
+        }
+    };
 
-            // type name resolve for strong handles
-            template<typename T>
-            struct TypeName<res::AsyncRef<T>>
-            {
-                static StringID GetTypeName()
-                {
-                    static auto cachedTypeName = res::FormatAsyncRefTypeName(TypeName<T>::GetTypeName());
-                    return cachedTypeName;
-                }
-            };
+} // resolve
 
-        } // resolve
-    } // reflection
-} // base
+END_BOOMER_NAMESPACE(base::reflection)

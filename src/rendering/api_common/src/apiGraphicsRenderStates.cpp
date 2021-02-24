@@ -9,23 +9,20 @@
 #include "build.h"
 #include "apiGraphicsRenderStates.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api)
+
+//--
+
+IBaseGraphicsRenderStates::IBaseGraphicsRenderStates(IBaseThread* owner, const GraphicsRenderStatesSetup& setup)
+	: IBaseObject(owner, ObjectType::GraphicsRenderStates)
+	, m_setup(setup)
 {
-    namespace api
-    {
-		//--
+	m_key = setup.key();
+}
 
-		IBaseGraphicsRenderStates::IBaseGraphicsRenderStates(IBaseThread* owner, const GraphicsRenderStatesSetup& setup)
-			: IBaseObject(owner, ObjectType::GraphicsRenderStates)
-			, m_setup(setup)
-		{
-			m_key = setup.key();
-		}
+IBaseGraphicsRenderStates::~IBaseGraphicsRenderStates()
+{}
 
-		IBaseGraphicsRenderStates::~IBaseGraphicsRenderStates()
-		{}
+//--
 
-		//--
-
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api)

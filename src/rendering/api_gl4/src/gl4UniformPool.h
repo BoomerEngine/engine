@@ -10,56 +10,49 @@
 
 #include "base/containers/include/queue.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+//---
+
+struct UniformBuffer
 {
-    namespace api
-    {
-		namespace gl4
-		{
-
-			//---
-
-			struct UniformBuffer
-			{
-				uint8_t* memoryPtr = nullptr;
-				GLuint glBuffer = 0;
-			};
+	uint8_t* memoryPtr = nullptr;
+	GLuint glBuffer = 0;
+};
 
 
-			//---
+//---
 
-			// simple pool for 64KB blocks of uniform data
-			class UniformBufferPool : public base::NoCopy
-			{
-			public:
-				UniformBufferPool();
-				virtual ~UniformBufferPool();
+// simple pool for 64KB blocks of uniform data
+class UniformBufferPool : public base::NoCopy
+{
+public:
+	UniformBufferPool();
+	virtual ~UniformBufferPool();
 
-				INLINE uint32_t bufferSize() const { return m_bufferSize; }
-				INLINE uint32_t bufferAlignment() const { return m_bufferAlignment; }
+	INLINE uint32_t bufferSize() const { return m_bufferSize; }
+	INLINE uint32_t bufferAlignment() const { return m_bufferAlignment; }
 
-				UniformBuffer allocateBuffer();
+	UniformBuffer allocateBuffer();
 
-				void returnToPool(UniformBuffer buffer);
+	void returnToPool(UniformBuffer buffer);
 
-			private:
-				const base::ThreadID m_owningThreadID;
+private:
+	const base::ThreadID m_owningThreadID;
 
-				base::Queue<UniformBuffer> m_freeEntries;
-				uint32_t m_bufferSize = 0;
-				uint32_t m_bufferAlignment = 0;
+	base::Queue<UniformBuffer> m_freeEntries;
+	uint32_t m_bufferSize = 0;
+	uint32_t m_bufferAlignment = 0;
 
-				base::HashSet<GLuint> m_allOwnedBuffers;
+	base::HashSet<GLuint> m_allOwnedBuffers;
 
-				//--
+	//--
 
-				void createBufferBatch(uint32_t count);
+	void createBufferBatch(uint32_t count);
 
-				//--
-			};
+	//--
+};
 
-			//---
+//---
 
-		} // gl4
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::gl4)

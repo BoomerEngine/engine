@@ -27,10 +27,8 @@
 
 #include "rendering/scene/include/renderingFrameParams.h"
 
-namespace rendering
-{
-    namespace test
-    {
+BEGIN_BOOMER_NAMESPACE(rendering::test)
+
         //---
 
         // order of test

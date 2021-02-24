@@ -10,70 +10,67 @@
 
 #include "base/object/include/object.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+//-----
+
+// rtti meta data with information about supported resource class that can be created byh this factory
+// NOTE: one factory, one class
+class BASE_RESOURCE_API FactoryClassMetadata : public rtti::IMetadata
 {
-    namespace res
+    RTTI_DECLARE_VIRTUAL_CLASS(FactoryClassMetadata, rtti::IMetadata);
+
+public:
+    FactoryClassMetadata();
+
+    // bind the resource class to the factory
+    template< typename T >
+    INLINE void bindResourceClass()
     {
-        //-----
+        m_resourceClass = T::GetStaticClass();
+    }
 
-        // rtti meta data with information about supported resource class that can be created byh this factory
-        // NOTE: one factory, one class
-        class BASE_RESOURCE_API FactoryClassMetadata : public rtti::IMetadata
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(FactoryClassMetadata, rtti::IMetadata);
+    // get bound resource class
+    INLINE ClassType resourceClass() const
+    {
+        return m_resourceClass;
+    }
 
-        public:
-            FactoryClassMetadata();
+private:
+    ClassType m_resourceClass;
+};
 
-            // bind the resource class to the factory
-            template< typename T >
-            INLINE void bindResourceClass()
-            {
-                m_resourceClass = T::GetStaticClass();
-            }
+//----
 
-            // get bound resource class
-            INLINE ClassType resourceClass() const
-            {
-                return m_resourceClass;
-            }
+// Resource factory, allows to create a resource of given class
+class BASE_RESOURCE_API IFactory : public IObject
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(IFactory, IObject);
 
-        private:
-            ClassType m_resourceClass;
-        };
+public:
+    IFactory();
+    virtual ~IFactory();
 
-        //----
+    // create resource based on the factory setup
+    virtual ResourceHandle createResource() const = 0;
 
-        // Resource factory, allows to create a resource of given class
-        class BASE_RESOURCE_API IFactory : public IObject
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(IFactory, IObject);
+    //--
 
-        public:
-            IFactory();
-            virtual ~IFactory();
+    // get all registered resource factory classes
+    static void GetAllFactories(base::Array<ClassType>& outFactories);
 
-            // create resource based on the factory setup
-            virtual ResourceHandle createResource() const = 0;
+    // get all resource classes creatable via factories
+    static void GetAllResourceClasses(base::Array<ClassType>& outResourceClasses);
 
-            //--
+    // create a factory for given resource class
+    static FactoryPtr CreateFactoryForResource(ClassType resourceClass);
 
-            // get all registered resource factory classes
-            static void GetAllFactories(base::Array<ClassType>& outFactories);
+protected:
+    StringBuf m_author;
+    StringBuf m_copyright;
+    bool m_allowInCompiledGame;
+};
 
-            // get all resource classes creatable via factories
-            static void GetAllResourceClasses(base::Array<ClassType>& outResourceClasses);
+//------
 
-            // create a factory for given resource class
-            static FactoryPtr CreateFactoryForResource(ClassType resourceClass);
-
-        protected:
-            StringBuf m_author;
-            StringBuf m_copyright;
-            bool m_allowInCompiledGame;
-        };
-
-        //------
-
-    } // res
-} // base
+END_BOOMER_NAMESPACE(base::res)

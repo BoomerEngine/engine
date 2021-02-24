@@ -8,107 +8,103 @@
 
 #include "rendering_scene_glue.inl"
 
-namespace rendering
-{
-    namespace scene
-    {
-		///---
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
 
-		static const uint32_t MAX_CASCADES = 4;
+///---
 
-        ///---
+static const uint32_t MAX_CASCADES = 4;
 
-        class Camera;
-        struct CameraSetup;
+///---
 
-        class FlyCamera;
+class Camera;
+struct CameraSetup;
 
-        ///---
+class FlyCamera;
 
-        class IFrameInspector;
+///---
 
-        //--
+class IFrameInspector;
+
+//--
  
-		struct FrameCompositionTarget;
+struct FrameCompositionTarget;
 
-        struct FrameParams;
-        struct FrameParams_Capture;
+struct FrameParams;
+struct FrameParams_Capture;
 
-        class FrameSurfaceCache;
+class FrameSurfaceCache;
         
-        class CameraContext;
-        typedef base::RefPtr<CameraContext> CameraContextPtr;
+class CameraContext;
+typedef base::RefPtr<CameraContext> CameraContextPtr;
 
-        class DebugGeometry;
+class DebugGeometry;
 
-        enum class DebugFont : uint8_t
-        {
-            Normal,
-            Bold,
-            Italic,
-            Big,
-            Small,
-        };
+enum class DebugFont : uint8_t
+{
+    Normal,
+    Bold,
+    Italic,
+    Big,
+    Small,
+};
 
-        //--
+//--
 
-        class MaterialCachedTemplate;
-        typedef base::RefPtr<MaterialCachedTemplate> MaterialCachedTemplatePtr;
+class MaterialCachedTemplate;
+typedef base::RefPtr<MaterialCachedTemplate> MaterialCachedTemplatePtr;
 
-        class Scene;
-        typedef base::RefPtr<Scene> ScenePtr;
+class Scene;
+typedef base::RefPtr<Scene> ScenePtr;
 
-        struct Command;
+struct Command;
 
-        class Selectable;
+class Selectable;
 
-        class MaterialCache;
-        struct MaterialCacheEntry;
+class MaterialCache;
+struct MaterialCacheEntry;
 
-        struct Fragment;
-        class IFragmentHandler;
-        class FragmentDrawList;
+struct Fragment;
+class IFragmentHandler;
+class FragmentDrawList;
         
-        class FrameRenderer;
-        class FrameView;
-        class FrameSurfaces;
+class FrameRenderer;
+class FrameView;
+class FrameSurfaces;
 
-        struct FilterFlags;
+struct FilterFlags;
 
-		//--
+//--
 
-		class FrameRenderingService;
+class FrameRenderingService;
 
-		class FrameViewMain;
-		class FrameViewCascades;
-		class FrameViewCaptureSelection;
-        class FrameViewCaptureDepth;
-        class FrameViewWireframe;
-		class FrameViewSingleCamera;
+class FrameViewMain;
+class FrameViewCascades;
+class FrameViewCaptureSelection;
+class FrameViewCaptureDepth;
+class FrameViewWireframe;
+class FrameViewSingleCamera;
 
-        struct FrameViewMainRecorder;
-        struct FrameViewCascadesRecorder;
-        struct FrameViewWireframeRecorder;
-        struct FrameViewCaptureSelectionRecorder;
-        struct FrameViewCaptureDepthRecorder;
+struct FrameViewMainRecorder;
+struct FrameViewCascadesRecorder;
+struct FrameViewWireframeRecorder;
+struct FrameViewCaptureSelectionRecorder;
+struct FrameViewCaptureDepthRecorder;
 
-		//--
+//--
 
-		class IObjectManager;
+class IObjectManager;
 
-		enum class ObjectType : uint8_t
-		{
-			Mesh,
-		};
+enum class ObjectType : uint8_t
+{
+	Mesh,
+};
 		
-		class IObjectProxy;
-		typedef base::RefPtr<IObjectProxy> ObjectProxyPtr;
+class IObjectProxy;
+typedef base::RefPtr<IObjectProxy> ObjectProxyPtr;
 
-		class ObjectProxyMesh;
-		typedef base::RefPtr<ObjectProxyMesh> ObjectProxyMeshPtr;
+class ObjectProxyMesh;
+typedef base::RefPtr<ObjectProxyMesh> ObjectProxyMeshPtr;
 
-		//--
+//--
 
-    } // scene
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::scene)

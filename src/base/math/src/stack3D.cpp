@@ -7,11 +7,3 @@
 ***/
 
 #include "build.h"
-
-namespace base
-{
-    //--
-
-    //--
-
-} // base

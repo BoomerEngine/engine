@@ -8,33 +8,29 @@
 
 #include "replicationFieldPacking.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::replication)
+
+///----
+
+/// mark property as replicated
+class BASE_REPLICATION_API SetupMetadata : public rtti::IMetadata
 {
-    namespace replication
+    RTTI_DECLARE_VIRTUAL_CLASS(SetupMetadata, rtti::IMetadata);
+
+public:
+    SetupMetadata();
+    SetupMetadata(const char* packingString);
+    SetupMetadata(const FieldPacking& packing);
+
+    INLINE const FieldPacking& packing() const
     {
+        return m_packing;
+    }
 
-        ///----
+private:
+    FieldPacking m_packing;
+};
 
-        /// mark property as replicated
-        class BASE_REPLICATION_API SetupMetadata : public rtti::IMetadata
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(SetupMetadata, rtti::IMetadata);
+///----
 
-        public:
-            SetupMetadata();
-            SetupMetadata(const char* packingString);
-            SetupMetadata(const FieldPacking& packing);
-
-            INLINE const FieldPacking& packing() const
-            {
-                return m_packing;
-            }
-
-        private:
-            FieldPacking m_packing;
-        };
-
-        ///----
-
-    } // replication
-} // base
+END_BOOMER_NAMESPACE(base::replication)

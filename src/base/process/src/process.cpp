@@ -15,34 +15,30 @@
     #include "processPOSIX.h"
 #endif
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::process)
+
+//---
+
+ProcessSetup::ProcessSetup()
+{}
+
+//---
+
+IProcess::~IProcess()
 {
-    namespace process
-    {
+}
 
-        //---
-
-        ProcessSetup::ProcessSetup()
-        {}
-
-        //---
-
-        IProcess::~IProcess()
-        {
-        }
-
-        IProcess* IProcess::Create(const ProcessSetup& setup)
-        {
+IProcess* IProcess::Create(const ProcessSetup& setup)
+{
 #if defined(PLATFORM_WINDOWS)
-            return prv::WinProcess::Create(setup);
+    return prv::WinProcess::Create(setup);
 #elif defined(PLATFORM_POSIX)
-            return prv::POSIXProcess::Create(setup);
+    return prv::POSIXProcess::Create(setup);
 #else
-            return nullptr; // no thread needed apparently :P
+    return nullptr; // no thread needed apparently :P
 #endif
-        }
+}
 
-        //---
+//---
 
-    } // process
-} // base
+END_BOOMER_NAMESPACE(base::process)

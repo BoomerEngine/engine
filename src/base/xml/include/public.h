@@ -8,18 +8,14 @@
 
 #include "base_xml_glue.inl"
 
-namespace base
-{
-    namespace xml
-    {
-        typedef size_t NodeID;
-        typedef size_t AttributeID;
+BEGIN_BOOMER_NAMESPACE(base::xml)
 
-        class Node;
+typedef size_t NodeID;
+typedef size_t AttributeID;
 
-        class IDocument;
-        typedef RefPtr<IDocument> DocumentPtr;
+class Node;
 
-    } // xml
-} // base
+class IDocument;
+typedef RefPtr<IDocument> DocumentPtr;
 
+END_BOOMER_NAMESPACE(base::xml)

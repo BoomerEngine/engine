@@ -10,24 +10,24 @@
 
 #include "renderingMaterialGraphBlock_OutputCommon.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//--
+
+/// unlit output (color is directly written to render target)
+/// NOTE: this block may contain internal lighting calculations
+class RENDERING_MATERIAL_GRAPH_API MaterialGraphBlockOutput_Unlit : public MaterialGraphBlockOutputCommon
 {
-    //--
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlockOutput_Unlit, MaterialGraphBlockOutputCommon);
 
-    /// unlit output (color is directly written to render target)
-    /// NOTE: this block may contain internal lighting calculations
-    class RENDERING_MATERIAL_GRAPH_API MaterialGraphBlockOutput_Unlit : public MaterialGraphBlockOutputCommon
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlockOutput_Unlit, MaterialGraphBlockOutputCommon);
+public:
+    MaterialGraphBlockOutput_Unlit();
 
-    public:
-        MaterialGraphBlockOutput_Unlit();
+private:
+    virtual void MaterialGraphBlockOutput_Unlit::buildLayout(base::graph::BlockLayoutBuilder& builder) const override;
+    virtual CodeChunk compileMainColor(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const override;
+};
 
-    private:
-        virtual void MaterialGraphBlockOutput_Unlit::buildLayout(base::graph::BlockLayoutBuilder& builder) const override;
-        virtual CodeChunk compileMainColor(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const override;
-    };
-
-    //--
+//--
     
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

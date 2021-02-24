@@ -9,35 +9,35 @@
 #include "build.h"
 #include "renderingMaterialGraphBlock.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+///---
+
+class MaterialGraphBlock_GlobalCameraUp : public MaterialGraphBlock
 {
-    ///---
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_GlobalCameraUp, MaterialGraphBlock);
 
-    class MaterialGraphBlock_GlobalCameraUp : public MaterialGraphBlock
+public:
+    virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_GlobalCameraUp, MaterialGraphBlock);
+        builder.socket("Value"_id, MaterialOutputSocket().hideCaption());
+    }
 
-    public:
-        virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
-        {
-            builder.socket("Value"_id, MaterialOutputSocket().hideCaption());
-        }
+    virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
+    {
+        return CodeChunk(CodeChunkType::Numerical3, "CameraParams.CameraUp");
+    }
 
-        virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
-        {
-            return CodeChunk(CodeChunkType::Numerical3, "CameraParams.CameraUp");
-        }
+private:
+    float m_value;
+};
 
-    private:
-        float m_value;
-    };
+RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_GlobalCameraUp);
+    RTTI_METADATA(base::graph::BlockInfoMetadata).title("Camera Up").group("Globals");
+    RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialGlobal");
+    RTTI_METADATA(base::graph::BlockShapeMetadata).rectangle();
+RTTI_END_TYPE();
 
-    RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_GlobalCameraUp);
-        RTTI_METADATA(base::graph::BlockInfoMetadata).title("Camera Up").group("Globals");
-        RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialGlobal");
-        RTTI_METADATA(base::graph::BlockShapeMetadata).rectangle();
-    RTTI_END_TYPE();
+///---
 
-    ///---
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

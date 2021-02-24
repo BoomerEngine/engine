@@ -10,7 +10,3 @@
 #include "stringDataHolder.h"
 #include "utf8StringFunctions.h"
 
-namespace base
-{
-    
-} // base

@@ -11,93 +11,93 @@
 #include "managedItem.h"
 #include "base/resource_compiler/include/importFileFingerprint.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//---
+
+DECLARE_UI_EVENT(EVENT_IMPORT_STATUS_CHANGED)
+
+//---
+
+/// internal helper class that checks the reimport status of a file
+class ManagedFileImportStatusCheck : public IReferencable, public IProgressTracker
 {
-    //---
+public:
+    ManagedFileImportStatusCheck(const ManagedFileNativeResource* file, ui::IElement* owner = nullptr);
+    ~ManagedFileImportStatusCheck();
 
-    DECLARE_UI_EVENT(EVENT_IMPORT_STATUS_CHANGED)
+    /// file being checked
+    INLINE const ManagedFileNativeResource* file() const { return m_file; }
 
-    //---
+    //--
 
-    /// internal helper class that checks the reimport status of a file
-    class ManagedFileImportStatusCheck : public IReferencable, public IProgressTracker
-    {
-    public:
-        ManagedFileImportStatusCheck(const ManagedFileNativeResource* file, ui::IElement* owner = nullptr);
-        ~ManagedFileImportStatusCheck();
+    /// get last posted status
+    res::ImportStatus status();
 
-        /// file being checked
-        INLINE const ManagedFileNativeResource* file() const { return m_file; }
+    /// cancel request 
+    void cancel();
 
-        //--
+private:
+    const ManagedFileNativeResource* m_file = nullptr;
 
-        /// get last posted status
-        res::ImportStatus status();
+    SpinLock m_lock;
+    res::ImportStatus m_status = res::ImportStatus::Checking;
+    std::atomic<uint32_t> m_cancelFlag = 0;
 
-        /// cancel request 
-        void cancel();
+    ui::ElementWeakPtr m_owner;
 
-    private:
-        const ManagedFileNativeResource* m_file = nullptr;
+    virtual bool checkCancelation() const override final;
+    virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
 
-        SpinLock m_lock;
-        res::ImportStatus m_status = res::ImportStatus::Checking;
-        std::atomic<uint32_t> m_cancelFlag = 0;
+    void postStatusChange(res::ImportStatus status);
 
-        ui::ElementWeakPtr m_owner;
+    CAN_YIELD void runCheck();
+};
 
-        virtual bool checkCancelation() const override final;
-        virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
+//---
 
-        void postStatusChange(res::ImportStatus status);
+/// internal helper class that checks ONE SINGLE SOURCE ASSET
+class ManagedFileSourceAssetCheck : public IReferencable, public IProgressTracker
+{
+public:
+    ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, const io::TimeStamp& lastKnownTimestamp, const res::ImportFileFingerprint& lastKnownCRC);
+    ~ManagedFileSourceAssetCheck();
 
-        CAN_YIELD void runCheck();
-    };
+    /// file being checked
+    INLINE const StringBuf& sourceAssetPath() const { return m_sourceAssetPath; }
 
-    //---
+    //--
 
-    /// internal helper class that checks ONE SINGLE SOURCE ASSET
-    class ManagedFileSourceAssetCheck : public IReferencable, public IProgressTracker
-    {
-    public:
-        ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, const io::TimeStamp& lastKnownTimestamp, const res::ImportFileFingerprint& lastKnownCRC);
-        ~ManagedFileSourceAssetCheck();
+    /// get last posted status
+    res::SourceAssetStatus status();
 
-        /// file being checked
-        INLINE const StringBuf& sourceAssetPath() const { return m_sourceAssetPath; }
+    /// last progress (0-1) of check (usually CRC computation)
+    float progress();
 
-        //--
+    /// cancel request 
+    void cancel();
 
-        /// get last posted status
-        res::SourceAssetStatus status();
+private:
+    StringBuf m_sourceAssetPath;
+    io::TimeStamp m_sourceLastKnownTimestamp;
+    res::ImportFileFingerprint m_sourceLastKnownCRC;
 
-        /// last progress (0-1) of check (usually CRC computation)
-        float progress();
+    SpinLock m_lock;
 
-        /// cancel request 
-        void cancel();
+    res::SourceAssetStatus m_status = res::SourceAssetStatus::Checking;
+    float m_progress = 0.0f;
 
-    private:
-        StringBuf m_sourceAssetPath;
-        io::TimeStamp m_sourceLastKnownTimestamp;
-        res::ImportFileFingerprint m_sourceLastKnownCRC;
+    std::atomic<uint32_t> m_cancelFlag = 0;
 
-        SpinLock m_lock;
+    virtual bool checkCancelation() const override final;
+    virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
 
-        res::SourceAssetStatus m_status = res::SourceAssetStatus::Checking;
-        float m_progress = 0.0f;
+    void postStatusChange(res::SourceAssetStatus status);
 
-        std::atomic<uint32_t> m_cancelFlag = 0;
+    CAN_YIELD void runCheck();
+};
 
-        virtual bool checkCancelation() const override final;
-        virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
+//---
 
-        void postStatusChange(res::SourceAssetStatus status);
-
-        CAN_YIELD void runCheck();
-    };
-
-    //---
-
-} // editor
+END_BOOMER_NAMESPACE(ed)
 

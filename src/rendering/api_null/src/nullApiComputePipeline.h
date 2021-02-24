@@ -13,33 +13,26 @@
 #include "nullApiThread.h"
 #include "nullApiShaders.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
+
+///---
+
+class ComputePipeline : public IBaseComputePipeline
 {
-    namespace api
-    {
-		namespace nul
-		{
-			///---
+public:
+	ComputePipeline(Thread* owner, const Shaders* shaders);
+	virtual ~ComputePipeline();
 
-			class ComputePipeline : public IBaseComputePipeline
-			{
-			public:
-				ComputePipeline(Thread* owner, const Shaders* shaders);
-				virtual ~ComputePipeline();
+	//--
 
-				//--
+	INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
+	INLINE const Shaders* shaders() const { return static_cast<const Shaders*>(IBaseComputePipeline::shaders()); }
 
-				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
-				INLINE const Shaders* shaders() const { return static_cast<const Shaders*>(IBaseComputePipeline::shaders()); }
+	//--				
 
-				//--				
+private:
+};
 
-			private:
-			};
+//--
 
-			//--
-
-		} // nul
-    } // api
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::api::nul)

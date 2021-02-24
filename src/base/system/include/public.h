@@ -43,21 +43,24 @@
 #include "formatBuffer.h"
 #include "atomic.h"
 
-// Forward declares
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+typedef uint32_t ThreadID;
+typedef uint32_t ProcessID;
+
+class Event;
+class Semaphore;
+class Thread;
+
+namespace process
 {
-    typedef uint32_t ThreadID;
-    typedef uint32_t ProcessID;
+    class IProcess;
+    class IPipeWriter;
+    class IPipeReader;
+}
 
-    namespace process
-    {
-        class IProcess;
-        class IPipeWriter;
-        class IPipeReader;
-    }
+#define QUEUE_INSPECTOR const void* payload
+typedef std::function<void(QUEUE_INSPECTOR)> TQueueInspectorFunc;
 
-    #define QUEUE_INSPECTOR const void* payload
-    typedef std::function<void(QUEUE_INSPECTOR)> TQueueInspectorFunc;
-
-} // base
+END_BOOMER_NAMESPACE(base)
 

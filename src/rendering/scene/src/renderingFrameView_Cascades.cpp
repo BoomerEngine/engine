@@ -12,132 +12,125 @@
 #include "renderingFrameView_Cascades.h"
 #include "renderingFrameResources.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
+
+//--
+
+FrameViewCascadesRecorder::CascadeSlice::CascadeSlice()
+    : solid(nullptr)
+    , masked(nullptr)
+{}
+
+FrameViewCascadesRecorder::FrameViewCascadesRecorder(FrameViewRecorder* parentView)
+    : FrameViewRecorder(parentView)
+{}
+
+//--
+
+FrameViewCascades::FrameViewCascades(const FrameRenderer& frame, const CascadeData& cascades)
+    : m_frame(frame)
+    , m_cascades(cascades)
+{}
+
+FrameViewCascades::~FrameViewCascades()
+{}
+
+void FrameViewCascades::render(GPUCommandWriter& cmd, FrameViewRecorder* parentView)
 {
-    namespace scene
+    // initialize the scaffolding of the view
+    FrameViewCascadesRecorder rec(parentView);
+    initializeCommandStreams(cmd, rec);
+
+    // render scene into cascades, background scene is not casting global shadows
+    if (auto* scene = m_frame.frame().scenes.mainScenePtr)
+        scene->renderCascadesView(rec, *this, m_frame);
+
+    // wait for recording jobs to finish
+    rec.finishRendering();
+}
+
+void FrameViewCascades::initializeCommandStreams(GPUCommandWriter& cmd, FrameViewCascadesRecorder& rec)
+{
+    cmd.opBeginBlock("Cascades");
+
+    for (uint32_t i = 0; i < m_cascades.numCascades; ++i)
     {
+        const auto& cascadeInfo = m_cascades.cascades[i];
+        auto& recSlice = rec.slices[i];
 
-        //--
+        cmd.opBeginBlock(base::TempString("Cascade{}", i));
 
-        FrameViewCascadesRecorder::CascadeSlice::CascadeSlice()
-            : solid(nullptr)
-            , masked(nullptr)
-        {}
-
-        FrameViewCascadesRecorder::FrameViewCascadesRecorder(FrameViewRecorder* parentView)
-            : FrameViewRecorder(parentView)
-        {}
-
-        //--
-
-        FrameViewCascades::FrameViewCascades(const FrameRenderer& frame, const CascadeData& cascades)
-            : m_frame(frame)
-            , m_cascades(cascades)
-        {}
-
-        FrameViewCascades::~FrameViewCascades()
-        {}
-
-        void FrameViewCascades::render(command::CommandWriter& cmd, FrameViewRecorder* parentView)
         {
-            // initialize the scaffolding of the view
-            FrameViewCascadesRecorder rec(parentView);
-            initializeCommandStreams(cmd, rec);
+            FrameBuffer fb;
+            fb.depth.view(m_frame.resources().cascadesShadowDepthRTV[i]).clearDepth(1.0f).clearStencil(0);
 
-            // render scene into cascades, background scene is not casting global shadows
-            if (auto* scene = m_frame.frame().scenes.mainScenePtr)
-                scene->renderCascadesView(rec, *this, m_frame);
+            cmd.opBeingPass(fb);
 
-            // wait for recording jobs to finish
-            rec.finishRendering();
+            recSlice.solid.attachBuffer(cmd.opCreateChildCommandBuffer());
+            recSlice.masked.attachBuffer(cmd.opCreateChildCommandBuffer());
+
+            cmd.opEndPass();
         }
 
-        void FrameViewCascades::initializeCommandStreams(command::CommandWriter& cmd, FrameViewCascadesRecorder& rec)
-        {
-            cmd.opBeginBlock("Cascades");
+        cmd.opEndBlock();
+    }
 
-            for (uint32_t i = 0; i < m_cascades.numCascades; ++i)
-            {
-                const auto& cascadeInfo = m_cascades.cascades[i];
-                auto& recSlice = rec.slices[i];
-
-                cmd.opBeginBlock(base::TempString("Cascade{}", i));
-
-                {
-                    FrameBuffer fb;
-                    fb.depth.view(m_frame.resources().cascadesShadowDepthRTV[i]).clearDepth(1.0f).clearStencil(0);
-
-                    cmd.opBeingPass(fb);
-
-                    recSlice.solid.attachBuffer(cmd.opCreateChildCommandBuffer());
-                    recSlice.masked.attachBuffer(cmd.opCreateChildCommandBuffer());
-
-                    cmd.opEndPass();
-                }
-
-                cmd.opEndBlock();
-            }
-
-            cmd.opEndBlock();
-        }
+    cmd.opEndBlock();
+}
 
 
-		/*void BindShadowsData(command::CommandWriter& cmd, const CascadeData& cascades)
-		{
-			struct
-			{
-				GPUCascadeInfo cascades;
-			} consts;
+/*void BindShadowsData(GPUCommandWriter& cmd, const CascadeData& cascades)
+{
+	struct
+	{
+		GPUCascadeInfo cascades;
+	} consts;
 
-			PackCascadeData(cascades, consts.cascades);
+	PackCascadeData(cascades, consts.cascades);
 
-			DescriptorEntry desc[2];
-			desc[0].constants(&consts);
-			desc[1] = cascades.cascadesAtlasSRV;
-			cmd.opBindDescriptor("ShadowParams"_id, desc);
-		}*/
+	DescriptorEntry desc[2];
+	desc[0].constants(&consts);
+	desc[1] = cascades.cascadesAtlasSRV;
+	cmd.opBindDescriptor("ShadowParams"_id, desc);
+}*/
 
-        //---
+//---
 
 #if 0
-        FrameView_CascadeShadows::FrameView_CascadeShadows(const FrameRenderer& frame, const CascadeData& data)
-            : FrameView(frame, FrameViewType::GlobalCascades, data.cascadeShadowMap.width(), data.cascadeShadowMap.height())
-            , m_cascadeData(data)
-        {}
+FrameView_CascadeShadows::FrameView_CascadeShadows(const FrameRenderer& frame, const CascadeData& data)
+    : FrameView(frame, FrameViewType::GlobalCascades, data.cascadeShadowMap.width(), data.cascadeShadowMap.height())
+    , m_cascadeData(data)
+{}
 
-        void FrameView_CascadeShadows::render(command::CommandWriter& parentCmd)
-        {
-            // collect from multiple frustums
-            collectCascadeCameras(frame().camera.camera, m_cascadeData);
+void FrameView_CascadeShadows::render(GPUCommandWriter& parentCmd)
+{
+    // collect from multiple frustums
+    collectCascadeCameras(frame().camera.camera, m_cascadeData);
 
-            // prepare fragments for the visible objects
-            {
-                command::CommandWriter cmd(parentCmd.opCreateChildCommandBuffer(), "CascadeFragments");
-                generateFragments(cmd);
-            }
+    // prepare fragments for the visible objects
+    {
+        GPUCommandWriter cmd(parentCmd.opCreateChildCommandBuffer(), "CascadeFragments");
+        generateFragments(cmd);
+    }
 
-            // render into separate buckets
-            for (uint32_t i = 0; i < m_cascadeData.numCascades; ++i)
-            {
-                command::CommandWriter cmd(parentCmd.opCreateChildCommandBuffer(), base::TempString("CascadeSlice{}", i));
+    // render into separate buckets
+    for (uint32_t i = 0; i < m_cascadeData.numCascades; ++i)
+    {
+        GPUCommandWriter cmd(parentCmd.opCreateChildCommandBuffer(), base::TempString("CascadeSlice{}", i));
 
-                // bind global settings
-                BindSingleCamera(cmd, m_cascadeData.cascades[i].camera);
+        // bind global settings
+        BindSingleCamera(cmd, m_cascadeData.cascades[i].camera);
 
-                // render the shadow depth 
-                const auto cascadeDepthMapSliceRT = m_cascadeData.cascadeShadowMap.createSingleSliceView(i);
-                const auto& depthBiasSettings = m_cascadeData.cascades[i];
-                RenderShadowDepthPass(cmd, *this, cascadeDepthMapSliceRT, depthBiasSettings.depthBiasConstant, depthBiasSettings.depthBiasSlope, 0.0f, i);
-            }
-        }
+        // render the shadow depth 
+        const auto cascadeDepthMapSliceRT = m_cascadeData.cascadeShadowMap.createSingleSliceView(i);
+        const auto& depthBiasSettings = m_cascadeData.cascades[i];
+        RenderShadowDepthPass(cmd, *this, cascadeDepthMapSliceRT, depthBiasSettings.depthBiasConstant, depthBiasSettings.depthBiasSlope, 0.0f, i);
+    }
+}
 
-        //--
+//--
 #endif
 
+//--
 
-
-        //--
-
-    } // scene
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::scene)

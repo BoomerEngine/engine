@@ -9,34 +9,34 @@
 #include "build.h"
 #include "renderingMaterialGraphBlock.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+///---
+
+class MaterialGraphBlock_MathAbs : public MaterialGraphBlock
 {
-    ///---
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_MathAbs, MaterialGraphBlock);
 
-    class MaterialGraphBlock_MathAbs : public MaterialGraphBlock
+public:
+    virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_MathAbs, MaterialGraphBlock);
+        builder.socket("Out"_id, MaterialOutputSocket().hideCaption());
+        builder.socket("X"_id, MaterialInputSocket().hideCaption());
+    }
 
-    public:
-        virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
-        {
-            builder.socket("Out"_id, MaterialOutputSocket().hideCaption());
-            builder.socket("X"_id, MaterialInputSocket().hideCaption());
-        }
+    virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
+    {
+        CodeChunk a = compiler.evalInput(this, "X"_id, 0.0f);
+        return a.abs();
+    }
+};
 
-        virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
-        {
-            CodeChunk a = compiler.evalInput(this, "X"_id, 0.0f);
-            return a.abs();
-        }
-    };
+RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_MathAbs);
+    RTTI_METADATA(base::graph::BlockInfoMetadata).title("abs(x)").group("Math");
+    RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialMath");
+    RTTI_METADATA(base::graph::BlockShapeMetadata).slanted();
+RTTI_END_TYPE();
 
-    RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_MathAbs);
-        RTTI_METADATA(base::graph::BlockInfoMetadata).title("abs(x)").group("Math");
-        RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialMath");
-        RTTI_METADATA(base::graph::BlockShapeMetadata).slanted();
-    RTTI_END_TYPE();
+///---
 
-    ///---
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

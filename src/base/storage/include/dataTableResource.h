@@ -10,32 +10,28 @@
 
 #include "base/resource/include/resource.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::storage)
+
+/// resource that contains cooked data table, can be built from various sources, even scripts
+class BASE_STORAGE_API TableResource : public res::IResource
 {
-    namespace table
-    {
+    RTTI_DECLARE_VIRTUAL_CLASS(TableResource, res::IResource);
 
-        /// resource that contains cooked data table, can be built from various sources, even scripts
-        class BASE_STORAGE_API TableResource : public res::IResource
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(TableResource, res::IResource);
+public:
+    TableResource();
 
-        public:
-            TableResource();
+    // get the data table container
+    //INLINE const TablePtr& table() const { return data; }
 
-            // get the data table container
-            //INLINE const TablePtr& table() const { return data; }
+    //--
 
-            //--
+    // set new content
+    // NOTE: will gut existing data and place new data inside
+    //void content(Table&& tableToConsume);
 
-            // set new content
-            // NOTE: will gut existing data and place new data inside
-            //void content(Table&& tableToConsume);
+private:
 
-        private:
+    //TablePtr data;
+};
 
-            //TablePtr data;
-        };
-
-    } // table
-} // base
+END_BOOMER_NAMESPACE(base::storage)

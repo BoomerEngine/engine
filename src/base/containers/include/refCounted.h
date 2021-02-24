@@ -4,99 +4,98 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//---
+
+class IReferencable;
+
+//---
+
+/// helper class for referencable objects that want to have weak refs to them
+class BASE_CONTAINERS_API RefWeakContainer : public NoCopy
 {
+    RTTI_DECLARE_POOL(POOL_REF_HOLDER)
 
-    //---
+public:
+    RefWeakContainer(IReferencable* ptr);
 
-    class IReferencable;
+    void addRef();
+    void releaseRef();
 
-    //---
+    void drop(); // invalidates all references EVEN if the object has a non-zero reference count (i.e. "you are dead to me")
 
-    /// helper class for referencable objects that want to have weak refs to them
-    class BASE_CONTAINERS_API RefWeakContainer : public NoCopy
-    {
-        RTTI_DECLARE_POOL(POOL_REF_HOLDER)
+    IReferencable* lock(); // returns a valid referencable with +1 reference count or NULL
 
-    public:
-        RefWeakContainer(IReferencable* ptr);
+    INLINE IReferencable* unsafe() const { return m_ptr; }
 
-        void addRef();
-        void releaseRef();
+    INLINE bool expired() const { return m_ptr == nullptr; }
 
-        void drop(); // invalidates all references EVEN if the object has a non-zero reference count (i.e. "you are dead to me")
+private:
+    ~RefWeakContainer();
 
-        IReferencable* lock(); // returns a valid referencable with +1 reference count or NULL
+    std::atomic<uint32_t> m_refCount = 1;
+    IReferencable* m_ptr; // unreferenced
 
-        INLINE IReferencable* unsafe() const { return m_ptr; }
+    SpinLock m_lock;
+};
 
-        INLINE bool expired() const { return m_ptr == nullptr; }
+//---
 
-    private:
-        ~RefWeakContainer();
+/// basic implementation of a intrusive reference counting object
+class BASE_CONTAINERS_API IReferencable : public NoCopy
+{
+    RTTI_DECLARE_POOL(POOL_REF_OBJECT)
 
-        std::atomic<uint32_t> m_refCount = 1;
-        IReferencable* m_ptr; // unreferenced
+public:
+    // object is constructed with initial refcount of 1, this can be overridden if required
+    IReferencable(uint32_t initialRefCount = 1);
 
-        SpinLock m_lock;
-    };
+    // object can only be destroyed when having 0 reference count
+    virtual ~IReferencable();
 
-    //---
+    //--
 
-    /// basic implementation of a intrusive reference counting object
-    class BASE_CONTAINERS_API IReferencable : public NoCopy
-    {
-        RTTI_DECLARE_POOL(POOL_REF_OBJECT)
+    // add a reference
+    void addRef();
 
-    public:
-        // object is constructed with initial refcount of 1, this can be overridden if required
-        IReferencable(uint32_t initialRefCount = 1);
+    // release a reference, when count reaches zero the dispose() function will be called
+    void releaseRef();
 
-        // object can only be destroyed when having 0 reference count
-        virtual ~IReferencable();
+    //--
 
-        //--
+    // lock a weak reference
+    RefWeakContainer* makeWeakRef() const;
 
-        // add a reference
-        void addRef();
+    //--
 
-        // release a reference, when count reaches zero the dispose() function will be called
-        void releaseRef();
+    // print some object description
+    virtual void print(IFormatStream& f) const;
 
-        //--
+protected:
+    // dispose of this object - called when reference count reaches zero
+    virtual void dispose();
 
-        // lock a weak reference
-        RefWeakContainer* makeWeakRef() const;
+private:
+    std::atomic<uint32_t> m_refCount;
+    RefWeakContainer* m_weakHolder;
+    bool m_realObject = true; // TODO: remove
+};
 
-        //--
+//---
 
-        // print some object description
-        virtual void print(IFormatStream& f) const;
+// dump all still allocated reference counted objects
+extern BASE_CONTAINERS_API void DumpLiveRefCountedObjects();
 
-    protected:
-        // dispose of this object - called when reference count reaches zero
-        virtual void dispose();
+// enter the default object creation mode on current thread
+extern BASE_CONTAINERS_API void EnterDefaultObjectCreation();
 
-    private:
-        std::atomic<uint32_t> m_refCount;
-        RefWeakContainer* m_weakHolder;
-        bool m_realObject = true; // TODO: remove
-    };
+// leave the default object creation mode on current thread
+extern BASE_CONTAINERS_API void LeaveDefaultObjectCreation();
 
-    //---
+// are we creating a default object ?
+extern BASE_CONTAINERS_API bool IsDefaultObjectCreation();
 
-    // dump all still allocated reference counted objects
-    extern BASE_CONTAINERS_API void DumpLiveRefCountedObjects();
+//---
 
-    // enter the default object creation mode on current thread
-    extern BASE_CONTAINERS_API void EnterDefaultObjectCreation();
-
-    // leave the default object creation mode on current thread
-    extern BASE_CONTAINERS_API void LeaveDefaultObjectCreation();
-
-    // are we creating a default object ?
-    extern BASE_CONTAINERS_API bool IsDefaultObjectCreation();
-
-    //---
-
-} // base
+END_BOOMER_NAMESPACE(base)

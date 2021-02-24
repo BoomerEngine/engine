@@ -8,37 +8,36 @@
 
 #pragma once
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//---
+
+/// compiler material technique
+struct MaterialCompiledTechnique;
+extern MaterialCompiledTechnique* CompileTechnique(const base::StringBuf& contextName, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup);
+
+//---
+
+/// a local compiler used to compile a single technique of given material
+class MaterialTechniqueCompiler : public base::NoCopy
 {
+    RTTI_DECLARE_POOL(POOL_RENDERING_TECHNIQUE_COMPILER)
 
-    //---
+public:
+    MaterialTechniqueCompiler(const base::StringBuf& contextName, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup, MaterialTechniquePtr& outputTechnique);
 
-    /// compiler material technique
-    struct MaterialCompiledTechnique;
-    extern MaterialCompiledTechnique* CompileTechnique(const base::StringBuf& contextName, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup);
+    bool compile() CAN_YIELD; // NOTE: slow
 
-    //---
+private:
+    MaterialCompilationSetup m_setup;
 
-    /// a local compiler used to compile a single technique of given material
-    class MaterialTechniqueCompiler : public base::NoCopy
-    {
-        RTTI_DECLARE_POOL(POOL_RENDERING_TECHNIQUE_COMPILER)
+    MaterialGraphContainerPtr m_graph;
+    MaterialTechniquePtr m_technique;
 
-    public:
-        MaterialTechniqueCompiler(const base::StringBuf& contextName, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup, MaterialTechniquePtr& outputTechnique);
+    base::StringBuf m_contextName;
+};
 
-        bool compile() CAN_YIELD; // NOTE: slow
+//---
 
-    private:
-        MaterialCompilationSetup m_setup;
-
-        MaterialGraphContainerPtr m_graph;
-        MaterialTechniquePtr m_technique;
-
-        base::StringBuf m_contextName;    
-    };
-
-    //---
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)
 

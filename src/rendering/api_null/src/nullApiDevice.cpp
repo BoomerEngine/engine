@@ -10,38 +10,32 @@
 #include "nullApiDevice.h"
 #include "nullApiThread.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
+
+//--
+
+RTTI_BEGIN_TYPE_CLASS(Device);
+	RTTI_METADATA(DeviceNameMetadata).name("NULL");
+RTTI_END_TYPE();
+
+Device::Device()
 {
-	namespace api
-	{
-		namespace nul
-		{
-			//--
+}
 
-			RTTI_BEGIN_TYPE_CLASS(Device);
-				RTTI_METADATA(DeviceNameMetadata).name("NULL");
-			RTTI_END_TYPE();
-
-			Device::Device()
-			{
-			}
-
-			Device::~Device()
-			{
-			}
+Device::~Device()
+{
+}
         
-			base::StringBuf Device::name() const
-			{
-				return "NullDevice";
-			}
+base::StringBuf Device::name() const
+{
+	return "NullDevice";
+}
 
-			IBaseThread* Device::createOptimalThread(const base::app::CommandLine& cmdLine)
-			{
-				return new Thread(this, windows());
-			}
+IBaseThread* Device::createOptimalThread(const base::app::CommandLine& cmdLine)
+{
+	return new Thread(this, windows());
+}
 
-			//---
+//---
 
-		} // nul
-	} // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

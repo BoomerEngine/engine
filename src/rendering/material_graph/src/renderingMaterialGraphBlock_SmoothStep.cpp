@@ -9,45 +9,45 @@
 #include "build.h"
 #include "renderingMaterialGraphBlock.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+///---
+
+class MaterialGraphBlock_SmoothStep : public MaterialGraphBlock
 {
-    ///---
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_SmoothStep, MaterialGraphBlock);
 
-    class MaterialGraphBlock_SmoothStep : public MaterialGraphBlock
+public:
+    MaterialGraphBlock_SmoothStep()
+    {}
+
+    virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_SmoothStep, MaterialGraphBlock);
+        builder.socket("Out"_id, MaterialOutputSocket());
+        builder.socket("X"_id, MaterialInputSocket());
+        builder.socket("Start"_id, MaterialInputSocket());
+        builder.socket("End"_id, MaterialInputSocket());
+    }
 
-    public:
-        MaterialGraphBlock_SmoothStep()
-        {}
+    virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
+    {
+        CodeChunk a = compiler.evalInput(this, "X"_id, 0.5f);
+        CodeChunk start = compiler.evalInput(this, "Start"_id, 0.0f);
+        CodeChunk end = compiler.evalInput(this, "End"_id, 1.0f);
 
-        virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
-        {
-            builder.socket("Out"_id, MaterialOutputSocket());
-            builder.socket("X"_id, MaterialInputSocket());
-            builder.socket("Start"_id, MaterialInputSocket());
-            builder.socket("End"_id, MaterialInputSocket());
-        }
+        const auto comps = a.components();
+        start = start.conform(comps);
+        end = end.conform(comps);
 
-        virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
-        {
-            CodeChunk a = compiler.evalInput(this, "X"_id, 0.5f);
-            CodeChunk start = compiler.evalInput(this, "Start"_id, 0.0f);
-            CodeChunk end = compiler.evalInput(this, "End"_id, 1.0f);
+        return CodeChunkOp::SmoothStep(start, end, a);
+    }
+};
 
-            const auto comps = a.components();
-            start = start.conform(comps);
-            end = end.conform(comps);
+RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_SmoothStep);
+    RTTI_METADATA(base::graph::BlockInfoMetadata).title("SmoothStep").group("Functions");
+    RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialGeneric");
+RTTI_END_TYPE();
 
-            return CodeChunkOp::SmoothStep(start, end, a);
-        }
-    };
+///---
 
-    RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_SmoothStep);
-        RTTI_METADATA(base::graph::BlockInfoMetadata).title("SmoothStep").group("Functions");
-        RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialGeneric");
-    RTTI_END_TYPE();
-
-    ///---
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

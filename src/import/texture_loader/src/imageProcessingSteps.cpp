@@ -12,118 +12,118 @@
 #include "base/image/include/imageView.h"
 #include "base/image/include/image.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(assets)
+
+//--
+
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IImageProcessingStep);
+RTTI_END_TYPE();
+
+IImageProcessingStep::~IImageProcessingStep()
+{}
+
+//--
+
+RTTI_BEGIN_TYPE_ENUM(ImageChannelOperation);
+RTTI_ENUM_OPTION(CopyR);
+RTTI_ENUM_OPTION(CopyG);
+RTTI_ENUM_OPTION(CopyB);
+RTTI_ENUM_OPTION(CopyA);
+RTTI_ENUM_OPTION(SetZero);
+RTTI_ENUM_OPTION(SetOne);
+RTTI_END_TYPE();
+
+RTTI_BEGIN_TYPE_CLASS(ImageProcessingStep_ChannelRemap);
+    RTTI_CATEGORY("Image parameters");
+    RTTI_PROPERTY(m_numOutputChannels).editable();
+    RTTI_CATEGORY("Channel mapping");
+    RTTI_PROPERTY(m_red).editable();
+    RTTI_PROPERTY(m_green).editable();
+    RTTI_PROPERTY(m_blue).editable();
+    RTTI_PROPERTY(m_alpha).editable();
+RTTI_END_TYPE();
+
+ImageProcessingStep_ChannelRemap::ImageProcessingStep_ChannelRemap()
+{}
+
+bool ImageProcessingStep_ChannelRemap::validate(base::IFormatStream& outErrors) const
 {
-    //--
+    return true;
+}
 
-    RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IImageProcessingStep);
-    RTTI_END_TYPE();
+union ColorDefaults
+{
+    uint8_t FormatUint8[4];
+    uint16_t FormatUint16[4];
+    uint16_t FormatFloat16[4];
+    float FormatFloat32[4];
+};
 
-    IImageProcessingStep::~IImageProcessingStep()
-    {}
+void ImageProcessingStep_ChannelRemap::process(base::image::ImageView& view, base::image::ImagePtr& tempImagePtr) const
+{
+    auto sourceView = view;
 
-    //--
+    auto channelCount = m_numOutputChannels;
+    if (channelCount == 0 || channelCount >= 4)
+        channelCount = view.channels();
 
-    RTTI_BEGIN_TYPE_ENUM(ImageChannelOperation);
-    RTTI_ENUM_OPTION(CopyR);
-    RTTI_ENUM_OPTION(CopyG);
-    RTTI_ENUM_OPTION(CopyB);
-    RTTI_ENUM_OPTION(CopyA);
-    RTTI_ENUM_OPTION(SetZero);
-    RTTI_ENUM_OPTION(SetOne);
-    RTTI_END_TYPE();
-
-    RTTI_BEGIN_TYPE_CLASS(ImageProcessingStep_ChannelRemap);
-        RTTI_CATEGORY("Image parameters");
-        RTTI_PROPERTY(m_numOutputChannels).editable();
-        RTTI_CATEGORY("Channel mapping");
-        RTTI_PROPERTY(m_red).editable();
-        RTTI_PROPERTY(m_green).editable();
-        RTTI_PROPERTY(m_blue).editable();
-        RTTI_PROPERTY(m_alpha).editable();
-    RTTI_END_TYPE();
-
-    ImageProcessingStep_ChannelRemap::ImageProcessingStep_ChannelRemap()
-    {}
-
-    bool ImageProcessingStep_ChannelRemap::validate(base::IFormatStream& outErrors) const
+    if (channelCount != sourceView.channels())
     {
-        return true;
+        tempImagePtr = base::RefNew<base::image::Image>(view.format(), channelCount, sourceView.width(), sourceView.height(), sourceView.depth());
+        base::image::ConvertChannels(sourceView, tempImagePtr->view());
+        view = tempImagePtr->view();
     }
 
-    union ColorDefaults
+    ColorDefaults colorDefaults;
+
+    switch (view.format())
     {
-        uint8_t FormatUint8[4];
-        uint16_t FormatUint16[4];
-        uint16_t FormatFloat16[4];
-        float FormatFloat32[4];
-    };
+        case base::image::PixelFormat::Uint8_Norm:
+            colorDefaults.FormatUint8[0] = 0;
+            colorDefaults.FormatUint8[1] = 0;
+            colorDefaults.FormatUint8[1] = 0;
+            colorDefaults.FormatUint8[2] = 255;
+            break;
 
-    void ImageProcessingStep_ChannelRemap::process(base::image::ImageView& view, base::image::ImagePtr& tempImagePtr) const
-    {
-        auto sourceView = view;
+        case base::image::PixelFormat::Uint16_Norm:
+            colorDefaults.FormatUint16[0] = 0;
+            colorDefaults.FormatUint16[1] = 0;
+            colorDefaults.FormatUint16[1] = 0;
+            colorDefaults.FormatUint16[2] = 65535;
+            break;
 
-        auto channelCount = m_numOutputChannels;
-        if (channelCount == 0 || channelCount >= 4)
-            channelCount = view.channels();
+        case base::image::PixelFormat::Float16_Raw:
+            colorDefaults.FormatFloat16[0] = base::Float16Helper::Compress(0.0f);
+            colorDefaults.FormatFloat16[1] = base::Float16Helper::Compress(0.0f);
+            colorDefaults.FormatFloat16[1] = base::Float16Helper::Compress(0.0f);
+            colorDefaults.FormatFloat16[2] = base::Float16Helper::Compress(1.0f);
+            break;
 
-        if (channelCount != sourceView.channels())
-        {
-            tempImagePtr = base::RefNew<base::image::Image>(view.format(), channelCount, sourceView.width(), sourceView.height(), sourceView.depth());
-            base::image::ConvertChannels(sourceView, tempImagePtr->view());
-            view = tempImagePtr->view();
-        }
-
-        ColorDefaults colorDefaults;
-
-        switch (view.format())
-        {
-            case base::image::PixelFormat::Uint8_Norm:
-                colorDefaults.FormatUint8[0] = 0;
-                colorDefaults.FormatUint8[1] = 0;
-                colorDefaults.FormatUint8[1] = 0;
-                colorDefaults.FormatUint8[2] = 255;
-                break;
-
-            case base::image::PixelFormat::Uint16_Norm:
-                colorDefaults.FormatUint16[0] = 0;
-                colorDefaults.FormatUint16[1] = 0;
-                colorDefaults.FormatUint16[1] = 0;
-                colorDefaults.FormatUint16[2] = 65535;
-                break;
-
-            case base::image::PixelFormat::Float16_Raw:
-                colorDefaults.FormatFloat16[0] = base::Float16Helper::Compress(0.0f);
-                colorDefaults.FormatFloat16[1] = base::Float16Helper::Compress(0.0f);
-                colorDefaults.FormatFloat16[1] = base::Float16Helper::Compress(0.0f);
-                colorDefaults.FormatFloat16[2] = base::Float16Helper::Compress(1.0f);
-                break;
-
-            case base::image::PixelFormat::Float32_Raw:
-                colorDefaults.FormatFloat32[0] = 0.0f;
-                colorDefaults.FormatFloat32[1] = 0.0f;
-                colorDefaults.FormatFloat32[1] = 0.0f;
-                colorDefaults.FormatFloat32[2] = 1.0f;
-                break;
-        }
-
-        uint8_t channelMappingValues[6];
-        channelMappingValues[4] = channelCount; // zero
-        channelMappingValues[5] = channelCount + 3; // one
-        channelMappingValues[0] = 0;
-        channelMappingValues[1] = (channelCount >= 2) ? 1 : channelCount;
-        channelMappingValues[2] = (channelCount >= 3) ? 2 : channelCount;
-        channelMappingValues[3] = (channelCount >= 4) ? 3 : channelCount+3;
-
-        uint8_t channelMapping[4];
-        channelMapping[0] = channelMappingValues[(int)m_red];
-        channelMapping[1] = channelMappingValues[(int)m_green];
-        channelMapping[2] = channelMappingValues[(int)m_blue];
-        channelMapping[3] = channelMappingValues[(int)m_alpha];
-
-        base::image::CopyChannels(view, channelMapping, &colorDefaults);
+        case base::image::PixelFormat::Float32_Raw:
+            colorDefaults.FormatFloat32[0] = 0.0f;
+            colorDefaults.FormatFloat32[1] = 0.0f;
+            colorDefaults.FormatFloat32[1] = 0.0f;
+            colorDefaults.FormatFloat32[2] = 1.0f;
+            break;
     }
 
-    //--
+    uint8_t channelMappingValues[6];
+    channelMappingValues[4] = channelCount; // zero
+    channelMappingValues[5] = channelCount + 3; // one
+    channelMappingValues[0] = 0;
+    channelMappingValues[1] = (channelCount >= 2) ? 1 : channelCount;
+    channelMappingValues[2] = (channelCount >= 3) ? 2 : channelCount;
+    channelMappingValues[3] = (channelCount >= 4) ? 3 : channelCount+3;
 
-} // rendering
+    uint8_t channelMapping[4];
+    channelMapping[0] = channelMappingValues[(int)m_red];
+    channelMapping[1] = channelMappingValues[(int)m_green];
+    channelMapping[2] = channelMappingValues[(int)m_blue];
+    channelMapping[3] = channelMappingValues[(int)m_alpha];
+
+    base::image::CopyChannels(view, channelMapping, &colorDefaults);
+}
+
+//--
+
+END_BOOMER_NAMESPACE(assets)

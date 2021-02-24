@@ -10,118 +10,117 @@
 #include "uiCheckBox.h"
 #include "uiTextLabel.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+//--
+
+RTTI_BEGIN_TYPE_CLASS(CheckBox);
+    RTTI_METADATA(ElementClassNameMetadata).name("CheckBox");
+RTTI_END_TYPE();
+
+CheckBox::CheckBox(bool initialState /*= false*/)
+    : Button(ButtonModeBit::EventOnClick)
+    , m_state(initialState ? CheckBoxState::Checked : CheckBoxState::Unchecked)
 {
+    allowFocusFromClick(true);
+    allowFocusFromKeyboard(true);
 
-    //--
+    if (!base::IsDefaultObjectCreation())
+        createInternalChild<ui::TextLabel>();
 
-    RTTI_BEGIN_TYPE_CLASS(CheckBox);
-        RTTI_METADATA(ElementClassNameMetadata).name("CheckBox");
-    RTTI_END_TYPE();
+    updateCheckStyles();
+}
 
-    CheckBox::CheckBox(bool initialState /*= false*/)
-        : Button(ButtonModeBit::EventOnClick)
-        , m_state(initialState ? CheckBoxState::Checked : CheckBoxState::Unchecked)
+void CheckBox::state(bool flag)
+{
+    state(flag ? CheckBoxState::Checked : CheckBoxState::Unchecked);
+}
+
+void CheckBox::updateCheckStyles()
+{
+    switch (m_state)
     {
-        allowFocusFromClick(true);
-        allowFocusFromKeyboard(true);
-
-        if (!base::IsDefaultObjectCreation())
-            createInternalChild<ui::TextLabel>();
-
-        updateCheckStyles();
-    }
-
-    void CheckBox::state(bool flag)
-    {
-        state(flag ? CheckBoxState::Checked : CheckBoxState::Unchecked);
-    }
-
-    void CheckBox::updateCheckStyles()
-    {
-        switch (m_state)
+        case CheckBoxState::Checked:
         {
-            case CheckBoxState::Checked:
-            {
-                removeStyleClass("undefined"_id);
-                addStyleClass("checked"_id);
-                break;
-            }
+            removeStyleClass("undefined"_id);
+            addStyleClass("checked"_id);
+            break;
+        }
 
-            case CheckBoxState::Unchecked:
-            {
-                removeStyleClass("undefined"_id);
-                removeStyleClass("checked"_id);
-                break;
-            }
+        case CheckBoxState::Unchecked:
+        {
+            removeStyleClass("undefined"_id);
+            removeStyleClass("checked"_id);
+            break;
+        }
 
-            case CheckBoxState::Undecided:
-            {
-                addStyleClass("undefined"_id);
-                removeStyleClass("checked"_id);
-                break;
-            }
+        case CheckBoxState::Undecided:
+        {
+            addStyleClass("undefined"_id);
+            removeStyleClass("checked"_id);
+            break;
+        }
+    }
+}
+
+void CheckBox::state(CheckBoxState state)
+{
+    if (m_state != state)
+    {
+        m_state = state;
+        updateCheckStyles();           
+    }   
+}
+
+bool CheckBox::handleTemplateProperty(base::StringView name, base::StringView value)
+{
+    if (name == "checked" || name == "check")
+    {
+        if (value == "true" || value == "1")
+        {
+            state(CheckBoxState::Checked);
+            return true;
+        }
+        else if (value == "false" || value == "0")
+        {
+            state(CheckBoxState::Unchecked);
+            return true;
+        }
+        else if (value == "?")
+        {
+            state(CheckBoxState::Undecided);
+            return true;
         }
     }
 
-    void CheckBox::state(CheckBoxState state)
-    {
-        if (m_state != state)
-        {
-            m_state = state;
-            updateCheckStyles();           
-        }   
-    }
+    return TBaseClass::handleTemplateProperty(name, value);
+}
 
-    bool CheckBox::handleTemplateProperty(base::StringView name, base::StringView value)
-    {
-        if (name == "checked" || name == "check")
-        {
-            if (value == "true" || value == "1")
-            {
-                state(CheckBoxState::Checked);
-                return true;
-            }
-            else if (value == "false" || value == "0")
-            {
-                state(CheckBoxState::Unchecked);
-                return true;
-            }
-            else if (value == "?")
-            {
-                state(CheckBoxState::Undecided);
-                return true;
-            }
-        }
+CheckBoxState CheckBox::NextState(CheckBoxState state)
+{
+    return (state == CheckBoxState::Checked) ? CheckBoxState::Unchecked : CheckBoxState::Checked;
+}
 
-        return TBaseClass::handleTemplateProperty(name, value);
-    }
+void CheckBox::clicked()
+{
+    state(NextState(state()));
+    call(EVENT_CLICKED, stateBool());
+}
 
-    CheckBoxState CheckBox::NextState(CheckBoxState state)
-    {
-        return (state == CheckBoxState::Checked) ? CheckBoxState::Unchecked : CheckBoxState::Checked;
-    }
+//--
 
-    void CheckBox::clicked()
-    {
-        state(NextState(state()));
-        call(EVENT_CLICKED, stateBool());
-    }
+CheckBoxPtr MakeCheckbox(IElement* parent, base::StringView txt, bool initialState)
+{
+    auto container = parent->createChild();
+    container->layoutHorizontal();
 
-    //--
+    auto box = container->createChild<CheckBox>(initialState);
+    auto text = container->createChild<TextLabel>(txt);
+    text->customHorizontalAligment(ElementHorizontalLayout::Expand);
 
-    CheckBoxPtr MakeCheckbox(IElement* parent, base::StringView txt, bool initialState)
-    {
-        auto container = parent->createChild();
-        container->layoutHorizontal();
+    return box;
+}
 
-        auto box = container->createChild<CheckBox>(initialState);
-        auto text = container->createChild<TextLabel>(txt);
-        text->customHorizontalAligment(ElementHorizontalLayout::Expand);
-
-        return box;
-    }
-
-    //--
+//--
     
-} // ui
+END_BOOMER_NAMESPACE(ui)

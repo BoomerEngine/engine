@@ -8,16 +8,12 @@
 
 #include "base_process_glue.inl"
 
-namespace base
-{
-    namespace process
-    {
+BEGIN_BOOMER_NAMESPACE(base::process)
 
-        class IPipeReader;
-        class IPipeWriter;
-        class IProcess;
+class IPipeReader;
+class IPipeWriter;
+class IProcess;
 
-        struct ProcessSetup;
+struct ProcessSetup;
 
-    } // msg
-} // base
+END_BOOMER_NAMESPACE(base::process)

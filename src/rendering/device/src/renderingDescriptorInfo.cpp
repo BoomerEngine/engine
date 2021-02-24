@@ -11,62 +11,60 @@
 
 #include "base/containers/include/stringBuilder.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//--
+
+DescriptorInfo::DescriptorInfo()
+    : m_hash(0)
+{}
+
+DescriptorInfo::DescriptorInfo(const DescriptorInfo& other, DescriptorID id)
+    : m_hash(other.m_hash)
+    , m_entries(other.m_entries)
+    , m_id(id)
+{}
+
+void DescriptorInfo::print(base::IFormatStream& str) const
 {
+    bool first = true;
 
-    //--
-
-    DescriptorInfo::DescriptorInfo()
-        : m_hash(0)
-    {}
-
-    DescriptorInfo::DescriptorInfo(const DescriptorInfo& other, DescriptorID id)
-        : m_hash(other.m_hash)
-        , m_entries(other.m_entries)
-        , m_id(id)
-    {}
-
-    void DescriptorInfo::print(base::IFormatStream& str) const
+    for (auto type : m_entries)
     {
-        bool first = true;
+        if (first)
+            first = false;
+        else
+            str << "-";
 
-        for (auto type : m_entries)
+        switch (type)
         {
-            if (first)
-                first = false;
-            else
-                str << "-";
+        case DeviceObjectViewType::ConstantBuffer: str.append("CBV"); break;
+        case DeviceObjectViewType::Buffer: str.append("BSRV"); break;
+        case DeviceObjectViewType::BufferWritable: str.append("BUAV"); break;
+        case DeviceObjectViewType::BufferStructured: str.append("SBSRV"); break;
+        case DeviceObjectViewType::BufferStructuredWritable: str.append("SBUAV"); break;
+        case DeviceObjectViewType::Image: str.append("ISRV"); break;
+		case DeviceObjectViewType::SampledImage: str.append("SSRV"); break;
+        case DeviceObjectViewType::ImageWritable: str.append("IUAV"); break;
+        case DeviceObjectViewType::RenderTarget: str.append("RTV"); break;
+        case DeviceObjectViewType::Sampler: str.append("SMPL"); break;
 
-            switch (type)
-            {
-            case DeviceObjectViewType::ConstantBuffer: str.append("CBV"); break;
-            case DeviceObjectViewType::Buffer: str.append("BSRV"); break;
-            case DeviceObjectViewType::BufferWritable: str.append("BUAV"); break;
-            case DeviceObjectViewType::BufferStructured: str.append("SBSRV"); break;
-            case DeviceObjectViewType::BufferStructuredWritable: str.append("SBUAV"); break;
-            case DeviceObjectViewType::Image: str.append("ISRV"); break;
-			case DeviceObjectViewType::SampledImage: str.append("SSRV"); break;
-            case DeviceObjectViewType::ImageWritable: str.append("IUAV"); break;
-            case DeviceObjectViewType::RenderTarget: str.append("RTV"); break;
-            case DeviceObjectViewType::Sampler: str.append("SMPL"); break;
-
-                default:
-                    FATAL_ERROR(base::TempString("Invalid type of the object view {} in the parameter layout", (uint8_t) type));
-                    break;
-            }
+            default:
+                FATAL_ERROR(base::TempString("Invalid type of the object view {} in the parameter layout", (uint8_t) type));
+                break;
         }
     }
+}
 
-    bool DescriptorInfo::operator==(const DescriptorInfo& other) const
-    {
-        if (m_hash != other.m_hash)
-            return false;
+bool DescriptorInfo::operator==(const DescriptorInfo& other) const
+{
+    if (m_hash != other.m_hash)
+        return false;
 
-        //ASSERT(m_entries == other.m_entries);
-        return true;
-    }
+    //ASSERT(m_entries == other.m_entries);
+    return true;
+}
 
-    //--
+//--
 
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

@@ -20,80 +20,77 @@
     #pragma optimize("",off)
 #endif
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::fibers)
+
+namespace prv
 {
-    namespace fibers
+
+    ///---
+
+    BaseScheduler::PendingJobPool::PendingJobPool()
+        : freeList(nullptr)
+        , numAllocatedJobs(0)
+        , numFreeJobs(0)
+    {}
+
+    BaseScheduler::PendingJob* BaseScheduler::PendingJobPool::alloc()
     {
-        namespace prv
+        auto lock = CreateLock(this->lock);
+
+        auto job  = freeList;
+        if (job == nullptr)
         {
+            job = new PendingJob();
+        }
+        else
+        {
+            freeList = job->next;
+            job->next = nullptr;
 
-            ///---
+            auto count = --numFreeJobs;
+            ASSERT(count >= 0);
+        }
 
-            BaseScheduler::PendingJobPool::PendingJobPool()
-                : freeList(nullptr)
-                , numAllocatedJobs(0)
-                , numFreeJobs(0)
-            {}
+        ++numAllocatedJobs;
 
-            BaseScheduler::PendingJob* BaseScheduler::PendingJobPool::alloc()
-            {
-                auto lock = CreateLock(this->lock);
+        ASSERT(!job->isAllocated);
+        ASSERT(!job->jobId);
+        ASSERT(!job->next);
+        job->isAllocated = true;
+        job->jobId = ++nextJobId;
 
-                auto job  = freeList;
-                if (job == nullptr)
-                {
-                    job = new PendingJob();
-                }
-                else
-                {
-                    freeList = job->next;
-                    job->next = nullptr;
+        return job;
+    }
 
-                    auto count = --numFreeJobs;
-                    ASSERT(count >= 0);
-                }
+    void BaseScheduler::PendingJobPool::release(PendingJob* job)
+    {
+        auto lock = CreateLock(this->lock);
 
-                ++numAllocatedJobs;
+        ASSERT(!job->isMainThreadJob);
+        ASSERT(job->isAllocated);
+        ASSERT(job->next == nullptr);
+        ASSERT(job->waitList == nullptr);
+        ASSERT(job->jobId != 0);
 
-                ASSERT(!job->isAllocated);
-                ASSERT(!job->jobId);
-                ASSERT(!job->next);
-                job->isAllocated = true;
-                job->jobId = ++nextJobId;
+        job->isAllocated = false;
+        job->job.name = nullptr;
+        job->job.func = TJobFunc();
+        job->fiber = nullptr;
+        job->jobId = 0;
 
-                return job;
-            }
+        job->next = freeList;
+        freeList = job;
 
-            void BaseScheduler::PendingJobPool::release(PendingJob* job)
-            {
-                auto lock = CreateLock(this->lock);
+        auto count = ++numAllocatedJobs;
+        ASSERT(count >= 0);
+        ++numFreeJobs;
+    }
 
-                ASSERT(!job->isMainThreadJob);
-                ASSERT(job->isAllocated);
-                ASSERT(job->next == nullptr);
-                ASSERT(job->waitList == nullptr);
-                ASSERT(job->jobId != 0);
+    ///---
 
-                job->isAllocated = false;
-                job->job.name = nullptr;
-                job->job.func = TJobFunc();
-                job->fiber = nullptr;
-                job->jobId = 0;
+} // prv
 
-                job->next = freeList;
-                freeList = job;
-
-                auto count = ++numAllocatedJobs;
-                ASSERT(count >= 0);
-                ++numFreeJobs;
-            }
-
-            ///---
-
-        } // prv
-    } // fibers
-} // base
-
+END_BOOMER_NAMESPACE(base::fibers)
 
 #ifdef PLATFORM_GCC
     #pragma GCC pop_options

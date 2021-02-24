@@ -11,50 +11,43 @@
 #include "rendering/api_common/include/apiShaders.h"
 #include "gl4Thread.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+///--
+
+class ShaderCompilationJob;
+
+///--
+
+/// loaded shaders, this object mainly servers as caching interface to object cache
+class Shaders : public IBaseShaders
 {
-    namespace api
-    {
-		namespace gl4
-		{
-			///--
+public:
+	Shaders(Thread* drv, const ShaderData* data);
+	virtual ~Shaders();
 
-			class ShaderCompilationJob;
+	//--
 
-			///--
+	INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
 
-			/// loaded shaders, this object mainly servers as caching interface to object cache
-			class Shaders : public IBaseShaders
-			{
-			public:
-				Shaders(Thread* drv, const ShaderData* data);
-				virtual ~Shaders();
+	INLINE VertexBindingLayout* vertexLayout() const { return (VertexBindingLayout*)IBaseShaders::vertexLayout();  }
+	INLINE DescriptorBindingLayout* descriptorLayout() const { return (DescriptorBindingLayout*)IBaseShaders::descriptorLayout(); }
 
-				//--
+	//--
 
-				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
+	virtual IBaseGraphicsPipeline* createGraphicsPipeline_ClientApi(const GraphicsRenderStatesSetup& setup) override;
+	virtual IBaseComputePipeline* createComputePipeline_ClientApi() override;
 
-				INLINE VertexBindingLayout* vertexLayout() const { return (VertexBindingLayout*)IBaseShaders::vertexLayout();  }
-				INLINE DescriptorBindingLayout* descriptorLayout() const { return (DescriptorBindingLayout*)IBaseShaders::descriptorLayout(); }
+	//--
 
-				//--
+	GLuint object();
 
-				virtual IBaseGraphicsPipeline* createGraphicsPipeline_ClientApi(const GraphicsRenderStatesSetup& setup) override;
-				virtual IBaseComputePipeline* createComputePipeline_ClientApi() override;
+private:
+	GLuint m_glProgram = 0;
 
-				//--
+	base::RefPtr<ShaderCompilationJob> m_compilationJob;
+};
 
-				GLuint object();
+///--
 
-			private:
-				GLuint m_glProgram = 0;
-
-				base::RefPtr<ShaderCompilationJob> m_compilationJob;
-			};
-
-			///--
-
-		} // null
-    } // api
-} // rendering
-        
+END_BOOMER_NAMESPACE(rendering::api::gl4)

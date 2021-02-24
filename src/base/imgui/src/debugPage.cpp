@@ -10,37 +10,37 @@
 #include "build.h"
 #include "debugPage.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+
+//--
+
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IDebugPage);
+RTTI_END_TYPE();
+
+IDebugPage::IDebugPage()
+{}
+
+IDebugPage::~IDebugPage()
+{}
+
+bool IDebugPage::handleInitialize()
 {
+    return true;
+}
 
-    //--
+void IDebugPage::handleTick(float timeDelta)
+{   
+}
 
-    RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IDebugPage);
-    RTTI_END_TYPE();
+void IDebugPage::handleRender()
+{
+}
 
-    IDebugPage::IDebugPage()
-    {}
+void IDebugPage::handleRender3D(rendering::scene::FrameParams& frame)
+{
+}
 
-    IDebugPage::~IDebugPage()
-    {}
+//--
 
-    bool IDebugPage::handleInitialize()
-    {
-        return true;
-    }
-
-    void IDebugPage::handleTick(float timeDelta)
-    {   
-    }
-
-    void IDebugPage::handleRender()
-    {
-    }
-
-    void IDebugPage::handleRender3D(rendering::scene::FrameParams& frame)
-    {
-    }
-
-    //--
-
-} // plugin
+END_BOOMER_NAMESPACE(base)

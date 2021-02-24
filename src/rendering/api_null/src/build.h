@@ -8,29 +8,22 @@
 
 #include "public.h"
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace nul
-		{
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
 
-			//--
+//--
 
-			class Device;
-			class Thread;
-			class CopyQueue;
+class Device;
+class Thread;
+class CopyQueue;
 
-			class Buffer;
-			class Image;
-			class Output;
-			class Shaders;
-			class Sampler;
-			class Swapchain;
-			class PassLayout;
+class Buffer;
+class Image;
+class Output;
+class Shaders;
+class Sampler;
+class Swapchain;
+class PassLayout;
 
-			//--
+//--
 
-		} // api
-    } // nul
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

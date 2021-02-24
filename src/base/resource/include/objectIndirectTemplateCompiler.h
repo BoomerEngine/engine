@@ -8,60 +8,61 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//--
+
+/// helper interface to compile final property view from multiple indirect object templates
+class BASE_RESOURCE_API ObjectIndirectTemplateCompiler : public ITemplatePropertyValueContainer
 {
-    //--
-
-    /// helper interface to compile final property view from multiple indirect object templates
-    class BASE_RESOURCE_API ObjectIndirectTemplateCompiler : public ITemplatePropertyValueContainer
-    {
-    public:
-        ObjectIndirectTemplateCompiler(); // use default loader
-        ObjectIndirectTemplateCompiler(res::ResourceLoader* loader); // use specific loader
-        virtual ~ObjectIndirectTemplateCompiler();
-
-        //--
-
-        // clear templates on list
-        void clear();
-
-        // add template to list
-        void addTemplate(const ObjectIndirectTemplate* ptr);
-
-        // remove template from list
-        void removeTemplate(const ObjectIndirectTemplate* ptr);
-
-        //--
-
-        // determine final object class
-        virtual ClassType compileClass() const override final;
-
-        // compile value of single property
-        virtual bool compileValue(StringID name, Type expectedType, void* ptr) const override final;
-
-        // compile stacked transform
-        EulerTransform compileTransform() const;
-
-        //--
-
-        // flatten all templates into a single template
-        // NOTE: created template is ALWAYS a clone so it's safe to use regardless of what happens to source data
-        ObjectIndirectTemplatePtr flatten() const;
-
-        //--
-
-    private:
-        InplaceArray<const ObjectIndirectTemplate*, 8> m_templates;
-        InplaceArray<const ObjectIndirectTemplate*, 8> m_enabledTemplates; // reversed order so we can break on first match
-
-        ClassType m_objectClass;
-        res::ResourceLoader* m_loader = nullptr;
-
-        void updateObjectClass();
-
-        bool compileValueRaw(StringID name, Type expectedType, void* ptr) const;
-    };
+public:
+    ObjectIndirectTemplateCompiler(); // use default loader
+    ObjectIndirectTemplateCompiler(res::ResourceLoader* loader); // use specific loader
+    virtual ~ObjectIndirectTemplateCompiler();
 
     //--
 
-} // base
+    // clear templates on list
+    void clear();
+
+    // add template to list
+    void addTemplate(const ObjectIndirectTemplate* ptr);
+
+    // remove template from list
+    void removeTemplate(const ObjectIndirectTemplate* ptr);
+
+    //--
+
+    // determine final object class
+    virtual ClassType compileClass() const override final;
+
+    // compile value of single property
+    virtual bool compileValue(StringID name, Type expectedType, void* ptr) const override final;
+
+    // compile stacked transform
+    EulerTransform compileTransform() const;
+
+    //--
+
+    // flatten all templates into a single template
+    // NOTE: created template is ALWAYS a clone so it's safe to use regardless of what happens to source data
+    ObjectIndirectTemplatePtr flatten() const;
+
+    //--
+
+private:
+    InplaceArray<const ObjectIndirectTemplate*, 8> m_templates;
+    InplaceArray<const ObjectIndirectTemplate*, 8> m_enabledTemplates; // reversed order so we can break on first match
+
+    ClassType m_objectClass;
+    res::ResourceLoader* m_loader = nullptr;
+
+    void updateObjectClass();
+
+    bool compileValueRaw(StringID name, Type expectedType, void* ptr) const;
+};
+
+//--
+
+END_BOOMER_NAMESPACE(base)
+

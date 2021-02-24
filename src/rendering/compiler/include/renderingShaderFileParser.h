@@ -11,112 +11,109 @@
 #include "base/containers/include/inplaceArray.h"
 #include "base/parser/include/textToken.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::shadercompiler)
+
+namespace parser
 {
-    namespace compiler
+    ///----
+
+    enum class ElementFlag : uint64_t
     {
-        namespace parser
-        {
-            ///----
+        In,
+        Out,
+        InOut,
+        Const,
+        Shared,
+        Vertex,
+        Export,
+        MAX,
+    };
 
-            enum class ElementFlag : uint64_t
-            {
-                In,
-                Out,
-                InOut,
-                Const,
-                Shared,
-                Vertex,
-                Export,
-                MAX,
-            };
+    typedef base::BitFlags<ElementFlag> ElementFlags;
 
-            typedef base::BitFlags<ElementFlag> ElementFlags;
+    ///----
 
-            ///----
+    enum class ElementType : uint8_t
+    {
+        Invalid,
+        Global,
+        Struct,
+        StructElement,
+        Function,
+        FunctionArgument,
+        Descriptor,
+        DescriptorResourceElement,
+        DescriptorConstantTable,
+        DescriptorConstantTableElement,
+		StaticSampler,
+		RenderStates,
+		KeyValueParam,
+        Program,
+        Attribute,
+        Variable,
+        Using,
+    };
 
-            enum class ElementType : uint8_t
-            {
-                Invalid,
-                Global,
-                Struct,
-                StructElement,
-                Function,
-                FunctionArgument,
-                Descriptor,
-                DescriptorResourceElement,
-                DescriptorConstantTable,
-                DescriptorConstantTableElement,
-				StaticSampler,
-				RenderStates,
-				KeyValueParam,
-                Program,
-                Attribute,
-                Variable,
-                Using,
-            };
+    enum class StatementType : uint8_t
+    {
+        Invalid,
+        FunctionScope,
+        LocalScope,
 
-            enum class StatementType : uint8_t
-            {
-                Invalid,
-                FunctionScope,
-                LocalScope,
+    };
 
-            };
+    struct RENDERING_COMPILER_API TypeReference
+    {
+        base::parser::Location location;
+        base::StringView name;
+        base::StringView innerType;
+        base::InplaceArray<int, 4> arraySizes;
 
-            struct RENDERING_COMPILER_API TypeReference
-            {
-                base::parser::Location location;
-                base::StringView name;
-                base::StringView innerType;
-                base::InplaceArray<int, 4> arraySizes;
+        TypeReference();
+        TypeReference(const base::parser::Location& loc, base::StringView name);
+    };
 
-                TypeReference();
-                TypeReference(const base::parser::Location& loc, base::StringView name);
-            };
+    struct RENDERING_COMPILER_API Element
+    {
+        ElementType type = ElementType::Invalid;
+        base::parser::Location location;
+        base::StringView name;
+        base::Array<Element*> children;
+        base::Array<Element*> attributes;
+        base::Array<base::parser::Token*> tokens; // inner content
+        CodeNode* code = nullptr; // resolved code
+        TypeReference* typeRef = nullptr; // type reference
+        ElementFlags flags = ElementFlags();
 
-            struct RENDERING_COMPILER_API Element
-            {
-                ElementType type = ElementType::Invalid;
-                base::parser::Location location;
-                base::StringView name;
-                base::Array<Element*> children;
-                base::Array<Element*> attributes;
-                base::Array<base::parser::Token*> tokens; // inner content
-                CodeNode* code = nullptr; // resolved code
-                TypeReference* typeRef = nullptr; // type reference
-                ElementFlags flags = ElementFlags();
+        base::StringView stringData;
+        int64_t intData = 0;
+        double floatData = 0.0;
 
-                base::StringView stringData;
-                int64_t intData = 0;
-                double floatData = 0.0;
+        //---
 
-                //---
+        Element(const base::parser::Location& loc, ElementType type, base::StringView name = base::StringView(), ElementFlags flags=ElementFlags());
 
-                Element(const base::parser::Location& loc, ElementType type, base::StringView name = base::StringView(), ElementFlags flags=ElementFlags());
+        //--
 
-                //--
+        const Element* findAttribute(base::StringView name) const;
 
-                const Element* findAttribute(base::StringView name) const;
+        AttributeList gatherAttributes() const;
+    };
 
-                AttributeList gatherAttributes() const;
-            };
+    ///----
 
-            ///----
+    // get the parser language to tokenize text for shader compilation
+    extern RENDERING_COMPILER_API const base::parser::ILanguageDefinition& GetShaderLanguageDefinition();
 
-            // get the parser language to tokenize text for shader compilation
-            extern RENDERING_COMPILER_API const base::parser::ILanguageDefinition& GetShaderLanguageDefinition();
+    /// analyze structure of the shader file
+    /// NOTE: all memory is allocated from the linear allocator
+    extern RENDERING_COMPILER_API Element* AnalyzeShaderFile(base::mem::LinearAllocator& mem, base::parser::IErrorReporter& errHandler, base::parser::TokenList& tokens);
 
-            /// analyze structure of the shader file
-            /// NOTE: all memory is allocated from the linear allocator
-            extern RENDERING_COMPILER_API Element* AnalyzeShaderFile(base::mem::LinearAllocator& mem, base::parser::IErrorReporter& errHandler, base::parser::TokenList& tokens);
+    /// analyze structure of the shader function
+    extern RENDERING_COMPILER_API CodeNode* AnalyzeShaderCode(base::mem::LinearAllocator& mem, base::parser::IErrorReporter& errHandler, const base::Array<base::parser::Token*>& tokens, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram);
 
-            /// analyze structure of the shader function
-            extern RENDERING_COMPILER_API CodeNode* AnalyzeShaderCode(base::mem::LinearAllocator& mem, base::parser::IErrorReporter& errHandler, const base::Array<base::parser::Token*>& tokens, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram);
+    ///----
 
-            ///----
+} // parser
 
-        } // parser
-    } // shader
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::shadercompiler)

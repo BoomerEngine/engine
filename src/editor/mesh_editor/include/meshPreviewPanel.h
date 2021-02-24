@@ -10,79 +10,79 @@
 
 #include "rendering/ui_viewport/include/renderingScenePanel.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+DECLARE_UI_EVENT(EVENT_MATERIAL_CLICKED);
+
+class  MeshPreview;
+
+struct MeshPreviewPanelSettings
 {
-    //--
+    int forceLod = -1;
 
-    DECLARE_UI_EVENT(EVENT_MATERIAL_CLICKED);
+    bool showBounds = false;
+    bool showSkeleton = false;
+    bool showBoneNames = false;
+    bool showBoneAxes = false;
 
-    class  MeshPreview;
+    bool isolateMaterials = false;
+    bool highlightMaterials = false;
+    base::HashSet<base::StringID> selectedMaterials;
+};
 
-    struct MeshPreviewPanelSettings
-    {
-        int forceLod = -1;
+//--
 
-        bool showBounds = false;
-        bool showSkeleton = false;
-        bool showBoneNames = false;
-        bool showBoneAxes = false;
+// a preview panel for an image
+class EDITOR_MESH_EDITOR_API MeshPreviewPanel : public ui::RenderingSimpleScenePanel
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(MeshPreviewPanel, ui::RenderingSimpleScenePanel);
 
-        bool isolateMaterials = false;
-        bool highlightMaterials = false;
-        base::HashSet<base::StringID> selectedMaterials;
-    };
+public:
+    MeshPreviewPanel();
+    virtual ~MeshPreviewPanel();
 
-    //--
+    //---
 
-    // a preview panel for an image
-    class EDITOR_MESH_EDITOR_API MeshPreviewPanel : public ui::RenderingSimpleScenePanel
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MeshPreviewPanel, ui::RenderingSimpleScenePanel);
+    // get current settings
+    INLINE const MeshPreviewPanelSettings& previewSettings() const { return m_previewSettings; }
 
-    public:
-        MeshPreviewPanel();
-        virtual ~MeshPreviewPanel();
+    // change preview settings
+    void previewSettings(const MeshPreviewPanelSettings& settings);
 
-        //---
+    // change preview settings
+    void changePreviewSettings(const std::function<void(MeshPreviewPanelSettings&)>& func);
 
-        // get current settings
-        INLINE const MeshPreviewPanelSettings& previewSettings() const { return m_previewSettings; }
+    // set preview material
+    void previewMaterial(base::StringID name, rendering::MaterialPtr data);
 
-        // change preview settings
-        void previewSettings(const MeshPreviewPanelSettings& settings);
-
-        // change preview settings
-        void changePreviewSettings(const std::function<void(MeshPreviewPanelSettings&)>& func);
-
-        // set preview material
-        void previewMaterial(base::StringID name, rendering::MaterialPtr data);
-
-        // set preview mesh
-        void previewMesh(const rendering::MeshPtr& ptr);
-
-        //--
-
-        virtual void configSave(const ui::ConfigBlock& block) const;
-        virtual void configLoad(const ui::ConfigBlock& block);
-
-    private:
-        rendering::MeshPtr m_mesh;
-
-        MeshPreviewPanelSettings m_previewSettings;
-        base::HashMap<base::StringID, rendering::MaterialPtr> m_previewMaterials;
-
-        base::Array<rendering::scene::ObjectProxyPtr> m_proxies;
-
-        base::Box m_lastBounds;
-
-        void destroyPreviewElements();
-        void createPreviewElements();
-
-        virtual void handleRender(rendering::scene::FrameParams& frame) override;
-        virtual void handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables) override;
-        virtual void handleAreaSelection(bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables) override;
-    };
+    // set preview mesh
+    void previewMesh(const rendering::MeshPtr& ptr);
 
     //--
 
-} // ed
+    virtual void configSave(const ui::ConfigBlock& block) const;
+    virtual void configLoad(const ui::ConfigBlock& block);
+
+private:
+    rendering::MeshPtr m_mesh;
+
+    MeshPreviewPanelSettings m_previewSettings;
+    base::HashMap<base::StringID, rendering::MaterialPtr> m_previewMaterials;
+
+    base::Array<rendering::scene::ObjectProxyPtr> m_proxies;
+
+    base::Box m_lastBounds;
+
+    void destroyPreviewElements();
+    void createPreviewElements();
+
+    virtual void handleRender(rendering::scene::FrameParams& frame) override;
+    virtual void handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables) override;
+    virtual void handleAreaSelection(bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables) override;
+};
+
+//--
+
+END_BOOMER_NAMESPACE(ed)

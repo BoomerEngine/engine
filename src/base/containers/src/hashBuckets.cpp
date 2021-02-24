@@ -9,37 +9,37 @@
 #include "build.h"
 #include "hashBuckets.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//--
+
+HashBuckets::HashBuckets()
+{}
+
+void HashBuckets::Reset(HashBuckets* data)
 {
-    
-    //--
+    if (data)
+        memset(data->m_buckets, 0xFF, data->m_bucketCount * sizeof(int));
+}
 
-    HashBuckets::HashBuckets()
-    {}
+void HashBuckets::Clear(HashBuckets*& data)
+{
+    mem::GlobalPool<POOL_HASH_BUCKETS>::Free(data);
+    data = nullptr;
+}
 
-    void HashBuckets::Reset(HashBuckets* data)
-    {
-        if (data)
-            memset(data->m_buckets, 0xFF, data->m_bucketCount * sizeof(int));
-    }
+bool HashBuckets::CheckCapacity(const HashBuckets* data, uint32_t elementCount)
+{
+    if (elementCount < MIN_BUCKETS)
+        return true;
 
-    void HashBuckets::Clear(HashBuckets*& data)
-    {
-        mem::GlobalPool<POOL_HASH_BUCKETS>::Free(data);
-        data = nullptr;
-    }
+    if (data && elementCount < data->m_capacity)
+        return true;
 
-    bool HashBuckets::CheckCapacity(const HashBuckets* data, uint32_t elementCount)
-    {
-        if (elementCount < MIN_BUCKETS)
-            return true;
+    return false;
+}
 
-        if (data && elementCount < data->m_capacity)
-            return true;
+//--
 
-        return false;
-    }
+END_BOOMER_NAMESPACE(base)
 
-    //--
-
-} // base

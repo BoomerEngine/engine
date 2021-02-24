@@ -9,24 +9,17 @@
 #include "build.h"
 #include "nullApiDescriptorLayout.h"
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace nul
-		{
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
 
-			//--
+//--
 
-			DescriptorBindingLayout::DescriptorBindingLayout(Thread* owner, const base::Array<ShaderDescriptorMetadata>& descriptors)
-				: IBaseDescriptorBindingLayout(descriptors)
-			{}
+DescriptorBindingLayout::DescriptorBindingLayout(Thread* owner, const base::Array<ShaderDescriptorMetadata>& descriptors)
+	: IBaseDescriptorBindingLayout(descriptors)
+{}
 
-			DescriptorBindingLayout::~DescriptorBindingLayout()
-			{}
+DescriptorBindingLayout::~DescriptorBindingLayout()
+{}
 
-			//--
+//--
 
-		} // nul
-    } // gl4
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

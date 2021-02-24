@@ -10,29 +10,22 @@
 
 #include "rendering/api_common/include/apiObjectCache.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+//--
+
+class VertexBindingLayout : public IBaseVertexBindingLayout
 {
-    namespace api
-    {
-		namespace gl4
-		{
-			//--
+public:
+	VertexBindingLayout(Thread* owner, const base::Array<ShaderVertexStreamMetadata>& streams);
+	virtual ~VertexBindingLayout();
 
-			class VertexBindingLayout : public IBaseVertexBindingLayout
-			{
-			public:
-				VertexBindingLayout(Thread* owner, const base::Array<ShaderVertexStreamMetadata>& streams);
-				virtual ~VertexBindingLayout();
+	GLuint object();
 
-				GLuint object();
+private:
+	GLuint m_glVertexLayout = 0;
+};
 
-			private:
-				GLuint m_glVertexLayout = 0;
-			};
+//--
 
-			//--
-
-		} // gl4
-    } // api
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::api::gl4)

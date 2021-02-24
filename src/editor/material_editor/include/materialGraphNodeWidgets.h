@@ -10,36 +10,36 @@
 
 #include "base/ui/include/uiGraphEditorNodeInnerWidget.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+// constant scalar editor
+class EDITOR_MATERIAL_EDITOR_API MaterialGraphConstantScalarWidget : public ui::IGraphNodeInnerWidget
 {
-    //--
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphConstantScalarWidget, ui::IGraphNodeInnerWidget);
 
-    // constant scalar editor
-    class EDITOR_MATERIAL_EDITOR_API MaterialGraphConstantScalarWidget : public ui::IGraphNodeInnerWidget
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphConstantScalarWidget, ui::IGraphNodeInnerWidget);
+public:
+    virtual bool bindToBlock(base::graph::Block* block) override;
+    virtual void bindToActionHistory(base::ActionHistory* history) override;
 
-    public:
-        virtual bool bindToBlock(base::graph::Block* block) override;
-        virtual void bindToActionHistory(base::ActionHistory* history) override;
+    ui::DataBoxPtr m_box;
+};
 
-        ui::DataBoxPtr m_box;
-    };
+//--
 
-    //--
+// constant scalar editor
+class EDITOR_MATERIAL_EDITOR_API MaterialGraphConstantColorWidget : public ui::IGraphNodeInnerWidget
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphConstantColorWidget, ui::IGraphNodeInnerWidget);
 
-    // constant scalar editor
-    class EDITOR_MATERIAL_EDITOR_API MaterialGraphConstantColorWidget : public ui::IGraphNodeInnerWidget
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphConstantColorWidget, ui::IGraphNodeInnerWidget);
+public:
+    virtual bool bindToBlock(base::graph::Block* block) override;
+    virtual void bindToActionHistory(base::ActionHistory* history) override;
 
-    public:
-        virtual bool bindToBlock(base::graph::Block* block) override;
-        virtual void bindToActionHistory(base::ActionHistory* history) override;
+    ui::DataBoxPtr m_box;
+};
 
-        ui::DataBoxPtr m_box;
-    };
+//--
 
-    //--
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

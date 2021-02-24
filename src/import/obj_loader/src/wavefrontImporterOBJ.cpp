@@ -24,1085 +24,1084 @@
 #include "import/mesh_loader/include/renderingMeshCooker.h"
 #include "rendering/material/include/renderingMaterialInstance.h"
 
-namespace wavefront
+BEGIN_BOOMER_NAMESPACE(assets)
+
+//--
+
+base::ConfigProperty<bool> cvAllowWavefrontThreads("Wavefront.Importer", "AllowThreads", true);
+
+//--
+RTTI_BEGIN_TYPE_ENUM(OBJMeshAttributeMode);
+    RTTI_ENUM_OPTION_WITH_HINT(Always, "Attribute will be always emitted, even if it contains no data (does not make sense but zeros compress well, so..)");
+    RTTI_ENUM_OPTION_WITH_HINT(IfPresentAnywhere, "Attribute will be emitted to a mesh if at least one input group from .obj contains it");
+    RTTI_ENUM_OPTION_WITH_HINT(IfPresentEverywhere, "Attribute will be emitted to a mesh ONLY if ALL groups in a build group contain it (to avoid uninitialized data));");
+    RTTI_ENUM_OPTION_WITH_HINT(Always, "Attribute will never be emitted");
+RTTI_END_TYPE();
+
+RTTI_BEGIN_TYPE_CLASS(OBJMeshImportConfig);
+    RTTI_CATEGORY("Topology");
+    RTTI_PROPERTY(forceTriangles).editable("Force triangles at output, even if we had quads").overriddable();
+    RTTI_CATEGORY("Mesh streams");
+    RTTI_PROPERTY(emitNormals).editable("Should we emit the loaded normals").overriddable();
+    RTTI_PROPERTY(emitUVs).editable("Should we emit the loaded UVs").overriddable();
+    RTTI_PROPERTY(emitColors).editable("Should we emit the loaded colors").overriddable();
+    RTTI_CATEGORY("Texture mapping");
+    RTTI_PROPERTY(flipUV).editable("Flip V channel of the UVs").overriddable();
+    RTTI_CATEGORY("Selective import");
+    RTTI_PROPERTY(objectFilter).editable("Import only those objects").overriddable();
+    RTTI_PROPERTY(groupFilter).editable("Import only those groups").overriddable();
+RTTI_END_TYPE();
+
+OBJMeshImportConfig::OBJMeshImportConfig()
 {
-    //--
+}
 
-    base::ConfigProperty<bool> cvAllowWavefrontThreads("Wavefront.Importer", "AllowThreads", true);
+void OBJMeshImportConfig::computeConfigurationKey(base::CRC64& crc) const
+{
+    TBaseClass::computeConfigurationKey(crc);
 
-    //--
-    RTTI_BEGIN_TYPE_ENUM(OBJMeshAttributeMode);
-        RTTI_ENUM_OPTION_WITH_HINT(Always, "Attribute will be always emitted, even if it contains no data (does not make sense but zeros compress well, so..)");
-        RTTI_ENUM_OPTION_WITH_HINT(IfPresentAnywhere, "Attribute will be emitted to a mesh if at least one input group from .obj contains it");
-        RTTI_ENUM_OPTION_WITH_HINT(IfPresentEverywhere, "Attribute will be emitted to a mesh ONLY if ALL groups in a build group contain it (to avoid uninitialized data));");
-        RTTI_ENUM_OPTION_WITH_HINT(Always, "Attribute will never be emitted");
-    RTTI_END_TYPE();
+    crc << objectFilter.view();
+    crc << groupFilter.view();
 
-    RTTI_BEGIN_TYPE_CLASS(OBJMeshImportConfig);
-        RTTI_CATEGORY("Topology");
-        RTTI_PROPERTY(forceTriangles).editable("Force triangles at output, even if we had quads").overriddable();
-        RTTI_CATEGORY("Mesh streams");
-        RTTI_PROPERTY(emitNormals).editable("Should we emit the loaded normals").overriddable();
-        RTTI_PROPERTY(emitUVs).editable("Should we emit the loaded UVs").overriddable();
-        RTTI_PROPERTY(emitColors).editable("Should we emit the loaded colors").overriddable();
-        RTTI_CATEGORY("Texture mapping");
-        RTTI_PROPERTY(flipUV).editable("Flip V channel of the UVs").overriddable();
-        RTTI_CATEGORY("Selective import");
-        RTTI_PROPERTY(objectFilter).editable("Import only those objects").overriddable();
-        RTTI_PROPERTY(groupFilter).editable("Import only those groups").overriddable();
-    RTTI_END_TYPE();
+    crc << (char)emitNormals;
+    crc << (char)emitUVs;
+    crc << (char)emitColors;
 
-    OBJMeshImportConfig::OBJMeshImportConfig()
+    crc << forceTriangles;
+    crc << allowThreads;
+    crc << flipUV;
+}
+
+//--
+
+RTTI_BEGIN_TYPE_CLASS(OBJMeshImporter);
+    RTTI_METADATA(base::res::ResourceCookedClassMetadata).addClass<rendering::Mesh>();
+    RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtension("obj");
+    RTTI_METADATA(base::res::ResourceCookerVersionMetadata).version(3);
+    RTTI_METADATA(base::res::ResourceImporterConfigurationClassMetadata).configurationClass<OBJMeshImportConfig>();
+RTTI_END_TYPE();
+
+OBJMeshImporter::OBJMeshImporter()
+{
+}
+
+enum class GroupBuildModelType
+{
+    Visual,
+    ConvexCollision,
+    TriangleCollision,
+    Occlusion,
+};
+
+struct GroupBuildRenderGroupKey
+{
+    uint16_t material = 0; // index into the material table
+
+    rendering::MeshStreamMask streams = rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Position_3F);
+    rendering::MeshTopologyType topology = rendering::MeshTopologyType::Triangles;
+
+    INLINE GroupBuildRenderGroupKey() {};
+    INLINE GroupBuildRenderGroupKey(const GroupBuildRenderGroupKey& other) = default;
+    INLINE GroupBuildRenderGroupKey& operator=(const GroupBuildRenderGroupKey& other) = default;
+
+    INLINE bool operator==(const GroupBuildRenderGroupKey& other) const
     {
+        return (streams == other.streams) && (topology == other.topology) && (material == other.material);
     }
+};
 
-    void OBJMeshImportConfig::computeConfigurationKey(base::CRC64& crc) const
-    {
-        TBaseClass::computeConfigurationKey(crc);
+struct GroupBuildRenderGroup
+{
+    GroupBuildRenderGroupKey key;
+    base::Array<const GroupChunk*> sourceChunks;
+};
 
-        crc << objectFilter.view();
-        crc << groupFilter.view();
+struct GroupBuildModel
+{
+    GroupBuildModelType type = GroupBuildModelType::Visual;
+    uint32_t detailMask = 1;
 
-        crc << (char)emitNormals;
-        crc << (char)emitUVs;
-        crc << (char)emitColors;
-
-        crc << forceTriangles;
-        crc << allowThreads;
-        crc << flipUV;
-    }
-
-    //--
-
-    RTTI_BEGIN_TYPE_CLASS(OBJMeshImporter);
-        RTTI_METADATA(base::res::ResourceCookedClassMetadata).addClass<rendering::Mesh>();
-        RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtension("obj");
-        RTTI_METADATA(base::res::ResourceCookerVersionMetadata).version(3);
-        RTTI_METADATA(base::res::ResourceImporterConfigurationClassMetadata).configurationClass<OBJMeshImportConfig>();
-    RTTI_END_TYPE();
-
-    OBJMeshImporter::OBJMeshImporter()
-    {
-    }
-
-    enum class GroupBuildModelType
-    {
-        Visual,
-        ConvexCollision,
-        TriangleCollision,
-        Occlusion,
-    };
-
-    struct GroupBuildRenderGroupKey
-    {
-        uint16_t material = 0; // index into the material table
-
-        rendering::MeshStreamMask streams = rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Position_3F);
-        rendering::MeshTopologyType topology = rendering::MeshTopologyType::Triangles;
-
-        INLINE GroupBuildRenderGroupKey() {};
-        INLINE GroupBuildRenderGroupKey(const GroupBuildRenderGroupKey& other) = default;
-        INLINE GroupBuildRenderGroupKey& operator=(const GroupBuildRenderGroupKey& other) = default;
-
-        INLINE bool operator==(const GroupBuildRenderGroupKey& other) const
-        {
-            return (streams == other.streams) && (topology == other.topology) && (material == other.material);
-        }
-    };
-
-    struct GroupBuildRenderGroup
-    {
-        GroupBuildRenderGroupKey key;
-        base::Array<const GroupChunk*> sourceChunks;
-    };
-
-    struct GroupBuildModel
-    {
-        GroupBuildModelType type = GroupBuildModelType::Visual;
-        uint32_t detailMask = 1;
-
-        base::Array<GroupBuildRenderGroup> groups;
+    base::Array<GroupBuildRenderGroup> groups;
         
-        GroupBuildRenderGroup* getBestGroup(const GroupBuildRenderGroupKey& key)
-        {
-            for (auto& group : groups)
-                if (group.key == key)
-                    return &group;
-
-            auto& group = groups.emplaceBack();
-            group.key = key;
-            return &group;
-        }
-    };
-
-    struct GroupBuildModelList
+    GroupBuildRenderGroup* getBestGroup(const GroupBuildRenderGroupKey& key)
     {
-        base::Array<GroupBuildModel> models;
+        for (auto& group : groups)
+            if (group.key == key)
+                return &group;
 
-        GroupBuildModel* getModel(GroupBuildModelType type, uint32_t mask)
-        {
-            for (auto& model : models)
-                if (model.type == type && model.detailMask == mask)
-                    return &model;
+        auto& group = groups.emplaceBack();
+        group.key = key;
+        return &group;
+    }
+};
 
-            auto& model = models.emplaceBack();
-            model.detailMask = mask;
-            model.type = type;
-            return &model;
-        }
-    };
+struct GroupBuildModelList
+{
+    base::Array<GroupBuildModel> models;
 
-    static bool DetermineIfAttributeShouldBeAllowed(OBJMeshAttributeMode mode, bool anyHasIt, bool allHasIt)
+    GroupBuildModel* getModel(GroupBuildModelType type, uint32_t mask)
     {
-        switch (mode)
-        {
-            case OBJMeshAttributeMode::Always: return true;
-            case OBJMeshAttributeMode::IfPresentAnywhere: return anyHasIt;
-            case OBJMeshAttributeMode::IfPresentEverywhere: return allHasIt;
-            case OBJMeshAttributeMode::Never: return false;
-        }
+        for (auto& model : models)
+            if (model.type == type && model.detailMask == mask)
+                return &model;
 
-        return false;
+        auto& model = models.emplaceBack();
+        model.detailMask = mask;
+        model.type = type;
+        return &model;
+    }
+};
+
+static bool DetermineIfAttributeShouldBeAllowed(OBJMeshAttributeMode mode, bool anyHasIt, bool allHasIt)
+{
+    switch (mode)
+    {
+        case OBJMeshAttributeMode::Always: return true;
+        case OBJMeshAttributeMode::IfPresentAnywhere: return anyHasIt;
+        case OBJMeshAttributeMode::IfPresentEverywhere: return allHasIt;
+        case OBJMeshAttributeMode::Never: return false;
     }
 
-    static GroupBuildRenderGroupKey DetermineGroupKey(const GroupChunk& chunk, OBJMeshAttributeMode uvMode, OBJMeshAttributeMode colorMode, OBJMeshAttributeMode normalMode, bool forceTriangles)
-    {
-        GroupBuildRenderGroupKey key;
-        key.material = chunk.material;
+    return false;
+}
 
-        // determine topology
-        auto quadsPossible = (chunk.commonFaceVertexCount) == 4;
-        if (quadsPossible && !forceTriangles )
-            key.topology = rendering::MeshTopologyType::Quads;
-        else
-            key.topology = rendering::MeshTopologyType::Triangles;
+static GroupBuildRenderGroupKey DetermineGroupKey(const GroupChunk& chunk, OBJMeshAttributeMode uvMode, OBJMeshAttributeMode colorMode, OBJMeshAttributeMode normalMode, bool forceTriangles)
+{
+    GroupBuildRenderGroupKey key;
+    key.material = chunk.material;
 
-        // streams
-        key.streams = rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Position_3F);
-        if (DetermineIfAttributeShouldBeAllowed(uvMode, chunk.attributeMask & AttributeBit::UVStream, chunk.attributeMask & AttributeBit::UVStream))
-            key.streams |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::TexCoord0_2F);
-        if (DetermineIfAttributeShouldBeAllowed(normalMode, chunk.attributeMask & AttributeBit::NormalStream, chunk.attributeMask & AttributeBit::NormalStream))
-            key.streams |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Normal_3F);
-        if (DetermineIfAttributeShouldBeAllowed(colorMode, chunk.attributeMask & AttributeBit::ColorStream, chunk.attributeMask & AttributeBit::ColorStream))
-            key.streams |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Color0_4U8);
+    // determine topology
+    auto quadsPossible = (chunk.commonFaceVertexCount) == 4;
+    if (quadsPossible && !forceTriangles )
+        key.topology = rendering::MeshTopologyType::Quads;
+    else
+        key.topology = rendering::MeshTopologyType::Triangles;
 
-        return key;
-    }
+    // streams
+    key.streams = rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Position_3F);
+    if (DetermineIfAttributeShouldBeAllowed(uvMode, chunk.attributeMask & AttributeBit::UVStream, chunk.attributeMask & AttributeBit::UVStream))
+        key.streams |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::TexCoord0_2F);
+    if (DetermineIfAttributeShouldBeAllowed(normalMode, chunk.attributeMask & AttributeBit::NormalStream, chunk.attributeMask & AttributeBit::NormalStream))
+        key.streams |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Normal_3F);
+    if (DetermineIfAttributeShouldBeAllowed(colorMode, chunk.attributeMask & AttributeBit::ColorStream, chunk.attributeMask & AttributeBit::ColorStream))
+        key.streams |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Color0_4U8);
+
+    return key;
+}
     
-    static GroupBuildModelType DetermineModelType(base::StringView name, uint8_t& outLodIndex)
+static GroupBuildModelType DetermineModelType(base::StringView name, uint8_t& outLodIndex)
+{
+    if (name.endsWithNoCase("_LOD0"))
     {
-        if (name.endsWithNoCase("_LOD0"))
-        {
-            outLodIndex = 0;
-            return GroupBuildModelType::Visual;
-        }
-        else if (name.endsWithNoCase("_LOD1"))
-        {
-            outLodIndex = 1;
-            return GroupBuildModelType::Visual;
-        }
-        else if (name.endsWithNoCase("_LOD2"))
-        {
-            outLodIndex = 2;
-            return GroupBuildModelType::Visual;
-        }
-        else if (name.endsWithNoCase("_LOD3"))
-        {
-            outLodIndex = 3;
-            return GroupBuildModelType::Visual;
-        }
-        else if (name.endsWithNoCase("_LOD4"))
-        {
-            outLodIndex = 4;
-            return GroupBuildModelType::Visual;
-        }
-        else if (name.endsWithNoCase("_LOD5"))
-        {
-            outLodIndex = 5;
-            return GroupBuildModelType::Visual;
-        }
-        else if (name.endsWithNoCase("_LOD6"))
-        {
-            outLodIndex = 6;
-            return GroupBuildModelType::Visual;
-        }
-        else if (name.endsWithNoCase("_LOD7"))
-        {
-            outLodIndex = 7;
-            return GroupBuildModelType::Visual;
-        }
-        else if (name.endsWithNoCase("_Col") || name.beginsWithNoCase("UCX_"))
-        {
-            return GroupBuildModelType::ConvexCollision;
-        }
-        else if (name.endsWithNoCase("_TriCol"))
-        {
-            return GroupBuildModelType::TriangleCollision;
-        }
-        else if (name.endsWithNoCase("_Occlusion") || name.beginsWith("OCC_"))
-        {
-            return GroupBuildModelType::Occlusion;
-        }
-
         outLodIndex = 0;
         return GroupBuildModelType::Visual;
     }
-
-    static void PrepareGroupBuildList(const FormatOBJ& data, OBJMeshAttributeMode uvMode, OBJMeshAttributeMode colorMode, OBJMeshAttributeMode normalMode, base::StringView objectFilter, base::StringView groupFilter, bool forceTriangles, GroupBuildModelList& outModelList)
+    else if (name.endsWithNoCase("_LOD1"))
     {
-        outModelList.models.reserve(data.groups().size());
+        outLodIndex = 1;
+        return GroupBuildModelType::Visual;
+    }
+    else if (name.endsWithNoCase("_LOD2"))
+    {
+        outLodIndex = 2;
+        return GroupBuildModelType::Visual;
+    }
+    else if (name.endsWithNoCase("_LOD3"))
+    {
+        outLodIndex = 3;
+        return GroupBuildModelType::Visual;
+    }
+    else if (name.endsWithNoCase("_LOD4"))
+    {
+        outLodIndex = 4;
+        return GroupBuildModelType::Visual;
+    }
+    else if (name.endsWithNoCase("_LOD5"))
+    {
+        outLodIndex = 5;
+        return GroupBuildModelType::Visual;
+    }
+    else if (name.endsWithNoCase("_LOD6"))
+    {
+        outLodIndex = 6;
+        return GroupBuildModelType::Visual;
+    }
+    else if (name.endsWithNoCase("_LOD7"))
+    {
+        outLodIndex = 7;
+        return GroupBuildModelType::Visual;
+    }
+    else if (name.endsWithNoCase("_Col") || name.beginsWithNoCase("UCX_"))
+    {
+        return GroupBuildModelType::ConvexCollision;
+    }
+    else if (name.endsWithNoCase("_TriCol"))
+    {
+        return GroupBuildModelType::TriangleCollision;
+    }
+    else if (name.endsWithNoCase("_Occlusion") || name.beginsWith("OCC_"))
+    {
+        return GroupBuildModelType::Occlusion;
+    }
 
-        for (auto& obj : data.objects())
+    outLodIndex = 0;
+    return GroupBuildModelType::Visual;
+}
+
+static void PrepareGroupBuildList(const FormatOBJ& data, OBJMeshAttributeMode uvMode, OBJMeshAttributeMode colorMode, OBJMeshAttributeMode normalMode, base::StringView objectFilter, base::StringView groupFilter, bool forceTriangles, GroupBuildModelList& outModelList)
+{
+    outModelList.models.reserve(data.groups().size());
+
+    for (auto& obj : data.objects())
+    {
+        if (!objectFilter.empty() && 0 != objectFilter.caseCmp(obj.name))
+            continue;
+
+        for (uint32_t i = 0; i < obj.numGroups; ++i)
         {
-            if (!objectFilter.empty() && 0 != objectFilter.caseCmp(obj.name))
+            auto& group = data.groups().typedData()[obj.firstGroup + i];
+
+            if (!groupFilter.empty() && 0 != groupFilter.caseCmp(group.name))
                 continue;
 
-            for (uint32_t i = 0; i < obj.numGroups; ++i)
+            uint8_t lodIndex = 0;
+            auto groupType = DetermineModelType(group.name, lodIndex);
+
+            auto* model = outModelList.getModel(groupType, 1U << lodIndex);
+
+            for (uint32_t k = 0; k < group.numChunks; ++k)
             {
-                auto& group = data.groups().typedData()[obj.firstGroup + i];
+                const auto* groupChunk = data.chunks().typedData() + group.firstChunk + k;
+                const auto groupChunkKey = DetermineGroupKey(*groupChunk, uvMode, colorMode, normalMode, forceTriangles);
 
-                if (!groupFilter.empty() && 0 != groupFilter.caseCmp(group.name))
-                    continue;
-
-                uint8_t lodIndex = 0;
-                auto groupType = DetermineModelType(group.name, lodIndex);
-
-                auto* model = outModelList.getModel(groupType, 1U << lodIndex);
-
-                for (uint32_t k = 0; k < group.numChunks; ++k)
-                {
-                    const auto* groupChunk = data.chunks().typedData() + group.firstChunk + k;
-                    const auto groupChunkKey = DetermineGroupKey(*groupChunk, uvMode, colorMode, normalMode, forceTriangles);
-
-                    auto* group = model->getBestGroup(groupChunkKey);
-                    group->sourceChunks.pushBack(groupChunk);
-                }
+                auto* group = model->getBestGroup(groupChunkKey);
+                group->sourceChunks.pushBack(groupChunk);
             }
         }
     }
+}
 
-    //--
+//--
 
-    static base::Box CalculateGeometryBounds(const FormatOBJ& data, const GroupBuildModelList& buildList, const base::Matrix& assetToEngine)
+static base::Box CalculateGeometryBounds(const FormatOBJ& data, const GroupBuildModelList& buildList, const base::Matrix& assetToEngine)
+{
+    struct PerChunkBox
     {
-        struct PerChunkBox
-        {
-            const GroupChunk* chunk = nullptr;
-            base::Box bounds;
-            bool valid = true;
-        };
-
-        base::Array<PerChunkBox> jobs;
-        jobs.reserve(data.chunks().size());
-
-        for (const auto& model : buildList.models)
-        {
-            for (const auto& group : model.groups)
-            {
-                for (const auto* chunk : group.sourceChunks)
-                {
-                    auto& job = jobs.emplaceBack();
-                    job.chunk = chunk;
-                }
-            }
-        }
-
-        RunFiberForFeach<PerChunkBox>("ComputeChunkBounds", jobs, -2, [&assetToEngine, &data](PerChunkBox& job)
-            {
-                const auto* chunk = job.chunk;
-
-                auto positions = data.positions();
-
-                auto face = data.faces() + chunk->firstFace;
-                auto faceEnd = face + chunk->numFaces;
-
-                auto faceIndices = data.faceIndices() + chunk->firstFaceIndex;
-
-                float minX = FLT_MAX;
-                float minY = FLT_MAX;
-                float minZ = FLT_MAX;
-                float maxX = -FLT_MAX;
-                float maxY = -FLT_MAX;
-                float maxZ = -FLT_MAX;
-
-                const float validBounds = 1000000.0f;
-
-                while (face < faceEnd)
-                {
-                    for (uint32_t i = 0; i < face->numVertices; ++i)
-                    {
-                        auto pos = assetToEngine.transformPoint(positions[faceIndices[0]]);
-
-                        DEBUG_CHECK(pos.x >= -validBounds && pos.x <= validBounds);
-                        DEBUG_CHECK(pos.y >= -validBounds && pos.y <= validBounds);
-                        DEBUG_CHECK(pos.z >= -validBounds && pos.z <= validBounds);
-
-                        minX = std::min<float>(minX, pos.x);
-                        minY = std::min<float>(minY, pos.y);
-                        minZ = std::min<float>(minZ, pos.z);
-
-                        maxX = std::max<float>(maxX, pos.x);
-                        maxY = std::max<float>(maxY, pos.y);
-                        maxZ = std::max<float>(maxZ, pos.z);
-
-                        //job.x += pos.x;
-                        //job.y += pos.y;
-                        //job.z += pos.z;
-
-                        faceIndices += chunk->numAttributes;
-                    }
-
-                    //count += face->numVertices;
-                    face += 1;
-                }
-                
-                if (minX < -validBounds || minY < -validBounds || minZ < -validBounds || maxX > validBounds || maxY > validBounds || maxZ > validBounds)
-                {
-                    job.valid = false;
-                }
-                else
-                {
-                    job.valid = true;
-                    job.bounds.min.x = minX;
-                    job.bounds.min.y = minY;
-                    job.bounds.min.z = minZ;
-                    job.bounds.max.x = maxX;
-                    job.bounds.max.y = maxY;
-                    job.bounds.max.z = maxZ;
-                }
-
-            });
-
+        const GroupChunk* chunk = nullptr;
         base::Box bounds;
-        for (const auto& job : jobs)
-            if (job.valid)
-                bounds.merge(job.bounds);
+        bool valid = true;
+    };
 
-        return bounds;
+    base::Array<PerChunkBox> jobs;
+    jobs.reserve(data.chunks().size());
+
+    for (const auto& model : buildList.models)
+    {
+        for (const auto& group : model.groups)
+        {
+            for (const auto* chunk : group.sourceChunks)
+            {
+                auto& job = jobs.emplaceBack();
+                job.chunk = chunk;
+            }
+        }
     }
 
-    //--
-
-    static uint32_t CountVerticesNeededChunk(const rendering::MeshTopologyType top, const FormatOBJ& data, const GroupChunk& sourceChunk)
-    {
-        uint32_t numWrittenVertices = 0;
-
-        TRACE_INFO("Wavefront chunk '{}': A:{} F:{} FI:{}", data.materialReferences()[sourceChunk.material].name, sourceChunk.numAttributes, sourceChunk.numFaces, sourceChunk.numFaceIndices);
-
-        DEBUG_CHECK_EX(sourceChunk.numFaceIndices % sourceChunk.numAttributes == 0, "Strange number of face indices");
-        if (top == rendering::MeshTopologyType::Triangles)
+    RunFiberForFeach<PerChunkBox>("ComputeChunkBounds", jobs, -2, [&assetToEngine, &data](PerChunkBox& job)
         {
-            if (sourceChunk.commonFaceVertexCount == 3)
+            const auto* chunk = job.chunk;
+
+            auto positions = data.positions();
+
+            auto face = data.faces() + chunk->firstFace;
+            auto faceEnd = face + chunk->numFaces;
+
+            auto faceIndices = data.faceIndices() + chunk->firstFaceIndex;
+
+            float minX = FLT_MAX;
+            float minY = FLT_MAX;
+            float minZ = FLT_MAX;
+            float maxX = -FLT_MAX;
+            float maxY = -FLT_MAX;
+            float maxZ = -FLT_MAX;
+
+            const float validBounds = 1000000.0f;
+
+            while (face < faceEnd)
             {
-                numWrittenVertices = (sourceChunk.numFaceIndices / sourceChunk.numAttributes);
+                for (uint32_t i = 0; i < face->numVertices; ++i)
+                {
+                    auto pos = assetToEngine.transformPoint(positions[faceIndices[0]]);
+
+                    DEBUG_CHECK(pos.x >= -validBounds && pos.x <= validBounds);
+                    DEBUG_CHECK(pos.y >= -validBounds && pos.y <= validBounds);
+                    DEBUG_CHECK(pos.z >= -validBounds && pos.z <= validBounds);
+
+                    minX = std::min<float>(minX, pos.x);
+                    minY = std::min<float>(minY, pos.y);
+                    minZ = std::min<float>(minZ, pos.z);
+
+                    maxX = std::max<float>(maxX, pos.x);
+                    maxY = std::max<float>(maxY, pos.y);
+                    maxZ = std::max<float>(maxZ, pos.z);
+
+                    //job.x += pos.x;
+                    //job.y += pos.y;
+                    //job.z += pos.z;
+
+                    faceIndices += chunk->numAttributes;
+                }
+
+                //count += face->numVertices;
+                face += 1;
             }
-            else if (sourceChunk.commonFaceVertexCount == 4)
+                
+            if (minX < -validBounds || minY < -validBounds || minZ < -validBounds || maxX > validBounds || maxY > validBounds || maxZ > validBounds)
             {
-                numWrittenVertices = 6 * ((sourceChunk.numFaceIndices / sourceChunk.numAttributes) / 4);
+                job.valid = false;
             }
             else
             {
-                auto face  = data.faces() + sourceChunk.firstFace;
-                auto faceEnd  = face + sourceChunk.numFaces;
-
-                while (face < faceEnd)
-                {
-                    numWrittenVertices += (face->numVertices - 2) * 3;
-                    ++face;
-                }
+                job.valid = true;
+                job.bounds.min.x = minX;
+                job.bounds.min.y = minY;
+                job.bounds.min.z = minZ;
+                job.bounds.max.x = maxX;
+                job.bounds.max.y = maxY;
+                job.bounds.max.z = maxZ;
             }
-        }
-        else if (top == rendering::MeshTopologyType::Quads)
+
+        });
+
+    base::Box bounds;
+    for (const auto& job : jobs)
+        if (job.valid)
+            bounds.merge(job.bounds);
+
+    return bounds;
+}
+
+//--
+
+static uint32_t CountVerticesNeededChunk(const rendering::MeshTopologyType top, const FormatOBJ& data, const GroupChunk& sourceChunk)
+{
+    uint32_t numWrittenVertices = 0;
+
+    TRACE_INFO("Wavefront chunk '{}': A:{} F:{} FI:{}", data.materialReferences()[sourceChunk.material].name, sourceChunk.numAttributes, sourceChunk.numFaces, sourceChunk.numFaceIndices);
+
+    DEBUG_CHECK_EX(sourceChunk.numFaceIndices % sourceChunk.numAttributes == 0, "Strange number of face indices");
+    if (top == rendering::MeshTopologyType::Triangles)
+    {
+        if (sourceChunk.commonFaceVertexCount == 3)
         {
-            DEBUG_CHECK(sourceChunk.commonFaceVertexCount == 4);
-            numWrittenVertices = sourceChunk.numFaceIndices / sourceChunk.numAttributes;
+            numWrittenVertices = (sourceChunk.numFaceIndices / sourceChunk.numAttributes);
         }
-
-        return numWrittenVertices;
-    }
-
-    static uint32_t CountVerticesNeeded(const rendering::MeshTopologyType top, const FormatOBJ& data, const base::Array<const GroupChunk*>& sourceChunks)
-    {
-        uint32_t numVertices = 0;
-
-        for (auto chunk  : sourceChunks)
-            numVertices += CountVerticesNeededChunk(top, data, *chunk);
-
-        return numVertices;
-    }
-
-    template< typename T >
-    static void FillDefaultDataZero(const rendering::MeshTopologyType top, const FormatOBJ& data, const GroupChunk& sourceChunk, T*& writeRawPtr)
-    {
-        auto vertexCount = CountVerticesNeededChunk(top, data, sourceChunk);
-        memset(writeRawPtr, 0, sizeof(T) * vertexCount);
-        writeRawPtr += vertexCount;
-    }
-
-    template< typename T >
-    static void FillDefaultDataOnes(const rendering::MeshTopologyType top, const FormatOBJ& data, const GroupChunk& sourceChunk, T*& writeRawPtr)
-    {
-        auto vertexCount = CountVerticesNeededChunk(top, data, sourceChunk);
-        memset(writeRawPtr, 255, sizeof(T) * vertexCount);
-        writeRawPtr += vertexCount;
-    }
-
-    template< typename T >
-    static void FlipFaces(T* writePtr, const T* writeEndPtr, const rendering::MeshTopologyType top)
-    {
-        if (top == rendering::MeshTopologyType::Triangles)
+        else if (sourceChunk.commonFaceVertexCount == 4)
         {
-            while (writePtr < writeEndPtr)
+            numWrittenVertices = 6 * ((sourceChunk.numFaceIndices / sourceChunk.numAttributes) / 4);
+        }
+        else
+        {
+            auto face  = data.faces() + sourceChunk.firstFace;
+            auto faceEnd  = face + sourceChunk.numFaces;
+
+            while (face < faceEnd)
             {
-                std::swap(writePtr[0], writePtr[2]);
-                writePtr += 3;
-            }
-        }
-        else if (top == rendering::MeshTopologyType::Quads)
-        {
-            while (writePtr < writeEndPtr)
-            {
-                std::swap(writePtr[0], writePtr[3]);
-                std::swap(writePtr[1], writePtr[2]);
-                writePtr += 4;
+                numWrittenVertices += (face->numVertices - 2) * 3;
+                ++face;
             }
         }
     }
-
-    template< typename T >
-    static void ExtractStreamData(uint32_t attributeIndex, const void* readRawPtr, T*& writeRawPtr, const GroupChunk& sourceChunk, const rendering::MeshTopologyType top, const FormatOBJ& data)
+    else if (top == rendering::MeshTopologyType::Quads)
     {
-        auto readPtr  = (const T*)readRawPtr;
-        auto writePtr  = (T*)writeRawPtr;
+        DEBUG_CHECK(sourceChunk.commonFaceVertexCount == 4);
+        numWrittenVertices = sourceChunk.numFaceIndices / sourceChunk.numAttributes;
+    }
 
-        auto faceIndices  = data.faceIndices() + sourceChunk.firstFaceIndex;
-        auto faceIndicesEnd  = faceIndices + sourceChunk.numFaceIndices;
+    return numWrittenVertices;
+}
 
-        if (top == rendering::MeshTopologyType::Triangles)
+static uint32_t CountVerticesNeeded(const rendering::MeshTopologyType top, const FormatOBJ& data, const base::Array<const GroupChunk*>& sourceChunks)
+{
+    uint32_t numVertices = 0;
+
+    for (auto chunk  : sourceChunks)
+        numVertices += CountVerticesNeededChunk(top, data, *chunk);
+
+    return numVertices;
+}
+
+template< typename T >
+static void FillDefaultDataZero(const rendering::MeshTopologyType top, const FormatOBJ& data, const GroupChunk& sourceChunk, T*& writeRawPtr)
+{
+    auto vertexCount = CountVerticesNeededChunk(top, data, sourceChunk);
+    memset(writeRawPtr, 0, sizeof(T) * vertexCount);
+    writeRawPtr += vertexCount;
+}
+
+template< typename T >
+static void FillDefaultDataOnes(const rendering::MeshTopologyType top, const FormatOBJ& data, const GroupChunk& sourceChunk, T*& writeRawPtr)
+{
+    auto vertexCount = CountVerticesNeededChunk(top, data, sourceChunk);
+    memset(writeRawPtr, 255, sizeof(T) * vertexCount);
+    writeRawPtr += vertexCount;
+}
+
+template< typename T >
+static void FlipFaces(T* writePtr, const T* writeEndPtr, const rendering::MeshTopologyType top)
+{
+    if (top == rendering::MeshTopologyType::Triangles)
+    {
+        while (writePtr < writeEndPtr)
         {
-            auto step = sourceChunk.numAttributes;
-            if (sourceChunk.commonFaceVertexCount == 3)
-            {
-                while (faceIndices < faceIndicesEnd)
-                {
-                    *writePtr++ = readPtr[faceIndices[attributeIndex]];
-                    faceIndices += step;
-                }
-            }
-            else if (sourceChunk.commonFaceVertexCount == 4)
-            {
-                while (faceIndices < faceIndicesEnd)
-                {
-                    *writePtr++ = readPtr[faceIndices[attributeIndex ]];
-                    *writePtr++ = readPtr[faceIndices[attributeIndex + step]];
-                    *writePtr++ = readPtr[faceIndices[attributeIndex + 2*step]];
-
-                    *writePtr++ = readPtr[faceIndices[attributeIndex]];
-                    *writePtr++ = readPtr[faceIndices[attributeIndex + 2*step]];
-                    *writePtr++ = readPtr[faceIndices[attributeIndex + 3*step]];
-
-                    faceIndices += 4 * step;
-                }
-            }
-            else
-            {
-                auto face  = data.faces() + sourceChunk.firstFace;
-                auto faceEnd  = face + sourceChunk.numFaces;
-
-                while (face < faceEnd)
-                {
-                    auto prev = attributeIndex + step;
-                    auto cur = prev + step;
-                    for (uint32_t i = 2; i < face->numVertices; ++i)
-                    {
-                        *writePtr++ = readPtr[faceIndices[attributeIndex]];
-                        *writePtr++ = readPtr[faceIndices[prev]];
-                        *writePtr++ = readPtr[faceIndices[cur]];
-                        prev += step;
-                        cur += step;
-                    }
-
-                    faceIndices += face->numVertices * sourceChunk.numAttributes;
-                    ++face;
-                }
-            }
+            std::swap(writePtr[0], writePtr[2]);
+            writePtr += 3;
         }
-        else if (top == rendering::MeshTopologyType::Quads)
+    }
+    else if (top == rendering::MeshTopologyType::Quads)
+    {
+        while (writePtr < writeEndPtr)
         {
-            ASSERT_EX(sourceChunk.commonFaceVertexCount == 4, "Invalid vertex count for a face");
+            std::swap(writePtr[0], writePtr[3]);
+            std::swap(writePtr[1], writePtr[2]);
+            writePtr += 4;
+        }
+    }
+}
 
-            auto step = sourceChunk.numAttributes;
+template< typename T >
+static void ExtractStreamData(uint32_t attributeIndex, const void* readRawPtr, T*& writeRawPtr, const GroupChunk& sourceChunk, const rendering::MeshTopologyType top, const FormatOBJ& data)
+{
+    auto readPtr  = (const T*)readRawPtr;
+    auto writePtr  = (T*)writeRawPtr;
+
+    auto faceIndices  = data.faceIndices() + sourceChunk.firstFaceIndex;
+    auto faceIndicesEnd  = faceIndices + sourceChunk.numFaceIndices;
+
+    if (top == rendering::MeshTopologyType::Triangles)
+    {
+        auto step = sourceChunk.numAttributes;
+        if (sourceChunk.commonFaceVertexCount == 3)
+        {
             while (faceIndices < faceIndicesEnd)
             {
                 *writePtr++ = readPtr[faceIndices[attributeIndex]];
                 faceIndices += step;
             }
         }
+        else if (sourceChunk.commonFaceVertexCount == 4)
+        {
+            while (faceIndices < faceIndicesEnd)
+            {
+                *writePtr++ = readPtr[faceIndices[attributeIndex ]];
+                *writePtr++ = readPtr[faceIndices[attributeIndex + step]];
+                *writePtr++ = readPtr[faceIndices[attributeIndex + 2*step]];
+
+                *writePtr++ = readPtr[faceIndices[attributeIndex]];
+                *writePtr++ = readPtr[faceIndices[attributeIndex + 2*step]];
+                *writePtr++ = readPtr[faceIndices[attributeIndex + 3*step]];
+
+                faceIndices += 4 * step;
+            }
+        }
         else
         {
-            DEBUG_CHECK(!"Invalid topology");
-        }
+            auto face  = data.faces() + sourceChunk.firstFace;
+            auto faceEnd  = face + sourceChunk.numFaces;
 
-        writeRawPtr = writePtr;
+            while (face < faceEnd)
+            {
+                auto prev = attributeIndex + step;
+                auto cur = prev + step;
+                for (uint32_t i = 2; i < face->numVertices; ++i)
+                {
+                    *writePtr++ = readPtr[faceIndices[attributeIndex]];
+                    *writePtr++ = readPtr[faceIndices[prev]];
+                    *writePtr++ = readPtr[faceIndices[cur]];
+                    prev += step;
+                    cur += step;
+                }
+
+                faceIndices += face->numVertices * sourceChunk.numAttributes;
+                ++face;
+            }
+        }
+    }
+    else if (top == rendering::MeshTopologyType::Quads)
+    {
+        ASSERT_EX(sourceChunk.commonFaceVertexCount == 4, "Invalid vertex count for a face");
+
+        auto step = sourceChunk.numAttributes;
+        while (faceIndices < faceIndicesEnd)
+        {
+            *writePtr++ = readPtr[faceIndices[attributeIndex]];
+            faceIndices += step;
+        }
+    }
+    else
+    {
+        DEBUG_CHECK(!"Invalid topology");
     }
 
-    static void ProcessSingleChunk(rendering::MeshTopologyType top, const FormatOBJ& data, const base::Matrix& assetToEngine, const base::Array<const GroupChunk*>& sourceChunks, rendering::MeshStreamMask streams, bool flipFaces, bool flipUV, rendering::MeshRawChunk& outChunk)
+    writeRawPtr = writePtr;
+}
+
+static void ProcessSingleChunk(rendering::MeshTopologyType top, const FormatOBJ& data, const base::Matrix& assetToEngine, const base::Array<const GroupChunk*>& sourceChunks, rendering::MeshStreamMask streams, bool flipFaces, bool flipUV, rendering::MeshRawChunk& outChunk)
+{
+    PC_SCOPE_LVL0(ProcessSingleChunk);
+
+    struct SourceChunkJobInfo
     {
-        PC_SCOPE_LVL0(ProcessSingleChunk);
+        uint32_t vertexCount = 0;
+        const GroupChunk* sourceChunk = nullptr;
+        base::Vector3* positionWritePtr = nullptr;
 
-        struct SourceChunkJobInfo
-        {
-            uint32_t vertexCount = 0;
-            const GroupChunk* sourceChunk = nullptr;
-            base::Vector3* positionWritePtr = nullptr;
+        char normalAttributeIndex = -1;
+        char uvAttributeIndex = -1;
+        char colorAttributeIndex = -1;
 
-            char normalAttributeIndex = -1;
-            char uvAttributeIndex = -1;
-            char colorAttributeIndex = -1;
+        base::Vector3* normalWritePtr = nullptr;
+        base::Vector2* uvWritePtr = nullptr;
+        base::Color* colorWritePtr = nullptr;
+    };
 
-            base::Vector3* normalWritePtr = nullptr;
-            base::Vector2* uvWritePtr = nullptr;
-            base::Color* colorWritePtr = nullptr;
-        };
+    // get data pointers to the source OBJ data (all vertices are using absolute indices so this can be set only once)
+    auto positions = data.positions();
+    auto normals = data.normals();
+    auto uvs = data.uvs();
+    auto colors = data.colors();
 
-        // get data pointers to the source OBJ data (all vertices are using absolute indices so this can be set only once)
-        auto positions = data.positions();
-        auto normals = data.normals();
-        auto uvs = data.uvs();
-        auto colors = data.colors();
+    // validate
+    for (const auto* sourceChunk : sourceChunks)
+    {
+        const auto* f = data.faces() + sourceChunk->firstFace;
+        DEBUG_CHECK(sourceChunk->firstFace + sourceChunk->numFaces <= data.numFaces());
+        const auto* fi = data.faceIndices() + sourceChunk->firstFaceIndex;
+        const auto* maxFi = fi + sourceChunk->numFaceIndices;
+        DEBUG_CHECK(sourceChunk->firstFaceIndex + sourceChunk->numFaceIndices <= data.numFaceIndices());
+        const auto numFaces = sourceChunk->numFaces;
+        for (uint32_t i=0; i<numFaces; ++f, ++i)
+        { 
+            uint8_t numAttributes = 0;
 
-        // validate
-        for (const auto* sourceChunk : sourceChunks)
-        {
-            const auto* f = data.faces() + sourceChunk->firstFace;
-            DEBUG_CHECK(sourceChunk->firstFace + sourceChunk->numFaces <= data.numFaces());
-            const auto* fi = data.faceIndices() + sourceChunk->firstFaceIndex;
-            const auto* maxFi = fi + sourceChunk->numFaceIndices;
-            DEBUG_CHECK(sourceChunk->firstFaceIndex + sourceChunk->numFaceIndices <= data.numFaceIndices());
-            const auto numFaces = sourceChunk->numFaces;
-            for (uint32_t i=0; i<numFaces; ++f, ++i)
-            { 
-                uint8_t numAttributes = 0;
+            if (f->attributeMask & 1) numAttributes += 1;
+            if (f->attributeMask & 2) numAttributes += 1;
+            if (f->attributeMask & 4) numAttributes += 1;
+            if (f->attributeMask & 8) numAttributes += 1;
 
-                if (f->attributeMask & 1) numAttributes += 1;
-                if (f->attributeMask & 2) numAttributes += 1;
-                if (f->attributeMask & 4) numAttributes += 1;
-                if (f->attributeMask & 8) numAttributes += 1;
-
-                for (uint32_t j = 0; j < f->numVertices; ++j)
-                {
-                    DEBUG_CHECK(fi < maxFi);
-
-                    if (f->attributeMask & 1)
-                    {
-                        const auto index = *fi++;
-                        DEBUG_CHECK(index < data.numPosition());
-                    }
-
-                    if (f->attributeMask & 2)
-                    {
-                        const auto index = *fi++;
-                        DEBUG_CHECK(index < data.numUVS());
-                    }
-
-                    if (f->attributeMask & 4)
-                    {
-                        const auto index = *fi++;
-                        DEBUG_CHECK(index < data.numNormals());
-                    }
-
-                    if (f->attributeMask & 8)
-                    {
-                        const auto index = *fi++;
-                        DEBUG_CHECK(index < data.numColors());
-                    }
-                }
-            }
-        }
-
-        // count total needed vertices
-        auto numVertices = CountVerticesNeeded(top, data, sourceChunks);
-
-        // count vertices in the source chunks
-        rendering::MeshRawStreamBuilder builder(top);
-        builder.reserveVertices(numVertices, streams);
-        builder.numVeritces = numVertices; // we use all what we reserved
-
-        // prepare source jobs
-        base::InplaceArray<SourceChunkJobInfo, 64> sourceJobsInfo;
-        sourceJobsInfo.reserve(sourceChunks.size());
-        {
-            // get write pointers, each chunk will append data
-            auto writePos = builder.vertexData<rendering::MeshStreamType::Position_3F>();
-            auto writeUV = builder.vertexData<rendering::MeshStreamType::TexCoord0_2F>();
-            auto writeNormals = builder.vertexData<rendering::MeshStreamType::Normal_3F>();
-            auto writeColors = builder.vertexData<rendering::MeshStreamType::Color0_4U8>();
-            for (auto chunk : sourceChunks)
+            for (uint32_t j = 0; j < f->numVertices; ++j)
             {
-                uint32_t runningAttributeIndex = 0;
+                DEBUG_CHECK(fi < maxFi);
 
-                auto& jobInfo = sourceJobsInfo.emplaceBack();
-                jobInfo.sourceChunk = chunk;
-                jobInfo.vertexCount = CountVerticesNeededChunk(top, data, *chunk);
-
-                // extract positions
+                if (f->attributeMask & 1)
                 {
-                    if (streams & rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Position_3F))
-                    {
-                        jobInfo.positionWritePtr = writePos;
-                        writePos += jobInfo.vertexCount;
-                    }
-                    runningAttributeIndex += 1;
+                    const auto index = *fi++;
+                    DEBUG_CHECK(index < data.numPosition());
                 }
 
-                // extract UVs
-                if (chunk->attributeMask & AttributeBit::UVStream)
+                if (f->attributeMask & 2)
                 {
-                    if (streams & rendering::MeshStreamMaskFromType(rendering::MeshStreamType::TexCoord0_2F))
-                    {
-                        jobInfo.uvAttributeIndex = runningAttributeIndex;
-                        jobInfo.uvWritePtr = writeUV;
-                        writeUV += jobInfo.vertexCount;
-                    }
-                    runningAttributeIndex += 1;
-                }
-                else if (streams & rendering::MeshStreamMaskFromType(rendering::MeshStreamType::TexCoord2_2F))
-                {
-                    jobInfo.uvWritePtr = writeUV;
-                    writeUV += jobInfo.vertexCount;
+                    const auto index = *fi++;
+                    DEBUG_CHECK(index < data.numUVS());
                 }
 
-                // extract normals
-                if (chunk->attributeMask & AttributeBit::NormalStream)
+                if (f->attributeMask & 4)
                 {
-                    if (streams & rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Normal_3F))
-                    {
-                        jobInfo.normalAttributeIndex = runningAttributeIndex;
-                        jobInfo.normalWritePtr = writeNormals;
-                        writeNormals += jobInfo.vertexCount;
-                    }
-
-                    runningAttributeIndex += 1;
-                }
-                else if (streams & rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Normal_3F))
-                {
-                    jobInfo.normalWritePtr = writeNormals;
-                    writeNormals += jobInfo.vertexCount;
+                    const auto index = *fi++;
+                    DEBUG_CHECK(index < data.numNormals());
                 }
 
-                // extract colors
-                if (chunk->attributeMask & AttributeBit::ColorStream)
+                if (f->attributeMask & 8)
                 {
-                    if (streams & rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Color0_4U8))
-                    {
-                        jobInfo.colorAttributeIndex = runningAttributeIndex;
-                        jobInfo.colorWritePtr = writeColors;
-                        writeColors += jobInfo.vertexCount;
-                    }
-                    runningAttributeIndex += 1;
-                }
-                else if (streams & rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Color0_4U8))
-                {
-                    jobInfo.colorWritePtr = writeColors;
-                    writeColors += jobInfo.vertexCount;
+                    const auto index = *fi++;
+                    DEBUG_CHECK(index < data.numColors());
                 }
             }
         }
+    }
 
-        // copy out the attributes for each chunk
-        auto jobCounter = Fibers::GetInstance().createCounter("ChunkExportStream", sourceJobsInfo.size());
-        RunChildFiber("ChunkExportStream").invocations(sourceJobsInfo.size()) << [jobCounter, flipUV, flipFaces, top, &assetToEngine, &data, streams, positions, uvs, colors, normals, &sourceJobsInfo, &builder](FIBER_FUNC)
+    // count total needed vertices
+    auto numVertices = CountVerticesNeeded(top, data, sourceChunks);
+
+    // count vertices in the source chunks
+    rendering::MeshRawStreamBuilder builder(top);
+    builder.reserveVertices(numVertices, streams);
+    builder.numVeritces = numVertices; // we use all what we reserved
+
+    // prepare source jobs
+    base::InplaceArray<SourceChunkJobInfo, 64> sourceJobsInfo;
+    sourceJobsInfo.reserve(sourceChunks.size());
+    {
+        // get write pointers, each chunk will append data
+        auto writePos = builder.vertexData<rendering::MeshStreamType::Position_3F>();
+        auto writeUV = builder.vertexData<rendering::MeshStreamType::TexCoord0_2F>();
+        auto writeNormals = builder.vertexData<rendering::MeshStreamType::Normal_3F>();
+        auto writeColors = builder.vertexData<rendering::MeshStreamType::Color0_4U8>();
+        for (auto chunk : sourceChunks)
         {
-            const auto& jobInfo = sourceJobsInfo[index];
+            uint32_t runningAttributeIndex = 0;
+
+            auto& jobInfo = sourceJobsInfo.emplaceBack();
+            jobInfo.sourceChunk = chunk;
+            jobInfo.vertexCount = CountVerticesNeededChunk(top, data, *chunk);
 
             // extract positions
             {
                 if (streams & rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Position_3F))
                 {
-                    auto* startPos = jobInfo.positionWritePtr;
-                    auto* writePos = startPos;
-                    ExtractStreamData(0, positions, writePos, *jobInfo.sourceChunk, top, data);
-
-                    if (flipFaces)
-                        FlipFaces(jobInfo.positionWritePtr, writePos, top);
-
-                    while (startPos < writePos)
-                    {
-                        *startPos = assetToEngine.transformPoint(*startPos);
-                        startPos += 1;
-                    }
+                    jobInfo.positionWritePtr = writePos;
+                    writePos += jobInfo.vertexCount;
                 }
+                runningAttributeIndex += 1;
             }
 
             // extract UVs
-            if (auto* writeUV = jobInfo.uvWritePtr)
+            if (chunk->attributeMask & AttributeBit::UVStream)
             {
-                if (jobInfo.uvAttributeIndex != -1)
+                if (streams & rendering::MeshStreamMaskFromType(rendering::MeshStreamType::TexCoord0_2F))
                 {
-                    auto* startUV = writeUV;
-                    ExtractStreamData(jobInfo.uvAttributeIndex, uvs, writeUV, *jobInfo.sourceChunk, top, data);
-
-                    if (flipFaces)
-                        FlipFaces(jobInfo.uvWritePtr, writeUV, top);
-
-                    if (flipUV)
-                    {
-                        while (startUV < writeUV)
-                        {
-                            startUV->y = 1.0f - startUV->y;
-                            startUV += 1;
-                        }
-                    }
+                    jobInfo.uvAttributeIndex = runningAttributeIndex;
+                    jobInfo.uvWritePtr = writeUV;
+                    writeUV += jobInfo.vertexCount;
                 }
-                else
-                {
-                    FillDefaultDataZero(top, data, *jobInfo.sourceChunk, writeUV);
-                }
+                runningAttributeIndex += 1;
+            }
+            else if (streams & rendering::MeshStreamMaskFromType(rendering::MeshStreamType::TexCoord2_2F))
+            {
+                jobInfo.uvWritePtr = writeUV;
+                writeUV += jobInfo.vertexCount;
             }
 
             // extract normals
-            if (auto* writeNormals = jobInfo.normalWritePtr)
+            if (chunk->attributeMask & AttributeBit::NormalStream)
             {
-                if (jobInfo.normalAttributeIndex != -1)
+                if (streams & rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Normal_3F))
                 {
-                    auto* startNormal = writeNormals;
-                    ExtractStreamData(jobInfo.normalAttributeIndex, normals, writeNormals, *jobInfo.sourceChunk, top, data);
-
-                    while (startNormal < writeNormals)
-                    {
-                        *startNormal = assetToEngine.transformVector(*startNormal).normalized();
-                        startNormal += 1;
-                    }
-
-                    if (flipFaces)
-                        FlipFaces(jobInfo.normalWritePtr, writeNormals, top);
+                    jobInfo.normalAttributeIndex = runningAttributeIndex;
+                    jobInfo.normalWritePtr = writeNormals;
+                    writeNormals += jobInfo.vertexCount;
                 }
-                else
-                    FillDefaultDataZero(top, data, *jobInfo.sourceChunk, writeNormals);
+
+                runningAttributeIndex += 1;
+            }
+            else if (streams & rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Normal_3F))
+            {
+                jobInfo.normalWritePtr = writeNormals;
+                writeNormals += jobInfo.vertexCount;
             }
 
             // extract colors
-            if (auto* writeColors = jobInfo.colorWritePtr)
+            if (chunk->attributeMask & AttributeBit::ColorStream)
             {
-                if (jobInfo.colorAttributeIndex != -1)
+                if (streams & rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Color0_4U8))
                 {
-                    ExtractStreamData(jobInfo.colorAttributeIndex, colors, writeColors, *jobInfo.sourceChunk, top, data);
-
-                    if (flipFaces)
-                        FlipFaces(jobInfo.colorWritePtr, writeColors, top);
+                    jobInfo.colorAttributeIndex = runningAttributeIndex;
+                    jobInfo.colorWritePtr = writeColors;
+                    writeColors += jobInfo.vertexCount;
                 }
-                else
-                {
-                    FillDefaultDataOnes(top, data, *jobInfo.sourceChunk, writeColors);
-                }
+                runningAttributeIndex += 1;
             }
-
-            Fibers::GetInstance().signalCounter(jobCounter);
-        };
-
-        Fibers::GetInstance().waitForCounterAndRelease(jobCounter);
-
-        // extract chunk data
-        builder.extract(outChunk);
+            else if (streams & rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Color0_4U8))
+            {
+                jobInfo.colorWritePtr = writeColors;
+                writeColors += jobInfo.vertexCount;
+            }
+        }
     }
 
-    //--
-
-    void OBJMeshImporter::buildMaterials(const FormatOBJ& data, const rendering::Mesh* existingMesh, base::res::IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, base::Array<int> &outSourceToExportMaterialIndexMapping, base::Array<rendering::MeshMaterial>& outExportMaterials) const
+    // copy out the attributes for each chunk
+    auto jobCounter = Fibers::GetInstance().createCounter("ChunkExportStream", sourceJobsInfo.size());
+    RunChildFiber("ChunkExportStream").invocations(sourceJobsInfo.size()) << [jobCounter, flipUV, flipFaces, top, &assetToEngine, &data, streams, positions, uvs, colors, normals, &sourceJobsInfo, &builder](FIBER_FUNC)
     {
-        auto meshGeometryManifest = importer.queryConfigration<OBJMeshImportConfig>();
+        const auto& jobInfo = sourceJobsInfo[index];
 
-        // find max material index actually used inside chunks
-        uint32_t maxSourceMaterialIndex = 0;
-        for (auto& sourceChunk : data.chunks())
-            maxSourceMaterialIndex = std::max<uint32_t>(maxSourceMaterialIndex, sourceChunk.material);
-
-        // prepare the mapping table
-        outSourceToExportMaterialIndexMapping.clear();
-        outSourceToExportMaterialIndexMapping.resizeWith(maxSourceMaterialIndex + 1, -1);
-
-        // look at the content we cant to export and make sure the necessary materials will be exported
-        for (const auto& model : exportGeometry.models)
+        // extract positions
         {
-            // we are not interested on materials used on the non-visual groups
-            if (model.type != GroupBuildModelType::Visual)
-                continue;
-
-            for (const auto& group : model.groups)
+            if (streams & rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Position_3F))
             {
-                for (const auto* chunk : group.sourceChunks)
+                auto* startPos = jobInfo.positionWritePtr;
+                auto* writePos = startPos;
+                ExtractStreamData(0, positions, writePos, *jobInfo.sourceChunk, top, data);
+
+                if (flipFaces)
+                    FlipFaces(jobInfo.positionWritePtr, writePos, top);
+
+                while (startPos < writePos)
                 {
-                    // add material to export list on first use
-                    if (-1 == outSourceToExportMaterialIndexMapping[chunk->material])
+                    *startPos = assetToEngine.transformPoint(*startPos);
+                    startPos += 1;
+                }
+            }
+        }
+
+        // extract UVs
+        if (auto* writeUV = jobInfo.uvWritePtr)
+        {
+            if (jobInfo.uvAttributeIndex != -1)
+            {
+                auto* startUV = writeUV;
+                ExtractStreamData(jobInfo.uvAttributeIndex, uvs, writeUV, *jobInfo.sourceChunk, top, data);
+
+                if (flipFaces)
+                    FlipFaces(jobInfo.uvWritePtr, writeUV, top);
+
+                if (flipUV)
+                {
+                    while (startUV < writeUV)
                     {
-                        const auto& sourceMaterial = data.materialReferences()[chunk->material];
-
-                        auto materialIndex = outExportMaterials.size();
-                        outSourceToExportMaterialIndexMapping[chunk->material] = materialIndex;
-                        TRACE_INFO("Mapped source material '{}' ({}) at export index {}", sourceMaterial.name, chunk->material, materialIndex);
-
-                        auto& exportMaterial = outExportMaterials.emplaceBack();
-                        exportMaterial.name = base::StringID(sourceMaterial.name.view());
-                        exportMaterial.material = buildSingleMaterial(importer, *meshGeometryManifest, sourceMaterial.name, data.materialLibraryFileName(), chunk->material, existingMesh);
+                        startUV->y = 1.0f - startUV->y;
+                        startUV += 1;
                     }
                 }
             }
+            else
+            {
+                FillDefaultDataZero(top, data, *jobInfo.sourceChunk, writeUV);
+            }
         }
 
-        TRACE_INFO("Exported {} material of {} total in file", outExportMaterials.size(), data.materialReferences().size());
-    }
+        // extract normals
+        if (auto* writeNormals = jobInfo.normalWritePtr)
+        {
+            if (jobInfo.normalAttributeIndex != -1)
+            {
+                auto* startNormal = writeNormals;
+                ExtractStreamData(jobInfo.normalAttributeIndex, normals, writeNormals, *jobInfo.sourceChunk, top, data);
 
-    struct PackingJob
-    {
-        base::Array<const GroupChunk*> sourceChunks;
-        rendering::MeshChunk chunk;
-        rendering::MeshTopologyType topology;
-        rendering::MeshStreamMask streams;
+                while (startNormal < writeNormals)
+                {
+                    *startNormal = assetToEngine.transformVector(*startNormal).normalized();
+                    startNormal += 1;
+                }
+
+                if (flipFaces)
+                    FlipFaces(jobInfo.normalWritePtr, writeNormals, top);
+            }
+            else
+                FillDefaultDataZero(top, data, *jobInfo.sourceChunk, writeNormals);
+        }
+
+        // extract colors
+        if (auto* writeColors = jobInfo.colorWritePtr)
+        {
+            if (jobInfo.colorAttributeIndex != -1)
+            {
+                ExtractStreamData(jobInfo.colorAttributeIndex, colors, writeColors, *jobInfo.sourceChunk, top, data);
+
+                if (flipFaces)
+                    FlipFaces(jobInfo.colorWritePtr, writeColors, top);
+            }
+            else
+            {
+                FillDefaultDataOnes(top, data, *jobInfo.sourceChunk, writeColors);
+            }
+        }
+
+        Fibers::GetInstance().signalCounter(jobCounter);
     };
 
-    static rendering::MeshVertexFormat ChooseVertexFormat(const GroupBuildRenderGroup& group)
-    {
-        return rendering::MeshVertexFormat::Static;
-    }
-        
-    static void PreparePackingJobs(const GroupBuildModelList& exportGeometry, const base::Array<int>& sourceToExportMaterialIndexMapping, base::Array<PackingJob>& outJobs)
-    {
-        uint32_t numChunks = 0;
-        for (const auto& model : exportGeometry.models)
-            for (const auto& group : model.groups)
-                numChunks += 1;
+    Fibers::GetInstance().waitForCounterAndRelease(jobCounter);
 
-        outJobs.reserve(numChunks);
+    // extract chunk data
+    builder.extract(outChunk);
+}
 
-        for (const auto& model : exportGeometry.models)
+//--
+
+void OBJMeshImporter::buildMaterials(const FormatOBJ& data, const rendering::Mesh* existingMesh, base::res::IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, base::Array<int> &outSourceToExportMaterialIndexMapping, base::Array<rendering::MeshMaterial>& outExportMaterials) const
+{
+    auto meshGeometryManifest = importer.queryConfigration<OBJMeshImportConfig>();
+
+    // find max material index actually used inside chunks
+    uint32_t maxSourceMaterialIndex = 0;
+    for (auto& sourceChunk : data.chunks())
+        maxSourceMaterialIndex = std::max<uint32_t>(maxSourceMaterialIndex, sourceChunk.material);
+
+    // prepare the mapping table
+    outSourceToExportMaterialIndexMapping.clear();
+    outSourceToExportMaterialIndexMapping.resizeWith(maxSourceMaterialIndex + 1, -1);
+
+    // look at the content we cant to export and make sure the necessary materials will be exported
+    for (const auto& model : exportGeometry.models)
+    {
+        // we are not interested on materials used on the non-visual groups
+        if (model.type != GroupBuildModelType::Visual)
+            continue;
+
+        for (const auto& group : model.groups)
         {
-            if (model.type != GroupBuildModelType::Visual)
-                continue;
-
-            for (const auto& group : model.groups)
+            for (const auto* chunk : group.sourceChunks)
             {
-                auto& job = outJobs.emplaceBack();
-                job.topology = group.key.topology;
-                job.streams = group.key.streams;
-                job.chunk.vertexFormat = ChooseVertexFormat(group);
-                job.chunk.materialIndex = sourceToExportMaterialIndexMapping[group.key.material];
-                job.chunk.detailMask = model.detailMask;
-                job.chunk.renderMask = (uint32_t)rendering::MeshChunkRenderingMaskBit::DEFAULT;
-                job.sourceChunks = group.sourceChunks;
+                // add material to export list on first use
+                if (-1 == outSourceToExportMaterialIndexMapping[chunk->material])
+                {
+                    const auto& sourceMaterial = data.materialReferences()[chunk->material];
+
+                    auto materialIndex = outExportMaterials.size();
+                    outSourceToExportMaterialIndexMapping[chunk->material] = materialIndex;
+                    TRACE_INFO("Mapped source material '{}' ({}) at export index {}", sourceMaterial.name, chunk->material, materialIndex);
+
+                    auto& exportMaterial = outExportMaterials.emplaceBack();
+                    exportMaterial.name = base::StringID(sourceMaterial.name.view());
+                    exportMaterial.material = buildSingleMaterial(importer, *meshGeometryManifest, sourceMaterial.name, data.materialLibraryFileName(), chunk->material, existingMesh);
+                }
             }
         }
     }
 
-    static void BuildRenderChunks(const FormatOBJ& sourceData, const base::Matrix assetToEngineTransform, const OBJMeshImportConfig& config, base::res::IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, const base::Array<int>& sourceToExportMaterialIndexMapping, base::Array<rendering::MeshChunk>& outChunks, base::Box& outBounds)
+    TRACE_INFO("Exported {} material of {} total in file", outExportMaterials.size(), data.materialReferences().size());
+}
+
+struct PackingJob
+{
+    base::Array<const GroupChunk*> sourceChunks;
+    rendering::MeshChunk chunk;
+    rendering::MeshTopologyType topology;
+    rendering::MeshStreamMask streams;
+};
+
+static rendering::MeshVertexFormat ChooseVertexFormat(const GroupBuildRenderGroup& group)
+{
+    return rendering::MeshVertexFormat::Static;
+}
+        
+static void PreparePackingJobs(const GroupBuildModelList& exportGeometry, const base::Array<int>& sourceToExportMaterialIndexMapping, base::Array<PackingJob>& outJobs)
+{
+    uint32_t numChunks = 0;
+    for (const auto& model : exportGeometry.models)
+        for (const auto& group : model.groups)
+            numChunks += 1;
+
+    outJobs.reserve(numChunks);
+
+    for (const auto& model : exportGeometry.models)
     {
-        base::ScopeTimer packingTime;
+        if (model.type != GroupBuildModelType::Visual)
+            continue;
 
-        // prepare list of packing jobs
-        base::Array<PackingJob> packingJobs;
-        PreparePackingJobs(exportGeometry, sourceToExportMaterialIndexMapping, packingJobs);
-        TRACE_INFO("Grouped chunks into {} packing jobs", packingJobs.size());
-
-        // output chunks
-        base::Array<rendering::MeshRawChunk> rawChunks;
-        rawChunks.resize(packingJobs.size());
-
-        // convert wavefront data into mesh streams
-        RunFiberLoop("ProcessModels", packingJobs.size(), -2, [&packingJobs, &rawChunks, &sourceData, &assetToEngineTransform, &config](uint32_t jobIndex)
-            {
-                const auto& job = packingJobs[jobIndex];
-                ProcessSingleChunk(job.topology, sourceData, assetToEngineTransform, job.sourceChunks, job.streams, config.flipFaces, config.flipUV, rawChunks[jobIndex]);
-                rawChunks[jobIndex].detailMask = job.chunk.detailMask;
-                rawChunks[jobIndex].renderMask = (rendering::MeshChunkRenderingMask)job.chunk.renderMask;
-                rawChunks[jobIndex].materialIndex = job.chunk.materialIndex;
-            });
-
-        // pack mesh streams into render chunks
-        rendering::BuildChunks(rawChunks, config, importer, outChunks, outBounds);
-    }
-
-    static void BuildDistanceLevels(const GroupBuildModelList& exportGeometry, const base::Matrix assetToEngineTransform, const OBJMeshImportConfig& config, base::Array<rendering::MeshDetailLevel>& outDetailLevels)
-    {
-        uint32_t detailMask = 1;
-        for (const auto& model : exportGeometry.models)
-            detailMask |= model.detailMask;
-
-        uint32_t numLods = std::clamp<uint32_t>(1 + base::FloorLog2(detailMask), 1, 8);
-
-        // TODO!
-        for (uint32_t i=0; i<numLods; ++i)
+        for (const auto& group : model.groups)
         {
-            auto& lod = outDetailLevels.emplaceBack();
-            lod.rangeMin = 50.0f * i;
-            lod.rangeMax = lod.rangeMin + 50.0f;
+            auto& job = outJobs.emplaceBack();
+            job.topology = group.key.topology;
+            job.streams = group.key.streams;
+            job.chunk.vertexFormat = ChooseVertexFormat(group);
+            job.chunk.materialIndex = sourceToExportMaterialIndexMapping[group.key.material];
+            job.chunk.detailMask = model.detailMask;
+            job.chunk.renderMask = (uint32_t)rendering::MeshChunkRenderingMaskBit::DEFAULT;
+            job.sourceChunks = group.sourceChunks;
         }
     }
+}
 
-    base::RefPtr<rendering::MaterialImportConfig> OBJMeshImporter::createMaterialImportConfig(const rendering::MeshImportConfig& cfg, base::StringView name) const
-    {
-        auto ret = base::RefNew<MTLMaterialImportConfig>();
-        ret->m_materialName = base::StringBuf(name);
-        ret->markPropertyOverride("materialName"_id);
-        return ret;
-    }
+static void BuildRenderChunks(const FormatOBJ& sourceData, const base::Matrix assetToEngineTransform, const OBJMeshImportConfig& config, base::res::IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, const base::Array<int>& sourceToExportMaterialIndexMapping, base::Array<rendering::MeshChunk>& outChunks, base::Box& outBounds)
+{
+    base::ScopeTimer packingTime;
 
-    base::res::ResourcePtr OBJMeshImporter::importResource(base::res::IResourceImporterInterface& importer) const
-    {
-        // load source data from OBJ format
-        auto sourceFilePath = importer.queryImportPath();
-        auto sourceGeometry = base::rtti_cast<wavefront::FormatOBJ>(importer.loadSourceAsset(importer.queryImportPath()));
-        if (!sourceGeometry)
-            return nullptr;
+    // prepare list of packing jobs
+    base::Array<PackingJob> packingJobs;
+    PreparePackingJobs(exportGeometry, sourceToExportMaterialIndexMapping, packingJobs);
+    TRACE_INFO("Grouped chunks into {} packing jobs", packingJobs.size());
 
-        // get the configuration for mesh import
-        auto meshGeometryManifest = importer.queryConfigration<OBJMeshImportConfig>();
-        auto existingData = base::rtti_cast<rendering::Mesh>(importer.existingData());
+    // output chunks
+    base::Array<rendering::MeshRawChunk> rawChunks;
+    rawChunks.resize(packingJobs.size());
 
-        // calculate the transform to apply to source data
-        // TODO: move to config file!
-        auto defaultSpace = rendering::MeshImportSpace::LeftHandYUp;
-        if (importer.queryResourcePath().view().beginsWith("/engine/"))
-            defaultSpace = rendering::MeshImportSpace::RightHandZUp;
-
-        // calculate asset transformation to engine space
-        auto assetToEngineTransform = meshGeometryManifest->calcAssetToEngineConversionMatrix(rendering::MeshImportUnits::Meters, defaultSpace);
-        auto allowThreads = meshGeometryManifest->allowThreads && cvAllowWavefrontThreads.get();
-
-        // should we swap faces ?
-        auto swapFaces = meshGeometryManifest->flipFaces ^ (assetToEngineTransform.det() < 0.0f);
-
-        // should we swap the UVs ?
-        auto flipUVs = meshGeometryManifest->flipUV;
-
-        ///--
-
-        // TODO: add filtering to export only requested object
-        GroupBuildModelList buildList;
-        PrepareGroupBuildList(*sourceGeometry, 
-            meshGeometryManifest->emitUVs, meshGeometryManifest->emitColors, meshGeometryManifest->emitNormals, 
-            meshGeometryManifest->objectFilter, meshGeometryManifest->groupFilter,
-            meshGeometryManifest->forceTriangles, buildList);
-
-        // calculate the mesh boundary
-        rendering::MeshInitData exportData;
-        exportData.bounds = CalculateGeometryBounds(*sourceGeometry, buildList, assetToEngineTransform);
-
-        // export materials
-        // TODO: only used ones
-        base::Array<int> sourceToExportMaterialMapping;
-        buildMaterials(*sourceGeometry, existingData, importer, buildList, sourceToExportMaterialMapping, exportData.materials);
-
-        // export render chunks
-        BuildRenderChunks(*sourceGeometry, assetToEngineTransform, *meshGeometryManifest, importer, buildList, sourceToExportMaterialMapping, exportData.chunks, exportData.bounds);
-
-        // export LOD settings
-        BuildDistanceLevels(buildList, assetToEngineTransform, *meshGeometryManifest, exportData.detailLevels);
-
-        // collision shapes
-        // TODO: extract the collision shapes
-        //base::Array<rendering::MeshCollisionShape> shapes;
-
-        // export bones
-        //base::Array<rendering::MeshBone> bones;
-
-        // return mesh
-        return base::RefNew<rendering::Mesh>(std::move(exportData));
-    }
-
-#if 0
-    rendering::content::PhysicsDataPtr OBJMeshImporter::buildPhysicsData(const base::res::CookingParams& ctx, const rendering::content::GeometryData& geometryData) const
-    {
-        // get the rendering blob, we will use it to build physics
-        auto renderingBlob = geometryData.renderingBlob();
-        if (!renderingBlob)
-            return nullptr;
-
-        // no physics
-        if (!m_physicsSettings)
-            return nullptr;
-
-        // get the file name part
-        auto sourceFilePath = importer.queryResourcePath().path();
-
-        // get the lookup token
-        auto physicsSettingsCRC = m_physicsSettings->calcSettingsCRC();
-        auto lookupToken = base::StringBuf(base::TempString("PhysicsData_{}_{}", Hex(renderingBlob->dataCRC()), Hex(physicsSettingsCRC)));
-
-        // load stuff from cache
-        rendering::data::GeometryBlobShapeMesh renderingBlobMesh(*renderingBlob);
-        auto physicsContainer = importer.cacheData<rendering::content::PhysicsDataCachedContent>(sourceFilePath, lookupToken, [this, sourceFilePath, &renderingBlobMesh]() -> base::RefPtr<rendering::content::PhysicsDataCachedContent>
+    // convert wavefront data into mesh streams
+    RunFiberLoop("ProcessModels", packingJobs.size(), -2, [&packingJobs, &rawChunks, &sourceData, &assetToEngineTransform, &config](uint32_t jobIndex)
         {
-            // create data
-            auto physicsData = m_physicsSettings->buildFromMesh(renderingBlobMesh);
-            if (!physicsData)
-                return nullptr;
-
-            auto physicsContainer = base::RefNew<rendering::content::PhysicsDataCachedContent>();
-            physicsContainer->data = physicsData;
-            physicsData->parent(physicsContainer);
-            return physicsContainer;
+            const auto& job = packingJobs[jobIndex];
+            ProcessSingleChunk(job.topology, sourceData, assetToEngineTransform, job.sourceChunks, job.streams, config.flipFaces, config.flipUV, rawChunks[jobIndex]);
+            rawChunks[jobIndex].detailMask = job.chunk.detailMask;
+            rawChunks[jobIndex].renderMask = (rendering::MeshChunkRenderingMask)job.chunk.renderMask;
+            rawChunks[jobIndex].materialIndex = job.chunk.materialIndex;
         });
 
-        // create the mesh access interface
-        if (physicsContainer && physicsContainer->data)
-            return physicsContainer->data->copy();
+    // pack mesh streams into render chunks
+    rendering::BuildChunks(rawChunks, config, importer, outChunks, outBounds);
+}
 
-        // no data
-        return nullptr;
+static void BuildDistanceLevels(const GroupBuildModelList& exportGeometry, const base::Matrix assetToEngineTransform, const OBJMeshImportConfig& config, base::Array<rendering::MeshDetailLevel>& outDetailLevels)
+{
+    uint32_t detailMask = 1;
+    for (const auto& model : exportGeometry.models)
+        detailMask |= model.detailMask;
+
+    uint32_t numLods = std::clamp<uint32_t>(1 + base::FloorLog2(detailMask), 1, 8);
+
+    // TODO!
+    for (uint32_t i=0; i<numLods; ++i)
+    {
+        auto& lod = outDetailLevels.emplaceBack();
+        lod.rangeMin = 50.0f * i;
+        lod.rangeMax = lod.rangeMin + 50.0f;
     }
+}
+
+base::RefPtr<rendering::MaterialImportConfig> OBJMeshImporter::createMaterialImportConfig(const rendering::MeshImportConfig& cfg, base::StringView name) const
+{
+    auto ret = base::RefNew<MTLMaterialImportConfig>();
+    ret->m_materialName = base::StringBuf(name);
+    ret->markPropertyOverride("materialName"_id);
+    return ret;
+}
+
+base::res::ResourcePtr OBJMeshImporter::importResource(base::res::IResourceImporterInterface& importer) const
+{
+    // load source data from OBJ format
+    auto sourceFilePath = importer.queryImportPath();
+    auto sourceGeometry = base::rtti_cast<wavefront::FormatOBJ>(importer.loadSourceAsset(importer.queryImportPath()));
+    if (!sourceGeometry)
+        return nullptr;
+
+    // get the configuration for mesh import
+    auto meshGeometryManifest = importer.queryConfigration<OBJMeshImportConfig>();
+    auto existingData = base::rtti_cast<rendering::Mesh>(importer.existingData());
+
+    // calculate the transform to apply to source data
+    // TODO: move to config file!
+    auto defaultSpace = rendering::MeshImportSpace::LeftHandYUp;
+    if (importer.queryResourcePath().view().beginsWith("/engine/"))
+        defaultSpace = rendering::MeshImportSpace::RightHandZUp;
+
+    // calculate asset transformation to engine space
+    auto assetToEngineTransform = meshGeometryManifest->calcAssetToEngineConversionMatrix(rendering::MeshImportUnits::Meters, defaultSpace);
+    auto allowThreads = meshGeometryManifest->allowThreads && cvAllowWavefrontThreads.get();
+
+    // should we swap faces ?
+    auto swapFaces = meshGeometryManifest->flipFaces ^ (assetToEngineTransform.det() < 0.0f);
+
+    // should we swap the UVs ?
+    auto flipUVs = meshGeometryManifest->flipUV;
+
+    ///--
+
+    // TODO: add filtering to export only requested object
+    GroupBuildModelList buildList;
+    PrepareGroupBuildList(*sourceGeometry, 
+        meshGeometryManifest->emitUVs, meshGeometryManifest->emitColors, meshGeometryManifest->emitNormals, 
+        meshGeometryManifest->objectFilter, meshGeometryManifest->groupFilter,
+        meshGeometryManifest->forceTriangles, buildList);
+
+    // calculate the mesh boundary
+    rendering::MeshInitData exportData;
+    exportData.bounds = CalculateGeometryBounds(*sourceGeometry, buildList, assetToEngineTransform);
+
+    // export materials
+    // TODO: only used ones
+    base::Array<int> sourceToExportMaterialMapping;
+    buildMaterials(*sourceGeometry, existingData, importer, buildList, sourceToExportMaterialMapping, exportData.materials);
+
+    // export render chunks
+    BuildRenderChunks(*sourceGeometry, assetToEngineTransform, *meshGeometryManifest, importer, buildList, sourceToExportMaterialMapping, exportData.chunks, exportData.bounds);
+
+    // export LOD settings
+    BuildDistanceLevels(buildList, assetToEngineTransform, *meshGeometryManifest, exportData.detailLevels);
+
+    // collision shapes
+    // TODO: extract the collision shapes
+    //base::Array<rendering::MeshCollisionShape> shapes;
+
+    // export bones
+    //base::Array<rendering::MeshBone> bones;
+
+    // return mesh
+    return base::RefNew<rendering::Mesh>(std::move(exportData));
+}
+
+#if 0
+rendering::content::PhysicsDataPtr OBJMeshImporter::buildPhysicsData(const base::res::CookingParams& ctx, const rendering::content::GeometryData& geometryData) const
+{
+    // get the rendering blob, we will use it to build physics
+    auto renderingBlob = geometryData.renderingBlob();
+    if (!renderingBlob)
+        return nullptr;
+
+    // no physics
+    if (!m_physicsSettings)
+        return nullptr;
+
+    // get the file name part
+    auto sourceFilePath = importer.queryResourcePath().path();
+
+    // get the lookup token
+    auto physicsSettingsCRC = m_physicsSettings->calcSettingsCRC();
+    auto lookupToken = base::StringBuf(base::TempString("PhysicsData_{}_{}", Hex(renderingBlob->dataCRC()), Hex(physicsSettingsCRC)));
+
+    // load stuff from cache
+    rendering::data::GeometryBlobShapeMesh renderingBlobMesh(*renderingBlob);
+    auto physicsContainer = importer.cacheData<rendering::content::PhysicsDataCachedContent>(sourceFilePath, lookupToken, [this, sourceFilePath, &renderingBlobMesh]() -> base::RefPtr<rendering::content::PhysicsDataCachedContent>
+    {
+        // create data
+        auto physicsData = m_physicsSettings->buildFromMesh(renderingBlobMesh);
+        if (!physicsData)
+            return nullptr;
+
+        auto physicsContainer = base::RefNew<rendering::content::PhysicsDataCachedContent>();
+        physicsContainer->data = physicsData;
+        physicsData->parent(physicsContainer);
+        return physicsContainer;
+    });
+
+    // create the mesh access interface
+    if (physicsContainer && physicsContainer->data)
+        return physicsContainer->data->copy();
+
+    // no data
+    return nullptr;
+}
 #endif
 
 
 
-    /*void GenerateSkyDome()
+/*void GenerateSkyDome()
+{
+    base::StringBuilder str;
+    rendering::BuilderOBJ obj(str);
+
+    auto numVerticalSegments = 20;
+    auto numAngularSegments = 72; // divisible by 24 and 36
+    auto radius = 1.0f;
+
+    base::Array<rendering::BuilderOBJ::WriteVertex> previousVertices;
+    for (int i=-1; i<=numVerticalSegments; ++i)
     {
-        base::StringBuilder str;
-        rendering::BuilderOBJ obj(str);
+        float y = std::max<int>(0,i) / (float)numVerticalSegments;
+        float theta = HALFPI * y;
 
-        auto numVerticalSegments = 20;
-        auto numAngularSegments = 72; // divisible by 24 and 36
-        auto radius = 1.0f;
-
-        base::Array<rendering::BuilderOBJ::WriteVertex> previousVertices;
-        for (int i=-1; i<=numVerticalSegments; ++i)
+        base::Array<rendering::BuilderOBJ::WriteVertex> currentVertices;
+        for (uint32_t j=0; j<=numAngularSegments; ++j)
         {
-            float y = std::max<int>(0,i) / (float)numVerticalSegments;
-            float theta = HALFPI * y;
+            float x = j / (float) numAngularSegments;
+            float phi = TWOPI * x;
 
-            base::Array<rendering::BuilderOBJ::WriteVertex> currentVertices;
-            for (uint32_t j=0; j<=numAngularSegments; ++j)
-            {
-                float x = j / (float) numAngularSegments;
-                float phi = TWOPI * x;
+            auto& v = currentVertices.emplaceBack();
+            v.uv = obj.writeUV(x, y);
 
-                auto& v = currentVertices.emplaceBack();
-                v.uv = obj.writeUV(x, y);
+            auto pos = i < 0 ?
+                    base::Vector3(cosf(phi), sinf(phi), -1.0f) :
+                    base::Vector3(cosf(phi) * cosf(theta), sinf(phi) * cosf(theta), sinf(theta));
+            v.pos = obj.writePosition(pos.x, pos.y, pos.z);
 
-                auto pos = i < 0 ?
-                        base::Vector3(cosf(phi), sinf(phi), -1.0f) :
-                        base::Vector3(cosf(phi) * cosf(theta), sinf(phi) * cosf(theta), sinf(theta));
-                v.pos = obj.writePosition(pos.x, pos.y, pos.z);
-
-                auto n = pos.normalized();
-                v.n = obj.writeNormal(n.x, n.y, n.z);
-            }
-
-            if (i >= 0)
-            {
-                for (uint32_t j=0; j<numAngularSegments; ++j)
-                {
-                    obj.writeFace(currentVertices[j], currentVertices[j+1], previousVertices[j+1]);
-                    obj.writeFace(currentVertices[j], previousVertices[j+1], previousVertices[j]);
-                }
-            }
-
-            previousVertices = currentVertices;
+            auto n = pos.normalized();
+            v.n = obj.writeNormal(n.x, n.y, n.z);
         }
 
-        auto path = base::io::AbsolutePath::Build(L"/home/rexdex/skydome.obj");
-        base::io::SaveFileFromString(path, str.toString());
-    }*/
+        if (i >= 0)
+        {
+            for (uint32_t j=0; j<numAngularSegments; ++j)
+            {
+                obj.writeFace(currentVertices[j], currentVertices[j+1], previousVertices[j+1]);
+                obj.writeFace(currentVertices[j], previousVertices[j+1], previousVertices[j]);
+            }
+        }
 
+        previousVertices = currentVertices;
+    }
 
-} // mesh
+    auto path = base::io::AbsolutePath::Build(L"/home/rexdex/skydome.obj");
+    base::io::SaveFileFromString(path, str.toString());
+}*/
+
+END_BOOMER_NAMESPACE(assets)
 
 

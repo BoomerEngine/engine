@@ -8,68 +8,68 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+/// a scope that prints its timing to log
+/// used for small profiling, can be picked up the automated tools
+class BASE_SYSTEM_API TimedScope
 {
-    /// a scope that prints its timing to log
-    /// used for small profiling, can be picked up the automated tools
-    class BASE_SYSTEM_API TimedScope
-    {
-    public:
-        TimedScope(const char* scopeName);
-        ~TimedScope();
+public:
+    TimedScope(const char* scopeName);
+    ~TimedScope();
 
-        /// add timing marker (prints time elapsed so far)
-        void printSubtime(const char* text);
+    /// add timing marker (prints time elapsed so far)
+    void printSubtime(const char* text);
 
-    private:
-        const char* m_name;
-        uint64_t m_startTime;
-        uint64_t m_prevMarkerTime;
-    };
+private:
+    const char* m_name;
+    uint64_t m_startTime;
+    uint64_t m_prevMarkerTime;
+};
 
-    /// a timer that starts at the beginning of the scope
-    /// does not print anything
-    class BASE_SYSTEM_API ScopeTimer
-    {
-    public:
-        ScopeTimer();
+/// a timer that starts at the beginning of the scope
+/// does not print anything
+class BASE_SYSTEM_API ScopeTimer
+{
+public:
+    ScopeTimer();
 
-        /// get time elapsed since the timer started
-        double timeElapsed() const;
+    /// get time elapsed since the timer started
+    double timeElapsed() const;
 
-        /// get time elapsed since the timer started in mili seconds
-        float milisecondsElapsed() const;
+    /// get time elapsed since the timer started in mili seconds
+    float milisecondsElapsed() const;
 
-        //
+    //
         
-        void print(IFormatStream& f) const;
+    void print(IFormatStream& f) const;
 
-    private:
-        uint64_t m_startTime;
-    };
+private:
+    uint64_t m_startTime;
+};
 
-    /// statistics timing collector
-    class BASE_SYSTEM_API TimingStatistics : public NoCopy
-    {
-    public:
-        TimingStatistics();
+/// statistics timing collector
+class BASE_SYSTEM_API TimingStatistics : public NoCopy
+{
+public:
+    TimingStatistics();
 
-        void clear();
+    void clear();
 
-        void update(double value);
+    void update(double value);
 
-        double mean() const;
-        double variance() const;
+    double mean() const;
+    double variance() const;
 
-    private:
-        double bestValue = DBL_MAX;
-        double worstValue = -DBL_MAX;
+private:
+    double bestValue = DBL_MAX;
+    double worstValue = -DBL_MAX;
 
-        double currentMean = 0.0;
-        double currentVariance = 0.0;
-        double currentSum = 0.0;
+    double currentMean = 0.0;
+    double currentVariance = 0.0;
+    double currentSum = 0.0;
 
-        uint32_t count = 0;
-    };
+    uint32_t count = 0;
+};
 
-}  // base
+END_BOOMER_NAMESPACE(base)

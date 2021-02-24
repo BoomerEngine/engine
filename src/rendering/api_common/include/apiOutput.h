@@ -13,83 +13,80 @@
 #include "apiObject.h"
 #include "apiSwapchain.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api)
+
+//--
+
+class ObjectRegistryProxy;
+
+//--
+
+// "virtual" render target view of the swapchain 
+class RENDERING_API_COMMON_API OutputRenderTarget : public IBaseObject
 {
-    namespace api
-    {
-		//--
+public:
+	OutputRenderTarget(IBaseThread* owner, Output* output, bool depth);
 
-		class ObjectRegistryProxy;
+	INLINE Output* output() const { return m_output; }
+	INLINE bool depth() const { return m_depth; }
 
-        //--
+private:
+	Output* m_output = nullptr;
+	bool m_depth = false;
+};
 
-		// "virtual" render target view of the swapchain 
-		class RENDERING_API_COMMON_API OutputRenderTarget : public IBaseObject
-		{
-		public:
-			OutputRenderTarget(IBaseThread* owner, Output* output, bool depth);
+//--
 
-			INLINE Output* output() const { return m_output; }
-			INLINE bool depth() const { return m_depth; }
+// an output object - higher level wrapper for the swapchain
+class RENDERING_API_COMMON_API Output : public IBaseObject
+{
+public:
+	Output(IBaseThread* owner, IBaseSwapchain* swapchain);
+	virtual ~Output();
 
-		private:
-			Output* m_output = nullptr;
-			bool m_depth = false;
-		};
+	static const auto STATIC_TYPE = ObjectType::Output;
 
-		//--
+	//---
 
-		// an output object - higher level wrapper for the swapchain
-		class RENDERING_API_COMMON_API Output : public IBaseObject
-		{
-		public:
-			Output(IBaseThread* owner, IBaseSwapchain* swapchain);
-			virtual ~Output();
+	// prepare output for rendering - called from any thread, should return current state
+	bool prepare_ClientApi(IDeviceObject* owningObject, RenderTargetViewPtr* outColorRT, RenderTargetViewPtr* outDepthRT, base::Point& outViewport);
 
-			static const auto STATIC_TYPE = ObjectType::Output;
+	// disconnect window from client side callbacks
+	void disconnect_ClientApi();
 
-			//---
+	//--
 
-			// prepare output for rendering - called from any thread, should return current state
-			bool prepare_ClientApi(IDeviceObject* owningObject, RenderTargetViewPtr* outColorRT, RenderTargetViewPtr* outDepthRT, base::Point& outViewport);
+	// acquire surface from owned swapchain
+	bool acquire();
 
-			// disconnect window from client side callbacks
-			void disconnect_ClientApi();
+	// present surface on owned swapchain (swap or discard)
+	void present(bool swap = true);
 
-			//--
+	//--
 
-			// acquire surface from owned swapchain
-			bool acquire();
+protected:
+	IBaseSwapchain* m_swapchain = nullptr;
 
-			// present surface on owned swapchain (swap or discard)
-			void present(bool swap = true);
+	OutputRenderTarget* m_colorTarget = nullptr;
+	OutputRenderTarget* m_depthTarget = nullptr;
 
-			//--
+	//--
 
-		protected:
-			IBaseSwapchain* m_swapchain = nullptr;
+	virtual void disconnectFromClient() override final;
+};
 
-			OutputRenderTarget* m_colorTarget = nullptr;
-			OutputRenderTarget* m_depthTarget = nullptr;
+//---
 
-			//--
+// engine side proxy for device output
+class RENDERING_API_COMMON_API OutputObjectProxy : public rendering::IOutputObject
+{
+public:
+	OutputObjectProxy(ObjectID id, IDeviceObjectHandler* impl, bool flipped, INativeWindowInterface* window);
 
-			virtual void disconnectFromClient() override final;
-		};
+	virtual bool prepare(RenderTargetViewPtr* outColorRT, RenderTargetViewPtr* outDepthRT, base::Point& outViewport) override final;
+	virtual void disconnect() override final;
+};
 
-		//---
+//--
 
-		// engine side proxy for device output
-		class RENDERING_API_COMMON_API OutputObjectProxy : public rendering::IOutputObject
-		{
-		public:
-			OutputObjectProxy(ObjectID id, IDeviceObjectHandler* impl, bool flipped, INativeWindowInterface* window);
-
-			virtual bool prepare(RenderTargetViewPtr* outColorRT, RenderTargetViewPtr* outDepthRT, base::Point& outViewport) override final;
-			virtual void disconnect() override final;
-		};
-
-        //--
-
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api)

@@ -13,42 +13,35 @@
 
 #include "rendering/api_common/include/apiGraphicsPipeline.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+///--
+
+class GraphicsPipeline : public IBaseGraphicsPipeline
 {
-    namespace api
-    {
-		namespace gl4
-		{
-			///--
+public:
+	GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates);
+	virtual ~GraphicsPipeline();
 
-			class GraphicsPipeline : public IBaseGraphicsPipeline
-			{
-			public:
-				GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates);
-				virtual ~GraphicsPipeline();
+	//--
 
-				//--
+	INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
+	INLINE Shaders* shaders() const { return const_cast<Shaders*>(static_cast<const Shaders*>(IBaseGraphicsPipeline::shaders())); }
 
-				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
-				INLINE Shaders* shaders() const { return const_cast<Shaders*>(static_cast<const Shaders*>(IBaseGraphicsPipeline::shaders())); }
-
-				INLINE const StateValues& staticRenderState() const { return m_staticRenderStates; }
-				INLINE StateMask staticRenderStateMask() const { return m_staticRenderStateMask; }
+	INLINE const StateValues& staticRenderState() const { return m_staticRenderStates; }
+	INLINE StateMask staticRenderStateMask() const { return m_staticRenderStateMask; }
 				
-				//--				
+	//--				
 
-				bool apply(GLuint& glActiveProgram);
+	bool apply(GLuint& glActiveProgram);
 
-				//--
+	//--
 
-			private:
-				StateValues m_staticRenderStates;
-				StateMask m_staticRenderStateMask;
-			};
+private:
+	StateValues m_staticRenderStates;
+	StateMask m_staticRenderStateMask;
+};
 
-			//--
+//--
 
-		} // gl4
-    } // api
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::api::gl4)

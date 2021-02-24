@@ -8,17 +8,6 @@
 
 #pragma once
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace dx11
-		{
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
 
-			//---
-
-			//---
-
-		} // dx11
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::dx11)

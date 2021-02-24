@@ -8,45 +8,45 @@
 
 #include "game_host_glue.inl"
 
-namespace game
-{
-    //--
+BEGIN_BOOMER_NAMESPACE(game)
 
-    class Host;
+//--
+
+class Host;
     
-    class IViewportRenderer;
+class IViewportRenderer;
 
-    struct HostViewport;
+struct HostViewport;
 
-    class Game;
-    typedef base::RefPtr<Game> GamePtr;
+class Game;
+typedef base::RefPtr<Game> GamePtr;
 
-    class World;
-    typedef base::RefPtr<World> WorldPtr;
+class World;
+typedef base::RefPtr<World> WorldPtr;
 
-    class GameWorldTransition;
+class GameWorldTransition;
 
-    //--
+//--
 
-    struct InputAction;
+struct InputAction;
 
-    class InputActionTable;
-    typedef base::RefPtr<InputActionTable> InputActionTablePtr;
+class InputActionTable;
+typedef base::RefPtr<InputActionTable> InputActionTablePtr;
 
-    class InputContext;
-    typedef base::RefPtr<InputContext> InputContextPtr;
+class InputContext;
+typedef base::RefPtr<InputContext> InputContextPtr;
 
-    class InputEvent;
-    typedef base::RefPtr<InputEvent> InputEventPtr;
+class InputEvent;
+typedef base::RefPtr<InputEvent> InputEventPtr;
 
-    class InputDefinitions;
-    typedef base::RefPtr<InputDefinitions> InputDefinitionsPtr;
-    typedef base::res::Ref<InputDefinitions> InputDefinitionsRef;
+class InputDefinitions;
+typedef base::RefPtr<InputDefinitions> InputDefinitionsPtr;
+typedef base::res::Ref<InputDefinitions> InputDefinitionsRef;
 
-    //--
+//--
 
-    class FreeCameraHelper;
+class FreeCameraHelper;
 
-    //--
+//--
 
-} // game
+END_BOOMER_NAMESPACE(game)

@@ -14,60 +14,55 @@
 #include "base/containers/include/hashSet.h"
 #include "base/memory/include/linearAllocator.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+//----
+
+class ScriptedClass;
+class ScriptedStruct;
+
+// holder for script managed RTTI objets, mostly functions, classes and enum types
+// NOTE: type objects are NEVER destroyed as this violates the RTTI contract that type pointers never change
+// NOTE: this also means that VERY heavy changes in the scripts may not be reloadable without restart
+class TypeRegistry : public base::NoCopy
 {
-    namespace script
-    {
+public:
+    TypeRegistry();
+    ~TypeRegistry();
 
-        //----
+    /// we have committed to do script reloading, prepare all script types for reloading
+    void prepareForReload();
 
-        class ScriptedClass;
-        class ScriptedStruct;
+    /// create a global function, may return existing object
+    rtti::Function* createFunction(StringID name, ClassType parentClass);
 
-        // holder for script managed RTTI objets, mostly functions, classes and enum types
-        // NOTE: type objects are NEVER destroyed as this violates the RTTI contract that type pointers never change
-        // NOTE: this also means that VERY heavy changes in the scripts may not be reloadable without restart
-        class TypeRegistry : public base::NoCopy
-        {
-        public:
-            TypeRegistry();
-            ~TypeRegistry();
+    /// create an enum type
+    rtti::EnumType* createEnum(StringID name, uint32_t enumTypeSize);
 
-            /// we have committed to do script reloading, prepare all script types for reloading
-            void prepareForReload();
+    /// create a class
+    ScriptedClass* createClass(StringID name, ClassType nativeClass);
 
-            /// create a global function, may return existing object
-            rtti::Function* createFunction(StringID name, ClassType parentClass);
+    /// create a struct
+    ScriptedStruct* createStruct(StringID name);
 
-            /// create an enum type
-            rtti::EnumType* createEnum(StringID name, uint32_t enumTypeSize);
+private:
+    Array<rtti::Function*> m_allFunctions;
+    HashMap<StringBuf, rtti::Function*> m_functionMap;
 
-            /// create a class
-            ScriptedClass* createClass(StringID name, ClassType nativeClass);
+    Array<rtti::EnumType*> m_allEnums;
+    HashMap<StringID, rtti::EnumType*> m_enumMap;
 
-            /// create a struct
-            ScriptedStruct* createStruct(StringID name);
+    Array<ScriptedClass*> m_allClasses;
+    HashMap<StringID, ScriptedClass*> m_classMap;
 
-        private:
-            Array<rtti::Function*> m_allFunctions;
-            HashMap<StringBuf, rtti::Function*> m_functionMap;
+    Array<ScriptedStruct*> m_allStructs;
+    HashMap<StringID, ScriptedStruct*> m_structMap;
 
-            Array<rtti::EnumType*> m_allEnums;
-            HashMap<StringID, rtti::EnumType*> m_enumMap;
+    HashSet<void*> m_usedStubs;
 
-            Array<ScriptedClass*> m_allClasses;
-            HashMap<StringID, ScriptedClass*> m_classMap;
+    static StringBuf BuildFunctionID(StringID name, ClassType parentClass);
+};
 
-            Array<ScriptedStruct*> m_allStructs;
-            HashMap<StringID, ScriptedStruct*> m_structMap;
+//----
 
-            HashSet<void*> m_usedStubs;
-
-            static StringBuf BuildFunctionID(StringID name, ClassType parentClass);
-        };
-
-        //----
-
-    } // script
-} // base
-
+END_BOOMER_NAMESPACE(base::script)

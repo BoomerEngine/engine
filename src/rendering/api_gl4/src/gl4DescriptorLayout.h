@@ -10,57 +10,50 @@
 
 #include "rendering/api_common/include/apiObjectCache.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+//--
+
+struct DescriptorBindingElement
 {
-    namespace api
-    {
-		namespace gl4
-		{
-			//--
+	uint16_t bindPointIndex = 0; // descriptor index in the global table
+	uint16_t elementIndex = 0; // element in the descriptor
 
-			struct DescriptorBindingElement
-			{
-				uint16_t bindPointIndex = 0; // descriptor index in the global table
-				uint16_t elementIndex = 0; // element in the descriptor
+	DeviceObjectViewType objectType = DeviceObjectViewType::Invalid; // what do we expect to find there
+	ImageFormat objectFormat = ImageFormat::UNKNOWN; // format for formated data
+	uint8_t objectSlot = 0; // in OpenGL
 
-				DeviceObjectViewType objectType = DeviceObjectViewType::Invalid; // what do we expect to find there
-				ImageFormat objectFormat = ImageFormat::UNKNOWN; // format for formated data
-				uint8_t objectSlot = 0; // in OpenGL
+	char samplerSlotIndex = 0; // element in the descriptor
+	GLuint glStaticSampler = 0; // resolved static sampler
 
-				char samplerSlotIndex = 0; // element in the descriptor
-				GLuint glStaticSampler = 0; // resolved static sampler
+	DescriptorID bindPointLayout; // debug layout
+	base::StringView bindPointName; // debug name
+	base::StringView elementName; // debug name
+};
 
-				DescriptorID bindPointLayout; // debug layout
-				base::StringView bindPointName; // debug name
-				base::StringView elementName; // debug name
-			};
+//--
 
-			//--
+class DescriptorBindingLayout : public IBaseDescriptorBindingLayout
+{
+public:
+	DescriptorBindingLayout(Thread* owner, const base::Array<ShaderDescriptorMetadata>& descriptors, const base::Array<ShaderStaticSamplerMetadata>& staticSamplers);
+	virtual ~DescriptorBindingLayout();
 
-			class DescriptorBindingLayout : public IBaseDescriptorBindingLayout
-			{
-			public:
-				DescriptorBindingLayout(Thread* owner, const base::Array<ShaderDescriptorMetadata>& descriptors, const base::Array<ShaderStaticSamplerMetadata>& staticSamplers);
-				virtual ~DescriptorBindingLayout();
+	INLINE const base::Array<DescriptorBindingElement>& elements() const { return m_elements; }
 
-				INLINE const base::Array<DescriptorBindingElement>& elements() const { return m_elements; }
+	void prepare();
 
-				void prepare();
+private:
+	base::Array<DescriptorBindingElement> m_elements;
 
-			private:
-				base::Array<DescriptorBindingElement> m_elements;
+	base::Array<GLuint> m_staticSamplers;
+	base::Array<SamplerState> m_staticSamplersStates;
 
-				base::Array<GLuint> m_staticSamplers;
-				base::Array<SamplerState> m_staticSamplersStates;
+	bool m_prepared = false;
 
-				bool m_prepared = false;
+	Thread* m_owner = nullptr;
+};
 
-				Thread* m_owner = nullptr;
-			};
+//--
 
-			//--
-
-		} // gl4
-    } // api
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::api::gl4)

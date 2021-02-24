@@ -12,76 +12,76 @@
 #include "renderingMaterialCode.h"
 #include "rendering/material/include/renderingMaterialRuntimeLayout.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+///---
+
+class MaterialGraphBlock_ParameterFloat : public MaterialGraphBlockParameter
 {
-    ///---
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_ParameterFloat, MaterialGraphBlockParameter);
 
-    class MaterialGraphBlock_ParameterFloat : public MaterialGraphBlockParameter
+public:
+    MaterialGraphBlock_ParameterFloat()
+        : m_value(0.0f)
+    {}
+
+    virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_ParameterFloat, MaterialGraphBlockParameter);
+        builder.socket("Value"_id, MaterialOutputSocket().hideCaption());
+    }
 
-    public:
-        MaterialGraphBlock_ParameterFloat()
-            : m_value(0.0f)
-        {}
+    virtual MaterialDataLayoutParameterType parameterType() const override
+    {
+        return MaterialDataLayoutParameterType::Float;
+    }
 
-        virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
+    virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
+    {
+        if (const auto* entry = compiler.findParamEntry(name()))
         {
-            builder.socket("Value"_id, MaterialOutputSocket().hideCaption());
-        }
-
-        virtual MaterialDataLayoutParameterType parameterType() const override
-        {
-            return MaterialDataLayoutParameterType::Float;
-        }
-
-        virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
-        {
-            if (const auto* entry = compiler.findParamEntry(name()))
-            {
-                if (entry->type == MaterialDataLayoutParameterType::Float)
+            if (entry->type == MaterialDataLayoutParameterType::Float)
+			{
+				if (compiler.context().bindlessTextures)
 				{
-					if (compiler.context().bindlessTextures)
-					{
 
-					}
-					else
-					{
-						const auto& layout = compiler.dataLayout()->discreteDataLayout();
-						return CodeChunk(CodeChunkType::Numerical1, base::TempString("{}.{}", layout.descriptorName, entry->name), true);
-					}
-                }
+				}
+				else
+				{
+					const auto& layout = compiler.dataLayout()->discreteDataLayout();
+					return CodeChunk(CodeChunkType::Numerical1, base::TempString("{}.{}", layout.descriptorName, entry->name), true);
+				}
             }
-
-            // default to a constant value
-            return CodeChunk(m_value);
         }
 
-        virtual base::Type dataType() const override
-        {
-            return base::reflection::GetTypeObject<float>();
-        }
+        // default to a constant value
+        return CodeChunk(m_value);
+    }
 
-        virtual const void* dataValue() const override
-        {
-            return &m_value;
-        }
+    virtual base::Type dataType() const override
+    {
+        return base::reflection::GetTypeObject<float>();
+    }
 
-        virtual void onPropertyChanged(base::StringView path) override
-        {
-            TBaseClass::onPropertyChanged(path);
-        }
+    virtual const void* dataValue() const override
+    {
+        return &m_value;
+    }
 
-    private:
-        float m_value;
-    };
+    virtual void onPropertyChanged(base::StringView path) override
+    {
+        TBaseClass::onPropertyChanged(path);
+    }
 
-    RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_ParameterFloat);
-        RTTI_METADATA(base::graph::BlockInfoMetadata).title("Scalar").group("Parameters").name("Scalar");
-        RTTI_PROPERTY(m_value).editable("Default value");
-        RTTI_METADATA(base::graph::BlockShapeMetadata).slantedWithTitle();
-    RTTI_END_TYPE();
+private:
+    float m_value;
+};
 
-    ///---
+RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_ParameterFloat);
+    RTTI_METADATA(base::graph::BlockInfoMetadata).title("Scalar").group("Parameters").name("Scalar");
+    RTTI_PROPERTY(m_value).editable("Default value");
+    RTTI_METADATA(base::graph::BlockShapeMetadata).slantedWithTitle();
+RTTI_END_TYPE();
 
-} // rendering
+///---
+
+END_BOOMER_NAMESPACE(rendering)

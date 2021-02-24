@@ -12,42 +12,35 @@
 #include "rendering/api_common/include/apiBackgroundJobs.h"
 #include "base/system/include/thread.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+//---
+
+class ThreadWinApi;
+struct ThreadSharedContextWinApi;
+
+class BackgroundQueueWinApi : public IBaseBackgroundQueue
 {
-    namespace api
-    {
-		namespace gl4
-		{
+public:
+	BackgroundQueueWinApi(ThreadWinApi* owner);
 
-			//---
+	virtual bool createWorkerThreads(uint32_t requestedCount, uint32_t& outNumCreated) override final;
+	virtual void stopWorkerThreads() override final;
 
-			class ThreadWinApi;
-			struct ThreadSharedContextWinApi;
+private:
+	ThreadWinApi* m_owner = nullptr;
 
-			class BackgroundQueueWinApi : public IBaseBackgroundQueue
-			{
-			public:
-				BackgroundQueueWinApi(ThreadWinApi* owner);
+	struct ThreadState
+	{
+		base::Thread thread;
+		ThreadSharedContextWinApi* context = nullptr;
+	};
 
-				virtual bool createWorkerThreads(uint32_t requestedCount, uint32_t& outNumCreated) override final;
-				virtual void stopWorkerThreads() override final;
+	base::Array<ThreadState*> m_workerThreads;
 
-			private:
-				ThreadWinApi* m_owner = nullptr;
+	void threadFunc(ThreadState* state);
+};
 
-				struct ThreadState
-				{
-					base::Thread thread;
-					ThreadSharedContextWinApi* context = nullptr;
-				};
+//---
 
-				base::Array<ThreadState*> m_workerThreads;
-
-				void threadFunc(ThreadState* state);
-			};
-
-			//---
-
-		} // gl4
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::gl4)

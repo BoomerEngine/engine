@@ -18,89 +18,86 @@
 #include "rendering/device/include/renderingPipeline.h"
 #include "rendering/device/include/renderingShaderMetadata.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api)
+
+//--
+
+IBaseShaders::IBaseShaders(IBaseThread* drv, const ShaderData* data)
+	: IBaseObject(drv, ObjectType::Shaders)
+	, m_sourceMetadata(AddRef(data->metadata()))
+	, m_sourceData(data->data())
+	, m_mask(data->metadata()->stageMask)
+	, m_key(data->metadata()->key)
 {
-    namespace api
-    {
-		//--
+	// resolve the vertex layout
+	if (m_sourceMetadata->stageMask.test(ShaderStage::Vertex))
+		m_vertexLayout = drv->objectCache()->resolveVertexBindingLayout(m_sourceMetadata);
 
-		IBaseShaders::IBaseShaders(IBaseThread* drv, const ShaderData* data)
-			: IBaseObject(drv, ObjectType::Shaders)
-			, m_sourceMetadata(AddRef(data->metadata()))
-			, m_sourceData(data->data())
-			, m_mask(data->metadata()->stageMask)
-			, m_key(data->metadata()->key)
+	// resolve descriptor state
+	m_descriptorLayout = drv->objectCache()->resolveDescriptorBindingLayout(m_sourceMetadata);
+}
+
+IBaseShaders::~IBaseShaders()
+{}
+
+//--
+
+ShadersObjectProxy::ShadersObjectProxy(ObjectID id, IDeviceObjectHandler* impl, const ShaderMetadata* metadata)
+	: ShaderObject(id, impl, metadata)
+{}
+
+GraphicsPipelineObjectPtr ShadersObjectProxy::createGraphicsPipeline(const GraphicsRenderStatesObject* renderStats)
+{
+	GraphicsRenderStatesSetup mergedStates = metadata()->renderStates;
+
+	if (renderStats)
+	{
+		if (auto apiRenderStates = renderStats->resolveInternalApiObject<IBaseGraphicsRenderStates>())
+			mergedStates.apply(apiRenderStates->setup());
+	}
+
+	const auto key = mergedStates.key();
+
+	auto lock = CreateLock(m_lock);
+
+	base::RefWeakPtr<GraphicsPipelineObject> psoRef;
+	if (m_pipelineObjectMap.find(key, psoRef))
+		if (auto pso = psoRef.lock())
+			return pso;
+
+	if (auto* obj = resolveInternalApiObject<IBaseShaders>())
+	{
+		if (auto* view = obj->createGraphicsPipeline_ClientApi(mergedStates))
 		{
-			// resolve the vertex layout
-			if (m_sourceMetadata->stageMask.test(ShaderStage::Vertex))
-				m_vertexLayout = drv->objectCache()->resolveVertexBindingLayout(m_sourceMetadata);
-
-			// resolve descriptor state
-			m_descriptorLayout = drv->objectCache()->resolveDescriptorBindingLayout(m_sourceMetadata);
+			auto ret = base::RefNew<rendering::GraphicsPipelineObject>(view->handle(), owner(), renderStats, this);
+			m_pipelineObjectMap[key] = ret;
+			return ret;
 		}
+	}
 
-		IBaseShaders::~IBaseShaders()
-		{}
+	return nullptr;
+}
 
-		//--
+ComputePipelineObjectPtr ShadersObjectProxy::createComputePipeline()
+{
+	auto lock = CreateLock(m_lock);
 
-		ShadersObjectProxy::ShadersObjectProxy(ObjectID id, IDeviceObjectHandler* impl, const ShaderMetadata* metadata)
-			: ShaderObject(id, impl, metadata)
-		{}
+	if (auto ret = m_compilePipelineObject.lock())
+		return ret;
 
-		GraphicsPipelineObjectPtr ShadersObjectProxy::createGraphicsPipeline(const GraphicsRenderStatesObject* renderStats)
+	if (auto* obj = resolveInternalApiObject<IBaseShaders>())
+	{
+		if (auto* view = obj->createComputePipeline_ClientApi())
 		{
-			GraphicsRenderStatesSetup mergedStates = metadata()->renderStates;
-
-			if (renderStats)
-			{
-				if (auto apiRenderStates = renderStats->resolveInternalApiObject<IBaseGraphicsRenderStates>())
-					mergedStates.apply(apiRenderStates->setup());
-			}
-
-			const auto key = mergedStates.key();
-
-			auto lock = CreateLock(m_lock);
-
-			base::RefWeakPtr<GraphicsPipelineObject> psoRef;
-			if (m_pipelineObjectMap.find(key, psoRef))
-				if (auto pso = psoRef.lock())
-					return pso;
-
-			if (auto* obj = resolveInternalApiObject<IBaseShaders>())
-			{
-				if (auto* view = obj->createGraphicsPipeline_ClientApi(mergedStates))
-				{
-					auto ret = base::RefNew<rendering::GraphicsPipelineObject>(view->handle(), owner(), renderStats, this);
-					m_pipelineObjectMap[key] = ret;
-					return ret;
-				}
-			}
-
-			return nullptr;
+			auto ret = base::RefNew<rendering::ComputePipelineObject>(view->handle(), owner(), this);
+			m_compilePipelineObject = ret;
+			return ret;
 		}
+	}
 
-		ComputePipelineObjectPtr ShadersObjectProxy::createComputePipeline()
-		{
-			auto lock = CreateLock(m_lock);
+	return nullptr;
+}
 
-			if (auto ret = m_compilePipelineObject.lock())
-				return ret;
+//--
 
-			if (auto* obj = resolveInternalApiObject<IBaseShaders>())
-			{
-				if (auto* view = obj->createComputePipeline_ClientApi())
-				{
-					auto ret = base::RefNew<rendering::ComputePipelineObject>(view->handle(), owner(), this);
-					m_compilePipelineObject = ret;
-					return ret;
-				}
-			}
-
-			return nullptr;
-		}
-
-		//--
-
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api)

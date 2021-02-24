@@ -8,87 +8,85 @@
 
 #include "base_image_glue.inl"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::image)
+
+class Image;
+typedef RefPtr<Image> ImagePtr;
+typedef res::Ref<Image> ImageRef;
+
+class ImageView;
+
+struct ImageRect;
+
+/// Image formats (global)
+enum class PixelFormat : uint8_t
 {
-    namespace image
-    {
-        class Image;
-        typedef RefPtr<Image> ImagePtr;
-        typedef res::Ref<Image> ImageRef;
+    Uint8_Norm, // normalized to 0-1 range
+    Uint16_Norm, // normalized to 0-1 range
+    Float16_Raw, // raw format
+    Float32_Raw, // raw format
+};
 
-        class ImageView;
+class DynamicAtlas;
+class SpaceAllocator;
 
-		struct ImageRect;
+/// color space, used by various filters that try to be a little bit more exact when filtering colors
+/// it's a good practice not to ignore this
+enum class ColorSpace : uint8_t
+{
+    // linear color space, values can be just merged together
+    Linear,
 
-        /// Image formats (global)
-        enum class PixelFormat : uint8_t
-        {
-            Uint8_Norm, // normalized to 0-1 range
-            Uint16_Norm, // normalized to 0-1 range
-            Float16_Raw, // raw format
-            Float32_Raw, // raw format
-        };
+    // sRGB color space, values represent color in sRGB space, should be converted back and forth before operation
+    SRGB,
 
-        class DynamicAtlas;
-        class SpaceAllocator;
+    // HDR perceptual scale, although values are linear our perception of them is not, use logarithmic weights when mixing color
+    HDR,
 
-        /// color space, used by various filters that try to be a little bit more exact when filtering colors
-        /// it's a good practice not to ignore this
-        enum class ColorSpace : uint8_t
-        {
-            // linear color space, values can be just merged together
-            Linear,
+    // Packed normals (needs unpacking and normalization)
+    Normals,
+};
 
-            // sRGB color space, values represent color in sRGB space, should be converted back and forth before operation
-            SRGB,
+/// downsampling mode
+enum class DownsampleMode : uint8_t
+{
+    Average,
+    AverageWithAlphaWeight,
+    AverageWithPremultipliedAlphaWeight,
+};
 
-            // HDR perceptual scale, although values are linear our perception of them is not, use logarithmic weights when mixing color
-            HDR,
+// cubemap sides enumeration
+enum class CubeSide : uint8_t
+{
+    PositiveX,
+    NegativeX,
+    PositiveY,
+    NegativeY,
+    PositiveZ,
+    NegativeZ,
+};
 
-            // Packed normals (needs unpacking and normalization)
-            Normals,
-        };
+END_BOOMER_NAMESPACE(base::image)
 
-        /// downsampling mode
-        enum class DownsampleMode : uint8_t
-        {
-            Average,
-            AverageWithAlphaWeight,
-            AverageWithPremultipliedAlphaWeight,
-        };
+//--
 
-        // cubemap sides enumeration
-        enum class CubeSide : uint8_t
-        {
-            PositiveX,
-            NegativeX,
-            PositiveY,
-            NegativeY,
-            PositiveZ,
-            NegativeZ,
-        };
+BEGIN_BOOMER_NAMESPACE(base)
 
-        //--
+// load image from file memory
+extern BASE_IMAGE_API image::ImagePtr LoadImageFromMemory(const void* memory, uint64_t size);
 
-    } // image
+// load image from file memory
+extern BASE_IMAGE_API image::ImagePtr LoadImageFromMemory(Buffer ptr);
 
-    //--
+// load image from file
+extern BASE_IMAGE_API image::ImagePtr LoadImageFromFile(io::IReadFileHandle* file);
 
-    // load image from file memory
-    extern BASE_IMAGE_API image::ImagePtr LoadImageFromMemory(const void* memory, uint64_t size);
+// load image from absolute file
+extern BASE_IMAGE_API image::ImagePtr LoadImageFromAbsolutePath(StringView absolutePath);
 
-    // load image from file memory
-    extern BASE_IMAGE_API image::ImagePtr LoadImageFromMemory(Buffer ptr);
+// load image from absolute file
+extern BASE_IMAGE_API image::ImagePtr LoadImageFromDepotPath(StringView depotPath);
 
-    // load image from file
-    extern BASE_IMAGE_API image::ImagePtr LoadImageFromFile(io::IReadFileHandle* file);
+END_BOOMER_NAMESPACE(base::image)
 
-    // load image from absolute file
-    extern BASE_IMAGE_API image::ImagePtr LoadImageFromAbsolutePath(StringView absolutePath);
-
-    // load image from absolute file
-    extern BASE_IMAGE_API image::ImagePtr LoadImageFromDepotPath(StringView depotPath);
-
-    //--
-
-} // base
+//--

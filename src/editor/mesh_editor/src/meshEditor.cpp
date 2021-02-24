@@ -26,148 +26,148 @@
 #include "rendering/mesh/include/renderingMesh.h"
 #include "base/ui/include/uiMenuBar.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//---
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshEditor);
+RTTI_END_TYPE();
+
+MeshEditor::MeshEditor(ManagedFileNativeResource* file)
+    : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::Imported })
 {
-    //---
+    createInterface();
+}
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshEditor);
-    RTTI_END_TYPE();
+MeshEditor::~MeshEditor()
+{}
 
-    MeshEditor::MeshEditor(ManagedFileNativeResource* file)
-        : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::Imported })
+void MeshEditor::createInterface()
+{
     {
-        createInterface();
+        auto tab = base::RefNew<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
+        tab->layoutVertical();
+
+        m_previewPanel = tab->createChild<MeshPreviewPanel>();
+        m_previewPanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+        m_previewPanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
+
+        m_previewPanel->bind(EVENT_MATERIAL_CLICKED, this) = [this](base::Array<base::StringID> materialNames)
+        {
+            m_materialsPanel->showMaterials(materialNames);
+        };
+
+        dockLayout().attachPanel(tab);
     }
 
-    MeshEditor::~MeshEditor()
-    {}
-
-    void MeshEditor::createInterface()
     {
-        {
-            auto tab = base::RefNew<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
-            tab->layoutVertical();
+        auto tab = base::RefNew<ui::DockPanel>("[img:tree] Structure", "StructurePanel");
+        tab->layoutVertical();
 
-            m_previewPanel = tab->createChild<MeshPreviewPanel>();
-            m_previewPanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-            m_previewPanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
+        m_structurePanel = tab->createChild<MeshStructurePanel>();
+        m_structurePanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+        m_structurePanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
 
-            m_previewPanel->bind(EVENT_MATERIAL_CLICKED, this) = [this](base::Array<base::StringID> materialNames)
-            {
-                m_materialsPanel->showMaterials(materialNames);
-            };
-
-            dockLayout().attachPanel(tab);
-        }
-
-        {
-            auto tab = base::RefNew<ui::DockPanel>("[img:tree] Structure", "StructurePanel");
-            tab->layoutVertical();
-
-            m_structurePanel = tab->createChild<MeshStructurePanel>();
-            m_structurePanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-            m_structurePanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
-
-            dockLayout().right().attachPanel(tab);
-        }
-
-        {
-            auto tab = base::RefNew<ui::DockPanel>("[img:color] Materials", "MaterialsPanel");
-            tab->layoutVertical();
-
-            m_materialsPanel = tab->createChild<MeshMaterialsPanel>(actionHistory());
-            m_materialsPanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-            m_materialsPanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
-
-            m_materialsPanel->bind(EVENT_MATERIAL_SELECTION_CHANGED, this) = [this]()
-            {
-                updateMaterialHighlights();
-            };
-
-            dockLayout().right().attachPanel(tab, false);
-        }
-
-        {
-            actions().bindCommand("MeshPreview.ShowBounds"_id) = [this]() {
-                m_previewPanel->changePreviewSettings([](MeshPreviewPanelSettings& settings)
-                    {
-                        settings.showBounds = !settings.showBounds;
-                    });
-            };
-            actions().bindToggle("MeshPreview.ShowBounds"_id) = [this]() {
-                return m_previewPanel->previewSettings().showBounds;
-            };
-        }
+        dockLayout().right().attachPanel(tab);
     }
 
-    void MeshEditor::fillViewMenu(ui::MenuButtonContainer* menu)
     {
-        TBaseClass::fillViewMenu(menu);
-        menu->createAction("MeshPreview.ShowBounds"_id, "Show bounds", "cube");
+        auto tab = base::RefNew<ui::DockPanel>("[img:color] Materials", "MaterialsPanel");
+        tab->layoutVertical();
+
+        m_materialsPanel = tab->createChild<MeshMaterialsPanel>(actionHistory());
+        m_materialsPanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+        m_materialsPanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
+
+        m_materialsPanel->bind(EVENT_MATERIAL_SELECTION_CHANGED, this) = [this]()
+        {
+            updateMaterialHighlights();
+        };
+
+        dockLayout().right().attachPanel(tab, false);
     }
 
-    bool MeshEditor::initialize()
     {
-        if (!TBaseClass::initialize())
-            return false;
+        actions().bindCommand("MeshPreview.ShowBounds"_id) = [this]() {
+            m_previewPanel->changePreviewSettings([](MeshPreviewPanelSettings& settings)
+                {
+                    settings.showBounds = !settings.showBounds;
+                });
+        };
+        actions().bindToggle("MeshPreview.ShowBounds"_id) = [this]() {
+            return m_previewPanel->previewSettings().showBounds;
+        };
+    }
+}
 
-        if (auto mesh = rtti_cast<rendering::Mesh>(resource()))
-        {
-            m_structurePanel->bindResource(mesh);
-            m_previewPanel->previewMesh(mesh);
-            m_materialsPanel->bindResource(mesh);
-        }
+void MeshEditor::fillViewMenu(ui::MenuButtonContainer* menu)
+{
+    TBaseClass::fillViewMenu(menu);
+    menu->createAction("MeshPreview.ShowBounds"_id, "Show bounds", "cube");
+}
 
-        return true;
+bool MeshEditor::initialize()
+{
+    if (!TBaseClass::initialize())
+        return false;
+
+    if (auto mesh = rtti_cast<rendering::Mesh>(resource()))
+    {
+        m_structurePanel->bindResource(mesh);
+        m_previewPanel->previewMesh(mesh);
+        m_materialsPanel->bindResource(mesh);
     }
 
-    void MeshEditor::handleLocalReimport(const res::ResourcePtr& ptr)
-    {
-        if (auto mesh = rtti_cast<rendering::Mesh>(ptr))
-        {
-            m_structurePanel->bindResource(mesh);
-            m_previewPanel->previewMesh(mesh);
-            m_materialsPanel->bindResource(mesh);
-        }
+    return true;
+}
 
-        TBaseClass::handleLocalReimport(ptr);
+void MeshEditor::handleLocalReimport(const res::ResourcePtr& ptr)
+{
+    if (auto mesh = rtti_cast<rendering::Mesh>(ptr))
+    {
+        m_structurePanel->bindResource(mesh);
+        m_previewPanel->previewMesh(mesh);
+        m_materialsPanel->bindResource(mesh);
     }
 
-    void MeshEditor::updateMaterialHighlights()
+    TBaseClass::handleLocalReimport(ptr);
+}
+
+void MeshEditor::updateMaterialHighlights()
+{
+    m_previewPanel->changePreviewSettings([this](MeshPreviewPanelSettings& settings)
+        {
+            settings.highlightMaterials = m_materialsPanel->settings().highlight;
+            settings.isolateMaterials = m_materialsPanel->settings().isolate;
+            settings.selectedMaterials.clear();
+            m_materialsPanel->collectSelectedMaterialNames(settings.selectedMaterials);
+        });
+}
+
+//---
+
+class MeshResourceEditorOpener : public IResourceEditorOpener
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(MeshResourceEditorOpener, IResourceEditorOpener);
+
+public:
+    virtual bool canOpen(const ManagedFileFormat& format) const override
     {
-        m_previewPanel->changePreviewSettings([this](MeshPreviewPanelSettings& settings)
-            {
-                settings.highlightMaterials = m_materialsPanel->settings().highlight;
-                settings.isolateMaterials = m_materialsPanel->settings().isolate;
-                settings.selectedMaterials.clear();
-                m_materialsPanel->collectSelectedMaterialNames(settings.selectedMaterials);
-            });
+        return format.nativeResourceClass() == rendering::Mesh::GetStaticClass();
     }
 
-    //---
-
-    class MeshResourceEditorOpener : public IResourceEditorOpener
+    virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MeshResourceEditorOpener, IResourceEditorOpener);
+        if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
+            return base::RefNew<MeshEditor>(nativeFile);
 
-    public:
-        virtual bool canOpen(const ManagedFileFormat& format) const override
-        {
-            return format.nativeResourceClass() == rendering::Mesh::GetStaticClass();
-        }
+        return nullptr;
+    }
+};
 
-        virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
-        {
-            if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-                return base::RefNew<MeshEditor>(nativeFile);
+RTTI_BEGIN_TYPE_CLASS(MeshResourceEditorOpener);
+RTTI_END_TYPE();
 
-            return nullptr;
-        }
-    };
+//---
 
-    RTTI_BEGIN_TYPE_CLASS(MeshResourceEditorOpener);
-    RTTI_END_TYPE();
-
-    //---
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

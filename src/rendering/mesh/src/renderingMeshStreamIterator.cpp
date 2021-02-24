@@ -9,8 +9,7 @@
 #include "build.h"
 #include "renderingMeshStreamIterator.h"
 
-namespace rendering
-{
+BEGIN_BOOMER_NAMESPACE(rendering)
     //---
 
     MeshDataIteratorBase::MeshDataIteratorBase(MeshStreamType tag, uint32_t numElements, uint32_t dataStride, void* ptr)

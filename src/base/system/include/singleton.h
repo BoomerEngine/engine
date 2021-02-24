@@ -8,29 +8,28 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+/// basic singleton interface
+/// NOTE: we try to cleanup all singletons before closing the app
+class BASE_SYSTEM_API ISingleton : public base::NoCopy
 {
+public:
+    /// called to cleanup the singleton before app shutdown
+    virtual void deinit();
 
-    /// basic singleton interface
-    /// NOTE: we try to cleanup all singletons before closing the app
-    class BASE_SYSTEM_API ISingleton : public base::NoCopy
-    {
-    public:
-        /// called to cleanup the singleton before app shutdown
-        virtual void deinit();
+    ///---
 
-        ///---
+    /// deinitialize all singletons
+    static void DeinitializeAll();
 
-        /// deinitialize all singletons
-        static void DeinitializeAll();
+protected:
+    ISingleton();
+    virtual ~ISingleton();
+};
 
-    protected:
-        ISingleton();
-        virtual ~ISingleton();
-    };
+#define DECLARE_SINGLETON(T) \
+    public: static T& GetInstance() { static T* instance = new T(); return *instance; } \
+    private: virtual ~T() {}
 
-    #define DECLARE_SINGLETON(T) \
-        public: static T& GetInstance() { static T* instance = new T(); return *instance; } \
-        private: virtual ~T() {}
-
-} // base
+END_BOOMER_NAMESPACE(base)

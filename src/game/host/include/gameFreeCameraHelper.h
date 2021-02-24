@@ -8,59 +8,58 @@
 
 #pragma once
 
-namespace game
+BEGIN_BOOMER_NAMESPACE(game)
+
+//---
+
+/// simple (debug) camera that can fly around the level
+class GAME_HOST_API FreeCameraHelper : public base::NoCopy
 {
+public:
+    FreeCameraHelper();
 
-    //---
+    ///--
 
-    /// simple (debug) camera that can fly around the level
-    class GAME_HOST_API FreeCameraHelper : public base::NoCopy
-    {
-    public:
-        FreeCameraHelper();
+    // get current (animated) camera position
+    INLINE const base::Vector3& position() const { return m_position; }
 
-        ///--
+    // get current (animated) camera rotation
+    INLINE const base::Angles& rotation() const { return m_rotation; }
 
-        // get current (animated) camera position
-        INLINE const base::Vector3& position() const { return m_position; }
+    ///--
 
-        // get current (animated) camera rotation
-        INLINE const base::Angles& rotation() const { return m_rotation; }
+    /// reset input state of the controller
+    void resetInput();
 
-        ///--
+    /// update camera animation/handling
+    void animate(float timeDelta);
 
-        /// reset input state of the controller
-        void resetInput();
+    /// move camera to given place
+    void moveTo(const base::Vector3& position, const base::Angles& rotation);
 
-        /// update camera animation/handling
-        void animate(float timeDelta);
+    /// process key event, moves the camera around
+    bool processInput(const base::input::BaseEvent& evt);
 
-        /// move camera to given place
-        void moveTo(const base::Vector3& position, const base::Angles& rotation);
+    //--
 
-        /// process key event, moves the camera around
-        bool processInput(const base::input::BaseEvent& evt);
+    // compute camera settings
+    void computeRenderingCamera(rendering::scene::CameraSetup& outCamera) const;
 
-        //--
+private:
+    base::Vector3 m_velocity;
+    base::Vector3 m_position;
+    base::Angles m_rotation;
 
-        // compute camera settings
-        void computeRenderingCamera(rendering::scene::CameraSetup& outCamera) const;
+    bool m_movementKeys[8];
 
-    private:
-        base::Vector3 m_velocity;
-        base::Vector3 m_position;
-        base::Angles m_rotation;
+    float m_speedFactor;
 
-        bool m_movementKeys[8];
+    void computeMovement(float timeDelta);
 
-        float m_speedFactor;
+    bool processKeyEvent(const base::input::KeyEvent& evt);
+    bool processMouseEvent(const base::input::AxisEvent& evt);
+};
 
-        void computeMovement(float timeDelta);
+//---
 
-        bool processKeyEvent(const base::input::KeyEvent& evt);
-        bool processMouseEvent(const base::input::AxisEvent& evt);
-    };
-
-    //---
-
-} // ui
+END_BOOMER_NAMESPACE(game)

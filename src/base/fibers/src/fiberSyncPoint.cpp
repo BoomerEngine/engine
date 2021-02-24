@@ -9,71 +9,67 @@
 #include "build.h"
 #include "fiberSyncPoint.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::fibers)
+
+///--
+
+SyncPoint::SyncPoint(const char* name)
+    : m_completed(true)
+    , m_name(name)
+{}
+
+SyncPoint::~SyncPoint()
+{}
+
+CAN_YIELD void SyncPoint::acquire()
 {
-    namespace fibers
+    auto lock = CreateLock(m_lock);
+
+    // check if we have not yet completed the sync (no release was called)
+    if (!m_completed)
     {
+        // create the fence we will be waiting for
+        ASSERT_EX(m_fence.empty(), "Fence already exists");
+        auto createdFence = Fibers::GetInstance().createCounter(m_name, 1);
+        m_fence = createdFence;
 
-        ///--
+        // release our data lock, this will allow other tread to see the data
+        lock.release();
 
-        SyncPoint::SyncPoint(const char* name)
-            : m_completed(true)
-            , m_name(name)
-        {}
+        // wait for the fence
+        // NOTE: we cannot use the m_fence since we are outside the lock
+        Fibers::GetInstance().waitForCounterAndRelease(createdFence);
 
-        SyncPoint::~SyncPoint()
-        {}
+        // reacquire the fence
+        lock.aquire();
 
-        CAN_YIELD void SyncPoint::acquire()
-        {
-            auto lock = CreateLock(m_lock);
+        // we should be completed by now
+        ASSERT_EX(m_completed, "Sync point fence passed by flag not set");
+        ASSERT_EX(m_fence.empty(), "Sync point fence not consumed");
+    }
 
-            // check if we have not yet completed the sync (no release was called)
-            if (!m_completed)
-            {
-                // create the fence we will be waiting for
-                ASSERT_EX(m_fence.empty(), "Fence already exists");
-                auto createdFence = Fibers::GetInstance().createCounter(m_name, 1);
-                m_fence = createdFence;
+    // mark as incomplete so the release can work
+    m_completed = false;
+}
 
-                // release our data lock, this will allow other tread to see the data
-                lock.release();
+void SyncPoint::release()
+{
+    auto lock = CreateLock(m_lock);
 
-                // wait for the fence
-                // NOTE: we cannot use the m_fence since we are outside the lock
-                Fibers::GetInstance().waitForCounterAndRelease(createdFence);
+    // mark as completed, if we managed to get to release() before next acquire() no fence will be created
+    ASSERT_EX(m_completed == false, "Release without previous acquire");
+    m_completed = true;
 
-                // reacquire the fence
-                lock.aquire();
+    // do we want to wait for a fence ?
+    if (!m_fence.empty())
+    {
+        // consume the fence
+        auto fenceToWait = m_fence;
+        m_fence = WaitCounter();
+        Fibers::GetInstance().signalCounter(fenceToWait);
+    }
+}
 
-                // we should be completed by now
-                ASSERT_EX(m_completed, "Sync point fence passed by flag not set");
-                ASSERT_EX(m_fence.empty(), "Sync point fence not consumed");
-            }
+///--
 
-            // mark as incomplete so the release can work
-            m_completed = false;
-        }
-
-        void SyncPoint::release()
-        {
-            auto lock = CreateLock(m_lock);
-
-            // mark as completed, if we managed to get to release() before next acquire() no fence will be created
-            ASSERT_EX(m_completed == false, "Release without previous acquire");
-            m_completed = true;
-
-            // do we want to wait for a fence ?
-            if (!m_fence.empty())
-            {
-                // consume the fence
-                auto fenceToWait = m_fence;
-                m_fence = WaitCounter();
-                Fibers::GetInstance().signalCounter(fenceToWait);
-            }
-        }
-
-        ///--
-
-    } // fibers
-} // base
+END_BOOMER_NAMESPACE(base::fibers)

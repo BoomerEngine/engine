@@ -7,13 +7,3 @@
 ***/
 
 #pragma once
-
-namespace base
-{
-    namespace prv
-    {
-
-        
-    
-    } // prv
-} // base

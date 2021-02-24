@@ -8,11 +8,3 @@
 
 #pragma once
 
-namespace base
-{
-
-    //--
-
-    //--
-
-} // base

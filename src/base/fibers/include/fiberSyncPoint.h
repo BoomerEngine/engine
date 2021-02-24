@@ -9,33 +9,29 @@
 
 #include "fiberSystem.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::fibers)
+
+///---
+
+/// a fiber synchronizer, contains internal fence
+class BASE_FIBERS_API SyncPoint : public NoCopy
 {
-    namespace fibers
-    {
+public:
+    SyncPoint(const char* name);
+    ~SyncPoint();
 
-        ///---
+    /// wait for previous fence to complete and acquire new fence
+    /// NOTE: if we managed to call release() before calling acquire there's no wait
+    CAN_YIELD void acquire();
 
-        /// a fiber synchronizer, contains internal fence
-        class BASE_FIBERS_API SyncPoint : public NoCopy
-        {
-        public:
-            SyncPoint(const char* name);
-            ~SyncPoint();
+    /// wait for the previous fence to complete but do not acquire new fence
+    void release();
 
-            /// wait for previous fence to complete and acquire new fence
-            /// NOTE: if we managed to call release() before calling acquire there's no wait
-            CAN_YIELD void acquire();
+private:
+    Mutex m_lock;
+    const char* m_name;
+    WaitCounter m_fence;
+    bool m_completed;
+};
 
-            /// wait for the previous fence to complete but do not acquire new fence
-            void release();
-
-        private:
-            Mutex m_lock;
-            const char* m_name;
-            WaitCounter m_fence;
-            bool m_completed;
-        };
-
-    } // fibers
-}// base
+END_BOOMER_NAMESPACE(base::fibers)

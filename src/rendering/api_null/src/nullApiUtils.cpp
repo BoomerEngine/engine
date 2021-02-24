@@ -8,13 +8,6 @@
 
 #include "build.h"
 
-namespace rendering
-{
-	namespace api
-	{
-		namespace nul
-		{
-		} // nul
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
 
-	} // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

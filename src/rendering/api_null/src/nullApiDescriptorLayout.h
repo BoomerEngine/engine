@@ -10,24 +10,17 @@
 
 #include "rendering/api_common/include/apiObjectCache.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
+
+//--
+
+class DescriptorBindingLayout : public IBaseDescriptorBindingLayout
 {
-    namespace api
-    {
-		namespace nul
-		{
-			//--
+public:
+	DescriptorBindingLayout(Thread* owner, const base::Array<ShaderDescriptorMetadata>& descriptors);
+	virtual ~DescriptorBindingLayout();
+};
 
-			class DescriptorBindingLayout : public IBaseDescriptorBindingLayout
-			{
-			public:
-				DescriptorBindingLayout(Thread* owner, const base::Array<ShaderDescriptorMetadata>& descriptors);
-				virtual ~DescriptorBindingLayout();
-			};
+//--
 
-			//--
-
-		} // nul
-    } // api
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::api::nul)

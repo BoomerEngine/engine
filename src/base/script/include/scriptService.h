@@ -10,48 +10,45 @@
 
 #include "base/app/include/localService.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+//----
+
+class Environment;
+
+// top level scripting service, manages all live scripting threads and objects, con
+class BASE_SCRIPT_API ScriptService : public app::ILocalService
 {
-    namespace script
-    {
-        //----
+    RTTI_DECLARE_VIRTUAL_CLASS(ScriptService, app::ILocalService);
 
-        //----
+public:
+    ScriptService();
 
-        class Environment;
+    //---
 
-        // top level scripting service, manages all live scripting threads and objects, con
-        class BASE_SCRIPT_API ScriptService : public app::ILocalService
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ScriptService, app::ILocalService);
+    // get scripting environment, in case we need it for something directly
+    INLINE Environment& environment() const { return *m_env; }
 
-        public:
-            ScriptService();
+    //---
 
-            //---
+    // load/reload scripts
+    // NOTE: scripts must be in a pre-compiled form already
+    // MUST BE CALLED FROM MAIN THREAD with no script code running on threads
+    bool loadScripts();
 
-            // get scripting environment, in case we need it for something directly
-            INLINE Environment& environment() const { return *m_env; }
+private:
+    UniquePtr<Environment> m_env;
+    bool m_scriptsDisabled;
+    bool m_scriptsLoaded;
 
-            //---
+    //--
 
-            // load/reload scripts
-            // NOTE: scripts must be in a pre-compiled form already
-            // MUST BE CALLED FROM MAIN THREAD with no script code running on threads
-            bool loadScripts();
+    // ILocalService
+    virtual app::ServiceInitializationResult onInitializeService( const app::CommandLine& cmdLine) override final;
+    virtual void onShutdownService() override final;
+    virtual void onSyncUpdate() override final;
+};
 
-        private:
-            UniquePtr<Environment> m_env;
-            bool m_scriptsDisabled;
-            bool m_scriptsLoaded;
+END_BOOMER_NAMESPACE(base::script)
 
-            //--
-
-            // ILocalService
-            virtual app::ServiceInitializationResult onInitializeService( const app::CommandLine& cmdLine) override final;
-            virtual void onShutdownService() override final;
-            virtual void onSyncUpdate() override final;
-        };
-
-    } // script
-} // base
+//---

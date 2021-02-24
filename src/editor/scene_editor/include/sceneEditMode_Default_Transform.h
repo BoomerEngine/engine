@@ -12,100 +12,100 @@
 #include "scenePreviewContainer.h"
 #include "editor/gizmos/include/gizmo.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+/// transform action for group of nodes
+class EDITOR_SCENE_EDITOR_API SceneEditModeDefaultTransformAction : public IGizmoActionContext
 {
-    //--
+public:
+    SceneEditModeDefaultTransformAction(SceneEditMode_Default* mode, const ScenePreviewPanel* panel, const Array<SceneContentDataNodePtr>& nodes, const SceneGridSettings& grid, const SceneGizmoSettings& gizmo);
+    virtual ~SceneEditModeDefaultTransformAction();
 
-    /// transform action for group of nodes
-    class EDITOR_SCENE_EDITOR_API SceneEditModeDefaultTransformAction : public IGizmoActionContext
+    virtual const IGizmoHost* host() const override final;
+    virtual const GizmoReferenceSpace& capturedReferenceSpace() const override final;
+
+    virtual void revert() override final;
+    virtual void preview(const base::Transform& deltaTransform) override final;
+    virtual void apply(const base::Transform& deltaTransform) override final;
+
+    virtual bool filterTranslation(const base::Vector3& deltaTranslationInSpace, base::Transform& outTransform) const override final;
+    virtual bool filterRotation(const base::Angles& rotationAnglesInSpace, base::Transform& outTransform) const override final;
+
+private:
+    SceneEditMode_Default* m_mode = nullptr;
+    const ScenePreviewPanel* m_panel = nullptr;
+        
+    struct CapturedNode
     {
-    public:
-        SceneEditModeDefaultTransformAction(SceneEditMode_Default* mode, const ScenePreviewPanel* panel, const Array<SceneContentDataNodePtr>& nodes, const SceneGridSettings& grid, const SceneGizmoSettings& gizmo);
-        virtual ~SceneEditModeDefaultTransformAction();
+        SceneContentDataNodePtr node;
+        SceneContentDataNodePtr parent;
+        EulerTransform initialLocalTransform;
+        AbsoluteTransform initialWorldTransform;
+        AbsoluteTransform initialParentWorldTransform;
 
-        virtual const IGizmoHost* host() const override final;
-        virtual const GizmoReferenceSpace& capturedReferenceSpace() const override final;
-
-        virtual void revert() override final;
-        virtual void preview(const base::Transform& deltaTransform) override final;
-        virtual void apply(const base::Transform& deltaTransform) override final;
-
-        virtual bool filterTranslation(const base::Vector3& deltaTranslationInSpace, base::Transform& outTransform) const override final;
-        virtual bool filterRotation(const base::Angles& rotationAnglesInSpace, base::Transform& outTransform) const override final;
-
-    private:
-        SceneEditMode_Default* m_mode = nullptr;
-        const ScenePreviewPanel* m_panel = nullptr;
-        
-        struct CapturedNode
-        {
-            SceneContentDataNodePtr node;
-            SceneContentDataNodePtr parent;
-            EulerTransform initialLocalTransform;
-            AbsoluteTransform initialWorldTransform;
-            AbsoluteTransform initialParentWorldTransform;
-
-            EulerTransform lastTransform;
-        };
-
-        GizmoReferenceSpace m_referenceSpace;
-        
-        Array<CapturedNode> m_nodes;
-        SceneGridSettings m_grid;
-        SceneGizmoSettings m_gizmo;
-
-        void applyDeltaTransform(const base::Transform& deltaTransform);
+        EulerTransform lastTransform;
     };
 
-    //--
+    GizmoReferenceSpace m_referenceSpace;
+        
+    Array<CapturedNode> m_nodes;
+    SceneGridSettings m_grid;
+    SceneGizmoSettings m_gizmo;
 
-    /// helper for an action of changing one field via dragger
-    class EDITOR_SCENE_EDITOR_API SceneEditModeDefaultTransformDragger : public IReferencable
+    void applyDeltaTransform(const base::Transform& deltaTransform);
+};
+
+//--
+
+/// helper for an action of changing one field via dragger
+class EDITOR_SCENE_EDITOR_API SceneEditModeDefaultTransformDragger : public IReferencable
+{
+public:
+    SceneEditModeDefaultTransformDragger(SceneEditMode_Default* mode, const Array<SceneContentDataNodePtr>& nodes, const SceneGridSettings& grid, GizmoSpace space, SceneNodeTransformValueFieldType field, double displacementPerStep);
+
+    void cancel();
+    void step(int stepDelta);
+    void apply(double finalValue);
+
+    ActionPtr createAction() const;
+
+private:
+    struct CapturedNode
     {
-    public:
-        SceneEditModeDefaultTransformDragger(SceneEditMode_Default* mode, const Array<SceneContentDataNodePtr>& nodes, const SceneGridSettings& grid, GizmoSpace space, SceneNodeTransformValueFieldType field, double displacementPerStep);
+        SceneContentDataNodePtr node;
+        EulerTransform initialLocalTransform;
+        AbsoluteTransform initialWorldTransform;
+        AbsoluteTransform initialParentWorldTransform;
 
-        void cancel();
-        void step(int stepDelta);
-        void apply(double finalValue);
-
-        ActionPtr createAction() const;
-
-    private:
-        struct CapturedNode
-        {
-            SceneContentDataNodePtr node;
-            EulerTransform initialLocalTransform;
-            AbsoluteTransform initialWorldTransform;
-            AbsoluteTransform initialParentWorldTransform;
-
-            EulerTransform calculatedTransform;
-        };
-
-        SceneEditMode_Default* m_mode = nullptr;
-
-        Array<CapturedNode> m_nodes;
-        SceneGridSettings m_grid;
-
-        int m_accumulatedSteps = 0;
-        double m_displacementPerStep = 0.01;
-        double m_lastDisplacement = 0.0;
-
-        GizmoSpace m_space;
-        SceneNodeTransformValueFieldType m_field;
-
-        //--
-
-        void computeTransforms();
+        EulerTransform calculatedTransform;
     };
 
+    SceneEditMode_Default* m_mode = nullptr;
+
+    Array<CapturedNode> m_nodes;
+    SceneGridSettings m_grid;
+
+    int m_accumulatedSteps = 0;
+    double m_displacementPerStep = 0.01;
+    double m_lastDisplacement = 0.0;
+
+    GizmoSpace m_space;
+    SceneNodeTransformValueFieldType m_field;
+
     //--
 
-    extern EDITOR_SCENE_EDITOR_API void ApplyLocalTransformField(EulerTransform& data, SceneNodeTransformValueFieldType field, double value, bool delta);
-    extern EDITOR_SCENE_EDITOR_API void ApplyWorldTransformField(AbsoluteTransform& data, SceneNodeTransformValueFieldType field, double value, bool delta);
-    extern EDITOR_SCENE_EDITOR_API void ResetLocalTransformField(EulerTransform& data, SceneNodeTransformValueFieldType field);
-    extern EDITOR_SCENE_EDITOR_API void ResetWorldTransformField(AbsoluteTransform& data, SceneNodeTransformValueFieldType field);
+    void computeTransforms();
+};
 
-    //--
+//--
 
-} // ed
+extern EDITOR_SCENE_EDITOR_API void ApplyLocalTransformField(EulerTransform& data, SceneNodeTransformValueFieldType field, double value, bool delta);
+extern EDITOR_SCENE_EDITOR_API void ApplyWorldTransformField(AbsoluteTransform& data, SceneNodeTransformValueFieldType field, double value, bool delta);
+extern EDITOR_SCENE_EDITOR_API void ResetLocalTransformField(EulerTransform& data, SceneNodeTransformValueFieldType field);
+extern EDITOR_SCENE_EDITOR_API void ResetWorldTransformField(AbsoluteTransform& data, SceneNodeTransformValueFieldType field);
+
+//--
+
+END_BOOMER_NAMESPACE(ed)

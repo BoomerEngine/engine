@@ -11,27 +11,23 @@
 #include "base/math/include/point.h"
 #include "base/system/include/timing.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::input)
+
+/// basic concept of input device
+class BASE_INPUT_API IDevice
 {
-    namespace input
-    {
+    RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IDevice);
 
-        /// basic concept of input device
-        class BASE_INPUT_API IDevice
-        {
-            RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IDevice);
+public:
+    IDevice();
+    virtual ~IDevice();
 
-        public:
-            IDevice();
-            virtual ~IDevice();
+    /// initialize device
+    virtual bool initialize(IContext* context) = 0;
 
-            /// initialize device
-            virtual bool initialize(IContext* context) = 0;
+    /// reset internal state of this device
+    /// this acts as if user release all keys on the device
+    virtual void process() = 0;
+};
 
-            /// reset internal state of this device
-            /// this acts as if user release all keys on the device
-            virtual void process() = 0;
-        };
-
-    } // input
-} // base
+END_BOOMER_NAMESPACE(base::input)

@@ -10,94 +10,89 @@
 
 #include "base/containers/include/stringBuf.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::io)
+
+/// TimeStamp for file
+class BASE_IO_API TimeStamp
 {
-    namespace io
+public:
+    INLINE TimeStamp()
+        : m_timecode(0)
+    {}
+
+    explicit INLINE TimeStamp(uint64_t timeCode)
+        : m_timecode(timeCode)
     {
+    }
 
-        /// TimeStamp for file
-        class BASE_IO_API TimeStamp
-        {
-        public:
-            INLINE TimeStamp()
-                : m_timecode(0)
-            {}
+    INLINE bool operator==(const TimeStamp &stamp) const
+    {
+        return m_timecode == stamp.m_timecode;
+    }
 
-            explicit INLINE TimeStamp(uint64_t timeCode)
-                : m_timecode(timeCode)
-            {
-            }
+    INLINE bool operator!=(const TimeStamp &stamp) const
+    {
+        return m_timecode != stamp.m_timecode;
+    }
 
-            INLINE bool operator==(const TimeStamp &stamp) const
-            {
-                return m_timecode == stamp.m_timecode;
-            }
+    INLINE bool operator<(const TimeStamp &stamp) const
+    {
+        return m_timecode < stamp.m_timecode;
+    }
 
-            INLINE bool operator!=(const TimeStamp &stamp) const
-            {
-                return m_timecode != stamp.m_timecode;
-            }
+    INLINE bool operator>(const TimeStamp &stamp) const
+    {
+        return m_timecode > stamp.m_timecode;
+    }
 
-            INLINE bool operator<(const TimeStamp &stamp) const
-            {
-                return m_timecode < stamp.m_timecode;
-            }
+    INLINE bool operator<=(const TimeStamp &stamp) const
+    {
+        return m_timecode <= stamp.m_timecode;
+    }
 
-            INLINE bool operator>(const TimeStamp &stamp) const
-            {
-                return m_timecode > stamp.m_timecode;
-            }
+    INLINE bool operator>=(const TimeStamp &stamp) const
+    {
+        return m_timecode >= stamp.m_timecode;
+    }
 
-            INLINE bool operator<=(const TimeStamp &stamp) const
-            {
-                return m_timecode <= stamp.m_timecode;
-            }
+    INLINE uint64_t hash() const
+    {
+        return m_timecode;
+    }
 
-            INLINE bool operator>=(const TimeStamp &stamp) const
-            {
-                return m_timecode >= stamp.m_timecode;
-            }
+    INLINE uint64_t value() const
+    {
+        return m_timecode;
+    }
 
-            INLINE uint64_t hash() const
-            {
-                return m_timecode;
-            }
+    INLINE bool empty() const
+    {
+        return m_timecode == 0;
+    }
 
-            INLINE uint64_t value() const
-            {
-                return m_timecode;
-            }
+    //--
 
-            INLINE bool empty() const
-            {
-                return m_timecode == 0;
-            }
+    //! Convert to display string (human readable)
+    StringBuf toDisplayString() const;
 
-            //--
+    //! Convert to safe string (no spaces)
+    StringBuf toSafeString() const;
 
-            //! Convert to display string (human readable)
-            StringBuf toDisplayString() const;
+    //--
 
-            //! Convert to safe string (no spaces)
-            StringBuf toSafeString() const;
+    //! Get current date/time
+    static TimeStamp GetNow();
 
-            //--
+    //! Get date/time from seconds/nano seconds
+    static TimeStamp GetFromFileTime(uint64_t seconds, uint64_t nanoSeconds);
 
-            //! Get current date/time
-            static TimeStamp GetNow();
+    //---
 
-            //! Get date/time from seconds/nano seconds
-            static TimeStamp GetFromFileTime(uint64_t seconds, uint64_t nanoSeconds);
+    // print as string
+    void print(IFormatStream& f) const;
 
-            //---
+private:
+    uint64_t  m_timecode;
+};
 
-            // print as string
-            void print(IFormatStream& f) const;
-
-        private:
-            uint64_t  m_timecode;
-        };
-
-    } // fs
-
-} // base
+END_BOOMER_NAMESPACE(base::io)

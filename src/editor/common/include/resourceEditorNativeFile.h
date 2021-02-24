@@ -10,39 +10,38 @@
 
 #include "resourceEditor.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+///---
+
+/// resource editor for native resources
+class EDITOR_COMMON_API ResourceEditorNativeFile : public ResourceEditor
 {
-    ///---
-
-    /// resource editor for native resources
-    class EDITOR_COMMON_API ResourceEditorNativeFile : public ResourceEditor
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(ResourceEditorNativeFile, ResourceEditor);
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceEditorNativeFile, ResourceEditor);
         
-    public:
-        ResourceEditorNativeFile(ManagedFileNativeResource* file, ResourceEditorFeatureFlags flags, StringView defaultEditorTag = "Common");
-        virtual ~ResourceEditorNativeFile();
+public:
+    ResourceEditorNativeFile(ManagedFileNativeResource* file, ResourceEditorFeatureFlags flags, StringView defaultEditorTag = "Common");
+    virtual ~ResourceEditorNativeFile();
 
-        INLINE ManagedFileNativeResource* nativeFile() const { return m_nativeFile; }
-        virtual const res::ResourcePtr& resource() const { return m_resource; }
+    INLINE ManagedFileNativeResource* nativeFile() const { return m_nativeFile; }
+    virtual const res::ResourcePtr& resource() const { return m_resource; }
 
-        virtual bool initialize() override;
-        virtual bool save() override;
-        virtual void cleanup() override;
+    virtual bool initialize() override;
+    virtual bool save() override;
+    virtual void cleanup() override;
 
-        virtual void handleContentModified();
-        virtual void handleLocalReimport(const res::ResourcePtr& ptr);
+    virtual void handleContentModified();
+    virtual void handleLocalReimport(const res::ResourcePtr& ptr);
 
-        void applyLocalReimport(const res::ResourcePtr& ptr);
+    void applyLocalReimport(const res::ResourcePtr& ptr);
 
-    protected:
-        res::ResourcePtr m_resource; // resource being edited
-        GlobalEventTable m_resourceEvents;
+protected:
+    res::ResourcePtr m_resource; // resource being edited
+    GlobalEventTable m_resourceEvents;
 
-        ManagedFileNativeResource* m_nativeFile = nullptr;
-    };
+    ManagedFileNativeResource* m_nativeFile = nullptr;
+};
 
-    ///---
+///---
     
-} // editor
-
+END_BOOMER_NAMESPACE(ed)

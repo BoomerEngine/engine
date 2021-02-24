@@ -22,120 +22,119 @@
 #include "base/resource_compiler/include/importInterface.h"
 #include "base/resource_compiler/include/importFileList.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+///--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetImportJob);
+RTTI_END_TYPE();
+
+AssetImportJob::AssetImportJob(const res::ImportListPtr& fileList, bool force)
+    : IBackgroundTask("Import assets")
+    , m_fileList(fileList)
+    , m_force(force)
 {
+    m_listModel = RefNew<AssetProcessingListModel>();
 
-    ///--
+    for (const auto& file : fileList->files())
+        m_listModel->setFileStatus(file.depotPath, res::ImportStatus::Pending);
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetImportJob);
-    RTTI_END_TYPE();
+    m_detailsDialog = RefNew<AssetImportDetailsDialog>(m_listModel);
+}
 
-    AssetImportJob::AssetImportJob(const res::ImportListPtr& fileList, bool force)
-        : IBackgroundTask("Import assets")
-        , m_fileList(fileList)
-        , m_force(force)
+AssetImportJob::~AssetImportJob()
+{
+}
+
+void AssetImportJob::runImportTask()
+{
+    if (res::ProcessImport(m_fileList, this, this, m_force))
+        m_status.exchange(BackgroundTaskStatus::Finished);
+    else
+        m_status.exchange(BackgroundTaskStatus::Failed);
+}
+
+void AssetImportJob::cancelSingleFile(const StringBuf& depotPath)
+{
+    /*res::ImportQueueFileCancel msg;
+    msg.depotPath = depotPath;
+    connection()->send(msg);*/
+}
+
+//--
+
+bool AssetImportJob::start()
+{
+    RefPtr<AssetImportJob> selfRef = AddRef(this);
+    RunFiber("ImportAssets") << [selfRef](FIBER_FUNC) // TODO: RunBackgroundTask!
     {
-        m_listModel = RefNew<AssetProcessingListModel>();
+        selfRef->runImportTask();
+    };
 
-        for (const auto& file : fileList->files())
-            m_listModel->setFileStatus(file.depotPath, res::ImportStatus::Pending);
+    return true;
+}
 
-        m_detailsDialog = RefNew<AssetImportDetailsDialog>(m_listModel);
-    }
+BackgroundTaskStatus AssetImportJob::update()
+{
+    return m_status.load();
+}
 
-    AssetImportJob::~AssetImportJob()
+ui::ElementPtr AssetImportJob::fetchDetailsDialog()
+{
+    return m_detailsDialog;
+}
+
+ui::ElementPtr AssetImportJob::fetchStatusDialog()
+{
+    return nullptr;
+}
+
+//--
+
+void AssetImportJob::queueJobAdded(const res::ImportJobInfo& info)
+{
+    auto model = m_listModel;
+
+    RunSync() << [model, info](FIBER_FUNC)
     {
-    }
+        model->setFileStatus(info.depotFilePath, res::ImportStatus::Pending);
+    };
+}
 
-    void AssetImportJob::runImportTask()
+void AssetImportJob::queueJobStarted(StringView depotPath)
+{
+    auto model = m_listModel;
+    auto path = StringBuf(depotPath);
+
+    RunSync() << [model, path](FIBER_FUNC)
     {
-        if (res::ProcessImport(m_fileList, this, this, m_force))
-            m_status.exchange(BackgroundTaskStatus::Finished);
-        else
-            m_status.exchange(BackgroundTaskStatus::Failed);
-    }
+        model->setFileStatus(path, res::ImportStatus::Processing);
+    };
+}
 
-    void AssetImportJob::cancelSingleFile(const StringBuf& depotPath)
+void AssetImportJob::queueJobFinished(StringView depotPath, res::ImportStatus status, double timeTaken)
+{
+    auto model = m_listModel;
+    auto path = StringBuf(depotPath);
+
+    RunSync() << [model, path, status, timeTaken](FIBER_FUNC)
     {
-        /*res::ImportQueueFileCancel msg;
-        msg.depotPath = depotPath;
-        connection()->send(msg);*/
-    }
+        model->setFileStatus(path, status, timeTaken);
+    };
+}
 
-    //--
+void AssetImportJob::queueJobProgressUpdate(StringView depotPath, uint64_t currentCount, uint64_t totalCount, StringView text)
+{
+    auto model = m_listModel;
+    auto pathCopy = StringBuf(depotPath);
+    auto textCopy = StringBuf(text);
 
-    bool AssetImportJob::start()
+    RunSync() << [model, pathCopy, currentCount, totalCount, textCopy](FIBER_FUNC)
     {
-        RefPtr<AssetImportJob> selfRef = AddRef(this);
-        RunFiber("ImportAssets") << [selfRef](FIBER_FUNC) // TODO: RunBackgroundTask!
-        {
-            selfRef->runImportTask();
-        };
+        model->setFileProgress(pathCopy, currentCount, totalCount, textCopy);
+    };
+}
 
-        return true;
-    }
+//--
 
-    BackgroundTaskStatus AssetImportJob::update()
-    {
-        return m_status.load();
-    }
-
-    ui::ElementPtr AssetImportJob::fetchDetailsDialog()
-    {
-        return m_detailsDialog;
-    }
-
-    ui::ElementPtr AssetImportJob::fetchStatusDialog()
-    {
-        return nullptr;
-    }
-
-    //--
-
-    void AssetImportJob::queueJobAdded(const res::ImportJobInfo& info)
-    {
-        auto model = m_listModel;
-
-        RunSync() << [model, info](FIBER_FUNC)
-        {
-            model->setFileStatus(info.depotFilePath, res::ImportStatus::Pending);
-        };
-    }
-
-    void AssetImportJob::queueJobStarted(StringView depotPath)
-    {
-        auto model = m_listModel;
-        auto path = StringBuf(depotPath);
-
-        RunSync() << [model, path](FIBER_FUNC)
-        {
-            model->setFileStatus(path, res::ImportStatus::Processing);
-        };
-    }
-
-    void AssetImportJob::queueJobFinished(StringView depotPath, res::ImportStatus status, double timeTaken)
-    {
-        auto model = m_listModel;
-        auto path = StringBuf(depotPath);
-
-        RunSync() << [model, path, status, timeTaken](FIBER_FUNC)
-        {
-            model->setFileStatus(path, status, timeTaken);
-        };
-    }
-
-    void AssetImportJob::queueJobProgressUpdate(StringView depotPath, uint64_t currentCount, uint64_t totalCount, StringView text)
-    {
-        auto model = m_listModel;
-        auto pathCopy = StringBuf(depotPath);
-        auto textCopy = StringBuf(text);
-
-        RunSync() << [model, pathCopy, currentCount, totalCount, textCopy](FIBER_FUNC)
-        {
-            model->setFileProgress(pathCopy, currentCount, totalCount, textCopy);
-        };
-    }
-
-    //--
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

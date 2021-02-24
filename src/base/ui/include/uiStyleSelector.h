@@ -8,208 +8,210 @@
 
 #pragma once
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+namespace style
 {
-    namespace style
+    /// ID of the node in the selector matching tree
+    typedef uint16_t SelectorID;
+
+    /// ID of the value table (param tables are compacted)
+    typedef uint16_t ValueID;
+
+    /// selector evaluation context, used to match selectors that apply to the given attributes
+    class BASE_UI_API SelectorMatchContext : public base::NoCopy
     {
-        /// ID of the node in the selector matching tree
-        typedef uint16_t SelectorID;
+        RTTI_DECLARE_POOL(POOL_UI_STYLES)
 
-        /// ID of the value table (param tables are compacted)
-        typedef uint16_t ValueID;
+    public:
+        SelectorMatchContext(base::StringID id, base::SpecificClassType<IElement> elementClass = nullptr);
 
-        /// selector evaluation context, used to match selectors that apply to the given attributes
-        class BASE_UI_API SelectorMatchContext : public base::NoCopy
-        {
-            RTTI_DECLARE_POOL(POOL_UI_STYLES)
+        INLINE uint64_t key() const { return m_key; }
 
-        public:
-            SelectorMatchContext(base::StringID id, base::SpecificClassType<IElement> elementClass = nullptr);
+        INLINE base::StringID id() const { return m_id; }
 
-            INLINE uint64_t key() const { return m_key; }
+        INLINE const base::StringID* classes() const { return m_classes.typedData(); }
+        INLINE const uint32_t numClasses() const { return m_classes.size(); }
 
-            INLINE base::StringID id() const { return m_id; }
+        INLINE const base::StringID* pseudoClasses() const { return m_pseudoClasses.typedData(); }
+        INLINE const uint32_t numPseudoClasses() const { return m_pseudoClasses.size(); }
 
-            INLINE const base::StringID* classes() const { return m_classes.typedData(); }
-            INLINE const uint32_t numClasses() const { return m_classes.size(); }
+        INLINE const base::StringID* types() const { return m_types.typedData(); }
+        INLINE const uint32_t numTypes() const { return m_types.size(); }
 
-            INLINE const base::StringID* pseudoClasses() const { return m_pseudoClasses.typedData(); }
-            INLINE const uint32_t numPseudoClasses() const { return m_pseudoClasses.size(); }
+        //--
 
-            INLINE const base::StringID* types() const { return m_types.typedData(); }
-            INLINE const uint32_t numTypes() const { return m_types.size(); }
+        bool id(base::StringID name);
 
-            //--
+        bool hasClass(base::StringID name) const;
+        bool addClass(base::StringID name);
+        bool removeClass(base::StringID name);
 
-            bool id(base::StringID name);
+        bool hasPseudoClass(base::StringID name) const;
+        bool addPseudoClass(base::StringID name);
+        bool removePseudoClass(base::StringID name);
 
-            bool hasClass(base::StringID name) const;
-            bool addClass(base::StringID name);
-            bool removeClass(base::StringID name);
+        bool customType(base::StringID type);
+        base::StringID customType() const;
 
-            bool hasPseudoClass(base::StringID name) const;
-            bool addPseudoClass(base::StringID name);
-            bool removePseudoClass(base::StringID name);
+        //--
 
-            bool customType(base::StringID type);
-            base::StringID customType() const;
+        // debug print
+        void print(base::IFormatStream& f) const;
 
-            //--
+    private:
+        static const auto MAX_TYPES = 8;
+        static const auto MAX_CLASSES = 6;
+        static const auto MAX_PSEUDO_CLASSES = 4;
 
-            // debug print
-            void print(base::IFormatStream& f) const;
+        uint64_t m_key = 0;
 
-        private:
-            static const auto MAX_TYPES = 8;
-            static const auto MAX_CLASSES = 6;
-            static const auto MAX_PSEUDO_CLASSES = 4;
+        bool m_hasCustomTypeName = false; // TODO: remove
 
-            uint64_t m_key = 0;
+        // TODO: refactor storage to use one array and ranges in it
 
-            bool m_hasCustomTypeName = false; // TODO: remove
+        base::StringID m_id;
 
-            // TODO: refactor storage to use one array and ranges in it
+        typedef base::InplaceArray<base::StringID, MAX_TYPES> TTypes;
+        TTypes m_types;
 
-            base::StringID m_id;
+        typedef base::InplaceArray<base::StringID, MAX_CLASSES> TClasses;
+        TClasses m_classes;
 
-            typedef base::InplaceArray<base::StringID, MAX_TYPES> TTypes;
-            TTypes m_types;
+        typedef base::InplaceArray<base::StringID, MAX_PSEUDO_CLASSES> TPseudoClasses;
+        TPseudoClasses m_pseudoClasses;
 
-            typedef base::InplaceArray<base::StringID, MAX_CLASSES> TClasses;
-            TClasses m_classes;
+        bool updateKey();
+    };
 
-            typedef base::InplaceArray<base::StringID, MAX_PSEUDO_CLASSES> TPseudoClasses;
-            TPseudoClasses m_pseudoClasses;
+    /// set of matched selectors that satisfied the SelectorMatchContext
+    /// the matched selectors are basis of determining which rule set to apply
+    class BASE_UI_API SelectorMatch
+    {
+        RTTI_DECLARE_POOL(POOL_UI_STYLES)
 
-            bool updateKey();
-        };
+    public:
+        SelectorMatch();
+        SelectorMatch(base::Array<SelectorID>&& ids, uint64_t hash);
+        SelectorMatch(const SelectorMatch& other) = default;
+        SelectorMatch(SelectorMatch&& other) = default;
+        SelectorMatch& operator=(const SelectorMatch& other) = default;
+        SelectorMatch& operator=(SelectorMatch&& other) = default;
 
-        /// set of matched selectors that satisfied the SelectorMatchContext
-        /// the matched selectors are basis of determining which rule set to apply
-        class BASE_UI_API SelectorMatch
-        {
-            RTTI_DECLARE_POOL(POOL_UI_STYLES)
+        // is the match empty ? If so there's no styling available :(
+        INLINE bool empty() const { return m_matchedSelectors.empty(); }
 
-        public:
-            SelectorMatch();
-            SelectorMatch(base::Array<SelectorID>&& ids, uint64_t hash);
-            SelectorMatch(const SelectorMatch& other) = default;
-            SelectorMatch(SelectorMatch&& other) = default;
-            SelectorMatch& operator=(const SelectorMatch& other) = default;
-            SelectorMatch& operator=(SelectorMatch&& other) = default;
+        // get entries (ordered set)
+        typedef base::Array<SelectorID> TMatchedSelectors;
+        INLINE const TMatchedSelectors& selectors() const { return m_matchedSelectors; }
 
-            // is the match empty ? If so there's no styling available :(
-            INLINE bool empty() const { return m_matchedSelectors.empty(); }
+        // get hash
+        INLINE uint64_t hash() const { return m_hash; }
 
-            // get entries (ordered set)
-            typedef base::Array<SelectorID> TMatchedSelectors;
-            INLINE const TMatchedSelectors& selectors() const { return m_matchedSelectors; }
+        //--
 
-            // get hash
-            INLINE uint64_t hash() const { return m_hash; }
+        // get the universal empty selector match
+        const static SelectorMatch& EMPTY();
 
-            //--
+    private:
+        TMatchedSelectors m_matchedSelectors; // sorted array with IDs of the matched rules
+        uint64_t m_hash; // hash of the values used to select the styling here
+    };
 
-            // get the universal empty selector match
-            const static SelectorMatch& EMPTY();
+    /// selector combinator type
+    /// determines the relation between rules
+    enum class SelectorCombinatorType : uint8_t
+    {
+        AnyParent, // Descendant Selector, the hierarchical check will ensure that the element is one of the parents of tested element
+        DirectParent, // Child Selector, the hierarchical check will pass only if the element is DIRECT PARENT of the tested element
+        AdjecentSibling, // the hierarchical check will pass only if the tested element is following element in the same parent
+        GeneralSibling, // the hierarchical check will pass only if the element is another child of the same parent
+    };
 
-        private:
-            TMatchedSelectors m_matchedSelectors; // sorted array with IDs of the matched rules
-            uint64_t m_hash; // hash of the values used to select the styling here
-        };
+    /// selector value
+    class BASE_UI_API SelectorParam
+    {
+        RTTI_DECLARE_NONVIRTUAL_CLASS(SelectorParam);
 
-        /// selector combinator type
-        /// determines the relation between rules
-        enum class SelectorCombinatorType : uint8_t
-        {
-            AnyParent, // Descendant Selector, the hierarchical check will ensure that the element is one of the parents of tested element
-            DirectParent, // Child Selector, the hierarchical check will pass only if the element is DIRECT PARENT of the tested element
-            AdjecentSibling, // the hierarchical check will pass only if the tested element is following element in the same parent
-            GeneralSibling, // the hierarchical check will pass only if the element is another child of the same parent
-        };
+    public:
+        INLINE SelectorParam() {};
+        INLINE SelectorParam(base::StringID param, ValueID value)
+            : m_paramName(param)
+            , m_valueId(value)
+        {}
 
-        /// selector value
-        class BASE_UI_API SelectorParam
-        {
-            RTTI_DECLARE_NONVIRTUAL_CLASS(SelectorParam);
+        /// get described style parameter
+        INLINE base::StringID paramName() const { return m_paramName; }
 
-        public:
-            INLINE SelectorParam() {};
-            INLINE SelectorParam(base::StringID param, ValueID value)
-                : m_paramName(param)
-                , m_valueId(value)
-            {}
+        /// get assigned value of parameter
+        INLINE ValueID valueId() const { return m_valueId; }
 
-            /// get described style parameter
-            INLINE base::StringID paramName() const { return m_paramName; }
+    private:
+        base::StringID m_paramName; // ID of the parameter in the parameter table
+        ValueID m_valueId = 0; // ID of the value in the value table
+    };
 
-            /// get assigned value of parameter
-            INLINE ValueID valueId() const { return m_valueId; }
+    /// selector match node
+    class BASE_UI_API SelectorMatchParams
+    {
+        RTTI_DECLARE_NONVIRTUAL_CLASS(SelectorMatchParams);
 
-        private:
-            base::StringID m_paramName; // ID of the parameter in the parameter table
-            ValueID m_valueId = 0; // ID of the value in the value table
-        };
+    public:
+        SelectorMatchParams();
+        SelectorMatchParams(const base::StringID type, const base::StringID clas, const base::StringID clas2, const base::StringID id, const base::StringID pseudoClass, const base::StringID pseudoClass2);
 
-        /// selector match node
-        class BASE_UI_API SelectorMatchParams
-        {
-            RTTI_DECLARE_NONVIRTUAL_CLASS(SelectorMatchParams);
-
-        public:
-            SelectorMatchParams();
-            SelectorMatchParams(const base::StringID type, const base::StringID clas, const base::StringID clas2, const base::StringID id, const base::StringID pseudoClass, const base::StringID pseudoClass2);
-
-            //---
+        //---
             
-            /// test against a match context
-            bool matches(const SelectorMatchContext& ctx) const;
+        /// test against a match context
+        bool matches(const SelectorMatchContext& ctx) const;
 
-            /// debug print
-            void print(base::IFormatStream& f) const;
+        /// debug print
+        void print(base::IFormatStream& f) const;
 
-            /// calculate hash
-            void calcHash(base::CRC64& crc) const;
+        /// calculate hash
+        void calcHash(base::CRC64& crc) const;
 
-        private:
-            base::StringID m_type;
-            base::StringID m_id;
-            base::StringID m_pseudoClass;
-            base::StringID m_pseudoClass2;
-            base::StringID m_class;
-            base::StringID m_class2;
-        };
+    private:
+        base::StringID m_type;
+        base::StringID m_id;
+        base::StringID m_pseudoClass;
+        base::StringID m_pseudoClass2;
+        base::StringID m_class;
+        base::StringID m_class2;
+    };
 
-        /// node in the selector tree
-        /// selector hierarchy is transformed into a tree
-        class BASE_UI_API SelectorNode
-        {
-            RTTI_DECLARE_NONVIRTUAL_CLASS(SelectorNode);
+    /// node in the selector tree
+    /// selector hierarchy is transformed into a tree
+    class BASE_UI_API SelectorNode
+    {
+        RTTI_DECLARE_NONVIRTUAL_CLASS(SelectorNode);
 
-        public:
-            SelectorNode();
-            SelectorNode(SelectorID parentNodeId, const base::Array<SelectorParam>& params, const SelectorMatchParams& matchParameters, SelectorCombinatorType combinator);
+    public:
+        SelectorNode();
+        SelectorNode(SelectorID parentNodeId, const base::Array<SelectorParam>& params, const SelectorMatchParams& matchParameters, SelectorCombinatorType combinator);
 
-            /// get the relation toward the parent node
-            INLINE SelectorCombinatorType relation() const { return m_combinator; }
+        /// get the relation toward the parent node
+        INLINE SelectorCombinatorType relation() const { return m_combinator; }
 
-            /// get ID of the parent node
-            INLINE SelectorID parentId() const { return m_parentId; }
+        /// get ID of the parent node
+        INLINE SelectorID parentId() const { return m_parentId; }
 
-            /// get the match parameters for this selector
-            INLINE const SelectorMatchParams& matchParameters() const { return m_matchParameters; }
+        /// get the match parameters for this selector
+        INLINE const SelectorMatchParams& matchParameters() const { return m_matchParameters; }
 
-            /// get the parameters defined at this selector
-            typedef base::Array<SelectorParam> TParameters;
-            INLINE const TParameters& parameters() const { return m_parameters; }
+        /// get the parameters defined at this selector
+        typedef base::Array<SelectorParam> TParameters;
+        INLINE const TParameters& parameters() const { return m_parameters; }
 
-        private:
-            SelectorCombinatorType m_combinator;
-            SelectorID m_parentId;
-            SelectorMatchParams m_matchParameters;
-            TParameters m_parameters;
-        };
+    private:
+        SelectorCombinatorType m_combinator;
+        SelectorID m_parentId;
+        SelectorMatchParams m_matchParameters;
+        TParameters m_parameters;
+    };
 
 
-    } // style
-} // ui
+} // style
+
+END_BOOMER_NAMESPACE(ui)
+

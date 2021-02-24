@@ -8,26 +8,22 @@
 
 #include "base_script_glue.inl"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+enum class DebugBreak : uint8_t
 {
-    namespace script
-    {
+    None,
+};
 
-        enum class DebugBreak : uint8_t
-        {
-            None,
-        };
+class FunctionCodeBlock;
 
-        class FunctionCodeBlock;
+class PortableData;
+typedef RefPtr<PortableData> PortableDataPtr;
 
-        class PortableData;
-        typedef RefPtr<PortableData> PortableDataPtr;
+class CompiledProject;
+typedef RefPtr<CompiledProject> CompiledProjectPtr;
 
-        class CompiledProject;
-        typedef RefPtr<CompiledProject> CompiledProjectPtr;
+class JITProject;
+typedef RefPtr<JITProject> JITProjectPtr;
 
-        class JITProject;
-        typedef RefPtr<JITProject> JITProjectPtr;
-
-    } // script
-} // base
+END_BOOMER_NAMESPACE(base::script)

@@ -12,57 +12,54 @@
 #include "base/object/include/streamOpcodeWriter.h"
 #include "base/object/include/streamOpcodeReader.h"
 
-namespace physics
+BEGIN_BOOMER_NAMESPACE(boomer)
+
+RTTI_BEGIN_CUSTOM_TYPE(PhysicsMaterialReference);
+    RTTI_TYPE_TRAIT().zeroInitializationValid().noDestructor().fastCopyCompare();
+RTTI_END_TYPE();
+
+//--
+
+static PhysicsMaterialReference theDefaultMaterialName("Default"_id);
+
+//--
+
+PhysicsMaterialReference::PhysicsMaterialReference()
+    : m_name("Default"_id)
+{}
+
+PhysicsMaterialReference::PhysicsMaterialReference(base::StringID materialName)
+    : m_name(materialName)
+{}
+
+const PhysicsMaterialReference& PhysicsMaterialReference::DEFAULT()
 {
-    namespace data
-    {
+    return theDefaultMaterialName;
+}
 
-        RTTI_BEGIN_CUSTOM_TYPE(MaterialReference);
-            RTTI_TYPE_TRAIT().zeroInitializationValid().noDestructor().fastCopyCompare();
-        RTTI_END_TYPE();
+const PhysicsMaterialDefinition& PhysicsMaterialReference::GetDefinition() const
+{
+    return *(const MaterialDefinition*)nullptr;
+}
 
-        //--
+void PhysicsMaterialReference::writeBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeWriter& stream) const
+{
+    stream.writeStringID(m_name);
+}
 
-        static MaterialReference theDefaultMaterialName("Default"_id);
+void PhysicsMaterialReference::readBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeReader& stream)
+{
+    m_name = stream.readStringID();
+}
 
-        //--
+void PhysicsMaterialReference::calcHash(base::CRC64& crc) const
+{
+    crc << m_name;
+}
 
-        MaterialReference::MaterialReference()
-            : m_name("Default"_id)
-        {}
+//--
 
-        MaterialReference::MaterialReference(base::StringID materialName)
-            : m_name(materialName)
-        {}
+END_BOOMER_NAMESPACE(boomer)
 
-        const MaterialReference& MaterialReference::DEFAULT()
-        {
-            return theDefaultMaterialName;
-        }
-
-        const MaterialDefinition& MaterialReference::GetDefinition() const
-        {
-            return *(const MaterialDefinition*)nullptr;
-        }
-
-        void MaterialReference::writeBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeWriter& stream) const
-        {
-            stream.writeStringID(m_name);
-        }
-
-        void MaterialReference::readBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeReader& stream)
-        {
-            m_name = stream.readStringID();
-        }
-
-        void MaterialReference::calcHash(base::CRC64& crc) const
-        {
-            crc << m_name;
-        }
-
-        //--
-
-    } // data
-} // physics
 
 

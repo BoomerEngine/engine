@@ -10,36 +10,29 @@
 
 #include "rendering/api_common/include/apiBackgroundJobs.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+//---
+
+class ShaderCompilationJob : public IBaseBackgroundJob
 {
-    namespace api
-    {
-		namespace gl4
-		{
+public:
+	ShaderCompilationJob(base::Buffer data, const ShaderMetadata* metadata);
+	virtual ~ShaderCompilationJob();
 
-			//---
+	GLuint extractCompiledProgram();
 
-			class ShaderCompilationJob : public IBaseBackgroundJob
-			{
-			public:
-				ShaderCompilationJob(base::Buffer data, const ShaderMetadata* metadata);
-				virtual ~ShaderCompilationJob();
+	virtual void print(base::IFormatStream& f) const override final;
+	virtual void process(volatile bool* vCancelFlag) override final;
 
-				GLuint extractCompiledProgram();
+private:
+	base::Buffer m_data;
+	ShaderMetadataPtr m_metadata;
 
-				virtual void print(base::IFormatStream& f) const override final;
-				virtual void process(volatile bool* vCancelFlag) override final;
+	GLuint m_glProgram = 0;
+};
 
-			private:
-				base::Buffer m_data;
-				ShaderMetadataPtr m_metadata;
+//--
 
-				GLuint m_glProgram = 0;
-			};
-
-			//--
-
-		} // gl4
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::gl4)
 

@@ -9,310 +9,309 @@
 #include "build.h"
 #include "renderingShaderSelector.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//--
+
+ShaderSelector::ShaderSelector()
 {
+}
 
-    //--
+ShaderSelector::ShaderSelector(const ShaderSelector& other)
+{
+	memcpy(&entries, &other.entries, sizeof(entries));
+}
 
-	ShaderSelector::ShaderSelector()
-	{
-	}
+ShaderSelector::ShaderSelector(ShaderSelector&& other)
+{
+	memcpy(&entries, &other.entries, sizeof(entries));
+	memzero(&other.entries, sizeof(entries));
+}
 
-	ShaderSelector::ShaderSelector(const ShaderSelector& other)
-	{
+void ShaderSelector::clear()
+{
+	memzero(&entries, sizeof(entries));
+}
+
+bool ShaderSelector::empty() const
+{
+	return entries[0].key.empty();
+}
+
+ShaderSelector& ShaderSelector::operator=(const ShaderSelector& other)
+{
+	if (this != &other)
 		memcpy(&entries, &other.entries, sizeof(entries));
-	}
 
-	ShaderSelector::ShaderSelector(ShaderSelector&& other)
+	return *this;
+}
+
+ShaderSelector& ShaderSelector::operator=(ShaderSelector&& other)
+{
+	if (this != &other)
 	{
 		memcpy(&entries, &other.entries, sizeof(entries));
 		memzero(&other.entries, sizeof(entries));
 	}
 
-	void ShaderSelector::clear()
+	return *this;
+}
+
+uint64_t ShaderSelector::key() const
+{
+	if (empty())
+		return 0;
+
+	base::CRC64 crc;
+	hash(crc);
+	return crc;
+}
+
+bool ShaderSelector::operator==(const ShaderSelector& other) const
+{
+	const auto* ptrA = entries;
+	const auto* ptrB = other.entries;
+	for (uint32_t i = 0; i < MAX_SELECTORS; ++i, ++ptrA, ++ptrB)
 	{
-		memzero(&entries, sizeof(entries));
-	}
-
-	bool ShaderSelector::empty() const
-	{
-		return entries[0].key.empty();
-	}
-
-	ShaderSelector& ShaderSelector::operator=(const ShaderSelector& other)
-	{
-		if (this != &other)
-			memcpy(&entries, &other.entries, sizeof(entries));
-
-		return *this;
-	}
-
-	ShaderSelector& ShaderSelector::operator=(ShaderSelector&& other)
-	{
-		if (this != &other)
-		{
-			memcpy(&entries, &other.entries, sizeof(entries));
-			memzero(&other.entries, sizeof(entries));
-		}
-
-		return *this;
-	}
-
-	uint64_t ShaderSelector::key() const
-	{
-		if (empty())
-			return 0;
-
-		base::CRC64 crc;
-		hash(crc);
-		return crc;
-	}
-
-	bool ShaderSelector::operator==(const ShaderSelector& other) const
-	{
-		const auto* ptrA = entries;
-		const auto* ptrB = other.entries;
-		for (uint32_t i = 0; i < MAX_SELECTORS; ++i, ++ptrA, ++ptrB)
-		{
-			if (ptrA->key != ptrB->key)
-				return false;
-			if (ptrA->value != ptrB->value)
-				return false;
-
-			if (!ptrA->key && !ptrB->key)
-				break;
-		}
-
-		return true;
-	}
-
-	bool ShaderSelector::operator!=(const ShaderSelector& other) const
-	{
-		return !operator==(other);
-	}
-
-	//--
-
-	bool ShaderSelector::has(base::StringID key) const
-	{
-		if (!key)
+		if (ptrA->key != ptrB->key)
+			return false;
+		if (ptrA->value != ptrB->value)
 			return false;
 
-		const auto* ptr = entries;
-		const auto* ptrEnd = entries + MAX_SELECTORS;
-		while (ptr < ptrEnd && ptr->key)
-		{
-			if (ptr->key == key)
-				return true;
-			++ptr;
-		}
-
-		return false;
+		if (!ptrA->key && !ptrB->key)
+			break;
 	}
 
-	int ShaderSelector::get(base::StringID key) const
+	return true;
+}
+
+bool ShaderSelector::operator!=(const ShaderSelector& other) const
+{
+	return !operator==(other);
+}
+
+//--
+
+bool ShaderSelector::has(base::StringID key) const
+{
+	if (!key)
+		return false;
+
+	const auto* ptr = entries;
+	const auto* ptrEnd = entries + MAX_SELECTORS;
+	while (ptr < ptrEnd && ptr->key)
 	{
-		if (!key)
-			return 0;
+		if (ptr->key == key)
+			return true;
+		++ptr;
+	}
 
-		const auto* ptr = entries;
-		const auto* ptrEnd = entries + MAX_SELECTORS;
-		while (ptr < ptrEnd && ptr->key)
-		{
-			if (ptr->key == key)
-				return ptr->value;
-			++ptr;
-		}
+	return false;
+}
 
+int ShaderSelector::get(base::StringID key) const
+{
+	if (!key)
 		return 0;
+
+	const auto* ptr = entries;
+	const auto* ptrEnd = entries + MAX_SELECTORS;
+	while (ptr < ptrEnd && ptr->key)
+	{
+		if (ptr->key == key)
+			return ptr->value;
+		++ptr;
 	}
 
-	bool ShaderSelector::setNoSort(base::StringID key, int value)
-	{
-		auto* ptr = entries;
-		const auto* ptrEnd = entries + MAX_SELECTORS;
-		while (ptr < ptrEnd && ptr->key)
-		{
-			if (ptr->key == key)
-			{
-				ptr->value = value;
-				return false;  // no sorting needed
-			}
+	return 0;
+}
 
-			++ptr;
+bool ShaderSelector::setNoSort(base::StringID key, int value)
+{
+	auto* ptr = entries;
+	const auto* ptrEnd = entries + MAX_SELECTORS;
+	while (ptr < ptrEnd && ptr->key)
+	{
+		if (ptr->key == key)
+		{
+			ptr->value = value;
+			return false;  // no sorting needed
 		}
 
-		DEBUG_CHECK_RETURN_EX_V(ptr < ptrEnd, "To many selectors", false);
-
-		ptr->key = key;
-		ptr->value = value;
-		return true;
+		++ptr;
 	}
 
-	void ShaderSelector::set(base::StringID key, int value)
+	DEBUG_CHECK_RETURN_EX_V(ptr < ptrEnd, "To many selectors", false);
+
+	ptr->key = key;
+	ptr->value = value;
+	return true;
+}
+
+void ShaderSelector::set(base::StringID key, int value)
+{
+	DEBUG_CHECK_RETURN_EX(key, "Cannot assign any value to empty key");
+
+	if (value == 0)
 	{
-		DEBUG_CHECK_RETURN_EX(key, "Cannot assign any value to empty key");
-
-		if (value == 0)
-		{
-			if (setNoSort(key, value))
-				sort();
-		}
-		else
-		{
-			remove(key);
-		}
-	}
-
-	bool ShaderSelector::remove(base::StringID key)
-	{
-		DEBUG_CHECK_RETURN_EX_V(key, "Cannot remove empty key", false);
-
-		auto* ptr = entries;
-		const auto* ptrEnd = entries + MAX_SELECTORS;
-		while (ptr < ptrEnd)
-		{
-			if (!ptr->key)
-				break;
-
-			if (ptr->key == key)
-			{
-				// shift items
-				auto* ptrBack = ptr; // where to write
-				++ptr;
-				while (ptr < ptrEnd)
-					*ptrBack++ = *ptr++;
-
-				// clear the last one
-				ptrBack->key = base::StringID();
-				ptrBack->value = 0;
-				return true;
-			}
-
-			++ptr;
-		}
-
-		return false;
-	}
-
-	void ShaderSelector::apply(const ShaderSelector& selector)
-	{
-		bool sortingNeeded = false;
-	
-		const auto* ptr = selector.entries;
-		const auto* ptrEnd = selector.entries + MAX_SELECTORS;
-		while (ptr < ptrEnd && ptr->key)
-		{
-			sortingNeeded |= setNoSort(ptr->key, ptr->value);
-			++ptr;			
-		}
-
-		if (sortingNeeded)
+		if (setNoSort(key, value))
 			sort();
 	}
-
-	void ShaderSelector::sort()
+	else
 	{
-		std::sort(entries, entries + MAX_SELECTORS, [](const Entry& a, const Entry& b) -> bool
-			{
-				if (a.key && b.key)
-					return a.key < b.key;
-				else
-					return (int)a.key.empty() < (int)b.key.empty();
-			});
+		remove(key);
 	}
+}
 
-	//--
+bool ShaderSelector::remove(base::StringID key)
+{
+	DEBUG_CHECK_RETURN_EX_V(key, "Cannot remove empty key", false);
 
-	void ShaderSelector::hash(base::CRC64& crc) const
+	auto* ptr = entries;
+	const auto* ptrEnd = entries + MAX_SELECTORS;
+	while (ptr < ptrEnd)
 	{
-        const auto* ptr = entries;
-        const auto* ptrEnd = entries + MAX_SELECTORS;
-        while (ptr < ptrEnd && ptr->key)
-        {
-            crc << ptr->key.index();
-            crc << ptr->value;
-            ++ptr;
-        }
-	}
+		if (!ptr->key)
+			break;
 
-	void ShaderSelector::print(base::IFormatStream& f) const
-	{
-		bool hasValues = false;
-
-		const auto* ptr = entries;
-		const auto* ptrEnd = entries + MAX_SELECTORS;
-		while (ptr < ptrEnd && ptr->key) 
+		if (ptr->key == key)
 		{
-			if (hasValues) f << ";";
-			hasValues = true;
-
-			f.appendf("{}={}", ptr->key, ptr->value);
+			// shift items
+			auto* ptrBack = ptr; // where to write
 			++ptr;
+			while (ptr < ptrEnd)
+				*ptrBack++ = *ptr++;
+
+			// clear the last one
+			ptrBack->key = base::StringID();
+			ptrBack->value = 0;
+			return true;
 		}
+
+		++ptr;
 	}
 
-	void ShaderSelector::defines(base::HashMap<base::StringID, base::StringBuf>& outDefines) const
+	return false;
+}
+
+void ShaderSelector::apply(const ShaderSelector& selector)
+{
+	bool sortingNeeded = false;
+	
+	const auto* ptr = selector.entries;
+	const auto* ptrEnd = selector.entries + MAX_SELECTORS;
+	while (ptr < ptrEnd && ptr->key)
 	{
-        const auto* ptr = entries;
-        const auto* ptrEnd = entries + MAX_SELECTORS;
-		while (ptr < ptrEnd && ptr->key)
-		{
-			outDefines[ptr->key] = base::TempString("{}", ptr->value);
-			++ptr;
-		}
+		sortingNeeded |= setNoSort(ptr->key, ptr->value);
+		++ptr;			
 	}
 
-	bool ShaderSelector::Parse(base::StringView text, ShaderSelector& outSelectors)
+	if (sortingNeeded)
+		sort();
+}
+
+void ShaderSelector::sort()
+{
+	std::sort(entries, entries + MAX_SELECTORS, [](const Entry& a, const Entry& b) -> bool
+		{
+			if (a.key && b.key)
+				return a.key < b.key;
+			else
+				return (int)a.key.empty() < (int)b.key.empty();
+		});
+}
+
+//--
+
+void ShaderSelector::hash(base::CRC64& crc) const
+{
+    const auto* ptr = entries;
+    const auto* ptrEnd = entries + MAX_SELECTORS;
+    while (ptr < ptrEnd && ptr->key)
+    {
+        crc << ptr->key.index();
+        crc << ptr->value;
+        ++ptr;
+    }
+}
+
+void ShaderSelector::print(base::IFormatStream& f) const
+{
+	bool hasValues = false;
+
+	const auto* ptr = entries;
+	const auto* ptrEnd = entries + MAX_SELECTORS;
+	while (ptr < ptrEnd && ptr->key) 
 	{
-		base::StringParser parser(text);
+		if (hasValues) f << ";";
+		hasValues = true;
 
-		ShaderSelector local;
-		bool hasKeys = false;
-
-		while (!parser.parseWhitespaces())
-		{
-			if (hasKeys && !parser.parseKeyword(";"))
-				return false;
-
-			base::StringView key;
-			if (!parser.parseIdentifier(key))
-				return false;
-
-			if (!parser.parseKeyword("="))
-				return false;
-
-			int value = 0;
-			if (!parser.parseInt32(value))
-				return false;
-
-			if (value)
-				local.setNoSort(base::StringID(key), value);
-			hasKeys = true;
-		}
-
-		outSelectors.apply(local); // output is modified only if we are successful
-		return true;
+		f.appendf("{}={}", ptr->key, ptr->value);
+		++ptr;
 	}
+}
 
-	//--
-
-	uint32_t ShaderSelector::CalcHash(const ShaderSelector& selectors)
+void ShaderSelector::defines(base::HashMap<base::StringID, base::StringBuf>& outDefines) const
+{
+    const auto* ptr = entries;
+    const auto* ptrEnd = entries + MAX_SELECTORS;
+	while (ptr < ptrEnd && ptr->key)
 	{
-		base::CRC32 crc;
+		outDefines[ptr->key] = base::TempString("{}", ptr->value);
+		++ptr;
+	}
+}
 
-		const auto* ptr = selectors.entries;
-		const auto* ptrEnd = selectors.entries + MAX_SELECTORS;
-        while (ptr < ptrEnd && ptr->key)
-		{
-			crc << ptr->key.index();
-			crc << ptr->value;
-			++ptr;
-		}
+bool ShaderSelector::Parse(base::StringView text, ShaderSelector& outSelectors)
+{
+	base::StringParser parser(text);
 
-		return crc;
+	ShaderSelector local;
+	bool hasKeys = false;
+
+	while (!parser.parseWhitespaces())
+	{
+		if (hasKeys && !parser.parseKeyword(";"))
+			return false;
+
+		base::StringView key;
+		if (!parser.parseIdentifier(key))
+			return false;
+
+		if (!parser.parseKeyword("="))
+			return false;
+
+		int value = 0;
+		if (!parser.parseInt32(value))
+			return false;
+
+		if (value)
+			local.setNoSort(base::StringID(key), value);
+		hasKeys = true;
 	}
 
-    //--
+	outSelectors.apply(local); // output is modified only if we are successful
+	return true;
+}
 
-} // rendering
+//--
+
+uint32_t ShaderSelector::CalcHash(const ShaderSelector& selectors)
+{
+	base::CRC32 crc;
+
+	const auto* ptr = selectors.entries;
+	const auto* ptrEnd = selectors.entries + MAX_SELECTORS;
+    while (ptr < ptrEnd && ptr->key)
+	{
+		crc << ptr->key.index();
+		crc << ptr->value;
+		++ptr;
+	}
+
+	return crc;
+}
+
+//--
+
+END_BOOMER_NAMESPACE(rendering)

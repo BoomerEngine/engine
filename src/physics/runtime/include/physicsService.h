@@ -8,38 +8,35 @@
 
 #include "base/app/include/localService.h"
 
-namespace physics
+BEGIN_BOOMER_NAMESPACE(boomer)
+
+/// scene desc
+struct PHYSICS_RUNTIME_API PhysicsSceneDesc
 {
-    namespace runtime
-    {
-        /// scene desc
-        struct PHYSICS_RUNTIME_API PhysicsSceneDesc
-        {
-            PhysicsSceneType m_type;
+    PhysicsSceneType m_type;
 
-            PhysicsSceneDesc();
-        };
+    PhysicsSceneDesc();
+};
 
-        /// physics service for the engine
-        class PHYSICS_RUNTIME_API PhysicsService : public base::app::ILocalService
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(PhysicsService, base::app::ILocalService);
+/// physics service for the engine
+class PHYSICS_RUNTIME_API PhysicsService : public base::app::ILocalService
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(PhysicsService, base::app::ILocalService);
 
-        public:
-            PhysicsService();
+public:
+    PhysicsService();
 
-            /// create a physics scene
-            PhysicsScenePtr createScene(const PhysicsSceneDesc& desc);
+    /// create a physics scene
+    PhysicsScenePtr createScene(const PhysicsSceneDesc& desc);
 
-        private:
-            virtual base::app::ServiceInitializationResult onInitializeService(const base::app::CommandLine& cmdLine) override final;
-            virtual void onShutdownService() override final;
-            virtual void onSyncUpdate() override final;
+private:
+    virtual base::app::ServiceInitializationResult onInitializeService(const base::app::CommandLine& cmdLine) override final;
+    virtual void onShutdownService() override final;
+    virtual void onSyncUpdate() override final;
 
-            physx::PxFoundation* m_foundation;
-            physx::PxPhysics* m_physics;
-            physx::PxPvd* m_pvd;
-        };
+    physx::PxFoundation* m_foundation;
+    physx::PxPhysics* m_physics;
+    physx::PxPvd* m_pvd;
+};
 
-    } // runtime
-} // physics
+END_BOOMER_NAMESPACE(boomer)

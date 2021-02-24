@@ -10,8 +10,7 @@
 #include "renderingMeshStreamIterator.h"
 #include "renderingMeshStreamPacker.h"
 
-namespace rendering
-{
+BEGIN_BOOMER_NAMESPACE(rendering)
 
     ///---
 

@@ -7,43 +7,40 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::socket)
+
+//--
+
+// a block of memory for network use
+class BASE_SOCKET_API Block : public NoCopy
 {
-    namespace socket
-    {
-        //--
+public:
+    // get size of the data in the block
+    INLINE uint32_t dataSize() const { return m_currentSize; }
 
-        // a block of memory for network use
-        class BASE_SOCKET_API Block : public NoCopy
-        {
-        public:
-            // get size of the data in the block
-            INLINE uint32_t dataSize() const { return m_currentSize; }
+    // get data
+    INLINE const uint8_t* data() const { return m_ptr; }
 
-            // get data
-            INLINE const uint8_t* data() const { return m_ptr; }
+    // get data
+    INLINE uint8_t* data() { return m_ptr; }
 
-            // get data
-            INLINE uint8_t* data() { return m_ptr; }
+    //--
 
-            //--
+    // we are done with the block, release it back to where it came from
+    void release();
 
-            // we are done with the block, release it back to where it came from
-            void release();
+    // eat header/tail data, effectively creates a block for the sub-part of the messages
+    void shrink(uint32_t skipFront, uint32_t newSize = INDEX_MAX);
 
-            // eat header/tail data, effectively creates a block for the sub-part of the messages
-            void shrink(uint32_t skipFront, uint32_t newSize = INDEX_MAX);
+private:
+    uint8_t* m_ptr = nullptr;
+    uint32_t m_currentSize = 0;
+    uint32_t m_totalSize = 0;
+    BlockAllocator* m_allocator = nullptr;
 
-        private:
-            uint8_t* m_ptr = nullptr;
-            uint32_t m_currentSize = 0;
-            uint32_t m_totalSize = 0;
-            BlockAllocator* m_allocator = nullptr;
+    friend class BlockAllocator;
+};
 
-            friend class BlockAllocator;
-        };
+//--
 
-        //--
-
-    } // socket
-} // base
+END_BOOMER_NAMESPACE(base::socket)

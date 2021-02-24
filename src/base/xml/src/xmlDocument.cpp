@@ -13,52 +13,49 @@
 
 #include "base/containers/include/stringBuilder.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::xml)
+
+//----
+
+IDocument::IDocument()
+{}
+
+IDocument::~IDocument()
+{}
+
+//----
+
+DocumentPtr IDocument::createWritableCopy(NodeID id)
 {
-    namespace xml
-    {
-        //----
+    if (!id)
+        return DocumentPtr();
 
-        IDocument::IDocument()
-        {}
+    auto copyDoc  = CreateDocument(StringBuf("root"));
+    if (!copyDoc)
+        return nullptr;
 
-        IDocument::~IDocument()
-        {}
+    CopyInnerNodes(*this, id, *copyDoc, copyDoc->root());
+    return copyDoc;
+}
 
-        //----
+DocumentPtr IDocument::createReadOnlyCopy(NodeID id)
+{
+    return createWritableCopy(id); // TEMPSHIT
+}
 
-        DocumentPtr IDocument::createWritableCopy(NodeID id)
-        {
-            if (!id)
-                return DocumentPtr();
+//----
 
-            auto copyDoc  = CreateDocument(StringBuf("root"));
-            if (!copyDoc)
-                return nullptr;
+Buffer IDocument::saveAsBinary(NodeID id) const
+{
+    return Buffer();
+}
 
-            CopyInnerNodes(*this, id, *copyDoc, copyDoc->root());
-            return copyDoc;
-        }
+void IDocument::saveAsText(IFormatStream& f, NodeID id) const
+{
+    TextWriter writer(f);
+    writer.writeNode(*this, id);
+}
 
-        DocumentPtr IDocument::createReadOnlyCopy(NodeID id)
-        {
-            return createWritableCopy(id); // TEMPSHIT
-        }
+//----
 
-        //----
-
-        Buffer IDocument::saveAsBinary(NodeID id) const
-        {
-            return Buffer();
-        }
-
-        void IDocument::saveAsText(IFormatStream& f, NodeID id) const
-        {
-            TextWriter writer(f);
-            writer.writeNode(*this, id);
-        }
-
-        //----
-
-    } // xml
-} // bas
+END_BOOMER_NAMESPACE(base::xml)

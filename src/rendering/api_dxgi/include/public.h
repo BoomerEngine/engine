@@ -10,33 +10,29 @@
 
 #include <DXGI.h>
 
-namespace rendering
-{
-	namespace api
-	{
+BEGIN_BOOMER_NAMESPACE(rendering::api)
 
-		//--
+//--
 
-		class DXGIHelper;
+class DXGIHelper;
 
-		//--
+//--
 
-		extern RENDERING_API_DXGI_API const char* TranslateDXGIError(HRESULT hRet);
+extern RENDERING_API_DXGI_API const char* TranslateDXGIError(HRESULT hRet);
 
-		extern RENDERING_API_DXGI_API const char* TranslateDXError(HRESULT hRet);
+extern RENDERING_API_DXGI_API const char* TranslateDXError(HRESULT hRet);
 
-		extern RENDERING_API_DXGI_API const char* TranslateDXGIFormatName(DXGI_FORMAT format);
+extern RENDERING_API_DXGI_API const char* TranslateDXGIFormatName(DXGI_FORMAT format);
 
-		extern RENDERING_API_DXGI_API void ValidateDXGIResult(HRESULT hRet, const char* expr, const char* file, uint32_t line);
+extern RENDERING_API_DXGI_API void ValidateDXGIResult(HRESULT hRet, const char* expr, const char* file, uint32_t line);
 
-		extern RENDERING_API_DXGI_API void ValidateDXResult(HRESULT hRet, const char* expr, const char* file, uint32_t line);
+extern RENDERING_API_DXGI_API void ValidateDXResult(HRESULT hRet, const char* expr, const char* file, uint32_t line);
 
-		extern RENDERING_API_DXGI_API void ValidateDXRelease(IUnknown** pPtr);
+extern RENDERING_API_DXGI_API void ValidateDXRelease(IUnknown** pPtr);
 
-		//--
+//--
 
-	} // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api)
 
 #ifndef BUILD_RELEASE
 	#define DXGI_PROTECT(expr) { HRESULT hRet = expr; rendering::api::ValidateDXGIResult(hRet, #expr, __FILE__, __LINE__); }

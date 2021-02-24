@@ -12,43 +12,39 @@
 #include "base/resource/include/resourceFactory.h"
 #include "base/resource/include/resourceTags.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::world)
+
+///----
+
+// factory class for the scene template
+class SceneMainFileFactory : public res::IFactory
 {
-    namespace world
+    RTTI_DECLARE_VIRTUAL_CLASS(SceneMainFileFactory, res::IFactory);
+
+public:
+    virtual res::ResourceHandle createResource() const override final
     {
+        return RefNew<RawScene>();
+    }
+};
 
-        ///----
+RTTI_BEGIN_TYPE_CLASS(SceneMainFileFactory);
+    RTTI_METADATA(res::FactoryClassMetadata).bindResourceClass<RawScene>();
+RTTI_END_TYPE();
 
-        // factory class for the scene template
-        class SceneMainFileFactory : public res::IFactory
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(SceneMainFileFactory, res::IFactory);
+///----
 
-        public:
-            virtual res::ResourceHandle createResource() const override final
-            {
-                return RefNew<RawScene>();
-            }
-        };
+RTTI_BEGIN_TYPE_CLASS(RawScene);
+    RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4scene");
+    RTTI_METADATA(res::ResourceDescriptionMetadata).description("Scene");
+    RTTI_METADATA(res::ResourceTagColorMetadata).color(0x9d, 0x02, 0x08);
+    //RTTI_PROPERTY(m_allLayers)
+RTTI_END_TYPE();
 
-        RTTI_BEGIN_TYPE_CLASS(SceneMainFileFactory);
-            RTTI_METADATA(res::FactoryClassMetadata).bindResourceClass<RawScene>();
-        RTTI_END_TYPE();
+RawScene::RawScene()
+{
+}
 
-        ///----
+///----
 
-        RTTI_BEGIN_TYPE_CLASS(RawScene);
-            RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4scene");
-            RTTI_METADATA(res::ResourceDescriptionMetadata).description("Scene");
-            RTTI_METADATA(res::ResourceTagColorMetadata).color(0x9d, 0x02, 0x08);
-            //RTTI_PROPERTY(m_allLayers)
-        RTTI_END_TYPE();
-
-        RawScene::RawScene()
-        {
-        }
-
-        ///----
-
-    } // world
-} // base
+END_BOOMER_NAMESPACE(base::world)

@@ -11,71 +11,70 @@
 #include "uiElement.h"
 #include "base/canvas/include/canvasGeometry.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+//--
+
+/// horizontal ruler
+class BASE_UI_API HorizontalRuler : public IElement
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(HorizontalRuler, IElement);
 
-    //--
+public:
+    HorizontalRuler();
 
-    /// horizontal ruler
-    class BASE_UI_API HorizontalRuler : public IElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(HorizontalRuler, IElement);
+    void region(float minVal, float maxVal);
+    void activeRegion(float minVal, float maxVal);
 
-    public:
-        HorizontalRuler();
+    inline float regionMin() const { return m_viewRegionMin; }
+    inline float regionMax() const { return m_viewRegionMax; }
+    inline float activeRegionMin() const { return m_viewActiveRegionMin; }
+    inline float activeRegionMax() const { return m_viewActiveRegionMax; }
 
-        void region(float minVal, float maxVal);
-        void activeRegion(float minVal, float maxVal);
+private:
+    float m_viewRegionMin = 0.0;
+    float m_viewRegionMax = 0.0;
+    float m_viewActiveRegionMin = 0.0;
+    float m_viewActiveRegionMax = 0.0;
 
-        inline float regionMin() const { return m_viewRegionMin; }
-        inline float regionMax() const { return m_viewRegionMax; }
-        inline float activeRegionMin() const { return m_viewActiveRegionMin; }
-        inline float activeRegionMax() const { return m_viewActiveRegionMax; }
+	mutable base::canvas::Geometry m_geometry;
 
-    private:
-        float m_viewRegionMin = 0.0;
-        float m_viewRegionMax = 0.0;
-        float m_viewActiveRegionMin = 0.0;
-        float m_viewActiveRegionMax = 0.0;
+	void generateGeometry(float width, float height) const;
 
-		mutable base::canvas::Geometry m_geometry;
+    virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+};
 
-		void generateGeometry(float width, float height) const;
+//--
 
-        virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
-    };
+/// vertical ruler
+class BASE_UI_API VerticalRuler : public IElement
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(VerticalRuler, IElement);
 
-    //--
+public:
+    VerticalRuler();
 
-    /// vertical ruler
-    class BASE_UI_API VerticalRuler : public IElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(VerticalRuler, IElement);
+    void region(float minVal, float maxVal);
+    void activeRegion(float minVal, float maxVal);
 
-    public:
-        VerticalRuler();
+    inline float regionMin() const { return m_viewRegionMin; }
+    inline float regionMax() const { return m_viewRegionMax; }
+    inline float activeRegionMin() const { return m_viewActiveRegionMin; }
+    inline float activeRegionMax() const { return m_viewActiveRegionMax; }
 
-        void region(float minVal, float maxVal);
-        void activeRegion(float minVal, float maxVal);
+private:
+    float m_viewRegionMin = 0.0;
+    float m_viewRegionMax = 0.0;
+    float m_viewActiveRegionMin = 0.0;
+    float m_viewActiveRegionMax = 0.0;
 
-        inline float regionMin() const { return m_viewRegionMin; }
-        inline float regionMax() const { return m_viewRegionMax; }
-        inline float activeRegionMin() const { return m_viewActiveRegionMin; }
-        inline float activeRegionMax() const { return m_viewActiveRegionMax; }
+	mutable base::canvas::Geometry m_geometry;
 
-    private:
-        float m_viewRegionMin = 0.0;
-        float m_viewRegionMax = 0.0;
-        float m_viewActiveRegionMin = 0.0;
-        float m_viewActiveRegionMax = 0.0;
+	void generateGeometry(float width, float height) const;
 
-		mutable base::canvas::Geometry m_geometry;
+    virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+};
 
-		void generateGeometry(float width, float height) const;
+//--
 
-        virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
-    };
-
-    //--
-
-} // ui
+END_BOOMER_NAMESPACE(ui)

@@ -10,8 +10,7 @@
 #include "base/world/include/worldEntity.h"
 #include "base/object/include/object.h"
 
-namespace game
-{
+BEGIN_BOOMER_NAMESPACE(game)
     //--
 
     enum class GameWorldStackOperation : uint8_t

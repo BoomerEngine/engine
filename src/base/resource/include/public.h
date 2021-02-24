@@ -24,144 +24,146 @@ DECLARE_GLOBAL_EVENT(EVENT_DEPOT_FILE_RELOADED, base::StringBuf)
 DECLARE_GLOBAL_EVENT(EVENT_DEPOT_DIRECTORY_ADDED, base::StringBuf)
 DECLARE_GLOBAL_EVENT(EVENT_DEPOT_DIRECTORY_REMOVED, base::StringBuf)
 
-namespace base
-{
+BEGIN_BOOMER_NAMESPACE(base)
+
     class ObjectIndirectTemplate;
     typedef RefPtr<ObjectIndirectTemplate> ObjectIndirectTemplatePtr;
     typedef RefWeakPtr<ObjectIndirectTemplate> ObjectIndirectTemplateWeakPtr;
 
     class DepotService;
 
-    namespace res
-    {
-        class PathResolver;
+END_BOOMER_NAMESPACE(base)
+
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+class PathResolver;
         
-        class BaseReference;
-        class BaseAsyncReference;
+class BaseReference;
+class BaseAsyncReference;
           
-        class ResourcePath;
-        class ResourceThumbnail;
+class ResourcePath;
+class ResourceThumbnail;
 
-        class ResourceLoader;
+class ResourceLoader;
         
-        typedef uint32_t ResourceUniqueID;
-        typedef uint32_t ResourceRuntimeVersion;
+typedef uint32_t ResourceUniqueID;
+typedef uint32_t ResourceRuntimeVersion;
 
-        class IResource;
-        typedef RefPtr< IResource > ResourceHandle;
-        typedef RefWeakPtr< IResource > ResourceWeakHandle;
-        typedef RefPtr< IResource > ResourcePtr;
-        typedef RefWeakPtr< IResource > ResourceWeakPtr;
+class IResource;
+typedef RefPtr< IResource > ResourceHandle;
+typedef RefWeakPtr< IResource > ResourceWeakHandle;
+typedef RefPtr< IResource > ResourcePtr;
+typedef RefWeakPtr< IResource > ResourceWeakPtr;
 
-        template< typename T >
-        class Ref;
+template< typename T >
+class Ref;
 
-        typedef fibers::WaitCounter ResourceLoadingFence;
-        typedef std::function< void(const ResourceHandle& res) > ResourceLoadedCallback;
+typedef fibers::WaitCounter ResourceLoadingFence;
+typedef std::function< void(const ResourceHandle& res) > ResourceLoadedCallback;
 
-        typedef uint64_t ResourceClassHash; // works as FormatCC
+typedef uint64_t ResourceClassHash; // works as FormatCC
 
-        class IFactory;
-        typedef RefPtr<IFactory> FactoryPtr;
+class IFactory;
+typedef RefPtr<IFactory> FactoryPtr;
 
-        class Metadata;
-        typedef RefPtr<Metadata> MetadataPtr;
+class Metadata;
+typedef RefPtr<Metadata> MetadataPtr;
 
-        class MetadataCache;
-        class DependencyCache;
+class MetadataCache;
+class DependencyCache;
 
-        class BlobCache;
+class BlobCache;
 
-        class ICookingErrorReporter;
-        class IResourceCookerInterface;
-        class ResourceCookerMemoryBlob;
+class ICookingErrorReporter;
+class IResourceCookerInterface;
+class ResourceCookerMemoryBlob;
 
-        class ResourceConfiguration;
-        typedef RefPtr<ResourceConfiguration> ResourceConfigurationPtr;
+class ResourceConfiguration;
+typedef RefPtr<ResourceConfiguration> ResourceConfigurationPtr;
 
-        class IResourceCacheBlob;
-        typedef RefPtr<IResourceCacheBlob> ResourceCacheBlobPtr;
+class IResourceCacheBlob;
+typedef RefPtr<IResourceCacheBlob> ResourceCacheBlobPtr;
 
-        class IResourceCookingDetailedSettings;
-        typedef RefPtr<IResourceCookingDetailedSettings> ResourceCookingDetailedSettingsPtr;
+class IResourceCookingDetailedSettings;
+typedef RefPtr<IResourceCookingDetailedSettings> ResourceCookingDetailedSettingsPtr;
 
-    } // res
+END_BOOMER_NAMESPACE(base::res)
 
-    // get global loader
-    extern BASE_RESOURCE_API res::ResourceLoader* GlobalLoader();
+BEGIN_BOOMER_NAMESPACE(base)
 
-    /// load resource from the default depot directory using the application loading service
+// get global loader
+extern BASE_RESOURCE_API res::ResourceLoader* GlobalLoader();
+
+/// load resource from the default depot directory using the application loading service
+/// NOTE: this will yield the current job until the resource is loaded
+extern BASE_RESOURCE_API CAN_YIELD res::ResourcePtr LoadResource(const res::ResourcePath& path);
+
+/// nice helper for async loading of resources if the resource exists it's returned right away without any extra fibers created (it's the major performance win)
+/// if resource does not exist it's queued for loading and internal fiber is created to service it
+/// NOTE: if the resource exists at the moment of the call the callback function is called right away
+extern BASE_RESOURCE_API void LoadResourceAsync(const res::ResourcePath& key, const std::function<void(const res::ResourcePtr&)>& funcLoaded);
+
+/// load resource from the default depot directory
     /// NOTE: this will yield the current job until the resource is loaded
-    extern BASE_RESOURCE_API CAN_YIELD res::ResourcePtr LoadResource(const res::ResourcePath& path);
+template< typename T >
+INLINE RefPtr<T> LoadResource(StringView path)
+{
+    return rtti_cast<T>(LoadResource(res::ResourcePath(path)));
+}
 
-    /// nice helper for async loading of resources if the resource exists it's returned right away without any extra fibers created (it's the major performance win)
-    /// if resource does not exist it's queued for loading and internal fiber is created to service it
-    /// NOTE: if the resource exists at the moment of the call the callback function is called right away
-    extern BASE_RESOURCE_API void LoadResourceAsync(const res::ResourcePath& key, const std::function<void(const res::ResourcePtr&)>& funcLoaded);
-
-    /// load resource from the default depot directory
-     /// NOTE: this will yield the current job until the resource is loaded
-    template< typename T >
-    INLINE RefPtr<T> LoadResource(StringView path)
+/// typed wrapper for loadResourceAsync
+template< typename T >
+INLINE void LoadResourceAsync(StringView path, const std::function<void(const RefPtr<T>&)>& funcLoaded)
+{
+    auto funcWrapper = [funcLoaded](const res::BaseReference& loaded)
     {
-        return rtti_cast<T>(LoadResource(res::ResourcePath(path)));
-    }
+        funcLoaded(rtti_cast<T>(loaded));
+    };
 
-    /// typed wrapper for loadResourceAsync
-    template< typename T >
-    INLINE void LoadResourceAsync(StringView path, const std::function<void(const RefPtr<T>&)>& funcLoaded)
+    LoadResourceAsync(path, funcWrapper);
+}
+
+/// typed wrapper for loadResourceAsync
+template< typename T >
+INLINE void LoadResourceAsync(const res::ResourcePath& key, const std::function<void(const RefPtr<T>&)>& funcLoaded)
+{
+    auto funcWrapper = [funcLoaded](const res::ResourcePtr& loaded)
     {
-        auto funcWrapper = [funcLoaded](const res::BaseReference& loaded)
-        {
-            funcLoaded(rtti_cast<T>(loaded));
-        };
+        funcLoaded(rtti_cast<T>(loaded));
+    };
 
-        LoadResourceAsync(path, funcWrapper);
-    }
+    LoadResourceAsync(key, funcWrapper);
+}
 
-    /// typed wrapper for loadResourceAsync
-    template< typename T >
-    INLINE void LoadResourceAsync(const res::ResourcePath& key, const std::function<void(const RefPtr<T>&)>& funcLoaded)
-    {
-        auto funcWrapper = [funcLoaded](const res::ResourcePtr& loaded)
-        {
-            funcLoaded(rtti_cast<T>(loaded));
-        };
+// clone object
+extern BASE_RESOURCE_API ObjectPtr CloneObjectUntyped(const IObject* object, const IObject* newParent = nullptr, res::ResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedClass = nullptr);
 
-        LoadResourceAsync(key, funcWrapper);
-    }
+// clone object
+template< typename T >
+INLINE RefPtr<T> CloneObject(const T* object, const IObject* newParent = nullptr, res::ResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedClass = nullptr)
+{
+    return rtti_cast<T>(CloneObjectUntyped(static_cast<const IObject*>(object), newParent, loader, mutatedClass));
+}
 
-    // clone object
-    extern BASE_RESOURCE_API ObjectPtr CloneObjectUntyped(const IObject* object, const IObject* newParent = nullptr, res::ResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedClass = nullptr);
+// clone object
+template< typename T >
+INLINE RefPtr<T> CloneObject(const RefPtr<T>& object, const IObject* newParent = nullptr, res::ResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedClass = nullptr)
+{
+    return rtti_cast<T>(CloneObjectUntyped(static_cast<const IObject*>(object), newParent, loader, mutatedClass));
+}
 
-    // clone object
-    template< typename T >
-    INLINE RefPtr<T> CloneObject(const T* object, const IObject* newParent = nullptr, res::ResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedClass = nullptr)
-    {
-        return rtti_cast<T>(CloneObjectUntyped(static_cast<const IObject*>(object), newParent, loader, mutatedClass));
-    }
+// save object to binary buffer
+extern BASE_RESOURCE_API Buffer SaveObjectToBuffer(const IObject* object);
 
-    // clone object
-    template< typename T >
-    INLINE RefPtr<T> CloneObject(const RefPtr<T>& object, const IObject* newParent = nullptr, res::ResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedClass = nullptr)
-    {
-        return rtti_cast<T>(CloneObjectUntyped(static_cast<const IObject*>(object), newParent, loader, mutatedClass));
-    }
+// load object from binary buffer
+extern BASE_RESOURCE_API ObjectPtr LoadObjectFromBuffer(const void* data, uint64_t size, res::ResourceLoader* loader=nullptr, SpecificClassType<IObject> mutatedClass = nullptr);
 
-    // save object to binary buffer
-    extern BASE_RESOURCE_API Buffer SaveObjectToBuffer(const IObject* object);
+//--
 
-    // load object from binary buffer
-    extern BASE_RESOURCE_API ObjectPtr LoadObjectFromBuffer(const void* data, uint64_t size, res::ResourceLoader* loader=nullptr, SpecificClassType<IObject> mutatedClass = nullptr);
+// extract list of resources used by given object (and child objects)
+extern BASE_RESOURCE_API void ExtractUsedResources(const IObject* object, HashMap<res::ResourcePath, uint32_t>& outResourceCounts);
 
-    //--
-
-    // extract list of resources used by given object (and child objects)
-    extern BASE_RESOURCE_API void ExtractUsedResources(const IObject* object, HashMap<res::ResourcePath, uint32_t>& outResourceCounts);
-
-    //--
-
-} // base
+END_BOOMER_NAMESPACE(base)
 
 // very commonly used stuff
 #include "resource.h"

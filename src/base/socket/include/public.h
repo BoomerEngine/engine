@@ -8,100 +8,97 @@
 
 #include "base_socket_glue.inl"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::socket)
+
+class Address;
+class Block;
+class BlockAllocator;
+class BaseSocket;
+class Selector;
+
+typedef uint32_t ConnectionID;
+
+//--
+
+namespace udp
 {
-    namespace socket
-    {
-        class Address;
-        class Block;
-        class BlockAllocator;
-        class BaseSocket;
-        class Selector;
+    class RawSocket;
 
-        typedef uint32_t ConnectionID;
+    class Packet;
+    class Endpoint;
+    class IEndpointHandler;
+} // udp
 
-        //--
+//--
 
-        namespace udp
-        {
-            class RawSocket;
+namespace tcp
+{
+    class RawSocket;
+    class Server;
+    class IServerHandler;
+    class Client;
+    class IClientHandler;
+} // udp
 
-            class Packet;
-            class Endpoint;
-            class IEndpointHandler;
-        } // udp
+//--
 
-        //--
+// Retrieve the most recently set error code, has to be checked immediately, fter failing call
+extern BASE_SOCKET_API int GetSocketError();
 
-        namespace tcp
-        {
-            class RawSocket;
-            class Server;
-            class IServerHandler;
-            class Client;
-            class IClientHandler;
-        } // udp
+// Check if the error code means that the call would have blocked
+extern BASE_SOCKET_API bool WouldBlock(int error);
 
-        //--
+// Check if the error resulted from ICMP message sent to UDP socket on unreachable destination port
+extern BASE_SOCKET_API bool PortUnreachable(int error);
 
-        // Retrieve the most recently set error code, has to be checked immediately, fter failing call
-        extern BASE_SOCKET_API int GetSocketError();
+// Initialize network
+extern BASE_SOCKET_API void Initialize();
 
-        // Check if the error code means that the call would have blocked
-        extern BASE_SOCKET_API bool WouldBlock(int error);
+// Shut down network layer
+extern BASE_SOCKET_API void Shutdown();
 
-        // Check if the error resulted from ICMP message sent to UDP socket on unreachable destination port
-        extern BASE_SOCKET_API bool PortUnreachable(int error);
+//--
 
-        // Initialize network
-        extern BASE_SOCKET_API void Initialize();
+// simple union
+template<typename R, typename S>
+struct ResultWithStatus
+{
+    R result;
+    S status;
 
-        // Shut down network layer
-        extern BASE_SOCKET_API void Shutdown();
+    INLINE ResultWithStatus(R result, S status)
+        : result(result)
+        , status(status)
+    {}
+};
 
-        //--
+//--
 
-        // simple union
-        template<typename R, typename S>
-        struct ResultWithStatus
-        {
-            R result;
-            S status;
+// part of data
+struct BlockPart
+{
+    const void* dataPtr = nullptr;
+    uint32_t size = 0;
 
-            INLINE ResultWithStatus(R result, S status)
-                : result(result)
-                , status(status)
-            {}
-        };
+    INLINE BlockPart() {};
+    INLINE BlockPart(const BlockPart& other) = default;
+    INLINE BlockPart& operator=(const BlockPart& other) = default;
+    INLINE BlockPart(const void* dataPtr, uint32_t size) : dataPtr(dataPtr), size(size) {};
+};
 
-        //--
+//--
 
-        // part of data
-        struct BlockPart
-        {
-            const void* dataPtr = nullptr;
-            uint32_t size = 0;
-
-            INLINE BlockPart() {};
-            INLINE BlockPart(const BlockPart& other) = default;
-            INLINE BlockPart& operator=(const BlockPart& other) = default;
-            INLINE BlockPart(const void* dataPtr, uint32_t size) : dataPtr(dataPtr), size(size) {};
-        };
-
-        //--
-
-        // VirtualSocket type
+// VirtualSocket type
 #ifdef PLATFORM_32BIT
-        typedef uint32_t SocketType;
+typedef uint32_t SocketType;
 #elif defined(PLATFORM_64BIT)
-        typedef uint64_t SocketType;
+typedef uint64_t SocketType;
 #endif
 
-        //--
+//--
 
-       static const SocketType SocketInvalid = (SocketType)-1;
+static const SocketType SocketInvalid = (SocketType)-1;
 
-       //--
-#
-    } // socket
-} // base
+//--
+
+END_BOOMER_NAMESPACE(base::socket)

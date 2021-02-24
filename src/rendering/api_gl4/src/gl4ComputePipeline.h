@@ -13,37 +13,30 @@
 #include "gl4Thread.h"
 #include "gl4Shaders.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+///---
+
+class ComputePipeline : public IBaseComputePipeline
 {
-    namespace api
-    {
-		namespace gl4
-		{
-			///---
+public:
+	ComputePipeline(Thread* owner, const Shaders* shaders);
+	virtual ~ComputePipeline();
 
-			class ComputePipeline : public IBaseComputePipeline
-			{
-			public:
-				ComputePipeline(Thread* owner, const Shaders* shaders);
-				virtual ~ComputePipeline();
+	//--
 
-				//--
+	INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
+	INLINE Shaders* shaders() const { return const_cast<Shaders*>(static_cast<const Shaders*>(IBaseComputePipeline::shaders())); }
 
-				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
-				INLINE Shaders* shaders() const { return const_cast<Shaders*>(static_cast<const Shaders*>(IBaseComputePipeline::shaders())); }
+	//--				
 
-				//--				
+	bool apply(GLuint& glActiveProgram);
 
-				bool apply(GLuint& glActiveProgram);
+	//--
 
-				//--
+private:
+};
 
-			private:
-			};
+//--
 
-			//--
-
-		} // gl4
-    } // api
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::api::gl4)

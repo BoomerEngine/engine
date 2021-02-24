@@ -29,75 +29,74 @@
 #include "base/ui/include/uiMessageBox.h"
 #include "base/ui/include/uiElementConfig.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedFile);
+RTTI_END_TYPE();
+
+ManagedFile::ManagedFile(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName)
+    : ManagedItem(depot, parentDir, fileName)
+    , m_isModified(false)
+    , m_fileFormat(nullptr)
 {
+    // lookup the file class
+    auto fileExt = fileName.afterFirst(".");
+    m_fileFormat = ManagedFileFormatRegistry::GetInstance().format(fileExt);
 
-    //--
+    // event key, do not build from path, it sucks
+    m_eventKey = MakeUniqueEventKey(fileName);
+}
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedFile);
-    RTTI_END_TYPE();
+ManagedFile::~ManagedFile()
+{
+}
 
-    ManagedFile::ManagedFile(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName)
-        : ManagedItem(depot, parentDir, fileName)
-        , m_isModified(false)
-        , m_fileFormat(nullptr)
+const image::Image* ManagedFile::typeThumbnail() const
+{
+    return m_fileFormat->thumbnail();
+}
+
+void ManagedFile::refreshVersionControlStateRefresh(bool sync /*= false*/)
+{
+    // TODO
+}
+
+void ManagedFile::modify(bool flag)
+{
+    if (m_isModified != flag)
     {
-        // lookup the file class
-        auto fileExt = fileName.afterFirst(".");
-        m_fileFormat = ManagedFileFormatRegistry::GetInstance().format(fileExt);
+        depot()->toogleFileModified(this, flag);
+        m_isModified = flag;
 
-        // event key, do not build from path, it sucks
-        m_eventKey = MakeUniqueEventKey(fileName);
+        TRACE_INFO("File '{}' was reported as {}", depotPath(), flag ? "modified" : "not modified");
+
+        if (auto dir = parentDirectory())
+            dir->updateModifiedContentCount();
     }
+}
 
-    ManagedFile::~ManagedFile()
+void ManagedFile::deleted(bool flag)
+{
+    if (flag != isDeleted())
     {
-    }
+        m_isDeleted = flag;
 
-    const image::Image* ManagedFile::typeThumbnail() const
-    {
-        return m_fileFormat->thumbnail();
-    }
-
-    void ManagedFile::refreshVersionControlStateRefresh(bool sync /*= false*/)
-    {
-        // TODO
-    }
-
-    void ManagedFile::modify(bool flag)
-    {
-        if (m_isModified != flag)
+        if (flag)
         {
-            depot()->toogleFileModified(this, flag);
-            m_isModified = flag;
-
-            TRACE_INFO("File '{}' was reported as {}", depotPath(), flag ? "modified" : "not modified");
-
-            if (auto dir = parentDirectory())
-                dir->updateModifiedContentCount();
+            DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_FILE_DELETED, ManagedFilePtr(AddRef(this)));
+            DispatchGlobalEvent(eventKey(), EVENT_MANAGED_FILE_DELETED);
+        }
+        else
+        {
+            DispatchGlobalEvent(eventKey(), EVENT_MANAGED_FILE_CREATED);
+            DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_FILE_CREATED, ManagedFilePtr(AddRef(this)));
         }
     }
+}
 
-    void ManagedFile::deleted(bool flag)
-    {
-        if (flag != isDeleted())
-        {
-            m_isDeleted = flag;
+//--
 
-            if (flag)
-            {
-                DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_FILE_DELETED, ManagedFilePtr(AddRef(this)));
-                DispatchGlobalEvent(eventKey(), EVENT_MANAGED_FILE_DELETED);
-            }
-            else
-            {
-                DispatchGlobalEvent(eventKey(), EVENT_MANAGED_FILE_CREATED);
-                DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_FILE_CREATED, ManagedFilePtr(AddRef(this)));
-            }
-        }
-    }
-
-    //--
-
-} // depot
+END_BOOMER_NAMESPACE(ed)
 

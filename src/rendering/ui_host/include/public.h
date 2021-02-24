@@ -8,13 +8,15 @@
 
 #include "rendering_ui_host_glue.inl"
 
-namespace rendering
-{
-    class NativeWindowRenderer;
-}
+BEGIN_BOOMER_NAMESPACE(rendering)
 
-namespace ui
-{
-    class RenderingPanel;
-    typedef base::RefPtr<RenderingPanel> RenderingPanelPtr;
-}
+class NativeWindowRenderer;
+
+END_BOOMER_NAMESPACE(rendering)
+
+BEGIN_BOOMER_NAMESPACE(ui)
+
+class RenderingPanel;
+typedef base::RefPtr<RenderingPanel> RenderingPanelPtr;
+
+END_BOOMER_NAMESPACE(ui)

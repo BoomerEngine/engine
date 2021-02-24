@@ -23,323 +23,316 @@ typedef int socklen_t;
 #include <fcntl.h>
 #endif
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::socket::tcp)
+
+//--
+
+static void addressToNetwork(const Address& address, in_addr* networkAddress)
 {
-    namespace socket
+    ASSERT(address.type() == AddressType::AddressIPv4);
+#if defined (PLATFORM_WINDOWS)
+    networkAddress->S_un.S_addr = *reinterpret_cast<const u_long *>(address.address());
+#else
+    networkAddress->s_addr = *reinterpret_cast<const u_long *>(address.address());
+#endif
+}
+
+static void addressToNetwork6(const Address& address, in6_addr* networkAddress)
+{
+    ASSERT(address.type() == AddressType::AddressIPv6);
+    memcpy(networkAddress, address.address(), sizeof(in6_addr));
+}
+
+static void networkToAddress(const sockaddr* networkAddress, Address* address)
+{
+    if (networkAddress->sa_family == AF_INET6)
     {
-        namespace tcp
+        const sockaddr_in6* a = reinterpret_cast<const sockaddr_in6 *>(networkAddress);
+#if defined (PLATFORM_WINDOWS)
+        address->set(AddressType::AddressIPv6, ntohs(a->sin6_port), reinterpret_cast<const uint8_t *>(&a->sin6_addr.u.Byte));
+#else
+        address->set(AddressType::AddressIPv6, ntohs(a->sin6_port), reinterpret_cast<const uint8_t *>(&a->sin6_addr.__in6_u.__u6_addr8));
+#endif
+    }
+    else if (networkAddress->sa_family == AF_INET)
+    {
+        const sockaddr_in* a = reinterpret_cast<const sockaddr_in *>(networkAddress);
+#if defined (PLATFORM_WINDOWS)
+        address->set(AddressType::AddressIPv4, ntohs(a->sin_port), reinterpret_cast<const uint8_t *>(&a->sin_addr.S_un.S_addr));
+#else
+        address->set(AddressType::AddressIPv4, ntohs(a->sin_port), reinterpret_cast<const uint8_t *>(&a->sin_addr.s_addr));
+#endif
+    }
+    else
+    {
+        ASSERT_EX(false, "Unsupported address family");
+    }
+}
+
+//--
+
+bool RawSocket::listen(const Address& address, Address* outLocalAddress /*= nullptr*/)
+{
+    close();
+
+    m_ipv6 = address.type() == AddressType::AddressIPv6;
+    m_socket = ::socket(m_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+    if (m_socket == SocketInvalid)
+    {
+        TRACE_ERROR("Failed to create socket {}", GetSocketError());
+        return false;
+    }
+
+    sockaddr* listenAddress = nullptr;
+    int listenAddressSize = 0;
+
+    sockaddr_in6 socketAddress6;
+    sockaddr_in socketAddress4;
+
+    if (m_ipv6)
+    {
+        memzero(&socketAddress6, sizeof(socketAddress6));
+        socketAddress6.sin6_family = AF_INET6;
+        socketAddress6.sin6_port = htons(address.port());
+        addressToNetwork6(address, &socketAddress6.sin6_addr);
+
+        listenAddress = reinterpret_cast<sockaddr *>(&socketAddress6);
+        listenAddressSize = sizeof(socketAddress6);
+    }
+    else
+    {
+        memzero(&socketAddress4, sizeof(socketAddress4));
+        socketAddress4.sin_family = AF_INET;
+        socketAddress4.sin_port = htons(address.port());
+        addressToNetwork(address, &socketAddress4.sin_addr);
+
+        listenAddress = reinterpret_cast<sockaddr *>(&socketAddress4);
+        listenAddressSize = sizeof(socketAddress4);
+    }
+
+    if (::bind(m_socket, listenAddress, listenAddressSize) < 0)
+    {
+        TRACE_ERROR("Failed to bind socket to {}: {}", address, GetSocketError());
+        close();
+        return false;
+    }
+
+    if (::listen(m_socket, 64) != 0)
+    {
+        TRACE_ERROR("Failed to listen on socket {}: {}", address, GetSocketError());
+        close();
+        return false;
+    }
+
+    if (outLocalAddress)
+    {
+        if (0 != ::getsockname(m_socket, listenAddress, &listenAddressSize))
         {
+            int error = GetSocketError();
+            TRACE_ERROR("getsockname() failed with error {}", error);
+            *outLocalAddress = Address(); // TODO: find better way
+        }
+        else
+        {
+            networkToAddress(listenAddress, outLocalAddress);
+        }
+    }
 
-            //--
+    return true;
+}
 
-            static void addressToNetwork(const Address& address, in_addr* networkAddress)
-            {
-                ASSERT(address.type() == AddressType::AddressIPv4);
-    #if defined (PLATFORM_WINDOWS)
-                networkAddress->S_un.S_addr = *reinterpret_cast<const u_long *>(address.address());
-    #else
-                networkAddress->s_addr = *reinterpret_cast<const u_long *>(address.address());
-    #endif
-            }
+bool RawSocket::connect(const Address& address, Address* outLocalAddress /*= nullptr*/)
+{
+    close();
 
-            static void addressToNetwork6(const Address& address, in6_addr* networkAddress)
-            {
-                ASSERT(address.type() == AddressType::AddressIPv6);
-                memcpy(networkAddress, address.address(), sizeof(in6_addr));
-            }
+    m_ipv6 = address.type() == AddressType::AddressIPv6;
+    m_socket = ::socket(m_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
-            static void networkToAddress(const sockaddr* networkAddress, Address* address)
-            {
-                if (networkAddress->sa_family == AF_INET6)
-                {
-                    const sockaddr_in6* a = reinterpret_cast<const sockaddr_in6 *>(networkAddress);
-    #if defined (PLATFORM_WINDOWS)
-                    address->set(AddressType::AddressIPv6, ntohs(a->sin6_port), reinterpret_cast<const uint8_t *>(&a->sin6_addr.u.Byte));
-    #else
-                    address->set(AddressType::AddressIPv6, ntohs(a->sin6_port), reinterpret_cast<const uint8_t *>(&a->sin6_addr.__in6_u.__u6_addr8));
-    #endif
-                }
-                else if (networkAddress->sa_family == AF_INET)
-                {
-                    const sockaddr_in* a = reinterpret_cast<const sockaddr_in *>(networkAddress);
-    #if defined (PLATFORM_WINDOWS)
-                    address->set(AddressType::AddressIPv4, ntohs(a->sin_port), reinterpret_cast<const uint8_t *>(&a->sin_addr.S_un.S_addr));
-    #else
-                    address->set(AddressType::AddressIPv4, ntohs(a->sin_port), reinterpret_cast<const uint8_t *>(&a->sin_addr.s_addr));
-    #endif
-                }
-                else
-                {
-                    ASSERT_EX(false, "Unsupported address family");
-                }
-            }
+    sockaddr* connectAddress = nullptr;
+    socklen_t connectAddressSize = 0;
 
-            //--
+    sockaddr_in6 socketAddress6;
+    sockaddr_in socketAddress4;
 
-            bool RawSocket::listen(const Address& address, Address* outLocalAddress /*= nullptr*/)
-            {
-                close();
+    if (m_ipv6)
+    {
+        memzero(&socketAddress6, sizeof(socketAddress6));
+        socketAddress6.sin6_family = AF_INET6;
+        socketAddress6.sin6_port = htons(address.port());
+        addressToNetwork6(address, &socketAddress6.sin6_addr);
 
-                m_ipv6 = address.type() == AddressType::AddressIPv6;
-                m_socket = ::socket(m_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        connectAddress = reinterpret_cast<sockaddr *>(&socketAddress6);
+        connectAddressSize = sizeof(socketAddress6);
+    }
+    else
+    {
+        memzero(&socketAddress4, sizeof(socketAddress4));
+        socketAddress4.sin_family = AF_INET;
+        socketAddress4.sin_port = htons(address.port());
+        addressToNetwork(address, &socketAddress4.sin_addr);
 
-                if (m_socket == SocketInvalid)
-                {
-                    TRACE_ERROR("Failed to create socket {}", GetSocketError());
-                    return false;
-                }
+        connectAddress = reinterpret_cast<sockaddr *>(&socketAddress4);
+        connectAddressSize = sizeof(socketAddress4);
+    }
 
-                sockaddr* listenAddress = nullptr;
-                int listenAddressSize = 0;
+    auto ret  = ::connect(m_socket, connectAddress, connectAddressSize);
+    if (ret < 0)
+    {
+        int error = GetSocketError();
+        if (WouldBlock(error))
+            return false;
 
-                sockaddr_in6 socketAddress6;
-                sockaddr_in socketAddress4;
+        if (PortUnreachable(error))
+        {
+            TRACE_ERROR("Previously sent TCP packet was dropped by recipient because the port was unreachable");
+            return false;
+        }
 
-                if (m_ipv6)
-                {
-                    memzero(&socketAddress6, sizeof(socketAddress6));
-                    socketAddress6.sin6_family = AF_INET6;
-                    socketAddress6.sin6_port = htons(address.port());
-                    addressToNetwork6(address, &socketAddress6.sin6_addr);
+        TRACE_ERROR("connect() failed with error {}", error);
+        close();
+        return false;
+    }
 
-                    listenAddress = reinterpret_cast<sockaddr *>(&socketAddress6);
-                    listenAddressSize = sizeof(socketAddress6);
-                }
-                else
-                {
-                    memzero(&socketAddress4, sizeof(socketAddress4));
-                    socketAddress4.sin_family = AF_INET;
-                    socketAddress4.sin_port = htons(address.port());
-                    addressToNetwork(address, &socketAddress4.sin_addr);
+    if (outLocalAddress)
+    {
+        if (0 != ::getsockname(m_socket, connectAddress, &connectAddressSize))
+        {
+            int error = GetSocketError();
+            TRACE_ERROR("getsockname() failed with error {}", error);
+            *outLocalAddress = Address(); // TODO: find better way
+        }
+        else
+        {
+            networkToAddress(connectAddress, outLocalAddress);
+        }
+    }
 
-                    listenAddress = reinterpret_cast<sockaddr *>(&socketAddress4);
-                    listenAddressSize = sizeof(socketAddress4);
-                }
+    return true;
+}
 
-                if (::bind(m_socket, listenAddress, listenAddressSize) < 0)
-                {
-                    TRACE_ERROR("Failed to bind socket to {}: {}", address, GetSocketError());
-                    close();
-                    return false;
-                }
+bool RawSocket::accept(const RawSocket& listener, Address* outSourceAddress /*= nullptr*/)
+{
+    if (listener.m_socket == SocketInvalid)
+    {
+        TRACE_ERROR("accept() called on bad socket");
+        return false;
+    }
 
-                if (::listen(m_socket, 64) != 0)
-                {
-                    TRACE_ERROR("Failed to listen on socket {}: {}", address, GetSocketError());
-                    close();
-                    return false;
-                }
+    sockaddr* acceptAddress = nullptr;
+    socklen_t acceptAddressSize = 0;
 
-                if (outLocalAddress)
-                {
-                    if (0 != ::getsockname(m_socket, listenAddress, &listenAddressSize))
-                    {
-                        int error = GetSocketError();
-                        TRACE_ERROR("getsockname() failed with error {}", error);
-                        *outLocalAddress = Address(); // TODO: find better way
-                    }
-                    else
-                    {
-                        networkToAddress(listenAddress, outLocalAddress);
-                    }
-                }
+    sockaddr_in6 socketAddress6;
+    sockaddr_in socketAddress4;
 
-                return true;
-            }
+    if (listener.m_ipv6)
+    {
+        memzero(&socketAddress6, sizeof(socketAddress6));
+        acceptAddress = reinterpret_cast<sockaddr *>(&socketAddress6);
+        acceptAddressSize = sizeof(socketAddress6);
+    }
+    else
+    {
+        memzero(&socketAddress4, sizeof(socketAddress4));
+        acceptAddress = reinterpret_cast<sockaddr *>(&socketAddress4);
+        acceptAddressSize = sizeof(socketAddress4);
+    }
 
-            bool RawSocket::connect(const Address& address, Address* outLocalAddress /*= nullptr*/)
-            {
-                close();
+    int ret = ::accept(listener.m_socket, acceptAddress, &acceptAddressSize);
+    if (ret < 0)
+    {
+        int error = GetSocketError();
+        if (WouldBlock(error))
+            return false;
 
-                m_ipv6 = address.type() == AddressType::AddressIPv6;
-                m_socket = ::socket(m_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM, IPPROTO_TCP);
+        if (PortUnreachable(error))
+        {
+            TRACE_ERROR("Previously sent TCP packet was dropped by recipient because the port was unreachable");
+            return false;
+        }
 
-                sockaddr* connectAddress = nullptr;
-                socklen_t connectAddressSize = 0;
+        TRACE_ERROR("accept() failed with error {}", error);
+        return false;
+    }
 
-                sockaddr_in6 socketAddress6;
-                sockaddr_in socketAddress4;
+    close();
 
-                if (m_ipv6)
-                {
-                    memzero(&socketAddress6, sizeof(socketAddress6));
-                    socketAddress6.sin6_family = AF_INET6;
-                    socketAddress6.sin6_port = htons(address.port());
-                    addressToNetwork6(address, &socketAddress6.sin6_addr);
+    m_ipv6 = listener.m_ipv6;
+    m_socket = ret;
 
-                    connectAddress = reinterpret_cast<sockaddr *>(&socketAddress6);
-                    connectAddressSize = sizeof(socketAddress6);
-                }
-                else
-                {
-                    memzero(&socketAddress4, sizeof(socketAddress4));
-                    socketAddress4.sin_family = AF_INET;
-                    socketAddress4.sin_port = htons(address.port());
-                    addressToNetwork(address, &socketAddress4.sin_addr);
+    networkToAddress(acceptAddress, outSourceAddress);
+    return true;
+}
 
-                    connectAddress = reinterpret_cast<sockaddr *>(&socketAddress4);
-                    connectAddressSize = sizeof(socketAddress4);
-                }
+int RawSocket::receive(void* data, int size)
+{
+    if (m_socket == SocketInvalid)
+    {
+        TRACE_ERROR("receive() called on bad socket");
+        return false;
+    }
 
-                auto ret  = ::connect(m_socket, connectAddress, connectAddressSize);
-                if (ret < 0)
-                {
-                    int error = GetSocketError();
-                    if (WouldBlock(error))
-                        return false;
+    sockaddr* receiveAddress = nullptr;
+    socklen_t receiveAddressSize = 0;
 
-                    if (PortUnreachable(error))
-                    {
-                        TRACE_ERROR("Previously sent TCP packet was dropped by recipient because the port was unreachable");
-                        return false;
-                    }
+    if (m_ipv6)
+    {
+        sockaddr_in6 address;
+        receiveAddress = reinterpret_cast<sockaddr *>(&address);
+        receiveAddressSize = sizeof(address);
+    }
+    else
+    {
+        sockaddr_in address;
+        receiveAddress = reinterpret_cast<sockaddr *>(&address);
+        receiveAddressSize = sizeof(address);
+    }
 
-                    TRACE_ERROR("connect() failed with error {}", error);
-                    close();
-                    return false;
-                }
+    int bytesReceived = recv(m_socket, reinterpret_cast<char *>(data), size, 0);
+    if (bytesReceived < 0)
+    {
+        int error = GetSocketError();
+        if (WouldBlock(error))
+            return 0;
 
-                if (outLocalAddress)
-                {
-                    if (0 != ::getsockname(m_socket, connectAddress, &connectAddressSize))
-                    {
-                        int error = GetSocketError();
-                        TRACE_ERROR("getsockname() failed with error {}", error);
-                        *outLocalAddress = Address(); // TODO: find better way
-                    }
-                    else
-                    {
-                        networkToAddress(connectAddress, outLocalAddress);
-                    }
-                }
+        if (PortUnreachable(error))
+        {
+            TRACE_ERROR("Previously sent TCP packet was dropped by recipient because the port was unreachable");
+            return 0;
+        }
 
-                return true;
-            }
+        TRACE_ERROR("recv() failed with error {}", error);
+        return -2;
+    }
+    else if (bytesReceived == 0)
+    {
+        TRACE_ERROR("recv() detected orderly shutdown");
+        return -1;
+    }
 
-            bool RawSocket::accept(const RawSocket& listener, Address* outSourceAddress /*= nullptr*/)
-            {
-                if (listener.m_socket == SocketInvalid)
-                {
-                    TRACE_ERROR("accept() called on bad socket");
-                    return false;
-                }
+    return bytesReceived;
+}
 
-                sockaddr* acceptAddress = nullptr;
-                socklen_t acceptAddressSize = 0;
+int RawSocket::send(const void* data, int size)
+{
+    if (m_socket == SocketInvalid)
+    {
+        TRACE_ERROR("send() called on bad socket");
+        return false;
+    }
 
-                sockaddr_in6 socketAddress6;
-                sockaddr_in socketAddress4;
+    int bytesSent = ::send(m_socket, reinterpret_cast<const char *>(data), size, 0);
+    if (bytesSent < 0)
+    {
+        int error = GetSocketError();
+        if (WouldBlock(error))
+            return 0;
 
-                if (listener.m_ipv6)
-                {
-                    memzero(&socketAddress6, sizeof(socketAddress6));
-                    acceptAddress = reinterpret_cast<sockaddr *>(&socketAddress6);
-                    acceptAddressSize = sizeof(socketAddress6);
-                }
-                else
-                {
-                    memzero(&socketAddress4, sizeof(socketAddress4));
-                    acceptAddress = reinterpret_cast<sockaddr *>(&socketAddress4);
-                    acceptAddressSize = sizeof(socketAddress4);
-                }
+        TRACE_ERROR("send() failed with error {}", error);
+        return -1;
+    }
 
-                int ret = ::accept(listener.m_socket, acceptAddress, &acceptAddressSize);
-                if (ret < 0)
-                {
-                    int error = GetSocketError();
-                    if (WouldBlock(error))
-                        return false;
+    return bytesSent;
+}
 
-                    if (PortUnreachable(error))
-                    {
-                        TRACE_ERROR("Previously sent TCP packet was dropped by recipient because the port was unreachable");
-                        return false;
-                    }
-
-                    TRACE_ERROR("accept() failed with error {}", error);
-                    return false;
-                }
-
-                close();
-
-                m_ipv6 = listener.m_ipv6;
-                m_socket = ret;
-
-                networkToAddress(acceptAddress, outSourceAddress);
-                return true;
-            }
-
-            int RawSocket::receive(void* data, int size)
-            {
-                if (m_socket == SocketInvalid)
-                {
-                    TRACE_ERROR("receive() called on bad socket");
-                    return false;
-                }
-
-                sockaddr* receiveAddress = nullptr;
-                socklen_t receiveAddressSize = 0;
-
-                if (m_ipv6)
-                {
-                    sockaddr_in6 address;
-                    receiveAddress = reinterpret_cast<sockaddr *>(&address);
-                    receiveAddressSize = sizeof(address);
-                }
-                else
-                {
-                    sockaddr_in address;
-                    receiveAddress = reinterpret_cast<sockaddr *>(&address);
-                    receiveAddressSize = sizeof(address);
-                }
-
-                int bytesReceived = recv(m_socket, reinterpret_cast<char *>(data), size, 0);
-                if (bytesReceived < 0)
-                {
-                    int error = GetSocketError();
-                    if (WouldBlock(error))
-                        return 0;
-
-                    if (PortUnreachable(error))
-                    {
-                        TRACE_ERROR("Previously sent TCP packet was dropped by recipient because the port was unreachable");
-                        return 0;
-                    }
-
-                    TRACE_ERROR("recv() failed with error {}", error);
-                    return -2;
-                }
-                else if (bytesReceived == 0)
-                {
-                    TRACE_ERROR("recv() detected orderly shutdown");
-                    return -1;
-                }
-
-                return bytesReceived;
-            }
-
-            int RawSocket::send(const void* data, int size)
-            {
-                if (m_socket == SocketInvalid)
-                {
-                    TRACE_ERROR("send() called on bad socket");
-                    return false;
-                }
-
-                int bytesSent = ::send(m_socket, reinterpret_cast<const char *>(data), size, 0);
-                if (bytesSent < 0)
-                {
-                    int error = GetSocketError();
-                    if (WouldBlock(error))
-                        return 0;
-
-                    TRACE_ERROR("send() failed with error {}", error);
-                    return -1;
-                }
-
-                return bytesSent;
-            }
-
-        } // tcp
-    } // socket
-} // base
+END_BOOMER_NAMESPACE(base::socket::tcp)

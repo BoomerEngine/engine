@@ -9,8 +9,7 @@
 #include "build.h"
 #include "renderingMeshStreamData.h"
 
-namespace rendering
-{
+BEGIN_BOOMER_NAMESPACE(rendering)
     //--
 
     RTTI_BEGIN_TYPE_ENUM(MeshStreamType);

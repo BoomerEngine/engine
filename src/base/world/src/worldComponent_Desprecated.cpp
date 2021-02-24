@@ -10,11 +10,6 @@
 #include "build.h"
 #include "worldComponent_Desprecated.h"
 
-namespace base
-{
-    namespace world
-    {
-
 #if 0
 
         //--
@@ -527,6 +522,3 @@ namespace base
 
         //--
 #endif
-
-    } // world
-} // base

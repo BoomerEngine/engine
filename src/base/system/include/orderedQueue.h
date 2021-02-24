@@ -10,35 +10,35 @@
 
 #include "algorithms.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//-----------------------------------------------------------------------------
+
+/// A simple ordered queue - jobs are picked up in the "priorityOrder" first and than submission order
+class BASE_SYSTEM_API IOrderedQueue : public base::NoCopy
 {
-    //-----------------------------------------------------------------------------
+public:
+    ///! close queue, all jobs are discarded
+    virtual void close() = 0;
 
-    /// A simple ordered queue - jobs are picked up in the "priorityOrder" first and than submission order
-    class BASE_SYSTEM_API IOrderedQueue : public base::NoCopy
-    {
-    public:
-        ///! close queue, all jobs are discarded
-        virtual void close() = 0;
+    ///! post a job to the queue with a specific order index, the larger indices are picked last
+    virtual void push(void* jobData, uint64_t order=0) = 0;
 
-        ///! post a job to the queue with a specific order index, the larger indices are picked last
-        virtual void push(void* jobData, uint64_t order=0) = 0;
+    ///! pop a job from the queue for given mask, returns false if all queues were empty (we are shutting down)
+    virtual void* pop() = 0;
 
-        ///! pop a job from the queue for given mask, returns false if all queues were empty (we are shutting down)
-        virtual void* pop() = 0;
+    //! get all items from queue (slow)
+    virtual void inspect(const TQueueInspectorFunc& inspector) = 0;
 
-        //! get all items from queue (slow)
-        virtual void inspect(const TQueueInspectorFunc& inspector) = 0;
+    //--
 
-        //--
+    //! Create a job queue
+    static IOrderedQueue* Create();
 
-        //! Create a job queue
-        static IOrderedQueue* Create();
+protected:
+    virtual ~IOrderedQueue();
+};
 
-    protected:
-        virtual ~IOrderedQueue();
-    };
+//-----------------------------------------------------------------------------
 
-    //-----------------------------------------------------------------------------
-
-} // base
+END_BOOMER_NAMESPACE(base)

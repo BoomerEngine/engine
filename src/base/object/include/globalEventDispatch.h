@@ -10,66 +10,66 @@
 
 #include "globalEventKey.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+///--
+
+/// listener/dispatcher that is capable of listening for particular event on particular object
+class BASE_OBJECT_API IGlobalEventListener : public IReferencable
 {
-    ///--
-
-    /// listener/dispatcher that is capable of listening for particular event on particular object
-    class BASE_OBJECT_API IGlobalEventListener : public IReferencable
-    {
-    public:
-        IGlobalEventListener(GlobalEventKey key, StringID eventName);
-        virtual ~IGlobalEventListener();
-
-        //--
-
-        // event key we are listening for
-        INLINE GlobalEventKey key() const { return m_key; }
-
-        // event name we are listening for
-        INLINE StringID name() const { return m_eventName; }
-
-        //--
-
-        // called when event occurred
-        virtual void dispatch(base::IObject* source, const void* data, base::Type dataType) const = 0;
-
-        //--
-
-    private:
-        GlobalEventKey m_key;
-        StringID m_eventName;
-    };
+public:
+    IGlobalEventListener(GlobalEventKey key, StringID eventName);
+    virtual ~IGlobalEventListener();
 
     //--
 
-    /// register a global event listener 
-    extern BASE_OBJECT_API void RegisterGlobalEventListener(IGlobalEventListener* listener);
+    // event key we are listening for
+    INLINE GlobalEventKey key() const { return m_key; }
 
-    /// unregister a global event listener
-    extern BASE_OBJECT_API void UnregisterGlobalEventListener(IGlobalEventListener* listener);
+    // event name we are listening for
+    INLINE StringID name() const { return m_eventName; }
 
-    /// dispatch global event
-    extern BASE_OBJECT_API void DispatchGlobalEvent(GlobalEventKey key, StringID eventName, IObject* source = nullptr, const void* data = nullptr, Type dataType = Type());
+    //--
+
+    // called when event occurred
+    virtual void dispatch(base::IObject* source, const void* data, base::Type dataType) const = 0;
+
+    //--
+
+private:
+    GlobalEventKey m_key;
+    StringID m_eventName;
+};
+
+//--
+
+/// register a global event listener 
+extern BASE_OBJECT_API void RegisterGlobalEventListener(IGlobalEventListener* listener);
+
+/// unregister a global event listener
+extern BASE_OBJECT_API void UnregisterGlobalEventListener(IGlobalEventListener* listener);
+
+/// dispatch global event
+extern BASE_OBJECT_API void DispatchGlobalEvent(GlobalEventKey key, StringID eventName, IObject* source = nullptr, const void* data = nullptr, Type dataType = Type());
 
 #ifdef HAS_BASE_REFLECTION
-    /// dispatch global event
-    template< typename T >
-    INLINE void DispatchGlobalEvent(GlobalEventKey key, StringID eventName, const T& data)
-    {
-        static_assert(!std::is_pointer<T>::value, "Cannot dispatch event with a pointer, wrap it in a container");
-        DispatchGlobalEvent(key, eventName, nullptr, &data, reflection::GetTypeObject<T>());
-    }
+/// dispatch global event
+template< typename T >
+INLINE void DispatchGlobalEvent(GlobalEventKey key, StringID eventName, const T& data)
+{
+    static_assert(!std::is_pointer<T>::value, "Cannot dispatch event with a pointer, wrap it in a container");
+    DispatchGlobalEvent(key, eventName, nullptr, &data, reflection::GetTypeObject<T>());
+}
 
-    /// dispatch global event
-    template< typename T >
-    INLINE void DispatchGlobalEvent(GlobalEventKey key, StringID eventName, IObject* source, const T& data)
-    {
-        static_assert(!std::is_pointer<T>::value, "Cannot dispatch event with a pointer, wrap it in a container");
-        DispatchGlobalEvent(key, eventName, source, &data, reflection::GetTypeObject<T>());
-    }
+/// dispatch global event
+template< typename T >
+INLINE void DispatchGlobalEvent(GlobalEventKey key, StringID eventName, IObject* source, const T& data)
+{
+    static_assert(!std::is_pointer<T>::value, "Cannot dispatch event with a pointer, wrap it in a container");
+    DispatchGlobalEvent(key, eventName, source, &data, reflection::GetTypeObject<T>());
+}
 #endif
 
-    //--
+//--
 
-} // base
+END_BOOMER_NAMESPACE(base)

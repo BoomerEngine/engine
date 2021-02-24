@@ -11,109 +11,108 @@
 #include "uiElement.h"
 #include "base/object/include/dataView.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+///---
+
+/// data boxes allows values to be edited
+class BASE_UI_API IDataBox : public IElement, public base::IDataViewObserver
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(IDataBox, IElement);
+
+public:
+    ///---
+
+    /// get data we are bound to 
+    INLINE const base::DataViewPtr& data() const { return m_data; }
+
+    /// get the action history we will use to post changes to the data
+    INLINE const base::ActionHistoryPtr& actionHistory() const { return m_actionHistory; }
+
+    /// get path to data
+    INLINE const base::StringBuf& path() const { return m_path; }
+
+    /// is data read only ?
+    INLINE bool readOnly() const { return m_readOnly; }
 
     ///---
 
-    /// data boxes allows values to be edited
-    class BASE_UI_API IDataBox : public IElement, public base::IDataViewObserver
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(IDataBox, IElement);
+    IDataBox();
+    virtual ~IDataBox();
 
-    public:
-        ///---
+    // bind to data
+    virtual void bindData(const base::DataViewPtr& data, const base::StringBuf& path, bool readOnly=false);
 
-        /// get data we are bound to 
-        INLINE const base::DataViewPtr& data() const { return m_data; }
+    // bind action history for optional undo of operations we are doing
+    virtual void bindActionHistory(base::ActionHistory* ah);
 
-        /// get the action history we will use to post changes to the data
-        INLINE const base::ActionHistoryPtr& actionHistory() const { return m_actionHistory; }
+    // enter edit mode
+    virtual void enterEdit();
 
-        /// get path to data
-        INLINE const base::StringBuf& path() const { return m_path; }
+    // cancel edit
+    virtual void cancelEdit();
 
-        /// is data read only ?
-        INLINE bool readOnly() const { return m_readOnly; }
+    // handle change of data value outside of the data box, re-read the value
+    virtual void handleValueChange();
 
-        ///---
+    // should we expand children (in case the value box was created for compound object)
+    virtual bool canExpandChildren() const;
 
-        IDataBox();
-        virtual ~IDataBox();
+    ///----
 
-        // bind to data
-        virtual void bindData(const base::DataViewPtr& data, const base::StringBuf& path, bool readOnly=false);
+    // read value
+    base::DataViewResult readValue(void* data, const base::Type dataType);
 
-        // bind action history for optional undo of operations we are doing
-        virtual void bindActionHistory(base::ActionHistory* ah);
+    // write new value, will create undo action if action history is provided
+    base::DataViewResult writeValue(const void* data, const base::Type dataType);
 
-        // enter edit mode
-        virtual void enterEdit();
+    ///----
 
-        // cancel edit
-        virtual void cancelEdit();
+    // read value
+    template< typename T >
+    INLINE base::DataViewResult readValue(T& data) { return readValue(&data, base::reflection::GetTypeObject<T>()); }
 
-        // handle change of data value outside of the data box, re-read the value
-        virtual void handleValueChange();
+    // write new value, will create undo action if action history is provided
+    template< typename T >
+    INLINE base::DataViewResult writeValue(const T& data) { return writeValue(&data, base::reflection::GetTypeObject<T>()); }
 
-        // should we expand children (in case the value box was created for compound object)
-        virtual bool canExpandChildren() const;
+    ///----
 
-        ///----
+    /// create data box to edit/visualize given type
+    static DataBoxPtr CreateForType(const base::rtti::DataViewInfo& info);
 
-        // read value
-        base::DataViewResult readValue(void* data, const base::Type dataType);
+private:
+    base::DataViewPtr m_data;
+    base::StringBuf m_path;
+    bool m_readOnly;
+    void* m_observerToken = nullptr;
 
-        // write new value, will create undo action if action history is provided
-        base::DataViewResult writeValue(const void* data, const base::Type dataType);
+    base::ActionHistoryPtr m_actionHistory;
 
-        ///----
+protected:
+    virtual void handlePropertyChanged(base::StringView fullPath, bool parentNotification) override;
 
-        // read value
-        template< typename T >
-        INLINE base::DataViewResult readValue(T& data) { return readValue(&data, base::reflection::GetTypeObject<T>()); }
+    base::DataViewResult executeAction(const base::ActionPtr& action);
+    base::DataViewResult executeAction(const base::DataViewActionResult& action);
+};
 
-        // write new value, will create undo action if action history is provided
-        template< typename T >
-        INLINE base::DataViewResult writeValue(const T& data) { return writeValue(&data, base::reflection::GetTypeObject<T>()); }
+///---
 
-        ///----
+/// data box "factory"
+class BASE_UI_API IDataBoxFactory : public base::NoCopy
+{
+    RTTI_DECLARE_POOL(POOL_UI_OBJECTS);
+    RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IDataBoxFactory);
 
-        /// create data box to edit/visualize given type
-        static DataBoxPtr CreateForType(const base::rtti::DataViewInfo& info);
+public:
+    virtual ~IDataBoxFactory();
 
-    private:
-        base::DataViewPtr m_data;
-        base::StringBuf m_path;
-        bool m_readOnly;
-        void* m_observerToken = nullptr;
+    /// create a data box
+    virtual DataBoxPtr tryCreate(const base::rtti::DataViewInfo& info) const = 0;
+};
 
-        base::ActionHistoryPtr m_actionHistory;
+///---
 
-    protected:
-        virtual void handlePropertyChanged(base::StringView fullPath, bool parentNotification) override;
-
-        base::DataViewResult executeAction(const base::ActionPtr& action);
-        base::DataViewResult executeAction(const base::DataViewActionResult& action);
-    };
-
-    ///---
-
-    /// data box "factory"
-    class BASE_UI_API IDataBoxFactory : public base::NoCopy
-    {
-        RTTI_DECLARE_POOL(POOL_UI_OBJECTS);
-        RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IDataBoxFactory);
-
-    public:
-        virtual ~IDataBoxFactory();
-
-        /// create a data box
-        virtual DataBoxPtr tryCreate(const base::rtti::DataViewInfo& info) const = 0;
-    };
-
-    ///---
-
-} // ui
+END_BOOMER_NAMESPACE(ui)
 
 

@@ -10,195 +10,192 @@
 
 #include "base/object/include/rttiMetadata.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+//-----
+
+/// version of the resource class internal serialization, if this does not match the resource we recook the resource
+class BASE_RESOURCE_API ResourceDataVersionMetadata : public rtti::IMetadata
 {
-    namespace res
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceDataVersionMetadata, rtti::IMetadata);
+
+public:
+    ResourceDataVersionMetadata();
+
+    INLINE uint32_t version() const
     {
-        //-----
+        return m_version;
+    }
 
-        /// version of the resource class internal serialization, if this does not match the resource we recook the resource
-        class BASE_RESOURCE_API ResourceDataVersionMetadata : public rtti::IMetadata
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ResourceDataVersionMetadata, rtti::IMetadata);
+    INLINE void version(uint32_t version)
+    {
+        m_version = version;
+    }
 
-        public:
-            ResourceDataVersionMetadata();
+private:
+    uint32_t m_version;
+};
 
-            INLINE uint32_t version() const
-            {
-                return m_version;
-            }
+//-----
 
-            INLINE void version(uint32_t version)
-            {
-                m_version = version;
-            }
+// Resource extension (class metadata)
+class BASE_RESOURCE_API ResourceExtensionMetadata : public rtti::IMetadata
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceExtensionMetadata, rtti::IMetadata);
 
-        private:
-            uint32_t m_version;
-        };
+public:
+    ResourceExtensionMetadata();
 
-        //-----
+    INLINE ResourceExtensionMetadata& extension(const char* ext)
+    {
+        m_ext = ext;
+        return *this;
+    }
 
-        // Resource extension (class metadata)
-        class BASE_RESOURCE_API ResourceExtensionMetadata : public rtti::IMetadata
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ResourceExtensionMetadata, rtti::IMetadata);
+    INLINE const char* extension() const { return m_ext; }
 
-        public:
-            ResourceExtensionMetadata();
+private:
+    const char* m_ext;
+};
 
-            INLINE ResourceExtensionMetadata& extension(const char* ext)
-            {
-                m_ext = ext;
-                return *this;
-            }
+//------
 
-            INLINE const char* extension() const { return m_ext; }
+// Resource description (class metadata)
+class BASE_RESOURCE_API ResourceDescriptionMetadata : public rtti::IMetadata
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceDescriptionMetadata, rtti::IMetadata);
 
-        private:
-            const char* m_ext;
-        };
+public:
+    ResourceDescriptionMetadata();
 
-        //------
+    INLINE ResourceDescriptionMetadata& description(const char* desc)
+    {
+        m_desc = desc;
+        return *this;
+    }
 
-        // Resource description (class metadata)
-        class BASE_RESOURCE_API ResourceDescriptionMetadata : public rtti::IMetadata
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ResourceDescriptionMetadata, rtti::IMetadata);
+    INLINE const char* description() const { return m_desc; }
 
-        public:
-            ResourceDescriptionMetadata();
+private:
+    const char* m_desc;
+};
 
-            INLINE ResourceDescriptionMetadata& description(const char* desc)
-            {
-                m_desc = desc;
-                return *this;
-            }
+//------
 
-            INLINE const char* description() const { return m_desc; }
+// Resource editor color
+class BASE_RESOURCE_API ResourceTagColorMetadata : public rtti::IMetadata
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceTagColorMetadata, rtti::IMetadata);
 
-        private:
-            const char* m_desc;
-        };
+public:
+    ResourceTagColorMetadata();
 
-        //------
+    INLINE ResourceTagColorMetadata& color(Color color)
+    {
+        m_color = color;
+        return *this;
+    }
 
-        // Resource editor color
-        class BASE_RESOURCE_API ResourceTagColorMetadata : public rtti::IMetadata
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ResourceTagColorMetadata, rtti::IMetadata);
+    INLINE ResourceTagColorMetadata& color(uint8_t r, uint8_t g, uint8_t b)
+    {
+        m_color = Color(r,g,b);
+        return *this;
+    }
 
-        public:
-            ResourceTagColorMetadata();
+    INLINE Color color() const { return m_color; }
 
-            INLINE ResourceTagColorMetadata& color(Color color)
-            {
-                m_color = color;
-                return *this;
-            }
+private:
+    Color m_color;
+};
 
-            INLINE ResourceTagColorMetadata& color(uint8_t r, uint8_t g, uint8_t b)
-            {
-                m_color = Color(r,g,b);
-                return *this;
-            }
+//--
 
-            INLINE Color color() const { return m_color; }
+/// metadata for raw resource to specify the target (imported) class
+class BASE_RESOURCE_API ResourceCookedClassMetadata : public rtti::IMetadata
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceCookedClassMetadata, rtti::IMetadata);
 
-        private:
-            Color m_color;
-        };
+public:
+    ResourceCookedClassMetadata();
 
-        //--
+    template< typename T >
+    INLINE ResourceCookedClassMetadata& addClass()
+    {
+        static_assert(std::is_base_of< res::IResource, T >::value, "Only resource classes can be specified here");
+        m_classes.pushBackUnique(T::GetStaticClass());
+        return *this;
+    }
 
-        /// metadata for raw resource to specify the target (imported) class
-        class BASE_RESOURCE_API ResourceCookedClassMetadata : public rtti::IMetadata
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ResourceCookedClassMetadata, rtti::IMetadata);
+    INLINE const Array<SpecificClassType<IResource>>& classList() const
+    {
+        return m_classes;
+    }
 
-        public:
-            ResourceCookedClassMetadata();
+private:
+    Array<SpecificClassType<IResource>> m_classes;
+};
 
-            template< typename T >
-            INLINE ResourceCookedClassMetadata& addClass()
-            {
-                static_assert(std::is_base_of< res::IResource, T >::value, "Only resource classes can be specified here");
-                m_classes.pushBackUnique(T::GetStaticClass());
-                return *this;
-            }
+//---
 
-            INLINE const Array<SpecificClassType<IResource>>& classList() const
-            {
-                return m_classes;
-            }
+/// metadata for input format supported for cooking (obj, jpg, etc)
+class BASE_RESOURCE_API ResourceSourceFormatMetadata : public rtti::IMetadata
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceSourceFormatMetadata, rtti::IMetadata);
 
-        private:
-            Array<SpecificClassType<IResource>> m_classes;
-        };
+public:
+    ResourceSourceFormatMetadata();
 
-        //---
+    INLINE ResourceSourceFormatMetadata& addSourceExtension(const char* ext)
+    {
+        if (ext && *ext)
+            m_extensions.pushBackUnique(ext);
+        return *this;
+    }
 
-        /// metadata for input format supported for cooking (obj, jpg, etc)
-        class BASE_RESOURCE_API ResourceSourceFormatMetadata : public rtti::IMetadata
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ResourceSourceFormatMetadata, rtti::IMetadata);
+    INLINE ResourceSourceFormatMetadata& addSourceExtensions(const char* extList)
+    {
+        InplaceArray<StringView, 50> list;
+        StringView(extList).slice(";,", false, list);
 
-        public:
-            ResourceSourceFormatMetadata();
+        for (const auto& ext : list)
+            m_extensions.pushBackUnique(ext);
+        return *this;
+    }
 
-            INLINE ResourceSourceFormatMetadata& addSourceExtension(const char* ext)
-            {
-                if (ext && *ext)
-                    m_extensions.pushBackUnique(ext);
-                return *this;
-            }
+    INLINE const Array<StringView>& extensions() const
+    {
+        return m_extensions;
+    }
 
-            INLINE ResourceSourceFormatMetadata& addSourceExtensions(const char* extList)
-            {
-                InplaceArray<StringView, 50> list;
-                StringView(extList).slice(";,", false, list);
+private:
+    Array<StringView> m_extensions;
+    Array<ClassType> m_classes;
+};
 
-                for (const auto& ext : list)
-                    m_extensions.pushBackUnique(ext);
-                return *this;
-            }
+//---
 
-            INLINE const Array<StringView>& extensions() const
-            {
-                return m_extensions;
-            }
+/// version of the cooker class, if this does not match the resource we recook the resource
+class BASE_RESOURCE_API ResourceCookerVersionMetadata : public rtti::IMetadata
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceCookerVersionMetadata, rtti::IMetadata);
 
-        private:
-            Array<StringView> m_extensions;
-            Array<ClassType> m_classes;
-        };
+public:
+    ResourceCookerVersionMetadata();
 
-        //---
+    INLINE uint32_t version() const
+    {
+        return m_version;
+    }
 
-        /// version of the cooker class, if this does not match the resource we recook the resource
-        class BASE_RESOURCE_API ResourceCookerVersionMetadata : public rtti::IMetadata
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ResourceCookerVersionMetadata, rtti::IMetadata);
+    INLINE void version(uint32_t version)
+    {
+        m_version = version;
+    }
 
-        public:
-            ResourceCookerVersionMetadata();
+private:
+    uint32_t m_version;
+};
 
-            INLINE uint32_t version() const
-            {
-                return m_version;
-            }
+//---
 
-            INLINE void version(uint32_t version)
-            {
-                m_version = version;
-            }
-
-        private:
-            uint32_t m_version;
-        };
-
-        //---
-
-    } // res
-} // base
+END_BOOMER_NAMESPACE(base::res)

@@ -11,53 +11,53 @@
 #include "editor/common/include/resourceEditor.h"
 #include "editor/common/include/resourceEditorNativeFile.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+class ImageHistogramWidget;
+class ImagePreviewPanelWithToolbar;
+class ImageHistogramPendingData;
+
+/// editor for static textures (baked)
+class StaticTextureEditor : public ResourceEditorNativeFile
 {
-    //--
+    RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureEditor, ResourceEditorNativeFile);
 
-    class ImageHistogramWidget;
-    class ImagePreviewPanelWithToolbar;
-    class ImageHistogramPendingData;
+public:
+    StaticTextureEditor(ManagedFileNativeResource* file);
+    virtual ~StaticTextureEditor();
 
-    /// editor for static textures (baked)
-    class StaticTextureEditor : public ResourceEditorNativeFile
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureEditor, ResourceEditorNativeFile);
+    INLINE ImagePreviewPanelWithToolbar* previewPanel() const { return m_previewPanel; }
 
-    public:
-        StaticTextureEditor(ManagedFileNativeResource* file);
-        virtual ~StaticTextureEditor();
-
-        INLINE ImagePreviewPanelWithToolbar* previewPanel() const { return m_previewPanel; }
-
-        INLINE const rendering::StaticTexturePtr& texture() const { return m_texture; }
-
-        //--
-
-        virtual bool initialize() override;
-        virtual void handleLocalReimport(const res::ResourcePtr& ptr) override;
-
-    private:
-        rendering::StaticTexturePtr m_texture;
-
-        ImageHistogramWidget* m_colorHistogram;
-        ImageHistogramWidget* m_lumHistogram;
-
-        ui::DockPanel* m_previewTab;
-        ImagePreviewPanelWithToolbar* m_previewPanel;
-
-        ui::TextLabel* m_imageInfoLabel;
-
-        base::Array<base::RefPtr<ImageHistogramPendingData>> m_pendingHistograms;
-        ui::Timer m_histogramCheckTimer;
-
-        void createInterface();
-        void updateImageInfoText();
-
-        void updateHistogram();
-        void checkHistograms();
-    };
+    INLINE const rendering::StaticTexturePtr& texture() const { return m_texture; }
 
     //--
 
-} // ed
+    virtual bool initialize() override;
+    virtual void handleLocalReimport(const res::ResourcePtr& ptr) override;
+
+private:
+    rendering::StaticTexturePtr m_texture;
+
+    ImageHistogramWidget* m_colorHistogram;
+    ImageHistogramWidget* m_lumHistogram;
+
+    ui::DockPanel* m_previewTab;
+    ImagePreviewPanelWithToolbar* m_previewPanel;
+
+    ui::TextLabel* m_imageInfoLabel;
+
+    base::Array<base::RefPtr<ImageHistogramPendingData>> m_pendingHistograms;
+    ui::Timer m_histogramCheckTimer;
+
+    void createInterface();
+    void updateImageInfoText();
+
+    void updateHistogram();
+    void checkHistograms();
+};
+
+//--
+
+END_BOOMER_NAMESPACE(ed)

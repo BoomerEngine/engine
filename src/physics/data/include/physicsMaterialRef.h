@@ -8,58 +8,53 @@
 
 #pragma once
 
-namespace physics
+BEGIN_BOOMER_NAMESPACE(boomer)
+
+class PhysicsMaterialDefinition;
+
+/// reference to physical material, just a name but can contain a twist
+class PHYSICS_DATA_API PhysicsMaterialReference
 {
-    namespace data
-    {
+public:
+    PhysicsMaterialReference(); // empty material, if used directly works as default material, normally used to signal "no material override"
+    PhysicsMaterialReference(const PhysicsMaterialReference& material) = default;
+    PhysicsMaterialReference(PhysicsMaterialReference&& material) = default;
+    PhysicsMaterialReference(base::StringID materialName);
 
-        class MaterialDefinition;
+    PhysicsMaterialReference& operator=(const PhysicsMaterialReference& material) = default;
+    PhysicsMaterialReference& operator=(PhysicsMaterialReference&& material) = default;
 
-        /// reference to physical material, just a name but can contain a twist
-        class PHYSICS_DATA_API MaterialReference
-        {
-        public:
-            MaterialReference(); // empty material, if used directly works as default material, normally used to signal "no material override"
-            MaterialReference(const MaterialReference& material) = default;
-            MaterialReference(MaterialReference&& material) = default;
-            MaterialReference(base::StringID materialName);
+    // is this an default (empty) material ?
+    INLINE bool empty() const { return m_name.empty(); }
 
-            MaterialReference& operator=(const MaterialReference& material) = default;
-            MaterialReference& operator=(MaterialReference&& material) = default;
+    // get material name
+    INLINE base::StringID name() const { return m_name; }
 
-            // is this an default (empty) material ?
-            INLINE bool empty() const { return m_name.empty(); }
+    // ordering operator for maps
+    INLINE bool operator<(const PhysicsMaterialReference& other) const { return m_name < other.m_name; }
+    INLINE bool operator==(const PhysicsMaterialReference& other) const { return m_name == other.m_name; }
+    INLINE bool operator!=(const PhysicsMaterialReference& other) const { return m_name != other.m_name; }
 
-            // get material name
-            INLINE base::StringID name() const { return m_name; }
+    // get a "Default" physical material that can be used when everything else fails
+    static const PhysicsMaterialReference& DEFAULT();
 
-            // ordering operator for maps
-            INLINE bool operator<(const MaterialReference& other) const { return m_name < other.m_name; }
-            INLINE bool operator==(const MaterialReference& other) const { return m_name == other.m_name; }
-            INLINE bool operator!=(const MaterialReference& other) const { return m_name != other.m_name; }
+    // get definition of material referenced by this name, uses the material library to resolve the material
+    // NOTE: returns default material in case of any problems
+    const PhysicsMaterialDefinition& GetDefinition() const;
 
-            // get a "Default" physical material that can be used when everything else fails
-            static const MaterialReference& DEFAULT();
+    //--
 
-            // get definition of material referenced by this name, uses the material library to resolve the material
-            // NOTE: returns default material in case of any problems
-            const MaterialDefinition& GetDefinition() const;
+    // Custom type implementation requirements
+    void writeBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeWriter& stream) const;
+    void readBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeReader& stream);
 
-            //--
+    // Calculate hash of the data
+    void calcHash(base::CRC64& crc) const;
 
-            // Custom type implementation requirements
-            void writeBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeWriter& stream) const;
-            void readBinary(base::rtti::TypeSerializationContext& typeContext, base::stream::OpcodeReader& stream);
+    //--
 
-            // Calculate hash of the data
-            void calcHash(base::CRC64& crc) const;
+private:
+    base::StringID m_name; // name of the referenced material
+};
 
-            //--
-
-        private:
-            base::StringID m_name; // name of the referenced material
-        };
-
-    } // data
-} // physics
-
+END_BOOMER_NAMESPACE(boomer)

@@ -13,56 +13,52 @@
 
 #include "base/containers/include/queue.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::shadercompiler)
+
+//---
+
+struct FoldedFunctionKey
 {
-    namespace compiler
-    {
+    const Function* func = nullptr;
+    const ProgramInstance* pi = nullptr;
+    uint64_t localArgsKey = 0;
 
-        //---
+    INLINE FoldedFunctionKey() {};
 
-        struct FoldedFunctionKey
-        {
-            const Function* func = nullptr;
-            const ProgramInstance* pi = nullptr;
-            uint64_t localArgsKey = 0;
+    INLINE static uint32_t CalcHash(const FoldedFunctionKey& key);
 
-            INLINE FoldedFunctionKey() {};
+    INLINE bool operator==(const FoldedFunctionKey& other) const { return (func == other.func) && (pi == other.pi) && (localArgsKey == other.localArgsKey); }
+    INLINE bool operator!=(const FoldedFunctionKey& other) const { return !operator==(other); }
+};
 
-            INLINE static uint32_t CalcHash(const FoldedFunctionKey& key);
+///---
 
-            INLINE bool operator==(const FoldedFunctionKey& other) const { return (func == other.func) && (pi == other.pi) && (localArgsKey == other.localArgsKey); }
-            INLINE bool operator!=(const FoldedFunctionKey& other) const { return !operator==(other); }
-        };
+/// generates folded versions of shader functions
+class FunctionFolder : public base::NoCopy
+{
+public:
+    FunctionFolder(base::mem::LinearAllocator& mem, CodeLibrary& code);
+    ~FunctionFolder();
 
-        ///---
+    /// Fold function code in context of given program instance
+    /// NOTE: this is function -> function transformation
+    /// NOTE: folding removes the dependencies on program instancing parameters as all constants are resolved and integrated into compiled function code
+    /// NOTE: FunctionFolder is a cache, we will return reused result if possible
+    Function* foldFunction(const Function* original,  // code
+        const ProgramInstance* thisVars,  // "this vars" - parameterization of program instance 
+        const ProgramConstants& localArgs,  // local arguments for calls
+        base::parser::IErrorReporter& err);
 
-        /// generates folded versions of shader functions
-        class FunctionFolder : public base::NoCopy
-        {
-        public:
-            FunctionFolder(base::mem::LinearAllocator& mem, CodeLibrary& code);
-            ~FunctionFolder();
+private:
+    base::mem::LinearAllocator& m_mem;
+    CodeLibrary& m_code;
 
-            /// Fold function code in context of given program instance
-            /// NOTE: this is function -> function transformation
-            /// NOTE: folding removes the dependencies on program instancing parameters as all constants are resolved and integrated into compiled function code
-            /// NOTE: FunctionFolder is a cache, we will return reused result if possible
-            Function* foldFunction(const Function* original,  // code
-                const ProgramInstance* thisVars,  // "this vars" - parameterization of program instance 
-                const ProgramConstants& localArgs,  // local arguments for calls
-                base::parser::IErrorReporter& err);
+    base::HashMap<FoldedFunctionKey, Function*> m_foldedFunctionsMap;
+    base::HashMap<base::StringID, uint32_t> m_functionNameCounter;
 
-        private:
-            base::mem::LinearAllocator& m_mem;
-            CodeLibrary& m_code;
+    CodeNode* foldCode(Function* func, const CodeNode* node, const ProgramInstance* thisArgs, const ProgramConstants& localArgs, base::parser::IErrorReporter& err);
+};
 
-            base::HashMap<FoldedFunctionKey, Function*> m_foldedFunctionsMap;
-            base::HashMap<base::StringID, uint32_t> m_functionNameCounter;
+//---
 
-            CodeNode* foldCode(Function* func, const CodeNode* node, const ProgramInstance* thisArgs, const ProgramConstants& localArgs, base::parser::IErrorReporter& err);
-        };
-
-        //---
-
-    } // compiler
-} // rendering
+END_BOOMER_NAMESPACE(rendering::shadercompiler)

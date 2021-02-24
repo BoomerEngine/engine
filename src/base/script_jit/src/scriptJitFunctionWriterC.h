@@ -10,131 +10,127 @@
 #include "base/script/include/scriptPortableStubs.h"
 #include "base/script/include/scriptJIT.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+//--
+
+/// piece of code emited by function JIT
+struct BASE_SCRIPT_JIT_API JITCodeChunkC
 {
-    namespace script
+    const JITType* jitType = nullptr;
+    bool pointer = false;
+    StringView text;
+    const StubOpcode* op = nullptr;
+
+    INLINE void print(IFormatStream& f) const
     {
+        f << text;
+    }
+};
 
-        //--
+//--
 
-        /// piece of code emited by function JIT
-        struct BASE_SCRIPT_JIT_API JITCodeChunkC
-        {
-            const JITType* jitType = nullptr;
-            bool pointer = false;
-            StringView text;
-            const StubOpcode* op = nullptr;
+/// opcode stream
+class BASE_SCRIPT_JIT_API JITOpcodeStream : public NoCopy
+{
+public:
+    JITOpcodeStream(const StubFunction* func);
 
-            INLINE void print(IFormatStream& f) const
-            {
-                f << text;
-            }
-        };
+    /// peek next opcode
+    const StubOpcode* peek() const;
 
-        //--
+    /// read next opcode
+    const StubOpcode* read();
 
-        /// opcode stream
-        class BASE_SCRIPT_JIT_API JITOpcodeStream : public NoCopy
-        {
-        public:
-            JITOpcodeStream(const StubFunction* func);
+    /// has data ?
+    INLINE operator bool() const { return m_pos < m_end; }
 
-            /// peek next opcode
-            const StubOpcode* peek() const;
+private:
+    uint32_t m_pos;
+    uint32_t m_end;
+    const StubFunction* m_func;
+};
 
-            /// read next opcode
-            const StubOpcode* read();
+//--
 
-            /// has data ?
-            INLINE operator bool() const { return m_pos < m_end; }
+/// function code transformer
+class BASE_SCRIPT_JIT_API JITFunctionWriterC : public NoCopy
+{
+public:
+    JITFunctionWriterC(mem::LinearAllocator& mem, JITTypeLib& types, JITConstCache& consts, const StubFunction* func, bool hasDirectParamAccess, bool emitExceptions, bool emitLines);
+    ~JITFunctionWriterC();
 
-        private:
-            uint32_t m_pos;
-            uint32_t m_end;
-            const StubFunction* m_func;
-        };
+    // emit function opcodes, returns generated code or empty strings on errors
+    bool emitOpcodes(StringBuf& outCode);
 
-        //--
+private:
+    mem::LinearAllocator& m_mem;
+    JITTypeLib& m_types;
+    JITConstCache& m_consts;
+    const StubFunction* m_func;
 
-        /// function code transformer
-        class BASE_SCRIPT_JIT_API JITFunctionWriterC : public NoCopy
-        {
-        public:
-            JITFunctionWriterC(mem::LinearAllocator& mem, JITTypeLib& types, JITConstCache& consts, const StubFunction* func, bool hasDirectParamAccess, bool emitExceptions, bool emitLines);
-            ~JITFunctionWriterC();
+    StringBuilder m_prolog;
+    StringBuilder m_code;
+    bool m_hasErrors;
+    bool m_hasDirectParamAccess;
+    bool m_emitExceptions;
+    bool m_emitLines;
 
-            // emit function opcodes, returns generated code or empty strings on errors
-            bool emitOpcodes(StringBuf& outCode);
+    uint32_t m_lastLine;
 
-        private:
-            mem::LinearAllocator& m_mem;
-            JITTypeLib& m_types;
-            JITConstCache& m_consts;
-            const StubFunction* m_func;
+    void reportError(const Stub* op, StringView txt);
 
-            StringBuilder m_prolog;
-            StringBuilder m_code;
-            bool m_hasErrors;
-            bool m_hasDirectParamAccess;
-            bool m_emitExceptions;
-            bool m_emitLines;
+    //--
 
-            uint32_t m_lastLine;
+    StringView copyString(const StringView str);
+    JITCodeChunkC makeChunk(const StubOpcode* op, const JITType* type, StringView str);
 
-            void reportError(const Stub* op, StringView txt);
+    JITCodeChunkC processOpcode(StringView contextStr, const StubOpcode* op, JITOpcodeStream& stream);
+    bool processStatement(StringView contextStr, const StubOpcode* op, JITOpcodeStream& stream);
+    bool finishStatement(const StubOpcode* op);
 
-            //--
+    //--
 
-            StringView copyString(const StringView str);
-            JITCodeChunkC makeChunk(const StubOpcode* op, const JITType* type, StringView str);
+    HashMap<const StubOpcode*, StringView> m_labelMap;
+    StringView makeLabel(const StubOpcode* label);
 
-            JITCodeChunkC processOpcode(StringView contextStr, const StubOpcode* op, JITOpcodeStream& stream);
-            bool processStatement(StringView contextStr, const StubOpcode* op, JITOpcodeStream& stream);
-            bool finishStatement(const StubOpcode* op);
+    //--
 
-            //--
+    struct NewTemps
+    {
+        StringView varName;
+        const JITType* jitType = nullptr;
+    };
 
-            HashMap<const StubOpcode*, StringView> m_labelMap;
-            StringView makeLabel(const StubOpcode* label);
+    HashMap<int, JITCodeChunkC> m_localsMap;
+    Array<NewTemps> m_newTemps;
+    uint32_t m_tempVarCounter = 0;
+    uint32_t m_exitLabelCounter = 0;
+    bool m_exitLabelNeeded = false;
 
-            //--
+    JITCodeChunkC makePointer(const JITCodeChunkC& chunk);
+    JITCodeChunkC makeValue(const JITCodeChunkC& chunk);
+    JITCodeChunkC makeBinaryOp(const StubOpcode* context, const JITType* retType, const char* txt, const JITCodeChunkC& a, const JITCodeChunkC& b);
+    JITCodeChunkC makeBinaryOp(const StubOpcode* context, const char* txt, const JITCodeChunkC& a, const JITCodeChunkC& b);
+    JITCodeChunkC makeBinaryOp(const StubOpcode* context, StringID engineType, const char* txt, const JITCodeChunkC& a, const JITCodeChunkC& b);
+    JITCodeChunkC makeUnaryOp(const StubOpcode* context, const JITType* retType, const char* txt, const JITCodeChunkC& a);
+    JITCodeChunkC makeUnaryOp(const StubOpcode* context, const char* txt, const JITCodeChunkC& a);
+    JITCodeChunkC makeUnaryOp(const StubOpcode* context, StringID engineType, const char* txt, const JITCodeChunkC& a);
 
-            struct NewTemps
-            {
-                StringView varName;
-                const JITType* jitType = nullptr;
-            };
+    JITCodeChunkC makeLocalVar(const StubOpcode* context, int localIndex, const Stub* type, StringID knownName = StringID());
+    JITCodeChunkC makeTempVar(const StubOpcode* context, const JITType* requiredType);
 
-            HashMap<int, JITCodeChunkC> m_localsMap;
-            Array<NewTemps> m_newTemps;
-            uint32_t m_tempVarCounter = 0;
-            uint32_t m_exitLabelCounter = 0;
-            bool m_exitLabelNeeded = false;
+    StringView makeStatementExitLabel();
 
-            JITCodeChunkC makePointer(const JITCodeChunkC& chunk);
-            JITCodeChunkC makeValue(const JITCodeChunkC& chunk);
-            JITCodeChunkC makeBinaryOp(const StubOpcode* context, const JITType* retType, const char* txt, const JITCodeChunkC& a, const JITCodeChunkC& b);
-            JITCodeChunkC makeBinaryOp(const StubOpcode* context, const char* txt, const JITCodeChunkC& a, const JITCodeChunkC& b);
-            JITCodeChunkC makeBinaryOp(const StubOpcode* context, StringID engineType, const char* txt, const JITCodeChunkC& a, const JITCodeChunkC& b);
-            JITCodeChunkC makeUnaryOp(const StubOpcode* context, const JITType* retType, const char* txt, const JITCodeChunkC& a);
-            JITCodeChunkC makeUnaryOp(const StubOpcode* context, const char* txt, const JITCodeChunkC& a);
-            JITCodeChunkC makeUnaryOp(const StubOpcode* context, StringID engineType, const char* txt, const JITCodeChunkC& a);
+    void makeCtor(const JITType* type, bool isMemoryZeroed, StringView str, bool fromPointer);
+    void makeDtor(const JITType* type, StringView str, bool fromPointer);
+    void makeCopy(const JITType* type, StringView to, bool targetPointer, StringView from, bool fromPointer);
 
-            JITCodeChunkC makeLocalVar(const StubOpcode* context, int localIndex, const Stub* type, StringID knownName = StringID());
-            JITCodeChunkC makeTempVar(const StubOpcode* context, const JITType* requiredType);
+    void makeCopy(const JITCodeChunkC& to, const JITCodeChunkC& from);
+    void makeCtor(const JITCodeChunkC& var, bool isMemoryZeroed);
+    void makeDtor(const JITCodeChunkC& var);
+};
 
-            StringView makeStatementExitLabel();
+//--
 
-            void makeCtor(const JITType* type, bool isMemoryZeroed, StringView str, bool fromPointer);
-            void makeDtor(const JITType* type, StringView str, bool fromPointer);
-            void makeCopy(const JITType* type, StringView to, bool targetPointer, StringView from, bool fromPointer);
-
-            void makeCopy(const JITCodeChunkC& to, const JITCodeChunkC& from);
-            void makeCtor(const JITCodeChunkC& var, bool isMemoryZeroed);
-            void makeDtor(const JITCodeChunkC& var);
-        };
-
-        //--
-
-    } // script
-} // base
+END_BOOMER_NAMESPACE(base::script)

@@ -8,33 +8,33 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//-----------------------------------------------------------------------------
+
+/// Synchronization event
+class BASE_SYSTEM_API Event : public base::NoCopy
 {
-    //-----------------------------------------------------------------------------
+public:
+    Event(bool manualReset = false);
+    ~Event();
 
-    /// Synchronization event
-    class BASE_SYSTEM_API Event : public base::NoCopy
-    {
-    public:
-        Event(bool manualReset = false);
-        ~Event();
+    //! Triggers the event so any waiting threads are activated
+    void trigger();
 
-        //! Triggers the event so any waiting threads are activated
-        void trigger();
+    //! Resets the event to an idle state
+    void reset();
 
-        //! Resets the event to an idle state
-        void reset();
+    //! Waits for the event to be triggered with timeout
+    bool wait(uint32_t waitTime);
 
-        //! Waits for the event to be triggered with timeout
-        bool wait(uint32_t waitTime);
+    //! Waits for the event to be triggered (forver)
+    void waitInfinite();
 
-        //! Waits for the event to be triggered (forver)
-        void waitInfinite();
+private:
+    void* m_event;          // Internal handle
+};
 
-    private:
-        void* m_event;          // Internal handle
-    };
+//-----------------------------------------------------------------------------
 
-    //-----------------------------------------------------------------------------
-
-} // base
+END_BOOMER_NAMESPACE(base)

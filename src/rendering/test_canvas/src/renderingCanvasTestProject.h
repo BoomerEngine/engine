@@ -10,53 +10,50 @@
 
 #include "base/app/include/application.h"
 
-namespace rendering
-{
-    namespace test
-    {
-        class ICanvasTest;
+BEGIN_BOOMER_NAMESPACE(rendering::test)
+
+class ICanvasTest;
         
-        /// boilerplate for rendering scene test
-        /// contains basic scene initialization and other shit
-        class CanvasTestProject : public base::app::IApplication
-        {
-        public:
-            CanvasTestProject();
+/// boilerplate for rendering scene test
+/// contains basic scene initialization and other shit
+class CanvasTestProject : public base::app::IApplication
+{
+public:
+    CanvasTestProject();
 
-        protected:
-            virtual bool initialize(const base::app::CommandLine& commandline) override;
-            virtual void cleanup() override;
-            virtual void update() override;
+protected:
+    virtual bool initialize(const base::app::CommandLine& commandline) override;
+    virtual void cleanup() override;
+    virtual void update() override;
 
-            //--
+    //--
 			
-            base::RefPtr<ICanvasTest> m_currentTest;
-            int m_currentTestCaseIndex;
-            int m_pendingTestCaseIndex;
+    base::RefPtr<ICanvasTest> m_currentTest;
+    int m_currentTestCaseIndex;
+    int m_pendingTestCaseIndex;
 
-            OutputObjectPtr m_renderingOutput;
-            bool m_exitRequested;
-			int m_pixelScaleTest = 0;
+    OutputObjectPtr m_renderingOutput;
+    bool m_exitRequested;
+	int m_pixelScaleTest = 0;
 
-            bool createRenderingOutput();
-			void updateTitleBar();
-			void processInput();
+    bool createRenderingOutput();
+	void updateTitleBar();
+	void processInput();
 
-            //--
+    //--
 
-            struct TestInfo
-            {
-                base::StringBuf m_testName;
-                base::ClassType m_testClass = nullptr;
-            };
+    struct TestInfo
+    {
+        base::StringBuf m_testName;
+        base::ClassType m_testClass = nullptr;
+    };
 
-            // test classes
-            base::Array<TestInfo> m_testClasses;
+    // test classes
+    base::Array<TestInfo> m_testClasses;
 
-            //--
+    //--
 
-            base::RefPtr<ICanvasTest> initializeTest(uint32_t testIndex);
-        };      
+    base::RefPtr<ICanvasTest> initializeTest(uint32_t testIndex);
+};
 
-    } // test
-} // scene
+END_BOOMER_NAMESPACE(rendering::test)

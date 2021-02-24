@@ -13,58 +13,55 @@
 #include "base/world/include/worldEntity.h"
 #include "base/world/include/world.h"
 
-namespace game
+BEGIN_BOOMER_NAMESPACE(game::test)
+
+//---
+
+/// a simple box on plane test, can be upscaled to more shapes
+class SceneTest_SponzaPhysics : public ISceneTestEmptyWorld
 {
-    namespace test
+    RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_SponzaPhysics, ISceneTestEmptyWorld);
+
+public:
+    virtual void configure() override
     {
-        //---
+        TBaseClass::configure();
+    }
 
-        /// a simple box on plane test, can be upscaled to more shapes
-        class SceneTest_SponzaPhysics : public ISceneTestEmptyWorld
+    virtual void update(float dt) override
+    {
+        TBaseClass::update(dt);
+    }
+
+    virtual void createWorldContent() override
+    {
+        if (auto mesh = loadMesh("/engine/scene/sponza/meshes/sponza.v4mesh"))
         {
-            RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_SponzaPhysics, ISceneTestEmptyWorld);
+            auto mc = base::RefNew<game::MeshEntity>();
+            mc->mesh(mesh);
+            m_world->attachEntity(mc);
+        }
 
-        public:
-            virtual void configure() override
-            {
-                TBaseClass::configure();
-            }
+        if (auto mesh = loadMesh("/engine/meshes/cube.v4mesh"))
+        {
+            auto mc = base::RefNew<game::MeshEntity>();
+            mc->mesh(mesh);
+            mc->requestMove(base::Vector3(0, 0, 0.5f));
+            m_mesh = mc;
 
-            virtual void update(float dt) override
-            {
-                TBaseClass::update(dt);
-            }
+            m_world->attachEntity(mc);
+        }
+    }
 
-            virtual void createWorldContent() override
-            {
-                if (auto mesh = loadMesh("/engine/scene/sponza/meshes/sponza.v4mesh"))
-                {
-                    auto mc = base::RefNew<game::MeshEntity>();
-                    mc->mesh(mesh);
-                    m_world->attachEntity(mc);
-                }
+protected:
+    base::world::EntityPtr m_mesh;
+    float m_meshYaw = 0.0f;
+};
 
-                if (auto mesh = loadMesh("/engine/meshes/cube.v4mesh"))
-                {
-                    auto mc = base::RefNew<game::MeshEntity>();
-                    mc->mesh(mesh);
-                    mc->requestMove(base::Vector3(0, 0, 0.5f));
-                    m_mesh = mc;
+RTTI_BEGIN_TYPE_CLASS(SceneTest_SponzaPhysics);
+    RTTI_METADATA(SceneTestOrderMetadata).order(200);
+RTTI_END_TYPE();
 
-                    m_world->attachEntity(mc);
-                }
-            }
+//---
 
-        protected:
-            base::world::EntityPtr m_mesh;
-            float m_meshYaw = 0.0f;
-        };
-
-        RTTI_BEGIN_TYPE_CLASS(SceneTest_SponzaPhysics);
-            RTTI_METADATA(SceneTestOrderMetadata).order(200);
-        RTTI_END_TYPE();
-
-        //---
-
-    } // test
-} // game
+END_BOOMER_NAMESPACE(game::test)

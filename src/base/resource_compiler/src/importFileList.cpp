@@ -11,61 +11,55 @@
 #include "base/resource/include/resourceTags.h"
 #include "base/resource/include/resourceMetadata.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+//--
+
+RTTI_BEGIN_TYPE_CLASS(ImportFileEntry);
+    RTTI_PROPERTY(depotPath);
+    RTTI_PROPERTY(assetPath);
+    RTTI_PROPERTY(userConfiguration);
+RTTI_END_TYPE();
+
+//--
+
+RTTI_BEGIN_TYPE_CLASS(ImportList);
+    RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4imports");
+    RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Import List");
+    RTTI_METADATA(base::res::ResourceTagColorMetadata).color(0xe2, 0xd6, 0xa8);
+    RTTI_PROPERTY(m_files);
+RTTI_END_TYPE();
+
+ImportList::ImportList()
+{}
+
+ImportList::ImportList(Array<ImportFileEntry>&& files)
+    : m_files(std::move(files))
 {
-    namespace res
+    for (auto& entry : m_files)
     {
-
-        //--
-
-        RTTI_BEGIN_TYPE_CLASS(ImportFileEntry);
-            RTTI_PROPERTY(depotPath);
-            RTTI_PROPERTY(assetPath);
-            RTTI_PROPERTY(userConfiguration);
-        RTTI_END_TYPE();
-
-        //--
-
-        RTTI_BEGIN_TYPE_CLASS(ImportList);
-            RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4imports");
-            RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Import List");
-            RTTI_METADATA(base::res::ResourceTagColorMetadata).color(0xe2, 0xd6, 0xa8);
-            RTTI_PROPERTY(m_files);
-        RTTI_END_TYPE();
-
-        ImportList::ImportList()
-        {}
-
-        ImportList::ImportList(Array<ImportFileEntry>&& files)
-            : m_files(std::move(files))
+        if (entry.userConfiguration)
         {
-            for (auto& entry : m_files)
-            {
-                if (entry.userConfiguration)
-                {
-                    DEBUG_CHECK_EX(!entry.userConfiguration->parent(), "Object should not be parented");
-                    entry.userConfiguration->parent(this);
-                }
-            }
+            DEBUG_CHECK_EX(!entry.userConfiguration->parent(), "Object should not be parented");
+            entry.userConfiguration->parent(this);
         }
+    }
+}
 
-        ImportList::ImportList(const ImportFileEntry& entry)
+ImportList::ImportList(const ImportFileEntry& entry)
+{
+    m_files.pushBack(entry);
+
+    for (auto& entry : m_files)
+    {
+        if (entry.userConfiguration)
         {
-            m_files.pushBack(entry);
-
-            for (auto& entry : m_files)
-            {
-                if (entry.userConfiguration)
-                {
-                    DEBUG_CHECK_EX(!entry.userConfiguration->parent(), "Object should not be parented");
-                    entry.userConfiguration->parent(this);
-                }
-            }
+            DEBUG_CHECK_EX(!entry.userConfiguration->parent(), "Object should not be parented");
+            entry.userConfiguration->parent(this);
         }
+    }
+}
 
-        //--
+//--
 
-        //--
-
-    } // res
-} // base
+END_BOOMER_NAMESPACE(base::res)

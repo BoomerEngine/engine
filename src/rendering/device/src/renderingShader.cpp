@@ -11,21 +11,20 @@
 #include "renderingShader.h"
 #include "renderingShaderData.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(ShaderObject);
+RTTI_END_TYPE();
+
+ShaderObject::ShaderObject(ObjectID id, IDeviceObjectHandler* impl, const ShaderMetadata* metadata)
+    : IDeviceObject(id, impl)
+    , m_metadata(AddRef(metadata))
 {
+    DEBUG_CHECK(metadata);
+}
 
-    //--
+//--
 
-	RTTI_BEGIN_TYPE_NATIVE_CLASS(ShaderObject);
-	RTTI_END_TYPE();
-
-	ShaderObject::ShaderObject(ObjectID id, IDeviceObjectHandler* impl, const ShaderMetadata* metadata)
-        : IDeviceObject(id, impl)
-        , m_metadata(AddRef(metadata))
-    {
-        DEBUG_CHECK(metadata);
-    }
-
-    //--
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

@@ -11,32 +11,31 @@
 
 #include "base/memory/include/linearAllocator.h"
 
-namespace base
-{
+BEGIN_BOOMER_NAMESPACE(base)
 
-	//--
+//--
 
-	IStub::IStub()
-	{}
+IStub::IStub()
+{}
 
-	IStub::~IStub()
-	{}
+IStub::~IStub()
+{}
 
-	void IStub::postLoad()
-	{}
+void IStub::postLoad()
+{}
 
-	//--
+//--
 
-	IStubReader::IStubReader(uint32_t version)
-		: m_version(version)
-	{}
+IStubReader::IStubReader(uint32_t version)
+: m_version(version)
+{}
 
-	IStubReader::~IStubReader()
-	{}
+IStubReader::~IStubReader()
+{}
 
-	IStubWriter::~IStubWriter()
-	{}
+IStubWriter::~IStubWriter()
+{}
 
-	//--
+//--
 
-} // base
+END_BOOMER_NAMESPACE(base)

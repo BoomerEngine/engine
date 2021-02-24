@@ -10,404 +10,404 @@
 
 #define UI_EVENT_FUNC base::StringID name, IElement* source, IElement* owner, const base::Variant& data
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+///---
+
+typedef std::function<bool(UI_EVENT_FUNC)> TEventFunction;
+
+///---
+
+template<typename T>
+struct EventFunctionBinderHelper
+{};
+
+template<>
+struct EventFunctionBinderHelper<void()>
 {
-    ///---
-
-    typedef std::function<bool(UI_EVENT_FUNC)> TEventFunction;
-
-    ///---
-
-    template<typename T>
-    struct EventFunctionBinderHelper
-    {};
-
-    template<>
-    struct EventFunctionBinderHelper<void()>
+    using type = std::function<void()>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<void()>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                func();
-                return true;
-            };
-        }
-    };
+            func();
+            return true;
+        };
+    }
+};
 
-    template<>
-    struct EventFunctionBinderHelper<bool()>
+template<>
+struct EventFunctionBinderHelper<bool()>
+{
+    using type = std::function<bool()>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<bool()>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                return func();
-            };
-        }
-    };
+            return func();
+        };
+    }
+};
 
-    template<>
-    struct EventFunctionBinderHelper<bool(*)()>
+template<>
+struct EventFunctionBinderHelper<bool(*)()>
+{
+    using type = std::function<bool()>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<bool()>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                return func();
-            };
-        }
-    };
+            return func();
+        };
+    }
+};
 
-    template<typename Class>
-    struct EventFunctionBinderHelper<void(Class::*)() const>
+template<typename Class>
+struct EventFunctionBinderHelper<void(Class::*)() const>
+{
+    using type = std::function<void()>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<void()>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                func();
-                return true;
-            };
-        }
-    };
+            func();
+            return true;
+        };
+    }
+};
 
-    template<typename Class>
-    struct EventFunctionBinderHelper<bool(Class::*)() const>
+template<typename Class>
+struct EventFunctionBinderHelper<bool(Class::*)() const>
+{
+    using type = std::function<bool()>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<bool()>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                return func();
-            };
-        }
-    };
+            return func();
+        };
+    }
+};
 
-    ///---
+///---
 
-    template<typename T>
-    struct EventFunctionBinderHelper<void(T*)>
+template<typename T>
+struct EventFunctionBinderHelper<void(T*)>
+{
+    using type = std::function<void(T*)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<void(T*)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
-                func(base::rtti_cast<T>(source));
-                return true;
-            };
-        }
-    };
+            static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
+            func(base::rtti_cast<T>(source));
+            return true;
+        };
+    }
+};
 
-    template<typename T>
-    struct EventFunctionBinderHelper<void(*)(T*)>
+template<typename T>
+struct EventFunctionBinderHelper<void(*)(T*)>
+{
+    using type = std::function<void(T*)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<void(T*)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
-                func(base::rtti_cast<T>(source));
-                return true;
-            };
-        }
-    };
+            static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
+            func(base::rtti_cast<T>(source));
+            return true;
+        };
+    }
+};
 
-    template<typename Class, typename T>
-    struct EventFunctionBinderHelper<void(Class::*)(T*) const>
+template<typename Class, typename T>
+struct EventFunctionBinderHelper<void(Class::*)(T*) const>
+{
+    using type = std::function<void(T*)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<void(T*)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
-                func(base::rtti_cast<T>(source));
-                return true;
-            };
-        }
-    };
+            static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
+            func(base::rtti_cast<T>(source));
+            return true;
+        };
+    }
+};
 
-    template<typename T>
-    struct EventFunctionBinderHelper<bool(T*)>
+template<typename T>
+struct EventFunctionBinderHelper<bool(T*)>
+{
+    using type = std::function<bool(T*)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<bool(T*)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
-                return func(base::rtti_cast<T>(source));
-            };
-        }
-    };
+            static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
+            return func(base::rtti_cast<T>(source));
+        };
+    }
+};
 
-    template<typename T>
-    struct EventFunctionBinderHelper<bool(*)(T*)>
+template<typename T>
+struct EventFunctionBinderHelper<bool(*)(T*)>
+{
+    using type = std::function<void(T*)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<void(T*)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
-                return func(base::rtti_cast<T>(source));
-            };
-        }
-    };
+            static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
+            return func(base::rtti_cast<T>(source));
+        };
+    }
+};
 
-    template<typename Class, typename T>
-    struct EventFunctionBinderHelper<bool(Class::*)(T*) const>
+template<typename Class, typename T>
+struct EventFunctionBinderHelper<bool(Class::*)(T*) const>
+{
+    using type = std::function<bool(T*)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<bool(T*)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
-                return func(base::rtti_cast<T>(source));
-            };
-        }
-    };
+            static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
+            return func(base::rtti_cast<T>(source));
+        };
+    }
+};
 
-    ///---
+///---
 
-    template<typename T, typename D>
-    struct EventFunctionBinderHelper<void(T*, D)>
+template<typename T, typename D>
+struct EventFunctionBinderHelper<void(T*, D)>
+{
+    using type = std::function<void(T*, D)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<void(T*, D)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
-                static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-                DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
-                func(base::rtti_cast<T>(source), *(const D*)data.data());
-                return true;
-            };
-        }
-    };
+            static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
+            static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
+            DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
+            func(base::rtti_cast<T>(source), *(const D*)data.data());
+            return true;
+        };
+    }
+};
 
-    template<typename T, typename D>
-    struct EventFunctionBinderHelper<void(*)(T*, D)>
+template<typename T, typename D>
+struct EventFunctionBinderHelper<void(*)(T*, D)>
+{
+    using type = std::function<void(T*, D)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<void(T*, D)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(std::is_pointer<D>::value, "Data can't be a pointer");
-                static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-                DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
-                func(base::rtti_cast<T>(source), *(const D*)data.data());
-                return true;
-            };
-        }
-    };
+            static_assert(std::is_pointer<D>::value, "Data can't be a pointer");
+            static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
+            DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
+            func(base::rtti_cast<T>(source), *(const D*)data.data());
+            return true;
+        };
+    }
+};
 
-    template<typename Class, typename T, typename D>
-    struct EventFunctionBinderHelper<void(Class::*)(T*, D) const>
+template<typename Class, typename T, typename D>
+struct EventFunctionBinderHelper<void(Class::*)(T*, D) const>
+{
+    using type = std::function<void(T*, D)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<void(T*, D)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
-                static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-                DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
-                func(base::rtti_cast<T>(source), *(const D*)data.data());
-                return true;
-            };
-        }
-    };
+            static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
+            static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
+            DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
+            func(base::rtti_cast<T>(source), *(const D*)data.data());
+            return true;
+        };
+    }
+};
 
-    ///---
+///---
 
-    template<typename T, typename D>
-    struct EventFunctionBinderHelper<bool(T*, D)>
+template<typename T, typename D>
+struct EventFunctionBinderHelper<bool(T*, D)>
+{
+    using type = std::function<bool(T*, D)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<bool(T*, D)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
-                static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-                DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
-                return func(base::rtti_cast<T>(source), *(const D*)data.data());
-            };
-        }
-    };
+            static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
+            static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
+            DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
+            return func(base::rtti_cast<T>(source), *(const D*)data.data());
+        };
+    }
+};
 
-    template<typename T, typename D>
-    struct EventFunctionBinderHelper<bool(*)(T*, D)>
+template<typename T, typename D>
+struct EventFunctionBinderHelper<bool(*)(T*, D)>
+{
+    using type = std::function<bool(T*, D)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<bool(T*, D)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
-                static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-                DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
-                return func(base::rtti_cast<T>(source), *(const D*)data.data());
-            };
-        }
-    };
+            static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
+            static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
+            DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
+            return func(base::rtti_cast<T>(source), *(const D*)data.data());
+        };
+    }
+};
 
-    template<typename Class, typename T, typename D>
-    struct EventFunctionBinderHelper<bool(Class::*)(T*, D) const>
+template<typename Class, typename T, typename D>
+struct EventFunctionBinderHelper<bool(Class::*)(T*, D) const>
+{
+    using type = std::function<bool(T*, D)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<bool(T*, D)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
-                static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-                DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
-                return func(base::rtti_cast<T>(source), *(const D*)data.data());
-            };
-        }
-    };
+            static_assert(std::is_base_of<ui::IElement, T>::value, "Context object must be UI element");
+            static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
+            DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
+            return func(base::rtti_cast<T>(source), *(const D*)data.data());
+        };
+    }
+};
 
-    ///---
+///---
 
-    template<typename D>
-    struct EventFunctionBinderHelper<void(D)>
+template<typename D>
+struct EventFunctionBinderHelper<void(D)>
+{
+    using type = std::function<void(D)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<void(D)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-                DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
-                func(*(const D*)data.data());
-                return true;
-            };
-        }
-    };
+            static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
+            DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
+            func(*(const D*)data.data());
+            return true;
+        };
+    }
+};
 
-    template<typename D>
-    struct EventFunctionBinderHelper<void(*)(D)>
+template<typename D>
+struct EventFunctionBinderHelper<void(*)(D)>
+{
+    using type = std::function<void(D)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<void(D)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-                DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
-                func(*(const D*)data.data());
-                return true;
-            };
-        }
-    };
+            static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
+            DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
+            func(*(const D*)data.data());
+            return true;
+        };
+    }
+};
 
-    template<typename Class, typename D>
-    struct EventFunctionBinderHelper<void(Class::*)(D) const>
+template<typename Class, typename D>
+struct EventFunctionBinderHelper<void(Class::*)(D) const>
+{
+    using type = std::function<void(D)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<void(D)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-                DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
-                func(*(const D*)data.data());
-                return true;
-            };
-        }
-    };
+            static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
+            DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
+            func(*(const D*)data.data());
+            return true;
+        };
+    }
+};
 
-    ///---
+///---
 
-    template<typename D>
-    struct EventFunctionBinderHelper<bool(D)>
+template<typename D>
+struct EventFunctionBinderHelper<bool(D)>
+{
+    using type = std::function<bool(D)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<bool(D)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-                DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
-                return func(*(const D*)data.data());
-            };
-        }
-    };
+            static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
+            DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
+            return func(*(const D*)data.data());
+        };
+    }
+};
 
-    template<typename D>
-    struct EventFunctionBinderHelper<bool(*)(D)>
+template<typename D>
+struct EventFunctionBinderHelper<bool(*)(D)>
+{
+    using type = std::function<bool(D)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<bool(D)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-                DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
-                return func(*(const D*)data.data());
-            };
-        }
-    };
+            static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
+            DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
+            return func(*(const D*)data.data());
+        };
+    }
+};
 
-    template<typename Class, typename D>
-    struct EventFunctionBinderHelper<bool(Class::*)(D) const>
+template<typename Class, typename D>
+struct EventFunctionBinderHelper<bool(Class::*)(D) const>
+{
+    using type = std::function<bool(D)>;
+    static TEventFunction bind(typename type func)
     {
-        using type = std::function<bool(D)>;
-        static TEventFunction bind(typename type func)
+        return [func](UI_EVENT_FUNC)
         {
-            return [func](UI_EVENT_FUNC)
-            {
-                static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-                DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
-                return func(*(const D*)data.data());
-            };
-        }
-    };
+            static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
+            DEBUG_CHECK_EX(data.type() == base::reflection::GetTypeObject<D>(), base::TempString("Invalid event data type, expected '{}', got '{}'", base::reflection::GetTypeName<D>(), data.type()));
+            return func(*(const D*)data.data());
+        };
+    }
+};
 
-    ///---
+///---
 
-    /// magical helper for binding event callback functions
-    struct BASE_UI_API EventFunctionBinder
+/// magical helper for binding event callback functions
+struct BASE_UI_API EventFunctionBinder
+{
+public:
+    INLINE EventFunctionBinder(TEventFunction* func) : m_function(func) {}
+    INLINE EventFunctionBinder(const EventFunctionBinder& other) = default;
+    INLINE EventFunctionBinder& operator=(const EventFunctionBinder& other) = default;
+
+    template< typename F >
+    INLINE void operator=(F func)
     {
-    public:
-        INLINE EventFunctionBinder(TEventFunction* func) : m_function(func) {}
-        INLINE EventFunctionBinder(const EventFunctionBinder& other) = default;
-        INLINE EventFunctionBinder& operator=(const EventFunctionBinder& other) = default;
+        if (m_function)
+            *m_function = EventFunctionBinderHelper<decltype(&F::operator())>::bind(func);
+    }
 
-        template< typename F >
-        INLINE void operator=(F func)
-        {
-            if (m_function)
-                *m_function = EventFunctionBinderHelper<decltype(&F::operator())>::bind(func);
-        }
-
-        INLINE void operator=(base::StringID actionName)
-        {
-            if (m_function)
-                *m_function = [actionName](UI_EVENT_FUNC) { return RunAction(owner, source, actionName); };
-        }
+    INLINE void operator=(base::StringID actionName)
+    {
+        if (m_function)
+            *m_function = [actionName](UI_EVENT_FUNC) { return RunAction(owner, source, actionName); };
+    }
 
         
-    private:
-        TEventFunction* m_function;
+private:
+    TEventFunction* m_function;
 
-        static bool RunAction(IElement* element, IElement* source, base::StringID action);
-    };
+    static bool RunAction(IElement* element, IElement* source, base::StringID action);
+};
 
-    ///---
+///---
     
-} // ui
+END_BOOMER_NAMESPACE(ui)

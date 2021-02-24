@@ -10,32 +10,32 @@
 #include "build.h"
 #include "mutex.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+Mutex::Mutex()
 {
-    Mutex::Mutex()
-    {
-        static_assert(sizeof(Mutex::m_data) >= sizeof(CRITICAL_SECTION), "Critical section data to small");
-        InitializeCriticalSection((CRITICAL_SECTION*)&m_data);
-    }
+    static_assert(sizeof(Mutex::m_data) >= sizeof(CRITICAL_SECTION), "Critical section data to small");
+    InitializeCriticalSection((CRITICAL_SECTION*)&m_data);
+}
 
-    Mutex::~Mutex()
-    {
-        DeleteCriticalSection((CRITICAL_SECTION*)&m_data);
-    }
+Mutex::~Mutex()
+{
+    DeleteCriticalSection((CRITICAL_SECTION*)&m_data);
+}
 
-    void Mutex::acquire()
-    {
-        EnterCriticalSection((CRITICAL_SECTION*)&m_data);
-    }
+void Mutex::acquire()
+{
+    EnterCriticalSection((CRITICAL_SECTION*)&m_data);
+}
 
-    void Mutex::release()
-    {
-        LeaveCriticalSection((CRITICAL_SECTION*)&m_data);
-    }
+void Mutex::release()
+{
+    LeaveCriticalSection((CRITICAL_SECTION*)&m_data);
+}
 
-    void Mutex::spinCount(uint32_t spinCount)
-    {
-        SetCriticalSectionSpinCount((CRITICAL_SECTION*)&m_data, spinCount);
-    }
+void Mutex::spinCount(uint32_t spinCount)
+{
+    SetCriticalSectionSpinCount((CRITICAL_SECTION*)&m_data, spinCount);
+}
 
-} // base
+END_BOOMER_NAMESPACE(base)

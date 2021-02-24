@@ -15,24 +15,24 @@
     #include "multiQueuePOSIX.h"
 #endif
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//---
+
+IMultiQueue::~IMultiQueue()
+{}
+
+IMultiQueue* IMultiQueue::Create(uint32_t numInternalQueues)
 {
-    //---
-
-    IMultiQueue::~IMultiQueue()
-    {}
-
-    IMultiQueue* IMultiQueue::Create(uint32_t numInternalQueues)
-    {
 #if defined(PLATFORM_WINDOWS)
-        return prv::WinMultiQueue::Create(numInternalQueues);
+    return prv::WinMultiQueue::Create(numInternalQueues);
 #elif defined(PLATFORM_POSIX)
-        return prv::POSIXMultiQueue::Create(numInternalQueues);
+    return prv::POSIXMultiQueue::Create(numInternalQueues);
 #else
-        return nullptr; // no thread needed apparently :P
+    return nullptr; // no thread needed apparently :P
 #endif
-    }
+}
 
-    //---
+//---
 
-} // inf
+END_BOOMER_NAMESPACE(base)

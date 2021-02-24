@@ -7,32 +7,33 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//--
+
+/// simple background job
+class BASE_FIBERS_API IBackgroundJob : public IReferencable
 {
-    //--
+    RTTI_DECLARE_POOL(POOL_FIBERS)
 
-    /// simple background job
-    class BASE_FIBERS_API IBackgroundJob : public IReferencable
-    {
-        RTTI_DECLARE_POOL(POOL_FIBERS)
+public:
+    virtual ~IBackgroundJob();
 
-    public:
-        virtual ~IBackgroundJob();
+    inline bool canceled() const { return m_cancelFlag.load(); }
 
-        inline bool canceled() const { return m_cancelFlag.load(); }
+    virtual void cancel();
+    virtual void run() = 0;
 
-        virtual void cancel();
-        virtual void run() = 0;
+private:
+    std::atomic<bool> m_cancelFlag = false;
+};
 
-    private:
-        std::atomic<bool> m_cancelFlag = false;
-    };
+//--
 
-    //--
+// run background job
+extern BASE_FIBERS_API void RunBackground(IBackgroundJob* job, StringID bucket = "default"_id);
 
-    // run background job
-    extern BASE_FIBERS_API void RunBackground(IBackgroundJob* job, StringID bucket = "default"_id);
+//--
 
-    //--
+END_BOOMER_NAMESPACE(base)
 
-} // base

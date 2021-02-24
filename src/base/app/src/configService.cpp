@@ -17,216 +17,212 @@
 #include "base/io/include/ioDirectoryWatcher.h"
 #include "base/io/include/ioSystem.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::config)
+
+RTTI_BEGIN_TYPE_CLASS(ConfigService);
+RTTI_END_TYPE();
+
+ConfigService::ConfigService()
+    : m_hasValidBase(false)
+{}
+
+ConfigService::~ConfigService()
+{}
+
+app::ServiceInitializationResult ConfigService::onInitializeService( const app::CommandLine& cmdLine)
 {
-    namespace config
+    /*m_engineConfigDir = base::io::SystemPath(io::PathCategory::).addDir("config");
+    TRACE_INFO("Engine config directory: '{}'", m_engineConfigDir);
+
+    m_engineConfigWatcher = base::io::CreateDirectoryWatcher(m_engineConfigDir);
+    if (m_engineConfigWatcher)
+        m_engineConfigWatcher->attachListener(this);*/
+
+    /*auto& projectDir = base::io::SystemPath(io::PathCategory::);
+    if (!projectDir.empty())
     {
+        m_projectConfigDir = projectDir.addDir("config");
+        TRACE_INFO("Project config directory: '{}'", m_engineConfigDir);
 
-        RTTI_BEGIN_TYPE_CLASS(ConfigService);
-        RTTI_END_TYPE();
+        m_projectConfigWatcher = base::io::CreateDirectoryWatcher(m_projectConfigDir);
+        if (m_projectConfigWatcher)
+            m_projectConfigWatcher->attachListener(this);
+    }*/
 
-        ConfigService::ConfigService()
-            : m_hasValidBase(false)
-        {}
+    m_userConfigFile = TempString("{}user.ini", base::io::SystemPath(io::PathCategory::UserConfigDir));
+    TRACE_INFO("User config file: '{}'", m_userConfigFile);
 
-        ConfigService::~ConfigService()
-        {}
+    if (!reloadConfig())
+    {
+        TRACE_ERROR("Failed to load base configuration for engine and project. Check your config files for errors.");
+        return app::ServiceInitializationResult::FatalError;
+    }
 
-        app::ServiceInitializationResult ConfigService::onInitializeService( const app::CommandLine& cmdLine)
+    if (cmdLine.hasParam("dumpConfig"))
+        dumpConfig();
+
+    return app::ServiceInitializationResult::Finished;
+}
+
+bool ConfigService::loadFileConfig(StringView path, config::Storage& outStorage) const
+{
+    if (base::io::FileExists(path))
+    {
+        StringBuf txt;
+        if (!io::LoadFileToString(path, txt))
         {
-            /*m_engineConfigDir = base::io::SystemPath(io::PathCategory::).addDir("config");
-            TRACE_INFO("Engine config directory: '{}'", m_engineConfigDir);
-
-            m_engineConfigWatcher = base::io::CreateDirectoryWatcher(m_engineConfigDir);
-            if (m_engineConfigWatcher)
-                m_engineConfigWatcher->attachListener(this);*/
-
-            /*auto& projectDir = base::io::SystemPath(io::PathCategory::);
-            if (!projectDir.empty())
-            {
-                m_projectConfigDir = projectDir.addDir("config");
-                TRACE_INFO("Project config directory: '{}'", m_engineConfigDir);
-
-                m_projectConfigWatcher = base::io::CreateDirectoryWatcher(m_projectConfigDir);
-                if (m_projectConfigWatcher)
-                    m_projectConfigWatcher->attachListener(this);
-            }*/
-
-            m_userConfigFile = TempString("{}user.ini", base::io::SystemPath(io::PathCategory::UserConfigDir));
-            TRACE_INFO("User config file: '{}'", m_userConfigFile);
-
-            if (!reloadConfig())
-            {
-                TRACE_ERROR("Failed to load base configuration for engine and project. Check your config files for errors.");
-                return app::ServiceInitializationResult::FatalError;
-            }
-
-            if (cmdLine.hasParam("dumpConfig"))
-                dumpConfig();
-
-            return app::ServiceInitializationResult::Finished;
+            TRACE_ERROR("Failed to open config file '{}'", path);
+            return false;
         }
 
-        bool ConfigService::loadFileConfig(StringView path, config::Storage& outStorage) const
+        if (!config::Storage::Load(txt, outStorage))
         {
-            if (base::io::FileExists(path))
-            {
-                StringBuf txt;
-                if (!io::LoadFileToString(path, txt))
-                {
-                    TRACE_ERROR("Failed to open config file '{}'", path);
-                    return false;
-                }
-
-                if (!config::Storage::Load(txt, outStorage))
-                {
-                    TRACE_ERROR("Failed to parse config file '{}', see log for details", path);
-                    return false;
-                }
-            }
-            else
-            {
-                TRACE_INFO("User configuration file does not exist (yet) and will not be loaded");
-            }
-
-            return true;
+            TRACE_ERROR("Failed to parse config file '{}', see log for details", path);
+            return false;
         }
+    }
+    else
+    {
+        TRACE_INFO("User configuration file does not exist (yet) and will not be loaded");
+    }
 
-        bool ConfigService::loadDirConfig(StringView path, config::Storage& outStorage) const
-        {
-            bool ret = true;
+    return true;
+}
 
-            InplaceArray<StringBuf, 20> configPaths;
-            base::io::FindFiles(path, "*.ini", configPaths, false);
-            if (!configPaths.empty())
-            {
-                TRACE_INFO("Found {} config file(s) at '{}'", configPaths.size(), path);
+bool ConfigService::loadDirConfig(StringView path, config::Storage& outStorage) const
+{
+    bool ret = true;
 
-                // make sure we are loading files in deterministic order
-                std::sort(configPaths.begin(), configPaths.end());
+    InplaceArray<StringBuf, 20> configPaths;
+    base::io::FindFiles(path, "*.ini", configPaths, false);
+    if (!configPaths.empty())
+    {
+        TRACE_INFO("Found {} config file(s) at '{}'", configPaths.size(), path);
 
-                // load files
-                for (auto& filePath : configPaths)
-                    ret &= loadFileConfig(filePath, outStorage);
-            }
+        // make sure we are loading files in deterministic order
+        std::sort(configPaths.begin(), configPaths.end());
 
-            return ret;
-        }
+        // load files
+        for (auto& filePath : configPaths)
+            ret &= loadFileConfig(filePath, outStorage);
+    }
 
-        bool ConfigService::loadBaseConfig(config::Storage& outStorage) const
-        {
-            bool ret = true;
+    return ret;
+}
 
-            /*// load engine config
-            ret &= loadDirConfig(m_engineConfigDir, outStorage);
+bool ConfigService::loadBaseConfig(config::Storage& outStorage) const
+{
+    bool ret = true;
 
-            // load project config
-            if (!m_projectConfigDir.empty())
-                ret &= loadDirConfig(m_projectConfigDir, outStorage);*/
+    /*// load engine config
+    ret &= loadDirConfig(m_engineConfigDir, outStorage);
 
-            return ret;
-        }
+    // load project config
+    if (!m_projectConfigDir.empty())
+        ret &= loadDirConfig(m_projectConfigDir, outStorage);*/
 
-        void ConfigService::requestSave()
-        {
-            if (!m_saveTime)
-                m_saveTime = NativeTimePoint::Now() + 1.0;
-        }
+    return ret;
+}
 
-        void ConfigService::requestReload()
-        {
-            if (!m_reloadTime)
-                m_reloadTime = NativeTimePoint::Now() + 0.5;
-        }
+void ConfigService::requestSave()
+{
+    if (!m_saveTime)
+        m_saveTime = NativeTimePoint::Now() + 1.0;
+}
 
-        void ConfigService::dumpConfig()
-        {
-            StringBuilder txt;
-            ConfigPropertyBase::PrintAll(txt);
+void ConfigService::requestReload()
+{
+    if (!m_reloadTime)
+        m_reloadTime = NativeTimePoint::Now() + 0.5;
+}
 
-            const auto& configPath = base::io::SystemPath(io::PathCategory::UserConfigDir);
-            io::SaveFileFromString(TempString("{}dump.ini", configPath), txt.toString());
-        }
+void ConfigService::dumpConfig()
+{
+    StringBuilder txt;
+    ConfigPropertyBase::PrintAll(txt);
 
-        bool ConfigService::reloadConfig()
-        {
-            // if we have a valid base than save the user config first
-            if (m_hasValidBase)
-                saveUserConfig();
+    const auto& configPath = base::io::SystemPath(io::PathCategory::UserConfigDir);
+    io::SaveFileFromString(TempString("{}dump.ini", configPath), txt.toString());
+}
 
-            // load a new base
-            auto newBase = CreateUniquePtr<config::Storage>();
-            if (!loadBaseConfig(*newBase))
-            {
-                TRACE_ERROR("Failed to load base configuration");
-                return false;
-            }
+bool ConfigService::reloadConfig()
+{
+    // if we have a valid base than save the user config first
+    if (m_hasValidBase)
+        saveUserConfig();
 
-            // store as new base
-            m_baseConfig = std::move(newBase);
-            m_hasValidBase = true;
+    // load a new base
+    auto newBase = CreateUniquePtr<config::Storage>();
+    if (!loadBaseConfig(*newBase))
+    {
+        TRACE_ERROR("Failed to load base configuration");
+        return false;
+    }
 
-            // reset all stored values
-            config::RawStorageData().clear();
+    // store as new base
+    m_baseConfig = std::move(newBase);
+    m_hasValidBase = true;
 
-            // load again into the config system
-            loadBaseConfig(config::RawStorageData());
+    // reset all stored values
+    config::RawStorageData().clear();
 
-            // load the user config on top
-            loadFileConfig(m_userConfigFile, config::RawStorageData());
+    // load again into the config system
+    loadBaseConfig(config::RawStorageData());
 
-            // apply the loaded configuration to config properties
-            ConfigPropertyBase::PullAll();
-            return true;
-        }
+    // load the user config on top
+    loadFileConfig(m_userConfigFile, config::RawStorageData());
 
-        void ConfigService::saveUserConfig()
-        {
-            ASSERT(m_hasValidBase);
+    // apply the loaded configuration to config properties
+    ConfigPropertyBase::PullAll();
+    return true;
+}
 
-            // reset the save timer
-            m_saveTime.clear();
+void ConfigService::saveUserConfig()
+{
+    ASSERT(m_hasValidBase);
 
-            // get the difference between base and
-            StringBuilder txt;
-            config::Storage::Save(txt, config::RawStorageData(), *m_baseConfig);
+    // reset the save timer
+    m_saveTime.clear();
 
-            // store the user config
-            if (!io::SaveFileFromString(m_userConfigFile, txt.toString()))
-            {
-                TRACE_ERROR("Failed to save user config to '{}'", m_userConfigFile);
-            }
-        }
+    // get the difference between base and
+    StringBuilder txt;
+    config::Storage::Save(txt, config::RawStorageData(), *m_baseConfig);
 
-        void ConfigService::handleEvent(const io::DirectoryWatcherEvent& evt)
-        {
-            if (evt.path.endsWith(".ini"))
-            {
-                TRACE_INFO("Config file '{}' changed", evt.path.c_str());
-                requestReload();
-            }
-        }
+    // store the user config
+    if (!io::SaveFileFromString(m_userConfigFile, txt.toString()))
+    {
+        TRACE_ERROR("Failed to save user config to '{}'", m_userConfigFile);
+    }
+}
 
-        void ConfigService::onShutdownService()
-        {
-            m_engineConfigWatcher.reset();
-            m_projectConfigWatcher.reset();
-        }
+void ConfigService::handleEvent(const io::DirectoryWatcherEvent& evt)
+{
+    if (evt.path.endsWith(".ini"))
+    {
+        TRACE_INFO("Config file '{}' changed", evt.path.c_str());
+        requestReload();
+    }
+}
 
-        void ConfigService::onSyncUpdate()
-        {
-            if (m_reloadTime && m_reloadTime.reached())
-            {
-                m_reloadTime.clear();
-                reloadConfig();
-            }
+void ConfigService::onShutdownService()
+{
+    m_engineConfigWatcher.reset();
+    m_projectConfigWatcher.reset();
+}
 
-            if (m_saveTime && m_saveTime.reached())
-            {
-                m_saveTime.clear();
-                saveUserConfig();
-            }
-        }
+void ConfigService::onSyncUpdate()
+{
+    if (m_reloadTime && m_reloadTime.reached())
+    {
+        m_reloadTime.clear();
+        reloadConfig();
+    }
 
-    } // config
-} // base
+    if (m_saveTime && m_saveTime.reached())
+    {
+        m_saveTime.clear();
+        saveUserConfig();
+    }
+}
+
+END_BOOMER_NAMESPACE(base::config)

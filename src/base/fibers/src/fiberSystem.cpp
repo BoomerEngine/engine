@@ -22,210 +22,204 @@
     typedef base::fibers::prv::ThreadBasedScheduler FiberSchedulerClass;
 #endif
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::fibers)
+
+Scheduler::Scheduler()
+    : m_scheduler(nullptr)
 {
-    namespace fibers
+}
+
+bool Scheduler::initialize(const IBaseCommandLine& commandline)
+{
+    ASSERT_EX(m_scheduler == nullptr, "Fiber scheduler already initialized");
+
+    // initialize the background job system
+    if (!BackgroundScheduler::GetInstance().initialize(commandline))
     {
+        TRACE_ERROR("Low-level background job syste failed to initialize");
+        return false;
+    }
 
-        Scheduler::Scheduler()
-            : m_scheduler(nullptr)
+    // use the thread based one if needed
+    auto fiberMode = commandline.singleValueAnsiStr("fiberMode");
+
+    // use the platform specified scheduler
+    if (0 == strcmp(fiberMode,"threads"))
+        m_scheduler = new prv::ThreadBasedScheduler;
+    else
+        m_scheduler = new FiberSchedulerClass;
+
+    // initialize the scheduler
+    if (!m_scheduler->initialize(commandline))
+    {
+        TRACE_ERROR("Low-level scheduler failed to initialize");
+        delete m_scheduler;
+        m_scheduler = nullptr;
+        return false;
+    }
+
+    // TODO: integrate with PC
+
+    // low-level initialization was ok
+    return true;
+}
+
+void Scheduler::deinit()
+{
+    // stop all background jobs
+    BackgroundScheduler::GetInstance().flush();
+
+    // stop all fibers
+    if (m_scheduler)
+    {
+        delete m_scheduler;
+        m_scheduler = nullptr;
+    }
+}
+
+void Scheduler::flush()
+{
+    PC_SCOPE_LVL1(SchedulerFlush);
+    if (m_scheduler)
+        m_scheduler->flush();
+}
+
+JobID Scheduler::currentJobID()
+{
+    return m_scheduler ? m_scheduler->currentJobID() : 0;
+}
+
+WaitCounter Scheduler::createCounter(const char* name, uint32_t count /*= 1*/)
+{
+    if (count == 0)
+        return WaitCounter();
+
+    ASSERT(m_scheduler != nullptr);
+    return m_scheduler->createCounter(name, count);
+}
+
+bool Scheduler::checkCounter(const WaitCounter& counter)
+{
+    if (counter.empty())
+        return true;
+
+    ASSERT(m_scheduler != nullptr);
+    return m_scheduler->checkCounter(counter);
+}
+
+void Scheduler::scheduleFiber(const Job& job, bool child, uint32_t numInvokations /*= 1*/)
+{
+    if (numInvokations > 0)
+    {
+        ASSERT(m_scheduler != nullptr);
+        m_scheduler->scheduleFiber(job, numInvokations, child);
+    }
+}
+
+void Scheduler::scheduleSync(const Job& job)
+{
+    m_scheduler->scheduleSync(job);
+}
+
+void Scheduler::runSyncJobs()
+{
+    m_scheduler->runSyncJobs();
+}
+
+void Scheduler::signalCounter(const WaitCounter& counter, uint32_t count /*= 1*/)
+{
+    if (!counter.empty())
+    {
+        ASSERT(m_scheduler != nullptr);
+        return m_scheduler->signalCounter(counter);
+    }
+}
+
+void Scheduler::yield()
+{
+    if (m_scheduler)
+        m_scheduler->yieldCurrentJob();
+}
+
+void Scheduler::waitForCounterAndRelease(WaitCounter& counter)
+{
+    if (!counter.empty())
+    {
+        ASSERT(m_scheduler != nullptr);
+        m_scheduler->waitForCounterAndRelease(counter);
+    }
+
+    counter = WaitCounter();
+}
+
+void Scheduler::waitForMultipleCountersAndRelease(const WaitCounter* counters, uint32_t count)
+{
+    ASSERT(m_scheduler != nullptr);
+    m_scheduler->waitForMultipleCountersAndRelease(counters, count);
+}
+
+bool Scheduler::isMainThread()
+{
+    return m_scheduler ? m_scheduler->isMainThread() : true;
+}
+
+bool Scheduler::isMainFiber()
+{
+    return m_scheduler ? m_scheduler->isMainFiber() : true;
+}
+
+uint32_t Scheduler::workerThreadCount()
+{
+    return m_scheduler ? m_scheduler->workerThreadCount() : 1;
+}
+
+//---
+
+FiberBuilder::FiberBuilder(const char* name /*= "InlineFiber"*/, uint32_t numInvokations /*= 1*/, bool child /* = false */, bool sync /*= false*/)
+    : m_name(name)
+    , m_sync(sync)
+    , m_child(child)
+    , m_numInvocations(numInvokations)
+{}
+
+FiberBuilder::FiberBuilder(const FiberBuilder& other)
+    : m_name(other.m_name)
+    , m_numInvocations(other.m_numInvocations)
+    , m_child(other.m_child)
+    , m_sync(other.m_sync)
+{}
+
+void FiberBuilder::operator<<(const TJobFunc& job)
+{
+    m_func = job;
+}
+
+FiberBuilder::~FiberBuilder()
+{
+    if (m_func)
+    {
+        if (m_sync)
         {
-        }
+            Job job;
+            job.func = std::move(m_func);
+            job.name = m_name;
+            job.localSink = m_propagateLogSink ? logging::Log::GetCurrentLocalSink() : nullptr;
 
-        bool Scheduler::initialize(const IBaseCommandLine& commandline)
+            Scheduler::GetInstance().scheduleSync(job);
+        }
+        else
         {
-            ASSERT_EX(m_scheduler == nullptr, "Fiber scheduler already initialized");
+            Job job;
+            job.func = std::move(m_func);
+            job.name = m_name;
+            job.localSink = m_propagateLogSink ? logging::Log::GetCurrentLocalSink() : nullptr;
 
-            // initialize the background job system
-            if (!BackgroundScheduler::GetInstance().initialize(commandline))
-            {
-                TRACE_ERROR("Low-level background job syste failed to initialize");
-                return false;
-            }
-
-            // use the thread based one if needed
-            auto fiberMode = commandline.singleValueAnsiStr("fiberMode");
-
-            // use the platform specified scheduler
-            if (0 == strcmp(fiberMode,"threads"))
-                m_scheduler = new prv::ThreadBasedScheduler;
-            else
-                m_scheduler = new FiberSchedulerClass;
-
-            // initialize the scheduler
-            if (!m_scheduler->initialize(commandline))
-            {
-                TRACE_ERROR("Low-level scheduler failed to initialize");
-                delete m_scheduler;
-                m_scheduler = nullptr;
-                return false;
-            }
-
-            // TODO: integrate with PC
-
-            // low-level initialization was ok
-            return true;
+            Scheduler::GetInstance().scheduleFiber(job, m_child, m_numInvocations);
         }
+    }
+}
 
-        void Scheduler::deinit()
-        {
-            // stop all background jobs
-            BackgroundScheduler::GetInstance().flush();
-
-            // stop all fibers
-            if (m_scheduler)
-            {
-                delete m_scheduler;
-                m_scheduler = nullptr;
-            }
-        }
-
-        void Scheduler::flush()
-        {
-            PC_SCOPE_LVL1(SchedulerFlush);
-            if (m_scheduler)
-                m_scheduler->flush();
-        }
-
-        JobID Scheduler::currentJobID()
-        {
-            return m_scheduler ? m_scheduler->currentJobID() : 0;
-        }
-
-        WaitCounter Scheduler::createCounter(const char* name, uint32_t count /*= 1*/)
-        {
-            if (count == 0)
-                return WaitCounter();
-
-            ASSERT(m_scheduler != nullptr);
-            return m_scheduler->createCounter(name, count);
-        }
-
-        bool Scheduler::checkCounter(const WaitCounter& counter)
-        {
-            if (counter.empty())
-                return true;
-
-            ASSERT(m_scheduler != nullptr);
-            return m_scheduler->checkCounter(counter);
-        }
-
-        void Scheduler::scheduleFiber(const Job& job, bool child, uint32_t numInvokations /*= 1*/)
-        {
-            if (numInvokations > 0)
-            {
-                ASSERT(m_scheduler != nullptr);
-                m_scheduler->scheduleFiber(job, numInvokations, child);
-            }
-        }
-
-        void Scheduler::scheduleSync(const Job& job)
-        {
-            m_scheduler->scheduleSync(job);
-        }
-
-        void Scheduler::runSyncJobs()
-        {
-            m_scheduler->runSyncJobs();
-        }
-
-        void Scheduler::signalCounter(const WaitCounter& counter, uint32_t count /*= 1*/)
-        {
-            if (!counter.empty())
-            {
-                ASSERT(m_scheduler != nullptr);
-                return m_scheduler->signalCounter(counter);
-            }
-        }
-
-        void Scheduler::yield()
-        {
-            if (m_scheduler)
-                m_scheduler->yieldCurrentJob();
-        }
-
-        void Scheduler::waitForCounterAndRelease(WaitCounter& counter)
-        {
-            if (!counter.empty())
-            {
-                ASSERT(m_scheduler != nullptr);
-                m_scheduler->waitForCounterAndRelease(counter);
-            }
-
-            counter = WaitCounter();
-        }
-
-        void Scheduler::waitForMultipleCountersAndRelease(const WaitCounter* counters, uint32_t count)
-        {
-            ASSERT(m_scheduler != nullptr);
-            m_scheduler->waitForMultipleCountersAndRelease(counters, count);
-        }
-
-        bool Scheduler::isMainThread()
-        {
-            return m_scheduler ? m_scheduler->isMainThread() : true;
-        }
-
-        bool Scheduler::isMainFiber()
-        {
-            return m_scheduler ? m_scheduler->isMainFiber() : true;
-        }
-
-        uint32_t Scheduler::workerThreadCount()
-        {
-            return m_scheduler ? m_scheduler->workerThreadCount() : 1;
-        }
-
-        //---
-
-        FiberBuilder::FiberBuilder(const char* name /*= "InlineFiber"*/, uint32_t numInvokations /*= 1*/, bool child /* = false */, bool sync /*= false*/)
-            : m_name(name)
-            , m_sync(sync)
-            , m_child(child)
-            , m_numInvocations(numInvokations)
-        {}
-
-        FiberBuilder::FiberBuilder(const FiberBuilder& other)
-            : m_name(other.m_name)
-            , m_numInvocations(other.m_numInvocations)
-            , m_child(other.m_child)
-            , m_sync(other.m_sync)
-        {}
-
-        void FiberBuilder::operator<<(const TJobFunc& job)
-        {
-            m_func = job;
-        }
-
-        FiberBuilder::~FiberBuilder()
-        {
-            if (m_func)
-            {
-                if (m_sync)
-                {
-                    Job job;
-                    job.func = std::move(m_func);
-                    job.name = m_name;
-                    job.localSink = m_propagateLogSink ? logging::Log::GetCurrentLocalSink() : nullptr;
-
-                    Scheduler::GetInstance().scheduleSync(job);
-                }
-                else
-                {
-                    Job job;
-                    job.func = std::move(m_func);
-                    job.name = m_name;
-                    job.localSink = m_propagateLogSink ? logging::Log::GetCurrentLocalSink() : nullptr;
-
-                    Scheduler::GetInstance().scheduleFiber(job, m_child, m_numInvocations);
-                }
-            }
-        }
-
-        //---
-
-    } // fibers
-} // base
+END_BOOMER_NAMESPACE(base::fibers)
 
 //----
 

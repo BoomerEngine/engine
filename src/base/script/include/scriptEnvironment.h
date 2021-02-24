@@ -8,48 +8,44 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+//----
+
+class PortableData;
+class TypeRegistry;
+class ScriptedClass;
+class ScriptedStruct;
+
+struct Stub;
+struct StubModule;
+struct StubFunction;
+struct StubTypeDecl;
+struct StubTypeName;
+struct StubProperty;
+struct StubEnum;
+struct StubClass;
+
+//----
+
+// top level scripting environment, contains binding
+class BASE_SCRIPT_API Environment : public base::NoCopy
 {
-    namespace script
-    {
+public:
+    Environment();
+    ~Environment();
 
-        //----
+    // load the compiled scripts package, called very early during service startup
+    // NOTE: engine most likely will not run without those compiled scripts
+    bool load();
 
-        class PortableData;
-        class TypeRegistry;
-        class ScriptedClass;
-        class ScriptedStruct;
+private:
+    CompiledProjectPtr m_compiled; // runtime handle to compiled data
+    JITProjectPtr m_jit; // JIt of the project's code
 
-        struct Stub;
-        struct StubModule;
-        struct StubFunction;
-        struct StubTypeDecl;
-        struct StubTypeName;
-        struct StubProperty;
-        struct StubEnum;
-        struct StubClass;
+    UniquePtr<TypeRegistry> m_types;
+};
 
-        //----
+//----
 
-        // top level scripting environment, contains binding
-        class BASE_SCRIPT_API Environment : public base::NoCopy
-        {
-        public:
-            Environment();
-            ~Environment();
-
-            // load the compiled scripts package, called very early during service startup
-            // NOTE: engine most likely will not run without those compiled scripts
-            bool load();
-
-        private:
-            CompiledProjectPtr m_compiled; // runtime handle to compiled data
-            JITProjectPtr m_jit; // JIt of the project's code
-
-            UniquePtr<TypeRegistry> m_types;
-        };
-
-        //----
-
-    } // script
-} // base
+END_BOOMER_NAMESPACE(base::script)

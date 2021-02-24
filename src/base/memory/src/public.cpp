@@ -16,144 +16,140 @@
 #endif
 #include "poolStats.h"
 
-namespace base
-{
-    namespace mem
-    {
-        //-----------------------------------------------------------------------------
+BEGIN_BOOMER_NAMESPACE(base::mem)
+
+//-----------------------------------------------------------------------------
 
 #if defined(BUILD_RELEASE)
-        typedef AnsiAllocator AllocatorClass;
-        //typedef DebugAllocator AllocatorClass;
+typedef AnsiAllocator AllocatorClass;
+//typedef DebugAllocator AllocatorClass;
 #else
-        typedef AnsiAllocator AllocatorClass;
-        //typedef DebugAllocator AllocatorClass;
+typedef AnsiAllocator AllocatorClass;
+//typedef DebugAllocator AllocatorClass;
 #endif
 
-        static AllocatorClass& GetAllocator()
-        {
-            static AllocatorClass* GTheAllocator = new AllocatorClass();
-            return *GTheAllocator;
-        }
+static AllocatorClass& GetAllocator()
+{
+    static AllocatorClass* GTheAllocator = new AllocatorClass();
+    return *GTheAllocator;
+}
 
-        //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-        void StartThreadAllocTracking()
-        {
-            //GetAllocator().startThreadTracking();
-        }
+void StartThreadAllocTracking()
+{
+    //GetAllocator().startThreadTracking();
+}
 
-        void FinishThreadAllocTracking()
-        {
-            //GetAllocator().finishThreadTracking();
-        }
+void FinishThreadAllocTracking()
+{
+    //GetAllocator().finishThreadTracking();
+}
 
-        void DumpMemoryLeaks()
-        {
-            GetAllocator().printLeaks();
-        }
+void DumpMemoryLeaks()
+{
+    GetAllocator().printLeaks();
+}
 
-        void ValidateHeap()
-        {
-            GetAllocator().validateHeap(nullptr);
-        }
+void ValidateHeap()
+{
+    GetAllocator().validateHeap(nullptr);
+}
 
-        void* AllocateBlock(PoolTag id, size_t size, size_t alignment, const char* typeName)
-        {
-            if (size >= MAX_MEM_SIZE)
-            {
-                TRACE_ERROR("Trying to allocate buffer that is bigger than the allowed single allocation size on current platform");
-                return nullptr;
-            }
+void* AllocateBlock(PoolTag id, size_t size, size_t alignment, const char* typeName)
+{
+    if (size >= MAX_MEM_SIZE)
+    {
+        TRACE_ERROR("Trying to allocate buffer that is bigger than the allowed single allocation size on current platform");
+        return nullptr;
+    }
 
-            return GetAllocator().allocate(id, size, alignment, typeName);
-        }
+    return GetAllocator().allocate(id, size, alignment, typeName);
+}
 
-        void FreeBlock(void* mem)
-        {
-            return GetAllocator().deallocate(mem);
-        }
+void FreeBlock(void* mem)
+{
+    return GetAllocator().deallocate(mem);
+}
 
-        void* ResizeBlock(PoolTag id, void* mem, size_t size, size_t alignment, const char* typeName)
-        {
-            if (size >= MAX_MEM_SIZE)
-            {
-                TRACE_ERROR("Trying to allocate buffer that is bigger than the allowed single allocation size on current platform");
-                return nullptr;
-            }
+void* ResizeBlock(PoolTag id, void* mem, size_t size, size_t alignment, const char* typeName)
+{
+    if (size >= MAX_MEM_SIZE)
+    {
+        TRACE_ERROR("Trying to allocate buffer that is bigger than the allowed single allocation size on current platform");
+        return nullptr;
+    }
 
-            return GetAllocator().reallocate(id, mem, size, alignment, typeName);
-        }
+    return GetAllocator().reallocate(id, mem, size, alignment, typeName);
+}
 
-        //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-        static size_t RoundUpToPageSize(size_t size, size_t pageSize)
-        {
-            return (size + (pageSize-1)) & ~(pageSize-1);
-        }
+static size_t RoundUpToPageSize(size_t size, size_t pageSize)
+{
+    return (size + (pageSize-1)) & ~(pageSize-1);
+}
 
 #ifdef PLATFORM_WINAPI
-        static size_t GetPageSize()
-        {
-            SYSTEM_INFO systemInfo;
-            GetSystemInfo(&systemInfo);
-            return systemInfo.dwPageSize;
-        }
+static size_t GetPageSize()
+{
+    SYSTEM_INFO systemInfo;
+    GetSystemInfo(&systemInfo);
+    return systemInfo.dwPageSize;
+}
 #endif
 
-        void* AllocSystemMemory(size_t size, bool largePages)
-        {
+void* AllocSystemMemory(size_t size, bool largePages)
+{
 #ifdef PLATFORM_WINAPI
-            static auto largePageSize = GetLargePageMinimum();
-            static auto smallPageSize = GetPageSize();
-            auto pageSize = largePages ? largePageSize : smallPageSize;
-            auto allocSize = RoundUpToPageSize(size, pageSize);
-            auto ret  = VirtualAlloc(NULL, allocSize, MEM_COMMIT | MEM_RESERVE | (largePages ? MEM_LARGE_PAGES : 0), PAGE_READWRITE);
-            if (largePages && ret == nullptr)
-            {
-                // retry without the large pages
-                auto newAllocSize = RoundUpToPageSize(size, smallPageSize);
-                ret = VirtualAlloc(NULL, newAllocSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
-            }
+    static auto largePageSize = GetLargePageMinimum();
+    static auto smallPageSize = GetPageSize();
+    auto pageSize = largePages ? largePageSize : smallPageSize;
+    auto allocSize = RoundUpToPageSize(size, pageSize);
+    auto ret  = VirtualAlloc(NULL, allocSize, MEM_COMMIT | MEM_RESERVE | (largePages ? MEM_LARGE_PAGES : 0), PAGE_READWRITE);
+    if (largePages && ret == nullptr)
+    {
+        // retry without the large pages
+        auto newAllocSize = RoundUpToPageSize(size, smallPageSize);
+        ret = VirtualAlloc(NULL, newAllocSize, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+    }
 
-            if (!ret)
-            {
-                FATAL_ERROR(TempString("System allocation of {} bytes failed", size));
-            }
+    if (!ret)
+    {
+        FATAL_ERROR(TempString("System allocation of {} bytes failed", size));
+    }
 #elif defined(PLATFORM_POSIX)
-            static auto pageSize = 4096;
-            auto allocSize = RoundUpToPageSize(size, pageSize);
-            auto ret  = mmap64(nullptr, allocSize, PROT_READ | PROT_WRITE,  MAP_PRIVATE | MAP_ANON, -1, 0);
-            if (ret == MAP_FAILED)
-            {
-                FATAL_ERROR(TempString("System allocation of {} bytes failed, reason: {}", size, errno));
-            }
+    static auto pageSize = 4096;
+    auto allocSize = RoundUpToPageSize(size, pageSize);
+    auto ret  = mmap64(nullptr, allocSize, PROT_READ | PROT_WRITE,  MAP_PRIVATE | MAP_ANON, -1, 0);
+    if (ret == MAP_FAILED)
+    {
+        FATAL_ERROR(TempString("System allocation of {} bytes failed, reason: {}", size, errno));
+    }
 #else
-    #error "Implement this"
+#error "Implement this"
 #endif
 
-            PoolStats::GetInstance().notifyAllocation(POOL_SYSTEM_MEMORY, size);
+    PoolStats::GetInstance().notifyAllocation(POOL_SYSTEM_MEMORY, size);
 
-            return ret;
-        }
+    return ret;
+}
 
-        void FreeSystemMemory(void* page, size_t size)
-        {
+void FreeSystemMemory(void* page, size_t size)
+{
 #ifdef PLATFORM_WINAPI
-            VirtualFree(page, 0, MEM_RELEASE);
+    VirtualFree(page, 0, MEM_RELEASE);
 #elif defined(PLATFORM_POSIX)
-            static auto pageSize = 4096;
-            auto allocSize = RoundUpToPageSize(size, pageSize);
-            munmap(page, allocSize);
+    static auto pageSize = 4096;
+    auto allocSize = RoundUpToPageSize(size, pageSize);
+    munmap(page, allocSize);
 #else
-    #error "Implement this"
+#error "Implement this"
 #endif
 
-            PoolStats::GetInstance().notifyFree(POOL_SYSTEM_MEMORY, size);
-        }
+    PoolStats::GetInstance().notifyFree(POOL_SYSTEM_MEMORY, size);
+}
 
-        //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-    } // mem
-} // base
-
+END_BOOMER_NAMESPACE(base::mem)

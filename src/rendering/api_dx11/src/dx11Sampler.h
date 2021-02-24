@@ -10,26 +10,19 @@
 
 #include "rendering/api_common/include/apiSampler.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
+
+///---
+
+class Sampler : public IBaseSampler
 {
-    namespace api
-    {
-		namespace dx11
-		{
-			///---
+public:
+	Sampler(Thread* owner, const SamplerState& setup);
+	virtual ~Sampler();
 
-			class Sampler : public IBaseSampler
-			{
-			public:
-				Sampler(Thread* owner, const SamplerState& setup);
-				virtual ~Sampler();
+	INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
+};
 
-				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
-			};
+//--
 
-			//--
-
-		} // dx11
-    } // api
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::api::dx11)

@@ -14,42 +14,40 @@
 
 #include <Windows.h>
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::process)
+
+namespace prv
 {
-    namespace process
+
+    namespace helper
     {
-        namespace prv
-        {
+        class StdHandleReader;
+    }
 
-            namespace helper
-            {
-                class StdHandleReader;
-            }
+    /// WinAPI based process
+    class WinProcess : public IProcess
+    {
+    public:
+        static WinProcess* Create(const ProcessSetup& setup);
 
-            /// WinAPI based process
-            class WinProcess : public IProcess
-            {
-            public:
-                static WinProcess* Create(const ProcessSetup& setup);
+        //--
 
-                //--
+        WinProcess();
+        virtual ~WinProcess();
 
-                WinProcess();
-                virtual ~WinProcess();
+        virtual bool wait(uint32_t timeoutMS) override;
+        virtual void terminate() override;
+        virtual ProcessID id() const override;
+        virtual bool isRunning() const override;
+        virtual bool exitCode(int& outExitCode) const override;
 
-                virtual bool wait(uint32_t timeoutMS) override;
-                virtual void terminate() override;
-                virtual ProcessID id() const override;
-                virtual bool isRunning() const override;
-                virtual bool exitCode(int& outExitCode) const override;
+    private:
+        HANDLE m_hProcess;
+        ProcessID m_id;
 
-            private:
-                HANDLE m_hProcess;
-                ProcessID m_id;
+        helper::StdHandleReader* m_stdReader;
+    };
 
-                helper::StdHandleReader* m_stdReader;
-            };
+} // prv
 
-        } // prv
-    } // process
-} // base
+END_BOOMER_NAMESPACE(base::process)

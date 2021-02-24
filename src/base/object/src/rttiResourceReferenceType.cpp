@@ -9,21 +9,17 @@
 #include "build.h"
 #include "rttiResourceReferenceType.h"
 
-namespace base
-{
-    namespace rtti
-    {
+BEGIN_BOOMER_NAMESPACE(base::rtti)
 
-        //--
+//--
 
-        IResourceReferenceType::IResourceReferenceType(StringID name)
-            : IType(name)
-        {}
+IResourceReferenceType::IResourceReferenceType(StringID name)
+    : IType(name)
+{}
 
-        IResourceReferenceType::~IResourceReferenceType()
-        {}
+IResourceReferenceType::~IResourceReferenceType()
+{}
 
-        //--
+//--
 
-    } // rtti
-} // base
+END_BOOMER_NAMESPACE(base::rtti)

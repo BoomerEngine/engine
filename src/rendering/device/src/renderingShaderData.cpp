@@ -14,52 +14,51 @@
 #include "renderingDeviceApi.h"
 #include "renderingDeviceService.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//--
+
+RTTI_BEGIN_TYPE_CLASS(ShaderData);
+	RTTI_PROPERTY(m_data);
+	RTTI_PROPERTY(m_metadata);
+RTTI_END_TYPE();
+
+ShaderData::ShaderData()
+{}
+
+ShaderData::ShaderData(base::Buffer data, const ShaderMetadata* metadata)
+	: m_data(data)
+	, m_metadata(AddRef(metadata))
 {
+	m_metadata->parent(this);
+	createDeviceObjects();
+}
 
-    //--
+ShaderData::~ShaderData()
+{
+	destroyDeviceObjects();
+}
 
-	RTTI_BEGIN_TYPE_CLASS(ShaderData);
-		RTTI_PROPERTY(m_data);
-		RTTI_PROPERTY(m_metadata);
-	RTTI_END_TYPE();
+void ShaderData::onPostLoad()
+{
+	TBaseClass::onPostLoad();
+}
 
-	ShaderData::ShaderData()
-	{}
+void ShaderData::createDeviceObjects()
+{
+	DEBUG_CHECK_RETURN_EX(!m_data.empty(), "No source shader data");
+	DEBUG_CHECK_RETURN_EX(m_metadata, "No source metadata");
 
-	ShaderData::ShaderData(base::Buffer data, const ShaderMetadata* metadata)
-		: m_data(data)
-		, m_metadata(AddRef(metadata))
-	{
-		m_metadata->parent(this);
-		createDeviceObjects();
-	}
+	if (auto* service = base::GetService<DeviceService>())
+		if (auto* device = service->device())
+			m_deviceShader = device->createShaders(this);
+}
 
-	ShaderData::~ShaderData()
-	{
-		destroyDeviceObjects();
-	}
+void ShaderData::destroyDeviceObjects()
+{
+	m_deviceShader.reset();
+}
 
-	void ShaderData::onPostLoad()
-	{
-		TBaseClass::onPostLoad();
-	}
+//--
 
-	void ShaderData::createDeviceObjects()
-	{
-		DEBUG_CHECK_RETURN_EX(!m_data.empty(), "No source shader data");
-		DEBUG_CHECK_RETURN_EX(m_metadata, "No source metadata");
-
-		if (auto* service = base::GetService<DeviceService>())
-			if (auto* device = service->device())
-				m_deviceShader = device->createShaders(this);
-	}
-
-	void ShaderData::destroyDeviceObjects()
-	{
-		m_deviceShader.reset();
-	}
-
-    //--
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

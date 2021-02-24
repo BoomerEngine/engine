@@ -8,7 +8,6 @@
 
 #include "public.h"
 
-namespace game
-{
+BEGIN_BOOMER_NAMESPACE(game)
 
-} // game
+END_BOOMER_NAMESPACE(game)

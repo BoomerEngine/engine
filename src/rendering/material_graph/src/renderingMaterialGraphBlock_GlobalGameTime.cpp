@@ -9,38 +9,38 @@
 #include "build.h"
 #include "renderingMaterialGraphBlock.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+///---
+
+class MaterialGraphBlock_GlobalGameTime : public MaterialGraphBlock
 {
-    ///---
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_GlobalGameTime, MaterialGraphBlock);
 
-    class MaterialGraphBlock_GlobalGameTime : public MaterialGraphBlock
+public:
+    MaterialGraphBlock_GlobalGameTime()
+    {}
+
+    virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_GlobalGameTime, MaterialGraphBlock);
+        builder.socket("Value"_id, MaterialOutputSocket().hideCaption());
+    }
 
-    public:
-        MaterialGraphBlock_GlobalGameTime()
-        {}
+    virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
+    {
+        return CodeChunk(CodeChunkType::Numerical1, "FrameParams.GameTime");
+    }
 
-        virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
-        {
-            builder.socket("Value"_id, MaterialOutputSocket().hideCaption());
-        }
+private:
+    float m_value;
+};
 
-        virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
-        {
-            return CodeChunk(CodeChunkType::Numerical1, "FrameParams.GameTime");
-        }
+RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_GlobalGameTime);
+    RTTI_METADATA(base::graph::BlockInfoMetadata).title("Game time").group("Globals");
+    RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialGlobal");
+    RTTI_METADATA(base::graph::BlockShapeMetadata).rectangle();
+RTTI_END_TYPE();
 
-    private:
-        float m_value;
-    };
+///---
 
-    RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_GlobalGameTime);
-        RTTI_METADATA(base::graph::BlockInfoMetadata).title("Game time").group("Globals");
-        RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialGlobal");
-        RTTI_METADATA(base::graph::BlockShapeMetadata).rectangle();
-    RTTI_END_TYPE();
-
-    ///---
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

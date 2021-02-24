@@ -12,43 +12,39 @@
 #include "base/system/include/spinLock.h"
 #include "base/system/include/scopeLock.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::socket)
+
+//---
+
+/// Base socket wrapper
+class BASE_SOCKET_API BaseSocket : public NoCopy
 {
-    namespace socket
-    {
+public:
+    BaseSocket();
+    BaseSocket(BaseSocket&& other);
+    BaseSocket& operator=(BaseSocket&& other);
+    ~BaseSocket();
 
-        //---
+    // retrieve raw socket descriptor
+    INLINE SocketType systemSocket() const { return m_socket; }
 
-        /// Base socket wrapper
-        class BASE_SOCKET_API BaseSocket : public NoCopy
-        {
-        public:
-            BaseSocket();
-            BaseSocket(BaseSocket&& other);
-            BaseSocket& operator=(BaseSocket&& other);
-            ~BaseSocket();
+    // is this valid socket ?
+    INLINE operator bool() const { return m_socket != SocketInvalid; }
 
-            // retrieve raw socket descriptor
-            INLINE SocketType systemSocket() const { return m_socket; }
+    // is this socket is using IPv6
+    INLINE bool isIP6() const { return m_ipv6; }
 
-            // is this valid socket ?
-            INLINE operator bool() const { return m_socket != SocketInvalid; }
+    // close the socket and clean up resources
+    void close();
 
-            // is this socket is using IPv6
-            INLINE bool isIP6() const { return m_ipv6; }
+    // Set socket blocking mode
+    bool blocking(bool blocking);
 
-            // close the socket and clean up resources
-            void close();
+protected:
+    SocketType m_socket;
+    bool m_ipv6;
+};
 
-            // Set socket blocking mode
-            bool blocking(bool blocking);
+//---
 
-        protected:
-            SocketType m_socket;
-            bool m_ipv6;
-        };
-
-        //---
-
-    } // socket
-} // base
+END_BOOMER_NAMESPACE(base::socket)

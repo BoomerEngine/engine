@@ -10,62 +10,62 @@
 
 #include "base/containers/include/blockPool.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//---
+
+/// a buffer that holds entries of constant size that can be updated frequently
+/// NOTE: this buffer has a backing CPU storage
+/// NOTE: this buffer does not grow
+class RENDERING_DEVICE_API ManagedBuffer : public base::NoCopy
 {
+    RTTI_DECLARE_POOL(POOL_RENDERING_RUNTIME)
+
+public:
+    ManagedBuffer(const BufferCreationInfo& info);
+    virtual ~ManagedBuffer();
+
     //---
 
-    /// a buffer that holds entries of constant size that can be updated frequently
-    /// NOTE: this buffer has a backing CPU storage
-    /// NOTE: this buffer does not grow
-    class RENDERING_DEVICE_API ManagedBuffer : public base::NoCopy
-    {
-        RTTI_DECLARE_POOL(POOL_RENDERING_RUNTIME)
+    /// buffer object
+    INLINE const BufferObjectPtr& bufferObject() { return m_bufferObject; }
 
-    public:
-        ManagedBuffer(const BufferCreationInfo& info);
-        virtual ~ManagedBuffer();
+    // backing CPU data buffer, read only
+    template< typename T >
+    INLINE const T* typedData() const { return (const T*)m_backingStorage; }
 
-        //---
+    //---
 
-        /// buffer object
-        INLINE const BufferObjectPtr& bufferObject() { return m_bufferObject; }
+    /// prepare buffer for use, write update commands
+    /// NOTE: we may send more than one update if the data is far apart
+    void update(GPUCommandWriter& cmd);
 
-        // backing CPU data buffer, read only
-        template< typename T >
-        INLINE const T* typedData() const { return (const T*)m_backingStorage; }
+    //---
 
-        //---
+    /// update data in the buffer
+    void writeData(uint32_t offset, uint32_t size, const void* data);
 
-        /// prepare buffer for use, write update commands
-        /// NOTE: we may send more than one update if the data is far apart
-        void update(command::CommandWriter& cmd);
+    /// write at index (for structured buffers)
+    template< typename T >
+    INLINE void writeAtIndex(uint32_t index, const T& data) { writeData(index * sizeof(T), sizeof(T), &data); }
 
-        //---
+    //---
 
-        /// update data in the buffer
-        void writeData(uint32_t offset, uint32_t size, const void* data);
+private:
+    BufferObjectPtr m_bufferObject;
 
-        /// write at index (for structured buffers)
-        template< typename T >
-        INLINE void writeAtIndex(uint32_t index, const T& data) { writeData(index * sizeof(T), sizeof(T), &data); }
+    uint8_t* m_backingStorage = nullptr;
+    uint8_t* m_backingStorageEnd = nullptr;
 
-        //---
+    uint32_t m_dirtyRegionStart = 0;
+    uint32_t m_dirtyRegionEnd = 0;
 
-    private:
-        BufferObjectPtr m_bufferObject;
+    uint32_t m_structureGranularity = 0;
 
-        uint8_t* m_backingStorage = nullptr;
-        uint8_t* m_backingStorageEnd = nullptr;
+    base::SpinLock m_stateLock;
+};
 
-        uint32_t m_dirtyRegionStart = 0;
-        uint32_t m_dirtyRegionEnd = 0;
+//--
 
-        uint32_t m_structureGranularity = 0;
-
-        base::SpinLock m_stateLock;
-    };
-
-    //--
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)
 

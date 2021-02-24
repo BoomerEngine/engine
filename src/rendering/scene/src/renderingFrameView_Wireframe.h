@@ -13,60 +13,55 @@
 
 #include "rendering/device/include/renderingCommandWriter.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
+
+//--
+
+/// command buffers to write to when recording wireframe view
+struct FrameViewWireframeRecorder : public FrameViewRecorder
 {
-    namespace scene
-    {
+	GPUCommandWriter viewBegin; // run at the start of the view rendering
+	GPUCommandWriter viewEnd; // run at the end of the view rendering
 
-		//--
+	GPUCommandWriter depthPrePass; // depth pre pass, mostly used for
+	GPUCommandWriter mainSolid; // solid (non transparent) objects - the main part of wireframe stuff
+	GPUCommandWriter mainTransparent; // transparent objects, not masked (pure solid)
+	GPUCommandWriter selectionOutline; // objects to render selection outline from
+	GPUCommandWriter sceneOverlay; // objects to render as scene overlay
+	GPUCommandWriter screenOverlay; // objects to render as screen overlay (at the screen resolution and after final composition)
 
-		/// command buffers to write to when recording wireframe view
-		struct FrameViewWireframeRecorder : public FrameViewRecorder
-		{
-			command::CommandWriter viewBegin; // run at the start of the view rendering
-			command::CommandWriter viewEnd; // run at the end of the view rendering
+	FrameViewWireframeRecorder();
+};
 
-			command::CommandWriter depthPrePass; // depth pre pass, mostly used for 
-			command::CommandWriter mainSolid; // solid (non transparent) objects - the main part of wireframe stuff
-			command::CommandWriter mainTransparent; // transparent objects, not masked (pure solid)
-			command::CommandWriter selectionOutline; // objects to render selection outline from
-			command::CommandWriter sceneOverlay; // objects to render as scene overlay
-			command::CommandWriter screenOverlay; // objects to render as screen overlay (at the screen resolution and after final composition)
+//--
 
-			FrameViewWireframeRecorder();
-		};
+/// helper recorder class
+class RENDERING_SCENE_API FrameViewWireframe : public FrameViewSingleCamera
+{
+public:
+	struct Setup
+	{
+		Camera camera;
 
-		//--
+		const RenderTargetView* colorTarget = nullptr; // NOTE: can be directly a back buffer!
+		const RenderTargetView* depthTarget = nullptr;
+		base::Rect viewport; // NOTE: does not have to start at 0,0 !!!
+	};
 
-		/// helper recorder class
-		class RENDERING_SCENE_API FrameViewWireframe : public FrameViewSingleCamera
-		{
-		public:
-			struct Setup
-			{
-				Camera camera;
+	//--
 
-				const RenderTargetView* colorTarget = nullptr; // NOTE: can be directly a back buffer!
-				const RenderTargetView* depthTarget = nullptr;
-				base::Rect viewport; // NOTE: does not have to start at 0,0 !!!
-			};
+	FrameViewWireframe(const FrameRenderer& frame, const Setup& setup);
 
-			//--
+	void render(GPUCommandWriter& cmd);
 
-			FrameViewWireframe(const FrameRenderer& frame, const Setup& setup);
+	//--
 
-			void render(command::CommandWriter& cmd);
+private:
+	const Setup& m_setup;
 
-			//--
+	void initializeCommandStreams(GPUCommandWriter& cmd, FrameViewWireframeRecorder& rec);
+};
 
-		private:
-			const Setup& m_setup;
+//--
 
-			void initializeCommandStreams(command::CommandWriter& cmd, FrameViewWireframeRecorder& rec);
-		};
-        
-        //--
-
-    } // scene
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::scene)

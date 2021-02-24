@@ -11,47 +11,47 @@
 #include "sceneEditMode.h"
 #include "editor/gizmos/include/gizmoGroup.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+// node in the clipboard data
+class EDITOR_SCENE_EDITOR_API SceneContentClipboardNode : public IObject
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(SceneContentClipboardNode, IObject);
+
+public:
+    SceneContentNodeType type; // type of content
+    StringBuf name;
+
+    EulerTransform localPlacement; // original placement with respect to parent
+    AbsoluteTransform worldPlacement; // original placement in the world space
+
     //--
 
-    // node in the clipboard data
-    class EDITOR_SCENE_EDITOR_API SceneContentClipboardNode : public IObject
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentClipboardNode, IObject);
+    world::NodeTemplatePtr packedEntityData;
+    ObjectIndirectTemplatePtr packedComponentData;
 
-    public:
-        SceneContentNodeType type; // type of content
-        StringBuf name;
+    //--
 
-        EulerTransform localPlacement; // original placement with respect to parent
-        AbsoluteTransform worldPlacement; // original placement in the world space
+    SceneContentClipboardNode();
+};
 
-        //--
+// clipboard data
+class EDITOR_SCENE_EDITOR_API SceneContentClipboardData : public IObject
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(SceneContentClipboardData, IObject);
 
-        world::NodeTemplatePtr packedEntityData;
-        ObjectIndirectTemplatePtr packedComponentData;
+public:
+    SceneContentNodeType type; // type of root content (must be uniform, we can't store entities AND components in the same clipboard data)
+    Array<SceneContentClipboardNodePtr> data; // objects in clipboard
 
-        //--
+    SceneContentClipboardData();
+};
 
-        SceneContentClipboardNode();
-    };
+// build clipboard data from selected nodes
+extern EDITOR_SCENE_EDITOR_API SceneContentClipboardDataPtr BuildClipboardDataFromNodes(const Array<SceneContentNodePtr>& nodes);
 
-    // clipboard data
-    class EDITOR_SCENE_EDITOR_API SceneContentClipboardData : public IObject
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(SceneContentClipboardData, IObject);
+//--    
 
-    public:
-        SceneContentNodeType type; // type of root content (must be uniform, we can't store entities AND components in the same clipboard data)
-        Array<SceneContentClipboardNodePtr> data; // objects in clipboard
-
-        SceneContentClipboardData();
-    };
-
-    // build clipboard data from selected nodes
-    extern EDITOR_SCENE_EDITOR_API SceneContentClipboardDataPtr BuildClipboardDataFromNodes(const Array<SceneContentNodePtr>& nodes);
-
-    //--    
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

@@ -13,12 +13,9 @@
 #include <PxScene.h>
 #include <PxActor.h>
 
-namespace physics
-{
-    namespace runtime
-    {
-        class PhysicsScene;
-        class PhysicsService;
+BEGIN_BOOMER_NAMESPACE(boomer)
 
-    } // runtime
-} // rendering
+class PhysicsScene;
+class PhysicsService;
+
+END_BOOMER_NAMESPACE(boomer)

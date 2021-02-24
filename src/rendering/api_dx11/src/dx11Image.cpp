@@ -13,73 +13,66 @@
 
 #include "base/memory/include/poolStats.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
+
+///---
+
+Image::Image(Thread* drv, const ImageCreationInfo& setup, const ISourceDataProvider* sourceData)
+	: IBaseImage(drv, setup, sourceData)
+{}
+
+Image::~Image()
+{}
+
+//--
+
+IBaseImageView* Image::createSampledView_ClientApi(const IBaseImageView::Setup& setup)
 {
-    namespace api
-    {
-		namespace dx11
-		{
+	return new ImageAnyView(owner(), this, setup);
+}
 
-			///---
+IBaseImageView* Image::createReadOnlyView_ClientApi(const IBaseImageView::Setup& setup)
+{
+	return new ImageAnyView(owner(), this, setup);
+}
 
-			Image::Image(Thread* drv, const ImageCreationInfo& setup, const ISourceDataProvider* sourceData)
-				: IBaseImage(drv, setup, sourceData)
-			{}
+IBaseImageView* Image::createWritableView_ClientApi(const IBaseImageView::Setup& setup)
+{
+	return new ImageAnyView(owner(), this, setup);
+}
 
-			Image::~Image()
-			{}
+IBaseImageView* Image::createRenderTargetView_ClientApi(const IBaseImageView::Setup& setup)
+{
+	return new ImageAnyView(owner(), this, setup);
+}
 
-			//--
+//--
 
-			IBaseImageView* Image::createSampledView_ClientApi(const IBaseImageView::Setup& setup)
-			{
-				return new ImageAnyView(owner(), this, setup);
-			}
+void Image::updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range)
+{
 
-			IBaseImageView* Image::createReadOnlyView_ClientApi(const IBaseImageView::Setup& setup)
-			{
-				return new ImageAnyView(owner(), this, setup);
-			}
-
-			IBaseImageView* Image::createWritableView_ClientApi(const IBaseImageView::Setup& setup)
-			{
-				return new ImageAnyView(owner(), this, setup);
-			}
-
-			IBaseImageView* Image::createRenderTargetView_ClientApi(const IBaseImageView::Setup& setup)
-			{
-				return new ImageAnyView(owner(), this, setup);
-			}
-
-			//--
-
-			void Image::updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range)
-			{
-
-			}
+}
 
 
-			void Image::copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
-			{
+void Image::copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+{
 
-			}
+}
 
-			void Image::copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
-			{
+void Image::copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+{
 
-			}
+}
 
-			//--
+//--
 
-			ImageAnyView::ImageAnyView(Thread* owner, Image* img, const Setup& setup)
-				: IBaseImageView(owner, ObjectType::ImageWritableView, img, setup)
-			{}
+ImageAnyView::ImageAnyView(Thread* owner, Image* img, const Setup& setup)
+	: IBaseImageView(owner, ObjectType::ImageWritableView, img, setup)
+{}
 
-			ImageAnyView::~ImageAnyView()
-			{}
+ImageAnyView::~ImageAnyView()
+{}
 
-			//--
+//--
 
-		} // dx11
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::dx11)

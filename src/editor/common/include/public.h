@@ -52,106 +52,104 @@ DECLARE_GLOBAL_EVENT(EVENT_MANAGED_PLACEHOLDER_DISCARDED);
 DECLARE_GLOBAL_EVENT(EVENT_MANAGED_PLACEHOLDER_ACCEPTED);
 
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed::vsc)
+
+class IChangelist;
+typedef RefPtr<IChangelist> ChangelistPtr;
+
+class IVersionControl;
+typedef UniquePtr<IVersionControl> VersionControlPtr;
+
+struct FileState;
+struct Result;
+
+END_BOOMER_NAMESPACE(ed::vsc)
+
+BEGIN_BOOMER_NAMESPACE(ed)
+
+///---
+
+enum class BackgroundTaskStatus : uint8_t
 {
-    namespace vsc
-    {
-        class IChangelist;
-        typedef RefPtr<IChangelist> ChangelistPtr;
+    Finished,
+    Failed,
+    Running,
+};
 
-        class IVersionControl;
-        typedef UniquePtr<IVersionControl> VersionControlPtr;
+class IBackgroundTask;
+typedef RefPtr<IBackgroundTask> BackgroundTaskPtr;
 
-        struct FileState;
-        struct Result;
+typedef std::function<void(IProgressTracker& progress)> TLongJobFunc;
 
-    } // vsc
+class ProgressDialog;
 
-    ///---
+//--
 
-    enum class BackgroundTaskStatus : uint8_t
-    {
-        Finished,
-        Failed,
-        Running,
-    };
+class ManagedDepot;
+class ManagedFileCollection;
 
-    class IBackgroundTask;
-    typedef RefPtr<IBackgroundTask> BackgroundTaskPtr;
+class ManagedItem;
+typedef RefPtr<ManagedItem> ManagedItemPtr;
+typedef RefWeakPtr<ManagedItem> ManagedIteamWeakPTr;
 
-    typedef std::function<void(IProgressTracker& progress)> TLongJobFunc;
+class ManagedFile;
+typedef RefPtr<ManagedFile> ManagedFilePtr;
+typedef RefWeakPtr<ManagedFile> ManagedFileWeakPtr;
 
-    class ProgressDialog;
+class ManagedFileNativeResource;
+typedef RefPtr<ManagedFileNativeResource> ManagedFileNativeResourcePtr;
+typedef RefWeakPtr<ManagedFileNativeResource> ManagedFileNativeResourceWeakPtr;
 
-    //--
+class ManagedFilePlaceholder;
+typedef RefPtr<ManagedFilePlaceholder> ManagedFilePlaceholderPtr;
+typedef RefWeakPtr<ManagedFilePlaceholder> ManagedFilePlaceholderWeakPtr;
 
-    class ManagedDepot;
-    class ManagedFileCollection;
+class ManagedDirectoryPlaceholder;
+typedef RefPtr<ManagedDirectoryPlaceholder> ManagedDirectoryPlaceholderPtr;
+typedef RefWeakPtr<ManagedDirectoryPlaceholder> ManagedDirectoryPlaceholderWeakPtr;
 
-    class ManagedItem;
-    typedef RefPtr<ManagedItem> ManagedItemPtr;
-    typedef RefWeakPtr<ManagedItem> ManagedIteamWeakPTr;
+class ManagedDirectory;
+typedef RefPtr<ManagedDirectory> ManagedDirectoryPtr;
+typedef RefWeakPtr<ManagedDirectory> ManagedDirectoryWeakPtr;
 
-    class ManagedFile;
-    typedef RefPtr<ManagedFile> ManagedFilePtr;
-    typedef RefWeakPtr<ManagedFile> ManagedFileWeakPtr;
+class ManagedThumbnailEntry;
+typedef RefPtr<ManagedThumbnailEntry> ManagedThumbnailEntryPtr;
+typedef RefWeakPtr<ManagedThumbnailEntry> ManagedThumbnailEntryWeakPtr;
 
-    class ManagedFileNativeResource;
-    typedef RefPtr<ManagedFileNativeResource> ManagedFileNativeResourcePtr;
-    typedef RefWeakPtr<ManagedFileNativeResource> ManagedFileNativeResourceWeakPtr;
+class ManagedFileImportStatusCheck;
+typedef RefPtr<ManagedFileImportStatusCheck> ManagedFileImportStatusCheckPtr;
+typedef RefWeakPtr<ManagedFileImportStatusCheck> ManagedFileImportStatusCheckWeakPtr;
 
-    class ManagedFilePlaceholder;
-    typedef RefPtr<ManagedFilePlaceholder> ManagedFilePlaceholderPtr;
-    typedef RefWeakPtr<ManagedFilePlaceholder> ManagedFilePlaceholderWeakPtr;
+class ManagedFileFormat;
+class ManagedFilePlaceholder;
 
-    class ManagedDirectoryPlaceholder;
-    typedef RefPtr<ManagedDirectoryPlaceholder> ManagedDirectoryPlaceholderPtr;
-    typedef RefWeakPtr<ManagedDirectoryPlaceholder> ManagedDirectoryPlaceholderWeakPtr;
+//--
 
-    class ManagedDirectory;
-    typedef RefPtr<ManagedDirectory> ManagedDirectoryPtr;
-    typedef RefWeakPtr<ManagedDirectory> ManagedDirectoryWeakPtr;
+class ResourceEditor;
+typedef RefPtr<ResourceEditor> ResourceEditorPtr;
 
-    class ManagedThumbnailEntry;
-    typedef RefPtr<ManagedThumbnailEntry> ManagedThumbnailEntryPtr;
-    typedef RefWeakPtr<ManagedThumbnailEntry> ManagedThumbnailEntryWeakPtr;
+class IResourceEditorAspect;
+typedef RefPtr<IResourceEditorAspect> ResourceEditorAspectPtr;
 
-    class ManagedFileImportStatusCheck;
-    typedef RefPtr<ManagedFileImportStatusCheck> ManagedFileImportStatusCheckPtr;
-    typedef RefWeakPtr<ManagedFileImportStatusCheck> ManagedFileImportStatusCheckWeakPtr;
+//--
 
-    class ManagedFileFormat;
-    class ManagedFilePlaceholder;
+class Editor;
 
-    //--
+class IBaseResourceContainerWindow;
+class MainWindow;
 
-    class ResourceEditor;
-    typedef RefPtr<ResourceEditor> ResourceEditorPtr;
+class AssetBrowser;
+class AssetImportPrepareTab;
+class AssetImportMainTab;
 
-    class IResourceEditorAspect;
-    typedef RefPtr<IResourceEditorAspect> ResourceEditorAspectPtr;
+typedef SpecificClassType<res::IResource> TImportClass;
 
-    //--
+enum class AssetBrowserContext : uint8_t
+{
+    DirectoryTab,
+    EditorTabHeader,
+};
 
-    class Editor;
-
-    class IBaseResourceContainerWindow;
-    class MainWindow;
-
-    class AssetBrowser;
-    class AssetImportPrepareTab;
-    class AssetImportMainTab;
-
-    typedef SpecificClassType<res::IResource> TImportClass;
-
-    enum class AssetBrowserContext : uint8_t
-    {
-        DirectoryTab,
-        EditorTabHeader,
-    };
-
-    //--
-        
-} // ed
+END_BOOMER_NAMESPACE(ed)
 
 using input::KeyCode;

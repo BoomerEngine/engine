@@ -11,51 +11,52 @@
 #include "base/object/include/streamOpcodeWriter.h"
 #include "base/object/include/streamOpcodeReader.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+namespace prv
 {
-    namespace prv
+
+    void WriteBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
     {
+        const auto& buffer = *(const Buffer*)data;
+        stream.writeTypedData<uint8_t>(0); // compression type - none, allows for binary compatibility with compressed buffers
+        stream.writeBuffer(buffer);
+    }
 
-        void WriteBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
+    void ReadBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
+    {
+        auto& buffer = *(Buffer*)data;
+
+        uint8_t code = 0;
+        stream.readTypedData(code);
+
+        ASSERT_EX(code == 0, "Invalid buffer code");
+        buffer = stream.readBuffer();
+
+        /*auto compressedBuffer = Buffer::Create(POOL_TEMP, compressedSize);
+        if (!compressedBuffer)
+            return false;
+
+        stream.read(compressedBuffer.data(), compressedSize);
+        if (stream.isError())
+            return false;
+
+        if (!mem::Decompress(mem::CompressionType::LZ4HC, compressedBuffer.data(), compressedBuffer.size(), buffer.data(), buffer.size()))
         {
-            const auto& buffer = *(const Buffer*)data;
-            stream.writeTypedData<uint8_t>(0); // compression type - none, allows for binary compatibility with compressed buffers
-            stream.writeBuffer(buffer);
-        }
+            DEBUG_CHECK(!"Decompression failed for some reason");
+            return false;
+        }*/
+    }
 
-        void ReadBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
-        {
-            auto& buffer = *(Buffer*)data;
+} // prv
 
-            uint8_t code = 0;
-            stream.readTypedData(code);
+RTTI_BEGIN_CUSTOM_TYPE(Buffer);
+    RTTI_BIND_NATIVE_CTOR_DTOR(Buffer);
+    RTTI_BIND_NATIVE_COPY(Buffer);
+    RTTI_BIND_NATIVE_COMPARE(Buffer);
+    RTTI_BIND_NATIVE_PRINT(Buffer);
+    RTTI_BIND_CUSTOM_BINARY_SERIALIZATION(&prv::WriteBinary, &prv::ReadBinary);
+RTTI_END_TYPE();
 
-            ASSERT_EX(code == 0, "Invalid buffer code");
-            buffer = stream.readBuffer();
+END_BOOMER_NAMESPACE(base)
 
-            /*auto compressedBuffer = Buffer::Create(POOL_TEMP, compressedSize);
-            if (!compressedBuffer)
-                return false;
-
-            stream.read(compressedBuffer.data(), compressedSize);
-            if (stream.isError())
-                return false;
-
-            if (!mem::Decompress(mem::CompressionType::LZ4HC, compressedBuffer.data(), compressedBuffer.size(), buffer.data(), buffer.size()))
-            {
-                DEBUG_CHECK(!"Decompression failed for some reason");
-                return false;
-            }*/
-        }
-
-    } // prv
-
-    RTTI_BEGIN_CUSTOM_TYPE(Buffer);
-        RTTI_BIND_NATIVE_CTOR_DTOR(Buffer);
-        RTTI_BIND_NATIVE_COPY(Buffer);
-        RTTI_BIND_NATIVE_COMPARE(Buffer);
-        RTTI_BIND_NATIVE_PRINT(Buffer);
-        RTTI_BIND_CUSTOM_BINARY_SERIALIZATION(&prv::WriteBinary, &prv::ReadBinary);
-    RTTI_END_TYPE();
-
-} // base

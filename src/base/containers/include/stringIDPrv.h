@@ -10,54 +10,55 @@
 
 #include "stringBuf.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+namespace prv
 {
-	namespace prv
+
+	///--
+
+	class StringIDDataStorage
 	{
+	public:
+		StringIDDataStorage();
+		~StringIDDataStorage();
 
-		///--
+		StringIDIndex place(StringView buf);
 
-		class StringIDDataStorage
-		{
-		public:
-			StringIDDataStorage();
-			~StringIDDataStorage();
+	private:
+		uint32_t m_stringTableSize = 0;
+		uint32_t m_stringTableWriteOffset = 0;
 
-			StringIDIndex place(StringView buf);
+		void resize();
+	};
 
-		private:
-			uint32_t m_stringTableSize = 0;
-			uint32_t m_stringTableWriteOffset = 0;
+	///--
 
-			void resize();
-		};
+	class StringIDMap
+	{
+	public:
+		StringIDMap();
+		~StringIDMap();
 
-		///--
+		StringIDIndex find(uint32_t stringHash, const char* stringData, uint32_t stringLength, uint32_t& outFreeBucket) const;
 
-		class StringIDMap
-		{
-		public:
-			StringIDMap();
-			~StringIDMap();
+		void insertAfterFailedFind(uint32_t stringHash, StringIDIndex stringIndex, uint32_t freeBucket);
 
-			StringIDIndex find(uint32_t stringHash, const char* stringData, uint32_t stringLength, uint32_t& outFreeBucket) const;
+	private:
+		uint32_t m_numBuckets = 0;
+		uint32_t m_numEntries = 0;
+		uint32_t m_maxEntries = 0; // some % of the nubmer of buckets, roughly 70%
 
-			void insertAfterFailedFind(uint32_t stringHash, StringIDIndex stringIndex, uint32_t freeBucket);
+		uint32_t* m_buckets = nullptr;
 
-		private:
-			uint32_t m_numBuckets = 0;
-			uint32_t m_numEntries = 0;
-			uint32_t m_maxEntries = 0; // some % of the nubmer of buckets, roughly 70%
+		void resize();
 
-			uint32_t* m_buckets = nullptr;
+		void insertAfterResize(uint32_t stringHash, StringIDIndex stringIndex);
+	};
 
-			void resize();
+	///--
 
-			void insertAfterResize(uint32_t stringHash, StringIDIndex stringIndex);
-		};
+} // prv
 
-		///--
-
-	} // prv
-} // base
+END_BOOMER_NAMESPACE(base)
 

@@ -12,53 +12,52 @@
 #include "managedItem.h"
 #include "managedItemCollection.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+ManagedFileCollection::ManagedFileCollection()
+{}
+
+ManagedFileCollection::~ManagedFileCollection()
+{}
+
+ManagedFileCollection::ManagedFileCollection(const ManagedFileCollection& other) = default;
+ManagedFileCollection::ManagedFileCollection(ManagedFileCollection&& other) = default;
+ManagedFileCollection& ManagedFileCollection::operator=(const ManagedFileCollection& other) = default;
+ManagedFileCollection& ManagedFileCollection::operator=(ManagedFileCollection&& other) = default;
+
+ManagedFileCollection::ManagedFileCollection(const Array<ManagedFile*>& files)
 {
+    m_files.reserve(files.size());
 
-    //--
+    for (auto* file : files)
+        if (file)
+            m_files.insert(file);
+}
 
-    ManagedFileCollection::ManagedFileCollection()
-    {}
+void ManagedFileCollection::clear()
+{
+    m_files.clear();
+}
 
-    ManagedFileCollection::~ManagedFileCollection()
-    {}
+bool ManagedFileCollection::collectFile(ManagedFile* file)
+{
+    return m_files.insert(file);
+}
 
-    ManagedFileCollection::ManagedFileCollection(const ManagedFileCollection& other) = default;
-    ManagedFileCollection::ManagedFileCollection(ManagedFileCollection&& other) = default;
-    ManagedFileCollection& ManagedFileCollection::operator=(const ManagedFileCollection& other) = default;
-    ManagedFileCollection& ManagedFileCollection::operator=(ManagedFileCollection&& other) = default;
+bool ManagedFileCollection::removeFile(ManagedFile* file)
+{
+    return m_files.remove(file);
+}
 
-    ManagedFileCollection::ManagedFileCollection(const Array<ManagedFile*>& files)
-    {
-        m_files.reserve(files.size());
+bool ManagedFileCollection::containsFile(ManagedFile* file) const
+{
+    return m_files.contains(file);
+}
 
-        for (auto* file : files)
-            if (file)
-                m_files.insert(file);
-    }
+//--
 
-    void ManagedFileCollection::clear()
-    {
-        m_files.clear();
-    }
-
-    bool ManagedFileCollection::collectFile(ManagedFile* file)
-    {
-        return m_files.insert(file);
-    }
-
-    bool ManagedFileCollection::removeFile(ManagedFile* file)
-    {
-        return m_files.remove(file);
-    }
-
-    bool ManagedFileCollection::containsFile(ManagedFile* file) const
-    {
-        return m_files.contains(file);
-    }
-
-    //--
-
-} // depot
+END_BOOMER_NAMESPACE(ed)
 
 

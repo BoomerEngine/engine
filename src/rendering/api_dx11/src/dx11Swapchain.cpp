@@ -10,18 +10,7 @@
 #include "dx11Thread.h"
 #include "dx11Swapchain.h"
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace dx11
-		{
-			//--
-
-			static void DisableFullscreen(IDXGISwapChain* dxSwapchain, HWND hWnd)
-			{
-				if (dxSwapchain)
-				{
+BEGIN_BOOMER_NAMESPACE(rendering::api)
 					IDXGIOutput* dxTarget = nullptr;
 					BOOL bFullscreen = FALSE;
 					if (SUCCEEDED(dxSwapchain->GetFullscreenState(&bFullscreen, &dxTarget)))

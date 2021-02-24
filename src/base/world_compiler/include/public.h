@@ -8,12 +8,6 @@
 
 #include "base_world_compiler_glue.inl"
 
-namespace base
-{
-    namespace world
-    {
-        //---
-        //---
+BEGIN_BOOMER_NAMESPACE(base::world)
 
-    }  // world
-} // base
+END_BOOMER_NAMESPACE(base::world)

@@ -11,43 +11,42 @@
 #include "instanceBufferLayout.h"
 #include "instanceVar.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+InstanceBuffer::InstanceBuffer(const InstanceBufferLayout* layout, void* data, uint32_t size, PoolTag poolID)
+    : m_layout(AddRef(layout))
+    , m_poolID(poolID)
+    , m_data(data)
+    , m_size(size)
+{}
+
+InstanceBuffer::~InstanceBuffer()
 {
+    m_layout->destroyBuffer(m_data);
+    m_layout.reset();
 
-    InstanceBuffer::InstanceBuffer(const InstanceBufferLayout* layout, void* data, uint32_t size, PoolTag poolID)
-        : m_layout(AddRef(layout))
-        , m_poolID(poolID)
-        , m_data(data)
-        , m_size(size)
-    {}
+    mem::FreeBlock(m_data);
+    m_data = nullptr;
+    m_size = 0;
+}
 
-    InstanceBuffer::~InstanceBuffer()
-    {
-        m_layout->destroyBuffer(m_data);
-        m_layout.reset();
+InstanceBufferPtr InstanceBuffer::copy() const
+{
+    void* ptr = mem::AllocateBlock(m_poolID, m_size, m_layout->alignment(), "InstanceBuffer");
+    m_layout->copyBufer(ptr, m_data);
+    return RefNew<InstanceBuffer>(m_layout, ptr, m_size, m_poolID);
+}
 
-        mem::FreeBlock(m_data);
-        m_data = nullptr;
-        m_size = 0;
-    }
+void* InstanceBuffer::GetInstanceVarData(const InstanceVarBase& v)
+{
+    DEBUG_CHECK_SLOW_EX(v.allocated(), "Used InstanceVar that has no allocated space in the buffer");
+    return base::OffsetPtr(m_data, v.offset());
+}
 
-    InstanceBufferPtr InstanceBuffer::copy() const
-    {
-        void* ptr = mem::AllocateBlock(m_poolID, m_size, m_layout->alignment(), "InstanceBuffer");
-        m_layout->copyBufer(ptr, m_data);
-        return RefNew<InstanceBuffer>(m_layout, ptr, m_size, m_poolID);
-    }
+const void* InstanceBuffer::GetInstanceVarData(const InstanceVarBase& v) const
+{
+    DEBUG_CHECK_SLOW_EX(v.allocated(), "Used InstanceVar that has no allocated space in the buffer");
+    return base::OffsetPtr(m_data, v.offset());
+}
 
-    void* InstanceBuffer::GetInstanceVarData(const InstanceVarBase& v)
-    {
-        DEBUG_CHECK_SLOW_EX(v.allocated(), "Used InstanceVar that has no allocated space in the buffer");
-        return base::OffsetPtr(m_data, v.offset());
-    }
-
-    const void* InstanceBuffer::GetInstanceVarData(const InstanceVarBase& v) const
-    {
-        DEBUG_CHECK_SLOW_EX(v.allocated(), "Used InstanceVar that has no allocated space in the buffer");
-        return base::OffsetPtr(m_data, v.offset());
-    }
-
-} // base
+END_BOOMER_NAMESPACE(base)

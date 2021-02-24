@@ -17,8 +17,7 @@
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
 
-namespace rendering
-{
+BEGIN_BOOMER_NAMESPACE(rendering)
 	///---
 
 	static base::ConfigProperty<uint32_t> cvMaxMeshletDataSizeKB("Rendering.Mesh", "MaxMeshletDataSizeKB", 1024);
@@ -139,12 +138,12 @@ namespace rendering
 
 	//--
 
-	void MeshService::uploadChanges(command::CommandWriter& cmd) const
+	void MeshService::uploadChanges(GPUCommandWriter& cmd) const
 	{
 		m_meshletStorage->pushUpdates(cmd);
 	}
 
-	void MeshService::bindMeshData(command::CommandWriter& cmd) const
+	void MeshService::bindMeshData(GPUCommandWriter& cmd) const
 	{
 		//m_meshletStorage->bin
 	}

@@ -11,40 +11,33 @@
 #include "rendering/api_common/include/apiBackgroundJobs.h"
 #include "base/system/include/thread.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
+
+//---
+
+class ThreadWinApi;
+
+class BackgroundQueue : public IBaseBackgroundQueue
 {
-    namespace api
-    {
-		namespace dx11
-		{
+public:
+	BackgroundQueue(Thread* owner);
 
-			//---
+	virtual bool createWorkerThreads(uint32_t requestedCount, uint32_t& outNumCreated) override final;
+	virtual void stopWorkerThreads() override final;
 
-			class ThreadWinApi;
+private:
+	Thread* m_owner = nullptr;
 
-			class BackgroundQueue : public IBaseBackgroundQueue
-			{
-			public:
-				BackgroundQueue(Thread* owner);
+	struct ThreadState
+	{
+		base::Thread thread;
+	};
 
-				virtual bool createWorkerThreads(uint32_t requestedCount, uint32_t& outNumCreated) override final;
-				virtual void stopWorkerThreads() override final;
+	base::Array<ThreadState*> m_workerThreads;
 
-			private:
-				Thread* m_owner = nullptr;
+	void threadFunc(ThreadState* state);
+};
 
-				struct ThreadState
-				{
-					base::Thread thread;
-				};
+//---
 
-				base::Array<ThreadState*> m_workerThreads;
-
-				void threadFunc(ThreadState* state);
-			};
-
-			//---
-
-		} // dx11
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::dx11)

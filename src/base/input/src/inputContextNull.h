@@ -10,28 +10,25 @@
 
 #include "inputContext.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::input)
+
+///---
+
+/// Null input context
+class BASE_INPUT_API ContextNull : public IContext
 {
-    namespace input
-    {
-        ///---
+    RTTI_DECLARE_VIRTUAL_CLASS(ContextNull, IContext);
 
-        /// Null input context
-        class BASE_INPUT_API ContextNull : public IContext
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ContextNull, IContext);
+public:
+    ContextNull(uint64_t nativeWindow=0, uint64_t nativeDisplay=0);
 
-        public:
-            ContextNull(uint64_t nativeWindow=0, uint64_t nativeDisplay=0);
+    //--
 
-            //--
+    virtual void resetInput() override final;
+    virtual void processState() override final;
+    virtual void processMessage(const void* msg) override final;
+};
 
-            virtual void resetInput() override final;
-            virtual void processState() override final;
-            virtual void processMessage(const void* msg) override final;
-        };
+///---
 
-        ///---
-
-    } // input
-} // base
+END_BOOMER_NAMESPACE(base::input)

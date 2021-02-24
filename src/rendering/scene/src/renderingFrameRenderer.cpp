@@ -27,127 +27,124 @@
 #include "renderingFrameView.h"
 #include "renderingFrameHelper_Outline.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
+
+//--
+
+FrameViewRecorder::FrameViewRecorder(FrameViewRecorder* parentView)
+    : m_parentView(parentView)
+{}
+
+void FrameViewRecorder::finishRendering()
 {
-    namespace scene
+    auto lock = CreateLock(m_fenceListLock);
+    Fibers::GetInstance().waitForMultipleCountersAndRelease(m_fences.typedData(), m_fences.size());
+}
+
+void FrameViewRecorder::postFence(base::fibers::WaitCounter fence, bool localFence)
+{
+    if (!m_parentView || localFence)
     {
-        //--
-
-        FrameViewRecorder::FrameViewRecorder(FrameViewRecorder* parentView)
-            : m_parentView(parentView)
-        {}
-
-        void FrameViewRecorder::finishRendering()
-        {
-            auto lock = CreateLock(m_fenceListLock);
-            Fibers::GetInstance().waitForMultipleCountersAndRelease(m_fences.typedData(), m_fences.size());
-        }
-
-        void FrameViewRecorder::postFence(base::fibers::WaitCounter fence, bool localFence)
-        {
-            if (!m_parentView || localFence)
-            {
-                auto lock = CreateLock(m_fenceListLock);
-                m_fences.pushBack(fence);
-            }
-            else
-            {
-                m_parentView->postFence(fence, false);
-            }
-        }
+        auto lock = CreateLock(m_fenceListLock);
+        m_fences.pushBack(fence);
+    }
+    else
+    {
+        m_parentView->postFence(fence, false);
+    }
+}
 
 
-		//--
+//--
 
-		FrameHelper::FrameHelper(IDevice* dev)
-		{
-			debug = new FrameHelperDebug(dev);
-			compose = new FrameHelperCompose(dev);
-            outline = new FrameHelperOutline(dev);
-		}
+FrameHelper::FrameHelper(IDevice* dev)
+{
+	debug = new FrameHelperDebug(dev);
+	compose = new FrameHelperCompose(dev);
+    outline = new FrameHelperOutline(dev);
+}
 
-		FrameHelper::~FrameHelper()
-		{
-			delete debug;
-			delete compose;
-            delete outline;
-		}
+FrameHelper::~FrameHelper()
+{
+	delete debug;
+	delete compose;
+    delete outline;
+}
 
-        //--
+//--
 
-        FrameRenderer::FrameRenderer(const FrameParams& frame, const FrameCompositionTarget& target, const FrameResources& resources, const FrameHelper& helpers)
-            : m_frame(frame)
-            , m_resources(resources)
-			, m_helpers(helpers)
-			, m_target(target)
-            , m_allocator(POOL_RENDERING_FRAME)
-        {
-            // lock scenes
-            {
-                PC_SCOPE_LVL1(LockScenes);
-                if (m_frame.scenes.backgroundScenePtr)
-                    m_frame.scenes.backgroundScenePtr->renderLock();
-                if (m_frame.scenes.mainScenePtr)
-                    m_frame.scenes.mainScenePtr->renderLock();
-            }
-        }
+FrameRenderer::FrameRenderer(const FrameParams& frame, const FrameCompositionTarget& target, const FrameResources& resources, const FrameHelper& helpers)
+    : m_frame(frame)
+    , m_resources(resources)
+	, m_helpers(helpers)
+	, m_target(target)
+    , m_allocator(POOL_RENDERING_FRAME)
+{
+    // lock scenes
+    {
+        PC_SCOPE_LVL1(LockScenes);
+        if (m_frame.scenes.backgroundScenePtr)
+            m_frame.scenes.backgroundScenePtr->renderLock();
+        if (m_frame.scenes.mainScenePtr)
+            m_frame.scenes.mainScenePtr->renderLock();
+    }
+}
 
-        FrameRenderer::~FrameRenderer()
-        {
-            // unlock all scenes
-            {
-                PC_SCOPE_LVL1(UnlockScenes);
-                if (m_frame.scenes.backgroundScenePtr)
-                    m_frame.scenes.backgroundScenePtr->renderUnlock();
-                if (m_frame.scenes.mainScenePtr)
-                    m_frame.scenes.mainScenePtr->renderUnlock();
-            }
-        }
+FrameRenderer::~FrameRenderer()
+{
+    // unlock all scenes
+    {
+        PC_SCOPE_LVL1(UnlockScenes);
+        if (m_frame.scenes.backgroundScenePtr)
+            m_frame.scenes.backgroundScenePtr->renderUnlock();
+        if (m_frame.scenes.mainScenePtr)
+            m_frame.scenes.mainScenePtr->renderUnlock();
+    }
+}
 
-        bool FrameRenderer::usesMultisamping() const
-        {
-            return m_msaa;
-        }        
+bool FrameRenderer::usesMultisamping() const
+{
+    return m_msaa;
+}        
 
-        void FrameRenderer::bindFrameParameters(command::CommandWriter& cmd) const
-        {
-            GPUFrameParameters params;
-            PackFrameParams(params, *this, m_target);
+void FrameRenderer::bindFrameParameters(GPUCommandWriter& cmd) const
+{
+    GPUFrameParameters params;
+    PackFrameParams(params, *this, m_target);
 
-            DescriptorEntry desc[1];
-            desc[0].constants(params);
-            cmd.opBindDescriptor("FrameParams"_id, desc);
-        }
+    DescriptorEntry desc[1];
+    desc[0].constants(params);
+    cmd.opBindDescriptor("FrameParams"_id, desc);
+}
 
-        void FrameRenderer::prepareFrame(command::CommandWriter& cmd)
-        {
-            command::CommandWriterBlock block(cmd, "PrepareFrame");
+void FrameRenderer::prepareFrame(GPUCommandWriter& cmd)
+{
+    CommandWriterBlock block(cmd, "PrepareFrame");
 
-            // prepare some major services
-            base::GetService<rendering::MeshService>()->uploadChanges(cmd);
+    // prepare some major services
+    base::GetService<rendering::MeshService>()->uploadChanges(cmd);
 
-            // dispatch all material changes
-            base::GetService<rendering::MaterialService>()->dispatchMaterialProxyChanges();
+    // dispatch all material changes
+    base::GetService<rendering::MaterialService>()->dispatchMaterialProxyChanges();
 
-            // bind global frame params
-            bindFrameParameters(cmd);
+    // bind global frame params
+    bindFrameParameters(cmd);
 
-            /*// prepare background
-            if (frame().scenes.backgroundScenePtr)
-                frame().scenes.backgroundScenePtr->prepare(cmd, *this);*/
+    /*// prepare background
+    if (frame().scenes.backgroundScenePtr)
+        frame().scenes.backgroundScenePtr->prepare(cmd, *this);*/
 
-            // prepare main scene
-            if (frame().scenes.mainScenePtr)
-                frame().scenes.mainScenePtr->prepare(cmd, *this);
-        }
+    // prepare main scene
+    if (frame().scenes.mainScenePtr)
+        frame().scenes.mainScenePtr->prepare(cmd, *this);
+}
 
-        void FrameRenderer::finishFrame()
-        {
-            /*for (auto& scene : m_scenes)
-                m_mergedSceneStats.merge(scene.stats);*/
-        }
+void FrameRenderer::finishFrame()
+{
+    /*for (auto& scene : m_scenes)
+        m_mergedSceneStats.merge(scene.stats);*/
+}
 
-        //--
+//--
 
-    } // scene
-} // rendering
+END_BOOMER_NAMESPACE(rendering::scene)

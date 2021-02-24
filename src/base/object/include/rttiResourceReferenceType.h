@@ -10,36 +10,32 @@
 
 #include "rttiType.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::rtti)
+
+//---
+
+/// RTTI-side base interface for a resource reference type, main purpose of having it here it facilitate resource reloading
+class BASE_OBJECT_API IResourceReferenceType : public IType
 {
-    namespace rtti
-    {
+public:
+    IResourceReferenceType(StringID name);
+    virtual ~IResourceReferenceType();
 
-        //---
+    //--
 
-        /// RTTI-side base interface for a resource reference type, main purpose of having it here it facilitate resource reloading
-        class BASE_OBJECT_API IResourceReferenceType : public IType
-        {
-        public:
-            IResourceReferenceType(StringID name);
-            virtual ~IResourceReferenceType();
+    /// get the class we are pointing to
+    virtual ClassType referenceResourceClass() const = 0;
 
-            //--
+    /*/// read the currently referenced resource
+    virtual void referenceReadResource(const void* data, RefPtr<res::IResource>& outRef) const = 0;
 
-            /// get the class we are pointing to
-            virtual ClassType referenceResourceClass() const = 0;
+    /// write new resource reference
+    virtual void referenceWriteResource(void* data, res::IResource* resource) const = 0;*/
 
-            /*/// read the currently referenced resource
-            virtual void referenceReadResource(const void* data, RefPtr<res::IResource>& outRef) const = 0;
+    /// patch resource reference, returns true if indeed it was patched
+    virtual bool referencePatchResource(void* data, res::IResource* currentResource, res::IResource* newResources) const = 0;
+};
 
-            /// write new resource reference
-            virtual void referenceWriteResource(void* data, res::IResource* resource) const = 0;*/
+//---
 
-            /// patch resource reference, returns true if indeed it was patched
-            virtual bool referencePatchResource(void* data, res::IResource* currentResource, res::IResource* newResources) const = 0;
-        };
-
-        //---
-
-    } // rtti
-} // base
+END_BOOMER_NAMESPACE(base::rtti)

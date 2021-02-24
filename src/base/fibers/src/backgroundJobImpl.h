@@ -12,51 +12,51 @@
 #include "base/containers/include/hashMap.h"
 #include "base/system/include/semaphoreCounter.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//--
+
+/// background job runner
+class BASE_FIBERS_API BackgroundScheduler : public ISingleton
 {
-    //--
+    DECLARE_SINGLETON(BackgroundScheduler);
 
-    /// background job runner
-    class BASE_FIBERS_API BackgroundScheduler : public ISingleton
+public:
+    BackgroundScheduler();
+
+    // initialize background job system
+    bool initialize(const IBaseCommandLine& commandline);
+
+    // finish all running and scheduled jobs
+    // NOTE: this may be a VERY LONG CALL and should not be called unless something very special happens (like quitting)
+    void flush();
+
+    /// run background job
+    void schedule(IBackgroundJob* job, StringID bucket);
+
+private:
+    struct ThreadBucket
     {
-        DECLARE_SINGLETON(BackgroundScheduler);
+        StringID bucketName;
 
-    public:
-        BackgroundScheduler();
+        SpinLock scheduledJobsLock;
+        Array<RefPtr<IBackgroundJob>> scheduledJobs;
+        Semaphore scheduledJobsSemaphore;
 
-        // initialize background job system
-        bool initialize(const IBaseCommandLine& commandline);
+        RefPtr<IBackgroundJob> currentJob;
+        Thread thread;
 
-        // finish all running and scheduled jobs
-        // NOTE: this may be a VERY LONG CALL and should not be called unless something very special happens (like quitting)
-        void flush();
+        std::atomic<bool> canceledFlag = false;
 
-        /// run background job
-        void schedule(IBackgroundJob* job, StringID bucket);
-
-    private:
-        struct ThreadBucket
-        {
-            StringID bucketName;
-
-            SpinLock scheduledJobsLock;
-            Array<RefPtr<IBackgroundJob>> scheduledJobs;
-            Semaphore scheduledJobsSemaphore;
-
-            RefPtr<IBackgroundJob> currentJob;
-            Thread thread;
-
-            std::atomic<bool> canceledFlag = false;
-
-            ThreadBucket();
-        };
-
-        HashMap<StringID, ThreadBucket*> m_threadBuckets;
-        SpinLock m_threadBucketsLock;
-
-        void runBucket(ThreadBucket* bucket);
+        ThreadBucket();
     };
 
-    //--
+    HashMap<StringID, ThreadBucket*> m_threadBuckets;
+    SpinLock m_threadBucketsLock;
 
-} // base
+    void runBucket(ThreadBucket* bucket);
+};
+
+//--
+
+END_BOOMER_NAMESPACE(base)

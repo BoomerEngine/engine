@@ -11,9 +11,9 @@
 #include "imgui.h"
 #include "imgui_integration.h"
 
-namespace base
-{
-    class IDebugPage;
-    typedef RefPtr<IDebugPage> DebugPagePtr;
+BEGIN_BOOMER_NAMESPACE(base)
 
-} // base
+class IDebugPage;
+typedef RefPtr<IDebugPage> DebugPagePtr;
+
+END_BOOMER_NAMESPACE(base)

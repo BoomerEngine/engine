@@ -8,16 +8,28 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//--
+
+ALWAYS_INLINE GlobalEventKey::GlobalEventKey(EGlobalKeyAutoInit)
 {
-    //--
+    m_key = MakeUniqueEventKey().rawValue();
+}
 
-    ALWAYS_INLINE GlobalEventKey::GlobalEventKey(EGlobalKeyAutoInit)
-    {
-        m_key = MakeUniqueEventKey().rawValue();
-    }
+ALWAYS_INLINE GlobalEventKey::GlobalEventKey(GlobalEventKey&& other)
+{
+    m_key = other.m_key;
+    other.m_key = 0;
 
-    ALWAYS_INLINE GlobalEventKey::GlobalEventKey(GlobalEventKey&& other)
+#ifdef GLOBAL_EVENTS_DEBUG_INFO
+    m_debugInfo = std::move(m_debugInfo);
+#endif
+}
+
+ALWAYS_INLINE GlobalEventKey& GlobalEventKey::operator=(GlobalEventKey&& other)
+{
+    if (this != &other)
     {
         m_key = other.m_key;
         other.m_key = 0;
@@ -27,56 +39,44 @@ namespace base
 #endif
     }
 
-    ALWAYS_INLINE GlobalEventKey& GlobalEventKey::operator=(GlobalEventKey&& other)
-    {
-        if (this != &other)
-        {
-            m_key = other.m_key;
-            other.m_key = 0;
+    return *this;
+}
 
-#ifdef GLOBAL_EVENTS_DEBUG_INFO
-            m_debugInfo = std::move(m_debugInfo);
-#endif
-        }
+ALWAYS_INLINE GlobalEventKey::operator bool() const
+{
+    return m_key != 0;
+}
 
-        return *this;
-    }
+ALWAYS_INLINE bool GlobalEventKey::valid() const
+{
+    return  m_key != 0;
+}
 
-    ALWAYS_INLINE GlobalEventKey::operator bool() const
-    {
-        return m_key != 0;
-    }
+ALWAYS_INLINE GlobalEventKeyType GlobalEventKey::rawValue() const
+{
+    return m_key;
+}
 
-    ALWAYS_INLINE bool GlobalEventKey::valid() const
-    {
-        return  m_key != 0;
-    }
+ALWAYS_INLINE bool GlobalEventKey::operator==(const GlobalEventKey& other) const
+{
+    return m_key == other.m_key;
+}
 
-    ALWAYS_INLINE GlobalEventKeyType GlobalEventKey::rawValue() const
-    {
-        return m_key;
-    }
+ALWAYS_INLINE bool GlobalEventKey::operator!=(const GlobalEventKey& other) const
+{
+    return m_key == other.m_key;
+}
 
-    ALWAYS_INLINE bool GlobalEventKey::operator==(const GlobalEventKey& other) const
-    {
-        return m_key == other.m_key;
-    }
+ALWAYS_INLINE bool GlobalEventKey::operator<(const GlobalEventKey& other) const
+{
+    return m_key < other.m_key;
+}
 
-    ALWAYS_INLINE bool GlobalEventKey::operator!=(const GlobalEventKey& other) const
-    {
-        return m_key == other.m_key;
-    }
+ALWAYS_INLINE uint32_t GlobalEventKey::CalcHash(const GlobalEventKey& key)
+{
+    return CRC32() << key.m_key;
+}
 
-    ALWAYS_INLINE bool GlobalEventKey::operator<(const GlobalEventKey& other) const
-    {
-        return m_key < other.m_key;
-    }
+//--
 
-    ALWAYS_INLINE uint32_t GlobalEventKey::CalcHash(const GlobalEventKey& key)
-    {
-        return CRC32() << key.m_key;
-    }
-
-    //--
-
-} // base
+END_BOOMER_NAMESPACE(base)

@@ -8,12 +8,3 @@
 
 #include "public.h"
 
-namespace base
-{
-    namespace script
-    {
-
-        //--
-
-    } // script
-} // base

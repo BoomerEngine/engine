@@ -11,40 +11,35 @@
 #include "rendering/api_common/include/apiDevice.h"
 #include "rendering/api_dxgi/include/dxgiHelper.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
+
+//--
+
+// a NULL implementation of the rendering api
+class RENDERING_API_DX11_API Device : public IBaseDevice
 {
-    namespace api
-    {
-		namespace dx11
-		{
+	RTTI_DECLARE_VIRTUAL_CLASS(Device, IBaseDevice);
 
-			// a NULL implementation of the rendering api
-			class RENDERING_API_DX11_API Device : public IBaseDevice
-			{
-				RTTI_DECLARE_VIRTUAL_CLASS(Device, IBaseDevice);
+public:
+	Device();
+	virtual ~Device();
 
-			public:
-				Device();
-				virtual ~Device();
+	//--
 
-				//--
+	virtual base::StringBuf name() const override final;
 
-				virtual base::StringBuf name() const override final;
+	//--
 
-				//--
+private:
+	virtual bool initialize(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps) override final;
+	virtual void shutdown() override final;
 
-			private:
-				virtual bool initialize(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps) override final;
-				virtual void shutdown() override final;
+	virtual IBaseThread* createOptimalThread(const base::app::CommandLine& cmdLine) override final;
 
-				virtual IBaseThread* createOptimalThread(const base::app::CommandLine& cmdLine) override final;
+	DXGIHelper* m_dxgi = nullptr;
+	uint32_t m_adapterIndex = 0;
+};
 
-				DXGIHelper* m_dxgi = nullptr;
-				uint32_t m_adapterIndex = 0;
-			};
+//--
 
-			//--
-
-		} // dx11
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::dx11)

@@ -11,25 +11,18 @@
 #include "nullApiObjectCache.h"
 #include "nullApiGraphicsPipeline.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
+
+//--
+
+GraphicsPipeline::GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates)
+	: IBaseGraphicsPipeline(owner, shaders, mergedRenderStates)
 {
-    namespace api
-    {
-		namespace nul
-		{
+}
 
-			//--
+GraphicsPipeline::~GraphicsPipeline()
+{}
 
-			GraphicsPipeline::GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates)
-				: IBaseGraphicsPipeline(owner, shaders, mergedRenderStates)
-			{
-			}
+//--
 
-			GraphicsPipeline::~GraphicsPipeline()
-			{}
-
-			//--
-
-		} // nul
-    } // gl4
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

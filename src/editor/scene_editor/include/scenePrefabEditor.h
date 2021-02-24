@@ -10,27 +10,26 @@
 
 #include "sceneCommonEditor.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+/// editor for prefabs
+class EDITOR_SCENE_EDITOR_API ScenePrefabEditor : public SceneCommonEditor
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(ScenePrefabEditor, SceneCommonEditor);
 
-    //--
+public:
+    ScenePrefabEditor(ManagedFileNativeResource* file);
+    virtual ~ScenePrefabEditor();
 
-    /// editor for prefabs
-    class EDITOR_SCENE_EDITOR_API ScenePrefabEditor : public SceneCommonEditor
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(ScenePrefabEditor, SceneCommonEditor);
+protected:
+    virtual bool checkGeneralSave() const override;
+    virtual bool save() override;
 
-    public:
-        ScenePrefabEditor(ManagedFileNativeResource* file);
-        virtual ~ScenePrefabEditor();
+    virtual void recreateContent() override;
+};
 
-    protected:
-        virtual bool checkGeneralSave() const override;
-        virtual bool save() override;
+//--
 
-        virtual void recreateContent() override;
-    };
-
-    //--
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

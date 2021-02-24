@@ -8,96 +8,93 @@
 
 #include <cmath>
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::replication)
+
+//--
+
+INLINE uint32_t BitCount::maxUnsigned() const
 {
-    namespace replication
+    if (m_bitCount == 0 || m_bitCount >= 32)
+        return ~0U;
+
+    return (1U << m_bitCount) - 1;
+}
+
+INLINE int BitCount::maxSigned() const
+{
+    if (m_bitCount < 2 || m_bitCount >= 32)
+        return std::numeric_limits<int>::max();
+
+    auto half = (int)1 << (m_bitCount-1);
+    return half - 1;
+}
+
+INLINE int BitCount::minSigned() const
+{
+    if (m_bitCount < 2 || m_bitCount >= 32)
+        return std::numeric_limits<int>::min();
+
+    auto mask = (1U << (m_bitCount - 1)) - 1;
+    return (int)~mask;
+}
+
+//--
+
+INLINE float Quantization::quantizationError() const
+{
+    return m_quantizationStep;
+}
+
+INLINE QuantizedValue Quantization::quantizeFloat(float val) const
+{
+    if (val >= m_quantizationMax)
+        return m_quantizationMaxValue;
+
+    if (val > m_quantizationMin)
     {
-        //--
+        auto q = (int) std::round((val - m_quantizationMin) * m_quantizationInvStep);
+        return (q == m_quantizationMaxValue) ? m_quantizationMaxValue : q;
+    }
 
-        INLINE uint32_t BitCount::maxUnsigned() const
-        {
-            if (m_bitCount == 0 || m_bitCount >= 32)
-                return ~0U;
+    return 0;
+}
 
-            return (1U << m_bitCount) - 1;
-        }
+INLINE float Quantization::unquantizeFloat(QuantizedValue val) const
+{
+    return m_quantizationMin + (val * m_quantizationStep);
+}
 
-        INLINE int BitCount::maxSigned() const
-        {
-            if (m_bitCount < 2 || m_bitCount >= 32)
-                return std::numeric_limits<int>::max();
+INLINE QuantizedValue Quantization::quantizeUnsigned(uint32_t val) const
+{
+    return val >= m_quantizationMaxValue ? m_quantizationMaxValue : val;
+}
 
-            auto half = (int)1 << (m_bitCount-1);
-            return half - 1;
-        }
+INLINE uint32_t Quantization::unquantizeUnsigned(QuantizedValue val) const
+{
+    return val & m_quantizationMaxValue;
+}
 
-        INLINE int BitCount::minSigned() const
-        {
-            if (m_bitCount < 2 || m_bitCount >= 32)
-                return std::numeric_limits<int>::min();
+INLINE QuantizedValue Quantization::quantizeSigned(int val) const
+{
+    QuantizedValue q = val;
 
-            auto mask = (1U << (m_bitCount - 1)) - 1;
-            return (int)~mask;
-        }
+    if (val < m_bitCount.minSigned())
+        q = m_bitCount.minSigned();
+    else  if (val > m_bitCount.maxSigned())
+        q = m_bitCount.maxSigned();
 
-        //--
+    return q & m_quantizationMaxValue;
+}
 
-        INLINE float Quantization::quantizationError() const
-        {
-            return m_quantizationStep;
-        }
+INLINE int Quantization::unquantizeSigned(QuantizedValue val) const
+{
+    auto signedBit = 1U << (m_bitCount.m_bitCount - 1);
+    if (val & signedBit)
+        return (int)(val | ~m_quantizationMaxValue);
+    else
+        return (int)(val & m_quantizationMaxValue);
+}
 
-        INLINE QuantizedValue Quantization::quantizeFloat(float val) const
-        {
-            if (val >= m_quantizationMax)
-                return m_quantizationMaxValue;
+//--
 
-            if (val > m_quantizationMin)
-            {
-                auto q = (int) std::round((val - m_quantizationMin) * m_quantizationInvStep);
-                return (q == m_quantizationMaxValue) ? m_quantizationMaxValue : q;
-            }
-
-            return 0;
-        }
-
-        INLINE float Quantization::unquantizeFloat(QuantizedValue val) const
-        {
-            return m_quantizationMin + (val * m_quantizationStep);
-        }
-
-        INLINE QuantizedValue Quantization::quantizeUnsigned(uint32_t val) const
-        {
-            return val >= m_quantizationMaxValue ? m_quantizationMaxValue : val;
-        }
-
-        INLINE uint32_t Quantization::unquantizeUnsigned(QuantizedValue val) const
-        {
-            return val & m_quantizationMaxValue;
-        }
-
-        INLINE QuantizedValue Quantization::quantizeSigned(int val) const
-        {
-            QuantizedValue q = val;
-
-            if (val < m_bitCount.minSigned())
-                q = m_bitCount.minSigned();
-            else  if (val > m_bitCount.maxSigned())
-                q = m_bitCount.maxSigned();
-
-            return q & m_quantizationMaxValue;
-        }
-
-        INLINE int Quantization::unquantizeSigned(QuantizedValue val) const
-        {
-            auto signedBit = 1U << (m_bitCount.m_bitCount - 1);
-            if (val & signedBit)
-                return (int)(val | ~m_quantizationMaxValue);
-            else
-                return (int)(val & m_quantizationMaxValue);
-        }
-
-        //--
-
-    } // replication
-} // base
+END_BOOMER_NAMESPACE(base::replication)

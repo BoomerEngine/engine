@@ -16,130 +16,130 @@
 #include "base/graph/include/graphContainer.h"
 #include "base/graph/include/graphBlock.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+//---
+
+GraphBlockPaletteTreeModel::GraphBlockPaletteTreeModel()
+{}
+
+ModelIndex GraphBlockPaletteTreeModel::findOrCreateRootGroup(base::StringView name)
 {
-    //---
-
-    GraphBlockPaletteTreeModel::GraphBlockPaletteTreeModel()
-    {}
-
-    ModelIndex GraphBlockPaletteTreeModel::findOrCreateRootGroup(base::StringView name)
+    ModelIndex ret;
+    if (!m_groups.find(name, ret))
     {
-        ModelIndex ret;
-        if (!m_groups.find(name, ret))
-        {
-            GraphBlockPaletteEntry entry;
-            entry.caption = base::StringBuf(name);
-            entry.displayText = base::StringBuf(base::TempString("[b]{}[/b]", name));
-            ret = addRootNode(entry);
-            m_groups[entry.caption] = ret;
-        }
-
-        return ret;
+        GraphBlockPaletteEntry entry;
+        entry.caption = base::StringBuf(name);
+        entry.displayText = base::StringBuf(base::TempString("[b]{}[/b]", name));
+        ret = addRootNode(entry);
+        m_groups[entry.caption] = ret;
     }
 
-    void GraphBlockPaletteTreeModel::addRootClass(base::SpecificClassType<base::graph::Block> rootClass)
+    return ret;
+}
+
+void GraphBlockPaletteTreeModel::addRootClass(base::SpecificClassType<base::graph::Block> rootClass)
+{
+    base::InplaceArray<base::ClassType, 100> blockClasses;
+    RTTI::GetInstance().enumClasses(rootClass, blockClasses);
+
+    for (const auto blockClass : blockClasses)
     {
-        base::InplaceArray<base::ClassType, 100> blockClasses;
-        RTTI::GetInstance().enumClasses(rootClass, blockClasses);
-
-        for (const auto blockClass : blockClasses)
+        if (const auto* groupInfo = blockClass->findMetadata<base::graph::BlockInfoMetadata>())
         {
-            if (const auto* groupInfo = blockClass->findMetadata<base::graph::BlockInfoMetadata>())
+            base::StringView groupName = "Generic";
+            if (!groupInfo->groupString.empty())
+                groupName = groupInfo->groupString;
+
+            base::StringView blockName = groupInfo->nameString;
+            if (blockName.empty())
+                blockName = groupInfo->titleString;
+
+            if (!blockName.empty())
             {
-                base::StringView groupName = "Generic";
-                if (!groupInfo->groupString.empty())
-                    groupName = groupInfo->groupString;
-
-                base::StringView blockName = groupInfo->nameString;
-                if (blockName.empty())
-                    blockName = groupInfo->titleString;
-
-                if (!blockName.empty())
-                {
-                    auto groupId = findOrCreateRootGroup(groupInfo->groupString);
+                auto groupId = findOrCreateRootGroup(groupInfo->groupString);
                     
-                    GraphBlockPaletteEntry entry;
-                    entry.caption = base::StringBuf(blockName);
-                    entry.blockClass = blockClass.cast<base::graph::Block>();
-                    entry.displayText = base::StringBuf(base::TempString("[img:fx] {}", blockName));
-                    addChildNode(groupId, entry);
-                }
+                GraphBlockPaletteEntry entry;
+                entry.caption = base::StringBuf(blockName);
+                entry.blockClass = blockClass.cast<base::graph::Block>();
+                entry.displayText = base::StringBuf(base::TempString("[img:fx] {}", blockName));
+                addChildNode(groupId, entry);
             }
         }
     }
+}
 
-    bool GraphBlockPaletteTreeModel::compare(const GraphBlockPaletteEntry& a, const GraphBlockPaletteEntry& b, int colIndex) const
+bool GraphBlockPaletteTreeModel::compare(const GraphBlockPaletteEntry& a, const GraphBlockPaletteEntry& b, int colIndex) const
+{
+    return a.caption < b.caption;
+}
+
+bool GraphBlockPaletteTreeModel::filter(const GraphBlockPaletteEntry& data, const SearchPattern& filter, int colIndex /*= 0*/) const
+{
+    return filter.testString(data.caption);
+}
+
+base::StringBuf GraphBlockPaletteTreeModel::displayContent(const GraphBlockPaletteEntry& data, int colIndex /*= 0*/) const
+{
+    return data.displayText;
+}
+
+DragDropDataPtr GraphBlockPaletteTreeModel::queryDragDropData(const base::input::BaseKeyFlags& keys, const ModelIndex& item)
+{
+    if (const auto data = dataPtrForNode(item))
     {
-        return a.caption < b.caption;
+        if (data->blockClass)
+            return base::RefNew<GraphBlockClassDragDropData>(data->blockClass);
     }
 
-    bool GraphBlockPaletteTreeModel::filter(const GraphBlockPaletteEntry& data, const SearchPattern& filter, int colIndex /*= 0*/) const
-    {
-        return filter.testString(data.caption);
-    }
+    return nullptr;
+}
 
-    base::StringBuf GraphBlockPaletteTreeModel::displayContent(const GraphBlockPaletteEntry& data, int colIndex /*= 0*/) const
-    {
-        return data.displayText;
-    }
+ui::ElementPtr GraphBlockPaletteTreeModel::tooltip(const GraphBlockPaletteEntry& data) const
+{
+    if (data.blockClass)
+        return CreateGraphBlockTooltip(data.blockClass);
+    return nullptr;
+}
 
-    DragDropDataPtr GraphBlockPaletteTreeModel::queryDragDropData(const base::input::BaseKeyFlags& keys, const ModelIndex& item)
-    {
-        if (const auto data = dataPtrForNode(item))
-        {
-            if (data->blockClass)
-                return base::RefNew<GraphBlockClassDragDropData>(data->blockClass);
-        }
+//---
 
-        return nullptr;
-    }
+RTTI_BEGIN_TYPE_CLASS(GraphBlockPalette);
+RTTI_END_TYPE();
 
-    ui::ElementPtr GraphBlockPaletteTreeModel::tooltip(const GraphBlockPaletteEntry& data) const
-    {
-        if (data.blockClass)
-            return CreateGraphBlockTooltip(data.blockClass);
-        return nullptr;
-    }
+GraphBlockPalette::GraphBlockPalette()
+{
+    layoutVertical();
 
-    //---
+    m_searchBar = createChild<SearchBar>(false);
 
-    RTTI_BEGIN_TYPE_CLASS(GraphBlockPalette);
-    RTTI_END_TYPE();
+    m_tree = createChild<TreeView>();
+    m_tree->expand();
+    m_tree->expandAll();
 
-    GraphBlockPalette::GraphBlockPalette()
-    {
-        layoutVertical();
+    m_searchBar->bindItemView(m_tree);
+}
 
-        m_searchBar = createChild<SearchBar>(false);
+void GraphBlockPalette::setRootClasses(base::graph::Container* graph)
+{
+    base::InplaceArray<base::SpecificClassType<base::graph::Block>, 10> blockClasses;
+    if (graph)
+        graph->supportedBlockClasses(blockClasses);
 
-        m_tree = createChild<TreeView>();
-        m_tree->expand();
-        m_tree->expandAll();
+    setRootClasses(blockClasses);
+}
 
-        m_searchBar->bindItemView(m_tree);
-    }
+void GraphBlockPalette::setRootClasses(const base::Array<base::SpecificClassType<base::graph::Block>>& rootClasses)
+{
+    auto model = base::RefNew<GraphBlockPaletteTreeModel>();
 
-    void GraphBlockPalette::setRootClasses(base::graph::Container* graph)
-    {
-        base::InplaceArray<base::SpecificClassType<base::graph::Block>, 10> blockClasses;
-        if (graph)
-            graph->supportedBlockClasses(blockClasses);
+    for (const auto blockClass : rootClasses)
+        model->addRootClass(blockClass);
 
-        setRootClasses(blockClasses);
-    }
+    m_tree->model(model);
+}
 
-    void GraphBlockPalette::setRootClasses(const base::Array<base::SpecificClassType<base::graph::Block>>& rootClasses)
-    {
-        auto model = base::RefNew<GraphBlockPaletteTreeModel>();
+//---
 
-        for (const auto blockClass : rootClasses)
-            model->addRootClass(blockClass);
-
-        m_tree->model(model);
-    }
-
-    //---
-
-} // ui
+END_BOOMER_NAMESPACE(ui)
 

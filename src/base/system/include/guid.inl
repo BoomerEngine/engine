@@ -8,94 +8,93 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//--
+
+INLINE GUID::GUID()
 {
+    static_assert(NUM_WORDS == 4, "Adapt for different number");
+    m_words[0] = 0;
+    m_words[1] = 0;
+    m_words[2] = 0;
+    m_words[3] = 0;
+}
 
-    //--
+INLINE GUID::GUID(const GUID& other)
+{
+    static_assert(NUM_WORDS == 4, "Adapt for different number");
+    m_words[0] = other.m_words[0];
+    m_words[1] = other.m_words[1];
+    m_words[2] = other.m_words[2];
+    m_words[3] = other.m_words[3];
+}
 
-    INLINE GUID::GUID()
-    {
-        static_assert(NUM_WORDS == 4, "Adapt for different number");
-        m_words[0] = 0;
-        m_words[1] = 0;
-        m_words[2] = 0;
-        m_words[3] = 0;
-    }
+INLINE GUID::GUID(GUID&& other)
+{
+    static_assert(NUM_WORDS == 4, "Adapt for different number");
+    m_words[0] = other.m_words[0];
+    m_words[1] = other.m_words[1];
+    m_words[2] = other.m_words[2];
+    m_words[3] = other.m_words[3];
+    other.m_words[0] = 0;
+    other.m_words[1] = 0;
+    other.m_words[2] = 0;
+    other.m_words[3] = 0;
+}
 
-    INLINE GUID::GUID(const GUID& other)
-    {
-        static_assert(NUM_WORDS == 4, "Adapt for different number");
-        m_words[0] = other.m_words[0];
-        m_words[1] = other.m_words[1];
-        m_words[2] = other.m_words[2];
-        m_words[3] = other.m_words[3];
-    }
+INLINE GUID& GUID::operator=(const GUID& other)
+{
+    static_assert(NUM_WORDS == 4, "Adapt for different number");
+    m_words[0] = other.m_words[0];
+    m_words[1] = other.m_words[1];
+    m_words[2] = other.m_words[2];
+    m_words[3] = other.m_words[3];
+    return *this;
+}
 
-    INLINE GUID::GUID(GUID&& other)
-    {
-        static_assert(NUM_WORDS == 4, "Adapt for different number");
-        m_words[0] = other.m_words[0];
-        m_words[1] = other.m_words[1];
-        m_words[2] = other.m_words[2];
-        m_words[3] = other.m_words[3];
-        other.m_words[0] = 0;
-        other.m_words[1] = 0;
-        other.m_words[2] = 0;
-        other.m_words[3] = 0;
-    }
+INLINE GUID& GUID::operator=(GUID&& other)
+{
+    static_assert(NUM_WORDS == 4, "Adapt for different number");
+    m_words[0] = other.m_words[0];
+    m_words[1] = other.m_words[1];
+    m_words[2] = other.m_words[2];
+    m_words[3] = other.m_words[3];
+    return *this;
+}
 
-    INLINE GUID& GUID::operator=(const GUID& other)
-    {
-        static_assert(NUM_WORDS == 4, "Adapt for different number");
-        m_words[0] = other.m_words[0];
-        m_words[1] = other.m_words[1];
-        m_words[2] = other.m_words[2];
-        m_words[3] = other.m_words[3];
-        return *this;
-    }
+INLINE const uint32_t* GUID::data() const
+{
+    return m_words;
+}
 
-    INLINE GUID& GUID::operator=(GUID&& other)
-    {
-        static_assert(NUM_WORDS == 4, "Adapt for different number");
-        m_words[0] = other.m_words[0];
-        m_words[1] = other.m_words[1];
-        m_words[2] = other.m_words[2];
-        m_words[3] = other.m_words[3];
-        return *this;
-    }
+INLINE bool GUID::empty() const
+{
+    static_assert(NUM_WORDS == 4, "Adapt for different number");
+    return m_words[0] == 0 && m_words[1] == 0 && m_words[2] == 0 && m_words[3] == 0;
+}
 
-    INLINE const uint32_t* GUID::data() const
-    {
-        return m_words;
-    }
+INLINE GUID::operator bool() const
+{
+    return !empty();
+}
 
-    INLINE bool GUID::empty() const
-    {
-        static_assert(NUM_WORDS == 4, "Adapt for different number");
-        return m_words[0] == 0 && m_words[1] == 0 && m_words[2] == 0 && m_words[3] == 0;
-    }
+INLINE bool GUID::operator==(const GUID& other) const
+{
+    static_assert(NUM_WORDS == 4, "Adapt for different number");
+    return (m_words[0] == other.m_words[0]) && (m_words[1] == other.m_words[1]) && (m_words[2] == other.m_words[2]) && (m_words[3] == other.m_words[3]);
+}
 
-    INLINE GUID::operator bool() const
-    {
-        return !empty();
-    }
+INLINE bool GUID::operator!=(const GUID& other) const
+{
+    return !operator==(other);
+}
 
-    INLINE bool GUID::operator==(const GUID& other) const
-    {
-        static_assert(NUM_WORDS == 4, "Adapt for different number");
-        return (m_words[0] == other.m_words[0]) && (m_words[1] == other.m_words[1]) && (m_words[2] == other.m_words[2]) && (m_words[3] == other.m_words[3]);
-    }
+INLINE bool GUID::operator<(const GUID& other) const
+{
+    return memcmp(m_words, other.m_words, sizeof(m_words)) < 0;
+}
 
-    INLINE bool GUID::operator!=(const GUID& other) const
-    {
-        return !operator==(other);
-    }
-
-    INLINE bool GUID::operator<(const GUID& other) const
-    {
-        return memcmp(m_words, other.m_words, sizeof(m_words)) < 0;
-    }
-
-    //--
+//--
     
-} // base
+END_BOOMER_NAMESPACE(base)

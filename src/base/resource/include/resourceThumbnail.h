@@ -10,29 +10,25 @@
 
 #include "resource.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+//---
+
+/// resource thumbnail data
+class BASE_RESOURCE_API ResourceThumbnail : public IObject
 {
-    namespace res
-    {
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceThumbnail, IObject);
 
-        //---
+public:
+    ResourceThumbnail();
 
-        /// resource thumbnail data
-        class BASE_RESOURCE_API ResourceThumbnail : public IObject
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ResourceThumbnail, IObject);
+    Buffer imagePixels; // raw image pixels, RGBA32
+    uint32_t imageWidth = 0;
+    uint32_t imageHeight = 0;
 
-        public:
-            ResourceThumbnail();
+    Array<StringBuf> comments; // additional comments
+};
 
-            Buffer imagePixels; // raw image pixels, RGBA32
-            uint32_t imageWidth = 0;
-            uint32_t imageHeight = 0;
+//---
 
-            Array<StringBuf> comments; // additional comments
-        };
-
-        //---
-
-    } // res
-} // base
+END_BOOMER_NAMESPACE(base::res)

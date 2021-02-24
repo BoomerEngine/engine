@@ -15,10 +15,8 @@
 #include "rendering/scene/include/renderingFrameDebug.h"
 #include "rendering/scene/include/renderingFrameDebugGeometry.h"
 
-namespace rendering
-{
-    namespace test
-    {
+BEGIN_BOOMER_NAMESPACE(rendering::test)
+
 
         //---
 

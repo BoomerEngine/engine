@@ -9,22 +9,18 @@
 #include "build.h"
 #include "ioFileHandle.h"
 
-namespace base
-{
-    namespace io
-    {
+BEGIN_BOOMER_NAMESPACE(base::io)
 
-        IReadFileHandle::IReadFileHandle()
-        {}
+IReadFileHandle::IReadFileHandle()
+{}
 
-        IReadFileHandle::~IReadFileHandle()
-        {}
+IReadFileHandle::~IReadFileHandle()
+{}
 
-        IWriteFileHandle::IWriteFileHandle()
-        {}
+IWriteFileHandle::IWriteFileHandle()
+{}
 
-        IWriteFileHandle::~IWriteFileHandle()
-        {}
+IWriteFileHandle::~IWriteFileHandle()
+{}
 
-    } // io
-} // base
+END_BOOMER_NAMESPACE(base::io)

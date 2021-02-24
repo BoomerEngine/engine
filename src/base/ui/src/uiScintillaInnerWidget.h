@@ -51,74 +51,74 @@
 
 #include "uiScintillaPlatform.h"
 
-namespace Scintilla
+BEGIN_BOOMER_NAMESPACE(ui)
+
+//---
+
+class ScintillaInnerWidgetMouseDragAction;
+
+class ScintillaInnerWidget : public IElement, public Scintilla::ScintillaBase, public IWindowInterface
 {
-    //---
+    RTTI_DECLARE_VIRTUAL_CLASS(ScintillaInnerWidget, IElement);
 
-    class ScintillaInnerWidgetMouseDragAction;
+public:
+    ScintillaInnerWidget(ScintillaTextEditor* owner, const base::RefPtr<Scrollbar>& scrollbar);
 
-    class ScintillaInnerWidget : public ui::IElement, public ScintillaBase, public IWindowInterface
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(ScintillaInnerWidget, ui::IElement);
+protected:
+    virtual void SetVerticalScrollPos() override final;
+    virtual void SetHorizontalScrollPos() override final;
+    virtual bool ModifyScrollBars(Sci::Line nMax, Sci::Line nPage) override final;
+    virtual void Copy() override final;
+    virtual void Paste() override final;
+    virtual void ClaimSelection() override final;
+    virtual void NotifyChange() override final;
+    virtual void NotifyParent(SCNotification scn) override final;
+    virtual void CopyToClipboard(const SelectionText &selectedText) override final;
+    virtual void SetMouseCapture(bool on) override final;
+    virtual bool HaveMouseCapture() override final;
+    virtual sptr_t DefWndProc(unsigned int iMessage, uptr_t wParam, sptr_t lParam) override final;
+    virtual void CreateCallTipWindow(PRectangle rc) override final;
+    virtual void AddToPopUp(const char *label, int cmd=0, bool enabled=true) override final;
 
-    public:
-        ScintillaInnerWidget(ui::ScintillaTextEditor* owner, const base::RefPtr<ui::Scrollbar>& scrollbar);
+    virtual PRectangle GetPosition() const override final;
+    virtual void SetPosition(PRectangle rc) override final;
+    virtual PRectangle GetClientPosition() const override final;
 
-    protected:
-        virtual void SetVerticalScrollPos() override final;
-        virtual void SetHorizontalScrollPos() override final;
-        virtual bool ModifyScrollBars(Sci::Line nMax, Sci::Line nPage) override final;
-        virtual void Copy() override final;
-        virtual void Paste() override final;
-        virtual void ClaimSelection() override final;
-        virtual void NotifyChange() override final;
-        virtual void NotifyParent(SCNotification scn) override final;
-        virtual void CopyToClipboard(const SelectionText &selectedText) override final;
-        virtual void SetMouseCapture(bool on) override final;
-        virtual bool HaveMouseCapture() override final;
-        virtual sptr_t DefWndProc(unsigned int iMessage, uptr_t wParam, sptr_t lParam) override final;
-        virtual void CreateCallTipWindow(PRectangle rc) override final;
-        virtual void AddToPopUp(const char *label, int cmd=0, bool enabled=true) override final;
+    virtual bool FineTickerRunning(TickReason reason) override;
+    virtual void FineTickerStart(TickReason reason, int millis, int tolerance) override;
+    virtual void FineTickerCancel(TickReason reason) override;
 
-        virtual PRectangle GetPosition() const override final;
-        virtual void SetPosition(PRectangle rc) override final;
-        virtual PRectangle GetClientPosition() const override final;
+    //--
 
-        virtual bool FineTickerRunning(TickReason reason) override;
-        virtual void FineTickerStart(TickReason reason, int millis, int tolerance) override;
-        virtual void FineTickerCancel(TickReason reason) override;
+    // ui implementation
+    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual bool handleCursorQuery(const ElementArea &area, const Position &absolutePosition, base::input::CursorType &outCursorType) const override;
+    virtual InputActionPtr handleMouseClick(const ElementArea &area, const base::input::MouseClickEvent &evt) override;
+    virtual bool handleMouseMovement(const base::input::MouseMovementEvent &evt) override;
+    virtual bool handleMouseWheel(const base::input::MouseMovementEvent &evt, float delta) override;
+    virtual bool handleKeyEvent(const base::input::KeyEvent &evt) override;
+    virtual bool handleCharEvent(const base::input::CharEvent &evt) override;
+    virtual void handleFocusLost() override;
+    virtual void handleFocusGained() override;
+    virtual DragDropHandlerPtr handleDragDrop(const DragDropDataPtr& data, const Position& entryPosition) override;
+    virtual void computeSize(Size& outSize) const override final;
 
-        //--
+    //--
 
-        // ui implementation
-        virtual void renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
-        virtual bool handleCursorQuery(const ui::ElementArea &area, const ui::Position &absolutePosition, base::input::CursorType &outCursorType) const override;
-        virtual ui::InputActionPtr handleMouseClick(const ui::ElementArea &area, const base::input::MouseClickEvent &evt) override;
-        virtual bool handleMouseMovement(const base::input::MouseMovementEvent &evt) override;
-        virtual bool handleMouseWheel(const base::input::MouseMovementEvent &evt, float delta) override;
-        virtual bool handleKeyEvent(const base::input::KeyEvent &evt) override;
-        virtual bool handleCharEvent(const base::input::CharEvent &evt) override;
-        virtual void handleFocusLost() override;
-        virtual void handleFocusGained() override;
-        virtual ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
-        virtual void computeSize(ui::Size& outSize) const override final;
+    ScintillaTextEditor* m_owner;
+    base::NativeTimePoint m_timeBase;
 
-        //--
+    static const uint32_t MAX_TIMERS = 10;
+    base::UniquePtr<Timer> m_timers[MAX_TIMERS];
 
-        ui::ScintillaTextEditor* m_owner;
-        base::NativeTimePoint m_timeBase;
+    Timer m_updateScrollBarsTimer;
 
-        static const uint32_t MAX_TIMERS = 10;
-        base::UniquePtr<ui::Timer> m_timers[MAX_TIMERS];
+    base::RefWeakPtr<ScintillaInnerWidgetMouseDragAction> m_inputAction;
+    friend class ScintillaInnerWidgetMouseDragAction;
 
-        ui::Timer m_updateScrollBarsTimer;
+    base::RefPtr<Scrollbar> m_scrollbar;
+    void updateScrollbar();
+};
 
-        base::RefWeakPtr<ScintillaInnerWidgetMouseDragAction> m_inputAction;
-        friend class ScintillaInnerWidgetMouseDragAction;
-
-        base::RefPtr<ui::Scrollbar> m_scrollbar;
-        void updateScrollbar();
-    };
-
-} // scintilla
+END_BOOMER_NAMESPACE(ui)
 

@@ -9,73 +9,69 @@
 #include "build.h"
 #include "resourceTags.h"
 
-namespace base
-{
-    namespace res
-    {
+BEGIN_BOOMER_NAMESPACE(base::res)
 
-        //--
+//--
 
-        RTTI_BEGIN_TYPE_CLASS(ResourceDataVersionMetadata);
-        RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_CLASS(ResourceDataVersionMetadata);
+RTTI_END_TYPE();
 
-        ResourceDataVersionMetadata::ResourceDataVersionMetadata()
-            : m_version(0)
-        {}
+ResourceDataVersionMetadata::ResourceDataVersionMetadata()
+    : m_version(0)
+{}
 
-        //----
+//----
 
-        RTTI_BEGIN_TYPE_CLASS(ResourceExtensionMetadata);
-        RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_CLASS(ResourceExtensionMetadata);
+RTTI_END_TYPE();
 
-        ResourceExtensionMetadata::ResourceExtensionMetadata()
-            : m_ext(nullptr)
-        {}
+ResourceExtensionMetadata::ResourceExtensionMetadata()
+    : m_ext(nullptr)
+{}
 
-        //---
+//---
 
-        RTTI_BEGIN_TYPE_CLASS(ResourceDescriptionMetadata);
-        RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_CLASS(ResourceDescriptionMetadata);
+RTTI_END_TYPE();
 
-        ResourceDescriptionMetadata::ResourceDescriptionMetadata()
-            : m_desc("")
-        {}
+ResourceDescriptionMetadata::ResourceDescriptionMetadata()
+    : m_desc("")
+{}
 
-        //--
+//--
 
-        RTTI_BEGIN_TYPE_CLASS(ResourceTagColorMetadata);
-        RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_CLASS(ResourceTagColorMetadata);
+RTTI_END_TYPE();
 
-        ResourceTagColorMetadata::ResourceTagColorMetadata()
-            : m_color(0, 0, 0, 0)
-        {}
+ResourceTagColorMetadata::ResourceTagColorMetadata()
+    : m_color(0, 0, 0, 0)
+{}
 
-        //--
+//--
 
-        RTTI_BEGIN_TYPE_CLASS(ResourceCookedClassMetadata);
-        RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_CLASS(ResourceCookedClassMetadata);
+RTTI_END_TYPE();
 
-        ResourceCookedClassMetadata::ResourceCookedClassMetadata()
-        {}
+ResourceCookedClassMetadata::ResourceCookedClassMetadata()
+{}
 
-        //--
+//--
 
-        RTTI_BEGIN_TYPE_CLASS(ResourceSourceFormatMetadata);
-        RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_CLASS(ResourceSourceFormatMetadata);
+RTTI_END_TYPE();
 
-        ResourceSourceFormatMetadata::ResourceSourceFormatMetadata()
-        {}
+ResourceSourceFormatMetadata::ResourceSourceFormatMetadata()
+{}
 
-        //--
+//--
 
-        RTTI_BEGIN_TYPE_CLASS(ResourceCookerVersionMetadata);
-        RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_CLASS(ResourceCookerVersionMetadata);
+RTTI_END_TYPE();
 
-        ResourceCookerVersionMetadata::ResourceCookerVersionMetadata()
-            : m_version(0)
-        {}
+ResourceCookerVersionMetadata::ResourceCookerVersionMetadata()
+    : m_version(0)
+{}
 
-        //--
+//--
 
-    } // res
-} // base
+END_BOOMER_NAMESPACE(base::res)

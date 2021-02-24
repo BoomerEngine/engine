@@ -10,34 +10,27 @@
 
 #include "rendering/api_common/include/apiDevice.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
+
+// a NULL implementation of the rendering api
+class RENDERING_API_NULL_API Device : public IBaseDevice
 {
-    namespace api
-    {
-		namespace nul
-		{
+	RTTI_DECLARE_VIRTUAL_CLASS(Device, IBaseDevice);
 
-			// a NULL implementation of the rendering api
-			class RENDERING_API_NULL_API Device : public IBaseDevice
-			{
-				RTTI_DECLARE_VIRTUAL_CLASS(Device, IBaseDevice);
+public:
+	Device();
+	virtual ~Device();
 
-			public:
-				Device();
-				virtual ~Device();
+	//--
 
-				//--
+	virtual base::StringBuf name() const override final;
 
-				virtual base::StringBuf name() const override final;
+	//--
 
-				//--
+private:
+	virtual IBaseThread* createOptimalThread(const base::app::CommandLine& cmdLine) override final;
+};
 
-			private:
-				virtual IBaseThread* createOptimalThread(const base::app::CommandLine& cmdLine) override final;
-			};
+//--
 
-			//--
-
-		} // nul
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

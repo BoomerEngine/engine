@@ -10,20 +10,19 @@
 #include "globalEventFunction.h"
 #include "globalEventDispatch.h"
 
-namespace base
-{
+BEGIN_BOOMER_NAMESPACE(base)
     
-    //--
+//--
 
-    void GlobalEventFunctionBinder::publish()
-    {
-        if (m_entry)
-            RegisterGlobalEventListener(m_entry);
-    }
+void GlobalEventFunctionBinder::publish()
+{
+    if (m_entry)
+        RegisterGlobalEventListener(m_entry);
+}
 
-    //--
+//--
 
-} // base
+END_BOOMER_NAMESPACE(base)
 
 
 

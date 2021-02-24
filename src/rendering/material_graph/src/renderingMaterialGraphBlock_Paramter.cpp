@@ -10,84 +10,84 @@
 #include "renderingMaterialGraph.h"
 #include "renderingMaterialGraphBlock_Parameter.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+///---
+
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(MaterialGraphBlockParameter);
+    RTTI_CATEGORY("Parameter");
+    RTTI_PROPERTY(m_name).editable("Name of the parameter");
+    RTTI_PROPERTY(m_category).editable("Display category in the material");
+        RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialParameter");
+RTTI_END_TYPE();
+
+MaterialGraphBlockParameter::MaterialGraphBlockParameter()
+    : m_category("Parameters"_id)
+{}
+
+MaterialGraphBlockParameter::MaterialGraphBlockParameter(base::StringID name)
+    : m_name(name)
+    , m_category("Parameters"_id)
+{}
+
+bool MaterialGraphBlockParameter::resetValue()
 {
-    ///---
+    const auto* defaultData = ((const MaterialGraphBlockParameter*)cls()->defaultObject())->dataValue();
+    return writeValue(defaultData, dataType());
+}
 
-    RTTI_BEGIN_TYPE_ABSTRACT_CLASS(MaterialGraphBlockParameter);
-        RTTI_CATEGORY("Parameter");
-        RTTI_PROPERTY(m_name).editable("Name of the parameter");
-        RTTI_PROPERTY(m_category).editable("Display category in the material");
-            RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialParameter");
-    RTTI_END_TYPE();
+bool MaterialGraphBlockParameter::writeValue(const void* data, base::Type type)
+{
+    if (base::rtti::ConvertData(data, type, (void*)dataValue(), dataType()))
+    {
+        postEvent(base::EVENT_OBJECT_PROPERTY_CHANGED, base::StringBuf("value"));
+        return true;
+    }
 
-    MaterialGraphBlockParameter::MaterialGraphBlockParameter()
-        : m_category("Parameters"_id)
-    {}
+    return false;
+}
 
-    MaterialGraphBlockParameter::MaterialGraphBlockParameter(base::StringID name)
-        : m_name(name)
-        , m_category("Parameters"_id)
-    {}
-
-    bool MaterialGraphBlockParameter::resetValue()
+bool MaterialGraphBlockParameter::readValue(void* data, base::Type type, bool defaultValueOnly /*= false*/) const
+{
+    if (defaultValueOnly)
     {
         const auto* defaultData = ((const MaterialGraphBlockParameter*)cls()->defaultObject())->dataValue();
-        return writeValue(defaultData, dataType());
+        return base::rtti::ConvertData(defaultData, dataType(), data, type);
     }
-
-    bool MaterialGraphBlockParameter::writeValue(const void* data, base::Type type)
+    else
     {
-        if (base::rtti::ConvertData(data, type, (void*)dataValue(), dataType()))
-        {
-            postEvent(base::EVENT_OBJECT_PROPERTY_CHANGED, base::StringBuf("value"));
-            return true;
-        }
-
-        return false;
+        return base::rtti::ConvertData(dataValue(), dataType(), data, type);
     }
+}
 
-    bool MaterialGraphBlockParameter::readValue(void* data, base::Type type, bool defaultValueOnly /*= false*/) const
+///---
+
+base::StringBuf MaterialGraphBlockParameter::chooseTitle() const
+{
+    if (m_name)
+        return base::TempString("{} [{}]", TBaseClass::chooseTitle(), m_name);
+    else
+        return TBaseClass::chooseTitle();
+}
+
+void MaterialGraphBlockParameter::onPropertyChanged(base::StringView path)
+{
+    if (path == "name" || path == "category")
     {
-        if (defaultValueOnly)
-        {
-            const auto* defaultData = ((const MaterialGraphBlockParameter*)cls()->defaultObject())->dataValue();
-            return base::rtti::ConvertData(defaultData, dataType(), data, type);
-        }
-        else
-        {
-            return base::rtti::ConvertData(dataValue(), dataType(), data, type);
-        }
+        invalidateStyle();
+
+        if (auto graph = findParent<MaterialGraphContainer>())
+            graph->refreshParameterList();
     }
-
-    ///---
-
-    base::StringBuf MaterialGraphBlockParameter::chooseTitle() const
+    else if (path == "value" && !name().empty())
     {
-        if (m_name)
-            return base::TempString("{} [{}]", TBaseClass::chooseTitle(), m_name);
-        else
-            return TBaseClass::chooseTitle();
+        if (auto graph = findParent<MaterialGraph>())
+            graph->onPropertyChanged(name().view());
     }
 
-    void MaterialGraphBlockParameter::onPropertyChanged(base::StringView path)
-    {
-        if (path == "name" || path == "category")
-        {
-            invalidateStyle();
+    return TBaseClass::onPropertyChanged(path);
+}
 
-            if (auto graph = findParent<MaterialGraphContainer>())
-                graph->refreshParameterList();
-        }
-        else if (path == "value" && !name().empty())
-        {
-            if (auto graph = findParent<MaterialGraph>())
-                graph->onPropertyChanged(name().view());
-        }
+///---
 
-        return TBaseClass::onPropertyChanged(path);
-    }
-
-    ///---
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

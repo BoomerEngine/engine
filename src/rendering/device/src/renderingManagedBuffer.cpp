@@ -13,75 +13,74 @@
 #include "renderingDeviceService.h"
 #include "renderingResources.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//---
+
+ManagedBuffer::ManagedBuffer(const BufferCreationInfo& info)
 {
+    auto creationInfo = info;
+    creationInfo.allowCopies = true;
+    creationInfo.allowDynamicUpdate = true;
 
-    //---
+    auto device = base::GetService<DeviceService>()->device();
+    m_bufferObject = device->createBuffer(creationInfo);
 
-    ManagedBuffer::ManagedBuffer(const BufferCreationInfo& info)
+    m_backingStorage = base::mem::GlobalPool<POOL_API_BACKING_STORAGE, uint8_t>::Alloc(info.size, 16);//, info.label.empty() ? "ManagedBuffer" : info.label.c_str());
+    m_backingStorageEnd = m_backingStorage + info.size;
+
+    m_structureGranularity = info.stride;
+}
+
+ManagedBuffer::~ManagedBuffer()
+{
+    base::mem::GlobalPool<POOL_API_BACKING_STORAGE, uint8_t>::Free(m_backingStorage);
+    m_backingStorage = nullptr;
+    m_backingStorageEnd = nullptr;
+
+    m_bufferObject.reset();
+}
+
+void ManagedBuffer::update(GPUCommandWriter& cmd)
+{
+    auto lock = CreateLock(m_stateLock);
+    if (m_dirtyRegionEnd > m_dirtyRegionStart)
     {
-        auto creationInfo = info;
-        creationInfo.allowCopies = true;
-        creationInfo.allowDynamicUpdate = true;
+        const auto uploadSize = m_dirtyRegionEnd - m_dirtyRegionStart;
+        cmd.opUpdateDynamicBuffer(m_bufferObject, m_dirtyRegionStart, uploadSize, m_backingStorage + m_dirtyRegionStart);
 
-        auto device = base::GetService<DeviceService>()->device();
-        m_bufferObject = device->createBuffer(creationInfo);
+        if (uploadSize > 4096)
+        {
+            TRACE_SPAM("Uploaded {}", MemSize(uploadSize));
+        }
 
-        m_backingStorage = base::mem::GlobalPool<POOL_API_BACKING_STORAGE, uint8_t>::Alloc(info.size, 16);//, info.label.empty() ? "ManagedBuffer" : info.label.c_str());
-        m_backingStorageEnd = m_backingStorage + info.size;
-
-        m_structureGranularity = info.stride;
+        m_dirtyRegionStart = 0;
+        m_dirtyRegionEnd = 0;
     }
+}
 
-    ManagedBuffer::~ManagedBuffer()
+void ManagedBuffer::writeData(uint32_t offset, uint32_t size, const void* data)
+{
+    DEBUG_CHECK_EX(m_backingStorage + offset + size <= m_backingStorageEnd, "Write outside the buffer's boundary");
+
+    if (m_backingStorage + offset + size <= m_backingStorageEnd)
     {
-        base::mem::GlobalPool<POOL_API_BACKING_STORAGE, uint8_t>::Free(m_backingStorage);
-        m_backingStorage = nullptr;
-        m_backingStorageEnd = nullptr;
+        memcpy(m_backingStorage + offset, data, size);
 
-        m_bufferObject.reset();
-    }
-
-    void ManagedBuffer::update(command::CommandWriter& cmd)
-    {
         auto lock = CreateLock(m_stateLock);
-        if (m_dirtyRegionEnd > m_dirtyRegionStart)
+        if (m_dirtyRegionStart == m_dirtyRegionEnd)
         {
-            const auto uploadSize = m_dirtyRegionEnd - m_dirtyRegionStart;
-            cmd.opUpdateDynamicBuffer(m_bufferObject, m_dirtyRegionStart, uploadSize, m_backingStorage + m_dirtyRegionStart);
-
-            if (uploadSize > 4096)
-            {
-                TRACE_SPAM("Uploaded {}", MemSize(uploadSize));
-            }
-
-            m_dirtyRegionStart = 0;
-            m_dirtyRegionEnd = 0;
+            m_dirtyRegionStart = offset;
+            m_dirtyRegionEnd = offset + size;
+        }
+        else
+        {
+            m_dirtyRegionStart = std::min<uint32_t>(m_dirtyRegionStart, offset);
+            m_dirtyRegionEnd = std::max<uint32_t>(m_dirtyRegionEnd, offset + size);
         }
     }
+}
 
-    void ManagedBuffer::writeData(uint32_t offset, uint32_t size, const void* data)
-    {
-        DEBUG_CHECK_EX(m_backingStorage + offset + size <= m_backingStorageEnd, "Write outside the buffer's boundary");
+//---
 
-        if (m_backingStorage + offset + size <= m_backingStorageEnd)
-        {
-            memcpy(m_backingStorage + offset, data, size);
-
-            auto lock = CreateLock(m_stateLock);
-            if (m_dirtyRegionStart == m_dirtyRegionEnd)
-            {
-                m_dirtyRegionStart = offset;
-                m_dirtyRegionEnd = offset + size;
-            }
-            else
-            {
-                m_dirtyRegionStart = std::min<uint32_t>(m_dirtyRegionStart, offset);
-                m_dirtyRegionEnd = std::max<uint32_t>(m_dirtyRegionEnd, offset + size);
-            }
-        }
-    }
-
-    //---
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

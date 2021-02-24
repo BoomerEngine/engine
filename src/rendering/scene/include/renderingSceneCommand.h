@@ -8,8 +8,7 @@
 
 #pragma once
 
-namespace rendering
-{
+BEGIN_BOOMER_NAMESPACE(rendering)
 	namespace scene
 	{
 		//--

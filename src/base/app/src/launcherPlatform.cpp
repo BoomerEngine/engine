@@ -19,80 +19,76 @@
 
 #include "application.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::platform)
+
+//---
+
+Platform::Platform()
+    : m_exitRequestsed(0)
+    , m_application(nullptr)
 {
-    namespace platform
+}
+
+Platform::~Platform()
+{
+}
+
+bool Platform::platformStart(const app::CommandLine& cmdline, app::IApplication* localApplication)
+{
+    ScopeTimer timer;
+
+    if (!handleStart(cmdline, localApplication))
+        return false;
+
+    TRACE_INFO("Platform initialized in {}", TimeInterval(timer.timeElapsed()));
+    return true;
+}
+
+bool Platform::platformUpdate()
+{
+    handleUpdate();
+
+    if (1 == m_exitRequestsed.exchange(0))
     {
+        TRACE_INFO("Platform serviced exit request");
+        return false;
+    }
 
-        //---
+    return true;
+}
 
-        Platform::Platform()
-            : m_exitRequestsed(0)
-            , m_application(nullptr)
-        {
-        }
+void Platform::platformIdle()
+{
+    // TODO: max tick rate ? CPU limiting ?
+}
 
-        Platform::~Platform()
-        {
-        }
-
-        bool Platform::platformStart(const app::CommandLine& cmdline, app::IApplication* localApplication)
-        {
-            ScopeTimer timer;
-
-            if (!handleStart(cmdline, localApplication))
-                return false;
-
-            TRACE_INFO("Platform initialized in {}", TimeInterval(timer.timeElapsed()));
-            return true;
-        }
-
-        bool Platform::platformUpdate()
-        {
-            handleUpdate();
-
-            if (1 == m_exitRequestsed.exchange(0))
-            {
-                TRACE_INFO("Platform serviced exit request");
-                return false;
-            }
-
-            return true;
-        }
-
-        void Platform::platformIdle()
-        {
-            // TODO: max tick rate ? CPU limiting ?
-        }
-
-        void Platform::platformCleanup()
-        {
+void Platform::platformCleanup()
+{
     
 
-            handleCleanup();
-        }
+    handleCleanup();
+}
 
-        void Platform::requestExit(const char* reason)
-        {
-            if (0 == m_exitRequestsed.exchange(1))
-            {
-                TRACE_INFO("Request application exit{}{}", reason ? ": " : "", reason);
-            }
-        }
-
-        //---
-
-        Platform& GetLaunchPlatform()
-        {
-#ifdef PLATFORM_WINDOWS
-            static auto thePlatform  = new win::Platform();
-#elif defined(PLATFORM_POSIX)
-            static auto thePlatform  = new posix::Platform();
-#else
-            static auto thePlatform  = new CommonPlatform();
-#endif
-            return *thePlatform;
-        }
-
+void Platform::requestExit(const char* reason)
+{
+    if (0 == m_exitRequestsed.exchange(1))
+    {
+        TRACE_INFO("Request application exit{}{}", reason ? ": " : "", reason);
     }
 }
+
+//---
+
+Platform& GetLaunchPlatform()
+{
+#ifdef PLATFORM_WINDOWS
+    static auto thePlatform  = new win::Platform();
+#elif defined(PLATFORM_POSIX)
+    static auto thePlatform  = new posix::Platform();
+#else
+    static auto thePlatform  = new CommonPlatform();
+#endif
+    return *thePlatform;
+}
+
+END_BOOMER_NAMESPACE(base::platform)

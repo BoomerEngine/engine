@@ -10,24 +10,17 @@
 #include "dx11Thread.h"
 #include "dx11Sampler.h"
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace dx11
-		{
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
 
-			//--
+//--
 
-			Sampler::Sampler(Thread* owner, const SamplerState& setup)
-				: IBaseSampler(owner, setup)
-			{}
+Sampler::Sampler(Thread* owner, const SamplerState& setup)
+	: IBaseSampler(owner, setup)
+{}
 
-			Sampler::~Sampler()
-			{}
+Sampler::~Sampler()
+{}
 
-			//--
+//--
 
-		} // dx11
-    } // gl4
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::dx11)

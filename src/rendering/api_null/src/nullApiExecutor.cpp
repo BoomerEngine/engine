@@ -13,147 +13,140 @@
 #include "rendering/api_common/include/apiExecution.h"
 #include "rendering/device/include/renderingDeviceApi.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
+
+//--
+
+FrameExecutor::FrameExecutor(Thread* thread, PerformanceStats* stats)
+	: IFrameExecutor(thread, stats)
 {
-    namespace api
-    {
-        namespace nul
-        {
+}
 
-			//--
-
-			FrameExecutor::FrameExecutor(Thread* thread, PerformanceStats* stats)
-				: IFrameExecutor(thread, stats)
-			{
-			}
-
-			FrameExecutor::~FrameExecutor()
-			{}
+FrameExecutor::~FrameExecutor()
+{}
            
-            //--
+//--
 
-			void FrameExecutor::runBeginBlock(const command::OpBeginBlock& op)
-			{
-			}
+void FrameExecutor::runBeginBlock(const OpBeginBlock& op)
+{
+}
 
-			void FrameExecutor::runEndBlock(const command::OpEndBlock& op)
-			{
-			}
+void FrameExecutor::runEndBlock(const OpEndBlock& op)
+{
+}
 
-			void FrameExecutor::runResolve(const command::OpResolve& op)
-			{
-			}
+void FrameExecutor::runResolve(const OpResolve& op)
+{
+}
 
-			void FrameExecutor::runClearFrameBuffer(const command::OpClearFrameBuffer& op)
-			{
+void FrameExecutor::runClearFrameBuffer(const OpClearFrameBuffer& op)
+{
 
-			}
+}
 
-			void FrameExecutor::runClearPassRenderTarget(const command::OpClearPassRenderTarget& op)
-			{
-			}
+void FrameExecutor::runClearPassRenderTarget(const OpClearPassRenderTarget& op)
+{
+}
 
-			void FrameExecutor::runClearPassDepthStencil(const command::OpClearPassDepthStencil& op)
-			{
-			}
+void FrameExecutor::runClearPassDepthStencil(const OpClearPassDepthStencil& op)
+{
+}
 
-			void FrameExecutor::runClearRenderTarget(const command::OpClearRenderTarget& op)
-			{
-			}
+void FrameExecutor::runClearRenderTarget(const OpClearRenderTarget& op)
+{
+}
 
-			void FrameExecutor::runClearDepthStencil(const command::OpClearDepthStencil& op)
-			{
-			}
+void FrameExecutor::runClearDepthStencil(const OpClearDepthStencil& op)
+{
+}
 
-			void FrameExecutor::runClearImage(const command::OpClearImage&)
-			{
-			}
+void FrameExecutor::runClearImage(const OpClearImage&)
+{
+}
 
-			void FrameExecutor::runClearBuffer(const command::OpClearBuffer&)
-			{
-			}
+void FrameExecutor::runClearBuffer(const OpClearBuffer&)
+{
+}
 
-			void FrameExecutor::runClearStructuredBuffer(const command::OpClearStructuredBuffer&)
-			{
+void FrameExecutor::runClearStructuredBuffer(const OpClearStructuredBuffer&)
+{
 
-			}
+}
 
-			void FrameExecutor::runDraw(const command::OpDraw& op)
-			{
-			}
+void FrameExecutor::runDraw(const OpDraw& op)
+{
+}
 
-			void FrameExecutor::runDrawIndexed(const command::OpDrawIndexed& op)
-			{
-			}
+void FrameExecutor::runDrawIndexed(const OpDrawIndexed& op)
+{
+}
 
-			void FrameExecutor::runDispatch(const command::OpDispatch& op)
-			{
-			}
+void FrameExecutor::runDispatch(const OpDispatch& op)
+{
+}
 
-			void FrameExecutor::runDrawIndirect(const command::OpDrawIndirect& op)
-			{
+void FrameExecutor::runDrawIndirect(const OpDrawIndirect& op)
+{
 
-			}
+}
 
-			void FrameExecutor::runDrawIndexedIndirect(const command::OpDrawIndexedIndirect& op)
-			{
+void FrameExecutor::runDrawIndexedIndirect(const OpDrawIndexedIndirect& op)
+{
 
-			}
+}
 
-			void FrameExecutor::runDispatchIndirect(const command::OpDispatchIndirect& op)
-			{
+void FrameExecutor::runDispatchIndirect(const OpDispatchIndirect& op)
+{
 
-			}
+}
 
-			void FrameExecutor::runResourceLayoutBarrier(const command::OpResourceLayoutBarrier& op)
-			{
-			}
+void FrameExecutor::runResourceLayoutBarrier(const OpResourceLayoutBarrier& op)
+{
+}
 
-			void FrameExecutor::runUAVBarrier(const command::OpUAVBarrier& op)
-			{
-			}
+void FrameExecutor::runUAVBarrier(const OpUAVBarrier& op)
+{
+}
 
-			void FrameExecutor::runDownload(const command::OpDownload& op)
-			{
-			}
+void FrameExecutor::runDownload(const OpDownload& op)
+{
+}
 
-			void FrameExecutor::runCopyRenderTarget(const command::OpCopyRenderTarget& op)
-			{
+void FrameExecutor::runCopyRenderTarget(const OpCopyRenderTarget& op)
+{
 
-			}
+}
 
-			void FrameExecutor::runSetViewportRect(const command::OpSetViewportRect& op)
-			{
+void FrameExecutor::runSetViewportRect(const OpSetViewportRect& op)
+{
 
-			}
+}
 
-			void FrameExecutor::runSetScissorRect(const command::OpSetScissorRect& op)
-			{
+void FrameExecutor::runSetScissorRect(const OpSetScissorRect& op)
+{
 
-			}
+}
 
-			void FrameExecutor::runSetBlendColor(const command::OpSetBlendColor& op)
-			{
+void FrameExecutor::runSetBlendColor(const OpSetBlendColor& op)
+{
 
-			}
+}
 
-			void FrameExecutor::runSetLineWidth(const command::OpSetLineWidth& op)
-			{
+void FrameExecutor::runSetLineWidth(const OpSetLineWidth& op)
+{
 
-			}
+}
 
-			void FrameExecutor::runSetDepthClip(const command::OpSetDepthClip& op)
-			{
+void FrameExecutor::runSetDepthClip(const OpSetDepthClip& op)
+{
 
-			}
+}
 
-			void FrameExecutor::runSetStencilReference(const command::OpSetStencilReference& op)
-			{
+void FrameExecutor::runSetStencilReference(const OpSetStencilReference& op)
+{
 
-			}
+}
 
-			//--
+//--
 
-        } // exec
-    } // gl4
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

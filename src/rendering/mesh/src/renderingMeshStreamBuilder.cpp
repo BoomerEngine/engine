@@ -9,8 +9,7 @@
 #include "build.h"
 #include "renderingMeshStreamBuilder.h"
 
-namespace rendering
-{
+BEGIN_BOOMER_NAMESPACE(rendering)
     ///--
 
     MeshRawStreamBuilder::MeshRawStreamBuilder(MeshTopologyType topology /*= MeshTopologyType::Triangles*/)

@@ -16,95 +16,93 @@
 #include "rendering/material_graph/include/renderingMaterialGraph.h"
 #include "rendering/material_graph/include/renderingMaterialGraphBlock.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(MaterialGraphInnerEditorPanel);
+RTTI_END_TYPE();
+
+MaterialGraphInnerEditorPanel::MaterialGraphInnerEditorPanel()
+{}
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(MaterialGraphEditorPanel);
+RTTI_END_TYPE();
+
+MaterialGraphEditorPanel::MaterialGraphEditorPanel(const base::ActionHistoryPtr& actions)
+    : m_hasValidSelection(false)
 {
-    //--
+    layoutVertical();
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(MaterialGraphInnerEditorPanel);
-    RTTI_END_TYPE();
+    m_graphEditor = createChild<ui::GraphEditor>();
+    m_graphEditor->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+    m_graphEditor->customVerticalAligment(ui::ElementVerticalLayout::Expand);
+    m_graphEditor->bindActionHistory(actions);
 
-    MaterialGraphInnerEditorPanel::MaterialGraphInnerEditorPanel()
-    {}
-
-    //--
-
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(MaterialGraphEditorPanel);
-    RTTI_END_TYPE();
-
-    MaterialGraphEditorPanel::MaterialGraphEditorPanel(const base::ActionHistoryPtr& actions)
-        : m_hasValidSelection(false)
+    m_graphEditor->bind(ui::EVENT_VIRTUAL_AREA_SELECTION_CHANGED) = [this]()
     {
-        layoutVertical();
+        m_selectedBlocks.reset();
 
-        m_graphEditor = createChild<ui::GraphEditor>();
-        m_graphEditor->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-        m_graphEditor->customVerticalAligment(ui::ElementVerticalLayout::Expand);
-        m_graphEditor->bindActionHistory(actions);
+        m_graphEditor->enumSelectedElements([this](ui::VirtualAreaElement* elem)
+            {
+                if (auto* node = base::rtti_cast<ui::GraphEditorBlockNode>(elem))
+                    if (auto block = base::rtti_cast<rendering::MaterialGraphBlock>(node->block()))
+                        m_selectedBlocks.pushBack(block);
+                return false;
+            });
 
-        m_graphEditor->bind(ui::EVENT_VIRTUAL_AREA_SELECTION_CHANGED) = [this]()
-        {
-            m_selectedBlocks.reset();
+        m_hasValidSelection = !m_selectedBlocks.empty();
 
-            m_graphEditor->enumSelectedElements([this](ui::VirtualAreaElement* elem)
-                {
-                    if (auto* node = base::rtti_cast<ui::GraphEditorBlockNode>(elem))
-                        if (auto block = base::rtti_cast<rendering::MaterialGraphBlock>(node->block()))
-                            m_selectedBlocks.pushBack(block);
-                    return false;
-                });
+        call(EVENT_MATERIAL_BLOCK_SELECTION_CHANGED);
+    };
+}
 
-            m_hasValidSelection = !m_selectedBlocks.empty();
+MaterialGraphEditorPanel::~MaterialGraphEditorPanel()
+{}
 
-            call(EVENT_MATERIAL_BLOCK_SELECTION_CHANGED);
-        };
-    }
+void MaterialGraphEditorPanel::bindGraph(const rendering::MaterialGraphPtr& graph)
+{
+    m_graph = graph;
 
-    MaterialGraphEditorPanel::~MaterialGraphEditorPanel()
-    {}
+    auto innerContainer = graph ? graph->graph() : nullptr;
+    m_graphEditor->bindGraph(innerContainer);
 
-    void MaterialGraphEditorPanel::bindGraph(const rendering::MaterialGraphPtr& graph)
-    {
-        m_graph = graph;
+    if (graph)
+        m_graphEditor->zoomToFit();
+}
 
-        auto innerContainer = graph ? graph->graph() : nullptr;
-        m_graphEditor->bindGraph(innerContainer);
+void MaterialGraphEditorPanel::actionCopySelection()
+{
+    m_graphEditor->actionCopySelection();
+}
 
-        if (graph)
-            m_graphEditor->zoomToFit();
-    }
+void MaterialGraphEditorPanel::actionCutSelection()
+{
+    m_graphEditor->actionCutSelection();
+}
 
-    void MaterialGraphEditorPanel::actionCopySelection()
-    {
-        m_graphEditor->actionCopySelection();
-    }
+void MaterialGraphEditorPanel::actionPasteSelection()
+{
+    m_graphEditor->actionPasteSelection(false, ui::VirtualPosition(0,0));
+}
 
-    void MaterialGraphEditorPanel::actionCutSelection()
-    {
-        m_graphEditor->actionCutSelection();
-    }
+void MaterialGraphEditorPanel::actionDeleteSelection()
+{
+    m_graphEditor->actionDeleteSelection();
+}
 
-    void MaterialGraphEditorPanel::actionPasteSelection()
-    {
-        m_graphEditor->actionPasteSelection(false, ui::VirtualPosition(0,0));
-    }
+bool MaterialGraphEditorPanel::hasDataToPaste() const
+{
+    return true;
+}
 
-    void MaterialGraphEditorPanel::actionDeleteSelection()
-    {
-        m_graphEditor->actionDeleteSelection();
-    }
+bool MaterialGraphEditorPanel::hasSelection() const
+{
+    return m_hasValidSelection;
+}
 
-    bool MaterialGraphEditorPanel::hasDataToPaste() const
-    {
-        return true;
-    }
-
-    bool MaterialGraphEditorPanel::hasSelection() const
-    {
-        return m_hasValidSelection;
-    }
-
-    //--
-
-    //--
+//--
     
-} // ed
+END_BOOMER_NAMESPACE(ed)

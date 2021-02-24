@@ -11,88 +11,84 @@
 #include "scriptFunctionCode.h"
 #include "base/memory/include/linearAllocator.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+class StubLibrary;
+struct StubTypeDecl;
+struct StubFunction;
+
+// type cast meta info
+enum class TypeCastMethod : uint8_t
 {
-    namespace script
+    Invalid,
+    Passthrough,
+    PassthroughNoRef,
+    CastFunc,
+    OpCode,
+};
+
+// type cast
+struct TypeCast
+{
+    const StubTypeDecl* m_sourceType = nullptr;
+    const StubTypeDecl* m_destType = nullptr;
+
+    TypeCastMethod m_castType = TypeCastMethod::Invalid;
+
+    const StubFunction* m_castFunction = nullptr;
+    FunctionNodeOp m_castingOp = FunctionNodeOp::Nop;
+
+    int m_cost = -1;
+    bool m_explicit = false;
+};
+
+// helper class to handle type casting
+class TypeCastMatrix : public base::NoCopy
+{
+public:
+    TypeCastMatrix();
+
+    // initialize from stub library, looks for type references and operators
+    bool initialize(IErrorHandler& err, const Array<StubFunction*>& allGlobalFunctions);
+
+    // find best cast for converting from one type to other
+    bool findBestCast(TypeCast& outCast) const;
+
+    // find best cast for converting from one type to other
+    TypeCast findBestCast(const StubTypeDecl* source, const StubTypeDecl* dest) const;
+
+    // find best operator
+    const StubFunction* findOperator(StringID op, const StubTypeDecl* left, bool leftAssignable, const StubTypeDecl* right, bool allowCasts) const;
+
+private:
+    struct CastInfo
     {
+        const StubTypeDecl* m_destType = nullptr;
+        const StubFunction* m_castFunction = nullptr;
 
-        class StubLibrary;
-        struct StubTypeDecl;
-		struct StubFunction;
+        int m_cost = 0;
+        bool m_explicit = false;
+    };
 
-        // type cast meta info
-        enum class TypeCastMethod : uint8_t
-        {
-            Invalid,
-            Passthrough,
-            PassthroughNoRef,
-            CastFunc,
-            OpCode,
-        };
+    struct TypeInfo
+    {
+        const StubTypeDecl* m_sourceType = nullptr;
+        Array<CastInfo> m_casts;
 
-        // type cast
-        struct TypeCast
-        {
-            const StubTypeDecl* m_sourceType = nullptr;
-            const StubTypeDecl* m_destType = nullptr;
+        CastInfo* createCastInfo(const StubTypeDecl* destType);
 
-            TypeCastMethod m_castType = TypeCastMethod::Invalid;
+        const CastInfo* findCastInfo(const StubTypeDecl* destType) const;
+    };
 
-            const StubFunction* m_castFunction = nullptr;
-            FunctionNodeOp m_castingOp = FunctionNodeOp::Nop;
+    //--
 
-            int m_cost = -1;
-            bool m_explicit = false;
-        };
+    TypeInfo* createTypeInfo(const StubTypeDecl* sourceType);
 
-        // helper class to handle type casting
-        class TypeCastMatrix : public base::NoCopy
-        {
-        public:
-            TypeCastMatrix();
+    const TypeInfo* findTypeInfo(const StubTypeDecl* sourceType) const;
 
-            // initialize from stub library, looks for type references and operators
-            bool initialize(IErrorHandler& err, const Array<StubFunction*>& allGlobalFunctions);
+    Array<TypeInfo> m_types;
 
-            // find best cast for converting from one type to other
-            bool findBestCast(TypeCast& outCast) const;
+    HashMap<StringID, Array<const StubFunction*>> m_operators;
+};
 
-            // find best cast for converting from one type to other
-            TypeCast findBestCast(const StubTypeDecl* source, const StubTypeDecl* dest) const;
-
-            // find best operator
-            const StubFunction* findOperator(StringID op, const StubTypeDecl* left, bool leftAssignable, const StubTypeDecl* right, bool allowCasts) const;
-
-        private:
-            struct CastInfo
-            {
-                const StubTypeDecl* m_destType = nullptr;
-                const StubFunction* m_castFunction = nullptr;
-
-                int m_cost = 0;
-                bool m_explicit = false;
-            };
-
-            struct TypeInfo
-            {
-                const StubTypeDecl* m_sourceType = nullptr;
-                Array<CastInfo> m_casts;
-
-                CastInfo* createCastInfo(const StubTypeDecl* destType);
-
-                const CastInfo* findCastInfo(const StubTypeDecl* destType) const;
-            };
-
-            //--
-
-            TypeInfo* createTypeInfo(const StubTypeDecl* sourceType);
-
-            const TypeInfo* findTypeInfo(const StubTypeDecl* sourceType) const;
-
-            Array<TypeInfo> m_types;
-
-            HashMap<StringID, Array<const StubFunction*>> m_operators;
-        };
-
-    } // script
-} // base
+END_BOOMER_NAMESPACE(base::script)

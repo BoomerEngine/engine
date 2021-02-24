@@ -13,132 +13,132 @@
 #include "uiSimpleTreeModel.h"
 #include "base/canvas/include/canvas.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+///----
+
+DECLARE_UI_EVENT(EVENT_COLOR_SELECTED, base::Color)
+
+///----
+
+class ColorPickerLSBoxInputAction;
+
+// helper element that displays the Lightness-Saturation rectangle for given hue
+class BASE_UI_API ColorPickerLSBox : public IElement
 {
-    ///----
+    RTTI_DECLARE_VIRTUAL_CLASS(ColorPickerLSBox, IElement);
 
-    DECLARE_UI_EVENT(EVENT_COLOR_SELECTED, base::Color)
+public:
+    ColorPickerLSBox();
 
-    ///----
+    // generated OnColorChanged when L or S is changed
 
-    class ColorPickerLSBoxInputAction;
+    inline base::Vector3 hls() const { return m_value; }
 
-    // helper element that displays the Lightness-Saturation rectangle for given hue
-    class BASE_UI_API ColorPickerLSBox : public IElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(ColorPickerLSBox, IElement);
+    void hls(const base::Vector3& val);
 
-    public:
-        ColorPickerLSBox();
+private:
+    base::Vector3 m_value;
 
-        // generated OnColorChanged when L or S is changed
+    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
+    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, base::input::CursorType& outCursorType) const override;
+    virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
 
-        inline base::Vector3 hls() const { return m_value; }
+	base::canvas::Geometry m_colorRectGeometry;
+	base::canvas::Geometry m_cursorGeometry;
 
-        void hls(const base::Vector3& val);
+    Size m_rectSize;
 
-    private:
-        base::Vector3 m_value;
+    void recomputeGeometry(const Size& size);
+    void updateFromPosition(const Position& pos);
 
-        virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
-        virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
-        virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, base::input::CursorType& outCursorType) const override;
-        virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
+	void rebuildCursorGeometry(const Size& size);
 
-		base::canvas::Geometry m_colorRectGeometry;
-		base::canvas::Geometry m_cursorGeometry;
+    friend class ColorPickerLSBoxInputAction;
+};
 
-        Size m_rectSize;
+///----
 
-        void recomputeGeometry(const Size& size);
-        void updateFromPosition(const Position& pos);
+class ColorPickerHueBarInputAction;
 
-		void rebuildCursorGeometry(const Size& size);
+// helper element for the color picker - the Hue bar
+class BASE_UI_API ColorPickerHueBar : public IElement
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ColorPickerHueBar, IElement);
 
-        friend class ColorPickerLSBoxInputAction;
-    };
+public:
+    ColorPickerHueBar();
 
-    ///----
+    // generated OnColorChanged when H is changed
 
-    class ColorPickerHueBarInputAction;
+    inline float hue() const { return m_hue; }
 
-    // helper element for the color picker - the Hue bar
-    class BASE_UI_API ColorPickerHueBar : public IElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(ColorPickerHueBar, IElement);
+    void hue(float h);
 
-    public:
-        ColorPickerHueBar();
+private:
+    float m_hue = 0.0;
 
-        // generated OnColorChanged when H is changed
+    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
+    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, base::input::CursorType& outCursorType) const override;
+    virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
 
-        inline float hue() const { return m_hue; }
+	base::canvas::Geometry m_cursorGeometry;
+	base::canvas::Geometry m_colorBarGeometry;
+    Size m_rectSize;
 
-        void hue(float h);
+    void recomputeGeometry(const Size& size);
+    void updateFromPosition(const Position& pos);
 
-    private:
-        float m_hue = 0.0;
+	void rebuildCursorGeometry(const Size& size);
 
-        virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
-        virtual InputActionPtr handleMouseClick(const ElementArea& area, const base::input::MouseClickEvent& evt) override;
-        virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, base::input::CursorType& outCursorType) const override;
-        virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
+    friend class ColorPickerHueBarInputAction;
+};
 
-		base::canvas::Geometry m_cursorGeometry;
-		base::canvas::Geometry m_colorBarGeometry;
-        Size m_rectSize;
+///----
 
-        void recomputeGeometry(const Size& size);
-        void updateFromPosition(const Position& pos);
+// helper dialog that allows to select a color
+class BASE_UI_API ColorPickerBox : public PopupWindow
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ColorPickerBox, PopupWindow);
 
-		void rebuildCursorGeometry(const Size& size);
+public:
+    ColorPickerBox(base::Color initialColor, bool editAlpha, base::StringView caption="");
+    virtual ~ColorPickerBox();
 
-        friend class ColorPickerHueBarInputAction;
-    };
+    inline base::Color color() const { return m_currentColor; }
 
-    ///----
+    // generated OnColorChanged when selected and general OnClosed when window itself is closed
 
-    // helper dialog that allows to select a color
-    class BASE_UI_API ColorPickerBox : public PopupWindow
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(ColorPickerBox, PopupWindow);
+private:
+    base::Color m_initialColor;
+    base::Color m_currentColor;
 
-    public:
-        ColorPickerBox(base::Color initialColor, bool editAlpha, base::StringView caption="");
-        virtual ~ColorPickerBox();
+    TrackBar* m_barR;
+    TrackBar* m_barG;
+    TrackBar* m_barB;
+    TrackBar* m_barA;
 
-        inline base::Color color() const { return m_currentColor; }
+    ColorPickerLSBox* m_lsBox;
+    ColorPickerHueBar* m_hueBar;
 
-        // generated OnColorChanged when selected and general OnClosed when window itself is closed
+    IElement* m_previousColorBox;
+    IElement* m_currentColorBox;
 
-    private:
-        base::Color m_initialColor;
-        base::Color m_currentColor;
+    TextLabel* m_valuesText;
 
-        TrackBar* m_barR;
-        TrackBar* m_barG;
-        TrackBar* m_barB;
-        TrackBar* m_barA;
+    bool m_editAlpha = false;
 
-        ColorPickerLSBox* m_lsBox;
-        ColorPickerHueBar* m_hueBar;
+    virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
 
-        IElement* m_previousColorBox;
-        IElement* m_currentColorBox;
+    void syncHue();
+    void recomputeFromHLS();
+    void recomputeFromColor(bool updateHSV = true);
 
-        TextLabel* m_valuesText;
+    void sendColorChange();
+};
 
-        bool m_editAlpha = false;
+///----
 
-        virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
-
-        void syncHue();
-        void recomputeFromHLS();
-        void recomputeFromColor(bool updateHSV = true);
-
-        void sendColorChange();
-    };
-
-    ///----
-
-} // ui
+END_BOOMER_NAMESPACE(ui)

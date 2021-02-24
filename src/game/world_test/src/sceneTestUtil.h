@@ -11,52 +11,49 @@
 #include "base/world/include/world.h"
 #include "base/world/include/worldPrefab.h"
 
-namespace game
+BEGIN_BOOMER_NAMESPACE(game::test)
+
+//---
+
+struct PlaneGround
 {
-    namespace test
-    {
-        //---
+public:
+    PlaneGround(base::world::World* world, const rendering::MeshRef& planeMesh);
 
-        struct PlaneGround
-        {
-        public:
-            PlaneGround(base::world::World* world, const rendering::MeshRef& planeMesh);
+    void ensureGroundUnder(float x, float y);
 
-            void ensureGroundUnder(float x, float y);
+private:
+    base::HashSet<uint32_t> m_planeCoordinatesSet;
 
-        private:
-            base::HashSet<uint32_t> m_planeCoordinatesSet;
+    base::world::World* m_world;
 
-            base::world::World* m_world;
+    rendering::MeshRef m_planeMesh;
+    float m_planeSize = 1.0f;
+};
 
-            rendering::MeshRef m_planeMesh;
-            float m_planeSize = 1.0f;
-        };
+//---
 
-        //---
+class PrefabBuilder
+{
+public:
+    PrefabBuilder();
 
-        class PrefabBuilder
-        {
-        public:
-            PrefabBuilder();
+    static base::world::NodeTemplatePtr BuildMeshNode(const rendering::MeshRef& mesh, const base::EulerTransform& placement, base::Color color = base::Color::WHITE);
+    static base::world::NodeTemplatePtr BuildPrefabNode(const base::world::PrefabPtr& prefab, const base::EulerTransform& placement);
 
-            static base::world::NodeTemplatePtr BuildMeshNode(const rendering::MeshRef& mesh, const base::EulerTransform& placement, base::Color color = base::Color::WHITE);
-            static base::world::NodeTemplatePtr BuildPrefabNode(const base::world::PrefabPtr& prefab, const base::EulerTransform& placement);
+    int addNode(const base::world::NodeTemplatePtr& node, int parentNode = -1);
 
-            int addNode(const base::world::NodeTemplatePtr& node, int parentNode = -1);
+    base::world::PrefabPtr extractPrefab();
 
-            base::world::PrefabPtr extractPrefab();
+private:
+    base::world::NodeTemplatePtr m_root;
+    base::Array<base::world::NodeTemplatePtr> m_nodes;
+};
 
-        private:
-            base::world::NodeTemplatePtr m_root;
-            base::Array<base::world::NodeTemplatePtr> m_nodes;
-        };
+//---
 
-        //---
+extern base::Point UlamSpiral(uint32_t n);
 
-        extern base::Point UlamSpiral(uint32_t n);
+//---
 
-        //---
-
-    } // test
-} // game
+END_BOOMER_NAMESPACE(game::test)

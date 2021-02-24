@@ -12,151 +12,147 @@
 #include "base/containers/include/stringBuf.h"
 #include "rttiMetadata.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+class ResourceLoader;
+END_BOOMER_NAMESPACE(base::res)
+
+BEGIN_BOOMER_NAMESPACE(base::rtti)
+
+class IType;
+
+/// flags for properties
+enum class PropertyFlagBit : uint32_t
 {
-    namespace res
-    {
-        class ResourceLoader;
-    }
+    Editable = FLAG(0), // property is user editable
+    ReadOnly = FLAG(1), // property cannot be modified
+    Inlined = FLAG(2), // property allows inlined objects to be created
+    Transient = FLAG(3), // property is never saved but can be edited
+    Overridable = FLAG(4), // property can be overridden (when used in a class derived from IObjectTemplate)
+    ScriptHidden = FLAG(10), // property is explicitly hidden from being exposed to scripts
+    ScriptReadOnly = FLAG(11), // property is explicitly marked as not being writable by scripts
+    Scripted = FLAG(12), // property was created from scripts
+    ExternalBuffer = FLAG(13), // property data is in the external buffer
+    NoResetToDefault = FLAG(14), // property can't be reset to default
+};
 
-    namespace rtti
-    {
-        class IType;
+typedef DirectFlags<PropertyFlagBit> PropertyFlags;
 
-        /// flags for properties
-        enum class PropertyFlagBit : uint32_t
-        {
-            Editable = FLAG(0), // property is user editable
-            ReadOnly = FLAG(1), // property cannot be modified
-            Inlined = FLAG(2), // property allows inlined objects to be created
-            Transient = FLAG(3), // property is never saved but can be edited
-            Overridable = FLAG(4), // property can be overridden (when used in a class derived from IObjectTemplate)
-            ScriptHidden = FLAG(10), // property is explicitly hidden from being exposed to scripts
-            ScriptReadOnly = FLAG(11), // property is explicitly marked as not being writable by scripts
-            Scripted = FLAG(12), // property was created from scripts
-            ExternalBuffer = FLAG(13), // property data is in the external buffer
-            NoResetToDefault = FLAG(14), // property can't be reset to default
-        };
+/// property setup
+struct PropertySetup
+{
+    uint32_t m_offset = 0;
+    Type m_type;
+    StringID m_name;
+    StringID m_category;
+    PropertyFlags m_flags;
+};
 
-        typedef DirectFlags<PropertyFlagBit> PropertyFlags;
+/// property editor data
+struct BASE_OBJECT_API PropertyEditorData
+{
+    StringID m_customEditor;
+    StringBuf m_comment;
+    StringBuf m_units;
+    double m_rangeMin = -DBL_MAX;
+    double m_rangeMax = DBL_MAX;
 
-        /// property setup
-        struct PropertySetup
-        {
-            uint32_t m_offset = 0;
-            Type m_type;
-            StringID m_name;
-            StringID m_category;
-            PropertyFlags m_flags;
-        };
+    uint8_t m_digits = 2;
+    bool m_colorWithAlpha = true;
+    bool m_noDefaultValue = false;
+    bool m_widgetDrag = false;
+    bool m_widgetSlider = false;
+    bool m_widgetDragWrap = false;
+    bool m_primaryResource = false;
 
-        /// property editor data
-        struct BASE_OBJECT_API PropertyEditorData
-        {
-            StringID m_customEditor;
-            StringBuf m_comment;
-            StringBuf m_units;
-            double m_rangeMin = -DBL_MAX;
-            double m_rangeMax = DBL_MAX;
+    PropertyEditorData();
+    PropertyEditorData& comment(StringView comment) { m_comment = StringBuf(comment); return* this; }
+    PropertyEditorData& primaryResource() { m_primaryResource = true; return *this; }
 
-            uint8_t m_digits = 2;
-            bool m_colorWithAlpha = true;
-            bool m_noDefaultValue = false;
-            bool m_widgetDrag = false;
-            bool m_widgetSlider = false;
-            bool m_widgetDragWrap = false;
-            bool m_primaryResource = false;
+    bool rangeEnabled() const;
+};
 
-            PropertyEditorData();
-            PropertyEditorData& comment(StringView comment) { m_comment = StringBuf(comment); return* this; }
-            PropertyEditorData& primaryResource() { m_primaryResource = true; return *this; }
+/// a property in the class
+class BASE_OBJECT_API Property : public MetadataContainer
+{
+public:
+    Property(const IType* parent, const PropertySetup& setup, const PropertyEditorData& editorData = PropertyEditorData());
+    virtual ~Property();
 
-            bool rangeEnabled() const;
-        };
+    /// get the name of the property
+    INLINE StringID name() const { return m_name; }
 
-        /// a property in the class
-        class BASE_OBJECT_API Property : public MetadataContainer
-        {
-        public:
-            Property(const IType* parent, const PropertySetup& setup, const PropertyEditorData& editorData = PropertyEditorData());
-            virtual ~Property();
+    /// get name of the category property is in
+    INLINE StringID category() const { return m_category; }
 
-            /// get the name of the property
-            INLINE StringID name() const { return m_name; }
+    /// get the owner of this property
+    INLINE Type parent() const { return m_parent; }
 
-            /// get name of the category property is in
-            INLINE StringID category() const { return m_category; }
+    /// get the type of the property
+    INLINE Type type() const { return m_type; }
 
-            /// get the owner of this property
-            INLINE Type parent() const { return m_parent; }
+    /// get the offset of data
+    INLINE uint32_t offset() const { return m_offset; }
 
-            /// get the type of the property
-            INLINE Type type() const { return m_type; }
+    /// get unique property hash
+    INLINE uint64_t hash() const { return m_hash; }
 
-            /// get the offset of data
-            INLINE uint32_t offset() const { return m_offset; }
+    /// get flags (raw view)
+    INLINE PropertyFlags flags() const { return m_flags; }
 
-            /// get unique property hash
-            INLINE uint64_t hash() const { return m_hash; }
+    /// is this a editable ?
+    INLINE bool editable() const { return m_flags.test(PropertyFlagBit::Editable); }
 
-            /// get flags (raw view)
-            INLINE PropertyFlags flags() const { return m_flags; }
+    /// is this a readonly ?
+    INLINE bool readonly() const { return m_flags.test(PropertyFlagBit::ReadOnly); }
 
-            /// is this a editable ?
-            INLINE bool editable() const { return m_flags.test(PropertyFlagBit::Editable); }
+    /// is this a inlined ?
+    INLINE bool inlined() const { return m_flags.test(PropertyFlagBit::Inlined); }
 
-            /// is this a readonly ?
-            INLINE bool readonly() const { return m_flags.test(PropertyFlagBit::ReadOnly); }
+    /// is this property created by scripts ?
+    INLINE bool scripted() const { return m_flags.test(PropertyFlagBit::Scripted); }
 
-            /// is this a inlined ?
-            INLINE bool inlined() const { return m_flags.test(PropertyFlagBit::Inlined); }
+    /// is this property data hold in external object buffer (object scripted property)
+    INLINE bool externalBuffer() const { return m_flags.test(PropertyFlagBit::ExternalBuffer); }
 
-            /// is this property created by scripts ?
-            INLINE bool scripted() const { return m_flags.test(PropertyFlagBit::Scripted); }
+    // can this property be reset to default/base value in the editor ?
+    INLINE bool resetable() const { return !m_flags.test(PropertyFlagBit::NoResetToDefault); }
 
-            /// is this property data hold in external object buffer (object scripted property)
-            INLINE bool externalBuffer() const { return m_flags.test(PropertyFlagBit::ExternalBuffer); }
+    /// is this an overridable template property ?
+    INLINE bool overridable() const { return m_flags.test(PropertyFlagBit::Overridable); }
 
-            // can this property be reset to default/base value in the editor ?
-            INLINE bool resetable() const { return !m_flags.test(PropertyFlagBit::NoResetToDefault); }
+    //--
 
-            /// is this an overridable template property ?
-            INLINE bool overridable() const { return m_flags.test(PropertyFlagBit::Overridable); }
+    /// get editor data
+    INLINE const PropertyEditorData& editorData() const { return m_editorData; }
 
-            //--
+    //--
 
-            /// get editor data
-            INLINE const PropertyEditorData& editorData() const { return m_editorData; }
+    /*/// get property data given the pointer to the object
+    virtual const void* offsetPtr(const void* data) const { return OffsetPtr(data, offset()); }
 
-            //--
+    /// get property data given the pointer to the object
+    virtual void* offsetPtr(void* data) const { return OffsetPtr(data, offset()); }*/
 
-            /*/// get property data given the pointer to the object
-            virtual const void* offsetPtr(const void* data) const { return OffsetPtr(data, offset()); }
+    /// get property data given the pointer to the object
+    ALWAYS_INLINE const void* offsetPtr(const void* data) const { return OffsetPtr(data, offset()); }
 
-            /// get property data given the pointer to the object
-            virtual void* offsetPtr(void* data) const { return OffsetPtr(data, offset()); }*/
+    /// get property data given the pointer to the object
+    ALWAYS_INLINE void* offsetPtr(void* data) const { return OffsetPtr(data, offset()); }
 
-            /// get property data given the pointer to the object
-            ALWAYS_INLINE const void* offsetPtr(const void* data) const { return OffsetPtr(data, offset()); }
+protected:
+    uint32_t m_offset;
+    PropertyFlags m_flags;
 
-            /// get property data given the pointer to the object
-            ALWAYS_INLINE void* offsetPtr(void* data) const { return OffsetPtr(data, offset()); }
+    StringID m_name;
+    StringID m_category;
+    Type m_type;
+    Type m_parent;
 
-        protected:
-            uint32_t m_offset;
-            PropertyFlags m_flags;
+    PropertyEditorData m_editorData;
 
-            StringID m_name;
-            StringID m_category;
-            Type m_type;
-            Type m_parent;
+    short m_overrideIndex = -1;
 
-            PropertyEditorData m_editorData;
+    uint64_t m_hash;
+};
 
-            short m_overrideIndex = -1;
-
-            uint64_t m_hash;
-        };
-
-    } // rtti
-} // base
+END_BOOMER_NAMESPACE(base::rtti)

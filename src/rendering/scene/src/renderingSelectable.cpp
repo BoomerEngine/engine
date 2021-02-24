@@ -10,44 +10,40 @@
 #include "rendering/scene/include/renderingSelectable.h"
 #include "base/containers/include/stringBuilder.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//---
+
+void Selectable::print(base::IFormatStream& f) const
 {
-    namespace scene
+    if (valid())
     {
+        f.appendf("ObjectID={}", m_objectID);
 
-        //---
+        if (m_subObjectID != 0)
+            f.appendf(",SubObjectID={}", m_subObjectID);
+    }
+    else
+    {
+        f << "None";
+    }
+}
 
-        void Selectable::print(base::IFormatStream& f) const
-        {
-            if (valid())
-            {
-                f.appendf("ObjectID={}", m_objectID);
+//---
 
-                if (m_subObjectID != 0)
-                    f.appendf(",SubObjectID={}", m_subObjectID);
-            }
-            else
-            {
-                f << "None";
-            }
-        }
+void EncodedSelectable::print(base::IFormatStream& f) const
+{
+    if (valid())
+    {
+        f << object;
+        f.appendf(" at [{},{}], depth {}", x, y, Prec(depth, 2));
+    }
+    else
+    {
+        f << "None";
+    }
+}
 
-        //---
+//---
 
-        void EncodedSelectable::print(base::IFormatStream& f) const
-        {
-            if (valid())
-            {
-                f << object;
-                f.appendf(" at [{},{}], depth {}", x, y, Prec(depth, 2));
-            }
-            else
-            {
-                f << "None";
-            }
-        }
-
-        //---
-
-    } // scene
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

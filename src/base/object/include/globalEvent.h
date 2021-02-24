@@ -10,12 +10,12 @@
 
 #define EVENT_FUNC base::StringID name, base::IObject* source, const void* data, base::Type dataType
 
-namespace base
-{
-    ///---
+BEGIN_BOOMER_NAMESPACE(base)
 
-    typedef std::function<bool(EVENT_FUNC)> TEventFunction;
+///---
 
-    //--
+typedef std::function<bool(EVENT_FUNC)> TEventFunction;
 
-} // base
+//--
+
+END_BOOMER_NAMESPACE(base)

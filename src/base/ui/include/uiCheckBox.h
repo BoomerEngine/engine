@@ -10,49 +10,49 @@
 
 #include "uiButton.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+class Button;
+
+/// check box state
+enum class CheckBoxState : char
 {
-    class Button;
+    Undecided=-1,
+    Unchecked=0,
+    Checked=1,
+};
 
-    /// check box state
-    enum class CheckBoxState : char
-    {
-        Undecided=-1,
-        Unchecked=0,
-        Checked=1,
-    };
+/// a check box - 3 state check mark
+class BASE_UI_API CheckBox : public Button
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(CheckBox, Button);
 
-    /// a check box - 3 state check mark
-    class BASE_UI_API CheckBox : public Button
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(CheckBox, Button);
+public:
+    CheckBox(bool initialState=false);
 
-    public:
-        CheckBox(bool initialState=false);
+    //---
 
-        //---
+    INLINE CheckBoxState state() const { return m_state; }
+    INLINE bool stateBool() const { return m_state == CheckBoxState::Checked; }
 
-        INLINE CheckBoxState state() const { return m_state; }
-        INLINE bool stateBool() const { return m_state == CheckBoxState::Checked; }
+    void state(CheckBoxState state);
+    void state(bool state);
 
-        void state(CheckBoxState state);
-        void state(bool state);
+    //--
 
-        //--
+private:
+    CheckBoxState m_state;
 
-    private:
-        CheckBoxState m_state;
+    virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
 
-        virtual bool handleTemplateProperty(base::StringView name, base::StringView value) override;
+    static CheckBoxState NextState(CheckBoxState state);
 
-        static CheckBoxState NextState(CheckBoxState state);
+    void updateCheckStyles();
 
-        void updateCheckStyles();
+    virtual void clicked();
+};
 
-        virtual void clicked();
-    };
+// make a checkbox with a label
+extern BASE_UI_API CheckBoxPtr MakeCheckbox(IElement* parent, base::StringView txt, bool initialState = false);
 
-    // make a checkbox with a label
-    extern BASE_UI_API CheckBoxPtr MakeCheckbox(IElement* parent, base::StringView txt, bool initialState = false);
-
-} // ui
+END_BOOMER_NAMESPACE(ui)

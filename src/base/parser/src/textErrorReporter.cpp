@@ -9,12 +9,3 @@
 #include "build.h"
 #include "textToken.h"
 #include "textErrorReporter.h"
-
-namespace base
-{
-    namespace parser
-    {
-       
-
-    } // parser
-} // base

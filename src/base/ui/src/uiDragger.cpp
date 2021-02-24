@@ -11,137 +11,135 @@
 #include "uiInputAction.h"
 #include "uiTextLabel.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+///---
+
+base::ConfigProperty<int> cvDraggerDeadZone("Editor", "DraggerDeadZone", 10);
+base::ConfigProperty<int> cvDraggerPixelRatio("Editor", "DraggerPixelStep", 4);
+
+///---
+
+/// input action for dragging
+class DraggerInputAction : public IInputAction
 {
+public:
+    DraggerInputAction(Dragger* box, const base::Point& initialPosition)
+        : IInputAction(box)
+        , m_box(box)
+        , m_pixelDelta(0)
+    {}
 
-    ///---
-
-    base::ConfigProperty<int> cvDraggerDeadZone("Editor", "DraggerDeadZone", 10);
-    base::ConfigProperty<int> cvDraggerPixelRatio("Editor", "DraggerPixelStep", 4);
-
-    ///---
-
-    /// input action for dragging
-    class DraggerInputAction : public IInputAction
+    virtual InputActionResult onKeyEvent(const base::input::KeyEvent& evt) override
     {
-    public:
-        DraggerInputAction(Dragger* box, const base::Point& initialPosition)
-            : IInputAction(box)
-            , m_box(box)
-            , m_pixelDelta(0)
-        {}
-
-        virtual InputActionResult onKeyEvent(const base::input::KeyEvent& evt) override
+        // revert back to old value on ESC key
+        if (evt.pressed() && evt.keyCode() == base::input::KeyCode::KEY_ESCAPE)
         {
-            // revert back to old value on ESC key
-            if (evt.pressed() && evt.keyCode() == base::input::KeyCode::KEY_ESCAPE)
-            {
-                m_box->call(EVENT_VALUE_DRAG_CANCELED);
-                return nullptr;
-            }
-
-            return InputActionResult(); // continue
+            m_box->call(EVENT_VALUE_DRAG_CANCELED);
+            return nullptr;
         }
 
-        virtual InputActionResult onMouseEvent(const base::input::MouseClickEvent& evt, const ElementWeakPtr& hoverStack) override
-        {
-            if (evt.leftReleased())
-            {
-                m_box->call(EVENT_VALUE_DRAG_FINISHED);
-                return nullptr;
-            }
-
-            return InputActionResult(); // continue
-        }
-
-        virtual InputActionResult onMouseMovement(const base::input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
-        {
-            const auto pixelStep = std::max<int>(1, cvDraggerPixelRatio.get());
-
-            int stepScale = 10;
-            if (evt.keyMask().isCtrlDown())
-                stepScale = 1;
-            else if (evt.keyMask().isShiftDown())
-                stepScale = 100;
-
-            m_pixelDelta += (int)evt.delta().y;
-
-            int valueDelta = 0;
-            if (m_pixelDelta > cvDraggerDeadZone.get())
-            {
-                const auto steps = (m_pixelDelta - cvDraggerDeadZone.get()) / pixelStep;
-                if (steps > 0)
-                {
-                    m_pixelDelta -= steps * pixelStep;
-                    valueDelta += steps * stepScale;
-                }
-            }
-            else if (m_pixelDelta < -cvDraggerDeadZone.get())
-            {
-                const auto steps = (cvDraggerDeadZone.get() + m_pixelDelta) / pixelStep;
-                if (steps < 0)
-                {
-                    m_pixelDelta -= steps * pixelStep;
-                    valueDelta += steps * stepScale;
-                }
-            }
-
-            if (valueDelta)
-                m_box->call(EVENT_VALUE_DRAG_STEP, -valueDelta);
-
-            return InputActionResult(); // continue
-        }
-
-        virtual bool allowsHoverTracking() const override
-        {
-            return false;
-        }
-
-        virtual bool fullMouseCapture() const override
-        {
-            return true;
-        }
-
-    private:
-        Dragger* m_box;
-        int64_t m_pixelDelta;
-    };
-
-    ///---
-
-    Dragger::Dragger()
-    {
-        hitTest(true);
-        enableAutoExpand(false, false);
+        return InputActionResult(); // continue
     }
 
-    InputActionPtr Dragger::handleMouseClick(const ui::ElementArea &area, const base::input::MouseClickEvent &evt)
+    virtual InputActionResult onMouseEvent(const base::input::MouseClickEvent& evt, const ElementWeakPtr& hoverStack) override
     {
-        if (evt.leftClicked())
+        if (evt.leftReleased())
         {
-            call(EVENT_VALUE_DRAG_STARTED);
-            return base::RefNew<DraggerInputAction>(this, evt.absolutePosition());
+            m_box->call(EVENT_VALUE_DRAG_FINISHED);
+            return nullptr;
         }
 
-        return nullptr;
+        return InputActionResult(); // continue
     }
 
-    bool Dragger::handleMouseWheel(const base::input::MouseMovementEvent &evt, float delta)
+    virtual InputActionResult onMouseMovement(const base::input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
+    {
+        const auto pixelStep = std::max<int>(1, cvDraggerPixelRatio.get());
+
+        int stepScale = 10;
+        if (evt.keyMask().isCtrlDown())
+            stepScale = 1;
+        else if (evt.keyMask().isShiftDown())
+            stepScale = 100;
+
+        m_pixelDelta += (int)evt.delta().y;
+
+        int valueDelta = 0;
+        if (m_pixelDelta > cvDraggerDeadZone.get())
+        {
+            const auto steps = (m_pixelDelta - cvDraggerDeadZone.get()) / pixelStep;
+            if (steps > 0)
+            {
+                m_pixelDelta -= steps * pixelStep;
+                valueDelta += steps * stepScale;
+            }
+        }
+        else if (m_pixelDelta < -cvDraggerDeadZone.get())
+        {
+            const auto steps = (cvDraggerDeadZone.get() + m_pixelDelta) / pixelStep;
+            if (steps < 0)
+            {
+                m_pixelDelta -= steps * pixelStep;
+                valueDelta += steps * stepScale;
+            }
+        }
+
+        if (valueDelta)
+            m_box->call(EVENT_VALUE_DRAG_STEP, -valueDelta);
+
+        return InputActionResult(); // continue
+    }
+
+    virtual bool allowsHoverTracking() const override
     {
         return false;
     }
 
-    bool Dragger::handleCursorQuery(const ui::ElementArea &area, const ui::Position &absolutePosition, base::input::CursorType &outCursorType) const
+    virtual bool fullMouseCapture() const override
     {
-        outCursorType = base::input::CursorType::SizeNS;
         return true;
     }
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(Dragger);
-        RTTI_METADATA(ElementClassNameMetadata).name("Dragger");
-    RTTI_END_TYPE();
+private:
+    Dragger* m_box;
+    int64_t m_pixelDelta;
+};
 
-    ///---
+///---
 
+Dragger::Dragger()
+{
+    hitTest(true);
+    enableAutoExpand(false, false);
 }
 
+InputActionPtr Dragger::handleMouseClick(const ui::ElementArea &area, const base::input::MouseClickEvent &evt)
+{
+    if (evt.leftClicked())
+    {
+        call(EVENT_VALUE_DRAG_STARTED);
+        return base::RefNew<DraggerInputAction>(this, evt.absolutePosition());
+    }
+
+    return nullptr;
+}
+
+bool Dragger::handleMouseWheel(const base::input::MouseMovementEvent &evt, float delta)
+{
+    return false;
+}
+
+bool Dragger::handleCursorQuery(const ui::ElementArea &area, const ui::Position &absolutePosition, base::input::CursorType &outCursorType) const
+{
+    outCursorType = base::input::CursorType::SizeNS;
+    return true;
+}
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(Dragger);
+    RTTI_METADATA(ElementClassNameMetadata).name("Dragger");
+RTTI_END_TYPE();
+
+//--
+
+END_BOOMER_NAMESPACE(ui)

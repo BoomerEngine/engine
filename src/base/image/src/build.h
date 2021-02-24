@@ -6,18 +6,15 @@
 
 #include "public.h"
 
-namespace base
-{
-    namespace image
-    {
-        class PixelIterator;
-        class PixelAccess;
+BEGIN_BOOMER_NAMESPACE(base::image)
 
-        class Image;
-        typedef RefPtr<Image> ImagePtr;
-        typedef res::Ref<Image> ImageRef;
+class PixelIterator;
+class PixelAccess;
 
-        class DynamicAtlas;
+class Image;
+typedef RefPtr<Image> ImagePtr;
+typedef res::Ref<Image> ImageRef;
 
-    } // image
-} // base
+class DynamicAtlas;
+
+END_BOOMER_NAMESPACE(base::image)

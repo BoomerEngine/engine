@@ -13,116 +13,113 @@
 #include "base/memory/include/linearAllocator.h"
 #include "base/containers/include/hashMap.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::parser)
+
+namespace prv
 {
-    namespace parser
+    //---
+
+    struct ParsingNode;
+
+    // helper temporary node used when building the parser tree
+    struct ParsingNodeRef
     {
-        namespace prv
-        {
-            //---
+        ParsingNode* m_node;
 
-            struct ParsingNode;
+        //--
 
-            // helper temporary node used when building the parser tree
-            struct ParsingNodeRef
-            {
-                ParsingNode* m_node;
+        INLINE ParsingNodeRef()
+            : m_node(nullptr)
+        {}
+    };
 
-                //--
+    // helper temporary node used when building the parser tree
+    struct ParsingNode
+    {
+        // assigned index of this node
+        uint32_t m_index;
 
-                INLINE ParsingNodeRef()
-                    : m_node(nullptr)
-                {}
-            };
+        // type of stuff to emit, if TextTokenType::Invalid this is not an emit node
+        // NOTE: we can be an emit node even if we have a "continuation table", it just means that we may match to a longer token as well:
+        // example "func" may be an good match for IDENTIFIER but a "function" will be a match for KEYWORD, etc
+        TextTokenType m_possibleEmit;
 
-            // helper temporary node used when building the parser tree
-            struct ParsingNode
-            {
-                // assigned index of this node
-                uint32_t m_index;
+        // in case we are emitting a keyword this is the ID of the keyword
+        int m_keywordID;
 
-                // type of stuff to emit, if TextTokenType::Invalid this is not an emit node
-                // NOTE: we can be an emit node even if we have a "continuation table", it just means that we may match to a longer token as well:
-                // example "func" may be an good match for IDENTIFIER but a "function" will be a match for KEYWORD, etc
-                TextTokenType m_possibleEmit;
+        // continuations
+        ParsingNodeRef m_continuation[128];
 
-                // in case we are emitting a keyword this is the ID of the keyword
-                int m_keywordID;
+        //--
 
-                // continuations
-                ParsingNodeRef m_continuation[128];
+        INLINE ParsingNode()
+            : m_possibleEmit(TextTokenType::Invalid)
+            , m_keywordID(-1)
+        {}
 
-                //--
+    };
 
-                INLINE ParsingNode()
-                    : m_possibleEmit(TextTokenType::Invalid)
-                    , m_keywordID(-1)
-                {}
+    //---
 
-            };
+    // helper tree builder
+    // NOTE: this may take some memory
+    class ParsingTreeBuilder : public base::NoCopy
+    {
+    public:
+        ParsingTreeBuilder();
+        ~ParsingTreeBuilder();
 
-            //---
+        // insert a match for identifiers
+        void insertIdentifiersMatch(const char* firstChars, const char* nextChars);
 
-            // helper tree builder
-            // NOTE: this may take some memory
-            class ParsingTreeBuilder : public base::NoCopy
-            {
-            public:
-                ParsingTreeBuilder();
-                ~ParsingTreeBuilder();
+        // insert a match for keyword
+        void insertKeywordMatch(const char* txt, int keywordID);
 
-                // insert a match for identifiers
-                void insertIdentifiersMatch(const char* firstChars, const char* nextChars);
+        // insert a match for single character
+        void insertCharMatch(char ch);
 
-                // insert a match for keyword
-                void insertKeywordMatch(const char* txt, int keywordID);
+        // insert a match for double quoted string
+        void insertStringMatch(bool asNames = false);
 
-                // insert a match for single character
-                void insertCharMatch(char ch);
+        // insert a match for single quoted string
+        void insertNameMatch(bool asStrings = false);
 
-                // insert a match for double quoted string
-                void insertStringMatch(bool asNames = false);
+        // insert a match for integer numbers (no dot)
+        void insertIntegerMatch();
 
-                // insert a match for single quoted string
-                void insertNameMatch(bool asStrings = false);
+        // insert a match for floating point number
+        void insertFloatingPointMatch();
 
-                // insert a match for integer numbers (no dot)
-                void insertIntegerMatch();
+        //--
 
-                // insert a match for floating point number
-                void insertFloatingPointMatch();
+        // dump structure to a string buffer for debugging
+        void print(IFormatStream& str) const;
 
-                //--
+        //--
 
-                // dump structure to a string buffer for debugging
-                void print(IFormatStream& str) const;
+        // create a language definition from the parser tree
+        UniquePtr<ILanguageDefinition> buildLanguageDefinition() const;
 
-                //--
+    private:
+        mem::LinearAllocator m_mem;
+        ParsingNode* m_root;
+        Array<ParsingNode*> m_nodes;
+        HashMap<int, StringBuf> m_debugKeywordMap;
 
-                // create a language definition from the parser tree
-                UniquePtr<ILanguageDefinition> buildLanguageDefinition() const;
+        //--
 
-            private:
-                mem::LinearAllocator m_mem;
-                ParsingNode* m_root;
-                Array<ParsingNode*> m_nodes;
-                HashMap<int, StringBuf> m_debugKeywordMap;
+        void insertUniqueMatchNode(ParsingNode* atNode, const char* chars, Array<ParsingNode*>& outContinuationNodes);
+        ParsingNode* insertUniqueMatchNode(ParsingNode* atNode, char ch);
+        ParsingNode* uniqueMatchNode(ParsingNode* atNode, const char* chars);
+        ParsingNode* duplicateNode(ParsingNode* node);
+        void makeFinalNode(ParsingNode* node);
+        void spinOnSelf(ParsingNode* node);
+        void spinOnSelf(ParsingNode* node, const char* spinChars);
+        void spinOnSelf(ParsingNode* node, char spinChar);
+    };
 
-                //--
+    //---
 
-                void insertUniqueMatchNode(ParsingNode* atNode, const char* chars, Array<ParsingNode*>& outContinuationNodes);
-                ParsingNode* insertUniqueMatchNode(ParsingNode* atNode, char ch);
-                ParsingNode* uniqueMatchNode(ParsingNode* atNode, const char* chars);
-                ParsingNode* duplicateNode(ParsingNode* node);
-                void makeFinalNode(ParsingNode* node);
-                void spinOnSelf(ParsingNode* node);
-                void spinOnSelf(ParsingNode* node, const char* spinChars);
-                void spinOnSelf(ParsingNode* node, char spinChar);
-            };
+} // prv
 
-            //---
-
-        } // prv
-    } // parser
-} // base
-
+END_BOOMER_NAMESPACE(base::parser)

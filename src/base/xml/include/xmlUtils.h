@@ -8,52 +8,47 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::xml)
+
+// error reporting context
+class BASE_XML_API ILoadingReporter
 {
-    class StringBuf;
+public:
+    virtual ~ILoadingReporter();
 
-    namespace xml
-    {
-        // error reporting context
-        class BASE_XML_API ILoadingReporter
-        {
-        public:
-            virtual ~ILoadingReporter();
+    // report error in the loaded document
+    virtual void onError(uint32_t line, uint32_t pos, const char* text) = 0;
 
-            // report error in the loaded document
-            virtual void onError(uint32_t line, uint32_t pos, const char* text) = 0;
+    // get the default implementation of the reporter - outputs stuff to log
+    static ILoadingReporter& GetDefault();
+};
 
-            // get the default implementation of the reporter - outputs stuff to log
-            static ILoadingReporter& GetDefault();
-        };
+// load and parse XML document from file on disk (may be text or binary XML)
+// NOTE: the loaded document is read only, youy will have to convert it to writable version to make changes
+extern BASE_XML_API DocumentPtr LoadDocument(ILoadingReporter& ctx, StringView absoluteFilePath);
 
-        // load and parse XML document from file on disk (may be text or binary XML)
-        // NOTE: the loaded document is read only, youy will have to convert it to writable version to make changes
-        extern BASE_XML_API DocumentPtr LoadDocument(ILoadingReporter& ctx, StringView absoluteFilePath);
+// parse XML document from text, the input buffer will be copied
+// NOTE: the loaded document is read only, youy will have to convert it to writable version to make changes
+extern BASE_XML_API DocumentPtr LoadDocument(ILoadingReporter& ctx, const char* text);
 
-        // parse XML document from text, the input buffer will be copied
-        // NOTE: the loaded document is read only, youy will have to convert it to writable version to make changes
-        extern BASE_XML_API DocumentPtr LoadDocument(ILoadingReporter& ctx, const char* text);
+// load and parse XML document from memory buffer disk (may be text or binary XML)
+// NOTE: the loaded document is read only, youy will have to convert it to writable version to make changes
+extern BASE_XML_API DocumentPtr LoadDocument(ILoadingReporter& ctx, const Buffer& mem);
 
-        // load and parse XML document from memory buffer disk (may be text or binary XML)
-        // NOTE: the loaded document is read only, youy will have to convert it to writable version to make changes
-        extern BASE_XML_API DocumentPtr LoadDocument(ILoadingReporter& ctx, const Buffer& mem);
+// save document to file on disk, document can be saved both in binary or text format
+extern BASE_XML_API bool SaveDocument(const IDocument& ptr, StringView absoluteFilePath, bool binaryFormat = false);
 
-        // save document to file on disk, document can be saved both in binary or text format
-        extern BASE_XML_API bool SaveDocument(const IDocument& ptr, StringView absoluteFilePath, bool binaryFormat = false);
+// create an empty document that can be filled with data
+extern BASE_XML_API DocumentPtr CreateDocument(StringView rootNodeName);
 
-        // create an empty document that can be filled with data
-        extern BASE_XML_API DocumentPtr CreateDocument(StringView rootNodeName);
+//---
 
-        //---
+// copy nodes from one document to other
+// NOTE: the destination node must exist
+extern BASE_XML_API void CopyInnerNodes(const IDocument& srcDoc, NodeID srcNodeId, IDocument& destDoc, NodeID destNodeId);
 
-        // copy nodes from one document to other
-        // NOTE: the destination node must exist
-        extern BASE_XML_API void CopyInnerNodes(const IDocument& srcDoc, NodeID srcNodeId, IDocument& destDoc, NodeID destNodeId);
+// copy nodes from one document to other
+// NOTE: the destination node must exist
+extern BASE_XML_API void CopyNodes(const IDocument& srcDoc, NodeID srcNodeId, IDocument& destDoc, NodeID destNodeParentId);
 
-        // copy nodes from one document to other
-        // NOTE: the destination node must exist
-        extern BASE_XML_API void CopyNodes(const IDocument& srcDoc, NodeID srcNodeId, IDocument& destDoc, NodeID destNodeParentId);
-        
-    } // xml
-} // base
+END_BOOMER_NAMESPACE(base::xml)

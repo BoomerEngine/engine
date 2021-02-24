@@ -16,360 +16,356 @@
 #include "rendering/device/include/renderingSamplerState.h"
 #include "rendering/device/include/renderingGraphicsStates.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::shadercompiler)
+
+class StaticSampler;
+struct ResolvedDescriptorInfo;
+
+/// get composite kind, encodes some special cases for composite types that can be swizzled
+enum class CompositeTypeHint : uint8_t
 {
-    namespace compiler
+    User, // this is a user type
+    VectorType, // N-component vector
+    MatrixType, // NxM-component matrix
+};
+
+/// packing rules for composite type
+enum class CompositePackingRules : uint8_t
+{
+    Vertex, // pack data for vertex shader input assembler, this is the most strict and strange
+    Std140, // strict shader rules (old shaders, array elements are forced to 16 bytes alignment, float3 takes 16 bytes, etc)
+    Std430, // relaxed shader rules (new shaders, array elements are using 4 bytes alignment), default for structures
+};
+
+/// composite type (structure)
+/// NOTE: we don't care about offsets here, the placement is abstract
+class RENDERING_COMPILER_API CompositeType : public base::NoCopy
+{
+public:
+    CompositeType(base::StringID name, CompositePackingRules packingRules, CompositeTypeHint hint = CompositeTypeHint::User);
+
+    struct MemberLayoutInfo
     {
+        uint32_t linearAlignment = 0; // member alignment that was used (or is needed)
+        uint32_t linearOffset = 0; // memory offset for this member int the parent structure
+        uint32_t linearSize = 0; // physical data size
+        uint32_t linearArrayCount = 0; // for arrays this is the number of array elements
+        uint32_t linearArrayStride = 0; // for arrays this is the stride of the array
 
-		class StaticSampler;
-        struct ResolvedDescriptorInfo;
+        ImageFormat dataFormat = ImageFormat::UNKNOWN; // specified format, if known
+    };
 
-        /// get composite kind, encodes some special cases for composite types that can be swizzled
-        enum class CompositeTypeHint : uint8_t
-        {
-            User, // this is a user type
-            VectorType, // N-component vector
-            MatrixType, // NxM-component matrix
-        };
+    struct Member
+    {
+        base::parser::Location location; // location of the member definition
+        base::StringID name; // name of the member
+        uint32_t firstComponent = 0; // first component in the scalar representation for this member
+        DataType type; // type of the member
 
-        /// packing rules for composite type
-        enum class CompositePackingRules : uint8_t
-        {
-            Vertex, // pack data for vertex shader input assembler, this is the most strict and strange
-            Std140, // strict shader rules (old shaders, array elements are forced to 16 bytes alignment, float3 takes 16 bytes, etc)
-            Std430, // relaxed shader rules (new shaders, array elements are using 4 bytes alignment), default for structures
-        };
+        AttributeList attributes; // all parsed attributes
 
-        /// composite type (structure)
-        /// NOTE: we don't care about offsets here, the placement is abstract
-        class RENDERING_COMPILER_API CompositeType : public base::NoCopy
-        {
-        public:
-            CompositeType(base::StringID name, CompositePackingRules packingRules, CompositeTypeHint hint = CompositeTypeHint::User);
+        base::Array<base::parser::Token*> initalizationTokens; // initialization tokens (can be a full expression)
+        CodeNode* initializerCode = nullptr; // parsed initialization code for the value
 
-            struct MemberLayoutInfo
-            {
-                uint32_t linearAlignment = 0; // member alignment that was used (or is needed)
-                uint32_t linearOffset = 0; // memory offset for this member int the parent structure
-                uint32_t linearSize = 0; // physical data size
-                uint32_t linearArrayCount = 0; // for arrays this is the number of array elements
-                uint32_t linearArrayStride = 0; // for arrays this is the stride of the array
+        //--
 
-                ImageFormat dataFormat = ImageFormat::UNKNOWN; // specified format, if known
-            };
+        MemberLayoutInfo layout; // computed layout
+    };
 
-            struct Member
-            {
-                base::parser::Location location; // location of the member definition
-                base::StringID name; // name of the member
-                uint32_t firstComponent = 0; // first component in the scalar representation for this member
-                DataType type; // type of the member
+    // get the type hint :) allows for easy implementation of GLSL/HLSL style type casts that would be otherwise impossible
+    INLINE CompositeTypeHint hint() const { return m_hint; }
 
-                AttributeList attributes; // all parsed attributes
+    // get the packing rules for the type
+    INLINE CompositePackingRules packingRules() const { return m_packing; }
 
-                base::Array<base::parser::Token*> initalizationTokens; // initialization tokens (can be a full expression)
-                CodeNode* initializerCode = nullptr; // parsed initialization code for the value
+    // get all structure members
+    typedef base::Array<Member> TMembers;
+    INLINE const TMembers& members() const { return m_members; }
 
-                //--
+    // get name of the composite type
+    INLINE base::StringID name() const { return m_name; }
 
-                MemberLayoutInfo layout; // computed layout
-            };
+    // get number of scalar components needed to represent the type
+    INLINE uint32_t scalarComponentCount() const { return m_scalarCount; }
 
-            // get the type hint :) allows for easy implementation of GLSL/HLSL style type casts that would be otherwise impossible
-            INLINE CompositeTypeHint hint() const { return m_hint; }
+    // get type unique hash that describes the type
+    INLINE uint64_t typeHash() const { return m_typeHash.crc(); }
 
-            // get the packing rules for the type
-            INLINE CompositePackingRules packingRules() const { return m_packing; }
+    // get linear memory size for this composite type
+    INLINE uint32_t linearSize() const { return m_linearSize; }
 
-            // get all structure members
-            typedef base::Array<Member> TMembers;
-            INLINE const TMembers& members() const { return m_members; }
+    // get linear memory alignment for this composite type
+    INLINE uint32_t linearAlignment() const { return m_linearAlignment; }
 
-            // get name of the composite type
-            INLINE base::StringID name() const { return m_name; }
+    // find member by name, returns type of the member
+    DataType memberType(const base::StringID name) const;
 
-            // get number of scalar components needed to represent the type
-            INLINE uint32_t scalarComponentCount() const { return m_scalarCount; }
+    // get index of member, returns -1 if not found
+    int memberIndex(const base::StringID name) const;
 
-            // get type unique hash that describes the type
-            INLINE uint64_t typeHash() const { return m_typeHash.crc(); }
+    // get member by index
+    DataType memberType(uint32_t index) const;
 
-            // get linear memory size for this composite type
-            INLINE uint32_t linearSize() const { return m_linearSize; }
+    // get name of member by index
+    base::StringID memberName(uint32_t index) const;
 
-            // get linear memory alignment for this composite type
-            INLINE uint32_t linearAlignment() const { return m_linearAlignment; }
+    //--
 
-            // find member by name, returns type of the member
-            DataType memberType(const base::StringID name) const;
+    // add member, fails if member with that name already exists
+    void addMember(const base::parser::Location& loc, const base::StringID memberName, DataType memberType, AttributeList&& attributes, const base::Array<base::parser::Token*>& initializationTokens = base::Array<base::parser::Token*>());
 
-            // get index of member, returns -1 if not found
-            int memberIndex(const base::StringID name) const;
+    //--
 
-            // get member by index
-            DataType memberType(uint32_t index) const;
+    // dump type data to debug stream
+    void print(base::IFormatStream& f) const;
 
-            // get name of member by index
-            base::StringID memberName(uint32_t index) const;
+    //--
 
-            //--
+    // compute data layout for the structure
+    bool computeMemoryLayout(bool& outNeedsMorePasses, bool& outUpdated, base::parser::IErrorReporter& err);
 
-            // add member, fails if member with that name already exists
-            void addMember(const base::parser::Location& loc, const base::StringID memberName, DataType memberType, AttributeList&& attributes, const base::Array<base::parser::Token*>& initializationTokens = base::Array<base::parser::Token*>());
+private:
+    base::StringID m_name; // name of the type
+    TMembers m_members; // members and their types
+    base::CRC64 m_typeHash; // type CRC, unique identifier for the type structure, allows to detect types with the same structure
+    uint32_t m_scalarCount; // number of scalar components needed to represent the type
+    CompositeTypeHint m_hint; // get the internal hint (used for GLSL/HLSL swizzles and mask)
+    CompositePackingRules m_packing; // packing rules for the type
 
-            //--
+    uint32_t m_linearSize; // total size in the memory of this composite type
+    uint32_t m_linearAlignment; // required structure alignment
+    bool m_layoutComputed; // layout for this member was computed
 
-            // dump type data to debug stream
-            void print(base::IFormatStream& f) const;
+    //--
 
-            //--
+    bool packLayoutVertex(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, base::parser::IErrorReporter& err) const;
+    bool packLayoutStd140(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, base::parser::IErrorReporter& err) const;
+    bool packLayoutStd430(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, base::parser::IErrorReporter& err) const;
+};
 
-            // compute data layout for the structure
-            bool computeMemoryLayout(bool& outNeedsMorePasses, bool& outUpdated, base::parser::IErrorReporter& err);
+///---
 
-        private:
-            base::StringID m_name; // name of the type
-            TMembers m_members; // members and their types
-            base::CRC64 m_typeHash; // type CRC, unique identifier for the type structure, allows to detect types with the same structure
-            uint32_t m_scalarCount; // number of scalar components needed to represent the type
-            CompositeTypeHint m_hint; // get the internal hint (used for GLSL/HLSL swizzles and mask)
-            CompositePackingRules m_packing; // packing rules for the type
+struct RENDERING_COMPILER_API ResourceTableEntry
+{
+    base::parser::Location m_location; // location of the member definition
+    base::StringID m_name; // name of the member
+    DataType m_type; // type of the entry
+    AttributeList m_attributes; // used provided attributes
 
-            uint32_t m_linearSize; // total size in the memory of this composite type
-            uint32_t m_linearAlignment; // required structure alignment
-            bool m_layoutComputed; // layout for this member was computed
+	char m_localSampler = -1;
+	const StaticSampler* m_staticSampler = nullptr;
 
-            //--
+    ResourceTableEntry();
+};
 
-            bool packLayoutVertex(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, base::parser::IErrorReporter& err) const;
-            bool packLayoutStd140(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, base::parser::IErrorReporter& err) const;
-            bool packLayoutStd430(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, base::parser::IErrorReporter& err) const;
-        };
+///---
 
-        ///---
+/// resource table (descriptor)
+class RENDERING_COMPILER_API ResourceTable : public base::NoCopy
+{
+public:
+    ResourceTable(base::StringID name, const AttributeList& attributes);
 
-        struct RENDERING_COMPILER_API ResourceTableEntry
-        {
-            base::parser::Location m_location; // location of the member definition
-            base::StringID m_name; // name of the member
-            DataType m_type; // type of the entry
-            AttributeList m_attributes; // used provided attributes
+    // get all structure members
+    typedef base::Array<ResourceTableEntry> TMembers;
+    INLINE const TMembers& members() const { return m_members; }
 
-			char m_localSampler = -1;
-			const StaticSampler* m_staticSampler = nullptr;
+    // get name of the composite type
+    INLINE base::StringID name() const { return m_name; }
 
-            ResourceTableEntry();
-        };
+    // assigned attributes
+    INLINE const AttributeList& attributes() const { return m_attributes; }
 
-        ///---
+    //--
 
-        /// resource table (descriptor)
-        class RENDERING_COMPILER_API ResourceTable : public base::NoCopy
-        {
-        public:
-            ResourceTable(base::StringID name, const AttributeList& attributes);
+    // add member, fails if member with that name already exists
+	void addMember(const base::parser::Location& loc, const base::StringID name, const DataType& type, const AttributeList& attributes, char localSampler = -1, const StaticSampler* staticSampler = nullptr);
 
-            // get all structure members
-            typedef base::Array<ResourceTableEntry> TMembers;
-            INLINE const TMembers& members() const { return m_members; }
 
-            // get name of the composite type
-            INLINE base::StringID name() const { return m_name; }
+    // get index of member, returns -1 if not found
+    int memberIndex(const base::StringID name) const;
 
-            // assigned attributes
-            INLINE const AttributeList& attributes() const { return m_attributes; }
+    // get name of member by index
+    base::StringID memberName(uint32_t index) const;
 
-            //--
+    //--
 
-            // add member, fails if member with that name already exists
-			void addMember(const base::parser::Location& loc, const base::StringID name, const DataType& type, const AttributeList& attributes, char localSampler = -1, const StaticSampler* staticSampler = nullptr);
+    // dump type data to debug stream
+    void print(base::IFormatStream& f) const;
 
+private:
+    base::StringID m_name; // name of the type
+    TMembers m_members; // members and their types
+    AttributeList m_attributes; // is thia a material resource layout
+};
 
-            // get index of member, returns -1 if not found
-            int memberIndex(const base::StringID name) const;
+///---
 
-            // get name of member by index
-            base::StringID memberName(uint32_t index) const;
+/// static sampler
+class RENDERING_COMPILER_API StaticSampler : public base::NoCopy
+{
+public:
+	StaticSampler(base::StringID name, const SamplerState& state);
 
-            //--
+	// name of the samples
+	INLINE base::StringID name() const { return m_name; }
 
-            // dump type data to debug stream
-            void print(base::IFormatStream& f) const;
+	// sampler state
+	INLINE const SamplerState& state() const { return m_state; }
 
-        private:
-            base::StringID m_name; // name of the type
-            TMembers m_members; // members and their types
-            AttributeList m_attributes; // is thia a material resource layout
-        };
+private:
+	base::StringID m_name;
+	SamplerState m_state;
+};
 
-		///---
+///---
 
-		/// static sampler
-		class RENDERING_COMPILER_API StaticSampler : public base::NoCopy
-		{
-		public:
-			StaticSampler(base::StringID name, const SamplerState& state);
+/// static rendering states... DX12/Vulkan BS
+class RENDERING_COMPILER_API StaticRenderStates : public base::NoCopy
+{
+public:
+	StaticRenderStates(base::StringID name, const GraphicsRenderStatesSetup& state);
 
-			// name of the samples
-			INLINE base::StringID name() const { return m_name; }
+	// name of the samples
+	INLINE base::StringID name() const { return m_name; }
 
-			// sampler state
-			INLINE const SamplerState& state() const { return m_state; }
+	// sampler state
+	INLINE const GraphicsRenderStatesSetup& state() const { return m_state; }
 
-		private:
-			base::StringID m_name;
-			SamplerState m_state;
-		};
+private:
+	base::StringID m_name;
+	GraphicsRenderStatesSetup m_state;
+};
 
-		///---
+///---
 
-		/// static rendering states... DX12/Vulkan BS
-		class RENDERING_COMPILER_API StaticRenderStates : public base::NoCopy
-		{
-		public:
-			StaticRenderStates(base::StringID name, const GraphicsRenderStatesSetup& state);
+/// a type library (describes known types)
+/// owned by shader library as all fragments and functions share types
+/// sharing common type library is simpler when validating fragments working together
+class RENDERING_COMPILER_API TypeLibrary : public base::NoCopy
+{
+public:
+    TypeLibrary(base::mem::LinearAllocator& allocator);
+    ~TypeLibrary();
 
-			// name of the samples
-			INLINE base::StringID name() const { return m_name; }
+    //--
 
-			// sampler state
-			INLINE const GraphicsRenderStatesSetup& state() const { return m_state; }
+    /// find composite type
+    DataType compositeType(const base::StringID name) const;
 
-		private:
-			base::StringID m_name;
-			GraphicsRenderStatesSetup m_state;
-		};
+    // get a boolean type, with optional vector size
+    DataType booleanType(uint32_t vectorSize = 1) const;
 
-        ///---
+    // get a signed integer type with optional vector size
+    DataType integerType(uint32_t vectorSize = 1) const;
 
-        /// a type library (describes known types)
-        /// owned by shader library as all fragments and functions share types
-        /// sharing common type library is simpler when validating fragments working together
-        class RENDERING_COMPILER_API TypeLibrary : public base::NoCopy
-        {
-        public:
-            TypeLibrary(base::mem::LinearAllocator& allocator);
-            ~TypeLibrary();
+    // get a unsigned type with optional vector size
+    DataType unsignedType(uint32_t vectorSize = 1) const;
 
-            //--
+    // get a floating point type with optional vector size
+    DataType floatType(uint32_t vectorSize = 1, uint32_t matrixRows = 1) const;
 
-            /// find composite type
-            DataType compositeType(const base::StringID name) const;
+    // get composite type
+    DataType simpleCompositeType(BaseType baseType, uint32_t vectorSize = 1, uint32_t matrixRows = 1) const;
 
-            // get a boolean type, with optional vector size
-            DataType booleanType(uint32_t vectorSize = 1) const;
+    // get resource type by name (image/sampler/texture etc)
+    DataType resourceType(base::StringID typeName, const AttributeList& attributes, base::StringBuf& outError);
 
-            // get a signed integer type with optional vector size
-            DataType integerType(uint32_t vectorSize = 1) const;
+    // get resource type for a constant buffer of given layout
+    DataType resourceType(const CompositeType* constantBufferLayout, const AttributeList& attributes);
 
-            // get a unsigned type with optional vector size
-            DataType unsignedType(uint32_t vectorSize = 1) const;
+    // get the element type for a given packed data format, returns float3 for RGB32F, float4 for RGBA8 etc
+    DataType packedFormatElementType(ImageFormat type) const;
 
-            // get a floating point type with optional vector size
-            DataType floatType(uint32_t vectorSize = 1, uint32_t matrixRows = 1) const;
+    //--
 
-            // get composite type
-            DataType simpleCompositeType(BaseType baseType, uint32_t vectorSize = 1, uint32_t matrixRows = 1) const;
+    /// declare a composite type
+    /// NOTE: fails is the type is already registered 
+    DataType registerCompositeType(CompositeType* compositeType);
 
-            // get resource type by name (image/sampler/texture etc)
-            DataType resourceType(base::StringID typeName, const AttributeList& attributes, base::StringBuf& outError);
+    /// find composite type by name
+    const CompositeType* findCompositeType(base::StringID name) const;
 
-            // get resource type for a constant buffer of given layout
-            DataType resourceType(const CompositeType* constantBufferLayout, const AttributeList& attributes);
+    //--
 
-            // get the element type for a given packed data format, returns float3 for RGB32F, float4 for RGBA8 etc
-            DataType packedFormatElementType(ImageFormat type) const;
+    /// declare a resource table
+    void registerResourceTable(ResourceTable* table);
 
-            //--
+    /// find resource table by name
+    const ResourceTable* findResourceTable(base::StringID name) const;
 
-            /// declare a composite type
-            /// NOTE: fails is the type is already registered 
-            DataType registerCompositeType(CompositeType* compositeType);
+	///--
 
-            /// find composite type by name
-            const CompositeType* findCompositeType(base::StringID name) const;
+	/// declare static sampler
+	void registerStaticSampler(StaticSampler* sampler);
 
-            //--
+	/// find static sampler by name
+	const StaticSampler* findStaticSampler(base::StringID name) const;
 
-            /// declare a resource table
-            void registerResourceTable(ResourceTable* table);
+	///--
 
-            /// find resource table by name
-            const ResourceTable* findResourceTable(base::StringID name) const;
+	/// declare render states
+	void registerStaticRenderStates(StaticRenderStates* states);
 
-			///--
+	/// find static sampler by name
+	const StaticRenderStates* findStaticRenderStates(base::StringID name) const;
 
-			/// declare static sampler
-			void registerStaticSampler(StaticSampler* sampler);
+    //--
 
-			/// find static sampler by name
-			const StaticSampler* findStaticSampler(base::StringID name) const;
+    /// get all registered composite types (NOTE: includes the vector types)
+    typedef base::Array<const CompositeType*> TCompositeTypes;
+    INLINE const TCompositeTypes& allCompositeTypes() const { return m_compositeTypes; }
 
-			///--
+    /// get all registered resource tables types
+    typedef base::Array<const ResourceTable*> TResourceTables;
+    INLINE const TResourceTables& allResourceTables() const { return m_resourceTables; }
 
-			/// declare render states
-			void registerStaticRenderStates(StaticRenderStates* states);
+	/// get all registered static samplers
+	typedef base::Array<const StaticSampler*> TStaticSamplers;
+	INLINE const TStaticSamplers& allStaticSamplers() const { return m_staticSamplers; }
 
-			/// find static sampler by name
-			const StaticRenderStates* findStaticRenderStates(base::StringID name) const;
+	/// get all registered static render states
+	typedef base::Array<const StaticRenderStates*> TStaticRenderStates;
+	INLINE const TStaticRenderStates& allStaticRenderStates() const { return m_staticRenderStates; }
 
-            //--
+    //--
 
-            /// get all registered composite types (NOTE: includes the vector types)
-            typedef base::Array<const CompositeType*> TCompositeTypes;
-            INLINE const TCompositeTypes& allCompositeTypes() const { return m_compositeTypes; }
+    /// compute sizes of composite types
+    bool calculateCompositeLayouts(base::parser::IErrorReporter& err);
 
-            /// get all registered resource tables types
-            typedef base::Array<const ResourceTable*> TResourceTables;
-            INLINE const TResourceTables& allResourceTables() const { return m_resourceTables; }
+private:
+    static const uint32_t MAX_COMPONENTS = 4;
 
-			/// get all registered static samplers
-			typedef base::Array<const StaticSampler*> TStaticSamplers;
-			INLINE const TStaticSamplers& allStaticSamplers() const { return m_staticSamplers; }
+    DataType m_boolTypes[MAX_COMPONENTS];
+    DataType m_intTypes[MAX_COMPONENTS];
+    DataType m_uintTypes[MAX_COMPONENTS];
+    DataType m_floatTypes[MAX_COMPONENTS][MAX_COMPONENTS];
 
-			/// get all registered static render states
-			typedef base::Array<const StaticRenderStates*> TStaticRenderStates;
-			INLINE const TStaticRenderStates& allStaticRenderStates() const { return m_staticRenderStates; }
+    typedef base::HashMap<base::StringID, const CompositeType*> TCompositeTypeMap;
+    TCompositeTypeMap m_compositeTypeMap;
+    TCompositeTypes m_compositeTypes;
 
-            //--
+    typedef base::HashMap<base::StringID, const ResourceTable*> TResourceTableMap;
+    TResourceTableMap m_resourceTableMap;
+    TResourceTables m_resourceTables;
 
-            /// compute sizes of composite types
-            bool calculateCompositeLayouts(base::parser::IErrorReporter& err);
+	typedef base::HashMap<base::StringID, const StaticSampler*> TStaticSamplerMap;
+	TStaticSamplerMap m_staticSamplerMap;
+	TStaticSamplers m_staticSamplers;
 
-        private:
-            static const uint32_t MAX_COMPONENTS = 4;
+	typedef base::HashMap<base::StringID, const StaticRenderStates*> TStaticRenderStatesMap;
+	TStaticRenderStatesMap m_staticRenderStatesMap;
+	TStaticRenderStates m_staticRenderStates;
 
-            DataType m_boolTypes[MAX_COMPONENTS];
-            DataType m_intTypes[MAX_COMPONENTS];
-            DataType m_uintTypes[MAX_COMPONENTS];
-            DataType m_floatTypes[MAX_COMPONENTS][MAX_COMPONENTS];
+    typedef base::HashMap<uint64_t, const ResourceType*> TResourceTypeMap;
+    TResourceTypeMap m_resourceTypesMap;
+    base::Array<ResourceType*> m_resourceTypes;
 
-            typedef base::HashMap<base::StringID, const CompositeType*> TCompositeTypeMap;
-            TCompositeTypeMap m_compositeTypeMap;
-            TCompositeTypes m_compositeTypes;
+	base::mem::LinearAllocator& m_allocator;
 
-            typedef base::HashMap<base::StringID, const ResourceTable*> TResourceTableMap;
-            TResourceTableMap m_resourceTableMap;
-            TResourceTables m_resourceTables;
+    //--
 
-			typedef base::HashMap<base::StringID, const StaticSampler*> TStaticSamplerMap;
-			TStaticSamplerMap m_staticSamplerMap;
-			TStaticSamplers m_staticSamplers;
+    void createDefaultTypes();
+};
 
-			typedef base::HashMap<base::StringID, const StaticRenderStates*> TStaticRenderStatesMap;
-			TStaticRenderStatesMap m_staticRenderStatesMap;
-			TStaticRenderStates m_staticRenderStates;
-
-            typedef base::HashMap<uint64_t, const ResourceType*> TResourceTypeMap;
-            TResourceTypeMap m_resourceTypesMap;
-            base::Array<ResourceType*> m_resourceTypes;
-
-			base::mem::LinearAllocator& m_allocator;
-
-            //--
-
-            void createDefaultTypes();
-        };
-
-    } // shader
-} // rendering
+END_BOOMER_NAMESPACE(rendering::shadercompiler)

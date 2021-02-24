@@ -22,8 +22,7 @@
 #include "rendering/device/include/renderingCommandBuffer.h"
 #include "base/resource/include/resourceLoadingService.h"
 
-namespace rendering
-{
+BEGIN_BOOMER_NAMESPACE(rendering)
 	namespace scene
 	{
         //--
@@ -74,7 +73,7 @@ namespace rendering
 
         }
 
-        command::CommandBuffer* FrameRenderingService::renderFrame(const FrameParams& frame, const FrameCompositionTarget& targetView, FrameStats* outFrameStats, SceneStats* outMergedStateStats)
+        GPUCommandBuffer* FrameRenderingService::renderFrame(const FrameParams& frame, const FrameCompositionTarget& targetView, FrameStats* outFrameStats, SceneStats* outMergedStateStats)
         {
             PC_SCOPE_LVL0(RenderFrame);
 
@@ -84,7 +83,7 @@ namespace rendering
 			m_sharedResources->adjust(requiredWidth, requiredHeight);
 
 			// rendering block
-			command::CommandWriter cmd("RenderFrame");
+			GPUCommandWriter cmd("RenderFrame");
 
 			{
 				FrameRenderer renderer(frame, targetView, *m_sharedResources, *m_sharedHelpers);
@@ -146,7 +145,7 @@ namespace rendering
                     // regardless of the rendering mode draw the depth buffer with selected fragments so we can compose a selection outline
                     if (frame.filters & FilterBit::PostProcesses_SelectionHighlight || frame.filters & FilterBit::PostProcesses_SelectionOutline)
                     {
-                        command::CommandWriter localCmd(cmd.opCreateChildCommandBuffer(), "SelectionOutline");
+                        GPUCommandWriter localCmd(cmd.opCreateChildCommandBuffer(), "SelectionOutline");
 
                         BindSingleCamera(localCmd, frame.camera.camera);
 

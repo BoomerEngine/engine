@@ -9,26 +9,7 @@
 #include "build.h"
 #include "gl4ComputePipeline.h"
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace gl4
-		{
-
-			//--
-
-			ComputePipeline::ComputePipeline(Thread* owner, const Shaders* shaders)
-				: IBaseComputePipeline(owner, shaders)
-			{}
-
-			ComputePipeline::~ComputePipeline()
-			{}
-
-			bool ComputePipeline::apply(GLuint& glActiveProgram)
-			{
-				if (GLuint glProgram = shaders()->object())
-				{
+BEGIN_BOOMER_NAMESPACE(rendering::api)
 					if (glProgram != glActiveProgram)
 					{
 						GL_PROTECT(glBindProgramPipeline(glProgram));

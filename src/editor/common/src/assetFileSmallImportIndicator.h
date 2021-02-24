@@ -11,42 +11,38 @@
 #include "base/ui/include/uiButton.h"
 #include "managedDepot.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+// micro-indicator for showing if imported file is up to date
+class AssetFileSmallImportIndicator : public ui::Button
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(AssetFileSmallImportIndicator, ui::Button);
+
+public:
+    AssetFileSmallImportIndicator(ManagedFileNativeResource* file);
+    virtual ~AssetFileSmallImportIndicator();
 
     //--
 
+    void recheck();
 
-    //--
+private:
+    ManagedFileNativeResource* m_file;
 
-    // micro-indicator for showing if imported file is up to date
-    class AssetFileSmallImportIndicator : public ui::Button
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(AssetFileSmallImportIndicator, ui::Button);
+    ManagedFileImportStatusCheckPtr m_checker;
 
-    public:
-        AssetFileSmallImportIndicator(ManagedFileNativeResource* file);
-        virtual ~AssetFileSmallImportIndicator();
+    ui::TextLabelPtr m_caption;
 
-        //--
+    GlobalEventTable m_events;
 
-        void recheck();
+    //--       
 
-    private:
-        ManagedFileNativeResource* m_file;
+    void showContextMenu();
+    void updateStatus();
+};
 
-        ManagedFileImportStatusCheckPtr m_checker;
+//--
 
-        ui::TextLabelPtr m_caption;
-
-        GlobalEventTable m_events;
-
-        //--       
-
-        void showContextMenu();
-        void updateStatus();
-    };
-
-    //--
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

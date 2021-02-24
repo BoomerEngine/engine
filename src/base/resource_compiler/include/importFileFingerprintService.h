@@ -13,71 +13,68 @@
 #include "base/fibers/include/fiberSystem.h"
 #include "importFileFingerprint.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+//--
+
+class ImportFingerprintCache;
+
+//--
+
+// a simple helper service that can compute fingerprints of files on disk
+class BASE_RESOURCE_COMPILER_API ImportFileFingerprintService : public base::app::ILocalService
 {
-    namespace res
+    RTTI_DECLARE_VIRTUAL_CLASS(ImportFileFingerprintService, base::app::ILocalService);
+
+public:
+    ImportFileFingerprintService();
+    virtual ~ImportFileFingerprintService();
+
+    //--
+
+    /// compute file fingerprint of given file
+    /// NOTE: this fill yield current fiber until results are available
+    CAN_YIELD FingerpintCalculationStatus calculateFingerprint(StringView absolutePath, bool background, IProgressTracker* progress, ImportFileFingerprint& outFingerprint);
+
+    //---
+
+private:
+    static const uint32_t HEADER_MAGIC = 0x43524343;//'CRCC';
+
+    //--
+
+    Mutex m_cacheLock;
+    RefPtr<ImportFingerprintCache> m_cache;
+
+    StringBuf m_cacheFilePath;
+    NativeTimePoint m_nextCacheWriteCheck;
+    std::atomic<uint32_t> m_hasNewCacheEntries = 0;
+
+    //--
+
+    // a job, either loading or baking
+    struct CacheJob : public IReferencable
     {
-        //--
+        StringBuf path;
+        io::TimeStamp timestamp;
+        ImportFileFingerprint fingerprint;
+        FingerpintCalculationStatus status = FingerpintCalculationStatus::OK;
+        fibers::WaitCounter signal;
+    };
 
-        class ImportFingerprintCache;
+    // synchronization for blobs being loaded/saved
+    SpinLock m_activeJobMapLock;
+    HashMap<StringBuf, RefWeakPtr<CacheJob>> m_activeJobMap;
 
-        //--
+    //--
 
-        // a simple helper service that can compute fingerprints of files on disk
-        class BASE_RESOURCE_COMPILER_API ImportFileFingerprintService : public base::app::ILocalService
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ImportFileFingerprintService, base::app::ILocalService);
+    virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override;
+    virtual void onShutdownService() override;
+    virtual void onSyncUpdate() override;
 
-        public:
-            ImportFileFingerprintService();
-            virtual ~ImportFileFingerprintService();
+    void saveCacheIfDirty();
 
-            //--
+    //--
+};
 
-            /// compute file fingerprint of given file
-            /// NOTE: this fill yield current fiber until results are available
-            CAN_YIELD FingerpintCalculationStatus calculateFingerprint(StringView absolutePath, bool background, IProgressTracker* progress, ImportFileFingerprint& outFingerprint);
-
-            //---
-
-        private:
-            static const uint32_t HEADER_MAGIC = 0x43524343;//'CRCC';
-
-            //--
-
-            Mutex m_cacheLock;
-            RefPtr<ImportFingerprintCache> m_cache;
-
-            StringBuf m_cacheFilePath;
-            NativeTimePoint m_nextCacheWriteCheck;
-            std::atomic<uint32_t> m_hasNewCacheEntries = 0;
-
-            //--
-
-            // a job, either loading or baking
-            struct CacheJob : public IReferencable
-            {
-                StringBuf path;
-                io::TimeStamp timestamp;
-                ImportFileFingerprint fingerprint;
-                FingerpintCalculationStatus status = FingerpintCalculationStatus::OK;
-                fibers::WaitCounter signal;
-            };
-
-            // synchronization for blobs being loaded/saved
-            SpinLock m_activeJobMapLock;
-            HashMap<StringBuf, RefWeakPtr<CacheJob>> m_activeJobMap;
-
-            //--
-
-            virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override;
-            virtual void onShutdownService() override;
-            virtual void onSyncUpdate() override;
-
-            void saveCacheIfDirty();
-
-            //--
-        };
-
-    } // io
-} // base
+END_BOOMER_NAMESPACE(base::res)

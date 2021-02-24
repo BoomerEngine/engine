@@ -12,18 +12,3 @@
 
 DECLARE_TEST_FILE(RequestHeaders);
 
-namespace base
-{
-    namespace http
-    {
-        //---
-
-        TEST(RequestHeaderTest, TestSimple)
-        {
-            
-        }
-
-        //--
-
-    } // http
-} // base

@@ -11,32 +11,26 @@
 #include "rendering/api_common/include/apiObjectCache.h"
 #include "dx11Thread.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
+
+//---
+
+class ObjectCache : public IBaseObjectCache
 {
-    namespace api
-    {
-		namespace dx11
-		{
-			//---
+public:
+	ObjectCache(Thread* owner);
+	virtual ~ObjectCache();
 
-			class ObjectCache : public IBaseObjectCache
-			{
-			public:
-				ObjectCache(Thread* owner);
-				virtual ~ObjectCache();
+	//--
 
-				//--
+	INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObjectCache::owner()); }
 
-				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObjectCache::owner()); }
+	//--
 
-				//--
+	virtual IBaseVertexBindingLayout* createOptimalVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams) override;
+	virtual IBaseDescriptorBindingLayout* createOptimalDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors, const base::Array<ShaderStaticSamplerMetadata>& staticSamplers) override;
+};
 
-				virtual IBaseVertexBindingLayout* createOptimalVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams) override;
-				virtual IBaseDescriptorBindingLayout* createOptimalDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors, const base::Array<ShaderStaticSamplerMetadata>& staticSamplers) override;
-			};
+//---
 
-			//---
-
-		} // dx11
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::dx11)

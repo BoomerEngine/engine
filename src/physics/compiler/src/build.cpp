@@ -17,10 +17,8 @@ DECLARE_MODULE(PROJECT_NAME)
     // custom module initialization code
 }
 
-namespace physics
-{
-	namespace compiler
-	{
-		void Dupa() {}
-	}
-}
+BEGIN_BOOMER_NAMESPACE(boomer)
+
+void Dupa() {}
+
+END_BOOMER_NAMESPACE(boomer)

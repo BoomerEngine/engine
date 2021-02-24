@@ -24,10 +24,8 @@
 #include "base/containers/include/stringBuilder.h"
 #include "base/resource/include/resourceStaticResource.h"
 
-namespace rendering
-{
-    namespace scene
-    {
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
+
         //---
 
 		FrameHelperOutline::FrameHelperOutline(IDevice* api)
@@ -42,7 +40,7 @@ namespace rendering
 
 		}
 
-		void FrameHelperOutline::drawOutlineEffect(command::CommandWriter& cmd, const Setup& setup) const
+		void FrameHelperOutline::drawOutlineEffect(GPUCommandWriter& cmd, const Setup& setup) const
 		{
 			struct
 			{

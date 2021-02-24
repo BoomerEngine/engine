@@ -10,23 +10,20 @@
 #include "apiComputePipeline.h"
 #include "apiShaders.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api)
+
+//--
+
+IBaseComputePipeline::IBaseComputePipeline(IBaseThread* owner, const IBaseShaders* shaders)
+	: IBaseObject(owner, ObjectType::ComputePipelineObject)
+	, m_shaders(shaders)
 {
-    namespace api
-    {
-		//--
+	m_key = shaders->key();
+}
 
-		IBaseComputePipeline::IBaseComputePipeline(IBaseThread* owner, const IBaseShaders* shaders)
-			: IBaseObject(owner, ObjectType::ComputePipelineObject)
-			, m_shaders(shaders)
-		{
-			m_key = shaders->key();
-		}
+IBaseComputePipeline::~IBaseComputePipeline()
+{}
 
-		IBaseComputePipeline::~IBaseComputePipeline()
-		{}
+//--
 
-		//--
-
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api)

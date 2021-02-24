@@ -10,39 +10,38 @@
 
 #include "editor/common/include/resourceEditorNativeFile.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+class MaterialPreviewPanel;
+class MaterialPreviewPanel;
+
+/// editor for meshes
+class EDITOR_MATERIAL_EDITOR_API MaterialInstanceEditor : public ResourceEditorNativeFile
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialInstanceEditor, ResourceEditorNativeFile);
 
-    class MaterialPreviewPanel;
-    class MaterialPreviewPanel;
+public:
+    MaterialInstanceEditor(ManagedFileNativeResource* file);
+    virtual ~MaterialInstanceEditor();
 
-    /// editor for meshes
-    class EDITOR_MATERIAL_EDITOR_API MaterialInstanceEditor : public ResourceEditorNativeFile
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialInstanceEditor, ResourceEditorNativeFile);
+    //--
 
-    public:
-        MaterialInstanceEditor(ManagedFileNativeResource* file);
-        virtual ~MaterialInstanceEditor();
+    INLINE MaterialPreviewPanel* previewPanel() const { return m_previewPanel; }
 
-        //--
+    INLINE const rendering::MaterialInstancePtr& materialInstance() const { return m_instance; }
 
-        INLINE MaterialPreviewPanel* previewPanel() const { return m_previewPanel; }
+    //--
 
-        INLINE const rendering::MaterialInstancePtr& materialInstance() const { return m_instance; }
+private:
+    rendering::MaterialInstancePtr m_instance;
 
-        //--
+    base::RefPtr<MaterialPreviewPanel> m_previewPanel;
+    ui::DataInspectorPtr m_properties;
 
-    private:
-        rendering::MaterialInstancePtr m_instance;
+    void createInterface();
 
-        base::RefPtr<MaterialPreviewPanel> m_previewPanel;
-        ui::DataInspectorPtr m_properties;
+    virtual bool initialize() override;
+    virtual bool save() override;
+};
 
-        void createInterface();
-
-        virtual bool initialize() override;
-        virtual bool save() override;
-    };
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

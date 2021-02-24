@@ -10,30 +10,19 @@
 
 #include <d3d11.h>
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace dx11
-		{
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
 
-			//--
+class Device;
+class Thread;
+class CopyQueue;
+class CopyPool;
 
-			class Device;
-			class Thread;
-			class CopyQueue;
-			class CopyPool;
+class Buffer;
+class Image;
+class Output;
+class Shaders;
+class Sampler;
+class Swapchain;
+class PassLayout;
 
-			class Buffer;
-			class Image;
-			class Output;
-			class Shaders;
-			class Sampler;
-			class Swapchain;
-			class PassLayout;
-
-			//--
-
-		} // api
-    } // dx11
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::dx11)

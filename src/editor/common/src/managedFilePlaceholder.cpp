@@ -14,52 +14,51 @@
 #include "managedThumbnails.h"
 #include "base/resource_compiler/include/importFileService.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedFilePlaceholder);
+RTTI_END_TYPE();
+
+static StringBuf FormatFileName(StringView initialName, const ManagedFileFormat* format)
 {
+    if (initialName.empty())
+        initialName = "file";
 
-    //--
+    return TempString("{}.{}", initialName, format->extension());
+}
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedFilePlaceholder);
-    RTTI_END_TYPE();
+ManagedFilePlaceholder::ManagedFilePlaceholder(ManagedDepot* depot, ManagedDirectory* parentDir, StringView initialName, const ManagedFileFormat* format)
+    : ManagedItem(depot, parentDir, FormatFileName(initialName, format))
+    , m_fileFormat(format)
+    , m_shortName(initialName)
+{
+    m_eventKey = MakeUniqueEventKey();
+}
 
-    static StringBuf FormatFileName(StringView initialName, const ManagedFileFormat* format)
+ManagedFilePlaceholder::~ManagedFilePlaceholder()
+{
+}
+
+const image::Image* ManagedFilePlaceholder::typeThumbnail() const
+{
+    return m_fileFormat->thumbnail();
+}
+
+void ManagedFilePlaceholder::rename(StringView name)
+{
+    if (ValidateFileName(name))
     {
-        if (initialName.empty())
-            initialName = "file";
-
-        return TempString("{}.{}", initialName, format->extension());
-    }
-
-    ManagedFilePlaceholder::ManagedFilePlaceholder(ManagedDepot* depot, ManagedDirectory* parentDir, StringView initialName, const ManagedFileFormat* format)
-        : ManagedItem(depot, parentDir, FormatFileName(initialName, format))
-        , m_fileFormat(format)
-        , m_shortName(initialName)
-    {
-        m_eventKey = MakeUniqueEventKey();
-    }
-
-    ManagedFilePlaceholder::~ManagedFilePlaceholder()
-    {
-    }
-
-    const image::Image* ManagedFilePlaceholder::typeThumbnail() const
-    {
-        return m_fileFormat->thumbnail();
-    }
-
-    void ManagedFilePlaceholder::rename(StringView name)
-    {
-        if (ValidateFileName(name))
+        if (m_shortName != name)
         {
-            if (m_shortName != name)
-            {
-                m_shortName = StringBuf(name);
-                m_name = FormatFileName(m_shortName, m_fileFormat);
-            }
+            m_shortName = StringBuf(name);
+            m_name = FormatFileName(m_shortName, m_fileFormat);
         }
     }
+}
 
-    //--
+//--
 
-} // depot
+END_BOOMER_NAMESPACE(ed)
 

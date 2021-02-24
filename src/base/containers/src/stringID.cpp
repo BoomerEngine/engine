@@ -11,115 +11,112 @@
 #include "stringID.h"
 #include "stringIDPrv.h"
 
-//#pragma optimize("", off)
+BEGIN_BOOMER_NAMESPACE(base)
 
-namespace base
+//---
+
+struct StringIDGlobalState
 {
+	prv::StringIDDataStorage storage;
 
-	//---
+	prv::StringIDMap globalMap;
+	SpinLock globalMapLock;
 
-	struct StringIDGlobalState
+	static StringIDGlobalState& GetInstance()
 	{
-		prv::StringIDDataStorage storage;
+		static StringIDGlobalState theGlobalState;
+		return theGlobalState;
+	}
+};
 
-		prv::StringIDMap globalMap;
-		SpinLock globalMapLock;
+static TYPE_TLS prv::StringIDMap* GStringIDLocalMap = nullptr;
 
-		static StringIDGlobalState& GetInstance()
-		{
-			static StringIDGlobalState theGlobalState;
-			return theGlobalState;
-		}
-	};
+static StringID GEmptyStringID;
 
-	static TYPE_TLS prv::StringIDMap* GStringIDLocalMap = nullptr;
+std::atomic<const char*> StringID::st_StringTable;
 
-	static StringID GEmptyStringID;
+StringID StringID::EMPTY()
+{
+    return GEmptyStringID;
+}
 
-	std::atomic<const char*> StringID::st_StringTable;
+StringID StringID::Find(StringView txt)
+{
+	if (!txt)
+		return StringID();
 
-    StringID StringID::EMPTY()
-    {
-        return GEmptyStringID;
-    }
+	const auto hash = CalcHash(txt);
 
-    StringID StringID::Find(StringView txt)
-    {
-		if (!txt)
-			return StringID();
+	// allocate local map on first use
+	if (!GStringIDLocalMap)
+		GStringIDLocalMap = new prv::StringIDMap();
 
-		const auto hash = CalcHash(txt);
-
-		// allocate local map on first use
-		if (!GStringIDLocalMap)
-			GStringIDLocalMap = new prv::StringIDMap();
-
-		// find in local map
-		uint32_t freeLocalBucket = 0;
-		auto index = GStringIDLocalMap->find(hash, txt.data(), txt.length(), freeLocalBucket);
-		if (index)
-			return StringID(index);
-
-		// get global state
-		auto& globalState = StringIDGlobalState::GetInstance();
-
-		// find in global map
-		{
-			auto lock = CreateLock(globalState.globalMapLock);
-
-			uint32_t freeGlobalBucket = 0;
-			index = globalState.globalMap.find(hash, txt.data(), txt.length(), freeGlobalBucket);
-		}
-
-		// if found in global map store in local as well
-		if (index)
-			GStringIDLocalMap->insertAfterFailedFind(hash, index, freeLocalBucket);
-
+	// find in local map
+	uint32_t freeLocalBucket = 0;
+	auto index = GStringIDLocalMap->find(hash, txt.data(), txt.length(), freeLocalBucket);
+	if (index)
 		return StringID(index);
-    }
 
-	StringIDIndex StringID::Alloc(StringView txt)
+	// get global state
+	auto& globalState = StringIDGlobalState::GetInstance();
+
+	// find in global map
 	{
-		if (!txt)
-			return 0;
+		auto lock = CreateLock(globalState.globalMapLock);
 
-		const auto hash = CalcHash(txt);
-
-		// allocate local map on first use
-		if (!GStringIDLocalMap)
-			GStringIDLocalMap = new prv::StringIDMap();
-
-		// find in local map
-		uint32_t freeLocalBucket = 0;
-		auto index = GStringIDLocalMap->find(hash, txt.data(), txt.length(), freeLocalBucket);
-		if (index)
-			return index;
-
-		// get global state
-		auto& globalState = StringIDGlobalState::GetInstance();
-
-		// find in global map
-		{
-			auto lock = CreateLock(globalState.globalMapLock);
-
-			uint32_t freeGlobalBucket = 0;
-			index = globalState.globalMap.find(hash, txt.data(), txt.length(), freeGlobalBucket);
-
-			// allocate in global map
-			if (index == 0)
-			{
-				// place the string in the storage
-				index = globalState.storage.place(txt);
-
-				// store in global map
-				globalState.globalMap.insertAfterFailedFind(hash, index, freeGlobalBucket);
-			}
-		}
-
-		// place in local map as well
-		GStringIDLocalMap->insertAfterFailedFind(hash, index, freeLocalBucket);
-
-		return index;
+		uint32_t freeGlobalBucket = 0;
+		index = globalState.globalMap.find(hash, txt.data(), txt.length(), freeGlobalBucket);
 	}
 
-} // base
+	// if found in global map store in local as well
+	if (index)
+		GStringIDLocalMap->insertAfterFailedFind(hash, index, freeLocalBucket);
+
+	return StringID(index);
+}
+
+StringIDIndex StringID::Alloc(StringView txt)
+{
+	if (!txt)
+		return 0;
+
+	const auto hash = CalcHash(txt);
+
+	// allocate local map on first use
+	if (!GStringIDLocalMap)
+		GStringIDLocalMap = new prv::StringIDMap();
+
+	// find in local map
+	uint32_t freeLocalBucket = 0;
+	auto index = GStringIDLocalMap->find(hash, txt.data(), txt.length(), freeLocalBucket);
+	if (index)
+		return index;
+
+	// get global state
+	auto& globalState = StringIDGlobalState::GetInstance();
+
+	// find in global map
+	{
+		auto lock = CreateLock(globalState.globalMapLock);
+
+		uint32_t freeGlobalBucket = 0;
+		index = globalState.globalMap.find(hash, txt.data(), txt.length(), freeGlobalBucket);
+
+		// allocate in global map
+		if (index == 0)
+		{
+			// place the string in the storage
+			index = globalState.storage.place(txt);
+
+			// store in global map
+			globalState.globalMap.insertAfterFailedFind(hash, index, freeGlobalBucket);
+		}
+	}
+
+	// place in local map as well
+	GStringIDLocalMap->insertAfterFailedFind(hash, index, freeLocalBucket);
+
+	return index;
+}
+
+END_BOOMER_NAMESPACE(base)

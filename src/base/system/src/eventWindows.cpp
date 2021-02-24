@@ -10,41 +10,41 @@
 #include "build.h"
 #include "event.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+Event::Event(bool manualReset)
 {
-    Event::Event(bool manualReset)
-    {
-        m_event = CreateEvent(NULL, manualReset, 0, NULL);
-    }
+    m_event = CreateEvent(NULL, manualReset, 0, NULL);
+}
 
-    Event::~Event()
-    {
-        CloseHandle((HANDLE)m_event);
-    }
+Event::~Event()
+{
+    CloseHandle((HANDLE)m_event);
+}
 
-    void Event::trigger()
-    {
-        SetEvent((HANDLE)m_event);
-    }
+void Event::trigger()
+{
+    SetEvent((HANDLE)m_event);
+}
 
-    void Event::reset()
-    {
-        ResetEvent((HANDLE)m_event);
-    }
+void Event::reset()
+{
+    ResetEvent((HANDLE)m_event);
+}
 
-    bool Event::wait(uint32_t waitTime)
-    {
-        DEBUG_CHECK_EX(waitTime != INFINITE, "Invalid wait time");
-        auto ret = WaitForSingleObject((HANDLE)m_event, waitTime);
+bool Event::wait(uint32_t waitTime)
+{
+    DEBUG_CHECK_EX(waitTime != INFINITE, "Invalid wait time");
+    auto ret = WaitForSingleObject((HANDLE)m_event, waitTime);
 
-        DEBUG_CHECK_EX(ret == WAIT_OBJECT_0 || ret == WAIT_TIMEOUT, "Event lost while waiting for it");
-        return (ret == WAIT_OBJECT_0);
-    }
+    DEBUG_CHECK_EX(ret == WAIT_OBJECT_0 || ret == WAIT_TIMEOUT, "Event lost while waiting for it");
+    return (ret == WAIT_OBJECT_0);
+}
 
-    void Event::waitInfinite()
-    {
-        auto ret = WaitForSingleObject((HANDLE)m_event, INFINITE);
-        DEBUG_CHECK_EX(ret == WAIT_OBJECT_0, "Event lost while waiting for it");
-    }
+void Event::waitInfinite()
+{
+    auto ret = WaitForSingleObject((HANDLE)m_event, INFINITE);
+    DEBUG_CHECK_EX(ret == WAIT_OBJECT_0, "Event lost while waiting for it");
+}
 
-} // inf
+END_BOOMER_NAMESPACE(base)

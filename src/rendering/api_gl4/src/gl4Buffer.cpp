@@ -14,242 +14,236 @@
 
 #include "rendering/device/include/renderingDeviceApi.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+//--
+
+static GLuint DetermineBestUsageFlag(const BufferCreationInfo& info)
 {
-	namespace api
+	GLuint flags = 0;
+
+	if (info.allowDynamicUpdate)
+		flags |= GL_DYNAMIC_STORAGE_BIT;
+
+	return flags;
+}
+
+//--
+
+Buffer::Buffer(Thread* drv, const BufferCreationInfo &setup, const ISourceDataProvider* sourceData)
+	: IBaseBuffer(drv, setup, sourceData)
+{
+	m_glUsage = DetermineBestUsageFlag(setup);
+}
+
+Buffer::~Buffer()
+{
+	if (m_glBuffer)
 	{
-	    namespace gl4
-		{
-			//--
+		GL_PROTECT(glDeleteBuffers(1, &m_glBuffer));
+		m_glBuffer = 0;
+	}
+}
 
-			static GLuint DetermineBestUsageFlag(const BufferCreationInfo& info)
-			{
-				GLuint flags = 0;
+void Buffer::ensureCreated()
+{
+	PC_SCOPE_LVL1(BufferCreate);
 
-				if (info.allowDynamicUpdate)
-					flags |= GL_DYNAMIC_STORAGE_BIT;
+	if (m_glBuffer)
+		return;
 
-				return flags;
-			}
+	// create buffer
+	GL_PROTECT(glCreateBuffers(1, &m_glBuffer));
 
-			//--
+	// label the object
+	if (setup().label)
+		GL_PROTECT(glObjectLabel(GL_BUFFER, m_glBuffer, setup().label.length(), setup().label.c_str()));
 
-			Buffer::Buffer(Thread* drv, const BufferCreationInfo &setup, const ISourceDataProvider* sourceData)
-				: IBaseBuffer(drv, setup, sourceData)
-			{
-				m_glUsage = DetermineBestUsageFlag(setup);
-			}
+	// fetch source atoms
+	base::InplaceArray<ISourceDataProvider::SourceAtom, 1> sourceAtoms;
+    if (m_initData)
+        m_initData->fetchSourceData(sourceAtoms);
 
-			Buffer::~Buffer()
-			{
-				if (m_glBuffer)
-				{
-					GL_PROTECT(glDeleteBuffers(1, &m_glBuffer));
-					m_glBuffer = 0;
-				}
-			}
+    // setup data with buffer
+	const void* sourceData = nullptr;
+	uint32_t sourceDataSize = 0;
+	if (sourceAtoms.size() >= 1)
+	{
+		sourceData = sourceAtoms[0].sourceData;
+		if (sourceData)
+			sourceDataSize = std::min<uint32_t>(sourceAtoms[0].sourceDataSize, setup().size);
+	}
 
-			void Buffer::ensureCreated()
-			{
-				PC_SCOPE_LVL1(BufferCreate);
+    // setup data with buffer
+    GL_PROTECT(glNamedBufferStorage(m_glBuffer, setup().size, sourceData, m_glUsage));
+}
 
-				if (m_glBuffer)
-					return;
+//--
 
-				// create buffer
-				GL_PROTECT(glCreateBuffers(1, &m_glBuffer));
+IBaseBufferView* Buffer::createConstantView_ClientApi(uint32_t offset, uint32_t size)
+{
+	IBaseBufferView::Setup setup;
+	setup.offset = offset;
+	setup.size = size;
+	return new BufferUntypedView(owner(), this, setup);
+}
 
-				// label the object
-				if (setup().label)
-					GL_PROTECT(glObjectLabel(GL_BUFFER, m_glBuffer, setup().label.length(), setup().label.c_str()));
+IBaseBufferView* Buffer::createView_ClientApi(ImageFormat format, uint32_t offset, uint32_t size)
+{
+	IBaseBufferView::Setup setup;
+	setup.offset = offset;
+	setup.size = size;
+	setup.format = format;
+	return new BufferTypedView(owner(), this, setup);
+}
 
-				// fetch source atoms
-				base::InplaceArray<ISourceDataProvider::SourceAtom, 1> sourceAtoms;
-                if (m_initData)
-                    m_initData->fetchSourceData(sourceAtoms);
+IBaseBufferView* Buffer::createStructuredView_ClientApi(uint32_t offset, uint32_t size)
+{
+	IBaseBufferView::Setup setup;
+	setup.offset = offset;
+	setup.size = size;
+	setup.stride = this->setup().stride;
+	setup.structured = true;
+	return new BufferUntypedView(owner(), this, setup);
+}
 
-                // setup data with buffer
-				const void* sourceData = nullptr;
-				uint32_t sourceDataSize = 0;
-				if (sourceAtoms.size() >= 1)
-				{
-					sourceData = sourceAtoms[0].sourceData;
-					if (sourceData)
-						sourceDataSize = std::min<uint32_t>(sourceAtoms[0].sourceDataSize, setup().size);
-				}
+IBaseBufferView* Buffer::createWritableView_ClientApi(ImageFormat format, uint32_t offset, uint32_t size)
+{
+	IBaseBufferView::Setup setup;
+	setup.offset = offset;
+	setup.size = size;
+	setup.format = format;
+	setup.writable = true;
+	return new BufferTypedView(owner(), this, setup);
+}
 
-                // setup data with buffer
-                GL_PROTECT(glNamedBufferStorage(m_glBuffer, setup().size, sourceData, m_glUsage));
-			}
+IBaseBufferView* Buffer::createWritableStructuredView_ClientApi(uint32_t offset, uint32_t size)
+{
+	IBaseBufferView::Setup setup;
+	setup.offset = offset;
+	setup.size = size;
+	setup.stride = this->setup().stride;
+	setup.structured = true;
+	setup.writable = true;
+	return new BufferUntypedView(owner(), this, setup);
+}
 
-			//--
+//--
 
-			IBaseBufferView* Buffer::createConstantView_ClientApi(uint32_t offset, uint32_t size)
-			{
-				IBaseBufferView::Setup setup;
-				setup.offset = offset;
-				setup.size = size;
-				return new BufferUntypedView(owner(), this, setup);
-			}
+ResolvedBufferView Buffer::resolve(uint32_t offset, uint32_t size)
+{
+	ensureCreated();
 
-			IBaseBufferView* Buffer::createView_ClientApi(ImageFormat format, uint32_t offset, uint32_t size)
-			{
-				IBaseBufferView::Setup setup;
-				setup.offset = offset;
-				setup.size = size;
-				setup.format = format;
-				return new BufferTypedView(owner(), this, setup);
-			}
+	if (size == INDEX_MAX)
+		size = setup().size - offset;
 
-			IBaseBufferView* Buffer::createStructuredView_ClientApi(uint32_t offset, uint32_t size)
-			{
-				IBaseBufferView::Setup setup;
-				setup.offset = offset;
-				setup.size = size;
-				setup.stride = this->setup().stride;
-				setup.structured = true;
-				return new BufferUntypedView(owner(), this, setup);
-			}
+	ASSERT_EX(offset < setup().size, "Invalid offset");
+	ASSERT_EX(offset + size <= setup().size, "Invalid offset + size");
 
-			IBaseBufferView* Buffer::createWritableView_ClientApi(ImageFormat format, uint32_t offset, uint32_t size)
-			{
-				IBaseBufferView::Setup setup;
-				setup.offset = offset;
-				setup.size = size;
-				setup.format = format;
-				setup.writable = true;
-				return new BufferTypedView(owner(), this, setup);
-			}
+	ResolvedBufferView ret;
+	ret.glBuffer = m_glBuffer;
+	ret.offset = offset;
+	ret.size = size;
+	return ret;
+}
 
-			IBaseBufferView* Buffer::createWritableStructuredView_ClientApi(uint32_t offset, uint32_t size)
-			{
-				IBaseBufferView::Setup setup;
-				setup.offset = offset;
-				setup.size = size;
-				setup.stride = this->setup().stride;
-				setup.structured = true;
-				setup.writable = true;
-				return new BufferUntypedView(owner(), this, setup);
-			}
+void Buffer::updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range)
+{
+	ensureCreated();
 
-			//--
+	const auto copySize = std::min<uint32_t>(range.buffer.size, dataSize - range.buffer.offset);
+	GL_PROTECT(glNamedBufferSubData(m_glBuffer, range.buffer.offset, copySize, data));
+}
 
-			ResolvedBufferView Buffer::resolve(uint32_t offset, uint32_t size)
-			{
-				ensureCreated();
+void Buffer::copyFromBuffer(const ResolvedBufferView& view, const ResourceCopyRange& range)
+{
+	ensureCreated();
 
-				if (size == INDEX_MAX)
-					size = setup().size - offset;
+	const auto copySize = std::min<uint32_t>(range.buffer.size, view.size);
+	GL_PROTECT(glCopyNamedBufferSubData(view.glBuffer, m_glBuffer, view.offset, range.buffer.offset, copySize));
+}
 
-				ASSERT_EX(offset < setup().size, "Invalid offset");
-				ASSERT_EX(offset + size <= setup().size, "Invalid offset + size");
+void Buffer::download(const DownloadArea* area, const ResourceCopyRange& range)
+{
+	ensureCreated();
 
-				ResolvedBufferView ret;
-				ret.glBuffer = m_glBuffer;
-				ret.offset = offset;
-				ret.size = size;
-				return ret;
-			}
+	ASSERT(range.buffer.size <= area->size());
 
-			void Buffer::updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range)
-			{
-				ensureCreated();
+	GL_PROTECT(glCopyNamedBufferSubData(m_glBuffer, area->buffer(), range.buffer.offset, 0, range.buffer.size));
+}
 
-				const auto copySize = std::min<uint32_t>(range.buffer.size, dataSize - range.buffer.offset);
-				GL_PROTECT(glNamedBufferSubData(m_glBuffer, range.buffer.offset, copySize, data));
-			}
+void Buffer::copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+{
+	auto view = static_cast<Buffer*>(sourceBuffer)->resolve(sourceRange.buffer.offset, sourceRange.buffer.size);
+	copyFromBuffer(view, targetRange);
+}
 
-			void Buffer::copyFromBuffer(const ResolvedBufferView& view, const ResourceCopyRange& range)
-			{
-				ensureCreated();
+void Buffer::copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+{
+	ASSERT(!"Not implemented");
+}
 
-				const auto copySize = std::min<uint32_t>(range.buffer.size, view.size);
-				GL_PROTECT(glCopyNamedBufferSubData(view.glBuffer, m_glBuffer, view.offset, range.buffer.offset, copySize));
-			}
+//--		
 
-            void Buffer::download(const DownloadArea* area, const ResourceCopyRange& range)
-			{
-				ensureCreated();
+BufferUntypedView::BufferUntypedView(Thread* drv, Buffer* buffer, const Setup& setup)
+	: IBaseBufferView(drv, buffer, ObjectType::BufferUntypedView, setup)
+{}
 
-				ASSERT(range.buffer.size <= area->size());
+BufferUntypedView::~BufferUntypedView()
+{}
 
-				GL_PROTECT(glCopyNamedBufferSubData(m_glBuffer, area->buffer(), range.buffer.offset, 0, range.buffer.size));
-			}
+ResolvedBufferView BufferUntypedView::resolve()
+{
+	ResolvedBufferView ret;
+	ret.glBuffer = buffer()->object();
+	ret.offset = setup().offset;
+	ret.size = setup().size;
+	return ret;
+}
 
-			void Buffer::copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
-			{
-				auto view = static_cast<Buffer*>(sourceBuffer)->resolve(sourceRange.buffer.offset, sourceRange.buffer.size);
-				copyFromBuffer(view, targetRange);
-			}
+//--		
 
-			void Buffer::copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
-			{
-				ASSERT(!"Not implemented");
-			}
+BufferTypedView::BufferTypedView(Thread* drv, Buffer* buffer, const Setup& setup)
+	: IBaseBufferView(drv, buffer, ObjectType::BufferTypedView, setup)
+{
+	DEBUG_CHECK_EX(setup.format != ImageFormat::UNKNOWN, "Trying to resolve a typed view without specifying a type");
+	m_glBufferFormat = TranslateImageFormat(setup.format);
+	ASSERT_EX(m_glBufferFormat != 0, "Invalid format for a typed buffer view");
+}
 
-			//--		
+BufferTypedView::~BufferTypedView()
+{
+	if (m_glBufferView)
+	{
+		GL_PROTECT(glDeleteTextures(1, &m_glBufferView));
+		m_glBufferView = 0;
+	}
+}
 
-			BufferUntypedView::BufferUntypedView(Thread* drv, Buffer* buffer, const Setup& setup)
-				: IBaseBufferView(drv, buffer, ObjectType::BufferUntypedView, setup)
-			{}
+void BufferTypedView::ensureCreated()
+{
+	if (m_glBufferView)
+		return;
 
-			BufferUntypedView::~BufferUntypedView()
-			{}
+	if (auto glBuffer = buffer()->object())
+	{
+		GL_PROTECT(glCreateTextures(GL_TEXTURE_BUFFER, 1, &m_glBufferView));
+		GL_PROTECT(glTextureBufferRange(m_glBufferView, m_glBufferFormat, glBuffer, setup().offset, setup().size));
+		GL_PROTECT(glObjectLabel(GL_BUFFER, m_glBufferView, -1, base::TempString("TypedView {} @{} of {}", setup().format, setup().offset, buffer()->setup().label).c_str()));
+	}
+}
 
-			ResolvedBufferView BufferUntypedView::resolve()
-			{
-				ResolvedBufferView ret;
-				ret.glBuffer = buffer()->object();
-				ret.offset = setup().offset;
-				ret.size = setup().size;
-				return ret;
-			}
+ResolvedFormatedView BufferTypedView::resolve()
+{
+	ensureCreated();
 
-			//--		
+	ResolvedFormatedView ret;
+	ret.glBufferView = m_glBufferView;
+	ret.glViewFormat = m_glBufferFormat;
+	ret.size = setup().size;
+	return ret;
+}
 
-			BufferTypedView::BufferTypedView(Thread* drv, Buffer* buffer, const Setup& setup)
-				: IBaseBufferView(drv, buffer, ObjectType::BufferTypedView, setup)
-			{
-				DEBUG_CHECK_EX(setup.format != ImageFormat::UNKNOWN, "Trying to resolve a typed view without specifying a type");
-				m_glBufferFormat = TranslateImageFormat(setup.format);
-				ASSERT_EX(m_glBufferFormat != 0, "Invalid format for a typed buffer view");
-			}
+//--
 
-			BufferTypedView::~BufferTypedView()
-			{
-				if (m_glBufferView)
-				{
-					GL_PROTECT(glDeleteTextures(1, &m_glBufferView));
-					m_glBufferView = 0;
-				}
-			}
-
-			void BufferTypedView::ensureCreated()
-			{
-				if (m_glBufferView)
-					return;
-
-				if (auto glBuffer = buffer()->object())
-				{
-					GL_PROTECT(glCreateTextures(GL_TEXTURE_BUFFER, 1, &m_glBufferView));
-					GL_PROTECT(glTextureBufferRange(m_glBufferView, m_glBufferFormat, glBuffer, setup().offset, setup().size));
-					GL_PROTECT(glObjectLabel(GL_BUFFER, m_glBufferView, -1, base::TempString("TypedView {} @{} of {}", setup().format, setup().offset, buffer()->setup().label).c_str()));
-				}
-			}
-
-			ResolvedFormatedView BufferTypedView::resolve()
-			{
-				ensureCreated();
-
-				ResolvedFormatedView ret;
-				ret.glBufferView = m_glBufferView;
-				ret.glViewFormat = m_glBufferFormat;
-				ret.size = setup().size;
-				return ret;
-			}
-
-			//--
-
-		} // gl4
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::gl4)

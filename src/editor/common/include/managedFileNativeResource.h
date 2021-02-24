@@ -11,51 +11,50 @@
 #include "managedFile.h"
 #include "base/object/include/globalEventKey.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//---
+
+// file in the depot that can be DIRECTLY loaded to a resource of sorts (without cooking, etc)
+class EDITOR_COMMON_API ManagedFileNativeResource : public ManagedFile
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(ManagedFileNativeResource, ManagedFile);
+
+public:
+    /// resource class this file can be loaded into (shorthandl for fileFormat().nativeResoureClass())
+    INLINE SpecificClassType<res::IResource> resourceClass() const { return m_resourceNativeClass; }
+
+public:
+    ManagedFileNativeResource(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName);
+    virtual ~ManagedFileNativeResource();
 
     //---
 
-    // file in the depot that can be DIRECTLY loaded to a resource of sorts (without cooking, etc)
-    class EDITOR_COMMON_API ManagedFileNativeResource : public ManagedFile
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(ManagedFileNativeResource, ManagedFile);
+    // load resource metadata, valid only for serialized resources
+    res::MetadataPtr loadMetadata() const;
 
-    public:
-        /// resource class this file can be loaded into (shorthandl for fileFormat().nativeResoureClass())
-        INLINE SpecificClassType<res::IResource> resourceClass() const { return m_resourceNativeClass; }
-
-    public:
-        ManagedFileNativeResource(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName);
-        virtual ~ManagedFileNativeResource();
-
-        //---
-
-        // load resource metadata, valid only for serialized resources
-        res::MetadataPtr loadMetadata() const;
-
-        /// check if the file can be reimported
-        bool canReimport() const;
-
-        //---
-
-        // load content for this file for edition
-        // NOTE: this will return previously loaded content if resource is still opened somewhere
-        res::ResourcePtr loadContent() const;
-
-        // save resource back to file, resets the modified flag
-        bool storeContent(const res::ResourcePtr& content);
-
-        // discard loaded content, usually done when deleting file
-        void discardContent();
-
-    protected:
-        SpecificClassType<res::IResource> m_resourceNativeClass;
-
-        GlobalEventTable m_fileEvents;
-    };
+    /// check if the file can be reimported
+    bool canReimport() const;
 
     //---
 
-} // editor
+    // load content for this file for edition
+    // NOTE: this will return previously loaded content if resource is still opened somewhere
+    res::ResourcePtr loadContent() const;
+
+    // save resource back to file, resets the modified flag
+    bool storeContent(const res::ResourcePtr& content);
+
+    // discard loaded content, usually done when deleting file
+    void discardContent();
+
+protected:
+    SpecificClassType<res::IResource> m_resourceNativeClass;
+
+    GlobalEventTable m_fileEvents;
+};
+
+//---
+
+END_BOOMER_NAMESPACE(ed)
 

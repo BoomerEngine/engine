@@ -10,84 +10,84 @@
 
 #include "base/memory/include/structurePool.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+// visualization of node
+class SceneNodeVisualization : public NoCopy
 {
-    //--
+public:
+    uint32_t index = INDEX_MAX;
+    uint32_t generation = INDEX_MAX;
 
-    // visualization of node
-    class SceneNodeVisualization : public NoCopy
+    ObjectID contentNodeObjectId = 0;
+
+    AbsoluteTransform placement;
+
+    std::atomic<uint32_t> version = 0;
+    world::EntityPtr entity;
+
+    bool visible = true;
+    bool effectSelection = false;
+};
+
+//--
+
+/// visualization handler for scene
+class SceneNodeVisualizationHandler : public IReferencable
+{
+public:
+    SceneNodeVisualizationHandler(world::World* targetWorld);
+    ~SceneNodeVisualizationHandler();
+
+    void clearAllProxies();
+    void updateAllProxies();
+
+    void createProxy(const SceneContentNode* node);
+    void removeProxy(const SceneContentNode* node);
+    void updateProxy(const SceneContentNode* node, SceneContentNodeDirtyFlags& flags);
+
+    bool retrieveBoundsForProxy(const SceneContentNode* node, Box& outBounds) const;
+
+    SceneContentNodePtr resolveSelectable(const rendering::scene::Selectable& selectable) const;
+
+private:
+    world::World* m_world;
+
+    mem::StructurePool<SceneNodeVisualization> m_proxyPool;
+
+    Array<SceneNodeVisualization*> m_proxies;
+    Array<uint32_t> m_freeProxyIndices;
+
+    Mutex m_proxyLock;
+    Mutex m_renderLock;
+
+    uint32_t m_proxyGenerationCounter = 1;
+
+    HashMap<const SceneContentNode*, SceneNodeVisualization*> m_nodeToProxyMap;
+
+    struct ProxyToReattach
     {
-    public:
-        uint32_t index = INDEX_MAX;
-        uint32_t generation = INDEX_MAX;
-
-        ObjectID contentNodeObjectId = 0;
-
-        AbsoluteTransform placement;
-
-        std::atomic<uint32_t> version = 0;
-        world::EntityPtr entity;
-
-        bool visible = true;
-        bool effectSelection = false;
+        uint32_t index;
+        uint32_t generation;
+        world::EntityPtr newEntity;
     };
 
-    //--
+    Array<ProxyToReattach> m_reattachList;
 
-    /// visualization handler for scene
-    class SceneNodeVisualizationHandler : public IReferencable
-    {
-    public:
-        SceneNodeVisualizationHandler(world::World* targetWorld);
-        ~SceneNodeVisualizationHandler();
+    uint32_t allocProxyIndex();
 
-        void clearAllProxies();
-        void updateAllProxies();
+    void updateProxySelection(SceneNodeVisualization* proxy, const SceneContentEntityNode* node);
+    void updateProxyData(SceneNodeVisualization* proxy, const SceneContentEntityNode* node);
+    void updateProxyVisibility(SceneNodeVisualization* proxy, const SceneContentEntityNode* node);
+    void reattachProxies();
 
-        void createProxy(const SceneContentNode* node);
-        void removeProxy(const SceneContentNode* node);
-        void updateProxy(const SceneContentNode* node, SceneContentNodeDirtyFlags& flags);
+    static bool CheckProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex);
+    static void ApplyProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex, const world::EntityPtr& entity);
+    static CAN_YIELD void CompileEntityData(const RefWeakPtr<SceneNodeVisualizationHandler>& self, const world::NodeTemplatePtr& data, uint32_t versionIndex, uint32_t proxyIndex, uint32_t proxyGeneration);
+};
 
-        bool retrieveBoundsForProxy(const SceneContentNode* node, Box& outBounds) const;
+//--
 
-        SceneContentNodePtr resolveSelectable(const rendering::scene::Selectable& selectable) const;
-
-    private:
-        world::World* m_world;
-
-        mem::StructurePool<SceneNodeVisualization> m_proxyPool;
-
-        Array<SceneNodeVisualization*> m_proxies;
-        Array<uint32_t> m_freeProxyIndices;
-
-        Mutex m_proxyLock;
-        Mutex m_renderLock;
-
-        uint32_t m_proxyGenerationCounter = 1;
-
-        HashMap<const SceneContentNode*, SceneNodeVisualization*> m_nodeToProxyMap;
-
-        struct ProxyToReattach
-        {
-            uint32_t index;
-            uint32_t generation;
-            world::EntityPtr newEntity;
-        };
-
-        Array<ProxyToReattach> m_reattachList;
-
-        uint32_t allocProxyIndex();
-
-        void updateProxySelection(SceneNodeVisualization* proxy, const SceneContentEntityNode* node);
-        void updateProxyData(SceneNodeVisualization* proxy, const SceneContentEntityNode* node);
-        void updateProxyVisibility(SceneNodeVisualization* proxy, const SceneContentEntityNode* node);
-        void reattachProxies();
-
-        static bool CheckProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex);
-        static void ApplyProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex, const world::EntityPtr& entity);
-        static CAN_YIELD void CompileEntityData(const RefWeakPtr<SceneNodeVisualizationHandler>& self, const world::NodeTemplatePtr& data, uint32_t versionIndex, uint32_t proxyIndex, uint32_t proxyGeneration);
-    };
-
-    //--
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

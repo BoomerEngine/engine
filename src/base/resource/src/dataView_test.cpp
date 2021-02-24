@@ -13,9 +13,9 @@
 #include "base/reflection/include/reflectionMacros.h"
 #include "base/object/include/rttiDataView.h"
 
-using namespace base;
-
 DECLARE_TEST_FILE(DataView);
+
+BEGIN_BOOMER_NAMESPACE(base::test)
 
 class DataViewTestObject : public IObject
 {
@@ -900,3 +900,5 @@ TEST(EditView, PointerCantStillWriteNonInlined)
 }
 
 //--
+
+END_BOOMER_NAMESPACE(base::test)

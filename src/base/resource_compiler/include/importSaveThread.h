@@ -12,68 +12,65 @@
 #include "base/containers/include/queue.h"
 #include "base/system/include/thread.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+//--
+
+/// importer output
+class BASE_RESOURCE_COMPILER_API IImportOutput : public NoCopy
 {
-    namespace res
+    RTTI_DECLARE_POOL(POOL_IMPORT)
+
+public:
+    virtual ~IImportOutput();
+
+    /// schedule new content for saving
+    virtual bool scheduleSave(const ResourcePtr& data, const StringBuf& depotPath) = 0;
+};
+
+//--
+
+/// importer saving thread, saves back to depot
+class BASE_RESOURCE_COMPILER_API ImportSaverThread : public IImportOutput
+{
+public:
+    ImportSaverThread();
+    ~ImportSaverThread(); // note: will kill all jobs
+
+    /// wait for jobs to finish
+    void waitUntilDone();
+
+    /// do we have anything to save ?
+    bool hasUnsavedContent() const;
+
+    /// schedule new content for saving
+    virtual bool scheduleSave(const ResourcePtr& data, const StringBuf& depotPath) override final;
+
+private:
+    struct SaveJob : public NoCopy
     {
-        //--
+        RTTI_DECLARE_POOL(POOL_IMPORT)
 
-        /// importer output
-        class BASE_RESOURCE_COMPILER_API IImportOutput : public NoCopy
-        {
-            RTTI_DECLARE_POOL(POOL_IMPORT)
+    public:
+        res::ResourcePtr unsavedResource;
+        StringBuf depotPath;
+    };
 
-        public:
-            virtual ~IImportOutput();
+    Queue<SaveJob*> m_saveJobQueue;
+    res::ResourcePtr m_saveCurrentResource;
+    SpinLock m_saveQueueLock;
 
-            /// schedule new content for saving
-            virtual bool scheduleSave(const ResourcePtr& data, const StringBuf& depotPath) = 0;
-        };
+    Semaphore m_saveThreadSemaphore;
+    Thread m_saveThread;
 
-        //--
+    std::atomic<uint32_t> m_saveThreadRequestExit;
 
-        /// importer saving thread, saves back to depot
-        class BASE_RESOURCE_COMPILER_API ImportSaverThread : public IImportOutput
-        {
-        public:
-            ImportSaverThread();
-            ~ImportSaverThread(); // note: will kill all jobs
+    ///--
 
-            /// wait for jobs to finish
-            void waitUntilDone();
+    void processSavingThread();
+    bool saveSingleFile(const res::ResourcePtr& data, const StringBuf& path);
+};
 
-            /// do we have anything to save ?
-            bool hasUnsavedContent() const;
+//--
 
-            /// schedule new content for saving
-            virtual bool scheduleSave(const ResourcePtr& data, const StringBuf& depotPath) override final;
-
-        private:
-            struct SaveJob : public NoCopy
-            {
-                RTTI_DECLARE_POOL(POOL_IMPORT)
-
-            public:
-                res::ResourcePtr unsavedResource;
-                StringBuf depotPath;
-            };
-
-            Queue<SaveJob*> m_saveJobQueue;
-            res::ResourcePtr m_saveCurrentResource;
-            SpinLock m_saveQueueLock;
-
-            Semaphore m_saveThreadSemaphore;
-            Thread m_saveThread;
-
-            std::atomic<uint32_t> m_saveThreadRequestExit;
-
-            ///--
-
-            void processSavingThread();
-            bool saveSingleFile(const res::ResourcePtr& data, const StringBuf& path);
-        };
-
-        //--
-
-    } // cooker
-} // base
+END_BOOMER_NAMESPACE(base::res)

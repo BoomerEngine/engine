@@ -11,104 +11,97 @@
 #include "rendering/api_common/include/apiBuffer.h"
 #include "gl4Thread.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+//--
+
+class BufferUntypedView;
+class BufferTypedView;
+
+//--
+
+class Buffer : public IBaseBuffer
 {
-    namespace api
-    {
-		namespace gl4
-		{
+public:
+	Buffer(Thread* owner, const BufferCreationInfo& setup, const ISourceDataProvider* sourceData);
+	virtual ~Buffer();
 
-			//--
+	//--
 
-			class BufferUntypedView;
-			class BufferTypedView;
+	INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
+	INLINE GLuint object() { ensureCreated(); return m_glBuffer; }
 
-			//--
+	//--
 
-			class Buffer : public IBaseBuffer
-			{
-			public:
-				Buffer(Thread* owner, const BufferCreationInfo& setup, const ISourceDataProvider* sourceData);
-				virtual ~Buffer();
+	virtual IBaseBufferView* createConstantView_ClientApi(uint32_t offset, uint32_t size) override final;
+	virtual IBaseBufferView* createView_ClientApi(ImageFormat format, uint32_t offset, uint32_t size) override final;
+	virtual IBaseBufferView* createStructuredView_ClientApi(uint32_t offset, uint32_t size) override final;
+	virtual IBaseBufferView* createWritableView_ClientApi(ImageFormat format, uint32_t offset, uint32_t size) override final;
+	virtual IBaseBufferView* createWritableStructuredView_ClientApi(uint32_t offset, uint32_t size) override final;
 
-				//--
+	//--
 
-				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
-				INLINE GLuint object() { ensureCreated(); return m_glBuffer; }
+	virtual void updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range) override final;
+	virtual void copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange) override final;
+	virtual void copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange) override final;
 
-				//--
+	void copyFromBuffer(const ResolvedBufferView& view, const ResourceCopyRange& range);
+    void download(const DownloadArea* area, const ResourceCopyRange& range);
 
-				virtual IBaseBufferView* createConstantView_ClientApi(uint32_t offset, uint32_t size) override final;
-				virtual IBaseBufferView* createView_ClientApi(ImageFormat format, uint32_t offset, uint32_t size) override final;
-				virtual IBaseBufferView* createStructuredView_ClientApi(uint32_t offset, uint32_t size) override final;
-				virtual IBaseBufferView* createWritableView_ClientApi(ImageFormat format, uint32_t offset, uint32_t size) override final;
-				virtual IBaseBufferView* createWritableStructuredView_ClientApi(uint32_t offset, uint32_t size) override final;
+	//--
 
-				//--
+	ResolvedBufferView resolve(uint32_t offset = 0, uint32_t size = INDEX_MAX);
 
-				virtual void updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range) override final;
-				virtual void copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange) override final;
-				virtual void copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange) override final;
+	//--
 
-				void copyFromBuffer(const ResolvedBufferView& view, const ResourceCopyRange& range);
-                void download(const DownloadArea* area, const ResourceCopyRange& range);
+private:
+	GLuint m_glUsage = 0;
+	GLuint m_glBuffer = 0;
 
-				//--
+	void ensureCreated();
 
-				ResolvedBufferView resolve(uint32_t offset = 0, uint32_t size = INDEX_MAX);
+	friend class BufferUntypedView;
+	friend class BufferTypedView;
+};
 
-				//--
+//---
 
-			private:
-				GLuint m_glUsage = 0;
-				GLuint m_glBuffer = 0;
+// untyped view of the buffer, can be structured with stride
+class BufferUntypedView : public IBaseBufferView
+{
+public:
+	BufferUntypedView(Thread* drv, Buffer* buffer, const Setup& setup);
+	virtual ~BufferUntypedView();
 
-				void ensureCreated();
+	static const auto STATIC_TYPE = ObjectType::BufferUntypedView;
 
-				friend class BufferUntypedView;
-				friend class BufferTypedView;
-			};
+	INLINE Buffer* buffer() const { return static_cast<Buffer*>(IBaseBufferView::buffer()); }
 
-			//---
+	ResolvedBufferView resolve();
+};
 
-			// untyped view of the buffer, can be structured with stride
-			class BufferUntypedView : public IBaseBufferView
-			{
-			public:
-				BufferUntypedView(Thread* drv, Buffer* buffer, const Setup& setup);
-				virtual ~BufferUntypedView();
+//---
 
-				static const auto STATIC_TYPE = ObjectType::BufferUntypedView;
+// typed (formatted) view of the buffer, 
+class BufferTypedView : public IBaseBufferView
+{
+public:
+	BufferTypedView(Thread* drv, Buffer* buffer, const Setup& setup);
+	virtual ~BufferTypedView();
 
-				INLINE Buffer* buffer() const { return static_cast<Buffer*>(IBaseBufferView::buffer()); }
+	static const auto STATIC_TYPE = ObjectType::BufferTypedView;
 
-				ResolvedBufferView resolve();
-			};
+	INLINE Buffer* buffer() const { return static_cast<Buffer*>(IBaseBufferView::buffer()); }
 
-			//---
+	ResolvedFormatedView resolve();
 
-			// typed (formatted) view of the buffer, 
-			class BufferTypedView : public IBaseBufferView
-			{
-			public:
-				BufferTypedView(Thread* drv, Buffer* buffer, const Setup& setup);
-				virtual ~BufferTypedView();
+private:
+	GLuint m_glBufferFormat = 0;
+	GLuint m_glBufferView = 0;
 
-				static const auto STATIC_TYPE = ObjectType::BufferTypedView;
+	void ensureCreated();
+};
 
-				INLINE Buffer* buffer() const { return static_cast<Buffer*>(IBaseBufferView::buffer()); }
+//--
 
-				ResolvedFormatedView resolve();
-
-			private:
-				GLuint m_glBufferFormat = 0;
-				GLuint m_glBufferView = 0;
-
-				void ensureCreated();
-			};
-
-			//--
-
-		} // gl4 
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::gl4)

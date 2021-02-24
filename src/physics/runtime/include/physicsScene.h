@@ -8,26 +8,22 @@
 
 #include "base/object/include/object.h"
 
-namespace physics
+BEGIN_BOOMER_NAMESPACE(boomer)
+
+/// simulation scene for the physics
+class PHYSICS_RUNTIME_API PhysicsScene : public base::IObject
 {
-    namespace runtime
-    {
+    RTTI_DECLARE_VIRTUAL_CLASS(PhysicsScene, base::IObject);
 
-        /// simulation scene for the physics
-        class PHYSICS_RUNTIME_API PhysicsScene : public base::IObject
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(PhysicsScene, base::IObject);
+public:
+    PhysicsScene(physx::PxScene* scene);
+    ~PhysicsScene();
 
-        public:
-            PhysicsScene(physx::PxScene* scene);
-            ~PhysicsScene();
+    // simulate with given time delta
+    void simulate(float dt);
 
-            // simulate with given time delta
-            void simulate(float dt);
+private:
+    physx::PxScene* m_scene = nullptr;
+};
 
-        private:
-            physx::PxScene* m_scene = nullptr;
-        };
-
-    } // runtime
-} // physics
+END_BOOMER_NAMESPACE(boomer)

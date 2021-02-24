@@ -13,39 +13,38 @@
 #include "rendering/scene/include/renderingFrameParams.h"
 #include "rendering/device/include/renderingDeviceService.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//---
+
+RTTI_BEGIN_TYPE_CLASS(RenderingSystem);
+RTTI_END_TYPE();
+
+RenderingSystem::RenderingSystem()
+{}
+
+RenderingSystem::~RenderingSystem()
+{}
+
+bool RenderingSystem::handleInitialize(base::world::World& scene)
 {
+	const auto sceneType = rendering::scene::SceneType::Game; // TODO!
+	m_scene = base::RefNew<rendering::scene::Scene>(sceneType);
 
-    //---
+    return true;
+}
 
-    RTTI_BEGIN_TYPE_CLASS(RenderingSystem);
-    RTTI_END_TYPE();
+void RenderingSystem::handleShutdown()
+{
+    m_scene.reset();
+}
 
-    RenderingSystem::RenderingSystem()
-    {}
+void RenderingSystem::handleRendering(rendering::scene::FrameParams& info)
+{
+    info.scenes.mainScenePtr = m_scene;
+}
 
-    RenderingSystem::~RenderingSystem()
-    {}
+///---
 
-    bool RenderingSystem::handleInitialize(base::world::World& scene)
-    {
-		const auto sceneType = rendering::scene::SceneType::Game; // TODO!
-		m_scene = base::RefNew<rendering::scene::Scene>(sceneType);
-
-        return true;
-    }
-
-    void RenderingSystem::handleShutdown()
-    {
-        m_scene.reset();
-    }
-
-    void RenderingSystem::handleRendering(rendering::scene::FrameParams& info)
-    {
-        info.scenes.mainScenePtr = m_scene;
-    }
-
-    ///---
-
-} // game
+END_BOOMER_NAMESPACE(rendering)
 

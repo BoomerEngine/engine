@@ -11,32 +11,27 @@
 #include "base/resource/include/resource.h"
 #include "base/xml/include/xmlDocument.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::storage)
+
+/// a resource-type wrapper for external XML files
+/// NOTE: in cooked version the data is saved as compressed binary XML to save space
+class BASE_STORAGE_API XMLData : public res::IResource
 {
-    namespace storage
-    {
+    RTTI_DECLARE_VIRTUAL_CLASS(XMLData, res::IResource)
 
-        /// a resource-type wrapper for external XML files
-        /// NOTE: in cooked version the data is saved as compressed binary XML to save space
-        class BASE_STORAGE_API XMLData : public res::IResource
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(XMLData, res::IResource)
+public:
+    XMLData();
+    XMLData(const xml::DocumentPtr& document);
 
-        public:
-            XMLData();
-            XMLData(const xml::DocumentPtr& document);
+    /// get the XML document interface
+    /// NOTE: do not cache!
+    INLINE const xml::IDocument& document() { return *m_document; }
 
-            /// get the XML document interface
-            /// NOTE: do not cache!
-            INLINE const xml::IDocument& document() { return *m_document; }
+    //--
 
-            //--
+private:
+    xml::DocumentPtr m_document;
+    Buffer m_binaryData;
+};
 
-        private:
-            xml::DocumentPtr m_document;
-            Buffer m_binaryData;
-        };
-
-    } // storage
-} // base
-
+END_BOOMER_NAMESPACE(base::storage)

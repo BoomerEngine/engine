@@ -10,43 +10,39 @@
 
 #include "base/object/include/object.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+//----
+
+class ScriptedClass;
+class ScriptedClassProperty;
+
+//----
+
+// scripted class type that derives from native type
+class BASE_SCRIPT_API ScriptedObject : public IObject
 {
-    namespace script
-    {
+    RTTI_DECLARE_VIRTUAL_CLASS(ScriptedObject, IObject);
 
-        //----
+public:
+    ScriptedObject();
+    virtual ~ScriptedObject();
 
-        class ScriptedClass;
-        class ScriptedClassProperty;
+    // get object class, dynamic, returns true scripted class
+    virtual ClassType cls() const override final { return m_scriptedClass ? m_scriptedClass : TBaseClass::cls(); }
 
-        //----
+    // get internal data buffer
+    INLINE const void* scriptedData() const { return m_scriptPropertiesData; }
+    INLINE void* scriptedData() { return m_scriptPropertiesData; }
 
-        // scripted class type that derives from native type
-		class BASE_SCRIPT_API ScriptedObject : public IObject
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ScriptedObject, IObject);
+private:
+    ClassType m_scriptedClass;
+    void* m_scriptPropertiesData;
 
-        public:
-            ScriptedObject();
-            virtual ~ScriptedObject();
+    friend class ScriptedClassProperty;
+    friend class ScriptedClass;
+};
 
-            // get object class, dynamic, returns true scripted class
-            virtual ClassType cls() const override final { return m_scriptedClass ? m_scriptedClass : TBaseClass::cls(); }
+///---
 
-            // get internal data buffer
-            INLINE const void* scriptedData() const { return m_scriptPropertiesData; }
-            INLINE void* scriptedData() { return m_scriptPropertiesData; }
-
-        private:
-            ClassType m_scriptedClass;
-            void* m_scriptPropertiesData;
-
-            friend class ScriptedClassProperty;
-            friend class ScriptedClass;
-        };
-
-        ///---
-
-    } // script
-} // base
+END_BOOMER_NAMESPACE(base::script)

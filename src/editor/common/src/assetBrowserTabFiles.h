@@ -12,130 +12,129 @@
 
 #include "base/ui/include/uiDockPanel.h"
 
-namespace ed
-{
+BEGIN_BOOMER_NAMESPACE(ed)
 
-    //--
+//--
 
-    DECLARE_UI_EVENT(EVENT_DIRECTORY_CHANGED)
+DECLARE_UI_EVENT(EVENT_DIRECTORY_CHANGED)
 
-    //--
+//--
     
-    class AssetBrowserDirContentModel;
+class AssetBrowserDirContentModel;
 
-    // classic list of files
-    class AssetBrowserTabFiles : public ui::DockPanel
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserTabFiles, ui::DockPanel);
+// classic list of files
+class AssetBrowserTabFiles : public ui::DockPanel
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserTabFiles, ui::DockPanel);
 
-    public:
-        AssetBrowserTabFiles(ManagedDepot* depot, AssetBrowserContext env = AssetBrowserContext::DirectoryTab);
-        virtual ~AssetBrowserTabFiles();
+public:
+    AssetBrowserTabFiles(ManagedDepot* depot, AssetBrowserContext env = AssetBrowserContext::DirectoryTab);
+    virtual ~AssetBrowserTabFiles();
 
-        //--
+    //--
 
-        INLINE AssetBrowserContext context() const { return m_context; }
+    INLINE AssetBrowserContext context() const { return m_context; }
 
-        INLINE bool list() const { return m_list; } // display items in a flat list
-        INLINE bool flat() const { return m_flat; } // flat view (flatten subdirectories)
+    INLINE bool list() const { return m_list; } // display items in a flat list
+    INLINE bool flat() const { return m_flat; } // flat view (flatten subdirectories)
 
-        INLINE ManagedDepot* depot() const { return m_depot; }
+    INLINE ManagedDepot* depot() const { return m_depot; }
 
-        INLINE ManagedDirectory* directory() const { return m_dir; }
+    INLINE ManagedDirectory* directory() const { return m_dir; }
 
-        INLINE const Array<const ManagedFileFormat*>& filterFormats() const { return m_filterFormats.keys(); }
-        INLINE const StringBuf& filterName() const { return m_filterName; }
+    INLINE const Array<const ManagedFileFormat*>& filterFormats() const { return m_filterFormats.keys(); }
+    INLINE const StringBuf& filterName() const { return m_filterName; }
 
-        //---
+    //---
 
-        /// toggle the list flatten
-        void flat(bool isFlattened);
+    /// toggle the list flatten
+    void flat(bool isFlattened);
 
-        /// toggle the list mode
-        void list(bool isList);
+    /// toggle the list mode
+    void list(bool isList);
 
-        /// set file format filter for resources
-        void filterFormat(const ManagedFileFormat* filterFormat, bool toggle);
+    /// set file format filter for resources
+    void filterFormat(const ManagedFileFormat* filterFormat, bool toggle);
 
-        /// change the name filter
-        void filterName(StringView txt);
+    /// change the name filter
+    void filterName(StringView txt);
 
-        /// set active directory
-        void directory(ManagedDirectory* dir, ManagedItem* autoSelectItem = nullptr);
+    /// set active directory
+    void directory(ManagedDirectory* dir, ManagedItem* autoSelectItem = nullptr);
 
-        /// select item in the list
-        bool selectItem(ManagedItem* item);
+    /// select item in the list
+    bool selectItem(ManagedItem* item);
 
-        /// select specific items
-        bool selectItems(const Array<ManagedItem*>& items);
+    /// select specific items
+    bool selectItems(const Array<ManagedItem*>& items);
 
-        /// get selected item (may be file/directory or something else)
-        ManagedItem* selectedItem() const;
+    /// get selected item (may be file/directory or something else)
+    ManagedItem* selectedItem() const;
 
-        /// get selected file
-        ManagedFile* selectedFile() const;
+    /// get selected file
+    ManagedFile* selectedFile() const;
 
-        /// get all selected files
-        Array<ManagedFile*> selectedFiles() const;
+    /// get all selected files
+    Array<ManagedFile*> selectedFiles() const;
 
-        /// get all selected items
-        Array<ManagedItem*> selectedItems() const;
+    /// get all selected items
+    Array<ManagedItem*> selectedItems() const;
 
-        //--
+    //--
 
-        virtual void configLoad(const ui::ConfigBlock& block);
-        virtual void configSave(const ui::ConfigBlock& block) const;
+    virtual void configLoad(const ui::ConfigBlock& block);
+    virtual void configSave(const ui::ConfigBlock& block) const;
 
-        //--
+    //--
 
-        void duplicateFile(ManagedFile* file);
+    void duplicateFile(ManagedFile* file);
 
-    private:
-        AssetBrowserContext m_context;
+private:
+    AssetBrowserContext m_context;
 
-        ManagedDepot* m_depot = nullptr;
-        ManagedDirectory* m_dir = nullptr;
+    ManagedDepot* m_depot = nullptr;
+    ManagedDirectory* m_dir = nullptr;
 
-        bool m_flat = false;
-        bool m_list = false;
-        uint32_t m_iconSize = 128;
+    bool m_flat = false;
+    bool m_list = false;
+    uint32_t m_iconSize = 128;
 
-        ui::ListView* m_files;
-        RefPtr<AssetBrowserDirContentModel> m_filesModel;
+    ui::ListView* m_files;
+    RefPtr<AssetBrowserDirContentModel> m_filesModel;
 
-        HashSet<const ManagedFileFormat*> m_filterFormats;
-        StringBuf m_filterName;
+    HashSet<const ManagedFileFormat*> m_filterFormats;
+    StringBuf m_filterName;
 
-        Array<ManagedFilePlaceholderPtr> m_filePlaceholders;
-        Array<ManagedDirectoryPlaceholderPtr> m_directoryPlaceholders;
-        GlobalEventTable m_fileEvents;
+    Array<ManagedFilePlaceholderPtr> m_filePlaceholders;
+    Array<ManagedDirectoryPlaceholderPtr> m_directoryPlaceholders;
+    GlobalEventTable m_fileEvents;
 
-        void updateTitle();
-        void refreshFileList();
-        void duplicateTab();
+    void updateTitle();
+    void refreshFileList();
+    void duplicateTab();
 
-        bool showGenericContextMenu();
-        void iconSize(uint32_t size);
+    bool showGenericContextMenu();
+    void iconSize(uint32_t size);
 
-        void createNewDirectory();
-        void createNewFile(const ManagedFileFormat* format);
-        bool importNewFile(const ManagedFileFormat* format);
+    void createNewDirectory();
+    void createNewFile(const ManagedFileFormat* format);
+    bool importNewFile(const ManagedFileFormat* format);
 
-        void finishFileDuplicate(ManagedFilePlaceholderPtr ptr, const ManagedFile* sourceFile);
+    void finishFileDuplicate(ManagedFilePlaceholderPtr ptr, const ManagedFile* sourceFile);
 
-        void finishFilePlaceholder(ManagedFilePlaceholderPtr ptr);
-        void cancelFilePlaceholder(ManagedFilePlaceholderPtr ptr);
-        void finishDirPlaceholder(ManagedDirectoryPlaceholderPtr ptr);
-        void cancelDirPlaceholder(ManagedDirectoryPlaceholderPtr ptr);
+    void finishFilePlaceholder(ManagedFilePlaceholderPtr ptr);
+    void cancelFilePlaceholder(ManagedFilePlaceholderPtr ptr);
+    void finishDirPlaceholder(ManagedDirectoryPlaceholderPtr ptr);
+    void cancelDirPlaceholder(ManagedDirectoryPlaceholderPtr ptr);
 
-        void buildNewAssetMenu(ui::MenuButtonContainer* menu);
-        void buildImportAssetMenu(ui::MenuButtonContainer* menu);        
-    };
+    void buildNewAssetMenu(ui::MenuButtonContainer* menu);
+    void buildImportAssetMenu(ui::MenuButtonContainer* menu);        
+};
      
-    //--
+//--
 
-    extern bool ImportNewFiles(ui::IElement* owner, const ManagedFileFormat* format, ManagedDirectory* parentDir);
+extern bool ImportNewFiles(ui::IElement* owner, const ManagedFileFormat* format, ManagedDirectory* parentDir);
 
-    //--
+//--
 
-} // ed
+END_BOOMER_NAMESPACE(ed)

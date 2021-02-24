@@ -33,99 +33,97 @@
 #include "canvasStyle.h"
 #include "canvasGeometryBuilder.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::canvas)
+
+namespace prv
 {
-    namespace canvas
+
+    enum class PointTypeFlag : uint8_t
     {
-        namespace prv
+        Corner = 0x01,
+        Left = 0x02,
+        Bevel = 0x04,
+        InnerBevel = 0x08,
+    };
+
+    typedef DirectFlags<PointTypeFlag> PointTypeFlags;
+
+    struct PathPoint
+    {
+        Vector2 pos; // position of point
+        Vector2 d; // normalized delta to next point
+        float len; // length to next point
+        Vector2 dm;
+        PointTypeFlags flags; // flags, is this a corner
+
+        INLINE PathPoint(const Vector2& _pos, PointTypeFlags _flags)
+            : pos(_pos)
+            , d(0,0)
+            , len(0.0f)
+            , dm(0,0)
+            , flags(_flags)
+        {}
+    };
+
+    struct PathData
+    {
+        uint32_t first; // first point in the point list
+        uint32_t count; // number of points in the path so far
+        Winding winding;
+        bool closed;
+        bool convex;
+
+        uint32_t bevelCount; // number of extra bevel vertices needed
+
+        INLINE PathData()
+            : first(0)
+            , count(0)
+            , winding(Winding::CCW)
+            , closed(false)
+            , convex(false)
+            , bevelCount(0)
+        {}
+    };
+
+    struct PathCache
+    {
+        RTTI_DECLARE_POOL(POOL_CANVAS)
+    public:
+
+        float minPointDist = 0.025f;
+        float tessTol = 0.1f;
+        InplaceArray<PathPoint, 64> points;
+        InplaceArray<PathData, 4> paths;
+
+        //--
+
+        PathCache(float minPointDist, float tesseltationTollerance);
+
+        INLINE const PathPoint* lastPoint() const
         {
+            return points.empty() ? nullptr : &points.back();
+        }
 
-            enum class PointTypeFlag : uint8_t
-            {
-                Corner = 0x01,
-                Left = 0x02,
-                Bevel = 0x04,
-                InnerBevel = 0x08,
-            };
+        INLINE bool isConvex() const
+        {
+            return paths.size() == 1 && paths[0].convex;
+        }
 
-            typedef DirectFlags<PointTypeFlag> PointTypeFlags;
+        void reset();
+        void addPath();
+        void addPoint(float x, float y, PointTypeFlags flags);
+        void addPoint(const Vector2& pos, PointTypeFlags flags);
+        void addBezier(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3, uint32_t level, PointTypeFlags flags);
+        void closePath();
+        void winding(Winding winding);
 
-            struct PathPoint
-            {
-                Vector2 pos; // position of point
-                Vector2 d; // normalized delta to next point
-                float len; // length to next point
-                Vector2 dm;
-                PointTypeFlags flags; // flags, is this a corner
+        void computeDeltas();
+        void computeJoints(float w, LineJoin lineJoin, float mitterLimit);
 
-                INLINE PathPoint(const Vector2& _pos, PointTypeFlags _flags)
-                    : pos(_pos)
-                    , d(0,0)
-                    , len(0.0f)
-                    , dm(0,0)
-                    , flags(_flags)
-                {}
-            };
+        uint32_t computeFillVertexCount(bool hasFringe) const;
+        uint32_t computeStrokeVertexCount(LineJoin lineJoin, LineCap lineCap, float strokeWidth) const;
+    };
 
-            struct PathData
-            {
-                uint32_t first; // first point in the point list
-                uint32_t count; // number of points in the path so far
-                Winding winding;
-                bool closed;
-                bool convex;
+} // prv
 
-                uint32_t bevelCount; // number of extra bevel vertices needed
-
-                INLINE PathData()
-                    : first(0)
-                    , count(0)
-                    , winding(Winding::CCW)
-                    , closed(false)
-                    , convex(false)
-                    , bevelCount(0)
-                {}
-            };
-
-            struct PathCache
-            {
-                RTTI_DECLARE_POOL(POOL_CANVAS)
-            public:
-
-                float minPointDist = 0.025f;
-                float tessTol = 0.1f;
-                InplaceArray<PathPoint, 64> points;
-                InplaceArray<PathData, 4> paths;
-
-                //--
-
-                PathCache(float minPointDist, float tesseltationTollerance);
-
-                INLINE const PathPoint* lastPoint() const
-                {
-                    return points.empty() ? nullptr : &points.back();
-                }
-
-                INLINE bool isConvex() const
-                {
-                    return paths.size() == 1 && paths[0].convex;
-                }
-
-                void reset();
-                void addPath();
-                void addPoint(float x, float y, PointTypeFlags flags);
-                void addPoint(const Vector2& pos, PointTypeFlags flags);
-                void addBezier(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3, uint32_t level, PointTypeFlags flags);
-                void closePath();
-                void winding(Winding winding);
-
-                void computeDeltas();
-                void computeJoints(float w, LineJoin lineJoin, float mitterLimit);
-
-                uint32_t computeFillVertexCount(bool hasFringe) const;
-                uint32_t computeStrokeVertexCount(LineJoin lineJoin, LineCap lineCap, float strokeWidth) const;
-            };
-
-        } // prv
-    } // canvas
-} // base
+END_BOOMER_NAMESPACE(base::canvas)

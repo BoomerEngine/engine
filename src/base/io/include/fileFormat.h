@@ -10,62 +10,59 @@
 
 #include "base/containers/include/stringBuf.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::io)
+
+/// file format information, extension + description
+class FileFormat
 {
-    namespace io
+public:
+    INLINE FileFormat()
+    {}
+
+    INLINE FileFormat(const FileFormat& other)
+        : m_ext(other.m_ext)
+        , m_desc(other.m_desc)
+    {}
+
+    INLINE FileFormat(FileFormat&& other)
+        : m_ext(std::move(other.m_ext))
+        , m_desc(std::move(other.m_desc))
+    {}
+
+    INLINE FileFormat(const base::StringBuf& ext, const base::StringBuf& desc)
+        : m_ext(ext)
+        , m_desc(desc)
+    {}
+
+    INLINE FileFormat& operator=(const FileFormat& other)
     {
-        /// file format information, extension + description
-        class FileFormat
-        {
-        public:
-            INLINE FileFormat()
-            {}
+        m_ext = other.m_ext;
+        m_desc = other.m_desc;
+        return *this;
+    }
 
-            INLINE FileFormat(const FileFormat& other)
-                : m_ext(other.m_ext)
-                , m_desc(other.m_desc)
-            {}
+    INLINE FileFormat& operator=(FileFormat&& other)
+    {
+        m_ext = std::move(other.m_ext);
+        m_desc = std::move(other.m_desc);;
+        return *this;
+    }
 
-            INLINE FileFormat(FileFormat&& other)
-                : m_ext(std::move(other.m_ext))
-                , m_desc(std::move(other.m_desc))
-            {}
+    //---
 
-            INLINE FileFormat(const base::StringBuf& ext, const base::StringBuf& desc)
-                : m_ext(ext)
-                , m_desc(desc)
-            {}
+    INLINE const base::StringBuf& extension() const
+    {
+        return m_ext;
+    }
 
-            INLINE FileFormat& operator=(const FileFormat& other)
-            {
-                m_ext = other.m_ext;
-                m_desc = other.m_desc;
-                return *this;
-            }
+    INLINE const base::StringBuf& description() const
+    {
+        return m_desc;
+    }
 
-            INLINE FileFormat& operator=(FileFormat&& other)
-            {
-                m_ext = std::move(other.m_ext);
-                m_desc = std::move(other.m_desc);;
-                return *this;
-            }
+private:
+    base::StringBuf m_ext;
+    base::StringBuf m_desc;
+};
 
-            //---
-
-            INLINE const base::StringBuf& extension() const
-            {
-                return m_ext;
-            }
-
-            INLINE const base::StringBuf& description() const
-            {
-                return m_desc;
-            }
-
-        private:
-            base::StringBuf m_ext;
-            base::StringBuf m_desc;
-        };
-
-    } // io
-} // base
+END_BOOMER_NAMESPACE(base::io)

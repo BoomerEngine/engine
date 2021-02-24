@@ -8,93 +8,90 @@
 
 #pragma once
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api)
+
+//--
+
+class ObjectRegistryProxy;
+
+/// internal object registry
+class RENDERING_API_COMMON_API ObjectRegistry : public IDeviceObjectHandler // external client proxies have have weak referencs to this
 {
-    namespace api
+    RTTI_DECLARE_POOL(POOL_API_OBJECTS)
+
+public:
+    ObjectRegistry(IBaseThread* owner);
+    virtual ~ObjectRegistry();
+
+    //--
+
+	// owner, the device thread
+	INLINE IBaseThread* owner() const { return m_owner; }
+
+    //--
+
+    // allocate object ID and bind object
+    ObjectID registerObject(IBaseObject* ptr);
+
+    // unregister object after it was deleted
+    void unregisterObject(ObjectID id, IBaseObject* ptr);
+
+    //--
+
+    // request object to be deleted when this frame ends
+    void requestObjectDeletion(ObjectID id);
+
+    //--
+
+    // resolve static object
+	IBaseObject* resolveStatic(ObjectID id, ObjectType expectedType = ObjectType::Unknown) const;
+
+    // resolve static object
+    template< typename T >
+    INLINE T* resolveStatic(ObjectID id) const
     {
-        //--
+        return static_cast<T*>(resolveStatic(id, T::STATIC_TYPE));
+    }
 
-        class ObjectRegistryProxy;
+	// resolve static object
+	template< typename T >
+	INLINE T* resolveSpecfic(ObjectID id, ObjectType expectedType) const
+	{
+		return static_cast<T*>(resolveStatic(id, expectedType));
+	}
 
-        /// internal object registry
-        class RENDERING_API_COMMON_API ObjectRegistry : public IDeviceObjectHandler // external client proxies have have weak referencs to this
-        {
-            RTTI_DECLARE_POOL(POOL_API_OBJECTS)
+	//--
 
-        public:
-            ObjectRegistry(IBaseThread* owner);
-            virtual ~ObjectRegistry();
+	// purge all still active objects
+	void purge();
 
-            //--
+private:
+    static const uint32_t MAX_OBJECTS = 1U << 16;
 
-			// owner, the device thread
-			INLINE IBaseThread* owner() const { return m_owner; }
+    base::Mutex m_lock; // may be called from threads
 
-            //--
+    uint32_t m_numAllocatedObjects = 0;
 
-            // allocate object ID and bind object
-            ObjectID registerObject(IBaseObject* ptr);
+    struct Entry
+    {
+        IBaseObject* ptr = nullptr;
+        bool markedForDeletion = false;
+    };
 
-            // unregister object after it was deleted
-            void unregisterObject(ObjectID id, IBaseObject* ptr);
+    uint32_t m_numObjects = 0;
+    Entry* m_objects = nullptr;
 
-            //--
+    base::Array<uint32_t> m_freeEntries;
+    uint32_t m_generationCounter = 1;
 
-            // request object to be deleted when this frame ends
-            void requestObjectDeletion(ObjectID id);
+    IBaseThread* m_owner = nullptr;
 
-            //--
+	//--
 
-            // resolve static object
-			IBaseObject* resolveStatic(ObjectID id, ObjectType expectedType = ObjectType::Unknown) const;
+	virtual void releaseToDevice(ObjectID id) override final;
+	virtual api::IBaseObject* resolveInternalObjectPtrRaw(ObjectID id, uint8_t objectType) override final;
+};
 
-            // resolve static object
-            template< typename T >
-            INLINE T* resolveStatic(ObjectID id) const
-            {
-                return static_cast<T*>(resolveStatic(id, T::STATIC_TYPE));
-            }
+//--
 
-			// resolve static object
-			template< typename T >
-			INLINE T* resolveSpecfic(ObjectID id, ObjectType expectedType) const
-			{
-				return static_cast<T*>(resolveStatic(id, expectedType));
-			}
-
-			//--
-
-			// purge all still active objects
-			void purge();
-
-        private:
-            static const uint32_t MAX_OBJECTS = 1U << 16;
-
-            base::Mutex m_lock; // may be called from threads
-
-            uint32_t m_numAllocatedObjects = 0;
-
-            struct Entry
-            {
-                IBaseObject* ptr = nullptr;
-                bool markedForDeletion = false;
-            };
-
-            uint32_t m_numObjects = 0;
-            Entry* m_objects = nullptr;
-
-            base::Array<uint32_t> m_freeEntries;
-            uint32_t m_generationCounter = 1;
-
-            IBaseThread* m_owner = nullptr;
-
-			//--
-
-			virtual void releaseToDevice(ObjectID id) override final;
-			virtual api::IBaseObject* resolveInternalObjectPtrRaw(ObjectID id, uint8_t objectType) override final;
-        };
-
-        //--
-
-    } // gl4
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api)

@@ -17,40 +17,37 @@
 
 #include <Windows.h>
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::fibers)
+
+namespace prv
 {
-    namespace fibers
+
+    /// WinAPI based implementation of the fiber system
+    class WinApiScheduler : public BaseScheduler
     {
-        namespace prv
-        {
+    public:
+        WinApiScheduler();
+        virtual ~WinApiScheduler();
 
-            /// WinAPI based implementation of the fiber system
-            class WinApiScheduler : public BaseScheduler
-            {
-            public:
-                WinApiScheduler();
-                virtual ~WinApiScheduler();
+    private:
+        static const uint32_t GTlsThreadState;
 
-            private:
-                static const uint32_t GTlsThreadState;
+        //--
 
-                //--
+        static DWORD WINAPI ThreadFunc(void* threadParameter);
+        static void WINAPI WorkerFiberFunc(void* threadParameter);
+        static void WINAPI SchedulerFiberFunc(void* threadParameter);
 
-                static DWORD WINAPI ThreadFunc(void* threadParameter);
-                static void WINAPI WorkerFiberFunc(void* threadParameter);
-                static void WINAPI SchedulerFiberFunc(void* threadParameter);
+        //--
 
-                //--
+        /// BaseScheduler interface
+        virtual ThreadState* currentThreadState() const override final;
+        virtual ThreadHandle createWorkerThread(void* state) override final;
+        virtual void convertMainThread() override final;
+        virtual FiberHandle createFiberState(uint32_t stackSize, void *state) override final;
+        virtual void switchFiber(FiberHandle from, FiberHandle to) override final;
+    };
 
-                /// BaseScheduler interface
-                virtual ThreadState* currentThreadState() const override final;
-                virtual ThreadHandle createWorkerThread(void* state) override final;
-                virtual void convertMainThread() override final;
-                virtual FiberHandle createFiberState(uint32_t stackSize, void *state) override final;
-                virtual void switchFiber(FiberHandle from, FiberHandle to) override final;
-            };
+} // prv
 
-        } // win
-    } // fibers
-} // base
-
+END_BOOMER_NAMESPACE(base::fibers)

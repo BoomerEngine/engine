@@ -11,173 +11,164 @@
 #include "base/containers/include/stringBuf.h"
 #include "base/object/include/rttiProperty.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::reflection)
+
+// helper class that can add stuff to the class type
+class BASE_REFLECTION_API PropertyBuilder : public NoCopy
 {
-    namespace rtti
+    RTTI_DECLARE_POOL(POOL_RTTI)
+
+public:
+    PropertyBuilder(Type propType, const char* name, const char* category, uint32_t offset);
+    ~PropertyBuilder();
+
+    void submit(rtti::IClassType* targetClass);
+
+    INLINE PropertyBuilder& name(const char* name)
     {
-        class IType;
-        class IMetadata;
+        DEBUG_CHECK_EX(name != nullptr && *name, "Custom name cannot be empty");
+        m_name = StringID(name);
+        return *this;
     }
 
-    namespace reflection
+    INLINE PropertyBuilder& category(const char* category)
     {
-        // helper class that can add stuff to the class type
-        class BASE_REFLECTION_API PropertyBuilder : public NoCopy
-        {
-            RTTI_DECLARE_POOL(POOL_RTTI)
+        m_category = StringID(category);
+        return *this;
+    }
 
-        public:
-            PropertyBuilder(Type propType, const char* name, const char* category, uint32_t offset);
-            ~PropertyBuilder();
+    INLINE PropertyBuilder& editable(const char* hint = "")
+    {
+        m_editable = true;
+        m_editorData.m_comment = hint;
+        return *this;
+    }
 
-            void submit(rtti::IClassType* targetClass);
+    INLINE PropertyBuilder& readonly()
+    {
+        m_editable = true;
+        m_readonly = true;
+        return *this;
+    }
 
-            INLINE PropertyBuilder& name(const char* name)
-            {
-                DEBUG_CHECK_EX(name != nullptr && *name, "Custom name cannot be empty");
-                m_name = StringID(name);
-                return *this;
-            }
+    INLINE PropertyBuilder& inlined()
+    {
+        m_inlined = true;
+        return *this;
+    }
 
-            INLINE PropertyBuilder& category(const char* category)
-            {
-                m_category = StringID(category);
-                return *this;
-            }
+    INLINE PropertyBuilder& transient()
+    {
+        m_transient = true;
+        return *this;
+    }
 
-            INLINE PropertyBuilder& editable(const char* hint = "")
-            {
-                m_editable = true;
-                m_editorData.m_comment = hint;
-                return *this;
-            }
+    INLINE PropertyBuilder& noScripts()
+    {
+        m_scriptHidden = true;
+        return *this;
+    }
 
-            INLINE PropertyBuilder& readonly()
-            {
-                m_editable = true;
-                m_readonly = true;
-                return *this;
-            }
+    INLINE PropertyBuilder& scriptReadOnly()
+    {
+        m_scriptReadOnly = true;
+        return *this;
+    }
 
-            INLINE PropertyBuilder& inlined()
-            {
-                m_inlined = true;
-                return *this;
-            }
+    INLINE PropertyBuilder& overriddable()
+    {
+        m_overriddable = true;
+        return *this;
+    }
 
-            INLINE PropertyBuilder& transient()
-            {
-                m_transient = true;
-                return *this;
-            }
+    INLINE PropertyBuilder& noReset()
+    {
+        m_noReset = true;
+        return *this;
+    }
 
-            INLINE PropertyBuilder& noScripts()
-            {
-                m_scriptHidden = true;
-                return *this;
-            }
+    template< typename T, typename... Args >
+    INLINE PropertyBuilder& metadata(Args && ... args)
+    {
+        auto obj = new T(std::forward< Args >(args)...);
+        m_metadata.pushBack(static_cast<rtti::IMetadata*>(obj));
+        return *this;
+    }
 
-            INLINE PropertyBuilder& scriptReadOnly()
-            {
-                m_scriptReadOnly = true;
-                return *this;
-            }
+    INLINE PropertyBuilder& editor(StringID id)
+    {
+        m_editorData.m_customEditor = id;
+        return *this;
+    }
 
-            INLINE PropertyBuilder& overriddable()
-            {
-                m_overriddable = true;
-                return *this;
-            }
+    INLINE PropertyBuilder& comment(StringView txt)
+    {
+        m_editorData.m_comment = StringBuf(txt);
+        return *this;
+    }
 
-            INLINE PropertyBuilder& noReset()
-            {
-                m_noReset = true;
-                return *this;
-            }
+    INLINE PropertyBuilder& units(StringView txt)
+    {
+        m_editorData.m_units = StringBuf(txt);
+        return *this;
+    }
 
-            template< typename T, typename... Args >
-            INLINE PropertyBuilder& metadata(Args && ... args)
-            {
-                auto obj = new T(std::forward< Args >(args)...);
-                m_metadata.pushBack(static_cast<rtti::IMetadata*>(obj));
-                return *this;
-            }
+    INLINE PropertyBuilder& range(double min, double max)
+    {
+        m_editorData.m_rangeMin = min;
+        m_editorData.m_rangeMax = max;
+        return *this;
+    }
 
-            INLINE PropertyBuilder& editor(StringID id)
-            {
-                m_editorData.m_customEditor = id;
-                return *this;
-            }
+    INLINE PropertyBuilder& digits(uint8_t numDigits)
+    {
+        m_editorData.m_digits = numDigits;
+        return *this;
+    }
 
-            INLINE PropertyBuilder& comment(StringView txt)
-            {
-                m_editorData.m_comment = StringBuf(txt);
-                return *this;
-            }
+    INLINE PropertyBuilder& hasAlpha()
+    {
+        m_editorData.m_colorWithAlpha = true;
+        return *this;
+    }
 
-            INLINE PropertyBuilder& units(StringView txt)
-            {
-                m_editorData.m_units = StringBuf(txt);
-                return *this;
-            }
+    INLINE PropertyBuilder& noDefaultValue()
+    {
+        m_editorData.m_noDefaultValue = true;
+        return *this;
+    }
 
-            INLINE PropertyBuilder& range(double min, double max)
-            {
-                m_editorData.m_rangeMin = min;
-                m_editorData.m_rangeMax = max;
-                return *this;
-            }
+    INLINE PropertyBuilder& widgetDrag(bool wrap=false)
+    {
+        m_editorData.m_widgetDrag = true;
+        m_editorData.m_widgetDragWrap = wrap;
+        return *this;
+    }
 
-            INLINE PropertyBuilder& digits(uint8_t numDigits)
-            {
-                m_editorData.m_digits = numDigits;
-                return *this;
-            }
+    INLINE PropertyBuilder& widgetSlider()
+    {
+        m_editorData.m_widgetSlider = true;
+        return *this;
+    }
 
-            INLINE PropertyBuilder& hasAlpha()
-            {
-                m_editorData.m_colorWithAlpha = true;
-                return *this;
-            }
+private:
+    Type m_type;
+    StringID m_name;
+    StringID m_category;
+    uint32_t m_offset = 0;
 
-            INLINE PropertyBuilder& noDefaultValue()
-            {
-                m_editorData.m_noDefaultValue = true;
-                return *this;
-            }
+    bool m_editable = false;
+    bool m_inlined = false;
+    bool m_readonly = false;
+    bool m_scriptHidden = false;
+    bool m_scriptReadOnly = false;
+    bool m_transient = false;
+    bool m_overriddable = false;
+    bool m_noReset = false;
 
-            INLINE PropertyBuilder& widgetDrag(bool wrap=false)
-            {
-                m_editorData.m_widgetDrag = true;
-                m_editorData.m_widgetDragWrap = wrap;
-                return *this;
-            }
+    rtti::PropertyEditorData m_editorData;
 
-            INLINE PropertyBuilder& widgetSlider()
-            {
-                m_editorData.m_widgetSlider = true;
-                return *this;
-            }
+    Array<rtti::IMetadata*> m_metadata;
+};
 
-        private:
-            Type m_type;
-            StringID m_name;
-            StringID m_category;
-            uint32_t m_offset = 0;
-
-            bool m_editable = false;
-            bool m_inlined = false;
-            bool m_readonly = false;
-            bool m_scriptHidden = false;
-            bool m_scriptReadOnly = false;
-            bool m_transient = false;
-            bool m_overriddable = false;
-            bool m_noReset = false;
-
-            rtti::PropertyEditorData m_editorData;
-
-            Array<rtti::IMetadata*> m_metadata;
-        };
-
-    } // reflection
-} // base
+END_BOOMER_NAMESPACE(base::reflection)

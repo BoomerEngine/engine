@@ -12,69 +12,66 @@
 #include "base/containers/include/hashMap.h"
 #include "importFileFingerprint.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+//---
+
+struct BASE_RESOURCE_COMPILER_API ImportFileFingerprintTimestampEntry
 {
-    namespace res
-    {
-        //---
+    RTTI_DECLARE_NONVIRTUAL_CLASS(ImportFileFingerprintTimestampEntry);
 
-        struct BASE_RESOURCE_COMPILER_API ImportFileFingerprintTimestampEntry
-        {
-            RTTI_DECLARE_NONVIRTUAL_CLASS(ImportFileFingerprintTimestampEntry);
+    uint64_t timestamp = 0;
+    ImportFileFingerprint fingerprint;
+};
 
-            uint64_t timestamp = 0;
-            ImportFileFingerprint fingerprint;
-        };
+struct BASE_RESOURCE_COMPILER_API ImportFileFingerprintCacheEntry
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(ImportFileFingerprintCacheEntry);
 
-        struct BASE_RESOURCE_COMPILER_API ImportFileFingerprintCacheEntry
-        {
-            RTTI_DECLARE_NONVIRTUAL_CLASS(ImportFileFingerprintCacheEntry);
+    StringBuf absolutePathUTF8; // conformed - lower case
+    Array<ImportFileFingerprintTimestampEntry> timestampEntries; // sorted by time
+};
 
-            StringBuf absolutePathUTF8; // conformed - lower case
-            Array<ImportFileFingerprintTimestampEntry> timestampEntries; // sorted by time
-        };
-
-        //--
+//--
             
-        // trivial "cache" for fingerprints
-        class BASE_RESOURCE_COMPILER_API ImportFingerprintCache : public IResource
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ImportFingerprintCache, IResource);
+// trivial "cache" for fingerprints
+class BASE_RESOURCE_COMPILER_API ImportFingerprintCache : public IResource
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ImportFingerprintCache, IResource);
 
-        public:
-            ImportFingerprintCache();
-            virtual ~ImportFingerprintCache();
+public:
+    ImportFingerprintCache();
+    virtual ~ImportFingerprintCache();
 
-            //--
+    //--
 
-            /// get number of entries in cache
-            INLINE uint32_t size() const { return m_entries.size(); }
+    /// get number of entries in cache
+    INLINE uint32_t size() const { return m_entries.size(); }
 
-            //--
+    //--
 
-            /// clear the cache
-            void clear();
+    /// clear the cache
+    void clear();
 
-            /// find entry for given path and timestamp
-            bool findEntry(StringView path, io::TimeStamp timestamp, ImportFileFingerprint& outFingerprint);
+    /// find entry for given path and timestamp
+    bool findEntry(StringView path, io::TimeStamp timestamp, ImportFileFingerprint& outFingerprint);
 
-            /// store entry for given path and timestamp
-            void storeEntry(StringView path, io::TimeStamp timestamp, const ImportFileFingerprint& fingerprint);
+    /// store entry for given path and timestamp
+    void storeEntry(StringView path, io::TimeStamp timestamp, const ImportFileFingerprint& fingerprint);
 
-        private:
-            HashMap<StringBuf, uint32_t> m_entriesMap;
-            Array<ImportFileFingerprintCacheEntry> m_entries;
+private:
+    HashMap<StringBuf, uint32_t> m_entriesMap;
+    Array<ImportFileFingerprintCacheEntry> m_entries;
 
-            //--
+    //--
 
-            void rebuildMap();
+    void rebuildMap();
 
-            void conformPath(StringView path, StringBuf& outPath) const;
+    void conformPath(StringView path, StringBuf& outPath) const;
 
-            virtual void onPostLoad() override;
-        };
+    virtual void onPostLoad() override;
+};
 
-        //---
+//---
 
-    } // res
-} // base
+END_BOOMER_NAMESPACE(base::res)

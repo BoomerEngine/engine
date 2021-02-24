@@ -8,9 +8,8 @@
 
 #include "import_mesh_loader_glue.inl"
 
-namespace rendering
-{
+BEGIN_BOOMER_NAMESPACE(rendering)
 
-    class MeshImportConfig;
+class MeshImportConfig;
 
-} // renering
+END_BOOMER_NAMESPACE(rendering)

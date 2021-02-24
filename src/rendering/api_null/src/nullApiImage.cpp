@@ -13,72 +13,65 @@
 
 #include "base/memory/include/poolStats.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
+
+///---
+
+Image::Image(Thread* drv, const ImageCreationInfo& setup, const ISourceDataProvider* sourceData)
+	: IBaseImage(drv, setup, sourceData)
+{}
+
+Image::~Image()
+{}
+
+//--
+
+IBaseImageView* Image::createSampledView_ClientApi(const IBaseImageView::Setup& setup)
 {
-    namespace api
-    {
-		namespace nul
-		{
+	return new ImageAnyView(owner(), this, setup, ObjectType::SampledImageView);
+}
 
-			///---
+IBaseImageView* Image::createReadOnlyView_ClientApi(const IBaseImageView::Setup& setup)
+{
+	return new ImageAnyView(owner(), this, setup, ObjectType::ImageReadOnlyView);
+}
 
-			Image::Image(Thread* drv, const ImageCreationInfo& setup, const ISourceDataProvider* sourceData)
-				: IBaseImage(drv, setup, sourceData)
-			{}
+IBaseImageView* Image::createWritableView_ClientApi(const IBaseImageView::Setup& setup)
+{
+	return new ImageAnyView(owner(), this, setup, ObjectType::ImageWritableView);
+}
 
-			Image::~Image()
-			{}
+IBaseImageView* Image::createRenderTargetView_ClientApi(const IBaseImageView::Setup& setup)
+{
+	return new ImageAnyView(owner(), this, setup, ObjectType::RenderTargetView);
+}
 
-			//--
+//--
 
-			IBaseImageView* Image::createSampledView_ClientApi(const IBaseImageView::Setup& setup)
-			{
-				return new ImageAnyView(owner(), this, setup, ObjectType::SampledImageView);
-			}
+void Image::updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range)
+{
 
-			IBaseImageView* Image::createReadOnlyView_ClientApi(const IBaseImageView::Setup& setup)
-			{
-				return new ImageAnyView(owner(), this, setup, ObjectType::ImageReadOnlyView);
-			}
+}
 
-			IBaseImageView* Image::createWritableView_ClientApi(const IBaseImageView::Setup& setup)
-			{
-				return new ImageAnyView(owner(), this, setup, ObjectType::ImageWritableView);
-			}
+void Image::copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+{
 
-			IBaseImageView* Image::createRenderTargetView_ClientApi(const IBaseImageView::Setup& setup)
-			{
-				return new ImageAnyView(owner(), this, setup, ObjectType::RenderTargetView);
-			}
+}
 
-			//--
+void Image::copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
+{
 
-			void Image::updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range)
-			{
+}
 
-			}
+//--
 
-			void Image::copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
-			{
+ImageAnyView::ImageAnyView(Thread* owner, Image* img, const Setup& setup, ObjectType viewType)
+	: IBaseImageView(owner, viewType, img, setup)
+{}
 
-			}
+ImageAnyView::~ImageAnyView()
+{}
 
-			void Image::copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange)
-			{
+//--
 
-			}
-
-			//--
-
-			ImageAnyView::ImageAnyView(Thread* owner, Image* img, const Setup& setup, ObjectType viewType)
-				: IBaseImageView(owner, viewType, img, setup)
-			{}
-
-			ImageAnyView::~ImageAnyView()
-			{}
-
-			//--
-
-		} // nul
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

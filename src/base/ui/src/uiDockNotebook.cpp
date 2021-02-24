@@ -19,94 +19,93 @@
 
 #include "base/input/include/inputStructures.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(DockNotebook);
+    RTTI_METADATA(ElementClassNameMetadata).name("DockNotebook");
+RTTI_END_TYPE();
+
+DockNotebook::DockNotebook(DockLayoutNode* layoutNode)
+    : m_layoutNode(layoutNode)
 {
+    enableAutoExpand(true, true);
+}
 
-    //--
+DockLayoutNode* DockNotebook::layoutNode() const
+{
+    return m_layoutNode.unsafe();
+}
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(DockNotebook);
-        RTTI_METADATA(ElementClassNameMetadata).name("DockNotebook");
-    RTTI_END_TYPE();
+ui::DockPanel* DockNotebook::activeTab() const
+{
+    return base::rtti_cast<ui::DockPanel>(Notebook::activeTab());
+}
 
-    DockNotebook::DockNotebook(DockLayoutNode* layoutNode)
-        : m_layoutNode(layoutNode)
-    {
-        enableAutoExpand(true, true);
-    }
+void DockNotebook::updateHeaderButtons()
+{
+    TBaseClass::updateHeaderButtons();
+}
 
-    DockLayoutNode* DockNotebook::layoutNode() const
-    {
-        return m_layoutNode.unsafe();
-    }
+bool DockNotebook::tabHasCloseButton(IElement* tab)
+{
+    if (auto dockPanel = base::rtti_cast<DockPanel>(tab))
+        return dockPanel->tabHasCloseButton();
 
-    ui::DockPanel* DockNotebook::activeTab() const
-    {
-        return base::rtti_cast<ui::DockPanel>(Notebook::activeTab());
-    }
+    return TBaseClass::tabHasCloseButton(tab);
+}
 
-    void DockNotebook::updateHeaderButtons()
-    {
-        TBaseClass::updateHeaderButtons();
-    }
-
-    bool DockNotebook::tabHasCloseButton(IElement* tab)
+void DockNotebook::closeTab(DockPanel* tab)
+{
+    // manage in the layout
+    if (auto node = m_layoutNode.lock())
     {
         if (auto dockPanel = base::rtti_cast<DockPanel>(tab))
-            return dockPanel->tabHasCloseButton();
-
-        return TBaseClass::tabHasCloseButton(tab);
-    }
-
-    void DockNotebook::closeTab(DockPanel* tab)
-    {
-        // manage in the layout
-        if (auto node = m_layoutNode.lock())
         {
-            if (auto dockPanel = base::rtti_cast<DockPanel>(tab))
+            if (dockPanel->id())
             {
-                if (dockPanel->id())
-                {
-                    dockPanel->m_visibleInLayout = false;
-                    node->container()->applyLayout();
-                }
-                else
-                {
-                    node->detachPanel(dockPanel);
-                }
-                return;
+                dockPanel->m_visibleInLayout = false;
+                node->container()->applyLayout();
             }
+            else
+            {
+                node->detachPanel(dockPanel);
+            }
+            return;
         }
+    }
 
-        // just close
+    // just close
+    TBaseClass::tabHandleCloseRequest(tab);
+}
+
+void DockNotebook::tabHandleCloseRequest(IElement* tab)
+{
+    if (auto dockPanel = base::rtti_cast<DockPanel>(tab))
+        dockPanel->handleCloseRequest();
+    else
         TBaseClass::tabHandleCloseRequest(tab);
-    }
+}
 
-    void DockNotebook::tabHandleCloseRequest(IElement* tab)
-    {
-        if (auto dockPanel = base::rtti_cast<DockPanel>(tab))
-            dockPanel->handleCloseRequest();
-        else
-            TBaseClass::tabHandleCloseRequest(tab);
-    }
+base::StringBuf DockNotebook::tabTitle(IElement* tab)
+{
+    if (auto dockPanel = base::rtti_cast<DockPanel>(tab))
+        return dockPanel->compileTabTitleString();
 
-    base::StringBuf DockNotebook::tabTitle(IElement* tab)
-    {
-        if (auto dockPanel = base::rtti_cast<DockPanel>(tab))
-            return dockPanel->compileTabTitleString();
+    return TBaseClass::tabTitle(tab);
+}
 
-        return TBaseClass::tabTitle(tab);
-    }
+void DockNotebook::attachTab(IElement* tab, IElement* afterTab /*= nullptr*/, bool activate /*= true*/)
+{
+    TBaseClass::attachTab(tab, afterTab, activate);
+}
 
-    void DockNotebook::attachTab(IElement* tab, IElement* afterTab /*= nullptr*/, bool activate /*= true*/)
-    {
-        TBaseClass::attachTab(tab, afterTab, activate);
-    }
+void DockNotebook::detachTab(IElement* tab, IElement* otherTabToActive /*= nullptr*/)
+{
+    TBaseClass::detachTab(tab, otherTabToActive);
+}
 
-    void DockNotebook::detachTab(IElement* tab, IElement* otherTabToActive /*= nullptr*/)
-    {
-        TBaseClass::detachTab(tab, otherTabToActive);
-    }
+//---
 
-    //---
-
-} // ui
+END_BOOMER_NAMESPACE(ui)

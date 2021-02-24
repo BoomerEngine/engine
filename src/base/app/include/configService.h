@@ -13,64 +13,60 @@
 #include "base/io/include/ioDirectoryWatcher.h"
 #include "base/system/include/timing.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::config)
+
+//----
+
+// config service - manages loading/saving configuration
+class BASE_APP_API ConfigService : public app::ILocalService, public io::IDirectoryWatcherListener
 {
-    namespace config
-    {
+    RTTI_DECLARE_VIRTUAL_CLASS(ConfigService, app::ILocalService);
 
-        //----
+public:
+    ConfigService();
+    virtual ~ConfigService();
 
-        // config service - manages loading/saving configuration
-        class BASE_APP_API ConfigService : public app::ILocalService, public io::IDirectoryWatcherListener
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ConfigService, app::ILocalService);
+    ///--
 
-        public:
-            ConfigService();
-            virtual ~ConfigService();
+    // request to save the user configuration
+    // NOTE: configuration is NOT saved right away in case we made a change that will cause a crash
+    void requestSave();
 
-            ///--
+    // request config to be reloaded
+    // NOTE: configuration is NOT reloaded right away in case we made a change that will cause a crash
+    void requestReload();
 
-            // request to save the user configuration
-            // NOTE: configuration is NOT saved right away in case we made a change that will cause a crash
-            void requestSave();
+    ///--
 
-            // request config to be reloaded
-            // NOTE: configuration is NOT reloaded right away in case we made a change that will cause a crash
-            void requestReload();
+protected:
+    virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
+    virtual void onShutdownService() override final;
+    virtual void onSyncUpdate() override final;
 
-            ///--
+    StringBuf m_userConfigFile;
 
-        protected:
-            virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
-            virtual void onShutdownService() override final;
-            virtual void onSyncUpdate() override final;
+    io::DirectoryWatcherPtr m_engineConfigWatcher;
+    io::DirectoryWatcherPtr m_projectConfigWatcher;
 
-            StringBuf m_userConfigFile;
+    UniquePtr<config::Storage> m_baseConfig;
+    bool m_hasValidBase;
 
-            io::DirectoryWatcherPtr m_engineConfigWatcher;
-            io::DirectoryWatcherPtr m_projectConfigWatcher;
+    NativeTimePoint m_reloadTime;
+    NativeTimePoint m_saveTime;
 
-            UniquePtr<config::Storage> m_baseConfig;
-            bool m_hasValidBase;
+    bool reloadConfig();
+    void saveUserConfig();
+    void dumpConfig();
 
-            NativeTimePoint m_reloadTime;
-            NativeTimePoint m_saveTime;
+    bool loadBaseConfig(config::Storage& outStorage) const;
+    bool loadDirConfig(StringView path, config::Storage& outStorage) const;
+    bool loadFileConfig(StringView path, config::Storage& outStorage) const;
 
-            bool reloadConfig();
-            void saveUserConfig();
-            void dumpConfig();
+    virtual void handleEvent(const io::DirectoryWatcherEvent& evt) override final;
+};
 
-            bool loadBaseConfig(config::Storage& outStorage) const;
-            bool loadDirConfig(StringView path, config::Storage& outStorage) const;
-            bool loadFileConfig(StringView path, config::Storage& outStorage) const;
+//----
 
-            virtual void handleEvent(const io::DirectoryWatcherEvent& evt) override final;
-        };
-
-        //----
-
-    } // config
-} // base
+END_BOOMER_NAMESPACE()
 
 typedef base::config::ConfigService ConfigService;

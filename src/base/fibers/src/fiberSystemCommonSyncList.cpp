@@ -20,100 +20,97 @@
     #pragma optimize("",off)
 #endif
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::fibers)
+
+namespace prv
 {
-    namespace fibers
+    ///---
+
+    BaseScheduler::SyncList::SyncList()
+        : freeList(nullptr)
+        , head(nullptr)
+        , tail(nullptr)
+        , m_count(0)
+    {}
+
+    void BaseScheduler::SyncList::push(const Job& jobPayload)
     {
-        namespace prv
+        auto lock = base::CreateLock(m_lock);
+
+        // get job
+        SyncJob* job = freeList;
+        if (!job)
         {
-            ///---
+            job = new SyncJob();
+            job->next = nullptr;
+        }
+        else
+        {
+            freeList = job->next;
+            job->next = nullptr;
+        }
 
-            BaseScheduler::SyncList::SyncList()
-                : freeList(nullptr)
-                , head(nullptr)
-                , tail(nullptr)
-                , m_count(0)
-            {}
+        // set payload
+        job->job = jobPayload;
 
-            void BaseScheduler::SyncList::push(const Job& jobPayload)
+        // add to list
+        if (head)
+        {
+            job->next = nullptr;
+            tail->next = job;
+            tail = job;
+        }
+        else
+        {
+            job->next = nullptr;
+            head = job;
+            tail = job;
+        }
+
+        ++m_count;
+    }
+
+    void BaseScheduler::SyncList::run()
+    {
+        auto lock = base::CreateLock(m_lock);
+
+        if (head != nullptr) // just run once
+        {
+            auto cur  = head;
+            head = nullptr;
+            tail = nullptr;
+            --m_count;
+
+            // release for the duration of job execution
+            lock.release();
+
+            // run jobs
+            while (cur)
             {
-                auto lock = base::CreateLock(m_lock);
-
-                // get job
-                SyncJob* job = freeList;
-                if (!job)
-                {
-                    job = new SyncJob();
-                    job->next = nullptr;
-                }
-                else
-                {
-                    freeList = job->next;
-                    job->next = nullptr;
-                }
-
-                // set payload
-                job->job = jobPayload;
-
-                // add to list
-                if (head)
-                {
-                    job->next = nullptr;
-                    tail->next = job;
-                    tail = job;
-                }
-                else
-                {
-                    job->next = nullptr;
-                    head = job;
-                    tail = job;
-                }
-
-                ++m_count;
+                cur->job.func(0);
+                cur->job.func = TJobFunc();
+                cur = cur->next;
             }
 
-            void BaseScheduler::SyncList::run()
+            // acquire back
+            lock.aquire();
+
+            // release to free list
+            while (cur)
             {
-                auto lock = base::CreateLock(m_lock);
-
-                if (head != nullptr) // just run once
-                {
-                    auto cur  = head;
-                    head = nullptr;
-                    tail = nullptr;
-                    --m_count;
-
-                    // release for the duration of job execution
-                    lock.release();
-
-                    // run jobs
-                    while (cur)
-                    {
-                        cur->job.func(0);
-                        cur->job.func = TJobFunc();
-                        cur = cur->next;
-                    }
-
-                    // acquire back
-                    lock.aquire();
-
-                    // release to free list
-                    while (cur)
-                    {
-                        auto next = cur->next;
-                        cur->next = freeList;
-                        freeList = cur;
-                        cur = next;
-                    }
-                }
+                auto next = cur->next;
+                cur->next = freeList;
+                freeList = cur;
+                cur = next;
             }
+        }
+    }
 
-          ///---
+    ///---
 
-        } // prv
-    } // fibers
-} // base
+} // prv
 
+END_BOOMER_NAMESPACE(base::fibers)
 
 #ifdef PLATFORM_GCC
     #pragma GCC pop_options

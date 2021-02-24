@@ -11,14 +11,6 @@
 #include "reflection.inl"
 #include "static_init.inl"
 
-namespace base
-{
-    extern void TestNewRegistering();
-}
-
-
 DECLARE_MODULE(PROJECT_NAME)
 {
-    // custom module initialization code
-    base::TestNewRegistering();
 }

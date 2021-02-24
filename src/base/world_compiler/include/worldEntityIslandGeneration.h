@@ -12,40 +12,36 @@
 #include "base/world/include/worldEntity.h"
 #include "base/world/include/worldNodeTemplate.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::world)
+
+//---
+
+struct SourceEntitySoup;
+
+// island of entities that must be streamed together
+class BASE_WORLD_COMPILER_API SourceIsland : public IReferencable
 {
-    namespace world
-    {
+public:
+    Array<RefPtr<HierarchyEntity>> flatEntities;
+    Array<RefPtr<SourceIsland>> children;
 
-        //---
+    Box localStreamingBox; // streaming box of the island
+    Box mergedStreamingBox;  // streaming box of the island and child islands
+};
 
-        struct SourceEntitySoup;
+//---
 
-        // island of entities that must be streamed together
-        class BASE_WORLD_COMPILER_API SourceIsland : public IReferencable
-        {
-        public:
-            Array<RefPtr<HierarchyEntity>> flatEntities;
-            Array<RefPtr<SourceIsland>> children;
+struct SourceIslands
+{
+    Box totalStreamingArea;
+    float largestStreamingDistance = 0.0f;
 
-            Box localStreamingBox; // streaming box of the island
-            Box mergedStreamingBox;  // streaming box of the island and child islands
-        };
+    Array<RefPtr<SourceIsland>> rootIslands;
+};
 
-        //---
+// extract source islands from source entity soup
+extern BASE_WORLD_COMPILER_API void ExtractSourceIslands(const SourceEntitySoup& outSoup, SourceIslands& outSourceIslands);
 
-        struct SourceIslands
-        {
-            Box totalStreamingArea;
-            float largestStreamingDistance = 0.0f;
+//---
 
-            Array<RefPtr<SourceIsland>> rootIslands;
-        };
-
-        // extract source islands from source entity soup
-        extern BASE_WORLD_COMPILER_API void ExtractSourceIslands(const SourceEntitySoup& outSoup, SourceIslands& outSourceIslands);
-
-        //---
-
-    } // world
-} // base
+END_BOOMER_NAMESPACE(base::world)

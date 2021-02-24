@@ -10,63 +10,62 @@
 #include "editorService.h"
 #include "editorBackgroundTask.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IBackgroundTask);
+RTTI_END_TYPE();
+
+IBackgroundTask::IBackgroundTask(StringView name)
+    : m_description(name)
 {
+    m_startTime.resetToNow();
 
-    //--
+    m_lastProgress.text = StringBuf("Processing...");
+}
 
-    RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IBackgroundTask);
-    RTTI_END_TYPE();
+IBackgroundTask::~IBackgroundTask()
+{}
 
-    IBackgroundTask::IBackgroundTask(StringView name)
-        : m_description(name)
+void IBackgroundTask::requestCancel()
+{
+    if (0 == m_cancelRequested.exchange(true))
     {
-        m_startTime.resetToNow();
-
-        m_lastProgress.text = StringBuf("Processing...");
+        TRACE_INFO("Requested cancelation of job '{}'", m_description);
     }
+}
 
-    IBackgroundTask::~IBackgroundTask()
-    {}
+ui::ElementPtr IBackgroundTask::fetchDetailsDialog()
+{
+    return nullptr;
+}
 
-    void IBackgroundTask::requestCancel()
-    {
-        if (0 == m_cancelRequested.exchange(true))
-        {
-            TRACE_INFO("Requested cancelation of job '{}'", m_description);
-        }
-    }
+ui::ElementPtr IBackgroundTask::fetchStatusDialog()
+{
+    return nullptr;
+}
 
-    ui::ElementPtr IBackgroundTask::fetchDetailsDialog()
-    {
-        return nullptr;
-    }
+void IBackgroundTask::queryProgressInfo(BackgroundTaskProgress& outInfo) const
+{
+    auto lock = CreateLock(m_lastProgressLock);
+    outInfo = m_lastProgress;
+}
 
-    ui::ElementPtr IBackgroundTask::fetchStatusDialog()
-    {
-        return nullptr;
-    }
+bool IBackgroundTask::checkCancelation() const
+{
+    return m_cancelRequested.load();
+}
 
-    void IBackgroundTask::queryProgressInfo(BackgroundTaskProgress& outInfo) const
-    {
-        auto lock = CreateLock(m_lastProgressLock);
-        outInfo = m_lastProgress;
-    }
+void IBackgroundTask::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text)
+{
+    auto lock = CreateLock(m_lastProgressLock);
+    m_lastProgress.text = StringBuf(text);
+    m_lastProgress.currentCount = currentCount;
+    m_lastProgress.totalCount = totalCount;
+    m_lastProgress.timestamp += 1;
+}
 
-    bool IBackgroundTask::checkCancelation() const
-    {
-        return m_cancelRequested.load();
-    }
+//--
 
-    void IBackgroundTask::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text)
-    {
-        auto lock = CreateLock(m_lastProgressLock);
-        m_lastProgress.text = StringBuf(text);
-        m_lastProgress.currentCount = currentCount;
-        m_lastProgress.totalCount = totalCount;
-        m_lastProgress.timestamp += 1;
-    }
-
-    //--
-
-} // editor
+END_BOOMER_NAMESPACE(ed)

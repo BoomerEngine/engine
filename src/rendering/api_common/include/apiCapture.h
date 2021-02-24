@@ -8,29 +8,26 @@
 
 #pragma once
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api)
+
+//---
+
+// capture interface (triggerable RenderDoc integration)
+class RENDERING_API_COMMON_API IFrameCapture : public base::NoCopy
 {
-    namespace api
-    {
-		//---
+	RTTI_DECLARE_POOL(POOL_API_RUNTIME);
 
-		// capture interface (triggerable RenderDoc integration)
-		class RENDERING_API_COMMON_API IFrameCapture : public base::NoCopy
-		{
-			RTTI_DECLARE_POOL(POOL_API_RUNTIME);
+public:
+	IFrameCapture();
+	virtual ~IFrameCapture();
 
-		public:
-			IFrameCapture();
-			virtual ~IFrameCapture();
+	//--
 
-			//--
+	static base::UniquePtr<IFrameCapture> ConditionalStartCapture(GPUCommandBuffer* masterCommandBuffer);
 
-			static base::UniquePtr<IFrameCapture> ConditionalStartCapture(command::CommandBuffer* masterCommandBuffer);
+	//--
+};
 
-			//--
-		};
+//---
 
-		//---
-
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

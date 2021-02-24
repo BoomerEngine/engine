@@ -14,20 +14,19 @@
 #include "rendering/scene/include/renderingScene.h"
 #include "rendering/scene/include/renderingSceneObjects.h"
 
-namespace game
-{
+BEGIN_BOOMER_NAMESPACE(game)
 
-    //--
+//--
 
-    RTTI_BEGIN_TYPE_CLASS(SolidMeshEntity);
-    RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_CLASS(SolidMeshEntity);
+RTTI_END_TYPE();
 
-    SolidMeshEntity::SolidMeshEntity()
-    {}
+SolidMeshEntity::SolidMeshEntity()
+{}
 
-    SolidMeshEntity::~SolidMeshEntity()
-    {}
+SolidMeshEntity::~SolidMeshEntity()
+{}
 
-    //--
-        
-} // rendering
+//--
+
+END_BOOMER_NAMESPACE(game)

@@ -10,34 +10,32 @@
 
 #include "launcherPlatformCommon.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::platform)
+
+namespace win
 {
-    namespace platform
+
+    class GenericOutput;
+
+    class Platform : public CommonPlatform
     {
-        namespace win
-        {
+    public:
+        Platform();
+        virtual ~Platform();
 
-            class GenericOutput;
+        virtual bool handleStart(const app::CommandLine& cmdline, app::IApplication* app) override;
+        virtual void handleUpdate() override;
+        virtual void handleCleanup() override;
 
-            class Platform : public CommonPlatform
-            {
-            public:
-                Platform();
-                virtual ~Platform();
+    private:
+        bool m_hasLog;
+        bool m_hasErrors;
 
-                virtual bool handleStart(const app::CommandLine& cmdline, app::IApplication* app) override;
-                virtual void handleUpdate() override;
-                virtual void handleCleanup() override;
+        UniquePtr<GenericOutput> m_output;
 
-            private:
-                bool m_hasLog;
-                bool m_hasErrors;
+        bool protectedStart(const app::CommandLine& cmdline, app::IApplication* app);
+    };
 
-                UniquePtr<GenericOutput> m_output;
+} // win
 
-                bool protectedStart(const app::CommandLine& cmdline, app::IApplication* app);
-            };
-
-        } // win
-    } // platform
-} // base
+END_BOOMER_NAMESPACE(base::platform)

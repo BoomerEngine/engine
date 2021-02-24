@@ -9,34 +9,31 @@
 #pragma once
 #include "base/system/include/mutex.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::font)
+
+/// internal font library, contains code and data shared between ALL fonts
+/// mostly needed because of free type 
+class FontLibrary : public ISingleton
 {
-    namespace font
-    {
-        /// internal font library, contains code and data shared between ALL fonts
-        /// mostly needed because of free type 
-        class FontLibrary : public ISingleton
-        {
-            DECLARE_SINGLETON(FontLibrary);
+    DECLARE_SINGLETON(FontLibrary);
 
-        public:
-            /// load font from memory
-            FT_Face loadFace(const void* data, uint32_t dataSize);
+public:
+    /// load font from memory
+    FT_Face loadFace(const void* data, uint32_t dataSize);
 
-            /// free loaded font
-            void freeFace(FT_Face face);
+    /// free loaded font
+    void freeFace(FT_Face face);
 
-        private:
-            FontLibrary();
+private:
+    FontLibrary();
 
-            FT_Library m_library;
-            uint32_t m_numLoadedFaces;
+    FT_Library m_library;
+    uint32_t m_numLoadedFaces;
 
-            Mutex m_lock; // resources may be loaded from multiple threads, we need to sync the access to the library
+    Mutex m_lock; // resources may be loaded from multiple threads, we need to sync the access to the library
 
-            void conditionalInitialize_NoLock();
-            void conditionalShutdown_NoLock();
-        };
+    void conditionalInitialize_NoLock();
+    void conditionalShutdown_NoLock();
+};
 
-    } // font
-} // base
+END_BOOMER_NAMESPACE(base::font)

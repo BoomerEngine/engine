@@ -14,42 +14,44 @@ extern "C"
     typedef struct FT_FaceRec_*  FT_Face;
 }
 
-namespace base
-{
-    namespace font
-    {
-        class Font;
-        class FontInputText;
+BEGIN_BOOMER_NAMESPACE(base::font)
 
-        struct FontStyleParams;
-        struct FontAssemblyParams;
+class Font;
+class FontInputText;
 
-        class Glyph;
-        class GlyphCache;
-        class GlyphBuffer;
+struct FontStyleParams;
+struct FontAssemblyParams;
 
-        typedef uint8_t FontID; // id of the font itself, we don't have that many fonts so this is just a number
-        typedef uint32_t FontGlyphID; // glyph ID, usually this is just the wchar_t
-        typedef uint32_t FontStyleHash; // render hash of the parameters the glyph was rendered with
-    } // font
+class Glyph;
+class GlyphCache;
+class GlyphBuffer;
 
-    typedef RefPtr<font::Font> FontPtr;
-    typedef res::Ref<font::Font> FontRef;
+typedef uint8_t FontID; // id of the font itself, we don't have that many fonts so this is just a number
+typedef uint32_t FontGlyphID; // glyph ID, usually this is just the wchar_t
+typedef uint32_t FontStyleHash; // render hash of the parameters the glyph was rendered with
 
-    //--
+END_BOOMER_NAMESPACE(base::font)
 
-    // load font from file memory
-    extern BASE_FONT_API FontPtr LoadFontFromMemory(Buffer ptr);
+BEGIN_BOOMER_NAMESPACE(base)
 
-    // load font from file
-    extern BASE_FONT_API FontPtr LoadFontFromFile(io::IReadFileHandle* file);
+typedef RefPtr<font::Font> FontPtr;
+typedef res::Ref<font::Font> FontRef;
 
-    // load font from absolute file
-    extern BASE_FONT_API FontPtr LoadFontFromAbsolutePath(StringView absolutePath);
+//--
 
-    // load font from absolute file
-    extern BASE_FONT_API FontPtr LoadFontFromDepotPath(StringView depotPath);
+// load font from file memory
+extern BASE_FONT_API FontPtr LoadFontFromMemory(Buffer ptr);
 
-    //--
+// load font from file
+extern BASE_FONT_API FontPtr LoadFontFromFile(io::IReadFileHandle* file);
 
-} // base
+// load font from absolute file
+extern BASE_FONT_API FontPtr LoadFontFromAbsolutePath(StringView absolutePath);
+
+// load font from absolute file
+extern BASE_FONT_API FontPtr LoadFontFromDepotPath(StringView depotPath);
+
+//--
+
+END_BOOMER_NAMESPACE(base::font)
+

@@ -7,59 +7,58 @@
 ***/
 
 #pragma once
-#
-namespace ed
-{
+
+BEGIN_BOOMER_NAMESPACE(ed)
     
-    /// reference space for the gizmo operations
-    struct EDITOR_GIZMOS_API GizmoReferenceSpace
-    {
-    public:
-        GizmoReferenceSpace();
-        GizmoReferenceSpace(GizmoSpace space, const AbsolutePosition& rootPoint);
-        GizmoReferenceSpace(GizmoSpace space, const AbsoluteTransform& transform);
-        GizmoReferenceSpace(const GizmoReferenceSpace& other) = default;
-        GizmoReferenceSpace(GizmoReferenceSpace&& other) = default;
-        GizmoReferenceSpace& operator=(const GizmoReferenceSpace& other) = default;
-        GizmoReferenceSpace& operator=(GizmoReferenceSpace&& other) = default;
+/// reference space for the gizmo operations
+struct EDITOR_GIZMOS_API GizmoReferenceSpace
+{
+public:
+    GizmoReferenceSpace();
+    GizmoReferenceSpace(GizmoSpace space, const AbsolutePosition& rootPoint);
+    GizmoReferenceSpace(GizmoSpace space, const AbsoluteTransform& transform);
+    GizmoReferenceSpace(const GizmoReferenceSpace& other) = default;
+    GizmoReferenceSpace(GizmoReferenceSpace&& other) = default;
+    GizmoReferenceSpace& operator=(const GizmoReferenceSpace& other) = default;
+    GizmoReferenceSpace& operator=(GizmoReferenceSpace&& other) = default;
 
-        //---
+    //---
 
-        /// get the space type
-        INLINE GizmoSpace space() const { return m_space; }
+    /// get the space type
+    INLINE GizmoSpace space() const { return m_space; }
 
-        /// get the reference space origin
-        INLINE const AbsolutePosition& origin() const { return m_transform.position();}
+    /// get the reference space origin
+    INLINE const AbsolutePosition& origin() const { return m_transform.position();}
 
-        /// get the reference transform
-        INLINE const AbsoluteTransform& absoluteTransform() const { return m_transform; }
+    /// get the reference transform
+    INLINE const AbsoluteTransform& absoluteTransform() const { return m_transform; }
 
-        /// get transform axis
-        INLINE const Vector3& axis(uint32_t index) const { ASSERT(index<3); return m_axes[index]; }
+    /// get transform axis
+    INLINE const Vector3& axis(uint32_t index) const { ASSERT(index<3); return m_axes[index]; }
 
-        //---
+    //---
 
-        /// compute a absolute space location for given position in the reference frame
-        AbsolutePosition calcAbsolutePositionForLocal(const Vector3& localPosition) const;
+    /// compute a absolute space location for given position in the reference frame
+    AbsolutePosition calcAbsolutePositionForLocal(const Vector3& localPosition) const;
 
-        /// apply transform in this gizmo space
-        AbsoluteTransform transform(const AbsoluteTransform& original, const Transform& transform) const;
+    /// apply transform in this gizmo space
+    AbsoluteTransform transform(const AbsoluteTransform& original, const Transform& transform) const;
 
-        //---
+    //---
 
-    private:
-        /// reference root position for the space (origin)
-        AbsoluteTransform m_transform;
+private:
+    /// reference root position for the space (origin)
+    AbsoluteTransform m_transform;
 
-        /// axes (X,Y,Z)
-        Vector3 m_axes[3];
+    /// axes (X,Y,Z)
+    Vector3 m_axes[3];
 
-        /// type of reference space
-        GizmoSpace m_space;
+    /// type of reference space
+    GizmoSpace m_space;
 
-        //--
+    //--
 
-        void cacheAxes();
-    };
+    void cacheAxes();
+};
 
-} // ed
+END_BOOMER_NAMESPACE(ed)

@@ -12,33 +12,26 @@
 
 #include "rendering/api_common/include/apiGraphicsPipeline.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
+
+///--
+
+class GraphicsPipeline : public IBaseGraphicsPipeline
 {
-    namespace api
-    {
-		namespace nul
-		{
-			///--
+public:
+	GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates);
+	virtual ~GraphicsPipeline();
 
-			class GraphicsPipeline : public IBaseGraphicsPipeline
-			{
-			public:
-				GraphicsPipeline(Thread* owner, const Shaders* shaders, const GraphicsRenderStatesSetup& mergedRenderStates);
-				virtual ~GraphicsPipeline();
+	//--
 
-				//--
+	INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
+	INLINE const Shaders* shaders() const { return static_cast<const Shaders*>(IBaseGraphicsPipeline::shaders()); }
 
-				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
-				INLINE const Shaders* shaders() const { return static_cast<const Shaders*>(IBaseGraphicsPipeline::shaders()); }
+	//--				
 
-				//--				
+private:
+};
 
-			private:
-			};
+//--
 
-			//--
-
-		} // nul
-    } // api
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::api::nul)

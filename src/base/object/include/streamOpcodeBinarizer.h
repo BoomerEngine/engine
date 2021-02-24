@@ -13,64 +13,60 @@
 #include "streamOpcodes.h"
 #include "streamOpcodeWriter.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::stream)
+
+//--
+
+/// mapped tables for writing
+struct BASE_OBJECT_API OpcodeMappedReferences : public NoCopy
 {
-    namespace stream
-    {
+    OpcodeMappedReferences();
 
-        //--
+    HashMap<StringID, uint32_t> mappedNames;
+    HashMap<Type, uint32_t> mappedTypes;
+    HashMap<const IObject*, uint32_t> mappedPointers;
+    HashMap<const rtti::Property*, uint32_t> mappedProperties;
+    HashMap<OpcodeWriterResourceReference, uint32_t> mappedResources;
+};
 
-        /// mapped tables for writing
-        struct BASE_OBJECT_API OpcodeMappedReferences : public NoCopy
-        {
-            OpcodeMappedReferences();
+//--
 
-            HashMap<StringID, uint32_t> mappedNames;
-            HashMap<Type, uint32_t> mappedTypes;
-            HashMap<const IObject*, uint32_t> mappedPointers;
-            HashMap<const rtti::Property*, uint32_t> mappedProperties;
-            HashMap<OpcodeWriterResourceReference, uint32_t> mappedResources;
-        };
+// binary data writer for the token stream, provides basic buffering and translation
+class BASE_OBJECT_API OpcodeFileWriter : public NoCopy
+{
+public:
+    OpcodeFileWriter(io::IWriteFileHandle* outputFile);
+    ~OpcodeFileWriter();
 
-        //--
+    //--
 
-        // binary data writer for the token stream, provides basic buffering and translation
-        class BASE_OBJECT_API OpcodeFileWriter : public NoCopy
-        {
-        public:
-            OpcodeFileWriter(io::IWriteFileHandle* outputFile);
-            ~OpcodeFileWriter();
+    // get CRC of written data
+    INLINE uint32_t crc() const { return m_crc.crc(); }
 
-            //--
+    //--
 
-            // get CRC of written data
-            INLINE uint32_t crc() const { return m_crc.crc(); }
+    // flush internal buffer
+    void flush();
 
-            //--
+    // write given amount of data to file
+    void writeToFile(const void* data, uint64_t size);
 
-            // flush internal buffer
-            void flush();
+private:
+    static const uint32_t BUFFER_SIZE = 4096;
 
-            // write given amount of data to file
-            void writeToFile(const void* data, uint64_t size);
+    io::IWriteFileHandle* m_outputFile;
 
-        private:
-            static const uint32_t BUFFER_SIZE = 4096;
+    uint8_t m_cacheBuffer[BUFFER_SIZE];
+    uint32_t m_cacheBufferSize = 0;
 
-            io::IWriteFileHandle* m_outputFile;
+    CRC32 m_crc;
+};
 
-            uint8_t m_cacheBuffer[BUFFER_SIZE];
-            uint32_t m_cacheBufferSize = 0;
+//--
 
-            CRC32 m_crc;
-        };
-
-        //--
-
-        // write opcode stream to file
-        extern void BASE_OBJECT_API WriteOpcodes(bool protectedStream, const OpcodeStream& stream, const OpcodeMappedReferences& mappedReferences, OpcodeFileWriter& writer);
+// write opcode stream to file
+extern void BASE_OBJECT_API WriteOpcodes(bool protectedStream, const OpcodeStream& stream, const OpcodeMappedReferences& mappedReferences, OpcodeFileWriter& writer);
             
-        //--
+//--
 
-    } // stream
-} // base
+END_BOOMER_NAMESPACE(base::stream)

@@ -9,24 +9,17 @@
 #include "build.h"
 #include "dx11DescriptorLayout.h"
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace dx11
-		{
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
 
-			//--
+//--
 
-			DescriptorBindingLayout::DescriptorBindingLayout(Thread* owner, const base::Array<ShaderDescriptorMetadata>& descriptors)
-				: IBaseDescriptorBindingLayout(descriptors)
-			{}
+DescriptorBindingLayout::DescriptorBindingLayout(Thread* owner, const base::Array<ShaderDescriptorMetadata>& descriptors)
+	: IBaseDescriptorBindingLayout(descriptors)
+{}
 
-			DescriptorBindingLayout::~DescriptorBindingLayout()
-			{}
+DescriptorBindingLayout::~DescriptorBindingLayout()
+{}
 
-			//--
+//--
 
-		} // dx11
-    } // gl4
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::dx11)

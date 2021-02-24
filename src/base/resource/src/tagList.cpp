@@ -17,180 +17,180 @@
 #include "base/object/include/streamOpcodeWriter.h"
 #include "base/object/include/streamOpcodeReader.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+RTTI_BEGIN_CUSTOM_TYPE(TagList);
+    RTTI_TYPE_TRAIT().zeroInitializationValid();
+    RTTI_BIND_NATIVE_BINARY_SERIALIZATION(TagList);
+    //RTTI_BIND_NATIVE_PRINT(TagList);
+RTTI_END_TYPE();
+
+TagList GEmptyTagList;
+
+const TagList& TagList::EMPTY()
 {
-    RTTI_BEGIN_CUSTOM_TYPE(TagList);
-        RTTI_TYPE_TRAIT().zeroInitializationValid();
-        RTTI_BIND_NATIVE_BINARY_SERIALIZATION(TagList);
-        //RTTI_BIND_NATIVE_PRINT(TagList);
-    RTTI_END_TYPE();
+    return GEmptyTagList;
+}
 
-    TagList GEmptyTagList;
+TagList TagList::Merge(const TagList& a, const TagList& b)
+{
+    if (a.empty())
+        return b;
+    else if (b.empty())
+        return a;
 
-    const TagList& TagList::EMPTY()
+    TagList ret(a);
+
+    // TODO: since both lists are sorted arrays this can be optimized
+
+    bool tagsAdded = false;
+    for (auto& tag : b.m_tags)
     {
-        return GEmptyTagList;
-    }
-
-    TagList TagList::Merge(const TagList& a, const TagList& b)
-    {
-        if (a.empty())
-            return b;
-        else if (b.empty())
-            return a;
-
-        TagList ret(a);
-
-        // TODO: since both lists are sorted arrays this can be optimized
-
-        bool tagsAdded = false;
-        for (auto& tag : b.m_tags)
+        if (!ret.m_tags.contains(tag))
         {
-            if (!ret.m_tags.contains(tag))
-            {
-                ret.m_tags.pushBack(tag);
-                tagsAdded = true;
-            }
+            ret.m_tags.pushBack(tag);
+            tagsAdded = true;
         }
+    }
         
-        if (tagsAdded)
-            ret.refreshHash();
+    if (tagsAdded)
+        ret.refreshHash();
 
-        return ret;
-    }
+    return ret;
+}
 
-    TagList TagList::Difference(const TagList& a, const TagList& b)
-    {
-        // if the set to subtract is empty than we end up with the A set
-        if (b.empty())
-            return a;
+TagList TagList::Difference(const TagList& a, const TagList& b)
+{
+    // if the set to subtract is empty than we end up with the A set
+    if (b.empty())
+        return a;
 
-        // if the input set is empty than the result will also be
-        if (a.empty())
-            return EMPTY();
+    // if the input set is empty than the result will also be
+    if (a.empty())
+        return EMPTY();
 
-        // subtracting a set from itself yields empty set
-        if (a.m_hash == b.m_hash)
-            return EMPTY();
+    // subtracting a set from itself yields empty set
+    if (a.m_hash == b.m_hash)
+        return EMPTY();
 
-        TagList ret(a);
+    TagList ret(a);
 
-        // TODO: since both lists are sorted arrays this can be optimized
+    // TODO: since both lists are sorted arrays this can be optimized
 
-        bool tagsRemoved = false;
-        for (auto& tag : b.m_tags)
-            tagsRemoved = ret.m_tags.remove(tag);
+    bool tagsRemoved = false;
+    for (auto& tag : b.m_tags)
+        tagsRemoved = ret.m_tags.remove(tag);
 
-        if (tagsRemoved)
-            ret.refreshHash();
+    if (tagsRemoved)
+        ret.refreshHash();
 
-        return ret;
-    }
+    return ret;
+}
 
-    TagList TagList::Intersect(const TagList& a, const TagList& b)
-    {
-        // if any of the set is empty the result is empty
-        if (a.empty() || b.empty())
-            return EMPTY();
+TagList TagList::Intersect(const TagList& a, const TagList& b)
+{
+    // if any of the set is empty the result is empty
+    if (a.empty() || b.empty())
+        return EMPTY();
 
-        // if the sets are the same the result if the same 
-        if (a.m_hash == b.m_hash)
-            return a;
+    // if the sets are the same the result if the same 
+    if (a.m_hash == b.m_hash)
+        return a;
 
-		InplaceArray<Tag, 10> temp;
+	InplaceArray<Tag, 10> temp;
 
-        for (auto& tag : a.m_tags)
-            if (b.contains(tag))
-				temp.pushBack(tag);
+    for (auto& tag : a.m_tags)
+        if (b.contains(tag))
+			temp.pushBack(tag);
 
-        return TagList(temp);
-    }
+    return TagList(temp);
+}
 
-    bool TagList::containsAny(const TagList& other) const
-    {
-        if (other.empty())
-            return true;
-
-        for (auto& tag : other.m_tags)
-            if (contains(tag))
-                return true;
-
-        return false;
-    }
-
-    bool TagList::containsAll(const TagList& other) const
-    {
-        if (other.empty())
-            return true;
-
-        for (auto& tag : other.m_tags)
-            if (!contains(tag))
-                return false;
-
+bool TagList::containsAny(const TagList& other) const
+{
+    if (other.empty())
         return true;
-    }
 
-    bool TagList::containsNone(const TagList& other) const
-    {
-        if (other.empty())
+    for (auto& tag : other.m_tags)
+        if (contains(tag))
             return true;
 
-        for (auto& tag : other.m_tags)
-            if (contains(tag))
-                return false;
+    return false;
+}
 
+bool TagList::containsAll(const TagList& other) const
+{
+    if (other.empty())
         return true;
-    }
 
-    void TagList::writeBinary(stream::OpcodeWriter& stream) const
+    for (auto& tag : other.m_tags)
+        if (!contains(tag))
+            return false;
+
+    return true;
+}
+
+bool TagList::containsNone(const TagList& other) const
+{
+    if (other.empty())
+        return true;
+
+    for (auto& tag : other.m_tags)
+        if (contains(tag))
+            return false;
+
+    return true;
+}
+
+void TagList::writeBinary(stream::OpcodeWriter& stream) const
+{
+    stream.beginArray(m_tags.size());
+    for (auto& tag : m_tags)
+        stream.writeStringID(tag);
+    stream.endArray();
+}
+
+void TagList::readBinary(stream::OpcodeReader& stream)
+{
+    uint32_t count = 0;
+    stream.enterArray(count);
+
+    m_tags.reset();
+    m_tags.reserve(count);
+
+    for (uint32_t i=0; i<count; ++i)
     {
-        stream.beginArray(m_tags.size());
-        for (auto& tag : m_tags)
-            stream.writeStringID(tag);
-        stream.endArray();
+        if (auto tag = stream.readStringID())
+    		m_tags.pushBack(tag);
     }
 
-    void TagList::readBinary(stream::OpcodeReader& stream)
-    {
-        uint32_t count = 0;
-        stream.enterArray(count);
+    refreshHash();
+}
 
-        m_tags.reset();
-        m_tags.reserve(count);
+void TagList::refreshHash()
+{
+    m_hash = 0;
 
-        for (uint32_t i=0; i<count; ++i)
-        {
-            if (auto tag = stream.readStringID())
-    			m_tags.pushBack(tag);
-        }
+    base::CRC64 crc;
+    calcHash(crc);
 
-        refreshHash();
-    }
+    m_hash = crc.crc();
+}
 
-    void TagList::refreshHash()
-    {
-        m_hash = 0;
+void TagList::calcHash(CRC64& crc) const
+{
+    for (auto& tag : m_tags)
+        crc << tag;
+}
 
-        base::CRC64 crc;
-        calcHash(crc);
+bool TagList::operator==(const TagList& other) const
+{
+    return m_hash == other.m_hash;
+}
 
-        m_hash = crc.crc();
-    }
+bool TagList::operator!=(const TagList& other) const
+{
+    return m_hash != other.m_hash;
+}
 
-    void TagList::calcHash(CRC64& crc) const
-    {
-        for (auto& tag : m_tags)
-            crc << tag;
-    }
-
-    bool TagList::operator==(const TagList& other) const
-    {
-        return m_hash == other.m_hash;
-    }
-
-    bool TagList::operator!=(const TagList& other) const
-    {
-        return m_hash != other.m_hash;
-    }
-
-} // base
+END_BOOMER_NAMESPACE(base)

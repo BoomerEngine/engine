@@ -10,46 +10,44 @@
 
 #include "base/containers/include/hashMap.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+namespace prv
 {
-    namespace res
+    /// helper class to map resource extension to a engine class
+    class ResourceClassLookup : public ISingleton
     {
-        namespace prv
-        {
-            /// helper class to map resource extension to a engine class
-            class ResourceClassLookup : public ISingleton
-            {
-                DECLARE_SINGLETON(ResourceClassLookup);
+        DECLARE_SINGLETON(ResourceClassLookup);
 
-            public:
-                ResourceClassLookup();
+    public:
+        ResourceClassLookup();
 
-                /// find an engine class that matches given class hash
-                SpecificClassType<IResource> resolveResourceClassHash(ResourceClassHash classHash) const;
+        /// find an engine class that matches given class hash
+        SpecificClassType<IResource> resolveResourceClassHash(ResourceClassHash classHash) const;
 
-                /// find an engine class that matches given extension
-                SpecificClassType<IResource> resolveResourceExtension(StringView extension) const;
+        /// find an engine class that matches given extension
+        SpecificClassType<IResource> resolveResourceExtension(StringView extension) const;
 
-                /// find an engine class that matches given short name (ie. Texture, Mesh) used to decode paths
-                SpecificClassType<IResource> resolveResourceShortName(StringView shortName) const;
+        /// find an engine class that matches given short name (ie. Texture, Mesh) used to decode paths
+        SpecificClassType<IResource> resolveResourceShortName(StringView shortName) const;
 
-                //---
+        //---
 
-            private:
-                void buildClassMap();
+    private:
+        void buildClassMap();
 
-                typedef HashMap< ResourceClassHash, SpecificClassType<IResource> > TResourceClassesByHash;
-                TResourceClassesByHash m_classesByHash; // only classes that have unique extension->rtti::ClassType mapping
+        typedef HashMap< ResourceClassHash, SpecificClassType<IResource> > TResourceClassesByHash;
+        TResourceClassesByHash m_classesByHash; // only classes that have unique extension->rtti::ClassType mapping
 
-                typedef HashMap< uint64_t, SpecificClassType<IResource> > TResourceClassesByExtension;
-                TResourceClassesByExtension m_classesByExtension;
+        typedef HashMap< uint64_t, SpecificClassType<IResource> > TResourceClassesByExtension;
+        TResourceClassesByExtension m_classesByExtension;
 
-                typedef HashMap< uint64_t, SpecificClassType<IResource> > TResourceClassesByShortName;
-                TResourceClassesByShortName m_classesByShortName;
+        typedef HashMap< uint64_t, SpecificClassType<IResource> > TResourceClassesByShortName;
+        TResourceClassesByShortName m_classesByShortName;
 
-                virtual void deinit() override;
-            };
+        virtual void deinit() override;
+    };
 
-        } // prv
-    } // res
-} // base
+} // prv
+
+END_BOOMER_NAMESPACE(base::res)

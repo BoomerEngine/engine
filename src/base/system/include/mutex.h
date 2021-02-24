@@ -10,30 +10,30 @@
 
 #include "algorithms.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//-----------------------------------------------------------------------------
+
+/// Critical section
+class BASE_SYSTEM_API Mutex : public base::NoCopy
 {
-    //-----------------------------------------------------------------------------
+public:
+    Mutex();
+    ~Mutex();
 
-    /// Critical section
-    class BASE_SYSTEM_API Mutex : public base::NoCopy
-    {
-    public:
-        Mutex();
-        ~Mutex();
+    //! Lock section
+    void acquire();
 
-        //! Lock section
-        void acquire();
+    //! Releases the lock on the critical section
+    void release();
 
-        //! Releases the lock on the critical section
-        void release();
+    //! Set spin count for critical section
+    void spinCount(uint32_t spinCount);
 
-        //! Set spin count for critical section
-        void spinCount(uint32_t spinCount);
+private:
+    uint8_t   m_data[64];
+};
 
-    private:
-        uint8_t   m_data[64];
-    };
+//-----------------------------------------------------------------------------
 
-    //-----------------------------------------------------------------------------
-
-} // base
+END_BOOMER_NAMESPACE(base)

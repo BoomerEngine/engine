@@ -9,34 +9,34 @@
 #include "build.h"
 #include "renderingMaterialGraphBlock.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+///---
+
+class MaterialGraphBlock_MathStep : public MaterialGraphBlock
 {
-    ///---
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_MathStep, MaterialGraphBlock);
 
-    class MaterialGraphBlock_MathStep : public MaterialGraphBlock
+public:
+    virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_MathStep, MaterialGraphBlock);
+        builder.socket("Out"_id, MaterialOutputSocket().hideCaption());
+        builder.socket("X"_id, MaterialInputSocket().hideCaption());
+    }
 
-    public:
-        virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
-        {
-            builder.socket("Out"_id, MaterialOutputSocket().hideCaption());
-            builder.socket("X"_id, MaterialInputSocket().hideCaption());
-        }
+    virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
+    {
+        CodeChunk a = compiler.evalInput(this, "X"_id, 0.0f);
+        return CodeChunkOp::Step(a);
+    }
+};
 
-        virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
-        {
-            CodeChunk a = compiler.evalInput(this, "X"_id, 0.0f);
-            return CodeChunkOp::Step(a);
-        }
-    };
+RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_MathStep);
+    RTTI_METADATA(base::graph::BlockInfoMetadata).title("step(x)").group("Math");
+    RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialMath");
+    RTTI_METADATA(base::graph::BlockShapeMetadata).slanted();
+RTTI_END_TYPE();
 
-    RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_MathStep);
-        RTTI_METADATA(base::graph::BlockInfoMetadata).title("step(x)").group("Math");
-        RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialMath");
-        RTTI_METADATA(base::graph::BlockShapeMetadata).slanted();
-    RTTI_END_TYPE();
+///---
 
-    ///---
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

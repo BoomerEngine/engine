@@ -11,30 +11,26 @@
 #include "scriptPortableData.h"
 #include "base/resource/include/resourceTags.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+//---
+
+RTTI_BEGIN_TYPE_CLASS(CompiledProject);
+    RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4scripts");
+    RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Compiled Script Project");
+    RTTI_PROPERTY(m_data);
+RTTI_END_TYPE();
+
+CompiledProject::CompiledProject()
+{}
+
+CompiledProject::CompiledProject(const RefPtr<PortableData>& data)
+    : m_data(data)
 {
-    namespace script
-    {
+    if (m_data)
+        m_data->parent(this);
+}
 
-        //---
+//---
 
-        RTTI_BEGIN_TYPE_CLASS(CompiledProject);
-            RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4scripts");
-            RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Compiled Script Project");
-            RTTI_PROPERTY(m_data);
-        RTTI_END_TYPE();
-
-        CompiledProject::CompiledProject()
-        {}
-
-        CompiledProject::CompiledProject(const RefPtr<PortableData>& data)
-            : m_data(data)
-        {
-            if (m_data)
-                m_data->parent(this);
-        }
-
-        //---
-
-    } // script
-} // base
+END_BOOMER_NAMESPACE(base::script)

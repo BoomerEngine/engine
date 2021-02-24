@@ -14,65 +14,65 @@
 #include "base/resource/include/resourceFactory.h"
 #include "base/resource/include/resourceTags.h"
 
-namespace game
+BEGIN_BOOMER_NAMESPACE(game)
+
+///---
+
+// factory class for the scene world
+class InputDefinitionsFactory : public base::res::IFactory
 {
-    ///---
+    RTTI_DECLARE_VIRTUAL_CLASS(InputDefinitionsFactory, base::res::IFactory);
 
-    // factory class for the scene world
-    class InputDefinitionsFactory : public base::res::IFactory
+public:
+    virtual base::res::ResourceHandle createResource() const override final
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(InputDefinitionsFactory, base::res::IFactory);
+        return base::RefNew<InputDefinitions>();
+    }
+};
 
-    public:
-        virtual base::res::ResourceHandle createResource() const override final
+RTTI_BEGIN_TYPE_CLASS(InputDefinitionsFactory);
+    RTTI_METADATA(base::res::FactoryClassMetadata).bindResourceClass<InputDefinitions>();
+RTTI_END_TYPE();
+
+///--
+
+RTTI_BEGIN_TYPE_CLASS(InputDefinitions);
+    RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4input");
+    RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Input Definitions");
+    RTTI_PROPERTY(m_root);
+RTTI_END_TYPE();
+
+InputDefinitions::InputDefinitions()
+{}
+
+static InputActionTablePtr FindChildren(const InputActionTable* table, base::StringView name)
+{
+    for (const auto& child : table->children())
+        if (child->name() == name)
+            return child;
+
+    return nullptr;
+}
+
+InputActionTablePtr InputDefinitions::findTable(base::StringView name) const
+{
+    auto table = m_root;
+    if (table)
+    {
+        base::InplaceArray<base::StringView, 5> nameParts;
+        name.slice(".", false, nameParts);
+
+        for (const auto& partName : nameParts)
         {
-            return base::RefNew<InputDefinitions>();
+            table = FindChildren(table, partName);
+            if (!table)
+                break;
         }
-    };
-
-    RTTI_BEGIN_TYPE_CLASS(InputDefinitionsFactory);
-        RTTI_METADATA(base::res::FactoryClassMetadata).bindResourceClass<InputDefinitions>();
-    RTTI_END_TYPE();
-
-    ///--
-
-	RTTI_BEGIN_TYPE_CLASS(InputDefinitions);
-        RTTI_METADATA(base::res::ResourceExtensionMetadata).extension("v4input");
-        RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("Input Definitions");
-        RTTI_PROPERTY(m_root);
-    RTTI_END_TYPE();
-
-    InputDefinitions::InputDefinitions()
-    {}
-
-    static InputActionTablePtr FindChildren(const InputActionTable* table, base::StringView name)
-    {
-        for (const auto& child : table->children())
-            if (child->name() == name)
-                return child;
-
-        return nullptr;
     }
 
-    InputActionTablePtr InputDefinitions::findTable(base::StringView name) const
-    {
-        auto table = m_root;
-        if (table)
-        {
-            base::InplaceArray<base::StringView, 5> nameParts;
-            name.slice(".", false, nameParts);
+    return table;
+}
 
-            for (const auto& partName : nameParts)
-            {
-                table = FindChildren(table, partName);
-                if (!table)
-                    break;
-            }
-        }
-
-        return table;
-    }
-
-    //---
+//---
     
-} // game
+END_BOOMER_NAMESPACE(game)

@@ -14,98 +14,84 @@
 
 DECLARE_TEST_FILE(TcpMessageTest);
 
-using namespace base;
-using namespace base::net;
-
-namespace test
-{
-
-    //--
-
-    struct HelloWorldMessage
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(HelloWorldMessage);
-
-    public:
-        StringBuf m_text;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(HelloWorldMessage);
-        RTTI_PROPERTY(m_text).metadata<replication::SetupMetadata>("maxLength:20");
-    RTTI_END_TYPE();
-
-    //--
-
-    struct AnswerToTheBigQuestionMessage
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(AnswerToTheBigQuestionMessage);
-
-    public:
-        uint32_t m_answer;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(AnswerToTheBigQuestionMessage);
-        RTTI_PROPERTY(m_answer).metadata<replication::SetupMetadata>("u:10");
-    RTTI_END_TYPE();
-
-    //--
-
-}
+BEGIN_BOOMER_NAMESPACE(base::net::test)
 
 //--
 
-namespace test
+struct HelloWorldMessage
 {
-    //--
+    RTTI_DECLARE_NONVIRTUAL_CLASS(HelloWorldMessage);
 
-    class HelloReply : public IObject
+public:
+    StringBuf m_text;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(HelloWorldMessage);
+    RTTI_PROPERTY(m_text).metadata<replication::SetupMetadata>("maxLength:20");
+RTTI_END_TYPE();
+
+//--
+
+struct AnswerToTheBigQuestionMessage
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(AnswerToTheBigQuestionMessage);
+
+public:
+    uint32_t m_answer;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(AnswerToTheBigQuestionMessage);
+    RTTI_PROPERTY(m_answer).metadata<replication::SetupMetadata>("u:10");
+RTTI_END_TYPE();
+
+//--
+
+class HelloReply : public IObject
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(HelloReply, IObject);
+
+public:
+    void messageHello(const HelloWorldMessage& msg, const net::MessageConnectionPtr& con)
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(HelloReply, IObject);
+        TRACE_INFO("Hello received: '{}'", msg.m_text);
+        m_text = msg.m_text;
+        m_helloReceived = true;
 
-    public:
-        void messageHello(const HelloWorldMessage& msg, const net::MessageConnectionPtr& con)
-        {
-            TRACE_INFO("Hello received: '{}'", msg.m_text);
-            m_text = msg.m_text;
-            m_helloReceived = true;
+        AnswerToTheBigQuestionMessage response;
+        response.m_answer = 42;
+        con->send(response);
+    }
 
-            AnswerToTheBigQuestionMessage response;
-            response.m_answer = 42;
-            con->send(response);
-        }
+    bool m_helloReceived = false;
+    StringBuf m_text;
+};
 
-        bool m_helloReceived = false;
-        StringBuf m_text;
-    };
+RTTI_BEGIN_TYPE_CLASS(HelloReply);
+    RTTI_FUNCTION("messageHello", messageHello);
+RTTI_END_TYPE();
 
-    RTTI_BEGIN_TYPE_CLASS(HelloReply);
-        RTTI_FUNCTION("messageHello", messageHello);
-    RTTI_END_TYPE();
+//--
 
-    //--
+class AnswerCapture : public IObject
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(AnswerCapture, IObject);
 
-    class AnswerCapture : public IObject
+public:
+    void messageAnswer(const AnswerToTheBigQuestionMessage& msg)
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(AnswerCapture, IObject);
+        m_answerReceived = true;
+        m_answer = msg.m_answer;
+    }
 
-    public:
-        void messageAnswer(const AnswerToTheBigQuestionMessage& msg)
-        {
-            m_answerReceived = true;
-            m_answer = msg.m_answer;
-        }
+    bool m_answerReceived = false;
+    uint32_t m_answer = 0;
+};
 
-        bool m_answerReceived = false;
-        uint32_t m_answer = 0;
-    };
+RTTI_BEGIN_TYPE_CLASS(AnswerCapture);
+    RTTI_FUNCTION("messageAnswer", messageAnswer);
+RTTI_END_TYPE();
 
-    RTTI_BEGIN_TYPE_CLASS(AnswerCapture);
-        RTTI_FUNCTION("messageAnswer", messageAnswer);
-    RTTI_END_TYPE();
-
-    //--
-
-} // test
+//--
 
 TEST(TcpMessage,ClientServerPassing)
 {
@@ -134,7 +120,7 @@ TEST(TcpMessage,ClientServerPassing)
 
     // send message to server
     {
-        test::HelloWorldMessage hello;
+        HelloWorldMessage hello;
         hello.m_text = "Hello, network!";
         client->send(hello);
     }
@@ -154,7 +140,7 @@ TEST(TcpMessage,ClientServerPassing)
 
     // dispatch the message to the object, it should be parsed correctly
     {
-        auto serverObject = RefNew<test::HelloReply>();
+        auto serverObject = RefNew<HelloReply>();
         ASSERT_TRUE(receivedMessage->dispatch(serverObject, connectionOnServerSide));
         ASSERT_TRUE(serverObject->m_helloReceived);
         ASSERT_STREQ("Hello, network!", serverObject->m_text.c_str());
@@ -175,7 +161,7 @@ TEST(TcpMessage,ClientServerPassing)
 
     // dispatch answer
     {
-        auto clientObject = RefNew<test::AnswerCapture>();
+        auto clientObject = RefNew<AnswerCapture>();
         ASSERT_TRUE(receivedMessage->dispatch(clientObject));
         ASSERT_TRUE(clientObject->m_answerReceived);
         ASSERT_EQ(42, clientObject->m_answer);
@@ -204,3 +190,5 @@ TEST(TcpMessage,ClientServerPassing)
     // destroy server object now
     server.reset();
 }
+
+END_BOOMER_NAMESPACE(base::net::test)

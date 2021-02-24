@@ -8,35 +8,31 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::mem)
+
+//---
+
+/// a simple pool for structures
+template<typename T>
+INLINE StructurePool<T>::StructurePool(PoolTag pool, uint32_t elementsPerPage)
+	: StructurePoolBase(pool, sizeof(T), alignof(T), elementsPerPage)
+{}
+
+template<typename T>
+template<typename... Args >
+INLINE T* StructurePool<T>::create(Args&& ... args)
 {
-    namespace mem
-    {
+	void* mem = StructurePoolBase::alloc();
+	return new (mem) T(std::forward< Args >(args)...);
+}
 
-		//---
+template<typename T>
+INLINE void StructurePool<T>::free(T* ptr)
+{
+	((T*)ptr)->~T();
+	StructurePoolBase::free(ptr);
+}
 
-		/// a simple pool for structures
-		template<typename T>
-		INLINE StructurePool<T>::StructurePool(PoolTag pool, uint32_t elementsPerPage)
-			: StructurePoolBase(pool, sizeof(T), alignof(T), elementsPerPage)
-		{}
+//---
 
-		template<typename T>
-		template<typename... Args >
-		INLINE T* StructurePool<T>::create(Args&& ... args)
-		{
-			void* mem = StructurePoolBase::alloc();
-			return new (mem) T(std::forward< Args >(args)...);
-		}
-
-		template<typename T>
-		INLINE void StructurePool<T>::free(T* ptr)
-		{
-			((T*)ptr)->~T();
-			StructurePoolBase::free(ptr);
-		}
-
-		//---
-
-	} // mem
-} // base
+END_BOOMER_NAMESPACE(base::mem)

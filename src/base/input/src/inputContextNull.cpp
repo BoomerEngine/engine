@@ -9,30 +9,26 @@
 #include "build.h"
 #include "inputContextNull.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::input)
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(ContextNull);
+RTTI_END_TYPE();
+
+ContextNull::ContextNull(uint64_t nativeWindow, uint64_t nativeDisplay)
 {
-    namespace input
-    {
+}
 
-        //--
+void ContextNull::processState()
+{}
 
-        RTTI_BEGIN_TYPE_NATIVE_CLASS(ContextNull);
-        RTTI_END_TYPE();
+void ContextNull::resetInput()
+{}
 
-        ContextNull::ContextNull(uint64_t nativeWindow, uint64_t nativeDisplay)
-        {
-        }
+void ContextNull::processMessage(const void* msg)
+{}
 
-        void ContextNull::processState()
-        {}
+//--
 
-        void ContextNull::resetInput()
-        {}
-
-        void ContextNull::processMessage(const void* msg)
-        {}
-
-        //--
-
-    } // input
-} // base
+END_BOOMER_NAMESPACE(base::input)

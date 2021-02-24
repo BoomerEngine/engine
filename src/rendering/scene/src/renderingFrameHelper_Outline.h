@@ -8,45 +8,42 @@
 
 #pragma once
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
+
+///---
+
+class RENDERING_SCENE_API FrameHelperOutline : public base::NoCopy
 {
-    namespace scene
-    {
-		///---
+public:
+	FrameHelperOutline(IDevice* api); // initialized to the max resolution of the device
+	~FrameHelperOutline();
 
-		class RENDERING_SCENE_API FrameHelperOutline : public base::NoCopy
-		{
-		public:
-			FrameHelperOutline(IDevice* api); // initialized to the max resolution of the device
-			~FrameHelperOutline();
+	struct Setup
+	{
+		uint32_t sceneWidth = 0;
+        uint32_t sceneHeight = 0;
+		ImageSampledView* sceneDepth = nullptr;
+		ImageSampledView* outlineDepth = nullptr;
 
-			struct Setup
-			{
-				uint32_t sceneWidth = 0;
-                uint32_t sceneHeight = 0;
-				ImageSampledView* sceneDepth = nullptr;
-				ImageSampledView* outlineDepth = nullptr;
+		base::Rect presentRect; // in target viewport that we assume is bound
 
-				base::Rect presentRect; // in target viewport that we assume is bound
+		float width = 4.0f;
+		float innerOpacity = 0.2f;
+		base::Color primaryColor = base::Color::YELLOW;
+		base::Color backgroundColor = base::Color::BLUE;
+	};
 
-				float width = 4.0f;
-				float innerOpacity = 0.2f;
-				base::Color primaryColor = base::Color::YELLOW;
-				base::Color backgroundColor = base::Color::BLUE;
-			};
+	// NOTE: requires active pass
+	void drawOutlineEffect(GPUCommandWriter& cmd, const Setup& setup) const;
 
-			// NOTE: requires active pass
-			void drawOutlineEffect(command::CommandWriter& cmd, const Setup& setup) const;
+private:
+    GraphicsPipelineObjectPtr m_outlineShaderPSO;
 
-		private:
-            GraphicsPipelineObjectPtr m_outlineShaderPSO;
+	//--
 
-			//--
-
-			IDevice* m_device = nullptr;
-		};		
+	IDevice* m_device = nullptr;
+};		
 	
-        ///---
+///---
 
-    } // scene
-} // rendering
+END_BOOMER_NAMESPACE(rendering::scene)

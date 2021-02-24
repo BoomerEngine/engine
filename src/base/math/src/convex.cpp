@@ -5104,284 +5104,283 @@ namespace ole2
 
 //--
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//---
+
+RTTI_BEGIN_TYPE_CLASS(Convex);
+    RTTI_PROPERTY(m_data);
+RTTI_END_TYPE();
+
+//---
+
+Convex::Convex()
+{}
+
+static int GetVertexCopy(ole::CHullInternal::Vertex* vertex, std::vector<ole::CHullInternal::Vertex*>& vertices)
 {
-
-    //---
-
-    RTTI_BEGIN_TYPE_CLASS(Convex);
-        RTTI_PROPERTY(m_data);
-    RTTI_END_TYPE();
-
-    //---
-
-    Convex::Convex()
-    {}
-
-    static int GetVertexCopy(ole::CHullInternal::Vertex* vertex, std::vector<ole::CHullInternal::Vertex*>& vertices)
+    auto index = vertex->copy;
+    if (index < 0)
     {
-        auto index = vertex->copy;
-        if (index < 0)
-        {
-            index = (int) vertices.size();
-            vertex->copy = index;
-            vertices.push_back(vertex);
+        index = (int) vertices.size();
+        vertex->copy = index;
+        vertices.push_back(vertex);
 #ifdef DEBUG_CONVEX_HULL
-            printf("Vertex %d gets index *%d\n", vertex->point.index, index);
+        printf("Vertex %d gets index *%d\n", vertex->point.index, index);
 #endif
-        }
-        return index;
+    }
+    return index;
+}
+
+template< typename T >
+static T* AllocPtr(void* base, void*& ptr, uint32_t count=1, uint16_t* outOffset = nullptr)
+{
+    // store offset
+    if (outOffset)
+    {
+        uint32_t offset = (uint32_t)( (const uint8_t*) ptr - (const uint8_t*) base );
+        DEBUG_CHECK(offset <= 65535);
+        *outOffset = range_cast<uint16_t>(offset);
     }
 
-    template< typename T >
-    static T* AllocPtr(void* base, void*& ptr, uint32_t count=1, uint16_t* outOffset = nullptr)
+    // get the write ptr
+    T* writePtr = (T*) ptr;
+
+    // advance
+    ptr = base::OffsetPtr(ptr, count * sizeof(T));
+    return writePtr;
+}
+
+bool Convex::build(const float* points, uint32_t numPoints, uint32_t stride, float shinkBy)
+{
+    base::ScopeTimer timeCounter;
+
+    // doomed to fail
+    if (numPoints < 4)
+        return false;
+
+    ole::CHullInternal hull;
+    hull.compute(points, false, stride, numPoints);
+
+    // Shrink the hull
+    if (shinkBy > 0.0f)
     {
-        // store offset
-        if (outOffset)
+        double limit = 0.5f;
+        if (hull.shrink(shinkBy, limit) < 0.0f)
         {
-            uint32_t offset = (uint32_t)( (const uint8_t*) ptr - (const uint8_t*) base );
-            DEBUG_CHECK(offset <= 65535);
-            *outOffset = range_cast<uint16_t>(offset);
-        }
-
-        // get the write ptr
-        T* writePtr = (T*) ptr;
-
-        // advance
-        ptr = base::OffsetPtr(ptr, count * sizeof(T));
-        return writePtr;
-    }
-
-    bool Convex::build(const float* points, uint32_t numPoints, uint32_t stride, float shinkBy)
-    {
-        base::ScopeTimer timeCounter;
-
-        // doomed to fail
-        if (numPoints < 4)
+            TRACE_WARNING("Shrinking convex hull failed: convex must have been smaller than %f", shinkBy);
             return false;
-
-        ole::CHullInternal hull;
-        hull.compute(points, false, stride, numPoints);
-
-        // Shrink the hull
-        if (shinkBy > 0.0f)
-        {
-            double limit = 0.5f;
-            if (hull.shrink(shinkBy, limit) < 0.0f)
-            {
-                TRACE_WARNING("Shrinking convex hull failed: convex must have been smaller than %f", shinkBy);
-                return false;
-            }
         }
+    }
 
-        std::vector<ole::CHullInternal::Vertex*> oldVertices;
-        GetVertexCopy(hull.vertexList, oldVertices);
+    std::vector<ole::CHullInternal::Vertex*> oldVertices;
+    GetVertexCopy(hull.vertexList, oldVertices);
 
-        Array<Vertex> buildVertices;
-        Array<ConvexEdge> buildEdges;
-        Array<Face> buildFaces;
-        Array<Plane> buildPlanes;
+    Array<Vertex> buildVertices;
+    Array<ConvexEdge> buildEdges;
+    Array<Face> buildFaces;
+    Array<Plane> buildPlanes;
 
-        int copied = 0;
-        while (copied < (int)oldVertices.size())
+    int copied = 0;
+    while (copied < (int)oldVertices.size())
+    {
+        auto v  = oldVertices[copied];
+
+        // extract vertex
+        auto point = hull.coordinates(v);
+        buildVertices.emplaceBack((float)point.x, (float)point.y, (float)point.z);
+
+        // extract edges from vertex
+        auto firstEdge  = v->edges;
+        if (firstEdge)
         {
-            auto v  = oldVertices[copied];
-
-            // extract vertex
-            auto point = hull.coordinates(v);
-            buildVertices.emplaceBack((float)point.x, (float)point.y, (float)point.z);
-
-            // extract edges from vertex
-            auto firstEdge  = v->edges;
-            if (firstEdge)
+            int firstCopy = -1;
+            int prevCopy = -1;
+            auto e  = firstEdge;
+            do
             {
-                int firstCopy = -1;
-                int prevCopy = -1;
-                auto e  = firstEdge;
-                do
+                if (e->copy < 0)
                 {
-                    if (e->copy < 0)
-                    {
-                        auto edgeIndex = buildEdges.size();
-                        buildEdges.emplaceBack(ConvexEdge());
-                        buildEdges.emplaceBack(ConvexEdge());
-                        auto& c = buildEdges[edgeIndex];
-                        auto& r = buildEdges[edgeIndex + 1];
+                    auto edgeIndex = buildEdges.size();
+                    buildEdges.emplaceBack(ConvexEdge());
+                    buildEdges.emplaceBack(ConvexEdge());
+                    auto& c = buildEdges[edgeIndex];
+                    auto& r = buildEdges[edgeIndex + 1];
 
-                        e->copy = edgeIndex;
-                        e->reverse->copy = edgeIndex + 1;
+                    e->copy = edgeIndex;
+                    e->reverse->copy = edgeIndex + 1;
 
-                        c.reverse = 1;
-                        r.reverse = -1;
-                        c.targetVertexIndex = GetVertexCopy(e->target, oldVertices);
-                        r.targetVertexIndex = copied;
+                    c.reverse = 1;
+                    r.reverse = -1;
+                    c.targetVertexIndex = GetVertexCopy(e->target, oldVertices);
+                    r.targetVertexIndex = copied;
 #ifdef DEBUG_CONVEX_HULL
-                        printf("      CREATE: Vertex *%d has edge to *%d\n", copied, c.targetVertex());
+                    printf("      CREATE: Vertex *%d has edge to *%d\n", copied, c.targetVertex());
 #endif
-                    }
-
-                    // link edges
-                    if (prevCopy >= 0)
-                        buildEdges[e->copy].next = prevCopy - e->copy;
-                    else
-                        firstCopy = e->copy;
-
-                    prevCopy = e->copy;
-                    e = e->next;
                 }
-                while (e != firstEdge);
 
-                buildEdges[firstCopy].next = prevCopy - firstCopy;
+                // link edges
+                if (prevCopy >= 0)
+                    buildEdges[e->copy].next = prevCopy - e->copy;
+                else
+                    firstCopy = e->copy;
+
+                prevCopy = e->copy;
+                e = e->next;
             }
-            copied++;
-        }
+            while (e != firstEdge);
 
-        // extract faces
-        for ( int i = 0; i < copied; i++ )
+            buildEdges[firstCopy].next = prevCopy - firstCopy;
+        }
+        copied++;
+    }
+
+    // extract faces
+    for ( int i = 0; i < copied; i++ )
+    {
+        auto v  = oldVertices[i];
+        auto firstEdge  = v->edges;
+        if ( firstEdge )
         {
-            auto v  = oldVertices[i];
-            auto firstEdge  = v->edges;
-            if ( firstEdge )
+            auto e  = firstEdge;
+            do
             {
-                auto e  = firstEdge;
-                do
+                if (e->copy >= 0)
                 {
-                    if (e->copy >= 0)
+#ifdef DEBUG_CONVEX_HULL
+                    printf("Vertex *%d has edge to *%d\n", i, buildEdges[e->copy].targetVertex());
+#endif
+                    buildFaces.pushBack(e->copy);
+                    auto f  = e;
+                    do
                     {
 #ifdef DEBUG_CONVEX_HULL
-                        printf("Vertex *%d has edge to *%d\n", i, buildEdges[e->copy].targetVertex());
+                        printf("   Face *%d\n", buildEdges[f->copy].targetVertex());
 #endif
-                        buildFaces.pushBack(e->copy);
-                        auto f  = e;
-                        do
-                        {
-#ifdef DEBUG_CONVEX_HULL
-                            printf("   Face *%d\n", buildEdges[f->copy].targetVertex());
-#endif
-                            f->copy = -1;
-                            f = f->reverse->prev;
-                        } while (f != e);
-                    }
-                    e = e->next;
-                } while (e != firstEdge);
-            }
+                        f->copy = -1;
+                        f = f->reverse->prev;
+                    } while (f != e);
+                }
+                e = e->next;
+            } while (e != firstEdge);
         }
-
-        // compute plane equations
-        for (auto& firstFaceEdge : buildFaces)
-        {
-            auto edgeA  = &buildEdges[firstFaceEdge];
-            auto& a = buildVertices[edgeA->sourceVertex()];
-
-            auto edgeB  = edgeA->nextEdgeOfFace();
-            auto& b = buildVertices[edgeB->sourceVertex()];
-
-            auto edgeC  = edgeB->nextEdgeOfFace();
-            auto& c = buildVertices[edgeC->sourceVertex()];
-
-            buildPlanes.emplaceBack(a,b,c);
-        }
-
-        // Valid hull exported
-        TRACE_INFO("Computed convex hull from {} points: {} faces, {} edges, {} vertices in {}",
-            numPoints, buildFaces.size(), buildEdges.size(), buildVertices.size(), TimeInterval(timeCounter.timeElapsed()));
-
-        // Not enough data
-        if (buildVertices.size() < 4 || buildFaces.size() < 4)
-            return false;
-
-        // count memory needed
-        uint32_t memoryNeeded = sizeof(Header);
-        memoryNeeded += sizeof(Vertex) * buildVertices.size();
-        memoryNeeded += sizeof(ConvexEdge) * buildEdges.size();
-        memoryNeeded += sizeof(Face) * buildFaces.size();
-        memoryNeeded += sizeof(Plane) * buildPlanes.size();
-
-        // to much data, 64KB of convex hull is enough
-        if (memoryNeeded >= 65536)
-        {
-            TRACE_ERROR("Convex hull is to big ({}), size limit is 64KB", MemSize(memoryNeeded));
-            return false;
-        }
-
-        // allocate memory
-        auto data = Buffer::Create(POOL_CONVEX_HULL, memoryNeeded);
-
-        // setup header
-        void* basePtr = data.data();
-        void* writePtr = basePtr;
-        auto header  = AllocPtr<Header>(basePtr, writePtr);
-
-        // setup planes
-        {
-            header->numPlanes = (uint16_t)buildPlanes.size();
-            auto planes  = AllocPtr<Plane>( basePtr, writePtr, buildPlanes.size(), &header->planeOffset);
-            memcpy(planes, buildPlanes.data(), buildPlanes.dataSize());
-        }
-
-        // setup vertices
-        {
-            header->numVertices = (uint16_t)buildVertices.size();
-            auto vertices  = AllocPtr<Vertex>(basePtr, writePtr, buildVertices.size(), &header->vertexOffset);
-            memcpy(vertices, buildVertices.data(), buildVertices.dataSize());
-        }
-
-        // setup faces
-        {
-            header->numFaces = (uint16_t)buildFaces.size();
-            auto faces  = AllocPtr<Face>(basePtr, writePtr, buildFaces.size(), &header->faceOffset);
-
-            for (uint32_t i=0; i<header->numFaces; ++i)
-                faces[i] = (uint16_t)buildFaces[i];
-        }
-
-        // setup edges
-        {
-            header->numEdges = (uint16_t)buildVertices.size();
-            auto edges  = AllocPtr<ConvexEdge>(basePtr, writePtr, buildEdges.size(), &header->edgeOffset);
-
-            for (uint32_t i=0; i<buildEdges.size(); ++i)
-            {
-                auto& srcEdge = buildEdges[i];
-                edges[i].next = (short)srcEdge.next - (short)i;
-                edges[i].reverse = (short)srcEdge.reverse;
-                edges[i].targetVertexIndex = (short)srcEdge.targetVertexIndex;
-            }
-        }
-
-        // bind data
-        TRACE_INFO("Computed convex hull data size {}", MemSize(memoryNeeded));
-        m_data = std::move(data);
-        return true;
     }
 
-    bool Convex::contains(const Vector3& point) const
+    // compute plane equations
+    for (auto& firstFaceEdge : buildFaces)
     {
-        return PointInPlaneList(planes(), numPlanes(), point);
+        auto edgeA  = &buildEdges[firstFaceEdge];
+        auto& a = buildVertices[edgeA->sourceVertex()];
+
+        auto edgeB  = edgeA->nextEdgeOfFace();
+        auto& b = buildVertices[edgeB->sourceVertex()];
+
+        auto edgeC  = edgeB->nextEdgeOfFace();
+        auto& c = buildVertices[edgeC->sourceVertex()];
+
+        buildPlanes.emplaceBack(a,b,c);
     }
 
-    bool Convex::intersect(const Vector3& origin, const Vector3& direction, float maxLength /*= VERY_LARGE_FLOAT*/, float* outEnterDistFromOrigin /*= nullptr*/, Vector3* outEntryPoint /*= nullptr*/, Vector3* outEntryNormal /*= nullptr*/) const
+    // Valid hull exported
+    TRACE_INFO("Computed convex hull from {} points: {} faces, {} edges, {} vertices in {}",
+        numPoints, buildFaces.size(), buildEdges.size(), buildVertices.size(), TimeInterval(timeCounter.timeElapsed()));
+
+    // Not enough data
+    if (buildVertices.size() < 4 || buildFaces.size() < 4)
+        return false;
+
+    // count memory needed
+    uint32_t memoryNeeded = sizeof(Header);
+    memoryNeeded += sizeof(Vertex) * buildVertices.size();
+    memoryNeeded += sizeof(ConvexEdge) * buildEdges.size();
+    memoryNeeded += sizeof(Face) * buildFaces.size();
+    memoryNeeded += sizeof(Plane) * buildPlanes.size();
+
+    // to much data, 64KB of convex hull is enough
+    if (memoryNeeded >= 65536)
     {
-        return IntersectPlaneList(planes(), numPlanes(), origin, direction, maxLength, outEnterDistFromOrigin, outEntryPoint, outEntryNormal);
+        TRACE_ERROR("Convex hull is to big ({}), size limit is 64KB", MemSize(memoryNeeded));
+        return false;
     }
 
-    float Convex::volume() const
+    // allocate memory
+    auto data = Buffer::Create(POOL_CONVEX_HULL, memoryNeeded);
+
+    // setup header
+    void* basePtr = data.data();
+    void* writePtr = basePtr;
+    auto header  = AllocPtr<Header>(basePtr, writePtr);
+
+    // setup planes
     {
-        return 1.0f; // TODO
+        header->numPlanes = (uint16_t)buildPlanes.size();
+        auto planes  = AllocPtr<Plane>( basePtr, writePtr, buildPlanes.size(), &header->planeOffset);
+        memcpy(planes, buildPlanes.data(), buildPlanes.dataSize());
     }
 
-    Box Convex::bounds() const
+    // setup vertices
     {
-        Box ret;
-
-        auto numVertices = this->numVertices();
-        auto vertex = vertices();
-        for (uint32_t i=0; i<numVertices; ++i)
-            ret.merge(vertex[i]);
-
-        return ret;
+        header->numVertices = (uint16_t)buildVertices.size();
+        auto vertices  = AllocPtr<Vertex>(basePtr, writePtr, buildVertices.size(), &header->vertexOffset);
+        memcpy(vertices, buildVertices.data(), buildVertices.dataSize());
     }
 
-    //---
+    // setup faces
+    {
+        header->numFaces = (uint16_t)buildFaces.size();
+        auto faces  = AllocPtr<Face>(basePtr, writePtr, buildFaces.size(), &header->faceOffset);
 
-} // base
+        for (uint32_t i=0; i<header->numFaces; ++i)
+            faces[i] = (uint16_t)buildFaces[i];
+    }
+
+    // setup edges
+    {
+        header->numEdges = (uint16_t)buildVertices.size();
+        auto edges  = AllocPtr<ConvexEdge>(basePtr, writePtr, buildEdges.size(), &header->edgeOffset);
+
+        for (uint32_t i=0; i<buildEdges.size(); ++i)
+        {
+            auto& srcEdge = buildEdges[i];
+            edges[i].next = (short)srcEdge.next - (short)i;
+            edges[i].reverse = (short)srcEdge.reverse;
+            edges[i].targetVertexIndex = (short)srcEdge.targetVertexIndex;
+        }
+    }
+
+    // bind data
+    TRACE_INFO("Computed convex hull data size {}", MemSize(memoryNeeded));
+    m_data = std::move(data);
+    return true;
+}
+
+bool Convex::contains(const Vector3& point) const
+{
+    return PointInPlaneList(planes(), numPlanes(), point);
+}
+
+bool Convex::intersect(const Vector3& origin, const Vector3& direction, float maxLength /*= VERY_LARGE_FLOAT*/, float* outEnterDistFromOrigin /*= nullptr*/, Vector3* outEntryPoint /*= nullptr*/, Vector3* outEntryNormal /*= nullptr*/) const
+{
+    return IntersectPlaneList(planes(), numPlanes(), origin, direction, maxLength, outEnterDistFromOrigin, outEntryPoint, outEntryNormal);
+}
+
+float Convex::volume() const
+{
+    return 1.0f; // TODO
+}
+
+Box Convex::bounds() const
+{
+    Box ret;
+
+    auto numVertices = this->numVertices();
+    auto vertex = vertices();
+    for (uint32_t i=0; i<numVertices; ++i)
+        ret.merge(vertex[i]);
+
+    return ret;
+}
+
+//---
+
+END_BOOMER_NAMESPACE(base)

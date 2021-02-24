@@ -23,26 +23,24 @@
 
 DECLARE_TEST_FILE(Serialization);
 
-using namespace base;
+BEGIN_BOOMER_NAMESPACE(base::test)
 
-namespace tests
+class TestObject : public IObject
 {
-    class TestObject : public IObject
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(TestObject, IObject);
+    RTTI_DECLARE_VIRTUAL_CLASS(TestObject, IObject);
 
-    public:
-        StringBuf m_text;
-        int m_int = 0;
-        float m_float = 0.0f;
-        bool m_bool = false;
-        StringID m_name;
-        Vector3 m_struct;
+public:
+    StringBuf m_text;
+    int m_int = 0;
+    float m_float = 0.0f;
+    bool m_bool = false;
+    StringID m_name;
+    Vector3 m_struct;
 
-        RefPtr<TestObject> m_child;
-    };
+    RefPtr<TestObject> m_child;
+};
 
-    RTTI_BEGIN_TYPE_CLASS(TestObject);
+RTTI_BEGIN_TYPE_CLASS(TestObject);
     RTTI_PROPERTY(m_bool);
     RTTI_PROPERTY(m_int);
     RTTI_PROPERTY(m_float);
@@ -50,22 +48,23 @@ namespace tests
     RTTI_PROPERTY(m_text);
     RTTI_PROPERTY(m_struct);
     RTTI_PROPERTY(m_child);
-    RTTI_END_TYPE();
+RTTI_END_TYPE();
 
-    class MassTestObject : public IObject
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MassTestObject, IObject);
+class MassTestObject : public IObject
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(MassTestObject, IObject);
 
-    public:
-        Array<Array<Box>> m_crap;
-        Array<RefPtr<MassTestObject>> m_child;
-    };
+public:
+    Array<Array<Box>> m_crap;
+    Array<RefPtr<MassTestObject>> m_child;
+};
 
-    RTTI_BEGIN_TYPE_CLASS(MassTestObject);
-    RTTI_PROPERTY(m_crap);
-    RTTI_PROPERTY(m_child);
-    RTTI_END_TYPE();
-}
+RTTI_BEGIN_TYPE_CLASS(MassTestObject);
+RTTI_PROPERTY(m_crap);
+RTTI_PROPERTY(m_child);
+RTTI_END_TYPE();
+
+//--
 
 void HelperSave(const base::ObjectPtr& obj, Buffer& outData)
 {
@@ -167,7 +166,7 @@ const char* HelperGetPropertyClassType(const base::res::FileTables& tables, uint
 TEST(Serialization, SaveSimple)
 {
     // create objects for testings
-    auto object = RefNew<tests::TestObject>();
+    auto object = RefNew<TestObject>();
 
     // save to memory
     base::Buffer data;
@@ -179,11 +178,11 @@ TEST(Serialization, SaveSimple)
 
     // check names
     ASSERT_STREQ("", HelperGetName(tables, 0));
-    ASSERT_STREQ("tests::TestObject", HelperGetName(tables, 1));
+    ASSERT_STREQ("TestObject", HelperGetName(tables, 1));
 
     // check types
     ASSERT_STREQ("", HelperGetType(tables, 0));
-    ASSERT_STREQ("tests::TestObject", HelperGetType(tables, 1));
+    ASSERT_STREQ("TestObject", HelperGetType(tables, 1));
 
     // check exports
     const auto exportCount = tables.chunkCount(base::res::FileTables::ChunkType::Exports);
@@ -199,7 +198,7 @@ TEST(Serialization, SaveSimple)
 TEST(Serialization, SaveSimpleWithSimpleData)
 {
     // create objects for testings
-    auto object = RefNew<tests::TestObject>();
+    auto object = RefNew<TestObject>();
     object->m_bool = true;
     object->m_float = 42.0f;
     object->m_name = "TEST"_id;
@@ -220,7 +219,7 @@ TEST(Serialization, SaveSimpleWithSimpleData)
     EXPECT_STREQ("float", HelperGetName(tables, 3));
     EXPECT_STREQ("StringID", HelperGetName(tables, 4));
     EXPECT_STREQ("StringBuf", HelperGetName(tables, 5));
-    EXPECT_STREQ("tests::TestObject", HelperGetName(tables, 6));
+    EXPECT_STREQ("TestObject", HelperGetName(tables, 6));
 
     // check types
     EXPECT_STREQ("", HelperGetType(tables, 0));
@@ -228,17 +227,17 @@ TEST(Serialization, SaveSimpleWithSimpleData)
     EXPECT_STREQ("float", HelperGetType(tables, 2));
     EXPECT_STREQ("StringID", HelperGetType(tables, 3));
     EXPECT_STREQ("StringBuf", HelperGetType(tables, 4));
-    EXPECT_STREQ("tests::TestObject", HelperGetType(tables, 5));
+    EXPECT_STREQ("TestObject", HelperGetType(tables, 5));
 
     // check properties
     EXPECT_STREQ("bool", HelperGetPropertyName(tables, 0));
     EXPECT_STREQ("float", HelperGetPropertyName(tables, 1));
     EXPECT_STREQ("name", HelperGetPropertyName(tables, 2));
     EXPECT_STREQ("text", HelperGetPropertyName(tables, 3));
-    EXPECT_STREQ("tests::TestObject", HelperGetPropertyClassType(tables, 0));
-    EXPECT_STREQ("tests::TestObject", HelperGetPropertyClassType(tables, 1));
-    EXPECT_STREQ("tests::TestObject", HelperGetPropertyClassType(tables, 2));
-    EXPECT_STREQ("tests::TestObject", HelperGetPropertyClassType(tables, 3));
+    EXPECT_STREQ("TestObject", HelperGetPropertyClassType(tables, 0));
+    EXPECT_STREQ("TestObject", HelperGetPropertyClassType(tables, 1));
+    EXPECT_STREQ("TestObject", HelperGetPropertyClassType(tables, 2));
+    EXPECT_STREQ("TestObject", HelperGetPropertyClassType(tables, 3));
 
     // check exports
     const auto exportCount = tables.chunkCount(base::res::FileTables::ChunkType::Exports);
@@ -254,10 +253,10 @@ TEST(Serialization, SaveSimpleWithSimpleData)
 TEST(Serialization, ObjectChain)
 {
     // create objects for testings
-    auto object = RefNew<tests::TestObject>();
-    object->m_child = RefNew<tests::TestObject>();
+    auto object = RefNew<TestObject>();
+    object->m_child = RefNew<TestObject>();
     object->m_child->parent(object);
-    object->m_child->m_child = RefNew<tests::TestObject>();
+    object->m_child->m_child = RefNew<TestObject>();
     object->m_child->m_child->parent(object->m_child);
 
     // save to memory
@@ -283,8 +282,8 @@ TEST(Serialization, ObjectChain)
 TEST(Serialization, ObjectChainBrokenLink)
 {
     // create objects for testings
-    auto object = RefNew<tests::TestObject>();
-    object->m_child = RefNew<tests::TestObject>();
+    auto object = RefNew<TestObject>();
+    object->m_child = RefNew<TestObject>();
 
     // save to memory
     base::Buffer data;
@@ -305,13 +304,13 @@ TEST(Serialization, ObjectChainBrokenLink)
 TEST(Serialization, SaveLoadSimple)
 {
     // create objects for testings
-    RefPtr<tests::TestObject> object = RefNew<tests::TestObject>();
+    RefPtr<TestObject> object = RefNew<TestObject>();
     object->m_bool = true;
     object->m_int = 123;
     object->m_float = 666.0f;
     object->m_text = "I want to belive";
 
-    RefPtr<tests::TestObject> objectChild = RefNew<tests::TestObject>();
+    RefPtr<TestObject> objectChild = RefNew<TestObject>();
     objectChild->parent(object);
     objectChild->m_bool = false;
     objectChild->m_int = 456;
@@ -327,7 +326,7 @@ TEST(Serialization, SaveLoadSimple)
     base::ObjectPtr loaded;
     HelperLoad(data, loaded);
 
-    auto loadedEx = base::rtti_cast<tests::TestObject>(loaded);
+    auto loadedEx = base::rtti_cast<TestObject>(loaded);
     ASSERT_FALSE(loadedEx.empty());
     auto loadedEx2 = loadedEx->m_child;
     ASSERT_FALSE(loadedEx2.empty());
@@ -344,13 +343,13 @@ TEST(Serialization, SaveLoadSimple)
     EXPECT_EQ(objectChild->m_text, loadedEx2->m_text);
 }
 
-static void GenerateCrapContent(uint32_t objectCount, uint32_t contentSize, Array<RefPtr<tests::MassTestObject>>& outTestObjects, Array<ObjectPtr>& outRoots)
+static void GenerateCrapContent(uint32_t objectCount, uint32_t contentSize, Array<RefPtr<MassTestObject>>& outTestObjects, Array<ObjectPtr>& outRoots)
 {
     FastRandState rand;
 
     for (uint32_t i = 0; i < objectCount; ++i)
     {
-        auto ptr = base::RefNew<tests::MassTestObject>();
+        auto ptr = base::RefNew<MassTestObject>();
 
         auto parentIndex = rand.range(outTestObjects.size()) - 1;
         if (parentIndex == -1)
@@ -390,7 +389,7 @@ static void GenerateCrapContent(uint32_t objectCount, uint32_t contentSize, Arra
 TEST(Serialization, SaveLoadMassiveProtected)
 {
     base::Array<ObjectPtr> roots;
-    base::Array<RefPtr<tests::MassTestObject>> objects;
+    base::Array<RefPtr<MassTestObject>> objects;
     GenerateCrapContent(500, 20, objects, roots);
 
     // save to memory
@@ -415,7 +414,7 @@ TEST(Serialization, SaveLoadMassiveProtected)
 TEST(Serialization, SaveLoadMassiveUnprotected)
 {
     base::Array<ObjectPtr> roots;
-    base::Array<RefPtr<tests::MassTestObject>> objects;
+    base::Array<RefPtr<MassTestObject>> objects;
     GenerateCrapContent(500, 20, objects, roots);
 
     // save to memory
@@ -440,7 +439,7 @@ TEST(Serialization, SaveLoadMassiveUnprotected)
 TEST(Serialization, SaveLoadMassiveMostlyObjectsProtected)
 {
     base::Array<ObjectPtr> roots;
-    base::Array<RefPtr<tests::MassTestObject>> objects;
+    base::Array<RefPtr<MassTestObject>> objects;
     GenerateCrapContent(5000, 3, objects, roots);
 
     // save to memory
@@ -465,7 +464,7 @@ TEST(Serialization, SaveLoadMassiveMostlyObjectsProtected)
 TEST(Serialization, SaveLoadMassiveMostlyObjectsUnprotected)
 {
     base::Array<ObjectPtr> roots;
-    base::Array<RefPtr<tests::MassTestObject>> objects;
+    base::Array<RefPtr<MassTestObject>> objects;
     GenerateCrapContent(5000, 3, objects, roots);
 
     // save to memory
@@ -487,3 +486,5 @@ TEST(Serialization, SaveLoadMassiveMostlyObjectsUnprotected)
         TRACE_WARNING("Load protected took {}", timer);
     }
 }
+
+END_BOOMER_NAMESPACE(base::test)

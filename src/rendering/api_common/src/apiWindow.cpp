@@ -9,18 +9,14 @@
 #include "build.h"
 #include "apiWindow.h"
 
-namespace rendering
-{
-	namespace api
-	{      
+BEGIN_BOOMER_NAMESPACE(rendering::api)
 
-		//--
+//--
 
-		WindowManager::~WindowManager()
-		{}
+WindowManager::~WindowManager()
+{}
 
-		//--
+//--
 
-	} // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api)
 

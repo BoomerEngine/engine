@@ -8,77 +8,73 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+//--
+
+INLINE ResourcePath::ResourcePath(ResourcePath&& other)
+    : m_string(std::move(other.m_string))
+    , m_hash(other.m_hash)
 {
-    namespace res
+    other.m_hash = 0;
+}
+
+INLINE ResourcePath& ResourcePath::operator=(ResourcePath&& other)
+{
+    if (this != &other)
     {
+        m_string = std::move(other.m_string);
+        m_hash = other.m_hash;
+        other.m_hash = 0;
+    }
+    return *this;
+}
 
-        //--
+INLINE bool ResourcePath::operator==(const ResourcePath& other) const
+{
+    return (m_hash == other.m_hash) && (m_string == other.m_string);
+}
 
-        INLINE ResourcePath::ResourcePath(ResourcePath&& other)
-            : m_string(std::move(other.m_string))
-            , m_hash(other.m_hash)
-        {
-            other.m_hash = 0;
-        }
+INLINE bool ResourcePath::operator!=(const ResourcePath& other) const
+{
+    return !operator==(other);
+}
 
-        INLINE ResourcePath& ResourcePath::operator=(ResourcePath&& other)
-        {
-            if (this != &other)
-            {
-                m_string = std::move(other.m_string);
-                m_hash = other.m_hash;
-                other.m_hash = 0;
-            }
-            return *this;
-        }
+INLINE bool ResourcePath::empty() const
+{
+    return m_string.empty();
+}
 
-        INLINE bool ResourcePath::operator==(const ResourcePath& other) const
-        {
-            return (m_hash == other.m_hash) && (m_string == other.m_string);
-        }
+INLINE bool ResourcePath::valid() const
+{
+    return !empty();
+}
 
-        INLINE bool ResourcePath::operator!=(const ResourcePath& other) const
-        {
-            return !operator==(other);
-        }
+INLINE ResourcePath::operator bool() const
+{
+    return !empty();
+}
 
-        INLINE bool ResourcePath::empty() const
-        {
-            return m_string.empty();
-        }
+ALWAYS_INLINE const StringBuf& ResourcePath::str() const
+{
+    return m_string;
+}
 
-        INLINE bool ResourcePath::valid() const
-        {
-            return !empty();
-        }
+ALWAYS_INLINE uint64_t ResourcePath::hash() const
+{
+    return m_hash;
+}
 
-        INLINE ResourcePath::operator bool() const
-        {
-            return !empty();
-        }
+INLINE StringView ResourcePath::view() const
+{
+    return m_string;
+}
 
-        ALWAYS_INLINE const StringBuf& ResourcePath::str() const
-        {
-            return m_string;
-        }
+INLINE uint32_t ResourcePath::CalcHash(const ResourcePath& key)
+{
+    return key.m_hash;
+}
 
-        ALWAYS_INLINE uint64_t ResourcePath::hash() const
-        {
-            return m_hash;
-        }
+//--
 
-        INLINE StringView ResourcePath::view() const
-        {
-            return m_string;
-        }
-
-        INLINE uint32_t ResourcePath::CalcHash(const ResourcePath& key)
-        {
-            return key.m_hash;
-        }
-
-        //--
-
-    } // res
-} // base
+END_BOOMER_NAMESPACE(base::res)

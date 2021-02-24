@@ -10,35 +10,31 @@
 
 #include "rendering/device/include/renderingCommands.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
+
+/// type of region
+enum class RegionType : uint8_t
 {
-    namespace scene
-    {
+    FrameNode,
+    GPUCommandBuffer,
+    Pass,
+    User,
+};
 
-        /// type of region
-        enum class RegionType : uint8_t
-        {
-            FrameNode,
-            CommandBuffer,
-            Pass,
-            User,
-        };
+/// analyzer of the command buffer data
+class RENDERING_SCENE_API IFrameAnalyzer : public base::NoCopy
+{
+public:
+    virtual ~IFrameAnalyzer();
 
-        /// analyzer of the command buffer data
-        class RENDERING_SCENE_API IFrameAnalyzer : public base::NoCopy
-        {
-        public:
-            virtual ~IFrameAnalyzer();
+    /// enter region
+    virtual void handleRegionBegin(const char* name, RegionType type);
 
-            /// enter region
-            virtual void handleRegionBegin(const char* name, RegionType type);
+    /// leaver region
+    virtual void handleRegionEnd(RegionType type);
 
-            /// leaver region
-            virtual void handleRegionEnd(RegionType type);
+    /// general command handler
+    virtual void handleCommand(const GPUBaseOpcode* op);
+};
 
-            /// general command handler
-            virtual void handleCommand(const command::OpBase* op);
-        };
-
-    } // scene
-} // rendering
+END_BOOMER_NAMESPACE(rendering::scene)

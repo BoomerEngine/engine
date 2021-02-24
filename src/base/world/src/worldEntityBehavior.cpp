@@ -10,25 +10,21 @@
 #include "build.h"
 #include "worldEntityBehavior.h"
 
-namespace base
-{
-    namespace world
-    {
+BEGIN_BOOMER_NAMESPACE(base::world)
 
-        //--
+//--
 
-        RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IEntityBehavior);
-        RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IEntityBehavior);
+RTTI_END_TYPE();
 
-        //--
+//--
 
-        IEntityBehavior::IEntityBehavior()
-        {}
+IEntityBehavior::IEntityBehavior()
+{}
 
-        IEntityBehavior::~IEntityBehavior()
-        {}
+IEntityBehavior::~IEntityBehavior()
+{}
 
-        //--
+//--
 
-    } // world
-} // base
+END_BOOMER_NAMESPACE(base::world)

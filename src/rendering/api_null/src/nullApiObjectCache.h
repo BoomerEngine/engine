@@ -11,32 +11,26 @@
 #include "rendering/api_common/include/apiObjectCache.h"
 #include "nullApiThread.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
+
+//---
+
+class ObjectCache : public IBaseObjectCache
 {
-    namespace api
-    {
-		namespace nul
-		{
-			//---
+public:
+	ObjectCache(Thread* owner);
+	virtual ~ObjectCache();
 
-			class ObjectCache : public IBaseObjectCache
-			{
-			public:
-				ObjectCache(Thread* owner);
-				virtual ~ObjectCache();
+	//--
 
-				//--
+	INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObjectCache::owner()); }
 
-				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObjectCache::owner()); }
+	//--
 
-				//--
+	virtual IBaseVertexBindingLayout* createOptimalVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams) override;
+	virtual IBaseDescriptorBindingLayout* createOptimalDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors, const base::Array<ShaderStaticSamplerMetadata>& staticSamplers) override;
+};
 
-				virtual IBaseVertexBindingLayout* createOptimalVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams) override;
-				virtual IBaseDescriptorBindingLayout* createOptimalDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors, const base::Array<ShaderStaticSamplerMetadata>& staticSamplers) override;
-			};
+//---
 
-			//---
-
-		} // nul
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

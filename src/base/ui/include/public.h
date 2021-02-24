@@ -19,447 +19,445 @@
 
 // events always have the valid ui::IElement as source
 
-namespace rendering
-{
-	namespace scene
-	{
-		struct FrameParams;
-	}
-}
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
 
-namespace ui
-{
-    typedef base::Vector2 Position;
-    typedef base::Vector2 Size;
-    typedef base::Vector2 VirtualPosition;
+struct FrameParams;
 
-    class DataStash;
-    class Renderer;
+END_BOOMER_NAMESPACE(rendering::scene)
+
+BEGIN_BOOMER_NAMESPACE(ui)
+
+typedef base::Vector2 Position;
+typedef base::Vector2 Size;
+typedef base::Vector2 VirtualPosition;
+
+class DataStash;
+class Renderer;
     
-    class RenderingPanel;
-    class ModelIndex;
+class RenderingPanel;
+class ModelIndex;
 
-    class ConfigBlock;
-    class IConfigDataInterface;
-    class ConfigFileStorageDataInterface;
+class ConfigBlock;
+class IConfigDataInterface;
+class ConfigFileStorageDataInterface;
 
-    class EventTable;
-    class ElementArea;
+class EventTable;
+class ElementArea;
 
-    class IElement;
-    typedef base::RefWeakPtr<IElement> ElementWeakPtr;
-    typedef base::RefPtr<IElement> ElementPtr;
+class IElement;
+typedef base::RefWeakPtr<IElement> ElementWeakPtr;
+typedef base::RefPtr<IElement> ElementPtr;
 
-    class Window;
-    typedef base::RefPtr<Window> WindowPtr;
-    typedef base::RefWeakPtr<Window> WindowWeakPtr;
+class Window;
+typedef base::RefPtr<Window> WindowPtr;
+typedef base::RefWeakPtr<Window> WindowWeakPtr;
 
-    class PopupWindow;
-    typedef base::RefPtr<PopupWindow> PopupPtr;
-    typedef base::RefWeakPtr<PopupWindow> PopupWeakPtr;
+class PopupWindow;
+typedef base::RefPtr<PopupWindow> PopupPtr;
+typedef base::RefWeakPtr<PopupWindow> PopupWeakPtr;
 
-    class ScrollArea;
-    typedef base::RefPtr<ScrollArea> ScrollAreaPtr;
-    typedef base::RefWeakPtr<ScrollArea> ScrollAreaWeakPtr;
+class ScrollArea;
+typedef base::RefPtr<ScrollArea> ScrollAreaPtr;
+typedef base::RefWeakPtr<ScrollArea> ScrollAreaWeakPtr;
 
-    class IInputAction;
-    typedef base::RefPtr<IInputAction> InputActionPtr;
-    typedef base::RefWeakPtr<IInputAction> InputActionWeakPtr;
+class IInputAction;
+typedef base::RefPtr<IInputAction> InputActionPtr;
+typedef base::RefWeakPtr<IInputAction> InputActionWeakPtr;
 
-    struct InputActionResult;
+struct InputActionResult;
 
-    enum class ElementHorizontalLayout : uint8_t;
-    enum class ElementVerticalLayout : uint8_t;
+enum class ElementHorizontalLayout : uint8_t;
+enum class ElementVerticalLayout : uint8_t;
 
-    namespace style
+namespace style
+{
+    class ContentLoader;
+    class SelectorMatch;
+    class Library;
+
+    struct ParamTable : public base::IReferencable
     {
-        class ContentLoader;
-        class SelectorMatch;
-        class Library;
-
-        struct ParamTable : public base::IReferencable
-        {
-            base::VariantTable values;
-        };
+        base::VariantTable values;
     };
+};
+
+typedef base::RefPtr<style::ParamTable> ParamTablePtr;
+typedef base::RefPtr<style::Library> StyleLibraryPtr;
+typedef base::res::Ref<style::Library> StyleLibraryRef;
+typedef base::RefWeakPtr<style::Library> StyleLibraryWeakPtr;
+
+class CachedGeometryBuilder;
+class CachedGeometry;
+
+class HitCache;
+
+class IDockTarget;
+
+class Button;
+typedef base::RefPtr<Button> ButtonPtr;
 
-    typedef base::RefPtr<style::ParamTable> ParamTablePtr;
-    typedef base::RefPtr<style::Library> StyleLibraryPtr;
-    typedef base::res::Ref<style::Library> StyleLibraryRef;
-    typedef base::RefWeakPtr<style::Library> StyleLibraryWeakPtr;
-
-    class CachedGeometryBuilder;
-    class CachedGeometry;
+class TextLabel;
+typedef base::RefPtr<TextLabel> TextLabelPtr;
+
+class Scrollbar;
+typedef base::RefPtr<Scrollbar> ScrollbarPtr;
+
+class Image;
+typedef base::RefPtr<Image> ImagePtr;
+
+// message type
+enum class MessageType
+{
+    Info,
+    Warning,
+    Error,
+    Question,
+};
 
-    class HitCache;
-
-    class IDockTarget;
+// sizer direction
+enum class Direction : uint8_t
+{
+    Horizontal = 0,
+    Vertical = 1,
+};
 
-    class Button;
-    typedef base::RefPtr<Button> ButtonPtr;
+// controls window sizing
+enum class WindowSizing
+{
+    FreeSize, // window's size can be adjusted by the user
+    AutoSize, // window size is automatic and cannot be changed
+};
 
-    class TextLabel;
-    typedef base::RefPtr<TextLabel> TextLabelPtr;
-
-    class Scrollbar;
-    typedef base::RefPtr<Scrollbar> ScrollbarPtr;
-
-    class Image;
-    typedef base::RefPtr<Image> ImagePtr;
+// function to create popup window - used whenever a popup is expected
+typedef std::function<PopupPtr()> TPopupFunc;
 
-    // message type
-    enum class MessageType
-    {
-        Info,
-        Warning,
-        Error,
-        Question,
-    };
+//--
 
-    // sizer direction
-    enum class Direction : uint8_t
-    {
-        Horizontal = 0,
-        Vertical = 1,
-    };
+/// validation function for text input
+typedef std::function<bool(base::StringView)> TInputValidationFunction;
 
-    // controls window sizing
-    enum class WindowSizing
-    {
-        FreeSize, // window's size can be adjusted by the user
-        AutoSize, // window size is automatic and cannot be changed
-    };
+//--
 
-    // function to create popup window - used whenever a popup is expected
-    typedef std::function<PopupPtr()> TPopupFunc;
+// drag and drop
+class IDragDropData;
+typedef base::RefPtr<IDragDropData> DragDropDataPtr;
 
-    //--
+class IDragDropHandler;
+typedef base::RefPtr<IDragDropHandler> DragDropHandlerPtr;
 
-    /// validation function for text input
-    typedef std::function<bool(base::StringView)> TInputValidationFunction;
+/// drag&drop reaction
+enum class DragDropStatus : uint8_t
+{
+    Ignore, // we do not handle D&D
+    Invalid, // we handle D&D but this data is invalid
+    Valid, // we handle D&D and this data is valid
+};
 
-    //--
+///--
 
-    // drag and drop
-    class IDragDropData;
-    typedef base::RefPtr<IDragDropData> DragDropDataPtr;
+/// window redraw policy
+enum class WindowRedrawPolicy
+{
+    // redraw all windows and all panels
+    // this is the slowest option that is also unbounded (it my take a many many ms to redraw the whole UI)
+    Everything,
 
-    class IDragDropHandler;
-    typedef base::RefPtr<IDragDropHandler> DragDropHandlerPtr;
+    // redraw the active window and one other window every frame
+    // this is the best for general editor operatior
+    RoundRobin,
 
-    /// drag&drop reaction
-    enum class DragDropStatus : uint8_t
-    {
-        Ignore, // we do not handle D&D
-        Invalid, // we handle D&D but this data is invalid
-        Valid, // we handle D&D and this data is valid
-    };
+    // redraw only the active window
+    // this is best for flying around, this is the butter smooth option
+    ActiveOnly,
+};
 
-    ///--
+///--
 
-    /// window redraw policy
-    enum class WindowRedrawPolicy
-    {
-        // redraw all windows and all panels
-        // this is the slowest option that is also unbounded (it my take a many many ms to redraw the whole UI)
-        Everything,
+/// rendering panel redraw policy
+enum class PanelRedrawPolicy
+{
+    // only draw this panel when dirty (or if size changes, obviously)
+    // this is best for very static panel that nothing changes on
+    OnlyDirty,
 
-        // redraw the active window and one other window every frame
-        // this is the best for general editor operatior
-        RoundRobin,
+    // draw this panel every time the window is rendered if active
+    // if the owning window is not active the panel is updated only from time to time
+    LowPriority,
 
-        // redraw only the active window
-        // this is best for flying around, this is the butter smooth option
-        ActiveOnly,
-    };
+    // draw this panel every time window is rendered, regardless if it's active or not
+    WithOwner,
 
-    ///--
+    // render this panel every frame, even if the window is not active (this will force the window to render as well)
+    // NOTE: this is very expensive mode, should be used only for strictly realtime content
+    Realtime,
+};
 
-    /// rendering panel redraw policy
-    enum class PanelRedrawPolicy
-    {
-        // only draw this panel when dirty (or if size changes, obviously)
-        // this is best for very static panel that nothing changes on
-        OnlyDirty,
+//---
 
-        // draw this panel every time the window is rendered if active
-        // if the owning window is not active the panel is updated only from time to time
-        LowPriority,
+/// event notification token, created when even is registered, should be held as long as the event is needed (destroying it will unregister the event)
+class BASE_UI_API EventToken : public base::NoCopy
+{
+public:
+    typedef std::function<void()> TUnregisterFunction;
 
-        // draw this panel every time window is rendered, regardless if it's active or not
-        WithOwner,
+    EventToken(const TUnregisterFunction& func);
+    ~EventToken();
 
-        // render this panel every frame, even if the window is not active (this will force the window to render as well)
-        // NOTE: this is very expensive mode, should be used only for strictly realtime content
-        Realtime,
-    };
+    // unbind without unregistering
+    void unbind();
 
-    //---
+    // unregister the event now, does not require the token to be discarded fully
+    void unregisterNow();
 
-    /// event notification token, created when even is registered, should be held as long as the event is needed (destroying it will unregister the event)
-    class BASE_UI_API EventToken : public base::NoCopy
-    {
-    public:
-        typedef std::function<void()> TUnregisterFunction;
+private:
+    TUnregisterFunction m_unregisterFunc;
+};
 
-        EventToken(const TUnregisterFunction& func);
-        ~EventToken();
+typedef base::RefPtr<EventToken> EventTokenPtr;
 
-        // unbind without unregistering
-        void unbind();
+//---
 
-        // unregister the event now, does not require the token to be discarded fully
-        void unregisterNow();
+/// Get default expand state for node
+enum class TreeNodeDefaultExpandState : uint8_t
+{
+    DontCare,
+    Expanded,
+    Collapsed,
+};
 
-    private:
-        TUnregisterFunction m_unregisterFunc;
-    };
+//---
 
-    typedef base::RefPtr<EventToken> EventTokenPtr;
+class Canvas;
+class ScrolableCanvas;
+class ICanvasContent;
 
-    //---
+class DynamicStyleElement;
+class IDynamicElementRenderer;
 
-    /// Get default expand state for node
-    enum class TreeNodeDefaultExpandState : uint8_t
-    {
-        DontCare,
-        Expanded,
-        Collapsed,
-    };
+class TreeViewDirect;
+class ITreeViewModel;
 
-    //---
+//---
 
-    class Canvas;
-    class ScrolableCanvas;
-    class ICanvasContent;
 
-    class DynamicStyleElement;
-    class IDynamicElementRenderer;
+/// tree columns widths
+struct BASE_UI_API TreeColumnSizes
+{
+public:
+    static const uint32_t MAX_COLUMNS = 8;
 
-    class TreeViewDirect;
-    class ITreeViewModel;
+    base::InplaceArray<float, MAX_COLUMNS> m_widths;
+};
 
-    //---
+//--
 
 
-    /// tree columns widths
-    struct BASE_UI_API TreeColumnSizes
-    {
-    public:
-        static const uint32_t MAX_COLUMNS = 8;
+class ModelIndex;
+class IAbstractItemModel;
+class IAbstractItemVisualizer;
 
-        base::InplaceArray<float, MAX_COLUMNS> m_widths;
-    };
+/// way items are updates
+enum class ItemUpdateModeBit : uint8_t
+{
+    Item = FLAG(0),
+    Parents = FLAG(1),
+    Children = FLAG(2),
+    Force = FLAG(7), // force update even if not visible
 
-    //--
+    ItemAndParents = Item | Parents,
+    ItemAndChildren = Item | Children,
+    Hierarchy = Item | Children | Parents,
+};
 
+typedef base::DirectFlags<ItemUpdateModeBit> ItemUpdateMode;
 
-    class ModelIndex;
-    class IAbstractItemModel;
-    class IAbstractItemVisualizer;
+/// item selection mode
+enum class ItemSelectionModeBit : uint8_t
+{
+    Clear = FLAG(0),
+    Select = FLAG(1),
+    Deselect = FLAG(2),
+    Toggle = FLAG(3),
+    UpdateCurrent = FLAG(4),
+    FocusCurrent = FLAG(5),
 
-    /// way items are updates
-    enum class ItemUpdateModeBit : uint8_t
-    {
-        Item = FLAG(0),
-        Parents = FLAG(1),
-        Children = FLAG(2),
-        Force = FLAG(7), // force update even if not visible
+    Default = Clear | Select | UpdateCurrent | FocusCurrent,
+    DefaultNoFocus = Clear | Select | UpdateCurrent,
+    DefaultToggle = Toggle | UpdateCurrent,
+};
 
-        ItemAndParents = Item | Parents,
-        ItemAndChildren = Item | Children,
-        Hierarchy = Item | Children | Parents,
-    };
+typedef base::DirectFlags<ItemSelectionModeBit> ItemSelectionMode;
 
-    typedef base::DirectFlags<ItemUpdateModeBit> ItemUpdateMode;
+//--
 
-    /// item selection mode
-    enum class ItemSelectionModeBit : uint8_t
-    {
-        Clear = FLAG(0),
-        Select = FLAG(1),
-        Deselect = FLAG(2),
-        Toggle = FLAG(3),
-        UpdateCurrent = FLAG(4),
-        FocusCurrent = FLAG(5),
+struct BASE_UI_API SearchPattern
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(SearchPattern);
 
-        Default = Clear | Select | UpdateCurrent | FocusCurrent,
-        DefaultNoFocus = Clear | Select | UpdateCurrent,
-        DefaultToggle = Toggle | UpdateCurrent,
-    };
+public:
+    base::StringBuf pattern;
+    bool regex = false;
+    bool wholeWordsOnly = false;
+    bool caseSenitive = false;
+    bool hasWildcards = false; // should be set based on content
 
-    typedef base::DirectFlags<ItemSelectionModeBit> ItemSelectionMode;
+    INLINE bool empty() const { return pattern.empty(); }
 
-    //--
+    bool operator==(const SearchPattern& other) const;
+    bool operator!=(const SearchPattern& other) const;
 
-    struct BASE_UI_API SearchPattern
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(SearchPattern);
+    void print(base::IFormatStream& f) const;
 
-    public:
-        base::StringBuf pattern;
-        bool regex = false;
-        bool wholeWordsOnly = false;
-        bool caseSenitive = false;
-        bool hasWildcards = false; // should be set based on content
+    bool testString(base::StringView txt) const;
+};
 
-        INLINE bool empty() const { return pattern.empty(); }
+//--
 
-        bool operator==(const SearchPattern& other) const;
-        bool operator!=(const SearchPattern& other) const;
+class EditBox;
+typedef base::RefPtr<EditBox> EditBoxPtr;
 
-        void print(base::IFormatStream& f) const;
+class ToolBar;
+typedef base::RefPtr<ToolBar> ToolBarPtr;
 
-        bool testString(base::StringView txt) const;
-    };
+class BreadcrumbBar;
+typedef base::RefPtr<BreadcrumbBar> BreadcrumbBarPtr;
 
-    //--
+class ManagedFrame;
+typedef base::RefPtr<ManagedFrame> ManagedFramePtr;
 
-    class EditBox;
-    typedef base::RefPtr<EditBox> EditBoxPtr;
+class ComboBox;
+typedef base::RefPtr<ComboBox> ComboBoxPtr;
 
-    class ToolBar;
-    typedef base::RefPtr<ToolBar> ToolBarPtr;
+class CheckBox;
+typedef base::RefPtr<CheckBox> CheckBoxPtr;
 
-    class BreadcrumbBar;
-    typedef base::RefPtr<BreadcrumbBar> BreadcrumbBarPtr;
+class ColumnHeaderBar;
+typedef base::RefPtr<ColumnHeaderBar> ColumnHeaderBarPtr;
 
-    class ManagedFrame;
-    typedef base::RefPtr<ManagedFrame> ManagedFramePtr;
+class Column;
+typedef base::RefPtr<Column> ColumnPtr;
 
-    class ComboBox;
-    typedef base::RefPtr<ComboBox> ComboBoxPtr;
+class Splitter;
+typedef base::RefPtr<Column> SplitterPtr;
 
-    class CheckBox;
-    typedef base::RefPtr<CheckBox> CheckBoxPtr;
+class TrackBar;
+typedef base::RefPtr<TrackBar> TrackBarPtr;
 
-    class ColumnHeaderBar;
-    typedef base::RefPtr<ColumnHeaderBar> ColumnHeaderBarPtr;
+class ProgressBar;
+typedef base::RefPtr<ProgressBar> ProgressBarPtr;
 
-    class Column;
-    typedef base::RefPtr<Column> ColumnPtr;
+class MenuBar;
+typedef base::RefPtr<MenuBar> MenuBarPtr;
 
-    class Splitter;
-    typedef base::RefPtr<Column> SplitterPtr;
+class MenuButtonContainer;
+typedef base::RefPtr<MenuButtonContainer> MenuButtonContainerPtr;
 
-    class TrackBar;
-    typedef base::RefPtr<TrackBar> TrackBarPtr;
+class SearchBar;
+typedef base::RefPtr<SearchBar> SearchBarPtr;
 
-    class ProgressBar;
-    typedef base::RefPtr<ProgressBar> ProgressBarPtr;
+class Dragger;
+typedef base::RefPtr<Dragger> DraggerPtr;
 
-    class MenuBar;
-    typedef base::RefPtr<MenuBar> MenuBarPtr;
+class Group;
+typedef base::RefPtr<Group> GroupPtr;
 
-    class MenuButtonContainer;
-    typedef base::RefPtr<MenuButtonContainer> MenuButtonContainerPtr;
+class Notebook;
+typedef base::RefPtr<Notebook> NotebookPtr;
 
-    class SearchBar;
-    typedef base::RefPtr<SearchBar> SearchBarPtr;
+//--
 
-    class Dragger;
-    typedef base::RefPtr<Dragger> DraggerPtr;
+class AbstractItemView;
+typedef base::RefPtr<AbstractItemView> AbstractItemViewPtr;
 
-    class Group;
-    typedef base::RefPtr<Group> GroupPtr;
+class ItemView;
+typedef base::RefPtr<ItemView> ItemViewPtr;
 
-    class Notebook;
-    typedef base::RefPtr<Notebook> NotebookPtr;
+class ListView;
+typedef base::RefPtr<ListView> ListViewPtr;
 
-    //--
+class TreeView;
+typedef base::RefPtr<TreeView> TreeViewPtr;
 
-    class AbstractItemView;
-    typedef base::RefPtr<AbstractItemView> AbstractItemViewPtr;
+//--
 
-    class ItemView;
-    typedef base::RefPtr<ItemView> ItemViewPtr;
+/// how to iterate elements
+enum class DockPanelIterationMode
+{
+    All, // iterate over all panels, even if they are in the hidden state
+    VisibleOnly, // iterate over panels that are not hidden even if they are not directly visible (ie. tab is not selected)
+    ActiveOnly, // iterate only over panels that are directly visible (tab is visible, splitter is not collapsed to zero, window is not minimized, etc)
+};
 
-    class ListView;
-    typedef base::RefPtr<ListView> ListViewPtr;
+class DockPanel;
+typedef base::RefPtr<DockPanel> DockPanelPtr;
 
-    class TreeView;
-    typedef base::RefPtr<TreeView> TreeViewPtr;
+class DockLayoutNode;
+typedef base::RefPtr<DockLayoutNode> DockLayoutNodePtr;
 
-    //--
+class DockNotebook;
+typedef base::RefPtr<DockNotebook> DockNotebookPtr;
 
-    /// how to iterate elements
-    enum class DockPanelIterationMode
-    {
-        All, // iterate over all panels, even if they are in the hidden state
-        VisibleOnly, // iterate over panels that are not hidden even if they are not directly visible (ie. tab is not selected)
-        ActiveOnly, // iterate only over panels that are directly visible (tab is visible, splitter is not collapsed to zero, window is not minimized, etc)
-    };
+class DockContainer;
+typedef base::RefPtr<DockContainer> DockContainerPtr;
 
-    class DockPanel;
-    typedef base::RefPtr<DockPanel> DockPanelPtr;
+//--
 
-    class DockLayoutNode;
-    typedef base::RefPtr<DockLayoutNode> DockLayoutNodePtr;
+class ScintillaTextEditor;
+typedef base::RefPtr<ScintillaTextEditor> ScintillaTextEditorPtr;
 
-    class DockNotebook;
-    typedef base::RefPtr<DockNotebook> DockNotebookPtr;
+//--
 
-    class DockContainer;
-    typedef base::RefPtr<DockContainer> DockContainerPtr;
+class RenderingScenePanel;
 
-    //--
+//--
 
-    class ScintillaTextEditor;
-    typedef base::RefPtr<ScintillaTextEditor> ScintillaTextEditorPtr;
+class DataInspector;
+typedef base::RefPtr<DataInspector> DataInspectorPtr;
 
-    //--
+class IDataBox;
+typedef base::RefPtr<IDataBox> DataBoxPtr;
 
-    class RenderingScenePanel;
+class ClassPickerBox;
+typedef base::RefPtr<ClassPickerBox> ClassPickerBoxPtr;    
 
-    //--
+//--
 
-    class DataInspector;
-    typedef base::RefPtr<DataInspector> DataInspectorPtr;
+class CanvasArea;
+typedef base::RefPtr<CanvasArea> CanvasAreaPtr;
 
-    class IDataBox;
-    typedef base::RefPtr<IDataBox> DataBoxPtr;
+class ICanvasAreaElement;
+typedef base::RefPtr< ICanvasAreaElement> CanvasAreaElementPtr;
 
-    class ClassPickerBox;
-    typedef base::RefPtr<ClassPickerBox> ClassPickerBoxPtr;    
+class HorizontalRuler;
+typedef base::RefPtr<HorizontalRuler> HorizontalRulerPtr;
 
-    //--
+class VerticalRuler;
+typedef base::RefPtr<VerticalRuler> VerticalRulerPtr;
 
-    class CanvasArea;
-    typedef base::RefPtr<CanvasArea> CanvasAreaPtr;
+//--
 
-    class ICanvasAreaElement;
-    typedef base::RefPtr< ICanvasAreaElement> CanvasAreaElementPtr;
+class GraphEditor;
+typedef base::RefPtr<GraphEditor> GraphEditorPtr;
+typedef base::RefWeakPtr<GraphEditor> GraphEditorWeakPtr;
 
-    class HorizontalRuler;
-    typedef base::RefPtr<HorizontalRuler> HorizontalRulerPtr;
+class GraphBlockPalette;
+typedef base::RefPtr<GraphBlockPalette> GraphBlockPalettePtr;
 
-    class VerticalRuler;
-    typedef base::RefPtr<VerticalRuler> VerticalRulerPtr;
+class IGraphEditorNode;
+typedef base::RefPtr<IGraphEditorNode> GraphEditorNodePtr;
 
-    //--
+class GraphEditorBlockNode;
+typedef base::RefPtr<GraphEditorBlockNode> GraphEditorBlockNodePtr;
 
-    class GraphEditor;
-    typedef base::RefPtr<GraphEditor> GraphEditorPtr;
-    typedef base::RefWeakPtr<GraphEditor> GraphEditorWeakPtr;
+class IGraphNodeInnerWidget;
+typedef base::RefPtr<IGraphNodeInnerWidget> GraphNodeInnerWidgetPtr;
 
-    class GraphBlockPalette;
-    typedef base::RefPtr<GraphBlockPalette> GraphBlockPalettePtr;
+//--
 
-    class IGraphEditorNode;
-    typedef base::RefPtr<IGraphEditorNode> GraphEditorNodePtr;
+extern BASE_UI_API void PostWindowMessage(IElement* owner, MessageType type, base::StringID group, base::StringView txt);
 
-    class GraphEditorBlockNode;
-    typedef base::RefPtr<GraphEditorBlockNode> GraphEditorBlockNodePtr;
+extern BASE_UI_API void PostNotificationMessage(IElement* owner, MessageType type, base::StringID group, base::StringView txt);
 
-    class IGraphNodeInnerWidget;
-    typedef base::RefPtr<IGraphNodeInnerWidget> GraphNodeInnerWidgetPtr;
+//--
 
-    //--
-
-    extern BASE_UI_API void PostWindowMessage(IElement* owner, MessageType type, base::StringID group, base::StringView txt);
-
-    extern BASE_UI_API void PostNotificationMessage(IElement* owner, MessageType type, base::StringID group, base::StringView txt);
-
-    //--
-
-} // ui
+END_BOOMER_NAMESPACE(ui)

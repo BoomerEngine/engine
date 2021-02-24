@@ -13,62 +13,59 @@
 #include "base/fibers/include/fiberSystem.h"
 #include "base/memory/include/structurePool.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::fibers)
+
+// a generic memory pool for the operations
+// TODO: rewrite once we create the mem::Pool stuff
+class BASE_FIBERS_API SharedMemoryPool : public NoCopy
 {
-    namespace fibers
+public:
+    SharedMemoryPool(PoolTag poolID, uint64_t size);
+    ~SharedMemoryPool();
+
+    //--
+
+    // allocate single block from the memory pool
+    CAN_YIELD Buffer allocBlockAsync(uint32_t size);
+
+    // allocate two blocks from the memory pool
+    CAN_YIELD bool allocBlocksAsync(uint32_t compressedSize, uint32_t decompressedSize, Buffer& outCompressedBuffer, Buffer& outDecompressedBuffer);
+
+private:
+    PoolTag m_poolID;
+    uint64_t m_maxMemorySize;
+
+    std::atomic<uint64_t> m_statUsedSize;
+    std::atomic<uint64_t> m_statRequestedSize;
+    std::atomic<uint32_t> m_statBlockCount;
+    std::atomic<uint32_t> m_statRequestCount;
+
+    struct MemRequest
     {
-        // a generic memory pool for the operations
-        // TODO: rewrite once we create the mem::Pool stuff
-        class BASE_FIBERS_API SharedMemoryPool : public NoCopy
-        {
-        public:
-            SharedMemoryPool(PoolTag poolID, uint64_t size);
-            ~SharedMemoryPool();
+        uint32_t m_compressedSize;
+        uint32_t m_decompressedSize;
+        Buffer* m_outCompressedBuffer;
+        Buffer* m_outDecompressedBuffer;
+        fibers::WaitCounter m_signal;
+    };
 
-            //--
+    mem::StructurePool<MemRequest> m_memRequestPool;
+    SpinLock m_lock;
 
-            // allocate single block from the memory pool
-            CAN_YIELD Buffer allocBlockAsync(uint32_t size);
+    bool serviceRequestAsync(uint32_t compressedSize, uint32_t decompressedSize, Buffer& outCompressedBuffer, Buffer& outDecompressedBuffer) CAN_YIELD;
 
-            // allocate two blocks from the memory pool
-            CAN_YIELD bool allocBlocksAsync(uint32_t compressedSize, uint32_t decompressedSize, Buffer& outCompressedBuffer, Buffer& outDecompressedBuffer);
+    typedef Queue< MemRequest* > TPendingRequests;
+    TPendingRequests m_requests;
 
-        private:
-            PoolTag m_poolID;
-            uint64_t m_maxMemorySize;
+    Buffer allocBuffer_NoLock(uint32_t size);
+    Buffer allocExternalBuffer_NoLock(uint32_t size);
 
-            std::atomic<uint64_t> m_statUsedSize;
-            std::atomic<uint64_t> m_statRequestedSize;
-            std::atomic<uint32_t> m_statBlockCount;
-            std::atomic<uint32_t> m_statRequestCount;
+    bool tryAllocate_NoLock(uint32_t compressedSize, uint32_t decompressedSize, Buffer& outCompressedBuffer, Buffer& outDecompresedBuffer);
+    void tryAllocatePendingReuests();
 
-            struct MemRequest
-            {
-                uint32_t m_compressedSize;
-                uint32_t m_decompressedSize;
-                Buffer* m_outCompressedBuffer;
-                Buffer* m_outDecompressedBuffer;
-                fibers::WaitCounter m_signal;
-            };
+    void releaseMemory(void* mem, uint64_t size);
+};
 
-            mem::StructurePool<MemRequest> m_memRequestPool;
-            SpinLock m_lock;
+//---
 
-            bool serviceRequestAsync(uint32_t compressedSize, uint32_t decompressedSize, Buffer& outCompressedBuffer, Buffer& outDecompressedBuffer) CAN_YIELD;
-
-            typedef Queue< MemRequest* > TPendingRequests;
-            TPendingRequests m_requests;
-
-            Buffer allocBuffer_NoLock(uint32_t size);
-            Buffer allocExternalBuffer_NoLock(uint32_t size);
-
-            bool tryAllocate_NoLock(uint32_t compressedSize, uint32_t decompressedSize, Buffer& outCompressedBuffer, Buffer& outDecompresedBuffer);
-            void tryAllocatePendingReuests();
-
-            void releaseMemory(void* mem, uint64_t size);
-        };
-
-        //---
-
-    } // fibers
-} // base
+END_BOOMER_NAMESPACE(base::fibers)

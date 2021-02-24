@@ -10,31 +10,31 @@
 
 #include "sceneCommonEditor.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+/// editor for scenes
+class EDITOR_SCENE_EDITOR_API SceneWorldEditor : public SceneCommonEditor
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(SceneWorldEditor, SceneCommonEditor);
 
-    //--
+public:
+    SceneWorldEditor(ManagedFileNativeResource* file);
+    virtual ~SceneWorldEditor();
 
-    /// editor for scenes
-    class EDITOR_SCENE_EDITOR_API SceneWorldEditor : public SceneCommonEditor
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(SceneWorldEditor, SceneCommonEditor);
+protected:
+    virtual bool checkGeneralSave() const override;
+    virtual bool save() override;
 
-    public:
-        SceneWorldEditor(ManagedFileNativeResource* file);
-        virtual ~SceneWorldEditor();
+    virtual void recreateContent() override;
 
-    protected:
-        virtual bool checkGeneralSave() const override;
-        virtual bool save() override;
+    void cmdShowAssetBrowser();
 
-        virtual void recreateContent() override;
+    SceneContentWorldDirPtr m_rootLayersGroup;
+};
 
-        void cmdShowAssetBrowser();
+//--
 
-        SceneContentWorldDirPtr m_rootLayersGroup;
-    };
+END_BOOMER_NAMESPACE(ed)
 
-    //--
-
-} // ed

@@ -13,12 +13,8 @@
 #include "dx11Thread.h"
 #include "dx11Shaders.h"
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace dx11
-		{
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
+
 			///---
 
 			class ComputePipeline : public IBaseComputePipeline

@@ -14,59 +14,56 @@
 
 #include "rendering/device/include/renderingShaderReloadNotifier.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
+
+///---
+
+struct SceneStats;
+struct FrameStats;
+class FrameResources;
+class FrameHelper;
+
+///---
+
+/// composition target for the frame
+struct FrameCompositionTarget
 {
-    namespace scene
-    {
-        ///---
+	const RenderTargetView* targetColorRTV = nullptr;
+	const RenderTargetView* targetDepthRTV = nullptr;
+	base::Rect targetRect;
+};
 
-        struct SceneStats;
-        struct FrameStats;
-		class FrameResources;
-		class FrameHelper;
+///---
 
-		///---
+/// service that facilitates rendering a single scene frame
+class RENDERING_SCENE_API FrameRenderingService : public base::app::ILocalService
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(FrameRenderingService, base::app::ILocalService);
 
-		/// composition target for the frame
-		struct FrameCompositionTarget
-		{
-			const RenderTargetView* targetColorRTV = nullptr;
-			const RenderTargetView* targetDepthRTV = nullptr;
-			base::Rect targetRect;
-		};
+public:
+    FrameRenderingService();
+    ~FrameRenderingService();
 
-        ///---
+    //--
 
-        /// service that facilitates rendering a single scene frame
-        class RENDERING_SCENE_API FrameRenderingService : public base::app::ILocalService
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(FrameRenderingService, base::app::ILocalService);
+    /// render command buffers for rendering given frame
+    GPUCommandBuffer* renderFrame(const FrameParams& frame, const FrameCompositionTarget& target, FrameStats* outFrameStats = nullptr, SceneStats* outMergedStateStats = nullptr);
 
-        public:
-            FrameRenderingService();
-            ~FrameRenderingService();
+    //--
 
-            //--
+private:
+    virtual base::app::ServiceInitializationResult onInitializeService(const base::app::CommandLine& cmdLine) override final;
+    virtual void onShutdownService() override final;
+    virtual void onSyncUpdate() override final;
 
-            /// render command buffers for rendering given frame
-            command::CommandBuffer* renderFrame(const FrameParams& frame, const FrameCompositionTarget& target, FrameStats* outFrameStats = nullptr, SceneStats* outMergedStateStats = nullptr);
+	FrameResources* m_sharedResources = nullptr;
+	FrameHelper* m_sharedHelpers = nullptr;
 
-            //--
+    ShaderReloadNotifier m_reloadNotifier;
 
-        private:
-            virtual base::app::ServiceInitializationResult onInitializeService(const base::app::CommandLine& cmdLine) override final;
-            virtual void onShutdownService() override final;
-            virtual void onSyncUpdate() override final;
+    void recreateHelpers();
+};
 
-			FrameResources* m_sharedResources = nullptr;
-			FrameHelper* m_sharedHelpers = nullptr;
+///---
 
-            ShaderReloadNotifier m_reloadNotifier;
-
-            void recreateHelpers();
-        };
-
-        ///---
-
-    } // scene
-} // rendering
+END_BOOMER_NAMESPACE(rendering::scene)

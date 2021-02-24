@@ -16,146 +16,144 @@
 #include "base/system/include/thread.h"
 #include "base/containers/include/hashMap.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::fibers)
+
+namespace prv
 {
-    namespace fibers
+
+    /// thread based scheduler for the fibers
+    /// each scheduled fiber gets a thread from a thread pool
+    /// NOTE: there may be many more threads that cores on a given system because of the blocking nature of the fake fiber synchronization model in here
+    /// NOTE: this is a fallback implementation and should not be used in final product (unless for specific purposes)
+    class ThreadBasedScheduler : public IFiberScheduler
     {
-        namespace prv
+    public:
+        ThreadBasedScheduler();
+        virtual ~ThreadBasedScheduler();
+
+        /// IFiberScheduler
+        virtual bool initialize(const IBaseCommandLine &commandline) override final;
+        virtual void flush() override final;
+        virtual void runSyncJobs();
+        virtual void scheduleSync(const Job &job) override final;
+        virtual void scheduleFiber(const Job &job, uint32_t numInvokations, bool child) override final;
+        virtual WaitCounter createCounter(const char* userName, uint32_t count = 1) override final;
+        virtual bool checkCounter(const WaitCounter& counter) override final;
+        virtual void signalCounter(const WaitCounter &counter, uint32_t count = 1) override final;
+        virtual void waitForCounterAndRelease(const WaitCounter &counter) override final;
+        virtual void waitForMultipleCountersAndRelease(const WaitCounter* counters, uint32_t count) override final;
+        virtual void yieldCurrentJob() override final;
+        virtual bool isMainThread() const override final;
+        virtual bool isMainFiber() const override final;
+        virtual uint32_t workerThreadCount() const override final;
+        virtual JobID currentJobID() const override final;
+
+    private:
+        //--
+
+        struct WaitCounterData
         {
+            std::atomic<WaitCounterSeqID> m_seqId;
+            std::atomic<int> m_refCount;
+            std::atomic<int> m_count;
+            Event m_event;
 
-            /// thread based scheduler for the fibers
-            /// each scheduled fiber gets a thread from a thread pool
-            /// NOTE: there may be many more threads that cores on a given system because of the blocking nature of the fake fiber synchronization model in here
-            /// NOTE: this is a fallback implementation and should not be used in final product (unless for specific purposes)
-            class ThreadBasedScheduler : public IFiberScheduler
-            {
-            public:
-                ThreadBasedScheduler();
-                virtual ~ThreadBasedScheduler();
+            INLINE WaitCounterData()
+                : m_seqId(0)
+                , m_refCount(0)
+                , m_count(0)
+                , m_event(true) // manual reset event
+            {}
+        };
 
-                /// IFiberScheduler
-                virtual bool initialize(const IBaseCommandLine &commandline) override final;
-                virtual void flush() override final;
-                virtual void runSyncJobs();
-                virtual void scheduleSync(const Job &job) override final;
-                virtual void scheduleFiber(const Job &job, uint32_t numInvokations, bool child) override final;
-                virtual WaitCounter createCounter(const char* userName, uint32_t count = 1) override final;
-                virtual bool checkCounter(const WaitCounter& counter) override final;
-                virtual void signalCounter(const WaitCounter &counter, uint32_t count = 1) override final;
-                virtual void waitForCounterAndRelease(const WaitCounter &counter) override final;
-                virtual void waitForMultipleCountersAndRelease(const WaitCounter* counters, uint32_t count) override final;
-                virtual void yieldCurrentJob() override final;
-                virtual bool isMainThread() const override final;
-                virtual bool isMainFiber() const override final;
-                virtual uint32_t workerThreadCount() const override final;
-                virtual JobID currentJobID() const override final;
+        struct JobPayload : public NoCopy
+        {
+            RTTI_DECLARE_POOL(POOL_FIBERS)
 
-            private:
-                //--
+        public:
+            TJobFunc m_funcToRun;
+            uint32_t m_invocationIndex;
+            const char* m_name;
+            JobID m_jobId;
 
-                struct WaitCounterData
-                {
-                    std::atomic<WaitCounterSeqID> m_seqId;
-                    std::atomic<int> m_refCount;
-                    std::atomic<int> m_count;
-                    Event m_event;
+            JobPayload();
+        };
 
-                    INLINE WaitCounterData()
-                        : m_seqId(0)
-                        , m_refCount(0)
-                        , m_count(0)
-                        , m_event(true) // manual reset event
-                    {}
-                };
+        struct JobThread : public NoCopy
+        {
+            RTTI_DECLARE_POOL(POOL_FIBERS)
 
-                struct JobPayload : public NoCopy
-                {
-                    RTTI_DECLARE_POOL(POOL_FIBERS)
+        public:
+            Thread m_thread;
+            Event m_waitForJob;
+            uint32_t m_id;
+            JobPayload* m_job;
 
-                public:
-                    TJobFunc m_funcToRun;
-                    uint32_t m_invocationIndex;
-                    const char* m_name;
-                    JobID m_jobId;
+            JobThread(ThreadBasedScheduler* owner, uint32_t id);
+            ~JobThread();
+        };
 
-                    JobPayload();
-                };
+        //---
 
-                struct JobThread : public NoCopy
-                {
-                    RTTI_DECLARE_POOL(POOL_FIBERS)
+        // allocate a thread for processing a job
+        JobThread* allocThreadFromPool();
 
-                public:
-                    Thread m_thread;
-                    Event m_waitForJob;
-                    uint32_t m_id;
-                    JobPayload* m_job;
+        // return thread to free list
+        bool returnThreadToPool(JobThread* thread);
 
-                    JobThread(ThreadBasedScheduler* owner, uint32_t id);
-                    ~JobThread();
-                };
+        //---
 
-                //---
+        // return counter to pool
+        void returnCounterToPool(WaitCounterID id);
 
-                // allocate a thread for processing a job
-                JobThread* allocThreadFromPool();
+        //---
 
-                // return thread to free list
-                bool returnThreadToPool(JobThread* thread);
+        // thread func
+        void processJobs(JobThread* thread);
 
-                //---
+        // try to start first job from the pending list
+        bool tryStartPendingJob();
 
-                // return counter to pool
-                void returnCounterToPool(WaitCounterID id);
+        // try to start a specific job, returns true if it worked and thread was assigned to the job
+        bool tryStartJob(JobPayload* payload);
 
-                //---
+        //---
 
-                // thread func
-                void processJobs(JobThread* thread);
+        std::atomic<uint32_t> m_exiting;
 
-                // try to start first job from the pending list
-                bool tryStartPendingJob();
+        //---
 
-                // try to start a specific job, returns true if it worked and thread was assigned to the job
-                bool tryStartJob(JobPayload* payload);
+        ThreadID m_mainThreadID;
 
-                //---
+        Array<JobThread*> m_freeThreads;
+        Array<JobThread*> m_allThreads;
+        Mutex m_freeThreadsLock;
 
-                std::atomic<uint32_t> m_exiting;
+        std::atomic<uint32_t> m_numThreadsRunning;
+        std::atomic<uint32_t> m_numThreadsWaiting;
 
-                //---
+        //--
 
-                ThreadID m_mainThreadID;
+        std::atomic<uint32_t> m_nextCounterSeqId;
 
-                Array<JobThread*> m_freeThreads;
-                Array<JobThread*> m_allThreads;
-                Mutex m_freeThreadsLock;
+        Array<WaitCounterID> m_freeCounterIds;
+        Mutex m_freeCountersLock;
 
-                std::atomic<uint32_t> m_numThreadsRunning;
-                std::atomic<uint32_t> m_numThreadsWaiting;
+        WaitCounterData* m_counters;
+        Mutex m_countersLock;
 
-                //--
+        //--
 
-                std::atomic<uint32_t> m_nextCounterSeqId;
+        std::atomic<uint32_t> m_nextJobId;
 
-                Array<WaitCounterID> m_freeCounterIds;
-                Mutex m_freeCountersLock;
+        Array<JobPayload*> m_pendingJobs;
+        Mutex m_pendingJobsLock;
 
-                WaitCounterData* m_counters;
-                Mutex m_countersLock;
+        //--
 
-                //--
+        static TYPE_TLS JobPayload* CurrentJob;
+    };
 
-                std::atomic<uint32_t> m_nextJobId;
+} // prv
 
-                Array<JobPayload*> m_pendingJobs;
-                Mutex m_pendingJobsLock;
-
-                //--
-
-                static TYPE_TLS JobPayload* CurrentJob;
-            };
-
-        } // prv
-    } // fibers
-} // base
+END_BOOMER_NAMESPACE(base::fibers)

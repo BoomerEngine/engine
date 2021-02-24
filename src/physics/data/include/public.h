@@ -8,16 +8,12 @@
 
 #include "physics_data_glue.inl"
 
-namespace physics
-{
-    namespace data
-    {
-        class ICollider;
-        typedef base::RefPtr<ICollider> ColliderPtr;
+BEGIN_BOOMER_NAMESPACE(boomer)
 
-        class CompiledShapeData;
-        typedef base::RefPtr<CompiledShapeData> CompiledShapeDataPtr;
+class IPhysicsCollider;
+typedef base::RefPtr<IPhysicsCollider> PhysicsColliderPtr;
 
-    } // data
-} // physics
+class PhysicsCompiledShapeData;
+typedef base::RefPtr<PhysicsCompiledShapeData> PhysicsCompiledShapeDataPtr;
 
+END_BOOMER_NAMESPACE(boomer)

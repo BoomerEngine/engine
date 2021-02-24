@@ -10,124 +10,124 @@
 #include "sceneContentStructure.h"
 #include "sceneContentNodes.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//---
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneContentStructure);
+RTTI_END_TYPE();
+
+SceneContentStructure::SceneContentStructure(SceneContentNodeType rootNodeType)
+{ 
+    if (rootNodeType == SceneContentNodeType::PrefabRoot)
+        m_root = RefNew<SceneContentPrefabRoot>();
+    else if (rootNodeType == SceneContentNodeType::WorldRoot)
+        m_root = RefNew<SceneContentWorldRoot>();
+
+    m_root->bindRootStructure(this);
+}
+
+SceneContentStructure::~SceneContentStructure()
+{}
+
+void SceneContentStructure::handleDebugRender(rendering::scene::FrameParams& frame) const
 {
-    //---
+    for (const auto& ent : m_nodes)
+        ent->handleDebugRender(frame);
+}
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneContentStructure);
-    RTTI_END_TYPE();
+const SceneContentNode* SceneContentStructure::findNodeByPath(StringView path) const
+{
+    if (path.empty())
+        return nullptr;
 
-    SceneContentStructure::SceneContentStructure(SceneContentNodeType rootNodeType)
-    { 
-        if (rootNodeType == SceneContentNodeType::PrefabRoot)
-            m_root = RefNew<SceneContentPrefabRoot>();
-        else if (rootNodeType == SceneContentNodeType::WorldRoot)
-            m_root = RefNew<SceneContentWorldRoot>();
+    return m_root->findNodeByPath(path);
+}
 
-        m_root->bindRootStructure(this);
-    }
+void SceneContentStructure::nodeAdded(SceneContentNode* node)
+{
+    ASSERT(node);
+    ASSERT(node->structure() == this);
+    DEBUG_CHECK_RETURN(!m_nodes.contains(node));
 
-    SceneContentStructure::~SceneContentStructure()
-    {}
+    m_nodes.pushBack(AddRef(node));
 
-    void SceneContentStructure::handleDebugRender(rendering::scene::FrameParams& frame) const
-    {
-        for (const auto& ent : m_nodes)
-            ent->handleDebugRender(frame);
-    }
+    auto& sync = m_nodeChanges.emplaceBack();
+    sync.type = SceneContentSyncOpType::Added;
+    sync.node = AddRef(node);        
 
-    const SceneContentNode* SceneContentStructure::findNodeByPath(StringView path) const
-    {
-        if (path.empty())
-            return nullptr;
+    if (auto entity = rtti_cast<SceneContentEntityNode>(node))
+        m_entities.pushBack(AddRef(entity));
 
-        return m_root->findNodeByPath(path);
-    }
-
-    void SceneContentStructure::nodeAdded(SceneContentNode* node)
-    {
-        ASSERT(node);
-        ASSERT(node->structure() == this);
-        DEBUG_CHECK_RETURN(!m_nodes.contains(node));
-
-        m_nodes.pushBack(AddRef(node));
-
-        auto& sync = m_nodeChanges.emplaceBack();
-        sync.type = SceneContentSyncOpType::Added;
-        sync.node = AddRef(node);        
-
-        if (auto entity = rtti_cast<SceneContentEntityNode>(node))
-            m_entities.pushBack(AddRef(entity));
-
-        if (!node->dirtyFlags().empty())
-            m_dirtyNodes.insert(node);
-    }
-
-    void SceneContentStructure::nodeRemoved(SceneContentNode* node)
-    {
-        ASSERT(node);
-        ASSERT(node->structure() == this);
-        DEBUG_CHECK_RETURN(m_nodes.contains(node));
-
-        auto& sync = m_nodeChanges.emplaceBack();
-        sync.type = SceneContentSyncOpType::Removed;
-        sync.node = AddRef(node);
-
-        m_nodes.remove(node);        
-        m_dirtyNodes.remove(node);
-
-        if (auto entity = rtti_cast<SceneContentEntityNode>(node))
-            m_entities.remove(entity);
-    }
-
-    void SceneContentStructure::nodeDirtyContent(SceneContentNode* node)
-    {
-        DEBUG_CHECK_RETURN(node);
+    if (!node->dirtyFlags().empty())
         m_dirtyNodes.insert(node);
-    }
+}
 
-    void SceneContentStructure::syncNodeChanges(Array<SceneContentSyncOp>& outOps)
+void SceneContentStructure::nodeRemoved(SceneContentNode* node)
+{
+    ASSERT(node);
+    ASSERT(node->structure() == this);
+    DEBUG_CHECK_RETURN(m_nodes.contains(node));
+
+    auto& sync = m_nodeChanges.emplaceBack();
+    sync.type = SceneContentSyncOpType::Removed;
+    sync.node = AddRef(node);
+
+    m_nodes.remove(node);        
+    m_dirtyNodes.remove(node);
+
+    if (auto entity = rtti_cast<SceneContentEntityNode>(node))
+        m_entities.remove(entity);
+}
+
+void SceneContentStructure::nodeDirtyContent(SceneContentNode* node)
+{
+    DEBUG_CHECK_RETURN(node);
+    m_dirtyNodes.insert(node);
+}
+
+void SceneContentStructure::syncNodeChanges(Array<SceneContentSyncOp>& outOps)
+{
+    outOps = std::move(m_nodeChanges);
+}
+
+void SceneContentStructure::visitDirtyNodes(const std::function<void(const SceneContentNode*, SceneContentNodeDirtyFlags&)>& func)
+{
+    PC_SCOPE_LVL0(VisitDirtyNodes);
+
+    uint32_t numNodesVisited = 0;
+    uint32_t numNodesStillDirty = 0;
+
+    auto nodes = m_dirtyNodes.keys();
+    m_dirtyNodes.reset();
+
+    for (const auto& nodeRef : nodes)
     {
-        outOps = std::move(m_nodeChanges);
-    }
-
-    void SceneContentStructure::visitDirtyNodes(const std::function<void(const SceneContentNode*, SceneContentNodeDirtyFlags&)>& func)
-    {
-        PC_SCOPE_LVL0(VisitDirtyNodes);
-
-        uint32_t numNodesVisited = 0;
-        uint32_t numNodesStillDirty = 0;
-
-        auto nodes = m_dirtyNodes.keys();
-        m_dirtyNodes.reset();
-
-        for (const auto& nodeRef : nodes)
+        if (auto node = nodeRef.lock())
         {
-            if (auto node = nodeRef.lock())
+            auto flags = node->dirtyFlags();
+            func(node, flags);
+            numNodesVisited += 1;
+
+            if (flags != node->dirtyFlags())
             {
-                auto flags = node->dirtyFlags();
-                func(node, flags);
-                numNodesVisited += 1;
+                node->resetDirtyStatus(flags);
 
-                if (flags != node->dirtyFlags())
+                if (!flags.empty())
                 {
-                    node->resetDirtyStatus(flags);
-
-                    if (!flags.empty())
-                    {
-                        m_dirtyNodes.insert(nodeRef);
-                        numNodesStillDirty += 1;
-                    }
+                    m_dirtyNodes.insert(nodeRef);
+                    numNodesStillDirty += 1;
                 }
             }
         }
-
-        if (numNodesVisited)
-        {
-            TRACE_INFO("Visited {} dirty nodes ({} still dirty)", numNodesVisited, numNodesStillDirty);
-        }
     }
 
-    //---
+    if (numNodesVisited)
+    {
+        TRACE_INFO("Visited {} dirty nodes ({} still dirty)", numNodesVisited, numNodesStillDirty);
+    }
+}
 
-} // ed
+//---
+
+END_BOOMER_NAMESPACE(ed)

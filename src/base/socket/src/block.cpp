@@ -9,32 +9,28 @@
 #include "block.h"
 #include "blockAllocator.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::socket)
+
+//--
+
+void Block::release()
 {
-    namespace socket
+    m_allocator->releaseBlock(this);
+}
+
+void Block::shrink(uint32_t skipFront, uint32_t newSize /*= INDEX_MAX*/)
+{
+    ASSERT(skipFront <= m_currentSize);
+    m_currentSize -= skipFront;
+    m_ptr += skipFront;
+
+    if (newSize != INDEX_MAX)
     {
+        ASSERT(newSize <= m_currentSize);
+        m_currentSize = newSize;
+    }
+}
 
-        //--
+//--
 
-        void Block::release()
-        {
-            m_allocator->releaseBlock(this);
-        }
-
-        void Block::shrink(uint32_t skipFront, uint32_t newSize /*= INDEX_MAX*/)
-        {
-            ASSERT(skipFront <= m_currentSize);
-            m_currentSize -= skipFront;
-            m_ptr += skipFront;
-
-            if (newSize != INDEX_MAX)
-            {
-                ASSERT(newSize <= m_currentSize);
-                m_currentSize = newSize;
-            }
-        }
-
-        //--
-
-    } // socket
-} // base
+END_BOOMER_NAMESPACE(base::socket)

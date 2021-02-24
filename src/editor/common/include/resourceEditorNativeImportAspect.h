@@ -10,41 +10,38 @@
 
 #include "resourceEditor.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+///---
+
+/// import reimport aspect - shows the data about resource import, import config and allows to reimport the asset
+class EDITOR_COMMON_API ResourceEditorNativeImportAspect : public IResourceEditorAspect
 {
-    ///---
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceEditorNativeImportAspect, IResourceEditorAspect);
 
+public:
+    ResourceEditorNativeImportAspect();
 
-    ///---
+    //--
 
-    /// import reimport aspect - shows the data about resource import, import config and allows to reimport the asset
-    class EDITOR_COMMON_API ResourceEditorNativeImportAspect : public IResourceEditorAspect
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(ResourceEditorNativeImportAspect, IResourceEditorAspect);
+    // get the asset import configuration
+    INLINE const res::ResourceConfigurationPtr& config() const { return m_config; }
 
-    public:
-        ResourceEditorNativeImportAspect();
+    //--
 
-        //--
+protected:
+    virtual bool initialize(ResourceEditor* editor);
+    virtual void close(); // called when editor is closed
 
-        // get the asset import configuration
-        INLINE const res::ResourceConfigurationPtr& config() const { return m_config; }
+    res::ResourceConfigurationPtr m_config;
 
-        //--
+    void inplaceReimport();
+    bool inplaceReimportWorker(IProgressTracker& progress);
 
-    protected:
-        virtual bool initialize(ResourceEditor* editor);
-        virtual void close(); // called when editor is closed
+    bool m_configChanged = false;
+};
 
-        res::ResourceConfigurationPtr m_config;
+///---
 
-        void inplaceReimport();
-        bool inplaceReimportWorker(IProgressTracker& progress);
-
-        bool m_configChanged = false;
-    };
-
-    ///---
-
-} // editor
+END_BOOMER_NAMESPACE(ed)
 

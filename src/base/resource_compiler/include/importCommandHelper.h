@@ -8,16 +8,13 @@
 
 #pragma once
 
-namespace base
-{
-    namespace res
-    {
-        //--
+BEGIN_BOOMER_NAMESPACE(base::res)
 
-        /// all-in-one import helper - import files from given list into the depot, runs internally on a fiber, can be canceled via mainProgress
-        extern BASE_RESOURCE_COMPILER_API bool ProcessImport(const ImportList* files, IProgressTracker* mainProgress, IImportQueueCallbacks* callbacks, bool force = false);
+//--
 
-        //--
+/// all-in-one import helper - import files from given list into the depot, runs internally on a fiber, can be canceled via mainProgress
+extern BASE_RESOURCE_COMPILER_API bool ProcessImport(const ImportList* files, IProgressTracker* mainProgress, IImportQueueCallbacks* callbacks, bool force = false);
 
-    } // res
-} // base
+//--
+
+END_BOOMER_NAMESPACE(base::res)

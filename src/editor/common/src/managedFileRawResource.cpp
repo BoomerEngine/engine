@@ -13,101 +13,101 @@
 #include "managedDepot.h"
 #include "base/io/include/ioFileHandle.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedFileRawResource);
+RTTI_END_TYPE();
+
+ManagedFileRawResource::ManagedFileRawResource(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName)
+    : ManagedFile(depot, parentDir, fileName)
 {
-    //--
+}
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(ManagedFileRawResource);
-    RTTI_END_TYPE();
-
-    ManagedFileRawResource::ManagedFileRawResource(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName)
-        : ManagedFile(depot, parentDir, fileName)
-    {
-    }
-
-    ManagedFileRawResource::~ManagedFileRawResource()
-    {
-    }
+ManagedFileRawResource::~ManagedFileRawResource()
+{
+}
     
-    Buffer ManagedFileRawResource::loadContent()
+Buffer ManagedFileRawResource::loadContent()
+{
+    DEBUG_CHECK_EX(!isDeleted(), "Trying to load contet from deleted file");
+    if (!isDeleted())
     {
-        DEBUG_CHECK_EX(!isDeleted(), "Trying to load contet from deleted file");
-        if (!isDeleted())
+        if (auto file = depot()->depot().createFileReader(depotPath()))
         {
-            if (auto file = depot()->depot().createFileReader(depotPath()))
+            if (auto ret = Buffer::Create(POOL_RAW_RESOURCE, file->size(), 16))
             {
-                if (auto ret = Buffer::Create(POOL_RAW_RESOURCE, file->size(), 16))
-                {
-                    if (file->readSync(ret.data(), ret.size()) == ret.size())
-                        return ret;
+                if (file->readSync(ret.data(), ret.size()) == ret.size())
+                    return ret;
 
-                    TRACE_ERROR("ManagedFile: IO error loading content of '{}'", depotPath());
-                }
-                else
-                {
-                    TRACE_ERROR("ManagedFile: Not enough memory to load content of '{}'", depotPath());
-                }
+                TRACE_ERROR("ManagedFile: IO error loading content of '{}'", depotPath());
             }
             else
             {
-                TRACE_WARNING("ManagedFile: Failed to load content for '{}'", depotPath());
+                TRACE_ERROR("ManagedFile: Not enough memory to load content of '{}'", depotPath());
             }
         }
         else
         {
-            TRACE_WARNING("ManagedFile: Can't load from deleted file '{}'", depotPath());
+            TRACE_WARNING("ManagedFile: Failed to load content for '{}'", depotPath());
         }
-
-        return nullptr;
+    }
+    else
+    {
+        TRACE_WARNING("ManagedFile: Can't load from deleted file '{}'", depotPath());
     }
 
-    bool ManagedFileRawResource::storeContent(const Buffer& data)
-    {
-        bool saved = false;
+    return nullptr;
+}
 
-        DEBUG_CHECK_EX(!isDeleted(), "Trying to save contet to deleted file");
-        if (!isDeleted())
+bool ManagedFileRawResource::storeContent(const Buffer& data)
+{
+    bool saved = false;
+
+    DEBUG_CHECK_EX(!isDeleted(), "Trying to save contet to deleted file");
+    if (!isDeleted())
+    {
+        if (data)
         {
-            if (data)
+            if (auto writer = depot()->depot().createFileWriter(depotPath()))
             {
-                if (auto writer = depot()->depot().createFileWriter(depotPath()))
+                if (writer->writeSync(data.data(), data.size()) == data.size())
                 {
-                    if (writer->writeSync(data.data(), data.size()) == data.size())
-                    {
-                        TRACE_INFO("ManagedFile: Save new data into '{}' ({})", depotPath(), MemSize(data.size()));
-                        saved = true;
-                    }
-                    else
-                    {
-                        TRACE_WARNING("ManagedFile: Unable to save all data into '{}'", depotPath());
-                        writer->discardContent();
-                    }
+                    TRACE_INFO("ManagedFile: Save new data into '{}' ({})", depotPath(), MemSize(data.size()));
+                    saved = true;
                 }
                 else
                 {
-                    TRACE_WARNING("ManagedFile: Unable to open writer for saving into '{}'", depotPath());
+                    TRACE_WARNING("ManagedFile: Unable to save all data into '{}'", depotPath());
+                    writer->discardContent();
                 }
             }
             else
             {
-                TRACE_WARNING("ManagedFile: Nothing to save for '{}'", depotPath());
+                TRACE_WARNING("ManagedFile: Unable to open writer for saving into '{}'", depotPath());
             }
         }
         else
         {
-            TRACE_WARNING("ManagedFile: Can't save into deleted file '{}'", depotPath());
+            TRACE_WARNING("ManagedFile: Nothing to save for '{}'", depotPath());
         }
-
-        // if file was saved change it's status
-        if (saved)
-        {
-            modify(false);
-
-            DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_FILE_SAVED, ManagedFilePtr(AddRef(static_cast<ManagedFile*>(this))));
-            DispatchGlobalEvent(eventKey(), EVENT_MANAGED_FILE_SAVED);
-        }
-
-        return saved;
+    }
+    else
+    {
+        TRACE_WARNING("ManagedFile: Can't save into deleted file '{}'", depotPath());
     }
 
-} // ed
+    // if file was saved change it's status
+    if (saved)
+    {
+        modify(false);
+
+        DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_FILE_SAVED, ManagedFilePtr(AddRef(static_cast<ManagedFile*>(this))));
+        DispatchGlobalEvent(eventKey(), EVENT_MANAGED_FILE_SAVED);
+    }
+
+    return saved;
+}
+
+END_BOOMER_NAMESPACE(ed)

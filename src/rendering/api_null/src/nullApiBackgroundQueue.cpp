@@ -9,29 +9,22 @@
 #include "build.h"
 #include "nullApiBackgroundQueue.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
+
+//--
+
+BackgroundQueue::BackgroundQueue()
+{}
+
+bool BackgroundQueue::createWorkerThreads(uint32_t requestedCount, uint32_t& outNumCreated)
 {
-    namespace api
-    {
-		namespace nul
-		{
+	outNumCreated = 0;
+	return true;
+}
 
-	        //--
+void BackgroundQueue::stopWorkerThreads()
+{}
 
-			BackgroundQueue::BackgroundQueue()
-			{}
-
-			bool BackgroundQueue::createWorkerThreads(uint32_t requestedCount, uint32_t& outNumCreated)
-			{
-				outNumCreated = 0;
-				return true;
-			}
-
-			void BackgroundQueue::stopWorkerThreads()
-			{}
-
-			//--
+//--
 	
-		} // nul
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

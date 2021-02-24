@@ -10,46 +10,43 @@
 #include "application.h"
 #include "localService.h"
 
-namespace base
-{
-    namespace app
-    {
-        ///---
+BEGIN_BOOMER_NAMESPACE(base::app)
 
-        RTTI_BEGIN_TYPE_CLASS(DependsOnServiceMetadata);
-        RTTI_END_TYPE();
+///---
 
-        DependsOnServiceMetadata::DependsOnServiceMetadata()
-        {}
+RTTI_BEGIN_TYPE_CLASS(DependsOnServiceMetadata);
+RTTI_END_TYPE();
 
-        ///---
+DependsOnServiceMetadata::DependsOnServiceMetadata()
+{}
 
-        RTTI_BEGIN_TYPE_CLASS(TickBeforeMetadata);
-        RTTI_END_TYPE();
+///---
 
-        TickBeforeMetadata::TickBeforeMetadata()
-        {}
+RTTI_BEGIN_TYPE_CLASS(TickBeforeMetadata);
+RTTI_END_TYPE();
 
-        ///---
+TickBeforeMetadata::TickBeforeMetadata()
+{}
 
-        RTTI_BEGIN_TYPE_CLASS(TickAfterMetadata);
-        RTTI_END_TYPE();
+///---
 
-        TickAfterMetadata::TickAfterMetadata()
-        {}
+RTTI_BEGIN_TYPE_CLASS(TickAfterMetadata);
+RTTI_END_TYPE();
 
-        ///---
+TickAfterMetadata::TickAfterMetadata()
+{}
 
-        RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ILocalService);
-        RTTI_END_TYPE();
+///---
 
-        ILocalService::ILocalService()
-        {}
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ILocalService);
+RTTI_END_TYPE();
 
-        ILocalService::~ILocalService()
-        {}
+ILocalService::ILocalService()
+{}
 
-        ///---
+ILocalService::~ILocalService()
+{}
 
-    } // app
-} // framework
+///---
+
+END_BOOMER_NAMESPACE(base::app)

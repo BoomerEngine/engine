@@ -8,13 +8,10 @@
 
 #include "public.h"
 
-namespace base
-{
-    namespace storage
-    {
-        class XMLData;
-        typedef base::RefPtr<XMLData> XMLDataPtr;
-        typedef base::res::Ref<XMLData> XMLDataRef;
-        
-    } // storage
-} // base
+BEGIN_BOOMER_NAMESPACE(base::storage)
+
+class XMLData;
+typedef base::RefPtr<XMLData> XMLDataPtr;
+typedef base::res::Ref<XMLData> XMLDataRef;
+
+END_BOOMER_NAMESPACE(base::storage)

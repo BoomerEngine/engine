@@ -45,8 +45,8 @@ namespace application
         bool processInput(const base::input::BaseEvent& evt);
 
         void renderFrame();
-        void renderGame(rendering::command::CommandWriter& cmd, const game::HostViewport& viewport);
-        void renderOverlay(rendering::command::CommandWriter& cmd, const game::HostViewport& viewport);
+        void renderGame(rendering::GPUCommandWriter& cmd, const game::HostViewport& viewport);
+        void renderOverlay(rendering::GPUCommandWriter& cmd, const game::HostViewport& viewport);
     };
 
 } // application

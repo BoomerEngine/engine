@@ -10,26 +10,22 @@
 
 #include "base/ui/include/uiWindow.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::test)
+
+//--
+
+/// test window
+class TestWindow : public ui::Window
 {
-    namespace test
-    {
+public:
+    TestWindow();
 
-        //--
+    virtual void queryInitialPlacementSetup(ui::WindowInitialPlacementSetup& outSetup) const override;
+    virtual void handleExternalCloseRequest() override;
 
-        /// test window
-        class TestWindow : public ui::Window
-        {
-        public:
-            TestWindow();
+	base::canvas::DynamicAtlasPtr m_honklerAtlas;
+};
 
-            virtual void queryInitialPlacementSetup(ui::WindowInitialPlacementSetup& outSetup) const override;
-            virtual void handleExternalCloseRequest() override;
+//--
 
-			base::canvas::DynamicAtlasPtr m_honklerAtlas;
-        };
-
-        //--
-
-    } // test
-} // scene
+END_BOOMER_NAMESPACE(rendering::test)

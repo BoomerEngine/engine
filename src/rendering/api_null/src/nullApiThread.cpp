@@ -22,115 +22,108 @@
 #include "rendering/api_common/include/apiObjectRegistry.h"
 #include "rendering/api_common/include/apiSwapchain.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
+
+//--
+
+base::ConfigProperty<float> cvFakeGPUWorkTime("NULL", "FakeGPUWorkTime", 10);
+
+//--
+
+Thread::Thread(Device* drv, WindowManager* windows)
+	: IBaseThread(drv, windows)
 {
-    namespace api
-    {
-		namespace nul
-		{
+}
 
-	        //--
+Thread::~Thread()
+{
 
-		    base::ConfigProperty<float> cvFakeGPUWorkTime("NULL", "FakeGPUWorkTime", 10);
+}
 
-			//--
+//--
 
-			Thread::Thread(Device* drv, WindowManager* windows)
-				: IBaseThread(drv, windows)
-			{
-			}
+void Thread::syncGPU_Thread()
+{
+	base::Sleep(200);
+}
 
-			Thread::~Thread()
-			{
+void Thread::execute_Thread(uint64_t frameIndex, PerformanceStats& stats, GPUCommandBuffer* masterCommandBuffer, const FrameExecutionData& data)
+{
+	FrameExecutor executor(this, &stats);
+	executor.execute(masterCommandBuffer);
+}
 
-			}
+void Thread::insertGpuFrameFence_Thread(uint64_t frameIndex)
+{
+	auto lock = base::CreateLock(m_fakeFencesLock);
 
-			//--
+	//auto& fakeFence = m_fakeFences.emplaceBack();
 
-			void Thread::syncGPU_Thread()
-			{
-				base::Sleep(200);
-			}
+}
 
-			void Thread::execute_Thread(uint64_t frameIndex, PerformanceStats& stats, command::CommandBuffer* masterCommandBuffer, const FrameExecutionData& data)
-			{
-				FrameExecutor executor(this, &stats);
-				executor.execute(masterCommandBuffer);
-			}
+bool Thread::checkGpuFrameFence_Thread(uint64_t& outFrameIndex)
+{
+	return false;
+}
 
-			void Thread::insertGpuFrameFence_Thread(uint64_t frameIndex)
-			{
-				auto lock = base::CreateLock(m_fakeFencesLock);
+IBaseSwapchain* Thread::createOptimalSwapchain(const OutputInitInfo& info)
+{
+	if (info.m_class == OutputClass::Window)
+	{
+		auto window = m_windows->createWindow(info);
+		DEBUG_CHECK_RETURN_EX_V(window, "Window not created", nullptr);
 
-				//auto& fakeFence = m_fakeFences.emplaceBack();
+		IBaseWindowedSwapchain::WindowSetup setup;
+		setup.colorFormat = ImageFormat::RGBA8_UNORM;
+		setup.depthFormat = ImageFormat::D24S8;
+		setup.samples = 1;
+		setup.flipped = false;
+		setup.deviceHandle = 0;
+		setup.windowHandle = window;
+		setup.windowManager = m_windows;
+		setup.windowInterface = m_windows->windowInterface(window);
 
-			}
+		return new Swapchain(info.m_class, setup);
+	}
 
-			bool Thread::checkGpuFrameFence_Thread(uint64_t& outFrameIndex)
-			{
-				return false;
-			}
+	return nullptr;
+}
 
-			IBaseSwapchain* Thread::createOptimalSwapchain(const OutputInitInfo& info)
-			{
-				if (info.m_class == OutputClass::Window)
-				{
-					auto window = m_windows->createWindow(info);
-					DEBUG_CHECK_RETURN_EX_V(window, "Window not created", nullptr);
+IBaseBuffer* Thread::createOptimalBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData)
+{
+	return new Buffer(this, info, sourceData);
+}
 
-					IBaseWindowedSwapchain::WindowSetup setup;
-					setup.colorFormat = ImageFormat::RGBA8_UNORM;
-					setup.depthFormat = ImageFormat::D24S8;
-					setup.samples = 1;
-					setup.flipped = false;
-					setup.deviceHandle = 0;
-					setup.windowHandle = window;
-					setup.windowManager = m_windows;
-					setup.windowInterface = m_windows->windowInterface(window);
+IBaseImage* Thread::createOptimalImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData)
+{
+	return new Image(this, info, sourceData);
+}
 
-					return new Swapchain(info.m_class, setup);
-				}
+IBaseSampler* Thread::createOptimalSampler(const SamplerState& state)
+{
+	return new Sampler(this, state);
+}
 
-				return nullptr;
-			}
+IBaseShaders* Thread::createOptimalShaders(const ShaderData* data)
+{
+	return new Shaders(this, data);
+}
 
-			IBaseBuffer* Thread::createOptimalBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData)
-			{
-				return new Buffer(this, info, sourceData);
-			}
+ObjectRegistry* Thread::createOptimalObjectRegistry(const base::app::CommandLine& cmdLine)
+{
+	return new ObjectRegistry(this);
+}
 
-			IBaseImage* Thread::createOptimalImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData)
-			{
-				return new Image(this, info, sourceData);
-			}
+IBaseObjectCache* Thread::createOptimalObjectCache(const base::app::CommandLine& cmdLine)
+{
+	return new ObjectCache(this);
+}
 
-			IBaseSampler* Thread::createOptimalSampler(const SamplerState& state)
-			{
-				return new Sampler(this, state);
-			}
+IBaseBackgroundQueue* Thread::createOptimalBackgroundQueue(const base::app::CommandLine& cmdLine)
+{
+	return new BackgroundQueue();
+}
 
-			IBaseShaders* Thread::createOptimalShaders(const ShaderData* data)
-			{
-				return new Shaders(this, data);
-			}
-
-			ObjectRegistry* Thread::createOptimalObjectRegistry(const base::app::CommandLine& cmdLine)
-			{
-				return new ObjectRegistry(this);
-			}
-
-			IBaseObjectCache* Thread::createOptimalObjectCache(const base::app::CommandLine& cmdLine)
-			{
-				return new ObjectCache(this);
-			}
-
-			IBaseBackgroundQueue* Thread::createOptimalBackgroundQueue(const base::app::CommandLine& cmdLine)
-			{
-				return new BackgroundQueue();
-			}
-
-			//--
+//--
 	
-		} // nul
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

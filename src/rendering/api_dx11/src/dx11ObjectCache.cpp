@@ -11,34 +11,27 @@
 #include "dx11DescriptorLayout.h"
 #include "dx11VertexLayout.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
+
+//---
+
+ObjectCache::ObjectCache(Thread* owner)
+	: IBaseObjectCache(owner)
+{}
+
+ObjectCache::~ObjectCache()
+{}
+
+IBaseVertexBindingLayout* ObjectCache::createOptimalVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams)
 {
-	namespace api
-	{
-		namespace dx11
-		{
+	return new VertexBindingLayout(owner(), streams);
+}
 
-			//---
+IBaseDescriptorBindingLayout* ObjectCache::createOptimalDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors, const base::Array<ShaderStaticSamplerMetadata>& staticSamplers)
+{
+	return new DescriptorBindingLayout(owner(), descriptors);
+}
 
-			ObjectCache::ObjectCache(Thread* owner)
-				: IBaseObjectCache(owner)
-			{}
+//---
 
-			ObjectCache::~ObjectCache()
-			{}
-
-			IBaseVertexBindingLayout* ObjectCache::createOptimalVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams)
-			{
-				return new VertexBindingLayout(owner(), streams);
-			}
-
-			IBaseDescriptorBindingLayout* ObjectCache::createOptimalDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors, const base::Array<ShaderStaticSamplerMetadata>& staticSamplers)
-			{
-				return new DescriptorBindingLayout(owner(), descriptors);
-			}
-
-			//---
-
-		} // dx11
-	} // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::dx11)

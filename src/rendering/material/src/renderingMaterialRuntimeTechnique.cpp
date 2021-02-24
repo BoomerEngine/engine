@@ -12,55 +12,54 @@
 #include "rendering/device/include/renderingShader.h"
 #include "rendering/device/include/renderingPipeline.h"
 
-namespace rendering
-{
+BEGIN_BOOMER_NAMESPACE(rendering)
  
-    ///---
+///---
 
-    MaterialTechniqueRenderStates::MaterialTechniqueRenderStates()
-    {}
+MaterialTechniqueRenderStates::MaterialTechniqueRenderStates()
+{}
 
-    ///---
+///---
 
-    static MaterialCompiledTechnique theEmptyTechnique;
+static MaterialCompiledTechnique theEmptyTechnique;
 
-    const MaterialCompiledTechnique& MaterialCompiledTechnique::EMPTY()
+const MaterialCompiledTechnique& MaterialCompiledTechnique::EMPTY()
+{
+    return theEmptyTechnique;
+}
+
+///---
+
+static std::atomic<uint32_t> GMaterialTechniqueID = 1;
+
+MaterialTechnique::MaterialTechnique(const MaterialCompilationSetup& setup)
+    : m_setup(setup)
+{
+	m_id = GMaterialTechniqueID++;
+}
+
+MaterialTechnique::~MaterialTechnique()
+{
+    if (auto* expiredState = m_data.exchange(nullptr))
+        m_expiredData.pushBack(NoAddRef(expiredState));
+
+    m_expiredData.clear();
+}
+
+void MaterialTechnique::pushData(const ShaderData* newState)
+{
+    if (newState && newState->deviceShader())
     {
-        return theEmptyTechnique;
-    }
-
-    ///---
-
-	static std::atomic<uint32_t> GMaterialTechniqueID = 1;
-
-    MaterialTechnique::MaterialTechnique(const MaterialCompilationSetup& setup)
-        : m_setup(setup)
-    {
-		m_id = GMaterialTechniqueID++;
-	}
-
-    MaterialTechnique::~MaterialTechnique()
-    {
-        if (auto* expiredState = m_data.exchange(nullptr))
-            m_expiredData.pushBack(NoAddRef(expiredState));
-
-        m_expiredData.clear();
-    }
-
-    void MaterialTechnique::pushData(const ShaderData* newState)
-    {
-        if (newState && newState->deviceShader())
+        if (auto pso = newState->deviceShader()->createGraphicsPipeline())
         {
-            if (auto pso = newState->deviceShader()->createGraphicsPipeline())
-            {
-                pso->addRef();
+            pso->addRef();
 
-                if (auto* expiredState = m_data.exchange(pso.get()))
-                    m_expiredData.pushBack(NoAddRef(expiredState));
-            }
+            if (auto* expiredState = m_data.exchange(pso.get()))
+                m_expiredData.pushBack(NoAddRef(expiredState));
         }
     }
+}
 
-    ///---
+///---
 
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

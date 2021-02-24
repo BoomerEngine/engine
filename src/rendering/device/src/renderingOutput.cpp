@@ -9,37 +9,37 @@
 #include "build.h"
 #include "renderingOutput.h"
 
-namespace rendering
-{
-    //--
+BEGIN_BOOMER_NAMESPACE(rendering)
 
-    RTTI_BEGIN_TYPE_ENUM(OutputClass);
-        RTTI_ENUM_OPTION(Offscreen);
-        RTTI_ENUM_OPTION(Window);
-        RTTI_ENUM_OPTION(HMD);
-    RTTI_END_TYPE();
+//--
 
-    ///--
+RTTI_BEGIN_TYPE_ENUM(OutputClass);
+    RTTI_ENUM_OPTION(Offscreen);
+    RTTI_ENUM_OPTION(Window);
+    RTTI_ENUM_OPTION(HMD);
+RTTI_END_TYPE();
 
-    INativeWindowCallback::~INativeWindowCallback()
-    {}
+///--
 
-    ///--
+INativeWindowCallback::~INativeWindowCallback()
+{}
 
-    INativeWindowInterface::~INativeWindowInterface()
-    {}
+///--
 
-    ///--
+INativeWindowInterface::~INativeWindowInterface()
+{}
 
-	RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IOutputObject);
-	RTTI_END_TYPE();
+///--
 
-    IOutputObject::IOutputObject(ObjectID id, IDeviceObjectHandler* impl, bool flipped, INativeWindowInterface* window)
-        : IDeviceObject(id, impl)
-        , m_flipped(flipped)
-        , m_window(window)
-    {}
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IOutputObject);
+RTTI_END_TYPE();
 
-    ///--
+IOutputObject::IOutputObject(ObjectID id, IDeviceObjectHandler* impl, bool flipped, INativeWindowInterface* window)
+    : IDeviceObject(id, impl)
+    , m_flipped(flipped)
+    , m_window(window)
+{}
 
-} // rendering
+///--
+
+END_BOOMER_NAMESPACE(rendering)

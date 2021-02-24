@@ -11,40 +11,40 @@
 
 #include "base/world/include/worldEntity.h"
 
-namespace game
+BEGIN_BOOMER_NAMESPACE(game)
+
+//--
+
+// generic visual entity that renders something
+class GAME_WORLD_API IVisualEntity : public base::world::Entity
 {
-    //--
+    RTTI_DECLARE_VIRTUAL_CLASS(IVisualEntity, base::world::Entity);
 
-    // generic visual entity that renders something
-    class GAME_WORLD_API IVisualEntity : public base::world::Entity
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(IVisualEntity, base::world::Entity);
+public:
+    IVisualEntity();
 
-    public:
-        IVisualEntity();
+    ///---
 
-        ///---
+protected:
+    rendering::scene::ObjectProxyPtr m_proxy;
 
-    protected:
-        rendering::scene::ObjectProxyPtr m_proxy;
+    virtual void handleAttach() override;
+    virtual void handleDetach() override;
+    virtual void handleTransformUpdate(const base::AbsoluteTransform& transform);
+    virtual void handleSelectionChanged() override;
 
-        virtual void handleAttach() override;
-        virtual void handleDetach() override;
-        virtual void handleTransformUpdate(const base::AbsoluteTransform& transform);
-        virtual void handleSelectionChanged() override;
+    virtual void queryTemplateProperties(base::ITemplatePropertyBuilder& outTemplateProperties) const override;
+    virtual bool initializeFromTemplateProperties(const base::ITemplatePropertyValueContainer& templateProperties) override;
 
-        virtual void queryTemplateProperties(base::ITemplatePropertyBuilder& outTemplateProperties) const override;
-        virtual bool initializeFromTemplateProperties(const base::ITemplatePropertyValueContainer& templateProperties) override;
+    virtual rendering::scene::ObjectProxyPtr handleCreateProxy(rendering::scene::Scene* scene) const = 0;
 
-        virtual rendering::scene::ObjectProxyPtr handleCreateProxy(rendering::scene::Scene* scene) const = 0;
+    void recreateRenderingProxy();
 
-        void recreateRenderingProxy();
+private:
+    void createRenderingProxy();
+    void destroyRenderingProxy();
+};
 
-    private:
-        void createRenderingProxy();
-        void destroyRenderingProxy();
-    };
+//--
 
-    //--
-
-} // game
+END_BOOMER_NAMESPACE(game)

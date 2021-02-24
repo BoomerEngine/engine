@@ -9,24 +9,17 @@
 #include "build.h"
 #include "dx11ComputePipeline.h"
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace dx11
-		{
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
 
-			//--
+//--
 
-			ComputePipeline::ComputePipeline(Thread* owner, const Shaders* shaders)
-				: IBaseComputePipeline(owner, shaders)
-			{}
+ComputePipeline::ComputePipeline(Thread* owner, const Shaders* shaders)
+	: IBaseComputePipeline(owner, shaders)
+{}
 
-			ComputePipeline::~ComputePipeline()
-			{}
+ComputePipeline::~ComputePipeline()
+{}
 
-			//--
+//--
 
-		} // dx11
-    } // gl4
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::dx11)

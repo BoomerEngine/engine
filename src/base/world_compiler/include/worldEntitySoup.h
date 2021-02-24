@@ -12,26 +12,22 @@
 #include "base/world/include/worldEntity.h"
 #include "base/world/include/worldNodeTemplate.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::world)
+
+//---
+
+// entity soup
+struct BASE_WORLD_COMPILER_API SourceEntitySoup : public NoCopy
 {
-    namespace world
-    {
+    Array<RefPtr<HierarchyEntity>> rootEntities;
+    uint32_t totalEntityCount = 0;
+};
 
-        //---
+//---
 
-        // entity soup
-        struct BASE_WORLD_COMPILER_API SourceEntitySoup : public NoCopy
-        {
-            Array<RefPtr<HierarchyEntity>> rootEntities;
-            uint32_t totalEntityCount = 0;
-        };
+// extract source entities from a scene
+extern BASE_WORLD_COMPILER_API void ExtractSourceEntities(const res::ResourcePath& worldFilePath, SourceEntitySoup& outSoup);
 
-        //---
+//---
 
-        // extract source entities from a scene
-        extern BASE_WORLD_COMPILER_API void ExtractSourceEntities(const res::ResourcePath& worldFilePath, SourceEntitySoup& outSoup);
-
-        //---
-
-    } // world
-} // base
+END_BOOMER_NAMESPACE(base::world)

@@ -7,11 +7,3 @@
 #pragma once
 
 #include "base_script_jit_glue.inl"
-
-namespace base
-{
-    namespace script
-    {
-
-    } // script
-} // base

@@ -10,24 +10,17 @@
 
 #include "rendering/api_common/include/apiObjectCache.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
+
+//--
+
+class VertexBindingLayout : public IBaseVertexBindingLayout
 {
-    namespace api
-    {
-		namespace dx11
-		{
-			//--
+public:
+	VertexBindingLayout(Thread* owner, const base::Array<ShaderVertexStreamMetadata>& streams);
+	virtual ~VertexBindingLayout();
+};
 
-			class VertexBindingLayout : public IBaseVertexBindingLayout
-			{
-			public:
-				VertexBindingLayout(Thread* owner, const base::Array<ShaderVertexStreamMetadata>& streams);
-				virtual ~VertexBindingLayout();
-			};
+//--
 
-			//--
-
-		} // dx11
-    } // api
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::api::dx11)

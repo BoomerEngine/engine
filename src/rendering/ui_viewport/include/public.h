@@ -8,13 +8,14 @@
 
 #include "rendering_ui_viewport_glue.inl"
 
-namespace ui
-{
-    class RenderingScenePanel;
-    typedef base::RefPtr<RenderingScenePanel> RenderingScenePanelPtr;
+BEGIN_BOOMER_NAMESPACE(ui)
 
-	class RenderingFullScenePanel;
-	typedef base::RefPtr<RenderingFullScenePanel> RenderingFullScenePanelPtr;
+class RenderingScenePanel;
+typedef base::RefPtr<RenderingScenePanel> RenderingScenePanelPtr;
 
-    class CameraViewportSetup;
-}
+class RenderingFullScenePanel;
+typedef base::RefPtr<RenderingFullScenePanel> RenderingFullScenePanelPtr;
+
+class CameraViewportSetup;
+
+END_BOOMER_NAMESPACE(ui)

@@ -9,39 +9,39 @@
 #include "build.h"
 #include "renderingMaterialGraphBlock.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+///---
+
+class MaterialGraphBlock_VectorDot4 : public MaterialGraphBlock
 {
-    ///---
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_VectorDot4, MaterialGraphBlock);
 
-    class MaterialGraphBlock_VectorDot4 : public MaterialGraphBlock
+public:
+    MaterialGraphBlock_VectorDot4()
+    {}
+
+    virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_VectorDot4, MaterialGraphBlock);
+        builder.socket("Out"_id, MaterialOutputSocket().hideCaption());
+        builder.socket("A"_id, MaterialInputSocket().hideCaption());
+        builder.socket("B"_id, MaterialInputSocket().hideCaption());
+    }
 
-    public:
-        MaterialGraphBlock_VectorDot4()
-        {}
+    virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
+    {
+        CodeChunk a = compiler.evalInput(this, "A"_id, base::Vector4(1, 1, 1, 1)).conform(4);
+        CodeChunk b = compiler.evalInput(this, "B"_id, base::Vector4(1, 1, 1, 1)).conform(4);
+        return CodeChunkOp::Dot4(a, b);
+    }
+};
 
-        virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
-        {
-            builder.socket("Out"_id, MaterialOutputSocket().hideCaption());
-            builder.socket("A"_id, MaterialInputSocket().hideCaption());
-            builder.socket("B"_id, MaterialInputSocket().hideCaption());
-        }
+RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_VectorDot4);
+    RTTI_METADATA(base::graph::BlockInfoMetadata).title("dot4").group("Vector").name("Dot4");
+    RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialVector");
+    RTTI_METADATA(base::graph::BlockShapeMetadata).slanted();
+RTTI_END_TYPE();
 
-        virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
-        {
-            CodeChunk a = compiler.evalInput(this, "A"_id, base::Vector4(1, 1, 1, 1)).conform(4);
-            CodeChunk b = compiler.evalInput(this, "B"_id, base::Vector4(1, 1, 1, 1)).conform(4);
-            return CodeChunkOp::Dot4(a, b);
-        }
-    };
+///---
 
-    RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_VectorDot4);
-        RTTI_METADATA(base::graph::BlockInfoMetadata).title("dot4").group("Vector").name("Dot4");
-        RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialVector");
-        RTTI_METADATA(base::graph::BlockShapeMetadata).slanted();
-    RTTI_END_TYPE();
-
-    ///---
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

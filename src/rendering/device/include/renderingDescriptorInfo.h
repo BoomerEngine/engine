@@ -12,51 +12,51 @@
 
 #include "base/containers/include/inplaceArray.h"
 
-namespace rendering
-{
+BEGIN_BOOMER_NAMESPACE(rendering)
+
     ///--
 
-    /// info about parameter descriptor
-    class RENDERING_DEVICE_API DescriptorInfo
-    {
-    public:
-        DescriptorInfo();
-        DescriptorInfo(const DescriptorInfo& other) = default;
-        DescriptorInfo(const DescriptorInfo& other, DescriptorID id);
-        DescriptorInfo& operator=(const DescriptorInfo& other) = default;
+/// info about parameter descriptor
+class RENDERING_DEVICE_API DescriptorInfo
+{
+public:
+    DescriptorInfo();
+    DescriptorInfo(const DescriptorInfo& other) = default;
+    DescriptorInfo(const DescriptorInfo& other, DescriptorID id);
+    DescriptorInfo& operator=(const DescriptorInfo& other) = default;
 
-        // is the layout empty ? should not be the case for valid layouts
-        INLINE bool empty() const { return m_entries.empty(); }
+    // is the layout empty ? should not be the case for valid layouts
+    INLINE bool empty() const { return m_entries.empty(); }
 
-        // get number of entries in the layout
-        INLINE uint32_t size() const { return m_entries.size(); }
+    // get number of entries in the layout
+    INLINE uint32_t size() const { return m_entries.size(); }
 
-        // get n-th entry
-        INLINE const DeviceObjectViewType operator[](uint32_t index) const { return m_entries[index]; }
+    // get n-th entry
+    INLINE const DeviceObjectViewType operator[](uint32_t index) const { return m_entries[index]; }
 
-        // get the unique layout hash
-        INLINE uint64_t hash() const { return m_hash; }
+    // get the unique layout hash
+    INLINE uint64_t hash() const { return m_hash; }
 
-        // get the ID we are registered under
-        INLINE DescriptorID id() const { return m_id; }
+    // get the ID we are registered under
+    INLINE DescriptorID id() const { return m_id; }
 
-        // compare layouts for being equal
-        bool operator==(const DescriptorInfo& other) const;
+    // compare layouts for being equal
+    bool operator==(const DescriptorInfo& other) const;
 
-        // get a string representation of the layout, usually something like CCIIB, etc describing the descriptor layout
-        void print(base::IFormatStream& f) const;
+    // get a string representation of the layout, usually something like CCIIB, etc describing the descriptor layout
+    void print(base::IFormatStream& f) const;
 
-    private:
-        DescriptorID m_id;
-        uint64_t m_hash = 0;
+private:
+    DescriptorID m_id;
+    uint64_t m_hash = 0;
 
-        base::InplaceArray<DeviceObjectViewType, 32> m_entries;
+    base::InplaceArray<DeviceObjectViewType, 32> m_entries;
 
-        //---
+    //---
 
-        friend class DescriptorID;
-    };
+    friend class DescriptorID;
+};
 
-    //--
+//--
 
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

@@ -11,68 +11,66 @@
 
 #include "base/system/include/output.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::platform)
+
+namespace win
 {
-    namespace platform
+    class ErrorHandlerDlg;
+
+    // WinAPI console log output
+    class GenericOutput : public logging::ILogSink, public logging::IErrorHandler
     {
-        namespace win
-        {
-            class ErrorHandlerDlg;
+    public:
+        GenericOutput(bool openConsole, bool verbose);
+        ~GenericOutput();
 
-            // WinAPI console log output
-            class GenericOutput : public logging::ILogSink, public logging::IErrorHandler
-            {
-            public:
-                GenericOutput(bool openConsole, bool verbose);
-                ~GenericOutput();
+        //! Throw exception
+        int handleException(EXCEPTION_POINTERS* exception);
 
-                //! Throw exception
-                int handleException(EXCEPTION_POINTERS* exception);
+    private:
+		// IOutputListener interface
+        virtual bool print(const logging::OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text) override final;
 
-            private:
-				// IOutputListener interface
-                virtual bool print(const logging::OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text) override final;
+		// IErrorListener interface
+		virtual void handleFatalError(const char* fileName, uint32_t fileLine, const char* txt) override final;
+		virtual void handleAssert(bool isFatal, const char* fileName, uint32_t fileLine, const char* expr, const char* msg, bool* isEnabled) override final;
 
-				// IErrorListener interface
-				virtual void handleFatalError(const char* fileName, uint32_t fileLine, const char* txt) override final;
-				virtual void handleAssert(bool isFatal, const char* fileName, uint32_t fileLine, const char* expr, const char* msg, bool* isEnabled) override final;
+    private:
+        //----
 
-            private:
-                //----
+        //! Generate mini dump
+        bool generateDump(EXCEPTION_POINTERS* pExcPtrs);
 
-                //! Generate mini dump
-                bool generateDump(EXCEPTION_POINTERS* pExcPtrs);
+        //----
 
-                //----
+        //! Handle dialog and it's result
+        void handleDialog(ErrorHandlerDlg& dlg, EXCEPTION_POINTERS* pExcPtrs, bool* isEnabledFlag);
 
-                //! Handle dialog and it's result
-                void handleDialog(ErrorHandlerDlg& dlg, EXCEPTION_POINTERS* pExcPtrs, bool* isEnabledFlag);
+        //! Break if no external debugger is attached
+        void breakIntoDebugger(EXCEPTION_POINTERS* pExcPtrs);
 
-                //! Break if no external debugger is attached
-                void breakIntoDebugger(EXCEPTION_POINTERS* pExcPtrs);
+        //! Crash application at current point
+        void crash(EXCEPTION_POINTERS* pExcPtrs, bool panic);
 
-                //! Crash application at current point
-                void crash(EXCEPTION_POINTERS* pExcPtrs, bool panic);
+        //----
 
-                //----
+        HINSTANCE m_hInstance;
 
-                HINSTANCE m_hInstance;
+        HANDLE  m_stdOut;
+        DWORD   m_mainThreadID;
 
-                HANDLE  m_stdOut;
-                DWORD   m_mainThreadID;
+        uint32_t  m_numErrors;
+        uint32_t  m_numWarnings;
 
-                uint32_t  m_numErrors;
-                uint32_t  m_numWarnings;
+		bool m_debugEcho = false;
+        bool m_verbose = false;
 
-				bool m_debugEcho = false;
-                bool m_verbose = false;
+        CRITICAL_SECTION m_lock;
 
-                CRITICAL_SECTION m_lock;
+        static void GetCrashReportPath(wchar_t* outPath);
+        static void GetCrashDumpPath(wchar_t* outPath);
+    };
 
-                static void GetCrashReportPath(wchar_t* outPath);
-                static void GetCrashDumpPath(wchar_t* outPath);
-            };
+} // win
 
-        } // win
-    } // platform
-} //  base
+END_BOOMER_NAMESPACE(base::platform)

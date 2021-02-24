@@ -18,69 +18,67 @@
 
 #include <Windows.h>
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::io)
+
+namespace prv
 {
-    namespace io
+
+    class WinFileHandle;
+
+    // dispatch for IO jobs
+    class WinAsyncReadDispatcher : public NoCopy
     {
-        namespace prv
+        RTTI_DECLARE_POOL(POOL_IO)
+
+    public:
+        WinAsyncReadDispatcher(uint32_t maxInFlightRequests);
+        ~WinAsyncReadDispatcher();
+
+        // process async IO request, returns the number of bytes read
+        CAN_YIELD uint64_t readAsync(HANDLE hAsyncFile, uint64_t offset, uint64_t size, void* outMemory);
+
+    private:
+        struct Token
         {
+            OVERLAPPED m_overlapped; // MUST BE FIRST
+            void* m_memory;
+            HANDLE m_hAsyncHandle;
+            uint32_t m_size;
+            fibers::WaitCounter m_signal;
+            uint32_t* m_numBytesRead;
+            WinAsyncReadDispatcher* m_dispatcher;
 
-            class WinFileHandle;
-
-            // dispatch for IO jobs
-            class WinAsyncReadDispatcher : public NoCopy
+            INLINE Token()
+                : m_memory(nullptr)
+                , m_hAsyncHandle(NULL)
+                , m_numBytesRead(nullptr)
+                , m_size(0)
+                , m_dispatcher(nullptr)
             {
-                RTTI_DECLARE_POOL(POOL_IO)
+                memzero(&m_overlapped, sizeof(m_overlapped));
+            }
+        };
 
-            public:
-                WinAsyncReadDispatcher(uint32_t maxInFlightRequests);
-                ~WinAsyncReadDispatcher();
+        mem::StructurePool<Token> m_tokenPool;
+		SpinLock m_tokenPoolLock;
 
-                // process async IO request, returns the number of bytes read
-                CAN_YIELD uint64_t readAsync(HANDLE hAsyncFile, uint64_t offset, uint64_t size, void* outMemory);
+        Thread m_ioCompletionThread;
 
-            private:
-                struct Token
-                {
-                    OVERLAPPED m_overlapped; // MUST BE FIRST
-                    void* m_memory;
-                    HANDLE m_hAsyncHandle;
-                    uint32_t m_size;
-                    fibers::WaitCounter m_signal;
-                    uint32_t* m_numBytesRead;
-                    WinAsyncReadDispatcher* m_dispatcher;
+        Queue<Token*> m_tokensToExecute;
+        SpinLock m_tokensToExecuteLock;
 
-                    INLINE Token()
-                        : m_memory(nullptr)
-                        , m_hAsyncHandle(NULL)
-                        , m_numBytesRead(nullptr)
-                        , m_size(0)
-                        , m_dispatcher(nullptr)
-                    {
-                        memzero(&m_overlapped, sizeof(m_overlapped));
-                    }
-                };
+        Semaphore m_tokensCounter;
+        std::atomic<uint32_t> m_exiting;
 
-                mem::StructurePool<Token> m_tokenPool;
-				SpinLock m_tokenPoolLock;
+        Token* popTokenFromQueue();
+        Token* allocToken();
+		void releaseToken(Token* token);
 
-                Thread m_ioCompletionThread;
+        void threadFunc();
 
-                Queue<Token*> m_tokensToExecute;
-                SpinLock m_tokensToExecuteLock;
+        static void WINAPI ProcessOverlappedResult(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped);
+    };
 
-                Semaphore m_tokensCounter;
-                std::atomic<uint32_t> m_exiting;
+} // prv
 
-                Token* popTokenFromQueue();
-                Token* allocToken();
-				void releaseToken(Token* token);
-
-                void threadFunc();
-
-                static void WINAPI ProcessOverlappedResult(DWORD dwErrorCode, DWORD dwNumberOfBytesTransfered, LPOVERLAPPED lpOverlapped);
-            };
-
-        } // prv
-    } // io
-} // base
+END_BOOMER_NAMESPACE(base::input)

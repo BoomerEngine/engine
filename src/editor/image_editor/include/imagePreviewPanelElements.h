@@ -11,58 +11,58 @@
 #include "base/ui/include/uiElement.h"
 #include "base/ui/include/uiCanvasArea.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+struct ImagePreviewPanelSettings;
+struct ImagePreviewPixel;
+
+//--
+
+// image based preview element
+class EDITOR_IMAGE_EDITOR_API IImagePreviewElement : public ui::ICanvasAreaElement
 {
-    //--
+    RTTI_DECLARE_VIRTUAL_CLASS(IImagePreviewElement, ui::ICanvasAreaElement);
 
-    struct ImagePreviewPanelSettings;
-    struct ImagePreviewPixel;
+public:
+    virtual ~IImagePreviewElement();
 
-    //--
+    virtual void configure(const ImagePreviewPanelSettings& settings) {};
+    virtual bool queryColor(float x, float y, ImagePreviewPixel& outPixel) const;
+};
 
-    // image based preview element
-    class EDITOR_IMAGE_EDITOR_API IImagePreviewElement : public ui::ICanvasAreaElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(IImagePreviewElement, ui::ICanvasAreaElement);
+//--
 
-    public:
-        virtual ~IImagePreviewElement();
+class EDITOR_IMAGE_EDITOR_API ImagePreviewElement : public IImagePreviewElement
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ImagePreviewElement, IImagePreviewElement);
 
-        virtual void configure(const ImagePreviewPanelSettings& settings) {};
-        virtual bool queryColor(float x, float y, ImagePreviewPixel& outPixel) const;
-    };
+public:
+    ImagePreviewElement(const rendering::ImageSampledView* view, const rendering::ImageSampledView* sourceView);
+    ImagePreviewElement(const rendering::ImageSampledView* view, int mipIndex=0, int sliceIndex=0);
+    ~ImagePreviewElement();
 
-    //--
+    virtual void configure(const ImagePreviewPanelSettings& settings) override;
+    virtual void prepareGeometry(ui::CanvasArea* owner, float sx, float sy, ui::Size& outCanvasSizeAtCurrentScale) override;
+    virtual void render(ui::CanvasArea* owner, float x, float y, float sx, float sy, base::canvas::Canvas& canvas, float mergedOpacity)  override;
 
-    class EDITOR_IMAGE_EDITOR_API ImagePreviewElement : public IImagePreviewElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(ImagePreviewElement, IImagePreviewElement);
+    void mip(int mip);
 
-    public:
-        ImagePreviewElement(const rendering::ImageSampledView* view, const rendering::ImageSampledView* sourceView);
-        ImagePreviewElement(const rendering::ImageSampledView* view, int mipIndex=0, int sliceIndex=0);
-        ~ImagePreviewElement();
+protected:
+	rendering::ImageSampledViewPtr m_view;
+	rendering::ImageSampledViewPtr m_sourceView;
 
-        virtual void configure(const ImagePreviewPanelSettings& settings) override;
-        virtual void prepareGeometry(ui::CanvasArea* owner, float sx, float sy, ui::Size& outCanvasSizeAtCurrentScale) override;
-        virtual void render(ui::CanvasArea* owner, float x, float y, float sx, float sy, base::canvas::Canvas& canvas, float mergedOpacity)  override;
+    int m_mipIndex = 0;
+    int m_sliceIndex = 0;
 
-        void mip(int mip);
+    base::UniquePtr<ImagePreviewPanelSettings> m_settings; // updated only on configure
+};
 
-    protected:
-		rendering::ImageSampledViewPtr m_view;
-		rendering::ImageSampledViewPtr m_sourceView;
+//--
 
-        int m_mipIndex = 0;
-        int m_sliceIndex = 0;
+extern void RenderPixelBackground(base::canvas::Canvas& canvas, const ui::Position& tl, const ui::Position& br, const ui::ElementArea& drawArea, const base::Rect& activeImageArea, float colorFrac);
 
-        base::UniquePtr<ImagePreviewPanelSettings> m_settings; // updated only on configure
-    };
+//--
 
-    //--
-
-    extern void RenderPixelBackground(base::canvas::Canvas& canvas, const ui::Position& tl, const ui::Position& br, const ui::ElementArea& drawArea, const base::Rect& activeImageArea, float colorFrac);
-
-    //--
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

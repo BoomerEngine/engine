@@ -38,182 +38,182 @@
 #include "base/resource/include/resourceMetadata.h"
 #include "base/resource_compiler/include/importFileList.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//---
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(MainWindowStatusBar);
+    RTTI_METADATA(ui::ElementClassNameMetadata).name("StatusBar");
+RTTI_END_TYPE();
+
+MainWindowStatusBar::MainWindowStatusBar()
 {
-    //---
+    layoutHorizontal();
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(MainWindowStatusBar);
-        RTTI_METADATA(ui::ElementClassNameMetadata).name("StatusBar");
-    RTTI_END_TYPE();
-
-    MainWindowStatusBar::MainWindowStatusBar()
     {
-        layoutHorizontal();
+        auto regionLeft = createChild<ui::IElement>();
+        regionLeft->customHorizontalAligment(ui::ElementHorizontalLayout::Left);
+        regionLeft->customVerticalAligment(ui::ElementVerticalLayout::Middle);
 
-        {
-            auto regionLeft = createChild<ui::IElement>();
-            regionLeft->customHorizontalAligment(ui::ElementHorizontalLayout::Left);
-            regionLeft->customVerticalAligment(ui::ElementVerticalLayout::Middle);
+        //--
 
-            //--
+        auto button = regionLeft->createChild<ui::Button>(ui::ButtonModeBit::EventOnClick);
+        button->bind(ui::EVENT_CLICKED) = [this]() { cmdShowJobDetails(); };
 
-            auto button = regionLeft->createChild<ui::Button>(ui::ButtonModeBit::EventOnClick);
-            button->bind(ui::EVENT_CLICKED) = [this]() { cmdShowJobDetails(); };
+        auto inner = button->createChild<ui::IElement>();
+        inner->layoutHorizontal();
+        inner->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
+        inner->customVerticalAligment(ui::ElementVerticalLayout::Middle);
 
-            auto inner = button->createChild<ui::IElement>();
-            inner->layoutHorizontal();
-            inner->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
-            inner->customVerticalAligment(ui::ElementVerticalLayout::Middle);
+        m_backgroundJobStatus = inner->createChild<ui::TextLabel>("[img:tick]");
+        m_backgroundJobStatus->customVerticalAligment(ui::ElementVerticalLayout::Middle);
+        m_backgroundJobStatus->customMargins(5, 0, 5, 0);
 
-            m_backgroundJobStatus = inner->createChild<ui::TextLabel>("[img:tick]");
-            m_backgroundJobStatus->customVerticalAligment(ui::ElementVerticalLayout::Middle);
-            m_backgroundJobStatus->customMargins(5, 0, 5, 0);
+        m_backgroundJobProgress = inner->createChild<ui::ProgressBar>(true);
+        m_backgroundJobProgress->customVerticalAligment(ui::ElementVerticalLayout::Middle);
+        m_backgroundJobProgress->customMinSize(700, 10);
+        m_backgroundJobProgress->customMargins(5, 0, 5, 0);
+    }
 
-            m_backgroundJobProgress = inner->createChild<ui::ProgressBar>(true);
-            m_backgroundJobProgress->customVerticalAligment(ui::ElementVerticalLayout::Middle);
-            m_backgroundJobProgress->customMinSize(700, 10);
-            m_backgroundJobProgress->customMargins(5, 0, 5, 0);
-        }
+    {
+        auto regionCenter = createChild<ui::IElement>();
+        regionCenter->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+        regionCenter->customVerticalAligment(ui::ElementVerticalLayout::Middle);
+        regionCenter->customProportion(1.0f);
+    }
 
-        {
-            auto regionCenter = createChild<ui::IElement>();
-            regionCenter->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-            regionCenter->customVerticalAligment(ui::ElementVerticalLayout::Middle);
-            regionCenter->customProportion(1.0f);
-        }
-
-        {
-            auto regionRight = createChild<ui::IElement>();
-            regionRight->customHorizontalAligment(ui::ElementHorizontalLayout::Right);
-            regionRight->customVerticalAligment(ui::ElementVerticalLayout::Middle);
+    {
+        auto regionRight = createChild<ui::IElement>();
+        regionRight->customHorizontalAligment(ui::ElementHorizontalLayout::Right);
+        regionRight->customVerticalAligment(ui::ElementVerticalLayout::Middle);
 
            
-        }
+    }
 
+    resetBackgroundJobStatus();
+}
+
+void MainWindowStatusBar::resetBackgroundJobStatus()
+{
+    m_activeBackgroundJob.reset();
+    m_backgroundJobStatus->text("[img:valid] Ready");
+    m_backgroundJobProgress->position(1.0f, "Done");
+    m_backgroundJobProgress->visibility(false);
+}
+
+void MainWindowStatusBar::pushBackgroundJobToHistory(IBackgroundTask* job, BackgroundTaskStatus status)
+{
+
+}
+
+void MainWindowStatusBar::updateBackgroundJobStatus(IBackgroundTask* job, uint64_t count, uint64_t total, StringView text, bool hasErrors)
+{
+    if (job)
+    {
+        m_activeBackgroundJob = AddRef(job);
+        m_backgroundJobStatus->text(TempString("[img:hourglass] {}", job->description()));
+
+        float prc = total ? ((double)count / (double)total) : 1.0f;
+        m_backgroundJobProgress->position(prc, text);
+        m_backgroundJobProgress->visibility(true);
+    }
+    else
+    {
         resetBackgroundJobStatus();
     }
+}
 
-    void MainWindowStatusBar::resetBackgroundJobStatus()
-    {
-        m_activeBackgroundJob.reset();
-        m_backgroundJobStatus->text("[img:valid] Ready");
-        m_backgroundJobProgress->position(1.0f, "Done");
-        m_backgroundJobProgress->visibility(false);
-    }
+void MainWindowStatusBar::cmdCancelBackgroundJob()
+{
 
-    void MainWindowStatusBar::pushBackgroundJobToHistory(IBackgroundTask* job, BackgroundTaskStatus status)
-    {
+}
 
-    }
+void MainWindowStatusBar::cmdShowJobDetails()
+{
+    if (m_activeBackgroundJob)
+        GetEditor()->showBackgroundJobDialog(m_activeBackgroundJob);
+}
 
-    void MainWindowStatusBar::updateBackgroundJobStatus(IBackgroundTask* job, uint64_t count, uint64_t total, StringView text, bool hasErrors)
-    {
-        if (job)
-        {
-            m_activeBackgroundJob = AddRef(job);
-            m_backgroundJobStatus->text(TempString("[img:hourglass] {}", job->description()));
+//---
 
-            float prc = total ? ((double)count / (double)total) : 1.0f;
-            m_backgroundJobProgress->position(prc, text);
-            m_backgroundJobProgress->visibility(true);
-        }
-        else
-        {
-            resetBackgroundJobStatus();
-        }
-    }
+RTTI_BEGIN_TYPE_NATIVE_CLASS(MainWindow);
+RTTI_END_TYPE();
 
-    void MainWindowStatusBar::cmdCancelBackgroundJob()
-    {
-
-    }
-
-    void MainWindowStatusBar::cmdShowJobDetails()
-    {
-        if (m_activeBackgroundJob)
-            GetEditor()->showBackgroundJobDialog(m_activeBackgroundJob);
-    }
-
-    //---
-
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(MainWindow);
-    RTTI_END_TYPE();
-
-    static StringBuf BuildWindowCaption()
-    {
-        StringBuilder txt;
-        txt << "Boomer Editor - ";
+static StringBuf BuildWindowCaption()
+{
+    StringBuilder txt;
+    txt << "Boomer Editor - ";
 
 #ifdef BUILD_DEBUG
-        txt.append(" [tag:#A66][b]DEBUG BUILD[/b][/tag]");
+    txt.append(" [tag:#A66][b]DEBUG BUILD[/b][/tag]");
 #elif defined(BUILD_CHECKED)
-        txt.append(" [tag:#999][b]CHECKED BUILD[/b][/tag]");
+    txt.append(" [tag:#999][b]CHECKED BUILD[/b][/tag]");
 #elif defined(BUILD_RELEASE)
-        txt.append(" [tag:#999][b]RELEASE BUILD[/b][/tag]");
+    txt.append(" [tag:#999][b]RELEASE BUILD[/b][/tag]");
 #endif
 
-        //txt.appendf(" [color:#888][size:--]({} {})[/color][/size]", __DATE__, __TIME__);
-        return txt.toString();
-    }
+    //txt.appendf(" [color:#888][size:--]({} {})[/color][/size]", __DATE__, __TIME__);
+    return txt.toString();
+}
 
-    MainWindow::MainWindow()
-        : IBaseResourceContainerWindow("Main", BuildWindowCaption())
-    {
-        customMinSize(1900, 1000);   
+MainWindow::MainWindow()
+    : IBaseResourceContainerWindow("Main", BuildWindowCaption())
+{
+    customMinSize(1900, 1000);   
 
-        m_statusBar = createChild<MainWindowStatusBar>();
-        m_statusBar->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-        m_statusBar->customVerticalAligment(ui::ElementVerticalLayout::Bottom);
-    }
+    m_statusBar = createChild<MainWindowStatusBar>();
+    m_statusBar->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+    m_statusBar->customVerticalAligment(ui::ElementVerticalLayout::Bottom);
+}
 
-    MainWindow::~MainWindow()
-    {
-    }
+MainWindow::~MainWindow()
+{
+}
 
-    void MainWindow::configLoad(const ui::ConfigBlock& block)
-    {
-        TBaseClass::configLoad(block);
-    }
+void MainWindow::configLoad(const ui::ConfigBlock& block)
+{
+    TBaseClass::configLoad(block);
+}
 
-    void MainWindow::configSave(const ui::ConfigBlock& block) const
-    {
-        TBaseClass::configSave(block);    
-    }    
+void MainWindow::configSave(const ui::ConfigBlock& block) const
+{
+    TBaseClass::configSave(block);    
+}    
 
     
-    //--
+//--
 
-    bool MainWindow::singularEditorOnly() const
+bool MainWindow::singularEditorOnly() const
+{
+    return true;
+}
+
+void MainWindow::handleExternalCloseRequest()
+{
+    // make sure all files are saved before closing main window
+    const auto& modifiedFiles = GetEditor()->managedDepot().modifiedFilesList();
+    if (SaveDepotFiles(this, modifiedFiles))
     {
-        return true;
+        GetEditor()->saveConfig();
+
+        platform::GetLaunchPlatform().requestExit("Editor window closed");
     }
-
-    void MainWindow::handleExternalCloseRequest()
-    {
-        // make sure all files are saved before closing main window
-        const auto& modifiedFiles = GetEditor()->managedDepot().modifiedFilesList();
-        if (SaveDepotFiles(this, modifiedFiles))
-        {
-            GetEditor()->saveConfig();
-
-            platform::GetLaunchPlatform().requestExit("Editor window closed");
-        }
-    }   
+}   
     
-    //--
+//--
 
-    void MainWindow::queryInitialPlacementSetup(ui::WindowInitialPlacementSetup& outSetup) const
-    {
-        TBaseClass::queryInitialPlacementSetup(outSetup);
+void MainWindow::queryInitialPlacementSetup(ui::WindowInitialPlacementSetup& outSetup) const
+{
+    TBaseClass::queryInitialPlacementSetup(outSetup);
 
-        outSetup.flagForceActive = true;
-        outSetup.flagAllowResize = true;
-        outSetup.flagShowOnTaskBar = true;
-        outSetup.title = "Boomer Editor";
-        outSetup.mode = ui::WindowInitialPlacementMode::Maximize;
-    }
+    outSetup.flagForceActive = true;
+    outSetup.flagAllowResize = true;
+    outSetup.flagShowOnTaskBar = true;
+    outSetup.title = "Boomer Editor";
+    outSetup.mode = ui::WindowInitialPlacementMode::Maximize;
+}
 
-    //--
+//--
 
-} // editor
+END_BOOMER_NAMESPACE(ed)
 

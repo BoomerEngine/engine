@@ -8,42 +8,42 @@
 
 #include "rendering_material_graph_glue.inl"
 
-namespace rendering
-{
-    ///---
+BEGIN_BOOMER_NAMESPACE(rendering)
 
-    class MaterialGraph;
-    typedef base::RefPtr<MaterialGraph> MaterialGraphPtr;
-    typedef base::res::Ref<MaterialGraph> MaterialGraphRef;
+///---
 
-    class MaterialGraphContainer;
-    typedef base::RefPtr<MaterialGraphContainer> MaterialGraphContainerPtr;
+class MaterialGraph;
+typedef base::RefPtr<MaterialGraph> MaterialGraphPtr;
+typedef base::res::Ref<MaterialGraph> MaterialGraphRef;
 
-    class MaterialGraphBlock;
-    typedef base::RefPtr<MaterialGraphBlock> MaterialGraphBlockPtr;
+class MaterialGraphContainer;
+typedef base::RefPtr<MaterialGraphContainer> MaterialGraphContainerPtr;
 
-    class MaterialGraphBlockParameter;
-    typedef base::RefPtr<MaterialGraphBlockParameter> MaterialGraphParameterBlockPtr;
+class MaterialGraphBlock;
+typedef base::RefPtr<MaterialGraphBlock> MaterialGraphBlockPtr;
 
-    class MaterialGraphBlockOutput;
+class MaterialGraphBlockParameter;
+typedef base::RefPtr<MaterialGraphBlockParameter> MaterialGraphParameterBlockPtr;
 
-    ///---
+class MaterialGraphBlockOutput;
+
+///---
 
 
-    class MaterialStageCompiler;
+class MaterialStageCompiler;
 
-    ///---
+///---
 
-    // #51574A
+// #51574A
     
-    extern const base::Color::ColorVal COLOR_SOCKET_RED;
-    extern const base::Color::ColorVal COLOR_SOCKET_GREEN;
-    extern const base::Color::ColorVal COLOR_SOCKET_BLUE;
-    extern const base::Color::ColorVal COLOR_SOCKET_ALPHA;
-    extern const base::Color::ColorVal COLOR_SOCKET_TEXTURE;
-    extern const base::Color::ColorVal COLOR_SOCKET_CUBE;
+extern const base::Color::ColorVal COLOR_SOCKET_RED;
+extern const base::Color::ColorVal COLOR_SOCKET_GREEN;
+extern const base::Color::ColorVal COLOR_SOCKET_BLUE;
+extern const base::Color::ColorVal COLOR_SOCKET_ALPHA;
+extern const base::Color::ColorVal COLOR_SOCKET_TEXTURE;
+extern const base::Color::ColorVal COLOR_SOCKET_CUBE;
 	
-	///---
+///---
 
-} // rendering
+END_BOOMER_NAMESPACE(rendering)
 

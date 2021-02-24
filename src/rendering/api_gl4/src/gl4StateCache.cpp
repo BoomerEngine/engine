@@ -11,18 +11,7 @@
 #include "gl4Buffer.h"
 #include "gl4Image.h"
 
-namespace rendering
-{
-    namespace api
-    {
-        namespace gl4
-        {
-			//--
-
-			static GLenum TranslateCompareOp(int op)
-			{
-				switch ((CompareOp)op)
-				{
+BEGIN_BOOMER_NAMESPACE(rendering::api)
 					case CompareOp::Never: return GL_NEVER;
 					case CompareOp::Less: return GL_LESS;
 					case CompareOp::LessEqual: return GL_LEQUAL;

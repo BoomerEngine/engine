@@ -10,84 +10,86 @@
 #include "stringVector.h"
 #include "utf8StringFunctions.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+namespace prv
 {
-    namespace prv
+
+    template<typename T>
+    struct ZeroGuard : public base::NoCopy
     {
-
-        template<typename T>
-        struct ZeroGuard : public base::NoCopy
+    public:
+        INLINE ZeroGuard(Array<T>& table)
+            : m_table(table)
         {
-        public:
-            INLINE ZeroGuard(Array<T>& table)
-                : m_table(table)
-            {
-                if (!table.empty() && table.back() == 0)
-                    table.popBack();
-            }
-
-            INLINE ~ZeroGuard()
-            {
-                if (!m_table.empty() && m_table.back() != 0)
-                    m_table.pushBack(0);
-            }
-
-        private:
-            Array<T>& m_table;
-        };
-
-        //---
-
-        void BaseHelper::Append(Array<char>& table, StringView view)
-        {
-            ZeroGuard<char> zg(table);
-
-            for (auto ch : view)
-                table.pushBack(ch);
+            if (!table.empty() && table.back() == 0)
+                table.popBack();
         }
 
-        void BaseHelper::Append(Array<wchar_t>& table, StringView view)
+        INLINE ~ZeroGuard()
         {
-            ZeroGuard<wchar_t> zg(table);
-
-            auto sizeReq = view.length();
-            table.reserve(range_cast<uint32_t>(table.size() + sizeReq + 1));
-
-            auto ptr  = view.data();
-            auto endPtr  = view.data() + view.length();
-            while (ptr < endPtr)
-            {
-                auto ch = utf8::NextChar(ptr, endPtr);
-                table.pushBack((wchar_t) ch);
-            }
+            if (!m_table.empty() && m_table.back() != 0)
+                m_table.pushBack(0);
         }
 
-        void BaseHelper::Append(Array<char>& table, const BaseStringView<wchar_t>& view)
+    private:
+        Array<T>& m_table;
+    };
+
+    //---
+
+    void BaseHelper::Append(Array<char>& table, StringView view)
+    {
+        ZeroGuard<char> zg(table);
+
+        for (auto ch : view)
+            table.pushBack(ch);
+    }
+
+    void BaseHelper::Append(Array<wchar_t>& table, StringView view)
+    {
+        ZeroGuard<wchar_t> zg(table);
+
+        auto sizeReq = view.length();
+        table.reserve(range_cast<uint32_t>(table.size() + sizeReq + 1));
+
+        auto ptr  = view.data();
+        auto endPtr  = view.data() + view.length();
+        while (ptr < endPtr)
         {
-            ZeroGuard<char> zg(table);
-
-            auto sizeReq = utf8::CalcSizeRequired(view.data(), view.length());
-			table.reserve(range_cast<uint32_t>(table.size() + sizeReq + 1));
-
-            for (auto ch : view)
-            {
-                char buf[6];
-                auto size = utf8::ConvertChar(buf, ch);
-                for (uint32_t i=0; i<size; ++i)
-                    table.pushBack(buf[i]);
-            }
+            auto ch = utf8::NextChar(ptr, endPtr);
+            table.pushBack((wchar_t) ch);
         }
+    }
 
-        void BaseHelper::Append(Array<wchar_t>& table, const BaseStringView<wchar_t>& view)
+    void BaseHelper::Append(Array<char>& table, const BaseStringView<wchar_t>& view)
+    {
+        ZeroGuard<char> zg(table);
+
+        auto sizeReq = utf8::CalcSizeRequired(view.data(), view.length());
+		table.reserve(range_cast<uint32_t>(table.size() + sizeReq + 1));
+
+        for (auto ch : view)
         {
-            ZeroGuard<wchar_t> zg(table);
-
-            auto sizeReq = view.length();
-			table.reserve(range_cast<uint32_t>(table.size() + sizeReq + 1));
-
-            for (auto ch : view)
-                table.pushBack(ch);
+            char buf[6];
+            auto size = utf8::ConvertChar(buf, ch);
+            for (uint32_t i=0; i<size; ++i)
+                table.pushBack(buf[i]);
         }
+    }
 
-    } // prv
-}// base
+    void BaseHelper::Append(Array<wchar_t>& table, const BaseStringView<wchar_t>& view)
+    {
+        ZeroGuard<wchar_t> zg(table);
+
+        auto sizeReq = view.length();
+		table.reserve(range_cast<uint32_t>(table.size() + sizeReq + 1));
+
+        for (auto ch : view)
+            table.pushBack(ch);
+    }
+
+} // prv
+
+END_BOOMER_NAMESPACE(base)
+

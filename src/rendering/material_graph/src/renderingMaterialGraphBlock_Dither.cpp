@@ -9,40 +9,40 @@
 #include "build.h"
 #include "renderingMaterialGraphBlock.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+using namespace CodeChunkOp;
+
+///---
+
+class MaterialGraphBlock_Dither : public MaterialGraphBlock
 {
-    using namespace CodeChunkOp;
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_Dither, MaterialGraphBlock);
 
-    ///---
+public:
+    MaterialGraphBlock_Dither()
+    {}
 
-    class MaterialGraphBlock_Dither : public MaterialGraphBlock
+    virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_Dither, MaterialGraphBlock);
+        builder.socket("Out"_id, MaterialOutputSocket());
+        builder.socket("In"_id, MaterialInputSocket());
+        builder.socket("Amount"_id, MaterialInputSocket());
+    }
 
-    public:
-        MaterialGraphBlock_Dither()
-        {}
+    virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
+    {
+        CodeChunk color = compiler.evalInput(this, "In"_id, base::Vector3(0,0,0)).conform(3);
+        // TODO
+        return color;
+    }
+};
 
-        virtual void buildLayout(base::graph::BlockLayoutBuilder& builder) const override
-        {
-            builder.socket("Out"_id, MaterialOutputSocket());
-            builder.socket("In"_id, MaterialInputSocket());
-            builder.socket("Amount"_id, MaterialInputSocket());
-        }
+RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_Dither);
+    RTTI_METADATA(base::graph::BlockInfoMetadata).title("Dither").group("Functions");
+    RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialGeneric");
+RTTI_END_TYPE();
 
-        virtual CodeChunk compile(MaterialStageCompiler& compiler, base::StringID outputName) const override
-        {
-            CodeChunk color = compiler.evalInput(this, "In"_id, base::Vector3(0,0,0)).conform(3);
-            // TODO
-            return color;
-        }
-    };
+///---
 
-    RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlock_Dither);
-        RTTI_METADATA(base::graph::BlockInfoMetadata).title("Dither").group("Functions");
-        RTTI_METADATA(base::graph::BlockStyleNameMetadata).style("MaterialGeneric");
-    RTTI_END_TYPE();
-
-    ///---
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

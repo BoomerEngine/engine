@@ -10,18 +10,18 @@
 
 #include "fiberSystem.h"
 
-namespace base
-{
-    namespace fibers
-    {
+BEGIN_BOOMER_NAMESPACE(base::fibers)
 
-        class SyncPoint;
-        class WaitList;
-        class WorkQueue;
-        class CommandQueue;
+class SyncPoint;
+class WaitList;
+class WorkQueue;
+class CommandQueue;
 
-    } // fibers
+END_BOOMER_NAMESPACE(base::fibers)
 
-    class IBackgroundJob;
 
-} // base
+BEGIN_BOOMER_NAMESPACE(base)
+
+class IBackgroundJob;
+
+END_BOOMER_NAMESPACE(base)

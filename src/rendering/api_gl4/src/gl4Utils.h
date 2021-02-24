@@ -6,35 +6,28 @@
 * [#filter: utils #]
 ***/
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace gl4
-		{
-			
-			//--
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
 
-			// get number of bits per pixel of texture
-			extern RENDERING_API_GL4_API uint8_t GetTextureFormatBytesPerPixel(GLenum format);
+//--
 
-			// get the view type
-			extern RENDERING_API_GL4_API GLenum TranslateTextureType(ImageViewType viewType, bool isMultiSampled = false);
+// get number of bits per pixel of texture
+extern RENDERING_API_GL4_API uint8_t GetTextureFormatBytesPerPixel(GLenum format);
 
-			// translate image format
-			extern RENDERING_API_GL4_API GLuint TranslateImageFormat(const ImageFormat format);
+// get the view type
+extern RENDERING_API_GL4_API GLenum TranslateTextureType(ImageViewType viewType, bool isMultiSampled = false);
 
-			// decompose format into parts
-			extern RENDERING_API_GL4_API void DecomposeVertexFormat(GLenum format, GLenum& outBaseFormat, GLuint& outSize, GLboolean& outNormalized);
+// translate image format
+extern RENDERING_API_GL4_API GLuint TranslateImageFormat(const ImageFormat format);
 
-			// decompose format into parts
-			extern RENDERING_API_GL4_API void DecomposeTextureFormat(GLenum format, GLenum& outBaseFormat, GLenum& outBaseType, bool* outCompressed = nullptr);
+// decompose format into parts
+extern RENDERING_API_GL4_API void DecomposeVertexFormat(GLenum format, GLenum& outBaseFormat, GLuint& outSize, GLboolean& outNormalized);
 
-			// decompose format into parts
-			extern RENDERING_API_GL4_API void DecomposeTextureFormat(base::image::PixelFormat format, uint32_t channels, GLenum& outBaseFormat, GLenum& outBaseType);
+// decompose format into parts
+extern RENDERING_API_GL4_API void DecomposeTextureFormat(GLenum format, GLenum& outBaseFormat, GLenum& outBaseType, bool* outCompressed = nullptr);
 
-			//--
+// decompose format into parts
+extern RENDERING_API_GL4_API void DecomposeTextureFormat(base::image::PixelFormat format, uint32_t channels, GLenum& outBaseFormat, GLenum& outBaseType);
 
-		} // gl4
-    } // api
-} // rendering
+//--
+
+END_BOOMER_NAMESPACE(rendering::api::gl4)

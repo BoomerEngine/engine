@@ -13,58 +13,56 @@
 
 #include <Windows.h>
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::io)
+
+namespace prv
 {
-    namespace io
+
+    /// File iterator for enumerating directory structure
+    class WinFileIterator
     {
-        namespace prv
-        {
+    public:
+        //! Are directories allowed ?
+        INLINE bool areDirectoriesAllowed() const { return m_allowDirs; }
 
-            /// File iterator for enumerating directory structure
-            class WinFileIterator
-            {
-            public:
-                //! Are directories allowed ?
-                INLINE bool areDirectoriesAllowed() const { return m_allowDirs; }
+        //! Are files allowed ?
+        INLINE bool areFilesAllowed() const { return m_allowFiles; }
 
-                //! Are files allowed ?
-                INLINE bool areFilesAllowed() const { return m_allowFiles; }
+        //---
 
-                //---
+        WinFileIterator(const wchar_t* pathWithPattern, bool allowFiles, bool allowDirs);
+        ~WinFileIterator();
 
-                WinFileIterator(const wchar_t* pathWithPattern, bool allowFiles, bool allowDirs);
-                ~WinFileIterator();
+        //! Iterate to next
+        void operator++(int);
 
-                //! Iterate to next
-                void operator++(int);
+        //! Iterate to next
+        void operator++();
 
-                //! Iterate to next
-                void operator++();
+        //! Is the current file valid ?
+        operator bool() const;
 
-                //! Is the current file valid ?
-                operator bool() const;
+        //! Get current file name (name and extension only)
+        const wchar_t* fileNameRaw() const;
 
-                //! Get current file name (name and extension only)
-                const wchar_t* fileNameRaw() const;
+        //! Get current file name (name and extension only) - UTF8 encoded
+        const char* fileName() const;
 
-                //! Get current file name (name and extension only) - UTF8 encoded
-                const char* fileName() const;
+    private:
+        //! Do we have a valid entry ?
+        bool validateEntry() const;
 
-            private:
-                //! Do we have a valid entry ?
-                bool validateEntry() const;
+        //! Skip until valid file is found
+        bool nextEntry();
 
-                //! Skip until valid file is found
-                bool nextEntry();
+        WIN32_FIND_DATA     m_findData;
+        HANDLE              m_findHandle;
+        bool                m_allowDirs;
+        bool                m_allowFiles;
 
-                WIN32_FIND_DATA     m_findData;
-                HANDLE              m_findHandle;
-                bool                m_allowDirs;
-                bool                m_allowFiles;
+        mutable char m_fileName[MAX_PATH];
+    };
 
-                mutable char m_fileName[MAX_PATH];
-            };
+} // prv
 
-        } // prv
-    } // io
-} // base
+END_BOOMER_NAMESPACE(base::io)

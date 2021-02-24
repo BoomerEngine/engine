@@ -15,167 +15,163 @@
 
 #include <Windows.h>
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api)
+
+//--
+
+// WinAPI specific Window output (aka. swapchain)
+class WindowWinApi : public INativeWindowInterface
 {
-	namespace api
-	{
+public:
+	WindowWinApi();
+	virtual ~WindowWinApi();
 
-		//--
+	//--
 
-		// WinAPI specific Window output (aka. swapchain)
-		class WindowWinApi : public INativeWindowInterface
-		{
-		public:
-			WindowWinApi();
-			virtual ~WindowWinApi();
+	HWND handle() const { return m_hWnd; }
+	ObjectID owner() const { return m_owner; }
 
-			//--
+	//--
 
-			HWND handle() const { return m_hWnd; }
-			ObjectID owner() const { return m_owner; }
+	bool prepareWindowForRendering(uint16_t& outWidth, uint16_t& outHeight);
+	void disconnectWindow();
+	void update();
 
-			//--
+	//--
 
-			bool prepareWindowForRendering(uint16_t& outWidth, uint16_t& outHeight);
-			void disconnectWindow();
-			void update();
+	virtual void windowMinimize() override;
+	virtual void windowMaximize() override;
+	virtual void windowRestore() override;
+	virtual void windowActivate() override;
+	virtual void windowShow(bool bringToFront = true) override;
+	virtual void windowHide() override;
+	virtual void windowEnable(bool enabled) override;
+	virtual uint64_t windowGetNativeHandle() const override;
+	virtual uint64_t windowGetNativeDisplay() const override;
+	virtual float windowGetPixelScale() const override;
+	virtual base::Point windowGetClientPlacement() const override;
+	virtual base::Point windowGetClientSize() const override;
+	virtual base::Point windowGetWindowPlacement() const override;
+	virtual base::Point windowGetWindowSize() const override;
+	virtual bool windowGetWindowDefaultPlacement(base::Rect& outWindowNormalRect) const override;
+	virtual bool windowHasCloseRequest() const override;
+	virtual bool windowIsActive() const override;
+	virtual bool windowIsVisible() const override;
+	virtual bool windowIsMaximized() const override;
+	virtual bool windowIsMinimized() const override;
+	virtual void windowSetTitle(const base::StringBuf& title) override;
+	virtual void windowAdjustClientPlacement(const base::Rect& clientRect) override;
+	virtual void windowAdjustWindowPlacement(const base::Rect& windowRect) override;
+	virtual void windowSetAlpha(float alpha) override;
+	virtual void windowCancelCloseRequest() override;
+	virtual base::input::ContextPtr windowGetInputContext() override;
+	virtual void windowBindOwner(ObjectID id) override;
 
-			//--
+	//--
 
-			virtual void windowMinimize() override;
-			virtual void windowMaximize() override;
-			virtual void windowRestore() override;
-			virtual void windowActivate() override;
-			virtual void windowShow(bool bringToFront = true) override;
-			virtual void windowHide() override;
-			virtual void windowEnable(bool enabled) override;
-			virtual uint64_t windowGetNativeHandle() const override;
-			virtual uint64_t windowGetNativeDisplay() const override;
-			virtual float windowGetPixelScale() const override;
-			virtual base::Point windowGetClientPlacement() const override;
-			virtual base::Point windowGetClientSize() const override;
-			virtual base::Point windowGetWindowPlacement() const override;
-			virtual base::Point windowGetWindowSize() const override;
-			virtual bool windowGetWindowDefaultPlacement(base::Rect& outWindowNormalRect) const override;
-			virtual bool windowHasCloseRequest() const override;
-			virtual bool windowIsActive() const override;
-			virtual bool windowIsVisible() const override;
-			virtual bool windowIsMaximized() const override;
-			virtual bool windowIsMinimized() const override;
-			virtual void windowSetTitle(const base::StringBuf& title) override;
-			virtual void windowAdjustClientPlacement(const base::Rect& clientRect) override;
-			virtual void windowAdjustWindowPlacement(const base::Rect& windowRect) override;
-			virtual void windowSetAlpha(float alpha) override;
-			virtual void windowCancelCloseRequest() override;
-			virtual base::input::ContextPtr windowGetInputContext() override;
-			virtual void windowBindOwner(ObjectID id) override;
+	// create the window output
+	static WindowWinApi* Create(const OutputInitInfo& initInfo);
 
-			//--
+private:
+	static void RegisterWindowClass();
 
-			// create the window output
-			static WindowWinApi* Create(const OutputInitInfo& initInfo);
+	ObjectID m_owner;
 
-		private:
-			static void RegisterWindowClass();
+	HWND m_hWnd = NULL;
 
-			ObjectID m_owner;
+	float m_currentPixelScale = 1.0f;
+	bool m_currentActiveFlag = false;
+	bool m_currentActiveFlagSeen = false;
+	bool m_hasSystemBorder = false;
+	bool m_duringSizeMove = false;
 
-			HWND m_hWnd = NULL;
-
-			float m_currentPixelScale = 1.0f;
-			bool m_currentActiveFlag = false;
-			bool m_currentActiveFlagSeen = false;
-			bool m_hasSystemBorder = false;
-			bool m_duringSizeMove = false;
-
-			bool m_initialShowDone = false;
-			bool m_initialShowMaximize = false;
-			bool m_initialShowMinimize = false;
-			bool m_initialShowActivate = false;
+	bool m_initialShowDone = false;
+	bool m_initialShowMaximize = false;
+	bool m_initialShowMinimize = false;
+	bool m_initialShowActivate = false;
             
-			base::StringBuf m_currentTitle;
-			base::StringBuf m_fullTitleString;
-			void updateTitle_NoLock();
+	base::StringBuf m_currentTitle;
+	base::StringBuf m_fullTitleString;
+	void updateTitle_NoLock();
 
-			INativeWindowCallback* m_callback;
+	INativeWindowCallback* m_callback;
 
-			std::atomic<uint32_t> m_windowCloseRequest = 0; // WM_CLOSE
+	std::atomic<uint32_t> m_windowCloseRequest = 0; // WM_CLOSE
 
-			base::input::ContextPtr m_inputContext;
+	base::input::ContextPtr m_inputContext;
 
-			std::atomic<uint32_t> m_numFramesStarted = 0;
-			uint32_t m_numLastFramesRendered = 0;
-			base::NativeTimePoint m_nextFPSCapture;
+	std::atomic<uint32_t> m_numFramesStarted = 0;
+	uint32_t m_numLastFramesRendered = 0;
+	base::NativeTimePoint m_nextFPSCapture;
 
-			base::Rect m_lastSizeMoveRect;
+	base::Rect m_lastSizeMoveRect;
 
-			//--
+	//--
 
-			base::Mutex m_windowLock;
+	base::Mutex m_windowLock;
 
-			//--
+	//--
 
-			LRESULT windowProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
-			static LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-		};
+	LRESULT windowProc(UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static LRESULT CALLBACK WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+};
 
-		//--
+//--
 
-		// manager of WinApi driven windows
-		class RENDERING_API_COMMON_API WindowManagerWinApi : public WindowManager
-		{
-		public:
-			WindowManagerWinApi();
-			virtual ~WindowManagerWinApi();
+// manager of WinApi driven windows
+class RENDERING_API_COMMON_API WindowManagerWinApi : public WindowManager
+{
+public:
+	WindowManagerWinApi();
+	virtual ~WindowManagerWinApi();
 
-			//---
+	//---
 
-			bool initialize(bool apiNeedsWindowForOutput);
+	bool initialize(bool apiNeedsWindowForOutput);
 
-			// --
+	// --
 
-			virtual uint64_t offscreenWindow() override final;
-			virtual void updateWindows() override final;
-			virtual uint64_t createWindow(const OutputInitInfo& initInfo) override final;
-			virtual void closeWindow(uint64_t handle) override final;
-			virtual bool prepareWindowForRendering(uint64_t handle, uint16_t& outWidth, uint16_t& outHeight) override final;
-			virtual void disconnectWindow(uint64_t handle) override final;
-			virtual INativeWindowInterface* windowInterface(uint64_t handle) override final;
+	virtual uint64_t offscreenWindow() override final;
+	virtual void updateWindows() override final;
+	virtual uint64_t createWindow(const OutputInitInfo& initInfo) override final;
+	virtual void closeWindow(uint64_t handle) override final;
+	virtual bool prepareWindowForRendering(uint64_t handle, uint16_t& outWidth, uint16_t& outHeight) override final;
+	virtual void disconnectWindow(uint64_t handle) override final;
+	virtual INativeWindowInterface* windowInterface(uint64_t handle) override final;
 
-			//--
+	//--
 
-			virtual void enumMonitorAreas(base::Array<base::Rect>& outMonitorAreas) const override final;
-			virtual void enumDisplays(base::Array<DisplayInfo>& outDisplayInfos) const override final;
-			virtual void enumResolutions(uint32_t displayIndex, base::Array<ResolutionInfo>& outResolutions) const override final;
+	virtual void enumMonitorAreas(base::Array<base::Rect>& outMonitorAreas) const override final;
+	virtual void enumDisplays(base::Array<DisplayInfo>& outDisplayInfos) const override final;
+	virtual void enumResolutions(uint32_t displayIndex, base::Array<ResolutionInfo>& outResolutions) const override final;
 
-			//--
+	//--
 
-		private:
-			base::Array<base::Rect> m_monitorRects;
-			HWND m_hFakeWnd = NULL;
+private:
+	base::Array<base::Rect> m_monitorRects;
+	HWND m_hFakeWnd = NULL;
 
-			struct CachedDisplay
-			{
-				DisplayInfo m_displayInfo;
-				base::Array<ResolutionInfo> m_resolutions;
-			};
+	struct CachedDisplay
+	{
+		DisplayInfo m_displayInfo;
+		base::Array<ResolutionInfo> m_resolutions;
+	};
 
-			base::Array<CachedDisplay> m_cachedDisplayInfos;
+	base::Array<CachedDisplay> m_cachedDisplayInfos;
 
-			base::Array<WindowWinApi*> m_windows;
-			base::Mutex m_windowsLock;
+	base::Array<WindowWinApi*> m_windows;
+	base::Mutex m_windowsLock;
 
-			base::Array<uint64_t> m_windowsToCloseOnMainThread;
+	base::Array<uint64_t> m_windowsToCloseOnMainThread;
 
-			bool m_duringUpdate = false;
+	bool m_duringUpdate = false;
 
-			void cacheDisplayModes();
-			void enumerateMonitors();
+	void cacheDisplayModes();
+	void enumerateMonitors();
 
-			static LRESULT CALLBACK DummyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-		};
+	static LRESULT CALLBACK DummyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+};
 
-		//--
+//--
 
-	} // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api)

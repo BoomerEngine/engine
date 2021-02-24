@@ -11,34 +11,27 @@
 #include "nullApiDescriptorLayout.h"
 #include "nullApiVertexLayout.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
+
+//---
+
+ObjectCache::ObjectCache(Thread* owner)
+	: IBaseObjectCache(owner)
+{}
+
+ObjectCache::~ObjectCache()
+{}
+
+IBaseVertexBindingLayout* ObjectCache::createOptimalVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams)
 {
-	namespace api
-	{
-		namespace nul
-		{
+	return new VertexBindingLayout(owner(), streams);
+}
 
-			//---
+IBaseDescriptorBindingLayout* ObjectCache::createOptimalDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors, const base::Array<ShaderStaticSamplerMetadata>& staticSamplers)
+{
+	return new DescriptorBindingLayout(owner(), descriptors);
+}
 
-			ObjectCache::ObjectCache(Thread* owner)
-				: IBaseObjectCache(owner)
-			{}
+//---
 
-			ObjectCache::~ObjectCache()
-			{}
-
-			IBaseVertexBindingLayout* ObjectCache::createOptimalVertexBindingLayout(const base::Array<ShaderVertexStreamMetadata>& streams)
-			{
-				return new VertexBindingLayout(owner(), streams);
-			}
-
-			IBaseDescriptorBindingLayout* ObjectCache::createOptimalDescriptorBindingLayout(const base::Array<ShaderDescriptorMetadata>& descriptors, const base::Array<ShaderStaticSamplerMetadata>& staticSamplers)
-			{
-				return new DescriptorBindingLayout(owner(), descriptors);
-			}
-
-			//---
-
-		} // nul
-	} // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

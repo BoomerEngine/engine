@@ -28,124 +28,121 @@
 #include "rendering/scene/include/renderingFrameParams.h"
 #include "rendering/scene/include/renderingSimpleFlyCamera.h"
 
-namespace game
+BEGIN_BOOMER_NAMESPACE(game::test)
+
+//---
+
+class FlyCameraEntity;
+
+//---
+
+// order of test
+class SceneTestOrderMetadata : public base::rtti::IMetadata
 {
-    namespace test
+    RTTI_DECLARE_VIRTUAL_CLASS(SceneTestOrderMetadata, base::rtti::IMetadata);
+
+public:
+    INLINE SceneTestOrderMetadata()
+        : m_order(-1)
+    {}
+
+    SceneTestOrderMetadata& order(int val)
     {
-        //---
+        m_order = val;
+        return *this;
+    }
 
-        class FlyCameraEntity;
+    int m_order;
+};
 
-        //---
+//---
 
-        // order of test
-        class SceneTestOrderMetadata : public base::rtti::IMetadata
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(SceneTestOrderMetadata, base::rtti::IMetadata);
+/// a basic rendering test for the scene
+class ISceneTest : public base::NoCopy
+{
+    RTTI_DECLARE_VIRTUAL_ROOT_CLASS(ISceneTest);
 
-        public:
-            INLINE SceneTestOrderMetadata()
-                : m_order(-1)
-            {}
+public:
+    ISceneTest();
 
-            SceneTestOrderMetadata& order(int val)
-            {
-                m_order = val;
-                return *this;
-            }
+    bool processInitialization();
 
-            int m_order;
-        };
+    virtual void initialize();
+    virtual void configure();
+    virtual void render(rendering::scene::FrameParams& info);
+    virtual void update(float dt);
+    virtual bool processInput(const base::input::BaseEvent& evt);
 
-        //---
+    void reportError(base::StringView msg);
 
-        /// a basic rendering test for the scene
-        class ISceneTest : public base::NoCopy
-        {
-            RTTI_DECLARE_VIRTUAL_ROOT_CLASS(ISceneTest);
+    rendering::MeshRef loadMesh(base::StringView meshName);
 
-        public:
-            ISceneTest();
+protected:
+    base::world::WorldPtr m_world;
+    bool m_failed = false;
 
-            bool processInitialization();
+    base::RefPtr<rendering::scene::FlyCamera> m_camera;
 
-            virtual void initialize();
-            virtual void configure();
-            virtual void render(rendering::scene::FrameParams& info);
-            virtual void update(float dt);
-            virtual bool processInput(const base::input::BaseEvent& evt);
+    //--
 
-            void reportError(base::StringView msg);
+    void configureLocalAdjustments();
 
-            rendering::MeshRef loadMesh(base::StringView meshName);
+    static rendering::scene::FilterFlags st_FrameFilterFlags;
+    static rendering::scene::FrameRenderMode st_FrameMode;
 
-        protected:
-            base::world::WorldPtr m_world;
-            bool m_failed = false;
+    static base::Angles st_GlobalLightingRotation;
 
-            base::RefPtr<rendering::scene::FlyCamera> m_camera;
+    static rendering::scene::FrameParams_ShadowCascades st_CascadeAdjust;
+    static bool st_CascadeAdjustEnabled;
 
-            //--
+    struct GlobalLightingParams
+    {
+        float globalLightColor[3];
+        float globalLightBrightness = 1.0f;
+        bool enableLightOverride = false;
 
-            void configureLocalAdjustments();
+        float globalAmbientZenithColor[3];
+        float globalAmbientHorizonColor[3];
+        float globalAmbientBrightness = 1.0f;
+        bool enableAmbientOverride = false;
 
-            static rendering::scene::FilterFlags st_FrameFilterFlags;
-            static rendering::scene::FrameRenderMode st_FrameMode;
+        GlobalLightingParams();
 
-            static base::Angles st_GlobalLightingRotation;
+        void pack(rendering::scene::FrameParams_GlobalLighting& outParams) const;
+    };
 
-            static rendering::scene::FrameParams_ShadowCascades st_CascadeAdjust;
-            static bool st_CascadeAdjustEnabled;
+    static GlobalLightingParams st_GlobalLightingAdjust;
 
-            struct GlobalLightingParams
-            {
-                float globalLightColor[3];
-                float globalLightBrightness = 1.0f;
-                bool enableLightOverride = false;
+    static rendering::scene::FrameParams_ExposureAdaptation st_GlobalExposureAdaptationAdjust;
+    static bool st_GlobalExposureAdaptationAdjustEnabled;
 
-                float globalAmbientZenithColor[3];
-                float globalAmbientHorizonColor[3];
-                float globalAmbientBrightness = 1.0f;
-                bool enableAmbientOverride = false;
+    static rendering::scene::FrameParams_ToneMapping st_GlobalTonemappingAdjust;
+    static bool st_GlobalTonemappingAdjustEnabled;
 
-                GlobalLightingParams();
+    static rendering::scene::FrameParams_ColorGrading st_GlobalColorGradingAdjust;
+    static bool st_GlobalColorGradingAdjustEnabled;
+};
 
-                void pack(rendering::scene::FrameParams_GlobalLighting& outParams) const;
-            };
+///---
 
-            static GlobalLightingParams st_GlobalLightingAdjust;
+/// a basic test with empty initial world
+class ISceneTestEmptyWorld : public ISceneTest
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ISceneTestEmptyWorld, ISceneTest);
 
-            static rendering::scene::FrameParams_ExposureAdaptation st_GlobalExposureAdaptationAdjust;
-            static bool st_GlobalExposureAdaptationAdjustEnabled;
+public:
+    ISceneTestEmptyWorld();
 
-            static rendering::scene::FrameParams_ToneMapping st_GlobalTonemappingAdjust;
-            static bool st_GlobalTonemappingAdjustEnabled;
+    void recreateWorld();
+    virtual void createWorldContent();
 
-            static rendering::scene::FrameParams_ColorGrading st_GlobalColorGradingAdjust;
-            static bool st_GlobalColorGradingAdjustEnabled;
-        };
+protected:
+    virtual void initialize() override;
 
-        ///---
+    base::Vector3 m_initialCameraPosition;
+    base::Angles m_initialCameraRotation;
+};
 
-        /// a basic test with empty initial world
-        class ISceneTestEmptyWorld : public ISceneTest
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(ISceneTestEmptyWorld, ISceneTest);
+///---
 
-        public:
-            ISceneTestEmptyWorld();
-
-            void recreateWorld();
-            virtual void createWorldContent();
-
-        protected:
-            virtual void initialize() override;
-
-            base::Vector3 m_initialCameraPosition;
-            base::Angles m_initialCameraRotation;
-        };
-
-        ///---
-
-    } // test
-} // game
+END_BOOMER_NAMESPACE(game::test)

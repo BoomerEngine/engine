@@ -12,110 +12,110 @@
 #include "renderingMaterialRuntimeService.h"
 #include "renderingMaterialTemplate.h"
 
-namespace rendering
-{
-	///---
+BEGIN_BOOMER_NAMESPACE(rendering)
 
-	RTTI_BEGIN_TYPE_CLASS(MaterialTemplateMetadata);
-		RTTI_PROPERTY(hasVertexAnimation);
-		RTTI_PROPERTY(hasPixelDiscard);
-		RTTI_PROPERTY(hasTransparency);
-		RTTI_PROPERTY(hasLighting);
-		RTTI_PROPERTY(hasPixelReadback);
-	RTTI_END_TYPE();
+///---
 
-	MaterialTemplateMetadata::MaterialTemplateMetadata()
-	{}
+RTTI_BEGIN_TYPE_CLASS(MaterialTemplateMetadata);
+	RTTI_PROPERTY(hasVertexAnimation);
+	RTTI_PROPERTY(hasPixelDiscard);
+	RTTI_PROPERTY(hasTransparency);
+	RTTI_PROPERTY(hasLighting);
+	RTTI_PROPERTY(hasPixelReadback);
+RTTI_END_TYPE();
+
+MaterialTemplateMetadata::MaterialTemplateMetadata()
+{}
  
-    ///---
+///---
 
-	MaterialTemplateProxy::MaterialTemplateProxy(const base::StringBuf& contextName, const base::Array<MaterialTemplateParamInfo>& parameters, const MaterialTemplateMetadata& metadata, const MaterialTemplateDynamicCompilerPtr& compiler, const base::Array<MaterialPrecompiledStaticTechnique>& precompiledTechniques)
-		: m_parameters(parameters)
-		, m_metadata(metadata)
-		, m_precompiledTechniques(precompiledTechniques)
-		, m_dynamicCompiler(compiler)
-		, m_contextName(contextName)
+MaterialTemplateProxy::MaterialTemplateProxy(const base::StringBuf& contextName, const base::Array<MaterialTemplateParamInfo>& parameters, const MaterialTemplateMetadata& metadata, const MaterialTemplateDynamicCompilerPtr& compiler, const base::Array<MaterialPrecompiledStaticTechnique>& precompiledTechniques)
+	: m_parameters(parameters)
+	, m_metadata(metadata)
+	, m_precompiledTechniques(precompiledTechniques)
+	, m_dynamicCompiler(compiler)
+	, m_contextName(contextName)
+{
+	m_reloadNotifier = [this]() { discardCachedTechniques(); };
+
+	m_techniqueMap.reserve(32);
+	registerLayout();
+}
+
+MaterialTemplateProxy::~MaterialTemplateProxy()
+{
+	m_techniqueMap.clear();
+	m_dynamicCompiler.reset();
+}
+
+void MaterialTemplateProxy::discardCachedTechniques()
+{
+	if (m_dynamicCompiler)
 	{
-		m_reloadNotifier = [this]() { discardCachedTechniques(); };
-
-		m_techniqueMap.reserve(32);
-		registerLayout();
-	}
-
-	MaterialTemplateProxy::~MaterialTemplateProxy()
-	{
+		auto lock = base::CreateLock(m_techniqueMapLock);
 		m_techniqueMap.clear();
-		m_dynamicCompiler.reset();
+	}
+}
+
+void MaterialTemplateProxy::registerLayout()
+{
+	base::Array<MaterialDataLayoutEntry> layoutEntries;
+	layoutEntries.reserve(m_parameters.size());
+
+	for (const auto& param : m_parameters)
+	{
+		auto& entry = layoutEntries.emplaceBack();
+		entry.name = param.name;
+		entry.type = param.parameterType;
 	}
 
-	void MaterialTemplateProxy::discardCachedTechniques()
+	// TODO: optimize layout/order
+
+	std::sort(layoutEntries.begin(), layoutEntries.end(), [](const MaterialDataLayoutEntry& a, MaterialDataLayoutEntry& b) { return a.name.view() < b.name.view(); });
+
+	m_layout = base::GetService<MaterialService>()->registerDataLayout(std::move(layoutEntries));
+}
+
+
+MaterialTechniquePtr MaterialTemplateProxy::fetchTechnique(const MaterialCompilationSetup& setup) const
+{
+	const auto key = setup.key();
+
+	// look in dynamic list
+	auto lock = base::CreateLock(m_techniqueMapLock);
+	auto& ret = m_techniqueMap[key];
+	if (!ret)
 	{
+		ret = base::RefNew<MaterialTechnique>(setup);
+
+		/*// lookup in precompiled list
+		for (const auto& techniqe : m_precompiledTechniques)
+		{
+			const auto techniqueKey = techniqe.setup.key();
+			if (key == techniqueKey)
+			{
+				auto compiledTechnique = new MaterialCompiledTechnique;
+				compiledTechnique->shader = techniqe.shader;
+				ret->pushData(compiledTechnique);
+				valid = true;
+				break;
+			}
+		}*/
+
+		// try to compile dynamically
 		if (m_dynamicCompiler)
 		{
-			auto lock = base::CreateLock(m_techniqueMapLock);
-			m_techniqueMap.clear();
+			m_dynamicCompiler->requestTechniqueComplation(m_contextName, ret);
 		}
-	}
-
-	void MaterialTemplateProxy::registerLayout()
-	{
-		base::Array<MaterialDataLayoutEntry> layoutEntries;
-		layoutEntries.reserve(m_parameters.size());
-
-		for (const auto& param : m_parameters)
+		else
 		{
-			auto& entry = layoutEntries.emplaceBack();
-			entry.name = param.name;
-			entry.type = param.parameterType;
+			TRACE_STREAM_ERROR().appendf("Missing material '{}' permutation '{}'. Key {}.", m_contextName, setup, key);
 		}
-
-		// TODO: optimize layout/order
-
-		std::sort(layoutEntries.begin(), layoutEntries.end(), [](const MaterialDataLayoutEntry& a, MaterialDataLayoutEntry& b) { return a.name.view() < b.name.view(); });
-
-		m_layout = base::GetService<MaterialService>()->registerDataLayout(std::move(layoutEntries));
 	}
 
+	return ret;
+}
 
-	MaterialTechniquePtr MaterialTemplateProxy::fetchTechnique(const MaterialCompilationSetup& setup) const
-	{
-		const auto key = setup.key();
+///---
 
-		// look in dynamic list
-		auto lock = base::CreateLock(m_techniqueMapLock);
-		auto& ret = m_techniqueMap[key];
-		if (!ret)
-		{
-			ret = base::RefNew<MaterialTechnique>(setup);
-
-			/*// lookup in precompiled list
-			for (const auto& techniqe : m_precompiledTechniques)
-			{
-				const auto techniqueKey = techniqe.setup.key();
-				if (key == techniqueKey)
-				{
-					auto compiledTechnique = new MaterialCompiledTechnique;
-					compiledTechnique->shader = techniqe.shader;
-					ret->pushData(compiledTechnique);
-					valid = true;
-					break;
-				}
-			}*/
-
-			// try to compile dynamically
-			if (m_dynamicCompiler)
-			{
-				m_dynamicCompiler->requestTechniqueComplation(m_contextName, ret);
-			}
-			else
-			{
-				TRACE_STREAM_ERROR().appendf("Missing material '{}' permutation '{}'. Key {}.", m_contextName, setup, key);
-			}
-		}
-
-		return ret;
-	}
-
-    ///---
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

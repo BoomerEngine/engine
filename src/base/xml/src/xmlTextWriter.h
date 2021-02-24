@@ -8,23 +8,20 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::xml)
+
+/// helper class to save the XML documents
+class TextWriter : public base::NoCopy
 {
-    namespace xml
-    {
-        /// helper class to save the XML documents
-        class TextWriter : public base::NoCopy
-        {
-        public:
-            TextWriter(IFormatStream& builder);
-            ~TextWriter();
+public:
+    TextWriter(IFormatStream& builder);
+    ~TextWriter();
 
-            /// write given node, recursive
-            void writeNode(const IDocument& doc, NodeID id, uint32_t depth = 0);
+    /// write given node, recursive
+    void writeNode(const IDocument& doc, NodeID id, uint32_t depth = 0);
 
-        private:
-            IFormatStream& m_builder;
-        };
+private:
+    IFormatStream& m_builder;
+};
 
-    } // xml
-} // base
+END_BOOMER_NAMESPACE(base::xml)

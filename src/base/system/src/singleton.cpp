@@ -12,79 +12,79 @@
 #include "scopeLock.h"
 #include "commandline.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+namespace prv
 {
-    namespace prv
-    {
 
-        /// the registry of all ISingleton implementations
-        class SigletonRegistry : public base::NoCopy
+    /// the registry of all ISingleton implementations
+    class SigletonRegistry : public base::NoCopy
+    {
+    public:
+        SigletonRegistry()
+        {}
+
+        void registerInstance(ISingleton* singleton)
         {
-        public:
-            SigletonRegistry()
-            {}
+            ScopeLock<Mutex> lock(m_lock);
 
-            void registerInstance(ISingleton* singleton)
+            if (m_numSingletons < MAX_SINGLETONS)
+                m_singletons[m_numSingletons++] = singleton;
+        }
+
+        void deinit()
+        {
+            ScopeLock<Mutex> lock(m_lock);
+
+            for (int i = (int)(m_numSingletons - 1); i >= 0; --i)
             {
-                ScopeLock<Mutex> lock(m_lock);
-
-                if (m_numSingletons < MAX_SINGLETONS)
-                    m_singletons[m_numSingletons++] = singleton;
+                auto singleton  = m_singletons[i];
+                singleton->deinit();
             }
+        }
 
-            void deinit()
-            {
-                ScopeLock<Mutex> lock(m_lock);
+        static SigletonRegistry& GetInstance()
+        {
+            static SigletonRegistry theInstance;
+            return theInstance;
+        }
 
-                for (int i = (int)(m_numSingletons - 1); i >= 0; --i)
-                {
-                    auto singleton  = m_singletons[i];
-                    singleton->deinit();
-                }
-            }
+    private:
+        static const uint32_t MAX_SINGLETONS = 256;
 
-            static SigletonRegistry& GetInstance()
-            {
-                static SigletonRegistry theInstance;
-                return theInstance;
-            }
+        Mutex m_lock;
+        ISingleton* m_singletons[MAX_SINGLETONS];
+        uint32_t m_numSingletons;
+    };
 
-        private:
-            static const uint32_t MAX_SINGLETONS = 256;
+} // prv
 
-            Mutex m_lock;
-            ISingleton* m_singletons[MAX_SINGLETONS];
-            uint32_t m_numSingletons;
-        };
+//--
 
-    } // prv
+ISingleton::ISingleton()
+{
+    prv::SigletonRegistry::GetInstance().registerInstance(this);
+}
 
-    //--
+ISingleton::~ISingleton()
+{
+    FATAL_ERROR("Calling destructor on ISingleton is not legal");
+}
 
-    ISingleton::ISingleton()
-    {
-        prv::SigletonRegistry::GetInstance().registerInstance(this);
-    }
+void ISingleton::deinit()
+{
+}
 
-    ISingleton::~ISingleton()
-    {
-        FATAL_ERROR("Calling destructor on ISingleton is not legal");
-    }
+void ISingleton::DeinitializeAll()
+{
+    prv::SigletonRegistry::GetInstance().deinit();
+}
 
-    void ISingleton::deinit()
-    {
-    }
+//--
 
-    void ISingleton::DeinitializeAll()
-    {
-        prv::SigletonRegistry::GetInstance().deinit();
-    }
+IBaseCommandLine::~IBaseCommandLine()
+{}
 
-    //--
+//--
 
-    IBaseCommandLine::~IBaseCommandLine()
-    {}
-
-    //--
-
-} // base
+END_BOOMER_NAMESPACE(base)

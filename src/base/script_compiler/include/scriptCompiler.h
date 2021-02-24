@@ -10,10 +10,6 @@
 
 #include "base/resource/include/resource.h"
 
-namespace base
-{
-    namespace script
-    {
-      
-    } // script
-} // base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+END_BOOMER_NAMESPACE(base::script)

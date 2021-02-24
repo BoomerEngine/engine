@@ -9,16 +9,12 @@
 #include "build.h"
 #include "ioAsyncFileHandle.h"
 
-namespace base
-{
-    namespace io
-    {
+BEGIN_BOOMER_NAMESPACE(base::io)
 
-        IAsyncFileHandle::IAsyncFileHandle()
-        {}
+IAsyncFileHandle::IAsyncFileHandle()
+{}
 
-        IAsyncFileHandle::~IAsyncFileHandle()
-        {}
+IAsyncFileHandle::~IAsyncFileHandle()
+{}
 
-    } // io
-} // base
+END_BOOMER_NAMESPACE(base::io)

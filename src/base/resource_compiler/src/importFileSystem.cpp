@@ -9,25 +9,21 @@
 #include "build.h"
 #include "importFileSystem.h"
 
-namespace base
-{
-    namespace res
-    {
+BEGIN_BOOMER_NAMESPACE(base::res)
 
-        //--
+//--
 
-        ISourceAssetFileSystem::~ISourceAssetFileSystem()
-        {}
+ISourceAssetFileSystem::~ISourceAssetFileSystem()
+{}
 
-        //--
+//--
 
-        RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ISourceAssetFileSystemFactory);
-        RTTI_END_TYPE();
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ISourceAssetFileSystemFactory);
+RTTI_END_TYPE();
 
-        ISourceAssetFileSystemFactory::~ISourceAssetFileSystemFactory()
-        {}
+ISourceAssetFileSystemFactory::~ISourceAssetFileSystemFactory()
+{}
 
-        //--
+//--
 
-    } // res
-} // base
+END_BOOMER_NAMESPACE(base::res)

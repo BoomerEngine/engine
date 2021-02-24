@@ -11,9 +11,6 @@
 #include "ioFileHandleWindows.h"
 #include "ioAsyncDispatcherWindows.h"
 
-#define BEGIN_BOOMER_NAMESPACE(name) namespace name {
-#define END_BOOMER_NAMESPACE() }
-
 BEGIN_BOOMER_NAMESPACE(base::io::prv)
 
 WinAsyncReadDispatcher::WinAsyncReadDispatcher(uint32_t maxInFlightRequests)
@@ -151,4 +148,4 @@ void WinAsyncReadDispatcher::threadFunc()
     }
 }
 
-END_BOOMER_NAMESPACE()
+END_BOOMER_NAMESPACE(base::io::prv)

@@ -10,57 +10,56 @@
 
 #include "editorResourceContainerWindow.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+///---
+
+/// status bar for main window
+class EDITOR_COMMON_API MainWindowStatusBar : public ui::IElement
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(MainWindowStatusBar, ui::IElement);
 
-    ///---
+public:
+    MainWindowStatusBar();
 
-    /// status bar for main window
-    class EDITOR_COMMON_API MainWindowStatusBar : public ui::IElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MainWindowStatusBar, ui::IElement);
+    void pushBackgroundJobToHistory(IBackgroundTask* job, BackgroundTaskStatus status);
+    void updateBackgroundJobStatus(IBackgroundTask* job, uint64_t count, uint64_t total, StringView text, bool hasErrors);
+    void resetBackgroundJobStatus();
 
-    public:
-        MainWindowStatusBar();
+private:
+    BackgroundTaskPtr m_activeBackgroundJob;
+    ui::ProgressBarPtr m_backgroundJobProgress;
+    ui::TextLabelPtr m_backgroundJobStatus;
 
-        void pushBackgroundJobToHistory(IBackgroundTask* job, BackgroundTaskStatus status);
-        void updateBackgroundJobStatus(IBackgroundTask* job, uint64_t count, uint64_t total, StringView text, bool hasErrors);
-        void resetBackgroundJobStatus();
+    void cmdCancelBackgroundJob();
+    void cmdShowJobDetails();
+};
 
-    private:
-        BackgroundTaskPtr m_activeBackgroundJob;
-        ui::ProgressBarPtr m_backgroundJobProgress;
-        ui::TextLabelPtr m_backgroundJobStatus;
+///---
 
-        void cmdCancelBackgroundJob();
-        void cmdShowJobDetails();
-    };
+/// main editor window 
+class EDITOR_COMMON_API MainWindow : public IBaseResourceContainerWindow
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(MainWindow, IBaseResourceContainerWindow);
 
-    ///---
+public:
+    MainWindow();
+    virtual ~MainWindow();
 
-    /// main editor window 
-    class EDITOR_COMMON_API MainWindow : public IBaseResourceContainerWindow
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MainWindow, IBaseResourceContainerWindow);
+    INLINE MainWindowStatusBar* statusBar() const { return m_statusBar; }
 
-    public:
-        MainWindow();
-        virtual ~MainWindow();
+    virtual void configLoad(const ui::ConfigBlock& block) override;
+    virtual void configSave(const ui::ConfigBlock& block) const override;
 
-        INLINE MainWindowStatusBar* statusBar() const { return m_statusBar; }
+protected:
+    virtual bool singularEditorOnly() const override;
+    virtual void handleExternalCloseRequest() override;
+    virtual void queryInitialPlacementSetup(ui::WindowInitialPlacementSetup& outSetup) const override;
 
-        virtual void configLoad(const ui::ConfigBlock& block) override;
-        virtual void configSave(const ui::ConfigBlock& block) const override;
+    RefPtr<MainWindowStatusBar> m_statusBar;
+};
 
-    protected:
-        virtual bool singularEditorOnly() const override;
-        virtual void handleExternalCloseRequest() override;
-        virtual void queryInitialPlacementSetup(ui::WindowInitialPlacementSetup& outSetup) const override;
+///---
 
-        RefPtr<MainWindowStatusBar> m_statusBar;
-    };
-
-    ///---
-
-} // editor
+END_BOOMER_NAMESPACE(ed)
 

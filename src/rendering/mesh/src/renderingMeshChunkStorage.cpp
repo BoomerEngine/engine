@@ -13,8 +13,7 @@
 #include "rendering/device/include/renderingBuffer.h"
 #include "rendering/device/include/renderingCommandWriter.h"
 
-namespace rendering
-{
+BEGIN_BOOMER_NAMESPACE(rendering)
 	//---
 
 	// 1GB of initial pool - 1GB of vram for meshes is 3x more than The Witcher 3 used, so it's PLENTy of realistic storage
@@ -75,7 +74,7 @@ namespace rendering
 
 	//--
 
-	void MeshChunkSharedStorage::pushUpdates(command::CommandWriter& cmd)
+	void MeshChunkSharedStorage::pushUpdates(GPUCommandWriter& cmd)
 	{
 		PC_SCOPE_LVL1(UpdateMeshSharedStorage);
 

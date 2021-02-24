@@ -15,50 +15,49 @@
 #include "uiTextLabel.h"
 #include "uiInputAction.h"
 
-namespace ui
+BEGIN_BOOMER_NAMESPACE(ui)
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(ColumnHeader);
+    RTTI_METADATA(ElementClassNameMetadata).name("ColumnHeader");
+RTTI_END_TYPE();
+
+ColumnHeader::ColumnHeader(base::StringView text, bool canResize, bool canSort)
+    : m_canResize(canResize)
+    , m_canSort(canSort)
 {
+    createChild<TextLabel>(text);
 
-    //--
-
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(ColumnHeader);
-        RTTI_METADATA(ElementClassNameMetadata).name("ColumnHeader");
-    RTTI_END_TYPE();
-
-    ColumnHeader::ColumnHeader(base::StringView text, bool canResize, bool canSort)
-        : m_canResize(canResize)
-        , m_canSort(canSort)
-    {
-        createChild<TextLabel>(text);
-
-        if (canSort)
-            m_sortingIcon = createNamedChild<TextLabel>("SortingIcon"_id);
-    }
+    if (canSort)
+        m_sortingIcon = createNamedChild<TextLabel>("SortingIcon"_id);
+}
     
-    void ColumnHeader::refreshSortingVisualization(bool active, bool asc)
+void ColumnHeader::refreshSortingVisualization(bool active, bool asc)
+{
+    if (m_sortingIcon)
     {
-        if (m_sortingIcon)
+        if (active)
         {
-            if (active)
+            if (asc)
             {
-                if (asc)
-                {
-                    m_sortingIcon->addStyleClass("ascending"_id);
-                    m_sortingIcon->removeStyleClass("descending"_id);
-                }
-                else
-                {
-                    m_sortingIcon->addStyleClass("descending"_id);
-                    m_sortingIcon->removeStyleClass("ascending"_id);
-                }
+                m_sortingIcon->addStyleClass("ascending"_id);
+                m_sortingIcon->removeStyleClass("descending"_id);
             }
             else
             {
+                m_sortingIcon->addStyleClass("descending"_id);
                 m_sortingIcon->removeStyleClass("ascending"_id);
-                m_sortingIcon->removeStyleClass("descending"_id);
             }
         }
+        else
+        {
+            m_sortingIcon->removeStyleClass("ascending"_id);
+            m_sortingIcon->removeStyleClass("descending"_id);
+        }
     }
+}
 
-    //--
+//--
 
-} // ui
+END_BOOMER_NAMESPACE(ui)

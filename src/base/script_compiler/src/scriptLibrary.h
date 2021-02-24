@@ -10,228 +10,226 @@
 
 #include "base/script/include/scriptPortableStubs.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+//---
+
+class StubLibrary;
+class TypeCastMatrix;
+
+//---
+
+/// library of compilation entities
+class StubLibrary : public base::NoCopy
 {
-    namespace script
-    {
+public:
+    StubLibrary(mem::LinearAllocator& mem, StringView primaryModuleName);
+    ~StubLibrary();
 
-        //---
+    //--
 
-        class StubLibrary;
-        class TypeCastMatrix;
+    // get the primary module
+    INLINE StubModule* primaryModule()  { return m_primaryModule; }
+    INLINE const StubModule* primaryModule() const { return m_primaryModule; }
 
-        //---
+    // get type casting matrix
+    INLINE const TypeCastMatrix& typeCastingMatrix() const { return *m_typeCastMatrix; }
 
-        /// library of compilation entities
-        class StubLibrary : public base::NoCopy
-        {
-        public:
-            StubLibrary(mem::LinearAllocator& mem, StringView primaryModuleName);
-            ~StubLibrary();
+    //--
 
-            //--
+    // build named maps of stuff in the library, this detects duplicates
+    bool buildNamedMaps(IErrorHandler& err);
 
-            // get the primary module
-            INLINE StubModule* primaryModule()  { return m_primaryModule; }
-            INLINE const StubModule* primaryModule() const { return m_primaryModule; }
+    // validate structure of type library
+    bool validate(IErrorHandler& err);
 
-            // get type casting matrix
-            INLINE const TypeCastMatrix& typeCastingMatrix() const { return *m_typeCastMatrix; }
+    //--
 
-            //--
+    // find stub in given context
+    const Stub* findStubInContext(StringID name, const Stub* context) const;
 
-            // build named maps of stuff in the library, this detects duplicates
-            bool buildNamedMaps(IErrorHandler& err);
+    // find all aliased functions
+    void findAliasedFunctions(StringID name, uint32_t expectedArgumentCount, Array<const StubFunction*>& outAliasedFunctions) const;
 
-            // validate structure of type library
-            bool validate(IErrorHandler& err);
+    // find or create a direct type declaration to an existing stub
+    const StubTypeDecl* resolveSimpleTypeReference(StringID name, const Stub* context);
 
-            //--
+    //--
 
-            // find stub in given context
-            const Stub* findStubInContext(StringID name, const Stub* context) const;
+    // create file entry
+    StubFile* createFile(StubModule* module, const StringBuf& depotPath, const StringBuf& absolutePath);
 
-            // find all aliased functions
-            void findAliasedFunctions(StringID name, uint32_t expectedArgumentCount, Array<const StubFunction*>& outAliasedFunctions) const;
+    // create a module import dependency
+    StubModuleImport* createModuleImport(const StubLocation& location, StubFile* file, StringID name);
 
-            // find or create a direct type declaration to an existing stub
-            const StubTypeDecl* resolveSimpleTypeReference(StringID name, const Stub* context);
+    // create an enum option
+    StubEnumOption* createEnumOption(const StubLocation& location, Stub* owner, StringID name);
 
-            //--
+    // create an enum
+    StubEnum* createEnum(const StubLocation& location, StringID name, Stub* owner);
 
-            // create file entry
-            StubFile* createFile(StubModule* module, const StringBuf& depotPath, const StringBuf& absolutePath);
+    // create a class declaration
+    StubClass* createClass(const StubLocation& location, StringID name, Stub* owner);
 
-            // create a module import dependency
-            StubModuleImport* createModuleImport(const StubLocation& location, StubFile* file, StringID name);
+    // create function argument
+    StubFunctionArg* createFunctionArg(const StubLocation& location, StringID name, StubFunction* owner);
 
-            // create an enum option
-            StubEnumOption* createEnumOption(const StubLocation& location, Stub* owner, StringID name);
+    // create function declaration
+    StubFunction* createFunction(const StubLocation& location, StringID name, Stub* owner);
 
-            // create an enum
-            StubEnum* createEnum(const StubLocation& location, StringID name, Stub* owner);
+    // create property
+    StubProperty* createProperty(const StubLocation& location, StringID name, Stub* owner);
 
-            // create a class declaration
-            StubClass* createClass(const StubLocation& location, StringID name, Stub* owner);
+    // create a native type declaration
+    StubTypeName* createTypeAlias(const StubLocation& location, StringID name, const StubTypeDecl* typeDecl, Stub* owner);
 
-            // create function argument
-            StubFunctionArg* createFunctionArg(const StubLocation& location, StringID name, StubFunction* owner);
+    // create a reference to named type
+    // NOTE: this will have to be resolved
+    StubTypeRef* createTypeRef(const StubLocation& location, StringID name, const Stub* context);
 
-            // create function declaration
-            StubFunction* createFunction(const StubLocation& location, StringID name, Stub* owner);
+    // create a already resolved type reference to an existing stub
+    StubTypeRef* createTypeRef(const Stub* resolvedStub);
 
-            // create property
-            StubProperty* createProperty(const StubLocation& location, StringID name, Stub* owner);
+    //--
 
-            // create a native type declaration
-            StubTypeName* createTypeAlias(const StubLocation& location, StringID name, const StubTypeDecl* typeDecl, Stub* owner);
+    // create integer constant value
+    StubConstantValue* createConstValueInt(const StubLocation& location, int64_t value);
 
-            // create a reference to named type
-            // NOTE: this will have to be resolved
-            StubTypeRef* createTypeRef(const StubLocation& location, StringID name, const Stub* context);
+    // create unsigned constant value
+    StubConstantValue* createConstValueUint(const StubLocation& location, uint64_t value);
 
-            // create a already resolved type reference to an existing stub
-            StubTypeRef* createTypeRef(const Stub* resolvedStub);
+    // create float constant value
+    StubConstantValue* createConstValueFloat(const StubLocation& location, double value);
 
-            //--
+    // create boolean constant vale
+    StubConstantValue* createConstValueBool(const StubLocation& location, bool value);
 
-            // create integer constant value
-            StubConstantValue* createConstValueInt(const StubLocation& location, int64_t value);
+    // create string constant value
+    StubConstantValue* createConstValueString(const StubLocation& location, StringView value);
 
-            // create unsigned constant value
-            StubConstantValue* createConstValueUint(const StubLocation& location, uint64_t value);
+    // create name constant value
+    StubConstantValue* createConstValueName(const StubLocation& location, StringID value);
 
-            // create float constant value
-            StubConstantValue* createConstValueFloat(const StubLocation& location, double value);
+    // create compound constant value
+    StubConstantValue* createConstValueCompound(const StubLocation& location, const StubTypeDecl* structTypeRef);
 
-            // create boolean constant vale
-            StubConstantValue* createConstValueBool(const StubLocation& location, bool value);
+    // create constant
+    StubConstant* createConst(const StubLocation& location, StringID name, Stub* owner);
 
-            // create string constant value
-            StubConstantValue* createConstValueString(const StubLocation& location, StringView value);
+    //--
 
-            // create name constant value
-            StubConstantValue* createConstValueName(const StubLocation& location, StringID value);
+    // create an engine type reference
+    StubTypeDecl* createEngineType(const StubLocation& location, StringID engineTypeName);
 
-            // create compound constant value
-            StubConstantValue* createConstValueCompound(const StubLocation& location, const StubTypeDecl* structTypeRef);
+    // create a simple type referencing given stub
+    StubTypeDecl* createSimpleType(const StubLocation& location, const Stub* stub);
 
-            // create constant
-            StubConstant* createConst(const StubLocation& location, StringID name, Stub* owner);
+    // create an class type reference (cls<Entity>)
+    StubTypeDecl* createClassType(const StubLocation& location, const Stub* classType);
 
-            //--
+    // create an shared pointer type reference (ptr<Entity>)
+    StubTypeDecl* createSharedPointerType(const StubLocation& location, const Stub* classType);
 
-            // create an engine type reference
-            StubTypeDecl* createEngineType(const StubLocation& location, StringID engineTypeName);
+    // create an weak pointer type reference (ptr<Entity>)
+    StubTypeDecl* createWeakPointerType(const StubLocation& location, const Stub* classType);
 
-            // create a simple type referencing given stub
-            StubTypeDecl* createSimpleType(const StubLocation& location, const Stub* stub);
+    // create a dynamic array type
+    StubTypeDecl* createDynamicArrayType(const StubLocation& location, const StubTypeDecl* innerType);
 
-            // create an class type reference (cls<Entity>)
-            StubTypeDecl* createClassType(const StubLocation& location, const Stub* classType);
+    // create a static array type
+    StubTypeDecl* createStaticArrayType(const StubLocation& location, const StubTypeDecl* innerType, uint32_t arraySize);
 
-            // create an shared pointer type reference (ptr<Entity>)
-            StubTypeDecl* createSharedPointerType(const StubLocation& location, const Stub* classType);
+    //--
 
-            // create an weak pointer type reference (ptr<Entity>)
-            StubTypeDecl* createWeakPointerType(const StubLocation& location, const Stub* classType);
+    // check if we can access given stub
+    bool canAccess(const Stub* stub, const Stub* fromStub) const;
 
-            // create a dynamic array type
-            StubTypeDecl* createDynamicArrayType(const StubLocation& location, const StubTypeDecl* innerType);
+    //--
 
-            // create a static array type
-            StubTypeDecl* createStaticArrayType(const StubLocation& location, const StubTypeDecl* innerType, uint32_t arraySize);
+    // import content of other module
+    const StubModule* importModule(const StubModule* importModule, StringID importName);
 
-            //--
+    // prune (remove) unused imports for types and functions
+    void pruneUnusedImports();
 
-            // check if we can access given stub
-            bool canAccess(const Stub* stub, const Stub* fromStub) const;
+private:
+    mem::LinearAllocator& m_mem;
 
-            //--
+    //--
 
-            // import content of other module
-            const StubModule* importModule(const StubModule* importModule, StringID importName);
+    SpinLock m_lock;
 
-            // prune (remove) unused imports for types and functions
-            void pruneUnusedImports();
+    Array<StubTypeRef*> m_unresolvedTypes;
+    Array<StubTypeDecl*> m_unresolvedDeclarations;
 
-        private:
-            mem::LinearAllocator& m_mem;
+    Array<StubModule*> m_modules;
 
-            //--
+    StringBuf m_primaryModuleName;
+    StubModule* m_primaryModule;
 
-            SpinLock m_lock;
+    HashMap<StringID, StubTypeDecl*> m_cacheEngineTypes;
+    HashMap<const Stub*, StubTypeRef*> m_cachedTypeRefs;
+    HashMap<const StubTypeRef*, StubTypeDecl*> m_cachedTypeSimpleDecls;
 
-            Array<StubTypeRef*> m_unresolvedTypes;
-            Array<StubTypeDecl*> m_unresolvedDeclarations;
+    UniquePtr<TypeCastMatrix> m_typeCastMatrix;
 
-            Array<StubModule*> m_modules;
+    void attachStub(Stub* owner, Stub* stub);
 
-            StringBuf m_primaryModuleName;
-            StubModule* m_primaryModule;
+    void formatTypeName(const StubTypeDecl* typeDecl, StringBuilder& f) const;
 
-            HashMap<StringID, StubTypeDecl*> m_cacheEngineTypes;
-            HashMap<const Stub*, StubTypeRef*> m_cachedTypeRefs;
-            HashMap<const StubTypeRef*, StubTypeDecl*> m_cachedTypeSimpleDecls;
+    bool isUnaryOperator(StringID name) const;
+    bool matchTypeSignature(const StubTypeDecl* a, const StubTypeDecl* b) const;
+    bool matchTypeSignature(const StubFunctionArg* a, const StubFunctionArg* b) const;
+    bool matchFunctionSignature(const StubFunction* a, const StubFunction* b) const;
 
-            UniquePtr<TypeCastMatrix> m_typeCastMatrix;
+    StringID formatOperatorName(const StubFunction* func) const;
+    StringID formatCastName(const StubFunction* func) const;
 
-            void attachStub(Stub* owner, Stub* stub);
+    const Stub* findRootStubInContext(StringID name, const Stub* context) const;
+    const Stub* findChildStubInContext(StringID name, const Stub* context) const;
 
-            void formatTypeName(const StubTypeDecl* typeDecl, StringBuilder& f) const;
+    StubTypeRef* createTypeRef_NoLock(const Stub* resolvedStub);
 
-            bool isUnaryOperator(StringID name) const;
-            bool matchTypeSignature(const StubTypeDecl* a, const StubTypeDecl* b) const;
-            bool matchTypeSignature(const StubFunctionArg* a, const StubFunctionArg* b) const;
-            bool matchFunctionSignature(const StubFunction* a, const StubFunction* b) const;
+    //--
 
-            StringID formatOperatorName(const StubFunction* func) const;
-            StringID formatCastName(const StubFunction* func) const;
+    bool buildFunction(IErrorHandler& err, StubFunction* ptr);
+    bool buildClass(IErrorHandler& err, StubClass* ptr);
+    bool linkClasses(IErrorHandler& err);
+    bool linkEnums(IErrorHandler& err);
+    bool createAutomaticClassFunctions(IErrorHandler& err);
+    bool linkFunctions(IErrorHandler& err);
+    bool resolveTypeRefs(IErrorHandler& err);
+    bool resolveTypeDecls(IErrorHandler& err);
+    bool checkProperties(IErrorHandler& err);
+    bool buildCastMatrix(IErrorHandler& err);
 
-            const Stub* findRootStubInContext(StringID name, const Stub* context) const;
-            const Stub* findChildStubInContext(StringID name, const Stub* context) const;
+    bool linkClass(IErrorHandler& err, StubClass* classStub);
+    bool linkEnum(IErrorHandler& err, StubEnum* classStub);
+    bool linkFunction(IErrorHandler& err, StubFunction* funcStub);
+    bool checkClassProperties(IErrorHandler& err, StubClass* classStub);
 
-            StubTypeRef* createTypeRef_NoLock(const Stub* resolvedStub);
+    void reportError(IErrorHandler& err, const StubLocation& loc, StringView txt);
+    void reportError(IErrorHandler& err, const Stub* stub, StringView txt);
+    void reportWarning(IErrorHandler& err, const StubLocation& loc, StringView txt);
+    void reportWarning(IErrorHandler& err, const Stub* stub, StringView txt);
 
-            //--
+    Stub* createImportStub(const Stub* sourceStub, HashMap<const Stub*, Stub*>& cache);
+    Stub* importStub(const Stub* sourceStub, HashMap<const Stub*, Stub*>& cache);
+    void importFileData(const StubFile* source, StubFile* dest, HashMap<const Stub*, Stub*>& cache);
+    void importEnumData(const StubEnum* source, StubEnum* dest, HashMap<const Stub*, Stub*>& cache);
+    void importEnumOptionData(const StubEnumOption* source, StubEnumOption* dest, HashMap<const Stub*, Stub*>& cache);
+    void importClassData(const StubClass* source, StubClass* dest, HashMap<const Stub*, Stub*>& cache);
+    void importPropertyData(const StubProperty* source, StubProperty* dest, HashMap<const Stub*, Stub*>& cache);
+    void importFunctionData(const StubFunction* source, StubFunction* dest, HashMap<const Stub*, Stub*>& cache);
+    void importFunctionArgData(const StubFunctionArg* source, StubFunctionArg* dest, HashMap<const Stub*, Stub*>& cache);
+    void importTypeNameData(const StubTypeName* source, StubTypeName* dest, HashMap<const Stub*, Stub*>& cache);
+    void importTypeRefData(const StubTypeRef* source, StubTypeRef* dest, HashMap<const Stub*, Stub*>& cache);
+    void importTypeDeclData(const StubTypeDecl* source, StubTypeDecl* dest, HashMap<const Stub*, Stub*>& cache);
+    void importConstantData(const StubConstant* source, StubConstant* dest, HashMap<const Stub*, Stub*>& cache);
+    void importConstantValueData(const StubConstantValue* source, StubConstantValue* dest, HashMap<const Stub*, Stub*>& cache);
+    StubLocation importLocation(const StubLocation& location, HashMap<const Stub*, Stub*>& cache);
+};
 
-            bool buildFunction(IErrorHandler& err, StubFunction* ptr);
-            bool buildClass(IErrorHandler& err, StubClass* ptr);
-            bool linkClasses(IErrorHandler& err);
-            bool linkEnums(IErrorHandler& err);
-            bool createAutomaticClassFunctions(IErrorHandler& err);
-            bool linkFunctions(IErrorHandler& err);
-            bool resolveTypeRefs(IErrorHandler& err);
-            bool resolveTypeDecls(IErrorHandler& err);
-            bool checkProperties(IErrorHandler& err);
-            bool buildCastMatrix(IErrorHandler& err);
+//--
 
-            bool linkClass(IErrorHandler& err, StubClass* classStub);
-            bool linkEnum(IErrorHandler& err, StubEnum* classStub);
-            bool linkFunction(IErrorHandler& err, StubFunction* funcStub);
-            bool checkClassProperties(IErrorHandler& err, StubClass* classStub);
-
-            void reportError(IErrorHandler& err, const StubLocation& loc, StringView txt);
-            void reportError(IErrorHandler& err, const Stub* stub, StringView txt);
-            void reportWarning(IErrorHandler& err, const StubLocation& loc, StringView txt);
-            void reportWarning(IErrorHandler& err, const Stub* stub, StringView txt);
-
-            Stub* createImportStub(const Stub* sourceStub, HashMap<const Stub*, Stub*>& cache);
-            Stub* importStub(const Stub* sourceStub, HashMap<const Stub*, Stub*>& cache);
-            void importFileData(const StubFile* source, StubFile* dest, HashMap<const Stub*, Stub*>& cache);
-            void importEnumData(const StubEnum* source, StubEnum* dest, HashMap<const Stub*, Stub*>& cache);
-            void importEnumOptionData(const StubEnumOption* source, StubEnumOption* dest, HashMap<const Stub*, Stub*>& cache);
-            void importClassData(const StubClass* source, StubClass* dest, HashMap<const Stub*, Stub*>& cache);
-            void importPropertyData(const StubProperty* source, StubProperty* dest, HashMap<const Stub*, Stub*>& cache);
-            void importFunctionData(const StubFunction* source, StubFunction* dest, HashMap<const Stub*, Stub*>& cache);
-            void importFunctionArgData(const StubFunctionArg* source, StubFunctionArg* dest, HashMap<const Stub*, Stub*>& cache);
-            void importTypeNameData(const StubTypeName* source, StubTypeName* dest, HashMap<const Stub*, Stub*>& cache);
-            void importTypeRefData(const StubTypeRef* source, StubTypeRef* dest, HashMap<const Stub*, Stub*>& cache);
-            void importTypeDeclData(const StubTypeDecl* source, StubTypeDecl* dest, HashMap<const Stub*, Stub*>& cache);
-            void importConstantData(const StubConstant* source, StubConstant* dest, HashMap<const Stub*, Stub*>& cache);
-            void importConstantValueData(const StubConstantValue* source, StubConstantValue* dest, HashMap<const Stub*, Stub*>& cache);
-            StubLocation importLocation(const StubLocation& location, HashMap<const Stub*, Stub*>& cache);
-        };
-
-    } // script
-} // base
+END_BOOMER_NAMESPACE(base::script)

@@ -12,58 +12,57 @@
 #include "editor/common/include/resourceEditorNativeFile.h"
 #include "rendering/material/include/renderingMaterialInstance.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+class MaterialGraphEditorPanel;
+class MaterialPreviewPanel;
+
+/// editor for meshes
+class EDITOR_MATERIAL_EDITOR_API MaterialGraphEditor : public ResourceEditorNativeFile
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphEditor, ResourceEditorNativeFile);
 
-    class MaterialGraphEditorPanel;
-    class MaterialPreviewPanel;
+public:
+    MaterialGraphEditor(ManagedFileNativeResource* file);
+    virtual ~MaterialGraphEditor();
 
-    /// editor for meshes
-    class EDITOR_MATERIAL_EDITOR_API MaterialGraphEditor : public ResourceEditorNativeFile
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphEditor, ResourceEditorNativeFile);
+    //--
 
-    public:
-        MaterialGraphEditor(ManagedFileNativeResource* file);
-        virtual ~MaterialGraphEditor();
+    INLINE MaterialPreviewPanel* previewPanel() const { return m_previewPanel; }
+    INLINE MaterialGraphEditorPanel* graphEditor() const { return m_graphEditor; }
+    INLINE rendering::MaterialGraph* graph() const { return m_graph; }
 
-        //--
+    //--
 
-        INLINE MaterialPreviewPanel* previewPanel() const { return m_previewPanel; }
-        INLINE MaterialGraphEditorPanel* graphEditor() const { return m_graphEditor; }
-        INLINE rendering::MaterialGraph* graph() const { return m_graph; }
+private:
+    base::RefPtr<rendering::MaterialGraph> m_graph;
+    base::RefPtr<rendering::MaterialInstance> m_previewMaterial;
 
-        //--
+    //---
 
-    private:
-        base::RefPtr<rendering::MaterialGraph> m_graph;
-        base::RefPtr<rendering::MaterialInstance> m_previewMaterial;
+    base::RefPtr<MaterialPreviewPanel> m_previewPanel;
+    base::RefPtr<MaterialGraphEditorPanel> m_graphEditor;
+    ui::GraphBlockPalettePtr m_graphPalette;
 
-        //---
+    ui::DataInspectorPtr m_properties;
 
-        base::RefPtr<MaterialPreviewPanel> m_previewPanel;
-        base::RefPtr<MaterialGraphEditorPanel> m_graphEditor;
-        ui::GraphBlockPalettePtr m_graphPalette;
+    void updatePreviewMaterial();
+    void createInterface();
+    void handleChangedSelection();
 
-        ui::DataInspectorPtr m_properties;
+    virtual void handleContentModified() override;
+    virtual void handleGeneralCopy() override;
+    virtual void handleGeneralCut() override;
+    virtual void handleGeneralPaste() override;
+    virtual void handleGeneralDelete() override;
 
-        void updatePreviewMaterial();
-        void createInterface();
-        void handleChangedSelection();
+    virtual bool checkGeneralCopy() const override;
+    virtual bool checkGeneralCut() const override;
+    virtual bool checkGeneralPaste() const override;
+    virtual bool checkGeneralDelete() const override;
 
-        virtual void handleContentModified() override;
-        virtual void handleGeneralCopy() override;
-        virtual void handleGeneralCut() override;
-        virtual void handleGeneralPaste() override;
-        virtual void handleGeneralDelete() override;
+    virtual bool initialize() override;
+    virtual bool save() override;
+};
 
-        virtual bool checkGeneralCopy() const override;
-        virtual bool checkGeneralCut() const override;
-        virtual bool checkGeneralPaste() const override;
-        virtual bool checkGeneralDelete() const override;
-
-        virtual bool initialize() override;
-        virtual bool save() override;
-    };
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

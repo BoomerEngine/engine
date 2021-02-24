@@ -9,14 +9,14 @@
 // Glue headers and logic
 #include "base_containers_glue.inl"
 
-namespace base
-{
-    typedef int32_t Index;
-    typedef uint32_t Count;
+BEGIN_BOOMER_NAMESPACE(base)
 
-	typedef uint32_t StringIDIndex;
+typedef int32_t Index;
+typedef uint32_t Count;
 
-} // base
+typedef uint32_t StringIDIndex;
+
+END_BOOMER_NAMESPACE(base)
 
 // All shared pointer stuff is always exposed
 #include "uniquePtr.h"
@@ -38,66 +38,64 @@ namespace base
 #include "stringBuilder.h"
 #include "stringParser.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+class RectAllocator;
+
+struct CompileTimeCRC32;
+struct CompileTimeCRC64;
+class IClipboardHandler;
+
+//----
+
+template< typename T, typename... Args >
+INLINE base::RefPtr<T> RefNew(Args&& ... args)
 {
-    class RectAllocator;
+    static_assert(std::is_base_of<IReferencable, T>::value, "RefNew can only be used with IReferencables");
+    return NoAddRef(new T(std::forward< Args >(args)...));
+}
 
-    struct CompileTimeCRC32;
-    struct CompileTimeCRC64;
-    class IClipboardHandler;
+//----
 
-    //----
+// decode Base64 data
+extern BASE_CONTAINERS_API void* DecodeBase64(const char* startTxt, const char* endTxt, uint32_t& outDataSize, const PoolTag& poolID = POOL_MEM_BUFFER);
 
-    template< typename T, typename... Args >
-    INLINE base::RefPtr<T> RefNew(Args&& ... args)
-    {
-        static_assert(std::is_base_of<IReferencable, T>::value, "RefNew can only be used with IReferencables");
-        return NoAddRef(new T(std::forward< Args >(args)...));
-    }
+// decode an escaped C string, supported escapements: \n \r \t \b \0 \x \" \' \\
+// NOTE: optionally we can automatically eat the quotes around the string
+// NOTE: returned buffer is NOT zero terminated, use a StringView to access
+extern BASE_CONTAINERS_API char* DecodeCString(const char* startTxt, const char* endTxt, uint32_t& outDataSize, const PoolTag& poolID = POOL_MEM_BUFFER);
 
-    //----
+//----
 
-    // decode Base64 data
-    extern BASE_CONTAINERS_API void* DecodeBase64(const char* startTxt, const char* endTxt, uint32_t& outDataSize, const PoolTag& poolID = POOL_MEM_BUFFER);
+static const uint32_t CRC32Init = 0x0;
+static const uint64_t CRC64Init = 0xCBF29CE484222325;
 
-    // decode an escaped C string, supported escapements: \n \r \t \b \0 \x \" \' \\
-    // NOTE: optionally we can automatically eat the quotes around the string
-    // NOTE: returned buffer is NOT zero terminated, use a StringView to access
-    extern BASE_CONTAINERS_API char* DecodeCString(const char* startTxt, const char* endTxt, uint32_t& outDataSize, const PoolTag& poolID = POOL_MEM_BUFFER);
+//----
 
-    //----
+// basic progress reporter
+class BASE_CONTAINERS_API IProgressTracker : public NoCopy
+{
+public:
+    virtual ~IProgressTracker();
 
-    static const uint32_t CRC32Init = 0x0;
-    static const uint64_t CRC64Init = 0xCBF29CE484222325;
+    /// check if we were canceled, if so we should exit any inner loops we are in
+    virtual bool checkCancelation() const = 0;
 
-    //----
+    /// post status update, will replace the previous status update
+    virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) = 0;
 
-    // basic progress reporter
-    class BASE_CONTAINERS_API IProgressTracker : public NoCopy
-    {
-    public:
-        virtual ~IProgressTracker();
+    /// post status update without any numerical information (just a sliding bar)
+    INLINE void reportProgress(StringView text) { reportProgress(0, 0, text); }
 
-        /// check if we were canceled, if so we should exit any inner loops we are in
-        virtual bool checkCancelation() const = 0;
+    //--
 
-        /// post status update, will replace the previous status update
-        virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) = 0;
+    // get an empty progress tracker - will not print anything
+    static IProgressTracker& DevNull();
 
-        /// post status update without any numerical information (just a sliding bar)
-        INLINE void reportProgress(StringView text) { reportProgress(0, 0, text); }
+    //--
+};
 
-        //--
-
-        // get an empty progress tracker - will not print anything
-        static IProgressTracker& DevNull();
-
-        //--
-    };
-
-    //----
-
-} // base
+END_BOOMER_NAMESPACE(base)
 
 static const int INVALID_ID = -1;
 

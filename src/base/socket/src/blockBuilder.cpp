@@ -10,56 +10,53 @@
 #include "block.h"
 #include "blockBuilder.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::socket)
+
+//--
+
+BlockBuilder::BlockBuilder()
 {
-    namespace socket
-    {
-        //--
+    m_startPos = m_internalBuffer;
+    m_curPos = m_internalBuffer;
+    m_endPos = m_internalBuffer + MAX_INTERNAL_SIZE;
+}
 
-        BlockBuilder::BlockBuilder()
-        {
-            m_startPos = m_internalBuffer;
-            m_curPos = m_internalBuffer;
-            m_endPos = m_internalBuffer + MAX_INTERNAL_SIZE;
-        }
+BlockBuilder::~BlockBuilder()
+{
+    clear();
+}
 
-        BlockBuilder::~BlockBuilder()
-        {
-            clear();
-        }
-
-        void BlockBuilder::clear()
-        {
-            if (m_startPos != m_internalBuffer)
-                mem::GlobalPool<POOL_NET, uint8_t>::Free(m_startPos);
-
-            m_startPos = m_internalBuffer;
-            m_curPos = m_internalBuffer;
-            m_endPos = m_internalBuffer + MAX_INTERNAL_SIZE;
-        }
-
-        void BlockBuilder::grow(uint32_t additionalSizeNeeded)
-        {
-            uint32_t capacity = (m_endPos - m_startPos);
-            uint32_t size = (m_curPos - m_startPos);
-            if (size + additionalSizeNeeded <= capacity)
-                return;
-
-            while (size + additionalSizeNeeded > capacity)
-                capacity *= 2;
-
-            auto newBuffer = mem::GlobalPool<POOL_NET, uint8_t>::Alloc(capacity, 1);
-            memcpy(newBuffer, m_startPos, size);
-
-            if (m_startPos != m_internalBuffer)
+void BlockBuilder::clear()
+{
+    if (m_startPos != m_internalBuffer)
         mem::GlobalPool<POOL_NET, uint8_t>::Free(m_startPos);
 
-            m_startPos = newBuffer;
-            m_endPos = newBuffer + capacity;
-            m_curPos = newBuffer + size;
-        }
+    m_startPos = m_internalBuffer;
+    m_curPos = m_internalBuffer;
+    m_endPos = m_internalBuffer + MAX_INTERNAL_SIZE;
+}
 
-        //--
+void BlockBuilder::grow(uint32_t additionalSizeNeeded)
+{
+    uint32_t capacity = (m_endPos - m_startPos);
+    uint32_t size = (m_curPos - m_startPos);
+    if (size + additionalSizeNeeded <= capacity)
+        return;
 
-    } // socket
-} // base
+    while (size + additionalSizeNeeded > capacity)
+        capacity *= 2;
+
+    auto newBuffer = mem::GlobalPool<POOL_NET, uint8_t>::Alloc(capacity, 1);
+    memcpy(newBuffer, m_startPos, size);
+
+    if (m_startPos != m_internalBuffer)
+mem::GlobalPool<POOL_NET, uint8_t>::Free(m_startPos);
+
+    m_startPos = newBuffer;
+    m_endPos = newBuffer + capacity;
+    m_curPos = newBuffer + size;
+}
+
+//--
+
+END_BOOMER_NAMESPACE(base::socket)

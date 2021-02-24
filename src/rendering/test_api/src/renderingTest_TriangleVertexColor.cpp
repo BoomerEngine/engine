@@ -12,70 +12,67 @@
 #include "rendering/device/include/renderingDeviceApi.h"
 #include "rendering/device/include/renderingCommandWriter.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::test)
+
+/// a basic rendering test
+class RenderingTest_TriangleVertexColor : public IRenderingTest
 {
-    namespace test
+    RTTI_DECLARE_VIRTUAL_CLASS(RenderingTest_TriangleVertexColor, IRenderingTest);
+
+public:
+    RenderingTest_TriangleVertexColor();
+
+    virtual void initialize() override final;
+    virtual void render(GPUCommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
+
+private:
+    BufferObjectPtr m_vertexBuffer;
+    GraphicsPipelineObjectPtr m_shader;
+};
+
+RTTI_BEGIN_TYPE_CLASS(RenderingTest_TriangleVertexColor);
+    RTTI_METADATA(RenderingTestOrderMetadata).order(13);
+RTTI_END_TYPE();
+
+//---       
+RenderingTest_TriangleVertexColor::RenderingTest_TriangleVertexColor()
+{
+}
+
+void RenderingTest_TriangleVertexColor::initialize()
+{
     {
-        /// a basic rendering test
-        class RenderingTest_TriangleVertexColor : public IRenderingTest
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(RenderingTest_TriangleVertexColor, IRenderingTest);
+        Simple3DVertex vertices[9];
+        vertices[0].set(0, -0.5f, 0.5f, 0, 0, base::Color::RED);
+        vertices[1].set(-0.7f, 0.5f, 0.5f, 0, 0, base::Color::RED);
+        vertices[2].set(0.7f, 0.5f, 0.5f, 0, 0, base::Color::RED);
+        vertices[0].VertexColor *= 0.5f;
 
-        public:
-            RenderingTest_TriangleVertexColor();
+        vertices[3].set(0 - 0.2f, -0.5f, 0.2f, 0, 0, base::Color::GREEN);
+        vertices[4].set(-0.7f - 0.2f, 0.5f, 0.2f, 0, 0, base::Color::GREEN);
+        vertices[5].set(0.7f - 0.2f, 0.5f, 0.2f, 0, 0, base::Color::GREEN);
+        vertices[3].VertexColor *= 0.5f;
 
-            virtual void initialize() override final;
-            virtual void render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView ) override final;
+        vertices[6].set(0 + 0.2f, -0.5f, 0.8f, 0, 0, base::Color::BLUE);
+        vertices[7].set(-0.7f + 0.2f, 0.5f, 0.8f, 0, 0, base::Color::BLUE);
+        vertices[8].set(0.7f + 0.2f, 0.5f, 0.8f, 0, 0, base::Color::BLUE);
+        vertices[6].VertexColor *= 0.5f;
 
-        private:
-            BufferObjectPtr m_vertexBuffer;
-            GraphicsPipelineObjectPtr m_shader;
-        };
+        m_vertexBuffer = createVertexBuffer(sizeof(vertices), vertices);
+    }
 
-        RTTI_BEGIN_TYPE_CLASS(RenderingTest_TriangleVertexColor);
-            RTTI_METADATA(RenderingTestOrderMetadata).order(13);
-        RTTI_END_TYPE();
+    m_shader = loadGraphicsShader("SimpleVertexColor.csl");
+}
 
-        //---       
-        RenderingTest_TriangleVertexColor::RenderingTest_TriangleVertexColor()
-        {
-        }
+void RenderingTest_TriangleVertexColor::render(GPUCommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
+{
+    FrameBuffer fb;
+    fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
 
-        void RenderingTest_TriangleVertexColor::initialize()
-        {
-            {
-                Simple3DVertex vertices[9];
-                vertices[0].set(0, -0.5f, 0.5f, 0, 0, base::Color::RED);
-                vertices[1].set(-0.7f, 0.5f, 0.5f, 0, 0, base::Color::RED);
-                vertices[2].set(0.7f, 0.5f, 0.5f, 0, 0, base::Color::RED);
-                vertices[0].VertexColor *= 0.5f;
+    cmd.opBeingPass(fb);
+    cmd.opBindVertexBuffer("Simple3DVertex"_id, m_vertexBuffer);
+    cmd.opDraw(m_shader, 0, 9);
+    cmd.opEndPass();
+}
 
-                vertices[3].set(0 - 0.2f, -0.5f, 0.2f, 0, 0, base::Color::GREEN);
-                vertices[4].set(-0.7f - 0.2f, 0.5f, 0.2f, 0, 0, base::Color::GREEN);
-                vertices[5].set(0.7f - 0.2f, 0.5f, 0.2f, 0, 0, base::Color::GREEN);
-                vertices[3].VertexColor *= 0.5f;
-
-                vertices[6].set(0 + 0.2f, -0.5f, 0.8f, 0, 0, base::Color::BLUE);
-                vertices[7].set(-0.7f + 0.2f, 0.5f, 0.8f, 0, 0, base::Color::BLUE);
-                vertices[8].set(0.7f + 0.2f, 0.5f, 0.8f, 0, 0, base::Color::BLUE);
-                vertices[6].VertexColor *= 0.5f;
-
-                m_vertexBuffer = createVertexBuffer(sizeof(vertices), vertices);
-            }
-
-            m_shader = loadGraphicsShader("SimpleVertexColor.csl");
-        }
-
-        void RenderingTest_TriangleVertexColor::render(command::CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView )
-        {
-            FrameBuffer fb;
-            fb.color[0].view(backBufferView).clear(base::Vector4(0.0f, 0.0f, 0.2f, 1.0f));
-
-            cmd.opBeingPass(fb);
-            cmd.opBindVertexBuffer("Simple3DVertex"_id, m_vertexBuffer);
-            cmd.opDraw(m_shader, 0, 9);
-            cmd.opEndPass();
-        }
-
-    } // test
-} // rendering
+END_BOOMER_NAMESPACE(rendering::test)

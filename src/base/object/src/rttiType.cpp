@@ -16,145 +16,141 @@
 
 #include "base/containers/include/stringBuilder.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::rtti)
+
+///---
+
+IType::IType(StringID name)
+    : m_name(name)
+{}
+
+IType::~IType()
+{}
+
+void IType::cacheTypeData()
+{}
+
+void IType::releaseTypeReferences()
+{}
+
+void IType::printToText(IFormatStream& f, const void* data, uint32_t flags) const
 {
-    namespace rtti
+    // nothing
+}
+
+bool IType::parseFromString(StringView txt, void* data, uint32_t flags) const
+{
+    // unparsable
+    return false;
+}
+
+//--
+
+DataViewResult IType::describeDataView(StringView viewPath, const void* viewData, DataViewInfo& outInfo) const
+{
+    if (viewPath.empty())
     {
+        outInfo.dataPtr = viewData;
+        outInfo.dataType = this; // that's all we know :D
 
-        ///---
+        if (outInfo.requestFlags.test(DataViewRequestFlagBit::TypeMetadata))
+            collectMetadataList(outInfo.typeMetadata);
 
-        IType::IType(StringID name)
-            : m_name(name)
-        {}
+        outInfo.flags |= DataViewInfoFlagBit::LikeValue;
+        return DataViewResultCode::OK;
+    }
 
-        IType::~IType()
-        {}
+    StringView propertyName;
+    if (ParsePropertyName(viewPath, propertyName))
+        return DataViewResultCode::ErrorUnknownProperty;
 
-        void IType::cacheTypeData()
-        {}
+    return DataViewResultCode::ErrorIllegalAccess;
+}
 
-        void IType::releaseTypeReferences()
-        {}
+DataViewResult IType::readDataView(StringView viewPath, const void* viewData, void* targetData, Type targetType) const
+{
+    if (viewPath.empty())
+    {
+        if (!rtti::ConvertData(viewData, this, targetData, targetType))
+            return DataViewResultCode::ErrorTypeConversion;
+        return DataViewResultCode::OK;
+    }
 
-        void IType::printToText(IFormatStream& f, const void* data, uint32_t flags) const
+    StringView propertyName;
+    if (ParsePropertyName(viewPath, propertyName))
+    {
+        if (propertyName == "__type")
         {
-            // nothing
+                // TODO
         }
-
-        bool IType::parseFromString(StringView txt, void* data, uint32_t flags) const
+        else if (propertyName == "__text")
         {
-            // unparsable
-            return false;
-        }
-
-        //--
-
-        DataViewResult IType::describeDataView(StringView viewPath, const void* viewData, DataViewInfo& outInfo) const
-        {
-            if (viewPath.empty())
+            StringBuf text;
             {
-                outInfo.dataPtr = viewData;
-                outInfo.dataType = this; // that's all we know :D
-
-                if (outInfo.requestFlags.test(DataViewRequestFlagBit::TypeMetadata))
-                    collectMetadataList(outInfo.typeMetadata);
-
-                outInfo.flags |= DataViewInfoFlagBit::LikeValue;
-                return DataViewResultCode::OK;
+                StringBuilder f;
+                printToText(f, viewData);
+                text = f.toString();
             }
 
-            StringView propertyName;
-            if (ParsePropertyName(viewPath, propertyName))
-                return DataViewResultCode::ErrorUnknownProperty;
+            static const auto textType = RTTI::GetInstance().findType("StringBuf"_id);
 
-            return DataViewResultCode::ErrorIllegalAccess;
-        }
+            if (!rtti::ConvertData(&text, textType, targetData, targetType))
+                return DataViewResultCode::ErrorTypeConversion;
 
-        DataViewResult IType::readDataView(StringView viewPath, const void* viewData, void* targetData, Type targetType) const
-        {
-            if (viewPath.empty())
-            {
-                if (!rtti::ConvertData(viewData, this, targetData, targetType))
-                    return DataViewResultCode::ErrorTypeConversion;
-                return DataViewResultCode::OK;
-            }
-
-            StringView propertyName;
-            if (ParsePropertyName(viewPath, propertyName))
-            {
-                if (propertyName == "__type")
-                {
-                     // TODO
-                }
-                else if (propertyName == "__text")
-                {
-                    StringBuf text;
-                    {
-                        StringBuilder f;
-                        printToText(f, viewData);
-                        text = f.toString();
-                    }
-
-                    static const auto textType = RTTI::GetInstance().findType("StringBuf"_id);
-
-                    if (!rtti::ConvertData(&text, textType, targetData, targetType))
-                        return DataViewResultCode::ErrorTypeConversion;
-
-                    return DataViewResultCode::OK;
+            return DataViewResultCode::OK;
                     
-                }
-
-                return DataViewResultCode::ErrorUnknownProperty;
-            }
-
-            return DataViewResultCode::ErrorIllegalAccess;
         }
 
-        DataViewResult IType::writeDataView(StringView viewPath, void* viewData, const void* sourceData, Type sourceType) const
-        {
-            if (viewPath.empty())
-            {
-                if (!rtti::ConvertData(sourceData, sourceType, viewData, this))
-                    return DataViewResultCode::ErrorTypeConversion;
-                return DataViewResultCode::OK;
-            }
+        return DataViewResultCode::ErrorUnknownProperty;
+    }
 
-            StringView propertyName;
-            if (ParsePropertyName(viewPath, propertyName))
-            {
-                return DataViewResultCode::ErrorUnknownProperty;
-            }
+    return DataViewResultCode::ErrorIllegalAccess;
+}
 
-            return DataViewResultCode::ErrorIllegalAccess;
-        }
+DataViewResult IType::writeDataView(StringView viewPath, void* viewData, const void* sourceData, Type sourceType) const
+{
+    if (viewPath.empty())
+    {
+        if (!rtti::ConvertData(sourceData, sourceType, viewData, this))
+            return DataViewResultCode::ErrorTypeConversion;
+        return DataViewResultCode::OK;
+    }
 
-        ///---
+    StringView propertyName;
+    if (ParsePropertyName(viewPath, propertyName))
+    {
+        return DataViewResultCode::ErrorUnknownProperty;
+    }
 
-        void TypeSerializationContext::print(IFormatStream& f) const
-        {
-            bool written = false;
+    return DataViewResultCode::ErrorIllegalAccess;
+}
 
-            if (directObjectContext)
-            {
-                f.appendf("object {}", *directObjectContext);
-                written = true;
-            }
+///---
 
-            if (classContext)
-            {
-                if (written) f.append(", ");
-                f.appendf("class '{}'", classContext->name());
-                written = true;
-            }
+void TypeSerializationContext::print(IFormatStream& f) const
+{
+    bool written = false;
 
-            if (propertyContext)
-            {
-                if (written) f.append(", ");
-                f.appendf("property '{}'", propertyContext->name());
-            }
-        }
+    if (directObjectContext)
+    {
+        f.appendf("object {}", *directObjectContext);
+        written = true;
+    }
 
-        ///---
+    if (classContext)
+    {
+        if (written) f.append(", ");
+        f.appendf("class '{}'", classContext->name());
+        written = true;
+    }
 
-    } // rtti
-} // base
+    if (propertyContext)
+    {
+        if (written) f.append(", ");
+        f.appendf("property '{}'", propertyContext->name());
+    }
+}
+
+///---
+
+END_BOOMER_NAMESPACE(base::rtti)

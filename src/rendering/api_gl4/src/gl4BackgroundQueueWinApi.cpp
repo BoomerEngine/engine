@@ -12,94 +12,87 @@
 #include "base/system/include/thread.h"
 #include "gl4ThreadWinApi.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+//--
+
+BackgroundQueueWinApi::BackgroundQueueWinApi(ThreadWinApi* owner)
+	: m_owner(owner)
+{}
+
+bool BackgroundQueueWinApi::createWorkerThreads(uint32_t requestedCount, uint32_t& outNumCreated)
 {
-    namespace api
-    {
-		namespace gl4
+	/*for (uint32_t i = 0; i < requestedCount; ++i)
+	{
+		if (auto* sharedContext = m_owner->createSharedContext())
 		{
+			auto* threadState = new ThreadState();
 
-	        //--
+			base::ThreadSetup setup;
+			setup.m_function = [this, threadState]() { threadFunc(threadState); };
+			setup.m_name = "RenderingBackgroundJobThread";
+			setup.m_stackSize = 256 << 10;
+			setup.m_priority = base::ThreadPriority::BelowNormal;
 
-			BackgroundQueueWinApi::BackgroundQueueWinApi(ThreadWinApi* owner)
-				: m_owner(owner)
-			{}
+			threadState->context = sharedContext;
+			threadState->thread.init(setup);
 
-			bool BackgroundQueueWinApi::createWorkerThreads(uint32_t requestedCount, uint32_t& outNumCreated)
-			{
-				/*for (uint32_t i = 0; i < requestedCount; ++i)
-				{
-					if (auto* sharedContext = m_owner->createSharedContext())
-					{
-						auto* threadState = new ThreadState();
+			m_workerThreads.pushBack(threadState);
+			outNumCreated += 1;
+		}
+	}*/
 
-						base::ThreadSetup setup;
-						setup.m_function = [this, threadState]() { threadFunc(threadState); };
-						setup.m_name = "RenderingBackgroundJobThread";
-						setup.m_stackSize = 256 << 10;
-						setup.m_priority = base::ThreadPriority::BelowNormal;
+	return true;
+}
 
-						threadState->context = sharedContext;
-						threadState->thread.init(setup);
+void BackgroundQueueWinApi::stopWorkerThreads()
+{
+	base::ScopeTimer timer;
 
-						m_workerThreads.pushBack(threadState);
-						outNumCreated += 1;
-					}
-				}*/
+	for (auto* state : m_workerThreads)
+	{
+		state->thread.close();
 
-				return true;
-			}
+		delete state->context;
+		state->context = nullptr;
 
-			void BackgroundQueueWinApi::stopWorkerThreads()
-			{
-				base::ScopeTimer timer;
+		delete state;
+	}
 
-				for (auto* state : m_workerThreads)
-				{
-					state->thread.close();
+	TRACE_INFO("Stopped {} background processing threads in {}", m_workerThreads.size(), timer);
+	m_workerThreads.clear();
+}
 
-					delete state->context;
-					state->context = nullptr;
+void BackgroundQueueWinApi::threadFunc(ThreadState* state)
+{
+	base::ScopeTimer timer;
 
-					delete state;
-				}
+	TRACE_INFO("Started background processing thread");
 
-				TRACE_INFO("Stopped {} background processing threads in {}", m_workerThreads.size(), timer);
-				m_workerThreads.clear();
-			}
+	state->context->activate();
 
-			void BackgroundQueueWinApi::threadFunc(ThreadState* state)
-			{
-				base::ScopeTimer timer;
+	uint32_t jobCounter = 0;
+	base::NativeTimeInterval jobBusyTimer;
+	bool run = true;
+	while (run)
+	{
+		if (auto* job = popNextJob(run))
+		{
+			const auto startTime = base::NativeTimePoint::Now();
 
-				TRACE_INFO("Started background processing thread");
+			processJob(job);
 
-				state->context->activate();
+			jobBusyTimer += startTime.timeTillNow();
+			jobCounter += 1;
+		}
+	}
 
-				uint32_t jobCounter = 0;
-				base::NativeTimeInterval jobBusyTimer;
-				bool run = true;
-				while (run)
-				{
-					if (auto* job = popNextJob(run))
-					{
-						const auto startTime = base::NativeTimePoint::Now();
+	state->context->deactivate();
 
-						processJob(job);
+	TRACE_INFO("Stopped background processing thread after {}, processed {} jobs in {} ({}% utilization)",
+		timer, jobCounter, jobBusyTimer, Prec((jobBusyTimer.toSeconds() / timer.timeElapsed()) * 100.0, 2));
+}
 
-						jobBusyTimer += startTime.timeTillNow();
-						jobCounter += 1;
-					}
-				}
-
-				state->context->deactivate();
-
-				TRACE_INFO("Stopped background processing thread after {}, processed {} jobs in {} ({}% utilization)",
-					timer, jobCounter, jobBusyTimer, Prec((jobBusyTimer.toSeconds() / timer.timeElapsed()) * 100.0, 2));
-			}
-
-			//--
+//--
 	
-		} // gl4
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::gl4)

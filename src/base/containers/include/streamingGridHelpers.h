@@ -10,90 +10,86 @@
 
 #include "streamingGrid.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//--
+
+/// position quantizer
+class BASE_CONTAINERS_API StreamingPositionQuantizer
 {
-    namespace containers
+public:
+    StreamingPositionQuantizer(float maxWorldSize);
+
+    struct QuantizedPosition
     {
-        //--
+        uint16_t x;
+        uint16_t y;
+        uint16_t z;
+        uint16_t r;
+    };
 
-        /// position quantizer
-        class BASE_CONTAINERS_API StreamingPositionQuantizer
-        {
-        public:
-            StreamingPositionQuantizer(float maxWorldSize);
+    INLINE QuantizedPosition quantizePosition(const float* v)
+    {
+        __m128 pos = _mm_set_ps(0.0f, v[2], v[1], v[0]);
 
-            struct QuantizedPosition
-            {
-                uint16_t x;
-                uint16_t y;
-                uint16_t z;
-                uint16_t r;
-            };
+        __m128 qpos = _mm_mul_ps(_mm_add_ps(pos, m_offset), m_scale);
+        qpos = _mm_max_ps(qpos, MinC);
+        qpos = _mm_min_ps(qpos, MaxC);
 
-            INLINE QuantizedPosition quantizePosition(const float* v)
-            {
-                __m128 pos = _mm_set_ps(0.0f, v[2], v[1], v[0]);
+        __m128i q = _mm_cvtps_epi32(qpos);
 
-                __m128 qpos = _mm_mul_ps(_mm_add_ps(pos, m_offset), m_scale);
-                qpos = _mm_max_ps(qpos, MinC);
-                qpos = _mm_min_ps(qpos, MaxC);
+        auto qptr  = (const int*)&q;
+        QuantizedPosition ret;
+        ret.x = (uint16_t)(qptr[0]);
+        ret.y = (uint16_t)(qptr[1]);
+        ret.z = (uint16_t)(qptr[2]);
+        ret.r = 0;
+        return ret;
+    }
 
-                __m128i q = _mm_cvtps_epi32(qpos);
+    INLINE QuantizedPosition quantizePositionAndRadius(const float* v, float r)
+    {
+        __m128 pos = _mm_set_ps(r, v[2], v[1], v[0]);
 
-                auto qptr  = (const int*)&q;
-                QuantizedPosition ret;
-                ret.x = (uint16_t)(qptr[0]);
-                ret.y = (uint16_t)(qptr[1]);
-                ret.z = (uint16_t)(qptr[2]);
-                ret.r = 0;
-                return ret;
-            }
+        __m128 qpos = _mm_mul_ps(_mm_add_ps(pos, m_offset), m_scale);
+        qpos = _mm_max_ps(qpos, MinC);
+        qpos = _mm_min_ps(qpos, MaxC);
 
-            INLINE QuantizedPosition quantizePositionAndRadius(const float* v, float r)
-            {
-                __m128 pos = _mm_set_ps(r, v[2], v[1], v[0]);
+        __m128i q = _mm_cvtps_epi32(qpos);
 
-                __m128 qpos = _mm_mul_ps(_mm_add_ps(pos, m_offset), m_scale);
-                qpos = _mm_max_ps(qpos, MinC);
-                qpos = _mm_min_ps(qpos, MaxC);
+        auto qptr  = (const int*)&q;
 
-                __m128i q = _mm_cvtps_epi32(qpos);
+        QuantizedPosition ret;
+        ret.x = (uint16_t)(qptr[0]);
+        ret.y = (uint16_t)(qptr[1]);
+        ret.z = (uint16_t)(qptr[2]);
+        ret.r = (uint16_t)(qptr[3]);
+        return ret;
+    }
 
-                auto qptr  = (const int*)&q;
+private:
+    static const __m128 MinC;
+    static const __m128 MaxC;
 
-                QuantizedPosition ret;
-                ret.x = (uint16_t)(qptr[0]);
-                ret.y = (uint16_t)(qptr[1]);
-                ret.z = (uint16_t)(qptr[2]);
-                ret.r = (uint16_t)(qptr[3]);
-                return ret;
-            }
+    __m128  m_scale;
+    __m128  m_offset;
+};
 
-        private:
-            static const __m128 MinC;
-            static const __m128 MaxC;
+//-----------------------------
 
-            __m128  m_scale;
-            __m128  m_offset;
-        };
+/// collector for objects from streaming grid
+template< uint32_t N >
+class StreamingGridCollectorStack : public StreamingGridCollector
+{
+public:
+    StreamingGridCollectorStack()
+        : StreamingGridCollector(&m_data[0], N)
+    {}
 
-        //-----------------------------
+private:
+    Elem m_data[N];
+};
 
-        /// collector for objects from streaming grid
-        template< uint32_t N >
-        class StreamingGridCollectorStack : public StreamingGridCollector
-        {
-        public:
-            StreamingGridCollectorStack()
-                : StreamingGridCollector(&m_data[0], N)
-            {}
+//-----------------------------
 
-        private:
-            Elem m_data[N];
-        };
-
-        //-----------------------------
-
-    } // streaming
-} // base
-
+END_BOOMER_NAMESPACE(base)

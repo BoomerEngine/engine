@@ -11,33 +11,26 @@
 #include "gl4ObjectCache.h"
 #include "gl4Sampler.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+//--
+
+Sampler::Sampler(Thread* owner, const SamplerState& setup)
+	: IBaseSampler(owner, setup)
+{}
+
+Sampler::~Sampler()
+{}
+
+GLuint Sampler::object()
 {
-    namespace api
-    {
-		namespace gl4
-		{
+	if (m_glSampler)
+		return m_glSampler;
 
-			//--
+	m_glSampler = owner()->objectCache()->createSampler(state());
+	return m_glSampler;
+}
 
-			Sampler::Sampler(Thread* owner, const SamplerState& setup)
-				: IBaseSampler(owner, setup)
-			{}
+//--
 
-			Sampler::~Sampler()
-			{}
-
-			GLuint Sampler::object()
-			{
-				if (m_glSampler)
-					return m_glSampler;
-
-				m_glSampler = owner()->objectCache()->createSampler(state());
-				return m_glSampler;
-			}
-
-			//--
-
-		} // gl4
-    } // gl4
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::gl4)

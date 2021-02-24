@@ -11,72 +11,68 @@
 #include "resourceFileTables.h"
 #include "base/containers/include/hashMap.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+//--
+
+// builder of the file tables
+class BASE_RESOURCE_API FileTablesBuilder : public NoCopy
 {
-    namespace res
-    {
+public:
+    FileTablesBuilder();
+    FileTablesBuilder(const FileTables& tables); // load existing data
 
-        //--
+    //--
 
-        // builder of the file tables
-        class BASE_RESOURCE_API FileTablesBuilder : public NoCopy
-        {
-        public:
-            FileTablesBuilder();
-            FileTablesBuilder(const FileTables& tables); // load existing data
+    // write to physical file
+    bool write(io::IWriteFileHandle* file, uint32_t headerFlags, uint64_t objectEndPos, uint64_t bufferEndPos, const void* prevHeader = nullptr) const;
 
-            //--
+    //--
 
-            // write to physical file
-            bool write(io::IWriteFileHandle* file, uint32_t headerFlags, uint64_t objectEndPos, uint64_t bufferEndPos, const void* prevHeader = nullptr) const;
+    int version = VER_CURRENT;
 
-            //--
+    Array<char> stringTable;
+    Array<FileTables::Name> nameTable;
+    Array<FileTables::Type> typeTable;
+    Array<FileTables::Path> pathTable;
+    Array<FileTables::Property> propertyTable;
+    Array<FileTables::Import> importTable;
+    Array<FileTables::Export> exportTable;
 
-            int version = VER_CURRENT;
+    //--
 
-            Array<char> stringTable;
-            Array<FileTables::Name> nameTable;
-            Array<FileTables::Type> typeTable;
-            Array<FileTables::Path> pathTable;
-            Array<FileTables::Property> propertyTable;
-            Array<FileTables::Import> importTable;
-            Array<FileTables::Export> exportTable;
+    HashMap<FileTables::Type, uint32_t> typeMap;
+    HashMap<FileTables::Path, uint32_t> pathMap;
+    HashMap<FileTables::Property, uint32_t> propertyMap;
+    HashMap<FileTables::ImportKey, uint32_t> importMap;
 
-            //--
+    HashMap<StringBuf, uint32_t> stringRawMap;
+    HashMap<StringID, uint32_t> nameRawMap;
+    HashMap<StringID, uint32_t> typeRawMap;
+    HashMap<StringBuf, uint32_t> pathRawMap;
 
-            HashMap<FileTables::Type, uint32_t> typeMap;
-            HashMap<FileTables::Path, uint32_t> pathMap;
-            HashMap<FileTables::Property, uint32_t> propertyMap;
-            HashMap<FileTables::ImportKey, uint32_t> importMap;
+    //--
 
-            HashMap<StringBuf, uint32_t> stringRawMap;
-            HashMap<StringID, uint32_t> nameRawMap;
-            HashMap<StringID, uint32_t> typeRawMap;
-            HashMap<StringBuf, uint32_t> pathRawMap;
+    uint32_t mapString(StringView txt);
+    uint16_t mapName(StringID name);
 
-            //--
+    uint16_t mapType(StringID typeName);
+    uint16_t mapType(Type type);
 
-            uint32_t mapString(StringView txt);
-            uint16_t mapName(StringID name);
+    uint16_t mapPath(StringView path);
+    uint16_t mapPath(uint16_t parent, StringView elem);
 
-            uint16_t mapType(StringID typeName);
-            uint16_t mapType(Type type);
+    uint16_t mapProperty(StringID classType, StringID propName);
+    uint16_t mapProperty(const FileTables::Property& prop);
+    uint16_t mapProperty(const rtti::Property* prop);
 
-            uint16_t mapPath(StringView path);
-            uint16_t mapPath(uint16_t parent, StringView elem);
+    uint16_t mapImport(StringID classType, StringView importPath, bool async);
+    uint16_t mapImport(const FileTables::Import& importInfo);
 
-            uint16_t mapProperty(StringID classType, StringID propName);
-            uint16_t mapProperty(const FileTables::Property& prop);
-            uint16_t mapProperty(const rtti::Property* prop);
+    typedef std::function<void(StringBuf&)> TImportRemapFunc;
+    void initFromTables(const FileTables& tables, const TImportRemapFunc& importPathRemapper);
+};
 
-            uint16_t mapImport(StringID classType, StringView importPath, bool async);
-            uint16_t mapImport(const FileTables::Import& importInfo);
+//--
 
-            typedef std::function<void(StringBuf&)> TImportRemapFunc;
-            void initFromTables(const FileTables& tables, const TImportRemapFunc& importPathRemapper);
-        };
-
-        //--
-
-    } // res
-} // base
+END_BOOMER_NAMESPACE(base::res)

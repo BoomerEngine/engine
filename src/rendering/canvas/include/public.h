@@ -8,11 +8,3 @@
 
 #include "rendering_canvas_glue.inl"
 
-namespace rendering
-{
-    namespace canvas
-    {
-	
-    } // canvas
-} // rendering
-

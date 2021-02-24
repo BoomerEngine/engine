@@ -11,24 +11,17 @@
 #include "dx11ObjectCache.h"
 #include "dx11VertexLayout.h"
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace dx11
-		{
+BEGIN_BOOMER_NAMESPACE(rendering::api::dx11)
 
-			//--
+//--
 
-			VertexBindingLayout::VertexBindingLayout(Thread* owner, const base::Array<ShaderVertexStreamMetadata>& streams)
-				: IBaseVertexBindingLayout(owner->objectCache(), streams)
-			{}
+VertexBindingLayout::VertexBindingLayout(Thread* owner, const base::Array<ShaderVertexStreamMetadata>& streams)
+	: IBaseVertexBindingLayout(owner->objectCache(), streams)
+{}
 
-			VertexBindingLayout::~VertexBindingLayout()
-			{}
+VertexBindingLayout::~VertexBindingLayout()
+{}
 
-			//--
+//--
 
-		} // dx11
-    } // gl4
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::dx11)

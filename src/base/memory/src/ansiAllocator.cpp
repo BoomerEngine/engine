@@ -13,82 +13,78 @@
     #include <malloc.h>
 #endif
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::mem)
+
+//--
+
+void AnsiAllocator::printLeaks()
 {
-    namespace mem
-    {
+    // nothing
+}
 
-        //--
+void AnsiAllocator::validateHeap(void* freedPtr)
+{
+    // nothing
+}
 
-        void AnsiAllocator::printLeaks()
-        {
-            // nothing
-        }
-
-        void AnsiAllocator::validateHeap(void* freedPtr)
-        {
-            // nothing
-        }
-
-        void* AnsiAllocator::allocate(PoolTag id, size_t size, size_t alignment, const char* typeName)
-        {
-    #if defined(PLATFORM_MSVC) && defined(BUILD_DEBUG)
-            return _aligned_malloc_dbg(size, alignment, typeName, 0);
-    #elif defined(PLATFORM_MSVC)
-            return _aligned_malloc(size, alignment);
-    #else
-            return aligned_alloc(alignment, size);
-    #endif
-        }
-
-        void AnsiAllocator::deallocate(void* mem)
-        {
-            if (mem != nullptr)
-            {
+void* AnsiAllocator::allocate(PoolTag id, size_t size, size_t alignment, const char* typeName)
+{
 #if defined(PLATFORM_MSVC) && defined(BUILD_DEBUG)
-                _aligned_free_dbg(mem);
+    return _aligned_malloc_dbg(size, alignment, typeName, 0);
 #elif defined(PLATFORM_MSVC)
-                _aligned_free_dbg(mem);
-                //_aligned_free(mem);
+    return _aligned_malloc(size, alignment);
 #else
-                return free(mem);
+    return aligned_alloc(alignment, size);
 #endif
-            }
-        }
+}
 
-        void* AnsiAllocator::reallocate(PoolTag id, void* mem, size_t newSize, size_t alignment, const char* typeName)
-        {
-            if (newSize == 0)
-            {
-                deallocate(mem);
-                return nullptr;
-            }
-            else if (mem == nullptr)
-            {
-                return allocate(id, newSize, alignment, typeName);
-            }
-            else
-            {
+void AnsiAllocator::deallocate(void* mem)
+{
+    if (mem != nullptr)
+    {
+#if defined(PLATFORM_MSVC) && defined(BUILD_DEBUG)
+        _aligned_free_dbg(mem);
+#elif defined(PLATFORM_MSVC)
+        _aligned_free_dbg(mem);
+        //_aligned_free(mem);
+#else
+        return free(mem);
+#endif
+    }
+}
+
+void* AnsiAllocator::reallocate(PoolTag id, void* mem, size_t newSize, size_t alignment, const char* typeName)
+{
+    if (newSize == 0)
+    {
+        deallocate(mem);
+        return nullptr;
+    }
+    else if (mem == nullptr)
+    {
+        return allocate(id, newSize, alignment, typeName);
+    }
+    else
+    {
 #if defined(PLATFORM_MSVC)
-    #if defined(BUILD_DEBUG)
-                void* ret = _aligned_realloc_dbg(mem, newSize, alignment, typeName, 0);
-    #else
-                void* ret = _aligned_realloc(mem, newSize, alignment);
-    #endif
-#elif defined(PLATFORM_POSIX)
-                void* ret = allocate(id, newSize, alignment);
-                size_t currentSize = malloc_usable_size(mem);
-                memcpy(ret, mem, std::min<size_t>(currentSize, newSize));
-                deallocate(mem);
+#if defined(BUILD_DEBUG)
+        void* ret = _aligned_realloc_dbg(mem, newSize, alignment, typeName, 0);
 #else
-    #error "Please provide ALIGNED realloc on this platform"
+        void* ret = _aligned_realloc(mem, newSize, alignment);
 #endif
-                ASSERT(ret != nullptr);
-                return ret;
-            }
-        }
+#elif defined(PLATFORM_POSIX)
+        void* ret = allocate(id, newSize, alignment);
+        size_t currentSize = malloc_usable_size(mem);
+        memcpy(ret, mem, std::min<size_t>(currentSize, newSize));
+        deallocate(mem);
+#else
+#error "Please provide ALIGNED realloc on this platform"
+#endif
+        ASSERT(ret != nullptr);
+        return ret;
+    }
+}
 
-        //--
+//--
 
-    } // mem
-} // base
+END_BOOMER_NAMESPACE(base::mem)

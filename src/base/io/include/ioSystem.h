@@ -8,200 +8,197 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::io)
+
+//--
+
+// Allocate single block of memory from the memory pool
+// The IO memory is pre-allocated by the application so there's no risk of fragmentation-caused OOM or performance drop
+// If there's not enough free memory in the IO pool this function will wait (yield the fiber) until some memory is freed and it will retry
+// If a buffer is REALLY large (which usually means an error, than it's allocated directly from the system)
+extern BASE_IO_API CAN_YIELD Buffer AllocBlockAsync(uint32_t size);
+
+// Allocate atomically two blocks from the memory pool, this function will wait until both blocks can be allocated
+extern BASE_IO_API CAN_YIELD bool AllocBlocksAsync(uint32_t compressedSize, uint32_t decompressedSize, Buffer& outCompressedBuffer, Buffer& outDecompressedBuffer);
+
+//--
+
+/// mode for opening file for writing
+enum class FileWriteMode : uint8_t
 {
-    namespace io
-    {
-        //--
+    DirectWrite, // directly open target file for writing, any writes will be permanent, potentially damaging the file
+    DirectAppend, // directly open target file for appending stuff at the end
+    StagedWrite, // write to a temporary file first, and if everything went well move it into target position, writing call be canceled by calling discardContent()
+};
 
-        // Allocate single block of memory from the memory pool
-        // The IO memory is pre-allocated by the application so there's no risk of fragmentation-caused OOM or performance drop
-        // If there's not enough free memory in the IO pool this function will wait (yield the fiber) until some memory is freed and it will retry
-        // If a buffer is REALLY large (which usually means an error, than it's allocated directly from the system)
-        extern BASE_IO_API CAN_YIELD Buffer AllocBlockAsync(uint32_t size);
+// Open physical file for reading
+extern BASE_IO_API ReadFileHandlePtr OpenForReading(StringView absoluteFilePath);
 
-        // Allocate atomically two blocks from the memory pool, this function will wait until both blocks can be allocated
-        extern BASE_IO_API CAN_YIELD bool AllocBlocksAsync(uint32_t compressedSize, uint32_t decompressedSize, Buffer& outCompressedBuffer, Buffer& outDecompressedBuffer);
+// open physical file for writing
+extern BASE_IO_API WriteFileHandlePtr OpenForWriting(StringView absoluteFilePath, FileWriteMode mode = FileWriteMode::StagedWrite);
 
-        //--
+// open physical file for async reading
+extern BASE_IO_API AsyncFileHandlePtr OpenForAsyncReading(StringView absoluteFilePath);
 
-        /// mode for opening file for writing
-        enum class FileWriteMode : uint8_t
-        {
-            DirectWrite, // directly open target file for writing, any writes will be permanent, potentially damaging the file
-            DirectAppend, // directly open target file for appending stuff at the end
-            StagedWrite, // write to a temporary file first, and if everything went well move it into target position, writing call be canceled by calling discardContent()
-        };
+// create a READ ONLY memory mapped buffer view of a file, used by some asset loaders
+extern BASE_IO_API Buffer OpenMemoryMappedForReading(StringView absoluteFilePath);
 
-        // Open physical file for reading
-        extern BASE_IO_API ReadFileHandlePtr OpenForReading(StringView absoluteFilePath);
+//--
 
-        // open physical file for writing
-        extern BASE_IO_API WriteFileHandlePtr OpenForWriting(StringView absoluteFilePath, FileWriteMode mode = FileWriteMode::StagedWrite);
+//! Get file size, returns 0 if file does not exist (we are not interested in empty file either)
+extern BASE_IO_API bool FileSize(StringView absoluteFilePath, uint64_t& outFileSize);
 
-        // open physical file for async reading
-        extern BASE_IO_API AsyncFileHandlePtr OpenForAsyncReading(StringView absoluteFilePath);
+//! Get file timestamp
+extern BASE_IO_API bool FileTimeStamp(StringView absoluteFilePath, class TimeStamp& outTimeStamp, uint64_t* outFileSize = nullptr);
 
-        // create a READ ONLY memory mapped buffer view of a file, used by some asset loaders
-        extern BASE_IO_API Buffer OpenMemoryMappedForReading(StringView absoluteFilePath);
+//! Make sure all directories along the way exist
+extern BASE_IO_API bool CreatePath(StringView absoluteFilePath);
 
-        //--
+//! Copy file
+extern BASE_IO_API bool CopyFile(StringView srcAbsolutePath, StringView destAbsolutePath);
 
-        //! Get file size, returns 0 if file does not exist (we are not interested in empty file either)
-        extern BASE_IO_API bool FileSize(StringView absoluteFilePath, uint64_t& outFileSize);
+//! Move file
+extern BASE_IO_API bool MoveFile(StringView srcAbsolutePath, StringView destAbsolutePath);
 
-        //! Get file timestamp
-        extern BASE_IO_API bool FileTimeStamp(StringView absoluteFilePath, class TimeStamp& outTimeStamp, uint64_t* outFileSize = nullptr);
+//! Delete file from disk
+extern BASE_IO_API bool DeleteFile(StringView absoluteFilePath);
 
-        //! Make sure all directories along the way exist
-        extern BASE_IO_API bool CreatePath(StringView absoluteFilePath);
+//! Delete folder from disk (note: directory must be empty)
+extern BASE_IO_API bool DeleteDir(StringView absoluteDirPath);
 
-        //! Copy file
-        extern BASE_IO_API bool CopyFile(StringView srcAbsolutePath, StringView destAbsolutePath);
+//! Check if file exists
+extern BASE_IO_API bool FileExists(StringView absoluteFilePath);
 
-        //! Move file
-        extern BASE_IO_API bool MoveFile(StringView srcAbsolutePath, StringView destAbsolutePath);
+//! Check if file is read only
+extern BASE_IO_API bool IsFileReadOnly(StringView absoluteFilePath);
 
-        //! Delete file from disk
-        extern BASE_IO_API bool DeleteFile(StringView absoluteFilePath);
+//! Change read only attribute on file
+extern BASE_IO_API bool ReadOnlyFlag(StringView absoluteFilePath, bool flag);
 
-        //! Delete folder from disk (note: directory must be empty)
-        extern BASE_IO_API bool DeleteDir(StringView absoluteDirPath);
+//! Touch file (updates the modification timestamp to current date without doing anything with the file)
+extern BASE_IO_API bool TouchFile(StringView absoluteFilePath);
 
-        //! Check if file exists
-        extern BASE_IO_API bool FileExists(StringView absoluteFilePath);
+//---
 
-        //! Check if file is read only
-        extern BASE_IO_API bool IsFileReadOnly(StringView absoluteFilePath);
+//! Enumerate files in given directory, calls the handler for every file found, if handler returns "true" we assume the search is over
+extern BASE_IO_API bool FindFiles(StringView absoluteFilePath, StringView searchPattern, const std::function<bool(StringView fullPath, StringView fileName)>& enumFunc, bool recurse);
 
-        //! Change read only attribute on file
-        extern BASE_IO_API bool ReadOnlyFlag(StringView absoluteFilePath, bool flag);
+//! Enumerate directories in given directory, calls the handler for every
+extern BASE_IO_API bool FindSubDirs(StringView absoluteFilePath, const std::function<bool(StringView name)>& enumFunc);
 
-        //! Touch file (updates the modification timestamp to current date without doing anything with the file)
-        extern BASE_IO_API bool TouchFile(StringView absoluteFilePath);
+//! Enumerate file in given directory, not recursive version, NOTE: slow as fuck
+extern BASE_IO_API bool FindLocalFiles(StringView absoluteFilePath, StringView searchPattern, const std::function<bool(StringView name)>& enumFunc);
 
-        //---
+//---
 
-        //! Enumerate files in given directory, calls the handler for every file found, if handler returns "true" we assume the search is over
-        extern BASE_IO_API bool FindFiles(StringView absoluteFilePath, StringView searchPattern, const std::function<bool(StringView fullPath, StringView fileName)>& enumFunc, bool recurse);
+//! Enumerate files in given directory, NOTE: slow as fuck as strings are built
+extern BASE_IO_API void FindFiles(StringView absoluteFilePath, StringView searchPattern, Array<StringBuf>& outAbsoluteFiles, bool recurse);
 
-        //! Enumerate directories in given directory, calls the handler for every
-        extern BASE_IO_API bool FindSubDirs(StringView absoluteFilePath, const std::function<bool(StringView name)>& enumFunc);
+//! Enumerate directories in given directory, NOTE: slow as fuck as strings are built
+extern BASE_IO_API void FindSubDirs(StringView absoluteFilePath, Array<StringBuf>& outDirectoryNames);
 
-        //! Enumerate file in given directory, not recursive version, NOTE: slow as fuck
-        extern BASE_IO_API bool FindLocalFiles(StringView absoluteFilePath, StringView searchPattern, const std::function<bool(StringView name)>& enumFunc);
+//! Enumerate file in given directory, not recursive version, NOTE: slow as fuck as strings are built
+extern BASE_IO_API void FindLocalFiles(StringView absoluteFilePath, StringView searchPattern, Array<StringBuf>& outFileNames);
 
-        //---
+//----
 
-        //! Enumerate files in given directory, NOTE: slow as fuck as strings are built
-        extern BASE_IO_API void FindFiles(StringView absoluteFilePath, StringView searchPattern, Array<StringBuf>& outAbsoluteFiles, bool recurse);
+    // type of location we want to retrieve from the system
+enum class PathCategory : uint8_t
+{
+    // path to the executable file currently running
+    ExecutableFile,
 
-        //! Enumerate directories in given directory, NOTE: slow as fuck as strings are built
-        extern BASE_IO_API void FindSubDirs(StringView absoluteFilePath, Array<StringBuf>& outDirectoryNames);
+    // path to the bin/ directory we are running from
+    ExecutableDir,
 
-        //! Enumerate file in given directory, not recursive version, NOTE: slow as fuck as strings are built
-        extern BASE_IO_API void FindLocalFiles(StringView absoluteFilePath, StringView searchPattern, Array<StringBuf>& outFileNames);
+    // engine directory (contains engine's src, data and config)
+    EngineDir,
 
-        //----
+    // path to the system wide temporary directory when temporary files may be stored
+    // NOTE: temp directory may be totally purged between runs
+    SystemTempDir,
 
-          // type of location we want to retrieve from the system
-        enum class PathCategory : uint8_t
-        {
-            // path to the executable file currently running
-            ExecutableFile,
+	// project local temp directory that has higher tendency to stay around
+	LocalTempDir,
 
-            // path to the bin/ directory we are running from
-            ExecutableDir,
+    // path to the user config directory - a directory where we can store user specific configuration files (like settings)
+    UserConfigDir,
 
-            // engine directory (contains engine's src, data and config)
-            EngineDir,
+    // path to "My Documents" or /home/XXX/ or something similar
+    UserDocumentsDir,
 
-            // path to the system wide temporary directory when temporary files may be stored
-            // NOTE: temp directory may be totally purged between runs
-            SystemTempDir,
+    //--
 
-			// project local temp directory that has higher tendency to stay around
-			LocalTempDir,
+    MAX,
+};
 
-            // path to the user config directory - a directory where we can store user specific configuration files (like settings)
-            UserConfigDir,
+//! Get a path to some specific shit
+extern BASE_IO_API const StringBuf& SystemPath(PathCategory category);
 
-            // path to "My Documents" or /home/XXX/ or something similar
-            UserDocumentsDir,
+//---
 
-            //--
+//! Create asynchronous directory watcher
+//! The watcher monitors directory for files being added/removed from it
+extern BASE_IO_API DirectoryWatcherPtr CreateDirectoryWatcher(StringView path);
 
-            MAX,
-        };
+//---
 
-        //! Get a path to some specific shit
-        extern BASE_IO_API const StringBuf& SystemPath(PathCategory category);
+/// persistent data for Open/Save file dialogs
+struct OpenSavePersistentData
+{
+    RTTI_DECLARE_POOL(POOL_IO)
 
-        //---
+public:
+    StringBuf directory;
+    StringBuf userPattern;
+    StringBuf filterExtension;
+    StringBuf lastSaveFileName;
+};
 
-        //! Create asynchronous directory watcher
-        //! The watcher monitors directory for files being added/removed from it
-        extern BASE_IO_API DirectoryWatcherPtr CreateDirectoryWatcher(StringView path);
+//! Show the given file in the file explorer
+extern BASE_IO_API void ShowFileExplorer(StringView path);
 
-        //---
+//! Show the system "Open File" dialog
+//! This pops up the native system window in which user can select a file(s) to be opened
+extern BASE_IO_API bool ShowFileOpenDialog(uint64_t nativeWindowHandle, bool allowMultiple, const Array<FileFormat>& formats, base::Array<StringBuf>& outPaths, OpenSavePersistentData& persistentData);
 
-        /// persistent data for Open/Save file dialogs
-        struct OpenSavePersistentData
-        {
-            RTTI_DECLARE_POOL(POOL_IO)
+//! Show the system "Save File" dialog
+//! This pops up the native system window in which user can select a file(s) to be opened
+extern BASE_IO_API bool ShowFileSaveDialog(uint64_t nativeWindowHandle, const StringBuf& currentFileName, const Array<FileFormat>& formats, StringBuf& outPath, OpenSavePersistentData& persistentData);
 
-        public:
-            StringBuf directory;
-            StringBuf userPattern;
-            StringBuf filterExtension;
-            StringBuf lastSaveFileName;
-        };
+//---
 
-        //! Show the given file in the file explorer
-        extern BASE_IO_API void ShowFileExplorer(StringView path);
+// load content of an absolute file on disk to a string buffer
+// returns true if content was loaded, false if there were errors (file does not exist, etc)
+// NOTE: both ANSI UTF-8 and UTF-16 files are supported, the UTF-16 files are automatically converted
+extern BASE_IO_API bool LoadFileToString(StringView absoluteFilePath, StringBuf& outString);
 
-        //! Show the system "Open File" dialog
-        //! This pops up the native system window in which user can select a file(s) to be opened
-        extern BASE_IO_API bool ShowFileOpenDialog(uint64_t nativeWindowHandle, bool allowMultiple, const Array<FileFormat>& formats, base::Array<StringBuf>& outPaths, OpenSavePersistentData& persistentData);
+// load file content into a memory buffer, uses OS dependent implementation for maximum efficiency
+// NOTE: buffer is usually allocated outside of the normal memory pools
+extern BASE_IO_API Buffer LoadFileToBuffer(StringView absoluteFilePath);
 
-        //! Show the system "Save File" dialog
-        //! This pops up the native system window in which user can select a file(s) to be opened
-        extern BASE_IO_API bool ShowFileSaveDialog(uint64_t nativeWindowHandle, const StringBuf& currentFileName, const Array<FileFormat>& formats, StringBuf& outPath, OpenSavePersistentData& persistentData);
+//----
 
-        //---
+// encoding of the file saved
+enum class StringEncoding : uint8_t
+{
+    Ansi, // all chars > 255 are saved as ?
+    UTF8, // native, no data conversion
+    UTF16, // expands to 16-bits, larger values are written as ?
+};
 
-        // load content of an absolute file on disk to a string buffer
-        // returns true if content was loaded, false if there were errors (file does not exist, etc)
-        // NOTE: both ANSI UTF-8 and UTF-16 files are supported, the UTF-16 files are automatically converted
-        extern BASE_IO_API bool LoadFileToString(StringView absoluteFilePath, StringBuf& outString);
+// save string (ANSI / UTF16) to file on disk
+// returns true if content was saved, false if there were errors (file could not be created, etc)
+extern BASE_IO_API bool SaveFileFromString(StringView absoluteFilePath, StringView str, StringEncoding encoding = StringEncoding::UTF8);
 
-        // load file content into a memory buffer, uses OS dependent implementation for maximum efficiency
-        // NOTE: buffer is usually allocated outside of the normal memory pools
-        extern BASE_IO_API Buffer LoadFileToBuffer(StringView absoluteFilePath);
+// save block of memory to file on disk
+// returns true if content was saved, false if there were errors (file could not be created, etc)
+extern BASE_IO_API bool SaveFileFromBuffer(StringView absoluteFilePath, const void* buffer, size_t size);
 
-        //----
+// save block of memory to file on disk
+// returns true if content was saved, false if there were errors (file could not be created, etc)
+extern BASE_IO_API bool SaveFileFromBuffer(StringView absoluteFilePath, const Buffer& buffer);
 
-        // encoding of the file saved
-        enum class StringEncoding : uint8_t
-        {
-            Ansi, // all chars > 255 are saved as ?
-            UTF8, // native, no data conversion
-            UTF16, // expands to 16-bits, larger values are written as ?
-        };
+//---
 
-        // save string (ANSI / UTF16) to file on disk
-        // returns true if content was saved, false if there were errors (file could not be created, etc)
-        extern BASE_IO_API bool SaveFileFromString(StringView absoluteFilePath, StringView str, StringEncoding encoding = StringEncoding::UTF8);
-
-        // save block of memory to file on disk
-        // returns true if content was saved, false if there were errors (file could not be created, etc)
-        extern BASE_IO_API bool SaveFileFromBuffer(StringView absoluteFilePath, const void* buffer, size_t size);
-
-        // save block of memory to file on disk
-        // returns true if content was saved, false if there were errors (file could not be created, etc)
-        extern BASE_IO_API bool SaveFileFromBuffer(StringView absoluteFilePath, const Buffer& buffer);
-
-        //---
-
-    } // io
-} // base
+END_BOOMER_NAMESPACE(base::io)

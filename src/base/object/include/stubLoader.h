@@ -8,45 +8,45 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//---
+
+class StubFactory;
+
+//---
+
+// helper class to unpack stub structure from memory blob
+class BASE_OBJECT_API StubLoader : public NoCopy
 {
-	//---
+public:
+	StubLoader(const StubFactory& factory, uint32_t minVersion, PoolTag tag = POOL_STUBS);
+	~StubLoader();
 
-	class StubFactory;
+	// clear data, releases allocated memory (will call destructor on stubs that need it)
+	void clear();
 
-	//---
+	// unpack packed stubs, returns pointer to the root packed object
+	// NOTE: we don't need the packed data once we unpack
+	// NOTE: it may fail if we have version change or there's any other error
+	const IStub* unpack(const void* packedData, uint32_t packedDataSize);
 
-	// helper class to unpack stub structure from memory blob
-	class BASE_OBJECT_API StubLoader : public NoCopy
-	{
-	public:
-		StubLoader(const StubFactory& factory, uint32_t minVersion, PoolTag tag = POOL_STUBS);
-		~StubLoader();
+	// same as unpack but takes buffer
+	const IStub* unpack(const Buffer& buffer);
 
-		// clear data, releases allocated memory (will call destructor on stubs that need it)
-		void clear();
+private:
+	const StubFactory& m_factory;
 
-		// unpack packed stubs, returns pointer to the root packed object
-		// NOTE: we don't need the packed data once we unpack
-		// NOTE: it may fail if we have version change or there's any other error
-		const IStub* unpack(const void* packedData, uint32_t packedDataSize);
+	void* m_unpackedMem = nullptr; // unpacked buffer, contains stub definitions + strings + inlined data
+	void* m_stubMem = nullptr; // memory with stub objects
 
-		// same as unpack but takes buffer
-		const IStub* unpack(const Buffer& buffer);
+	uint32_t m_minVersion = 1;
 
-	private:
-		const StubFactory& m_factory;
+	PoolTag m_tag;
 
-		void* m_unpackedMem = nullptr; // unpacked buffer, contains stub definitions + strings + inlined data
-		void* m_stubMem = nullptr; // memory with stub objects
+	base::Array<IStub*> m_stubsThatNeedDestruction;
+};
 
-		uint32_t m_minVersion = 1;
+//---
 
-		PoolTag m_tag;
-
-		base::Array<IStub*> m_stubsThatNeedDestruction;
-	};
-
-	//---
-
-} // base
+END_BOOMER_NAMESPACE(base)

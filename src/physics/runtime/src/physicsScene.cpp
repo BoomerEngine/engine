@@ -9,31 +9,27 @@
 #include "physicsService.h"
 #include "physicsScene.h"
 
-namespace physics
+BEGIN_BOOMER_NAMESPACE(boomer)
+
+//---
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(PhysicsScene);
+RTTI_END_TYPE();
+
+PhysicsScene::PhysicsScene(physx::PxScene* scene)
+    : m_scene(scene)
 {
-    namespace runtime
-    {
+}
 
-        //---
+PhysicsScene::~PhysicsScene()
+{
 
-        RTTI_BEGIN_TYPE_NATIVE_CLASS(PhysicsScene);
-        RTTI_END_TYPE();
+}
 
-        PhysicsScene::PhysicsScene(physx::PxScene* scene)
-            : m_scene(scene)
-        {
-        }
+void PhysicsScene::simulate(float dt)
+{
+}
 
-        PhysicsScene::~PhysicsScene()
-        {
+//---
 
-        }
-
-        void PhysicsScene::simulate(float dt)
-        {
-        }
-
-        //---
-
-    } // runtime
-} // physics
+END_BOOMER_NAMESPACE(boomer)

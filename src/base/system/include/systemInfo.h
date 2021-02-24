@@ -8,23 +8,22 @@
 
 #pragma once
 
-namespace base
-{
+BEGIN_BOOMER_NAMESPACE(base)
 
-    // Get name of the user
-	#undef GetUserName
-    extern BASE_SYSTEM_API const char* GetUserName();
+// Get name of the user
+#undef GetUserName
+extern BASE_SYSTEM_API const char* GetUserName();
 
-    // Get computer name
-    extern BASE_SYSTEM_API const char* GetHostName();
+// Get computer name
+extern BASE_SYSTEM_API const char* GetHostName();
 
-    // Get string that describes the system
-    extern BASE_SYSTEM_API const char* GetSystemName();
+// Get string that describes the system
+extern BASE_SYSTEM_API const char* GetSystemName();
 
-    // Get value of the environment variable
-    extern BASE_SYSTEM_API const char* GetEnv(const char* key);
+// Get value of the environment variable
+extern BASE_SYSTEM_API const char* GetEnv(const char* key);
 
-    // Get value from the registry
-    extern BASE_SYSTEM_API bool GetRegistryKey(const char* path, const char* key, char* outBuffer, uint32_t& outBufferSize);
+// Get value from the registry
+extern BASE_SYSTEM_API bool GetRegistryKey(const char* path, const char* key, char* outBuffer, uint32_t& outBufferSize);
 
-} // base
+END_BOOMER_NAMESPACE(base)

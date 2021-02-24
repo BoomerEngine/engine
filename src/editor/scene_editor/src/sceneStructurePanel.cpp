@@ -28,880 +28,880 @@
 #include "base/ui/include/uiColumnHeaderBar.h"
 #include "base/object/include/object.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+SceneContentTreeModel::SceneContentTreeModel(SceneContentStructure* structure, ScenePreviewContainer* preview)
+    : m_structure(structure)
+    , m_preview(preview)
+    , m_contentEvents(this)
+    , m_root(m_structure->root())
 {
-    //--
-
-    SceneContentTreeModel::SceneContentTreeModel(SceneContentStructure* structure, ScenePreviewContainer* preview)
-        : m_structure(structure)
-        , m_preview(preview)
-        , m_contentEvents(this)
-        , m_root(m_structure->root())
+    m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_ADDED) = [this](SceneContentNodePtr node)
     {
-        m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_ADDED) = [this](SceneContentNodePtr node)
-        {
-            handleChildNodeAttached(node);
-        };
-
-        m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_REMOVED) = [this](SceneContentNodePtr node)
-        {
-            handleChildNodeDetached(node);
-        };
-
-        m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_VISUAL_FLAG_CHANGED) = [this](SceneContentNodePtr node)
-        {
-            handleNodeVisualFlagsChanged(node);
-        };
-
-        m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_VISIBILITY_CHANGED) = [this](SceneContentNodePtr node)
-        {
-            handleNodeVisibilityChanged(node);
-        };
-
-        m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_MODIFIED_FLAG_CHANGED) = [this](SceneContentNodePtr node)
-        {
-            handleNodeModifiedFlagsChanged(node);
-        };
-
-        m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_RENAMED) = [this](SceneContentNodePtr node)
-        {
-            handleNodeNameChanged(node);
-        };
-
-    }
-
-    SceneContentTreeModel::~SceneContentTreeModel()
-    {
-        m_root.reset();
-    }
-
-    bool SceneContentTreeModel::hasChildren(const ui::ModelIndex& parent /*= ui::ModelIndex()*/) const
-    {
-        if (!parent)
-            return m_root;
-
-        if (parent.model() == this)
-            if (auto* proxy = parent.unsafe<SceneContentNode>())
-                return !proxy->children().empty();
-
-        return false;
-    }
-
-    void SceneContentTreeModel::children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const
-    {
-        if (!parent)
-        {
-            if (m_root)
-            {
-                auto rootIndex = ui::ModelIndex(this, m_root, m_root->uniqueModelIndex());
-                outChildrenIndices.pushBack(rootIndex);
-            }
-        }
-        else if (parent.model() == this)
-        {
-            if (auto* proxy = parent.unsafe<SceneContentNode>())
-            {
-                outChildrenIndices.reserve(proxy->children().size());
-
-                for (const auto& child : proxy->children())
-                {
-                    auto childIndex = ui::ModelIndex(this, child, child->uniqueModelIndex());
-                    outChildrenIndices.pushBack(childIndex);
-                }
-            }
-        }
-    }
-
-    ui::ModelIndex SceneContentTreeModel::parent(const ui::ModelIndex& item /*= ui::ModelIndex()*/) const
-    {
-        if (item.model() == this)
-            if (auto* proxy = item.unsafe<SceneContentNode>())
-                if (auto* parentNode = proxy->parent())
-                    return ui::ModelIndex(this, parentNode, parentNode->uniqueModelIndex());
-
-        return ui::ModelIndex();
-    }
-
-    bool SceneContentTreeModel::compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex /*= 0*/) const
-    {
-        if (first.model() == this && second.model() == this)
-        {
-            const auto* firstProxy = first.unsafe<SceneContentNode>();
-            const auto* secondProxy = second.unsafe<SceneContentNode>();
-            if (firstProxy && secondProxy)
-                return firstProxy->name() < secondProxy->name();
-        }
-
-        return first < second;
-    }
-
-    bool SceneContentTreeModel::filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex /*= 0*/) const
-    {
-        if (id.model() == this)
-            if (auto* proxy = id.unsafe<SceneContentNode>())
-                return filter.testString(proxy->name());
-
-        return true;
-    }
-
-    base::StringBuf SceneContentTreeModel::displayContent(const ui::ModelIndex& id, int colIndex /*= 0*/) const
-    {
-        if (id.model() == this)
-        {
-            if (auto* node = id.unsafe<SceneContentNode>())
-            {
-                switch (colIndex)
-                {
-                    case 0:
-                    {
-                        StringBuilder txt;
-                        node->displayText(txt);
-                        return txt.toString();
-                    }
-
-                    case 1:
-                    {
-                        if (node->visible())
-                        {
-                            if (node->visibilityFlagRaw() == SceneContentNodeLocalVisibilityState::Default)
-                                return node->defaultVisibilityFlag() ? "[color:#aaa][img:eye][/color]" : "[color:#aaa][img:eye_cross][/color]";
-                            else if (node->visibilityFlagRaw() == SceneContentNodeLocalVisibilityState::Visible)
-                                return "[img:eye]";
-                            else
-                                return "[img:eye_cross]";
-                        }
-                        else
-                        {
-                            return node->visibilityFlagBool() ? "[color:#555][img:eye][/color]" : "[color:#555][img:eye_cross][/color]";
-                        }
-                    }
-
-                    case 2:
-                    {
-                        if (node->type() == SceneContentNodeType::LayerFile)
-                            return node->modified() ? "[img:save]" : "";
-                    }
-                }
-            }
-        }
-
-        return base::StringBuf::EMPTY();
-    }
-
-    ui::ModelIndex SceneContentTreeModel::indexForNode(const SceneContentNode* node) const
-    {
-        if (node)
-            return ui::ModelIndex(this, node, node->uniqueModelIndex());
-
-        return ui::ModelIndex();
-    }
-
-    SceneContentNodePtr SceneContentTreeModel::nodeForIndex(const ui::ModelIndex& id) const
-    {
-        return id.lock<SceneContentNode>();
-    }
-
-    ui::PopupPtr SceneContentTreeModel::contextMenu(ui::AbstractItemView* view, const base::Array<ui::ModelIndex>& indices) const
-    {
-        if (m_preview)
-        {
-            if (auto mode = m_preview->mode())
-            {
-                // resolve current item (under cursor)
-                const auto currentNode = nodeForIndex(view->current());
-
-                // gather selected indices
-                InplaceArray<SceneContentNodePtr, 10> selectedNodes;
-                for (const auto& id : indices)
-                    if (auto node = nodeForIndex(id))
-                        selectedNodes.pushBack(node);
-
-                auto menu = RefNew<ui::MenuButtonContainer>();
-                mode->handleTreeContextMenu(menu, currentNode, selectedNodes);
-                return menu->convertToPopup();
-            }
-        }
-
-        return nullptr;
-    }
-
-    ui::ElementPtr SceneContentTreeModel::tooltip(ui::AbstractItemView* view, ui::ModelIndex id) const
-    {
-        return nullptr;
-    }
-
-    //--
-
-    /// drag&drop data with scene node
-    class SceneNodeDragDropData : public ui::IDragDropData
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(SceneNodeDragDropData, ui::IDragDropData);
-
-    public:
-        SceneNodeDragDropData(const SceneContentNode* node)
-            : m_node(AddRef(node))
-        {}
-
-        INLINE const SceneContentNodePtr& data() const { return m_node; }
-
-    private:
-        virtual ui::ElementPtr createPreview() const
-        {
-            StringBuilder caption;
-            caption << SceneContentNode::IconTextForType(m_node->type());
-            caption << " ";
-            caption << m_node->buildHierarchicalName();
-
-            return RefNew<ui::TextLabel>(caption.view());
-        }
-
-        SceneContentNodePtr m_node;
+        handleChildNodeAttached(node);
     };
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneNodeDragDropData);
-    RTTI_END_TYPE();
-
-    //--
-
-    ui::DragDropDataPtr SceneContentTreeModel::queryDragDropData(const base::input::BaseKeyFlags& keys, const ui::ModelIndex& id)
+    m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_REMOVED) = [this](SceneContentNodePtr node)
     {
-        if (id.model() == this)
-            if (auto* node = id.unsafe<SceneContentNode>())
-                if (node->type() == SceneContentNodeType::Entity)
-                    return RefNew<SceneNodeDragDropData>(node);
+        handleChildNodeDetached(node);
+    };
 
-        return nullptr;
-    }
-
-    ui::DragDropHandlerPtr SceneContentTreeModel::handleDragDropData(ui::AbstractItemView* view, const ui::ModelIndex& id, const ui::DragDropDataPtr& data, const ui::Position& pos)
+    m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_VISUAL_FLAG_CHANGED) = [this](SceneContentNodePtr node)
     {
-        if (id.model() == this)
+        handleNodeVisualFlagsChanged(node);
+    };
+
+    m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_VISIBILITY_CHANGED) = [this](SceneContentNodePtr node)
+    {
+        handleNodeVisibilityChanged(node);
+    };
+
+    m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_MODIFIED_FLAG_CHANGED) = [this](SceneContentNodePtr node)
+    {
+        handleNodeModifiedFlagsChanged(node);
+    };
+
+    m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_RENAMED) = [this](SceneContentNodePtr node)
+    {
+        handleNodeNameChanged(node);
+    };
+
+}
+
+SceneContentTreeModel::~SceneContentTreeModel()
+{
+    m_root.reset();
+}
+
+bool SceneContentTreeModel::hasChildren(const ui::ModelIndex& parent /*= ui::ModelIndex()*/) const
+{
+    if (!parent)
+        return m_root;
+
+    if (parent.model() == this)
+        if (auto* proxy = parent.unsafe<SceneContentNode>())
+            return !proxy->children().empty();
+
+    return false;
+}
+
+void SceneContentTreeModel::children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const
+{
+    if (!parent)
+    {
+        if (m_root)
         {
-            if (auto* node = id.unsafe<SceneContentNode>())
+            auto rootIndex = ui::ModelIndex(this, m_root, m_root->uniqueModelIndex());
+            outChildrenIndices.pushBack(rootIndex);
+        }
+    }
+    else if (parent.model() == this)
+    {
+        if (auto* proxy = parent.unsafe<SceneContentNode>())
+        {
+            outChildrenIndices.reserve(proxy->children().size());
+
+            for (const auto& child : proxy->children())
             {
-                if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
-                {
-                    if (auto file = fileData->file())
-                        if (node->canAttach(SceneContentNodeType::Entity))
-                            return base::RefNew<ui::DragDropHandlerGeneric>(data, view, pos);
-                }
-                else if (auto nodeData = base::rtti_cast<SceneNodeDragDropData>(data))
-                {
-                    if (node->canAttach(nodeData->data()->type()))
-                        return base::RefNew<ui::DragDropHandlerGeneric>(data, view, pos);
-                }
+                auto childIndex = ui::ModelIndex(this, child, child->uniqueModelIndex());
+                outChildrenIndices.pushBack(childIndex);
             }
         }
+    }
+}
 
-        return nullptr;
+ui::ModelIndex SceneContentTreeModel::parent(const ui::ModelIndex& item /*= ui::ModelIndex()*/) const
+{
+    if (item.model() == this)
+        if (auto* proxy = item.unsafe<SceneContentNode>())
+            if (auto* parentNode = proxy->parent())
+                return ui::ModelIndex(this, parentNode, parentNode->uniqueModelIndex());
+
+    return ui::ModelIndex();
+}
+
+bool SceneContentTreeModel::compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex /*= 0*/) const
+{
+    if (first.model() == this && second.model() == this)
+    {
+        const auto* firstProxy = first.unsafe<SceneContentNode>();
+        const auto* secondProxy = second.unsafe<SceneContentNode>();
+        if (firstProxy && secondProxy)
+            return firstProxy->name() < secondProxy->name();
     }
 
-    bool SceneContentTreeModel::handleDragDropCompletion(ui::AbstractItemView* view, const ui::ModelIndex& id, const ui::DragDropDataPtr& data)
+    return first < second;
+}
+
+bool SceneContentTreeModel::filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex /*= 0*/) const
+{
+    if (id.model() == this)
+        if (auto* proxy = id.unsafe<SceneContentNode>())
+            return filter.testString(proxy->name());
+
+    return true;
+}
+
+base::StringBuf SceneContentTreeModel::displayContent(const ui::ModelIndex& id, int colIndex /*= 0*/) const
+{
+    if (id.model() == this)
     {
-        if (id.model() == this)
+        if (auto* node = id.unsafe<SceneContentNode>())
         {
-            if (auto* node = id.unsafe<SceneContentNode>())
+            switch (colIndex)
             {
-                if (m_preview)
+                case 0:
                 {
-                    if (auto mode = m_preview->mode())
+                    StringBuilder txt;
+                    node->displayText(txt);
+                    return txt.toString();
+                }
+
+                case 1:
+                {
+                    if (node->visible())
                     {
-                        if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
-                        {
-                            if (auto file = fileData->file())
-                                return mode->handleTreeResourceDrop(AddRef(node), file);
-                        }
-                        else if (auto nodeData = base::rtti_cast<SceneNodeDragDropData>(data))
-                        {
-                            return mode->handleTreeNodeDrop(AddRef(node), nodeData->data());
-                        }
+                        if (node->visibilityFlagRaw() == SceneContentNodeLocalVisibilityState::Default)
+                            return node->defaultVisibilityFlag() ? "[color:#aaa][img:eye][/color]" : "[color:#aaa][img:eye_cross][/color]";
+                        else if (node->visibilityFlagRaw() == SceneContentNodeLocalVisibilityState::Visible)
+                            return "[img:eye]";
+                        else
+                            return "[img:eye_cross]";
+                    }
+                    else
+                    {
+                        return node->visibilityFlagBool() ? "[color:#555][img:eye][/color]" : "[color:#555][img:eye_cross][/color]";
                     }
                 }
-            }
-        }
 
-        return false;
-    }
-
-    bool SceneContentTreeModel::handleIconClick(const ui::ModelIndex& id, int columnIndex) const
-    {
-        if (columnIndex == 1)
-        {
-            if (id.model() == this)
-            {
-                if (auto* node = id.unsafe<SceneContentNode>())
+                case 2:
                 {
-                    if (node->visibilityFlagBool())
-                        node->visibility(SceneContentNodeLocalVisibilityState::Hidden);
-                    else
-                        node->visibility(SceneContentNodeLocalVisibilityState::Visible);
-
-                    return true;
+                    if (node->type() == SceneContentNodeType::LayerFile)
+                        return node->modified() ? "[img:save]" : "";
                 }
             }
         }
-
-        return false;
     }
 
-    void SceneContentTreeModel::visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const
+    return base::StringBuf::EMPTY();
+}
+
+ui::ModelIndex SceneContentTreeModel::indexForNode(const SceneContentNode* node) const
+{
+    if (node)
+        return ui::ModelIndex(this, node, node->uniqueModelIndex());
+
+    return ui::ModelIndex();
+}
+
+SceneContentNodePtr SceneContentTreeModel::nodeForIndex(const ui::ModelIndex& id) const
+{
+    return id.lock<SceneContentNode>();
+}
+
+ui::PopupPtr SceneContentTreeModel::contextMenu(ui::AbstractItemView* view, const base::Array<ui::ModelIndex>& indices) const
+{
+    if (m_preview)
     {
-        TBaseClass::visualize(item, columnCount, content);
-    }
-
-    //--
-
-    void SceneContentTreeModel::handleChildNodeAttached(SceneContentNode* child)
-    {
-        if (const auto childIndex = indexForNode(child))
-            if (const auto parentIndex = indexForNode(child->parent()))
-                notifyItemAdded(parentIndex, childIndex);
-    }
-
-    void SceneContentTreeModel::handleChildNodeDetached(SceneContentNode* child)
-    {
-        if (const auto childIndex = indexForNode(child))
-            if (const auto parentIndex = indexForNode(child->parent()))
-                notifyItemRemoved(parentIndex, childIndex);
-    }
-
-    void SceneContentTreeModel::handleNodeVisibilityChanged(SceneContentNode* child)
-    {
-        if (auto index = indexForNode(child))
-            requestItemUpdate(index);
-    }
-
-    void SceneContentTreeModel::handleNodeVisualFlagsChanged(SceneContentNode* child)
-    {
-        if (auto index = indexForNode(child))
-            requestItemUpdate(index);
-    }
-
-    void SceneContentTreeModel::handleNodeModifiedFlagsChanged(SceneContentNode* child)
-    {
-        if (auto index = indexForNode(child))
-            requestItemUpdate(index);
-    }
-
-    void SceneContentTreeModel::handleNodeNameChanged(SceneContentNode* child)
-    {
-        if (auto index = indexForNode(child))
-            requestItemUpdate(index);
-    }    
-
-    //--
-
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneStructurePanel);
-    RTTI_END_TYPE();
-
-    SceneStructurePanel::SceneStructurePanel(SceneContentStructure* scene, ScenePreviewContainer* preview)
-        : m_preview(AddRef(preview))
-        , m_scene(AddRef(scene))
-    {
-        layoutVertical();
-
-        //--
-
-        actions().bindCommand("Tree.Copy"_id) = [this]() { handleTreeObjectCopy(); };
-        actions().bindCommand("Tree.Cut"_id) = [this]() { handleTreeObjectCut(); };
-        actions().bindCommand("Tree.Delete"_id) = [this]() { handleTreeObjectDeletion(); };
-        actions().bindCommand("Tree.Paste"_id) = [this]() { handleTreeObjectPaste(false); };
-        actions().bindCommand("Tree.PasteRelative"_id) = [this]() { handleTreeObjectPaste(true); };
-
-        actions().bindShortcut("Tree.Copy"_id, "Ctrl+C");
-        actions().bindShortcut("Tree.Cut"_id, "Ctrl+X");
-        actions().bindShortcut("Tree.Delete"_id, "Delete");
-        actions().bindShortcut("Tree.Paste"_id, "Ctrl+V");
-        actions().bindShortcut("Tree.PasteRelative"_id, "Ctrl+Shift+V");
-
-        //--
-
-        if (scene->root()->type() == SceneContentNodeType::WorldRoot)
+        if (auto mode = m_preview->mode())
         {
-            auto toolbar = createChild<ui::IElement>();
-            toolbar->layoutHorizontal();
-            toolbar->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-            toolbar->customMargins(4, 4, 4, 4);
+            // resolve current item (under cursor)
+            const auto currentNode = nodeForIndex(view->current());
 
-            {
-                auto btn = toolbar->createChild<ui::Button>("[img:save] Save");
-                btn->styleType("BackgroundButton"_id);
-                btn->tooltip("Save current preset");
-                btn->customVerticalAligment(ui::ElementVerticalLayout::Middle);
-                btn->customMargins(ui::Offsets(0, 0, 2, 0));
-                btn->bind(ui::EVENT_CLICKED) = [this]() { presetSave(); };
-            }
+            // gather selected indices
+            InplaceArray<SceneContentNodePtr, 10> selectedNodes;
+            for (const auto& id : indices)
+                if (auto node = nodeForIndex(id))
+                    selectedNodes.pushBack(node);
 
-            {
-                m_presetList = toolbar->createChild<ui::ComboBox>();
-                m_presetList->expand();
-                m_presetList->bind(ui::EVENT_COMBO_SELECTED) = [this]() { presetSelect(); };
-            }
-
-            {
-                auto btn = toolbar->createChild<ui::Button>("[img:table_add]");
-                btn->styleType("BackgroundButton"_id);
-                btn->tooltip("Add new preset using current state of scene");
-                btn->customVerticalAligment(ui::ElementVerticalLayout::Middle);
-                btn->customMargins(ui::Offsets(2, 0, 2, 0));
-                btn->bind(ui::EVENT_CLICKED) = [this]() { presetAddNew(); };
-            }
-
-            {
-                auto btn = toolbar->createChild<ui::Button>("[img:table_delete]");
-                btn->styleType("BackgroundButton"_id);
-                btn->customVerticalAligment(ui::ElementVerticalLayout::Middle);
-                btn->tooltip("Remove current preset");
-                btn->customMargins(ui::Offsets(0, 0, 0, 0));
-                btn->bind(ui::EVENT_CLICKED) = [this]() { presetRemove(); };
-            }
+            auto menu = RefNew<ui::MenuButtonContainer>();
+            mode->handleTreeContextMenu(menu, currentNode, selectedNodes);
+            return menu->convertToPopup();
         }
-
-        //--
-
-        m_searchBar = createChild<ui::SearchBar>();
-        m_searchBar->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-
-        //--
-
-        auto columns = createChild<ui::ColumnHeaderBar>();
-        columns->addColumn("Name", 450, false, false, true);
-        columns->addColumn("[img:eye]", 30, true, false, false);
-        columns->addColumn("[img:save]", 30, true, false, false);
-
-        m_tree = createChild<ui::TreeView>();
-        m_tree->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-        m_tree->customVerticalAligment(ui::ElementVerticalLayout::Expand);
-        m_tree->columnCount(3);
-
-        m_tree->bind(ui::EVENT_ITEM_SELECTION_CHANGED) = [this]()
-        {
-            treeSelectionChanged();
-        };
-
-        //--
-
-        m_treeModel = RefNew<SceneContentTreeModel>(scene, preview);
-        m_tree->model(m_treeModel);
-
-        //--
     }
 
-    SceneStructurePanel::~SceneStructurePanel()
+    return nullptr;
+}
+
+ui::ElementPtr SceneContentTreeModel::tooltip(ui::AbstractItemView* view, ui::ModelIndex id) const
+{
+    return nullptr;
+}
+
+//--
+
+/// drag&drop data with scene node
+class SceneNodeDragDropData : public ui::IDragDropData
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(SceneNodeDragDropData, ui::IDragDropData);
+
+public:
+    SceneNodeDragDropData(const SceneContentNode* node)
+        : m_node(AddRef(node))
     {}
 
-    void SceneStructurePanel::presetSave(const ui::ConfigBlock& block) const
-    {
-        if (m_presetList)
-        {
-            // save list of presets and selected one
-            Array<StringBuf> presetNames;
-            for (const auto* preset : m_presets)
-                presetNames.pushBack(preset->name);
-            block.write("PresetNames", presetNames);
-            block.write("ActivePreset", m_presetActive ? m_presetActive->name : StringBuf::EMPTY());
+    INLINE const SceneContentNodePtr& data() const { return m_node; }
 
-            // write the preset states
-            for (auto* preset : m_presets)
+private:
+    virtual ui::ElementPtr createPreview() const
+    {
+        StringBuilder caption;
+        caption << SceneContentNode::IconTextForType(m_node->type());
+        caption << " ";
+        caption << m_node->buildHierarchicalName();
+
+        return RefNew<ui::TextLabel>(caption.view());
+    }
+
+    SceneContentNodePtr m_node;
+};
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneNodeDragDropData);
+RTTI_END_TYPE();
+
+//--
+
+ui::DragDropDataPtr SceneContentTreeModel::queryDragDropData(const base::input::BaseKeyFlags& keys, const ui::ModelIndex& id)
+{
+    if (id.model() == this)
+        if (auto* node = id.unsafe<SceneContentNode>())
+            if (node->type() == SceneContentNodeType::Entity)
+                return RefNew<SceneNodeDragDropData>(node);
+
+    return nullptr;
+}
+
+ui::DragDropHandlerPtr SceneContentTreeModel::handleDragDropData(ui::AbstractItemView* view, const ui::ModelIndex& id, const ui::DragDropDataPtr& data, const ui::Position& pos)
+{
+    if (id.model() == this)
+    {
+        if (auto* node = id.unsafe<SceneContentNode>())
+        {
+            if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
             {
-                auto localBlock = block.tag(preset->name);
-                localBlock.write("ShownNodes", preset->shownNodes);
-                localBlock.write("HiddenNodes", preset->hiddenNodes);
+                if (auto file = fileData->file())
+                    if (node->canAttach(SceneContentNodeType::Entity))
+                        return base::RefNew<ui::DragDropHandlerGeneric>(data, view, pos);
+            }
+            else if (auto nodeData = base::rtti_cast<SceneNodeDragDropData>(data))
+            {
+                if (node->canAttach(nodeData->data()->type()))
+                    return base::RefNew<ui::DragDropHandlerGeneric>(data, view, pos);
             }
         }
     }
 
-    void SceneStructurePanel::presetLoad(const ui::ConfigBlock& block)
+    return nullptr;
+}
+
+bool SceneContentTreeModel::handleDragDropCompletion(ui::AbstractItemView* view, const ui::ModelIndex& id, const ui::DragDropDataPtr& data)
+{
+    if (id.model() == this)
     {
-        if (m_presetList)
+        if (auto* node = id.unsafe<SceneContentNode>())
         {
-            // load presets
-            ScenePreset* defaultPreset = nullptr;
-            Array<StringBuf> presetNames;
-            if (block.read("PresetNames", presetNames))
+            if (m_preview)
             {
-                for (const auto& name : presetNames)
+                if (auto mode = m_preview->mode())
                 {
-                    if (name.empty())
-                        continue;
-
-                    ScenePreset* presetToLoad = nullptr;
-                    for (auto* preset : m_presets)
+                    if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
                     {
-                        if (preset->name == name)
-                        {
-                            presetToLoad = preset;
-                            break;
-                        }
+                        if (auto file = fileData->file())
+                            return mode->handleTreeResourceDrop(AddRef(node), file);
                     }
-
-                    if (!presetToLoad)
+                    else if (auto nodeData = base::rtti_cast<SceneNodeDragDropData>(data))
                     {
-                        presetToLoad = new ScenePreset();
-                        presetToLoad->name = name;
-                        m_presets.pushBack(presetToLoad);
-                    }
-
-                    if (presetToLoad->name == "(default)")
-                        defaultPreset = presetToLoad;
-
-                    {
-                        auto localBlock = block.tag(name);
-                        presetToLoad->dirty = false;
-                        localBlock.read("ShownNodes", presetToLoad->shownNodes);
-                        localBlock.read("HiddenNodes", presetToLoad->hiddenNodes);
+                        return mode->handleTreeNodeDrop(AddRef(node), nodeData->data());
                     }
                 }
             }
-
-            // make sure we always have the "default" preset
-            if (!defaultPreset)
-            {
-                defaultPreset = new ScenePreset();
-                defaultPreset->name = "(default)";
-                defaultPreset->dirty = true;
-                m_presets.insert(0, defaultPreset);
-            }
-
-            // select preset
-            StringBuf activePresetName;
-            block.read("ActivePreset", activePresetName);
-            updatePresetList(activePresetName);
-
-            // apply selected preset
-            applySelectedPreset();
         }
     }
 
-    static void CollectExpandedNodes(ui::TreeView* tree, SceneContentTreeModel* model, const ui::ModelIndex& index, Array<StringBuf>& expandedNodesPaths)
+    return false;
+}
+
+bool SceneContentTreeModel::handleIconClick(const ui::ModelIndex& id, int columnIndex) const
+{
+    if (columnIndex == 1)
     {
-        if (tree->isExpanded(index))
+        if (id.model() == this)
         {
-            InplaceArray<ui::ModelIndex, 100> children;
-            model->children(index, children);
+            if (auto* node = id.unsafe<SceneContentNode>())
+            {
+                if (node->visibilityFlagBool())
+                    node->visibility(SceneContentNodeLocalVisibilityState::Hidden);
+                else
+                    node->visibility(SceneContentNodeLocalVisibilityState::Visible);
 
-            if (!children.empty())
-                if (auto node = model->nodeForIndex(index))
-                    if (auto path = node->buildHierarchicalName())
-                        expandedNodesPaths.pushBack(path);
-
-            for (const auto& childIndex : children)
-                CollectExpandedNodes(tree, model, childIndex, expandedNodesPaths);
+                return true;
+            }
         }
     }
 
+    return false;
+}
 
-    void SceneStructurePanel::configSave(const ui::ConfigBlock& block) const
+void SceneContentTreeModel::visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const
+{
+    TBaseClass::visualize(item, columnCount, content);
+}
+
+//--
+
+void SceneContentTreeModel::handleChildNodeAttached(SceneContentNode* child)
+{
+    if (const auto childIndex = indexForNode(child))
+        if (const auto parentIndex = indexForNode(child->parent()))
+            notifyItemAdded(parentIndex, childIndex);
+}
+
+void SceneContentTreeModel::handleChildNodeDetached(SceneContentNode* child)
+{
+    if (const auto childIndex = indexForNode(child))
+        if (const auto parentIndex = indexForNode(child->parent()))
+            notifyItemRemoved(parentIndex, childIndex);
+}
+
+void SceneContentTreeModel::handleNodeVisibilityChanged(SceneContentNode* child)
+{
+    if (auto index = indexForNode(child))
+        requestItemUpdate(index);
+}
+
+void SceneContentTreeModel::handleNodeVisualFlagsChanged(SceneContentNode* child)
+{
+    if (auto index = indexForNode(child))
+        requestItemUpdate(index);
+}
+
+void SceneContentTreeModel::handleNodeModifiedFlagsChanged(SceneContentNode* child)
+{
+    if (auto index = indexForNode(child))
+        requestItemUpdate(index);
+}
+
+void SceneContentTreeModel::handleNodeNameChanged(SceneContentNode* child)
+{
+    if (auto index = indexForNode(child))
+        requestItemUpdate(index);
+}    
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneStructurePanel);
+RTTI_END_TYPE();
+
+SceneStructurePanel::SceneStructurePanel(SceneContentStructure* scene, ScenePreviewContainer* preview)
+    : m_preview(AddRef(preview))
+    , m_scene(AddRef(scene))
+{
+    layoutVertical();
+
+    //--
+
+    actions().bindCommand("Tree.Copy"_id) = [this]() { handleTreeObjectCopy(); };
+    actions().bindCommand("Tree.Cut"_id) = [this]() { handleTreeObjectCut(); };
+    actions().bindCommand("Tree.Delete"_id) = [this]() { handleTreeObjectDeletion(); };
+    actions().bindCommand("Tree.Paste"_id) = [this]() { handleTreeObjectPaste(false); };
+    actions().bindCommand("Tree.PasteRelative"_id) = [this]() { handleTreeObjectPaste(true); };
+
+    actions().bindShortcut("Tree.Copy"_id, "Ctrl+C");
+    actions().bindShortcut("Tree.Cut"_id, "Ctrl+X");
+    actions().bindShortcut("Tree.Delete"_id, "Delete");
+    actions().bindShortcut("Tree.Paste"_id, "Ctrl+V");
+    actions().bindShortcut("Tree.PasteRelative"_id, "Ctrl+Shift+V");
+
+    //--
+
+    if (scene->root()->type() == SceneContentNodeType::WorldRoot)
     {
-        TBaseClass::configSave(block);
-        presetSave(block.tag("Presets"));
+        auto toolbar = createChild<ui::IElement>();
+        toolbar->layoutHorizontal();
+        toolbar->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+        toolbar->customMargins(4, 4, 4, 4);
 
-        Array<StringBuf> expandedNodes;
-        if (auto rootIndex = m_treeModel->indexForNode(m_scene->root()))
-            CollectExpandedNodes(m_tree, m_treeModel, rootIndex, expandedNodes);
-        block.write("ExpandedNodes", expandedNodes);
-    }
-
-    void SceneStructurePanel::applySelectedPreset()
-    {
-        // TODO: collect differential state (what to hide what to show)
-        // TODO: loading progress bar if lots of stuff to load
-
-        if (m_presetActive)
-            applyPresetState(*m_presetActive);
-    }
-
-    void SceneStructurePanel::updatePresetList(StringView presetToSelect)
-    {
-        DEBUG_CHECK_RETURN(m_presetList);
-
-        if (!m_presets.contains(m_presetActive))
-            m_presetActive = nullptr;
-
-        std::sort(m_presets.begin(), m_presets.end(), [](const ScenePreset* a, const ScenePreset* b)
-            {
-                return a->name < b->name;
-            });
-
-        m_presetList->clearOptions();
-        for (const auto* preset : m_presets)
-            m_presetList->addOption(preset->name);
-
-        if (!presetToSelect.empty())
         {
-            for (auto* preset : m_presets)
-            {
-                if (preset->name == presetToSelect)
-                {
-                    m_presetActive = preset;
-                    break;
-                }
-            }
+            auto btn = toolbar->createChild<ui::Button>("[img:save] Save");
+            btn->styleType("BackgroundButton"_id);
+            btn->tooltip("Save current preset");
+            btn->customVerticalAligment(ui::ElementVerticalLayout::Middle);
+            btn->customMargins(ui::Offsets(0, 0, 2, 0));
+            btn->bind(ui::EVENT_CLICKED) = [this]() { presetSave(); };
         }
 
-        if (!m_presetActive)
         {
-            for (auto* preset : m_presets)
-            {
-                if (preset->name == "(default)")
-                {
-                    m_presetActive = preset;
-                    break;
-                }
-            }
+            m_presetList = toolbar->createChild<ui::ComboBox>();
+            m_presetList->expand();
+            m_presetList->bind(ui::EVENT_COMBO_SELECTED) = [this]() { presetSelect(); };
         }
 
         {
-            auto index = m_presets.find(m_presetActive);
-            m_presetList->selectOption(index);
+            auto btn = toolbar->createChild<ui::Button>("[img:table_add]");
+            btn->styleType("BackgroundButton"_id);
+            btn->tooltip("Add new preset using current state of scene");
+            btn->customVerticalAligment(ui::ElementVerticalLayout::Middle);
+            btn->customMargins(ui::Offsets(2, 0, 2, 0));
+            btn->bind(ui::EVENT_CLICKED) = [this]() { presetAddNew(); };
         }
-    }
-
-    void SceneStructurePanel::configLoad(const ui::ConfigBlock& block)
-    {
-        TBaseClass::configLoad(block);
-        presetLoad(block.tag("Presets"));
 
         {
-            Array<StringBuf> expandedNodes;
-            if (block.read("ExpandedNodes", expandedNodes))
-            {
-                for (const auto& path : expandedNodes)
-                    if (const auto* node = m_scene->findNodeByPath(path))
-                        if (auto index = m_treeModel->indexForNode(node))
-                            m_tree->expandItem(index);
-            }
-            else
-            {
-                for (const auto& rootChild : m_scene->root()->children())
-                    if (rootChild->type() == SceneContentNodeType::LayerDir || rootChild->type() == SceneContentNodeType::Entity)
-                        if (auto index = m_treeModel->indexForNode(rootChild))
-                            m_tree->expandItem(index);
-            }
+            auto btn = toolbar->createChild<ui::Button>("[img:table_delete]");
+            btn->styleType("BackgroundButton"_id);
+            btn->customVerticalAligment(ui::ElementVerticalLayout::Middle);
+            btn->tooltip("Remove current preset");
+            btn->customMargins(ui::Offsets(0, 0, 0, 0));
+            btn->bind(ui::EVENT_CLICKED) = [this]() { presetRemove(); };
         }
     }
 
     //--
 
-    static void CollectHiddenNodes(const SceneContentNode* node, Array<StringBuf>& outHiddenNodes, Array<StringBuf>& outShownNodes)
+    m_searchBar = createChild<ui::SearchBar>();
+    m_searchBar->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+
+    //--
+
+    auto columns = createChild<ui::ColumnHeaderBar>();
+    columns->addColumn("Name", 450, false, false, true);
+    columns->addColumn("[img:eye]", 30, true, false, false);
+    columns->addColumn("[img:save]", 30, true, false, false);
+
+    m_tree = createChild<ui::TreeView>();
+    m_tree->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+    m_tree->customVerticalAligment(ui::ElementVerticalLayout::Expand);
+    m_tree->columnCount(3);
+
+    m_tree->bind(ui::EVENT_ITEM_SELECTION_CHANGED) = [this]()
     {
-        const auto flag = node->visibilityFlagBool();
-        if (flag != node->defaultVisibilityFlag())
+        treeSelectionChanged();
+    };
+
+    //--
+
+    m_treeModel = RefNew<SceneContentTreeModel>(scene, preview);
+    m_tree->model(m_treeModel);
+
+    //--
+}
+
+SceneStructurePanel::~SceneStructurePanel()
+{}
+
+void SceneStructurePanel::presetSave(const ui::ConfigBlock& block) const
+{
+    if (m_presetList)
+    {
+        // save list of presets and selected one
+        Array<StringBuf> presetNames;
+        for (const auto* preset : m_presets)
+            presetNames.pushBack(preset->name);
+        block.write("PresetNames", presetNames);
+        block.write("ActivePreset", m_presetActive ? m_presetActive->name : StringBuf::EMPTY());
+
+        // write the preset states
+        for (auto* preset : m_presets)
         {
-            if (flag)
-                outShownNodes.pushBack(node->buildHierarchicalName());
-            else
-                outHiddenNodes.pushBack(node->buildHierarchicalName());
+            auto localBlock = block.tag(preset->name);
+            localBlock.write("ShownNodes", preset->shownNodes);
+            localBlock.write("HiddenNodes", preset->hiddenNodes);
         }
-
-        for (const auto& child : node->children())
-            CollectHiddenNodes(child, outHiddenNodes, outShownNodes);
     }
+}
 
-    void SceneStructurePanel::collectPresetState(ScenePreset& outState) const
+void SceneStructurePanel::presetLoad(const ui::ConfigBlock& block)
+{
+    if (m_presetList)
     {
-        outState.dirty = true;
-        outState.shownNodes.reset();
-        outState.hiddenNodes.reset();
-        CollectHiddenNodes(m_scene->root(), outState.hiddenNodes, outState.shownNodes);
-    }
-
-    static void ApplyVisibilityState(SceneContentNode* node, const HashMap<const SceneContentNode*, SceneContentNodeLocalVisibilityState>& visibilityState)
-    {
-        auto nodeVisState = SceneContentNodeLocalVisibilityState::Default;
-        visibilityState.find(node, nodeVisState);
-
-        node->visibility(nodeVisState);
-
-        for (const auto& child : node->children())
-            ApplyVisibilityState(child, visibilityState);        
-    }
-
-    void SceneStructurePanel::applyPresetState(const ScenePreset& state)
-    {
-        HashMap<const SceneContentNode*, SceneContentNodeLocalVisibilityState> visibilityState;
-        visibilityState.reserve(state.hiddenNodes.size() + state.shownNodes.size());
-
-        for (const auto& path : state.hiddenNodes)
-            if (const auto* node = m_scene->findNodeByPath(path))
-                visibilityState[node] = SceneContentNodeLocalVisibilityState::Hidden;
-
-        for (const auto& path : state.shownNodes)
-            if (const auto* node = m_scene->findNodeByPath(path))
-                visibilityState[node] = SceneContentNodeLocalVisibilityState::Visible;
-
-        ApplyVisibilityState(m_scene->root(), visibilityState);
-
-        m_scene->root()->recalculateVisibility();
-    }
-
-    void SceneStructurePanel::presetAddNew()
-    {
-        StringBuf presetName = "preset";
-        if (m_presetActive && m_presetActive->name != "(default)")
-            presetName = m_presetActive->name;
-
-        if (ui::ShowInputBox(m_presetList, ui::InputBoxSetup().title("New preset").message("Enter name of new preset:"), presetName))
+        // load presets
+        ScenePreset* defaultPreset = nullptr;
+        Array<StringBuf> presetNames;
+        if (block.read("PresetNames", presetNames))
         {
-            if (!presetName.empty())
+            for (const auto& name : presetNames)
             {
-                ScenePreset* presetToSave = nullptr;
+                if (name.empty())
+                    continue;
+
+                ScenePreset* presetToLoad = nullptr;
                 for (auto* preset : m_presets)
                 {
-                    if (preset->name == presetName)
+                    if (preset->name == name)
                     {
-                        presetToSave = preset;
+                        presetToLoad = preset;
                         break;
                     }
                 }
 
-                if (!presetToSave)
+                if (!presetToLoad)
                 {
-                    presetToSave = new ScenePreset();
-                    presetToSave->name = presetName;
+                    presetToLoad = new ScenePreset();
+                    presetToLoad->name = name;
+                    m_presets.pushBack(presetToLoad);
                 }
 
-                collectPresetState(*presetToSave);
-                updatePresetList(presetToSave->name);
+                if (presetToLoad->name == "(default)")
+                    defaultPreset = presetToLoad;
+
+                {
+                    auto localBlock = block.tag(name);
+                    presetToLoad->dirty = false;
+                    localBlock.read("ShownNodes", presetToLoad->shownNodes);
+                    localBlock.read("HiddenNodes", presetToLoad->hiddenNodes);
+                }
             }
         }
-    }
 
-    void SceneStructurePanel::presetRemove()
-    {
-        if (!m_presetActive || m_presetActive->name == "(default)")
+        // make sure we always have the "default" preset
+        if (!defaultPreset)
         {
-            ui::ShowMessageBox(m_presetList, ui::MessageBoxSetup().warn().title("Remove preset").message("Current preset can't be removed"));
-            return;
+            defaultPreset = new ScenePreset();
+            defaultPreset->name = "(default)";
+            defaultPreset->dirty = true;
+            m_presets.insert(0, defaultPreset);
         }
 
-        m_presetList->removeOption(m_presetActive->name);
+        // select preset
+        StringBuf activePresetName;
+        block.read("ActivePreset", activePresetName);
+        updatePresetList(activePresetName);
+
+        // apply selected preset
+        applySelectedPreset();
+    }
+}
+
+static void CollectExpandedNodes(ui::TreeView* tree, SceneContentTreeModel* model, const ui::ModelIndex& index, Array<StringBuf>& expandedNodesPaths)
+{
+    if (tree->isExpanded(index))
+    {
+        InplaceArray<ui::ModelIndex, 100> children;
+        model->children(index, children);
+
+        if (!children.empty())
+            if (auto node = model->nodeForIndex(index))
+                if (auto path = node->buildHierarchicalName())
+                    expandedNodesPaths.pushBack(path);
+
+        for (const auto& childIndex : children)
+            CollectExpandedNodes(tree, model, childIndex, expandedNodesPaths);
+    }
+}
+
+
+void SceneStructurePanel::configSave(const ui::ConfigBlock& block) const
+{
+    TBaseClass::configSave(block);
+    presetSave(block.tag("Presets"));
+
+    Array<StringBuf> expandedNodes;
+    if (auto rootIndex = m_treeModel->indexForNode(m_scene->root()))
+        CollectExpandedNodes(m_tree, m_treeModel, rootIndex, expandedNodes);
+    block.write("ExpandedNodes", expandedNodes);
+}
+
+void SceneStructurePanel::applySelectedPreset()
+{
+    // TODO: collect differential state (what to hide what to show)
+    // TODO: loading progress bar if lots of stuff to load
+
+    if (m_presetActive)
+        applyPresetState(*m_presetActive);
+}
+
+void SceneStructurePanel::updatePresetList(StringView presetToSelect)
+{
+    DEBUG_CHECK_RETURN(m_presetList);
+
+    if (!m_presets.contains(m_presetActive))
         m_presetActive = nullptr;
-    }
 
-    void SceneStructurePanel::presetSave()
-    {
-        if (m_presetActive)
-            collectPresetState(*m_presetActive);
-        else
-            presetAddNew();
-    }
+    std::sort(m_presets.begin(), m_presets.end(), [](const ScenePreset* a, const ScenePreset* b)
+        {
+            return a->name < b->name;
+        });
 
-    void SceneStructurePanel::presetSelect()
+    m_presetList->clearOptions();
+    for (const auto* preset : m_presets)
+        m_presetList->addOption(preset->name);
+
+    if (!presetToSelect.empty())
     {
-        auto name = m_presetList->selectedOptionText();
         for (auto* preset : m_presets)
         {
-            if (preset->name == name)
+            if (preset->name == presetToSelect)
             {
                 m_presetActive = preset;
-                applySelectedPreset();
+                break;
             }
         }
     }
 
-    //--
-
-    void SceneStructurePanel::syncExternalSelection(const Array<SceneContentNodePtr>& nodes)
+    if (!m_presetActive)
     {
-        if (m_treeModel)
+        for (auto* preset : m_presets)
         {
-            Array<ui::ModelIndex> indices;
-            indices.reserve(nodes.size());
-
-            for (const auto& node : nodes)
+            if (preset->name == "(default)")
             {
-                if (auto index = m_treeModel->indexForNode(node))
+                m_presetActive = preset;
+                break;
+            }
+        }
+    }
+
+    {
+        auto index = m_presets.find(m_presetActive);
+        m_presetList->selectOption(index);
+    }
+}
+
+void SceneStructurePanel::configLoad(const ui::ConfigBlock& block)
+{
+    TBaseClass::configLoad(block);
+    presetLoad(block.tag("Presets"));
+
+    {
+        Array<StringBuf> expandedNodes;
+        if (block.read("ExpandedNodes", expandedNodes))
+        {
+            for (const auto& path : expandedNodes)
+                if (const auto* node = m_scene->findNodeByPath(path))
+                    if (auto index = m_treeModel->indexForNode(node))
+                        m_tree->expandItem(index);
+        }
+        else
+        {
+            for (const auto& rootChild : m_scene->root()->children())
+                if (rootChild->type() == SceneContentNodeType::LayerDir || rootChild->type() == SceneContentNodeType::Entity)
+                    if (auto index = m_treeModel->indexForNode(rootChild))
+                        m_tree->expandItem(index);
+        }
+    }
+}
+
+//--
+
+static void CollectHiddenNodes(const SceneContentNode* node, Array<StringBuf>& outHiddenNodes, Array<StringBuf>& outShownNodes)
+{
+    const auto flag = node->visibilityFlagBool();
+    if (flag != node->defaultVisibilityFlag())
+    {
+        if (flag)
+            outShownNodes.pushBack(node->buildHierarchicalName());
+        else
+            outHiddenNodes.pushBack(node->buildHierarchicalName());
+    }
+
+    for (const auto& child : node->children())
+        CollectHiddenNodes(child, outHiddenNodes, outShownNodes);
+}
+
+void SceneStructurePanel::collectPresetState(ScenePreset& outState) const
+{
+    outState.dirty = true;
+    outState.shownNodes.reset();
+    outState.hiddenNodes.reset();
+    CollectHiddenNodes(m_scene->root(), outState.hiddenNodes, outState.shownNodes);
+}
+
+static void ApplyVisibilityState(SceneContentNode* node, const HashMap<const SceneContentNode*, SceneContentNodeLocalVisibilityState>& visibilityState)
+{
+    auto nodeVisState = SceneContentNodeLocalVisibilityState::Default;
+    visibilityState.find(node, nodeVisState);
+
+    node->visibility(nodeVisState);
+
+    for (const auto& child : node->children())
+        ApplyVisibilityState(child, visibilityState);        
+}
+
+void SceneStructurePanel::applyPresetState(const ScenePreset& state)
+{
+    HashMap<const SceneContentNode*, SceneContentNodeLocalVisibilityState> visibilityState;
+    visibilityState.reserve(state.hiddenNodes.size() + state.shownNodes.size());
+
+    for (const auto& path : state.hiddenNodes)
+        if (const auto* node = m_scene->findNodeByPath(path))
+            visibilityState[node] = SceneContentNodeLocalVisibilityState::Hidden;
+
+    for (const auto& path : state.shownNodes)
+        if (const auto* node = m_scene->findNodeByPath(path))
+            visibilityState[node] = SceneContentNodeLocalVisibilityState::Visible;
+
+    ApplyVisibilityState(m_scene->root(), visibilityState);
+
+    m_scene->root()->recalculateVisibility();
+}
+
+void SceneStructurePanel::presetAddNew()
+{
+    StringBuf presetName = "preset";
+    if (m_presetActive && m_presetActive->name != "(default)")
+        presetName = m_presetActive->name;
+
+    if (ui::ShowInputBox(m_presetList, ui::InputBoxSetup().title("New preset").message("Enter name of new preset:"), presetName))
+    {
+        if (!presetName.empty())
+        {
+            ScenePreset* presetToSave = nullptr;
+            for (auto* preset : m_presets)
+            {
+                if (preset->name == presetName)
                 {
-                    m_tree->expandItem(index.parent());
-                    indices.pushBack(index);
+                    presetToSave = preset;
+                    break;
                 }
             }
 
-            if (!indices.empty())
-                m_tree->ensureVisible(indices.back());
+            if (!presetToSave)
+            {
+                presetToSave = new ScenePreset();
+                presetToSave->name = presetName;
+            }
 
-            m_tree->select(indices, ui::ItemSelectionModeBit::DefaultNoFocus, false);
+            collectPresetState(*presetToSave);
+            updatePresetList(presetToSave->name);
         }
     }
+}
 
-    void SceneStructurePanel::treeSelectionChanged()
+void SceneStructurePanel::presetRemove()
+{
+    if (!m_presetActive || m_presetActive->name == "(default)")
     {
-        if (m_treeModel)
-        {
-            if (auto mode = m_preview ? m_preview->mode() : nullptr)
-            {
-                Array<SceneContentNodePtr> selection;
-                for (const auto& id : m_tree->selection())
-                    if (auto node = m_treeModel->nodeForIndex(id))
-                        selection.pushBack(node);
+        ui::ShowMessageBox(m_presetList, ui::MessageBoxSetup().warn().title("Remove preset").message("Current preset can't be removed"));
+        return;
+    }
 
-                auto current = m_treeModel->nodeForIndex(m_tree->current());
-                mode->handleTreeSelectionChange(current, selection);
+    m_presetList->removeOption(m_presetActive->name);
+    m_presetActive = nullptr;
+}
+
+void SceneStructurePanel::presetSave()
+{
+    if (m_presetActive)
+        collectPresetState(*m_presetActive);
+    else
+        presetAddNew();
+}
+
+void SceneStructurePanel::presetSelect()
+{
+    auto name = m_presetList->selectedOptionText();
+    for (auto* preset : m_presets)
+    {
+        if (preset->name == name)
+        {
+            m_presetActive = preset;
+            applySelectedPreset();
+        }
+    }
+}
+
+//--
+
+void SceneStructurePanel::syncExternalSelection(const Array<SceneContentNodePtr>& nodes)
+{
+    if (m_treeModel)
+    {
+        Array<ui::ModelIndex> indices;
+        indices.reserve(nodes.size());
+
+        for (const auto& node : nodes)
+        {
+            if (auto index = m_treeModel->indexForNode(node))
+            {
+                m_tree->expandItem(index.parent());
+                indices.pushBack(index);
             }
         }
+
+        if (!indices.empty())
+            m_tree->ensureVisible(indices.back());
+
+        m_tree->select(indices, ui::ItemSelectionModeBit::DefaultNoFocus, false);
     }
+}
 
-    void SceneStructurePanel::handleTreeObjectDeletion()
+void SceneStructurePanel::treeSelectionChanged()
+{
+    if (m_treeModel)
     {
-        if (m_treeModel)
+        if (auto mode = m_preview ? m_preview->mode() : nullptr)
         {
-            if (auto mode = m_preview ? m_preview->mode() : nullptr)
-            {
-                Array<SceneContentNodePtr> selection;
-                for (const auto& id : m_tree->selection())
-                    if (auto node = m_treeModel->nodeForIndex(id))
-                        selection.pushBack(node);
+            Array<SceneContentNodePtr> selection;
+            for (const auto& id : m_tree->selection())
+                if (auto node = m_treeModel->nodeForIndex(id))
+                    selection.pushBack(node);
 
-                mode->handleTreeDeleteNodes(selection);
-            }
+            auto current = m_treeModel->nodeForIndex(m_tree->current());
+            mode->handleTreeSelectionChange(current, selection);
         }
     }
+}
 
-    void SceneStructurePanel::handleTreeObjectCopy()
+void SceneStructurePanel::handleTreeObjectDeletion()
+{
+    if (m_treeModel)
     {
-        if (m_treeModel)
+        if (auto mode = m_preview ? m_preview->mode() : nullptr)
         {
-            if (auto mode = m_preview ? m_preview->mode() : nullptr)
-            {
-                Array<SceneContentNodePtr> selection;
-                for (const auto& id : m_tree->selection())
-                    if (auto node = m_treeModel->nodeForIndex(id))
-                        selection.pushBack(node);
+            Array<SceneContentNodePtr> selection;
+            for (const auto& id : m_tree->selection())
+                if (auto node = m_treeModel->nodeForIndex(id))
+                    selection.pushBack(node);
 
-                mode->handleTreeCopyNodes(selection);
-            }
+            mode->handleTreeDeleteNodes(selection);
         }
     }
+}
 
-    void SceneStructurePanel::handleTreeObjectCut()
+void SceneStructurePanel::handleTreeObjectCopy()
+{
+    if (m_treeModel)
     {
-        if (m_treeModel)
+        if (auto mode = m_preview ? m_preview->mode() : nullptr)
         {
-            if (auto mode = m_preview ? m_preview->mode() : nullptr)
-            {
-                Array<SceneContentNodePtr> selection;
-                for (const auto& id : m_tree->selection())
-                    if (auto node = m_treeModel->nodeForIndex(id))
-                        selection.pushBack(node);
+            Array<SceneContentNodePtr> selection;
+            for (const auto& id : m_tree->selection())
+                if (auto node = m_treeModel->nodeForIndex(id))
+                    selection.pushBack(node);
 
-                mode->handleTreeCutNodes(selection);
-            }
+            mode->handleTreeCopyNodes(selection);
         }
     }
+}
 
-    void SceneStructurePanel::handleTreeObjectPaste(bool relative)
+void SceneStructurePanel::handleTreeObjectCut()
+{
+    if (m_treeModel)
     {
-        if (m_treeModel)
+        if (auto mode = m_preview ? m_preview->mode() : nullptr)
         {
-            if (auto mode = m_preview ? m_preview->mode() : nullptr)
-            {
-                auto current = m_treeModel->nodeForIndex(m_tree->current());
-                mode->handleTreePasteNodes(current, relative ? SceneContentNodePasteMode::Relative : SceneContentNodePasteMode::Absolute);
-            }
+            Array<SceneContentNodePtr> selection;
+            for (const auto& id : m_tree->selection())
+                if (auto node = m_treeModel->nodeForIndex(id))
+                    selection.pushBack(node);
+
+            mode->handleTreeCutNodes(selection);
         }
     }
+}
 
-    //--
+void SceneStructurePanel::handleTreeObjectPaste(bool relative)
+{
+    if (m_treeModel)
+    {
+        if (auto mode = m_preview ? m_preview->mode() : nullptr)
+        {
+            auto current = m_treeModel->nodeForIndex(m_tree->current());
+            mode->handleTreePasteNodes(current, relative ? SceneContentNodePasteMode::Relative : SceneContentNodePasteMode::Absolute);
+        }
+    }
+}
+
+//--
     
-} // ed
+END_BOOMER_NAMESPACE(ed)

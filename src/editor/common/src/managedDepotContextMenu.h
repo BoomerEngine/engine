@@ -8,30 +8,30 @@
 
 #pragma once
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+class AssetBrowserTabFiles;
+
+struct DepotMenuContext
 {
-    //--
+    AssetBrowserTabFiles* tab = nullptr; // only if we are inside the tab
+    ManagedDirectory* contextDirectory = nullptr;
+};
 
-    class AssetBrowserTabFiles;
+/// build menu for given single item
+extern EDITOR_COMMON_API void BuildDepotContextMenu(ui::IElement* owner, ui::MenuButtonContainer& menu, const DepotMenuContext& context, ManagedItem* item);
 
-    struct DepotMenuContext
-    {
-        AssetBrowserTabFiles* tab = nullptr; // only if we are inside the tab
-        ManagedDirectory* contextDirectory = nullptr;
-    };
+/// build menu for given items
+extern EDITOR_COMMON_API void BuildDepotContextMenu(ui::IElement* owner, ui::MenuButtonContainer& menu, const DepotMenuContext& context, const Array<ManagedItem*>& items);
 
-    /// build menu for given single item
-    extern EDITOR_COMMON_API void BuildDepotContextMenu(ui::IElement* owner, ui::MenuButtonContainer& menu, const DepotMenuContext& context, ManagedItem* item);
+//--
 
-    /// build menu for given items
-    extern EDITOR_COMMON_API void BuildDepotContextMenu(ui::IElement* owner, ui::MenuButtonContainer& menu, const DepotMenuContext& context, const Array<ManagedItem*>& items);
+/// open all files in list
+extern EDITOR_COMMON_API void OpenDepotFiles(ui::IElement* owner, const Array<ManagedFile*>& files);
 
-    //--
+//---
 
-    /// open all files in list
-    extern EDITOR_COMMON_API void OpenDepotFiles(ui::IElement* owner, const Array<ManagedFile*>& files);
-
-    //---
-
-} // ed
+END_BOOMER_NAMESPACE(ed)
 

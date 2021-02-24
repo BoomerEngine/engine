@@ -9,42 +9,39 @@
 
 #include "address.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::socket)
+
+//--
+
+// a helper for allocating network block
+class BASE_SOCKET_API BlockAllocator : public NoCopy
 {
-    namespace socket
-    {
-        //--
+    RTTI_DECLARE_POOL(POOL_NET)
 
-        // a helper for allocating network block
-        class BASE_SOCKET_API BlockAllocator : public NoCopy
-        {
-            RTTI_DECLARE_POOL(POOL_NET)
+public:
+    BlockAllocator();
+    ~BlockAllocator();
 
-        public:
-            BlockAllocator();
-            ~BlockAllocator();
+    // allocate block with specific usable size
+    Block* alloc(uint32_t size);
 
-            // allocate block with specific usable size
-            Block* alloc(uint32_t size);
+    /// build a single block from parts
+    Block* build(std::initializer_list<BlockPart> blocks);
 
-            /// build a single block from parts
-            Block* build(std::initializer_list<BlockPart> blocks);
+    /// build a single block from parts
+    Block* build(const Array<BlockPart>& blocks);
 
-            /// build a single block from parts
-            Block* build(const Array<BlockPart>& blocks);
+private:
+    void releaseBlock(Block* block);
 
-        private:
-            void releaseBlock(Block* block);
+    std::atomic<uint32_t> m_numBlocks;
+    std::atomic<uint32_t> m_numBytes;
+    std::atomic<uint32_t> m_maxBlocks;
+    std::atomic<uint32_t> m_maxBytes;
 
-            std::atomic<uint32_t> m_numBlocks;
-            std::atomic<uint32_t> m_numBytes;
-            std::atomic<uint32_t> m_maxBlocks;
-            std::atomic<uint32_t> m_maxBytes;
+    friend class Block;
+};
 
-            friend class Block;
-        };
+//--
 
-        //--
-
-    } // socket
-} // base
+END_BOOMER_NAMESPACE(base::socket)

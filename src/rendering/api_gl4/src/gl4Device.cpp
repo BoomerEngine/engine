@@ -21,38 +21,32 @@
 	typedef rendering::api::gl4::ThreadX11 ThreadClass;
 #endif
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+//--
+
+RTTI_BEGIN_TYPE_CLASS(Device);
+	RTTI_METADATA(DeviceNameMetadata).name("GL4");
+RTTI_END_TYPE();
+
+Device::Device()
 {
-	namespace api
-	{
-		namespace gl4
-		{
-			//--
+}
 
-			RTTI_BEGIN_TYPE_CLASS(Device);
-				RTTI_METADATA(DeviceNameMetadata).name("GL4");
-			RTTI_END_TYPE();
-
-			Device::Device()
-			{
-			}
-
-			Device::~Device()
-			{
-			}
+Device::~Device()
+{
+}
         
-			base::StringBuf Device::name() const
-			{
-				return "GL4";
-			}
+base::StringBuf Device::name() const
+{
+	return "GL4";
+}
 
-			IBaseThread* Device::createOptimalThread(const base::app::CommandLine& cmdLine)
-			{
-				return new ThreadClass(this, windows());
-			}
+IBaseThread* Device::createOptimalThread(const base::app::CommandLine& cmdLine)
+{
+	return new ThreadClass(this, windows());
+}
 
-			//---
+//---
 
-		} // gl4
-	} // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::gl4)

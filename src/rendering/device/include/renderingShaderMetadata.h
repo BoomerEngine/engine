@@ -12,155 +12,155 @@
 #include "renderingSamplerState.h"
 #include "renderingGraphicsStates.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering)
+
+//--
+
+namespace shader
 {
+	struct StubProgram;
+} // shader
+
+//---
+
+struct RENDERING_DEVICE_API ShaderVertexElementMetadata
+{
+	RTTI_DECLARE_NONVIRTUAL_CLASS(ShaderVertexElementMetadata);
+
+public:
+	base::StringID name; // "VertexPosition"
+	ImageFormat format = ImageFormat::UNKNOWN; // RGB32F
+	uint16_t offset = 0; // offset in the stream
+	uint16_t size = 0; // field size (can be derived from format, stored for completeness)
+
+	INLINE ShaderVertexElementMetadata() {};
+
+	void print(base::IFormatStream& f) const;
+};
+
+//---
+
+struct RENDERING_DEVICE_API ShaderVertexStreamMetadata
+{
+	RTTI_DECLARE_NONVIRTUAL_CLASS(ShaderVertexStreamMetadata);
+
+public:
+	base::StringID name; // "SimpleVertex3D"
+	uint8_t index = 0; // binding index (internal)
+	uint16_t size = 0; // size of the declared vertex data (all elements)
+	uint16_t stride = 0; // stride of the vertex element (mostly the same as size)
+	bool instanced = false; // is this instance data stream
+
+	base::Array<ShaderVertexElementMetadata> elements;
+
+	INLINE ShaderVertexStreamMetadata() {};
+
+	void print(base::IFormatStream& f) const;
+};
+
+//---
+
+struct RENDERING_DEVICE_API ShaderDescriptorEntryMetadata
+{
+	RTTI_DECLARE_NONVIRTUAL_CLASS(ShaderDescriptorEntryMetadata);
+
+public:
+	base::StringID name; // "SimpleVertex3D"
+	uint8_t index = 0; // index in descriptor table
+
+	DeviceObjectViewType type = DeviceObjectViewType::Invalid; // type of data
+	ShaderStageMask stageMask; // which stages actually use this data, can be used to detect PixelShaderOnly states
+
 	//--
 
-	namespace shader
-	{
-		struct StubProgram;
-	} // shader
+	ImageFormat format = ImageFormat::UNKNOWN; // format of data for formatted descriptors
+	ImageViewType viewType = ImageViewType::View2D; // type of texture view
+	int number = 0; // stride of data for structured descriptors, size of constant buffers, index of sample for samples 
 
-	//---
+	INLINE ShaderDescriptorEntryMetadata() {};
 
-	struct RENDERING_DEVICE_API ShaderVertexElementMetadata
-	{
-		RTTI_DECLARE_NONVIRTUAL_CLASS(ShaderVertexElementMetadata);
+	void print(base::IFormatStream& f) const;
+};
 
-	public:
-		base::StringID name; // "VertexPosition"
-		ImageFormat format = ImageFormat::UNKNOWN; // RGB32F
-		uint16_t offset = 0; // offset in the stream
-		uint16_t size = 0; // field size (can be derived from format, stored for completeness)
+//---
 
-		INLINE ShaderVertexElementMetadata() {};
+struct RENDERING_DEVICE_API ShaderDescriptorMetadata
+{
+	RTTI_DECLARE_NONVIRTUAL_CLASS(ShaderDescriptorMetadata);
 
-		void print(base::IFormatStream& f) const;
-	};
+public:
+	base::StringID name; // "TestData"
+	DescriptorID id; // set on load, not stored directly
+	uint8_t index = 0; // descriptor index in shader metadata
 
-	//---
+	ShaderStageMask stageMask; // which stages actually use this data, can be used to detect PixelShaderOnly states, OR of all elements
 
-	struct RENDERING_DEVICE_API ShaderVertexStreamMetadata
-	{
-		RTTI_DECLARE_NONVIRTUAL_CLASS(ShaderVertexStreamMetadata);
+	base::Array<ShaderDescriptorEntryMetadata> elements;
 
-	public:
-		base::StringID name; // "SimpleVertex3D"
-		uint8_t index = 0; // binding index (internal)
-		uint16_t size = 0; // size of the declared vertex data (all elements)
-		uint16_t stride = 0; // stride of the vertex element (mostly the same as size)
-		bool instanced = false; // is this instance data stream
+	//--
 
-		base::Array<ShaderVertexElementMetadata> elements;
+	INLINE ShaderDescriptorMetadata() {};
 
-		INLINE ShaderVertexStreamMetadata() {};
+	void print(base::IFormatStream& f) const;
+};
 
-		void print(base::IFormatStream& f) const;
-	};
+//---
 
-	//---
+struct RENDERING_DEVICE_API ShaderStaticSamplerMetadata
+{
+	RTTI_DECLARE_NONVIRTUAL_CLASS(ShaderStaticSamplerMetadata);
 
-	struct RENDERING_DEVICE_API ShaderDescriptorEntryMetadata
-	{
-		RTTI_DECLARE_NONVIRTUAL_CLASS(ShaderDescriptorEntryMetadata);
+public:
+	base::StringID name; // "PointClamp"
+	ShaderStageMask stageMask; // which stages actually have shaders :)
 
-	public:
-		base::StringID name; // "SimpleVertex3D"
-		uint8_t index = 0; // index in descriptor table
+	SamplerState state; // actual sampler state
 
-		DeviceObjectViewType type = DeviceObjectViewType::Invalid; // type of data
-		ShaderStageMask stageMask; // which stages actually use this data, can be used to detect PixelShaderOnly states
+	INLINE ShaderStaticSamplerMetadata() {};
 
-		//--
+	void print(base::IFormatStream& f) const;
+};
 
-		ImageFormat format = ImageFormat::UNKNOWN; // format of data for formatted descriptors
-		ImageViewType viewType = ImageViewType::View2D; // type of texture view
-		int number = 0; // stride of data for structured descriptors, size of constant buffers, index of sample for samples 
+//---
 
-		INLINE ShaderDescriptorEntryMetadata() {};
+// extracted meta data from compiled shaders (a whole bunch of them for all stages)
+// this is ultra-useful information that can be used for client-side validation 
+// NOTE: metadata object is always present, 
+class RENDERING_DEVICE_API ShaderMetadata : public base::IObject
+{
+	RTTI_DECLARE_VIRTUAL_CLASS(ShaderMetadata, base::IObject);
 
-		void print(base::IFormatStream& f) const;
-	};
+public:
+	ShaderStageMask stageMask; // which stages actually have shaders :)
 
-	//---
+	uint64_t key = 0; // unique, content based key for the shader bundle, can be used for caching
+	uint64_t vertexLayoutKey = 0; // key describing the vertex data layout
+	uint64_t descriptorLayoutKey = 0; // key describing the root signature (all parametrs + static shaders, etc)
 
-	struct RENDERING_DEVICE_API ShaderDescriptorMetadata
-	{
-		RTTI_DECLARE_NONVIRTUAL_CLASS(ShaderDescriptorMetadata);
+	uint16_t computeGroupSizeX = 0;
+	uint16_t computeGroupSizeY = 0;
+	uint16_t computeGroupSizeZ = 0;
 
-	public:
-		base::StringID name; // "TestData"
-		DescriptorID id; // set on load, not stored directly
-		uint8_t index = 0; // descriptor index in shader metadata
+	ShaderFeatureMask featureMask;
 
-		ShaderStageMask stageMask; // which stages actually use this data, can be used to detect PixelShaderOnly states, OR of all elements
+	base::Array<ShaderDescriptorMetadata> descriptors;
+	base::Array<ShaderVertexStreamMetadata> vertexStreams;
+	base::Array<ShaderStaticSamplerMetadata> staticSamplers;
 
-		base::Array<ShaderDescriptorEntryMetadata> elements;
+	GraphicsRenderStatesSetup renderStates;
 
-		//--
+	ShaderMetadata();
 
-		INLINE ShaderDescriptorMetadata() {};
+	void print(base::IFormatStream& f) const;
 
-		void print(base::IFormatStream& f) const;
-	};
+	static ShaderMetadataPtr BuildFromStubs(const shader::StubProgram* program, uint64_t key);
 
-	//---
+private:
+	virtual void onPostLoad() override;
 
-	struct RENDERING_DEVICE_API ShaderStaticSamplerMetadata
-	{
-		RTTI_DECLARE_NONVIRTUAL_CLASS(ShaderStaticSamplerMetadata);
+	void cacheRuntimeData();
+};
 
-	public:
-		base::StringID name; // "PointClamp"
-		ShaderStageMask stageMask; // which stages actually have shaders :)
+//---
 
-		SamplerState state; // actual sampler state
-
-		INLINE ShaderStaticSamplerMetadata() {};
-
-		void print(base::IFormatStream& f) const;
-	};
-
-	//---
-
-	// extracted meta data from compiled shaders (a whole bunch of them for all stages)
-	// this is ultra-useful information that can be used for client-side validation 
-	// NOTE: metadata object is always present, 
-	class RENDERING_DEVICE_API ShaderMetadata : public base::IObject
-	{
-		RTTI_DECLARE_VIRTUAL_CLASS(ShaderMetadata, base::IObject);
-
-	public:
-		ShaderStageMask stageMask; // which stages actually have shaders :)
-
-		uint64_t key = 0; // unique, content based key for the shader bundle, can be used for caching
-		uint64_t vertexLayoutKey = 0; // key describing the vertex data layout
-		uint64_t descriptorLayoutKey = 0; // key describing the root signature (all parametrs + static shaders, etc)
-
-		uint16_t computeGroupSizeX = 0;
-		uint16_t computeGroupSizeY = 0;
-		uint16_t computeGroupSizeZ = 0;
-
-		ShaderFeatureMask featureMask;
-
-		base::Array<ShaderDescriptorMetadata> descriptors;
-		base::Array<ShaderVertexStreamMetadata> vertexStreams;
-		base::Array<ShaderStaticSamplerMetadata> staticSamplers;
-
-		GraphicsRenderStatesSetup renderStates;
-
-		ShaderMetadata();
-
-		void print(base::IFormatStream& f) const;
-
-		static ShaderMetadataPtr BuildFromStubs(const shader::StubProgram* program, uint64_t key);
-
-	private:
-		virtual void onPostLoad() override;
-
-		void cacheRuntimeData();
-	};
-
-	//---
-
-} // rendering
+END_BOOMER_NAMESPACE(rendering)

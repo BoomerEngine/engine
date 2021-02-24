@@ -11,35 +11,28 @@
 
 #include "rendering/api_common/include/apiSwapchain.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+//--
+
+class ThreadWinApi;
+
+// WinAPI specific OpenGL 4 driver thread
+class SwapchainWinApi : public IBaseWindowedSwapchain
 {
-	namespace api
-	{
-		namespace gl4
-		{
+public:
+	SwapchainWinApi(OutputClass cls, const WindowSetup& setup, void* hWnd, void* hDC, ThreadWinApi* thread);
+	virtual ~SwapchainWinApi();
 
-			//--
+	virtual bool acquire() override final;
+	virtual void present(bool swap = true) override final;
 
-			class ThreadWinApi;
+private:
+	ThreadWinApi* m_thread = nullptr;
+	void* m_hWnd = NULL;
+	void* m_hDC = NULL;
+};
 
-			// WinAPI specific OpenGL 4 driver thread
-			class SwapchainWinApi : public IBaseWindowedSwapchain
-			{
-			public:
-				SwapchainWinApi(OutputClass cls, const WindowSetup& setup, void* hWnd, void* hDC, ThreadWinApi* thread);
-				virtual ~SwapchainWinApi();
+//--
 
-				virtual bool acquire() override final;
-				virtual void present(bool swap = true) override final;
-
-			private:
-				ThreadWinApi* m_thread = nullptr;
-				void* m_hWnd = NULL;
-				void* m_hDC = NULL;
-			};
-
-			//--
-
-		} // gl4
-	} // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::gl4)

@@ -12,42 +12,38 @@
 #include "scriptFileParserHelper.h"
 #include "scriptFunctionCode.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+//---
+
+class IErrorHandler;
+
+/// parse content of function
+class FunctionParser : public base::NoCopy
 {
-    namespace script
-    {
+public:
+    FunctionParser(mem::LinearAllocator& mem, IErrorHandler& err, StubLibrary& library);
+    ~FunctionParser();
 
-        //---
+    //--
 
-        class IErrorHandler;
+    /// get shared stub library
+    INLINE StubLibrary& stubs() const { return m_stubs; }
 
-        /// parse content of function
-        class FunctionParser : public base::NoCopy
-        {
-        public:
-            FunctionParser(mem::LinearAllocator& mem, IErrorHandler& err, StubLibrary& library);
-            ~FunctionParser();
+    /// get error reporter
+    INLINE IErrorHandler& errorHandler() const { return m_err; }
 
-            //--
+    //--
 
-            /// get shared stub library
-            INLINE StubLibrary& stubs() const { return m_stubs; }
+    // process code of a function
+    bool processCode(const StubFunction* functionStub, FunctionCode& outCode);
 
-            /// get error reporter
-            INLINE IErrorHandler& errorHandler() const { return m_err; }
+private:
+    mem::LinearAllocator& m_mem;
+    IErrorHandler& m_err;
+    StubLibrary& m_stubs;
+};
 
-            //--
+//---
 
-            // process code of a function
-            bool processCode(const StubFunction* functionStub, FunctionCode& outCode);
-
-        private:
-            mem::LinearAllocator& m_mem;
-            IErrorHandler& m_err;
-            StubLibrary& m_stubs;
-        };
-
-        //---
-
-    } // script
-} // base
+END_BOOMER_NAMESPACE(base::script)

@@ -11,59 +11,54 @@
 #include "renderingFrameView.h"
 #include "rendering/device/include/renderingCommandWriter.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
+
+//--
+
+/// command buffers to write to when recording shadow cascades
+struct RENDERING_SCENE_API FrameViewCascadesRecorder : public FrameViewRecorder
 {
-    namespace scene
+    struct CascadeSlice
     {
+        GPUCommandWriter solid;
+        GPUCommandWriter masked;
 
-        //--
+        CascadeSlice();
+    };
 
-        /// command buffers to write to when recording shadow cascades
-        struct RENDERING_SCENE_API FrameViewCascadesRecorder : public FrameViewRecorder
-        {
-            struct CascadeSlice
-            {
-                command::CommandWriter solid;
-                command::CommandWriter masked;
+    CascadeSlice slices[MAX_CASCADES];
 
-                CascadeSlice();
-            };
+    FrameViewCascadesRecorder(FrameViewRecorder* parentView);
+};
 
-            CascadeSlice slices[MAX_CASCADES];
+//--
 
-            FrameViewCascadesRecorder(FrameViewRecorder* parentView);
-        };
+/// view for rendering shadow cascades
+class RENDERING_SCENE_API FrameViewCascades : public base::NoCopy
+{
+public:
+    FrameViewCascades(const FrameRenderer& frame, const CascadeData& cascades);
+    ~FrameViewCascades();
 
-        //--
+    void render(GPUCommandWriter& cmd, FrameViewRecorder* parentView);
 
-        /// view for rendering shadow cascades
-        class RENDERING_SCENE_API FrameViewCascades : public base::NoCopy
-        {
-        public:
-            FrameViewCascades(const FrameRenderer& frame, const CascadeData& cascades);
-            ~FrameViewCascades();
+    //--
 
-            void render(command::CommandWriter& cmd, FrameViewRecorder* parentView);
+    INLINE const CascadeInfo& cascade(int index) const { return m_cascades.cascades[index]; }
 
-            //--
+    //--
 
-            INLINE const CascadeInfo& cascade(int index) const { return m_cascades.cascades[index]; }
+private:
+    const FrameRenderer& m_frame;
+    const CascadeData& m_cascades;
 
-            //--
+    //--
 
-        private:
-            const FrameRenderer& m_frame;
-            const CascadeData& m_cascades;
+    void initializeCommandStreams(GPUCommandWriter& cmd, FrameViewCascadesRecorder& rec);
 
-            //--
+    //--
+};
 
-            void initializeCommandStreams(command::CommandWriter& cmd, FrameViewCascadesRecorder& rec);
+//--
 
-            //--
-        };
-
-        //--
-
-    } // scene
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::scene)

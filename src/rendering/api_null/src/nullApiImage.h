@@ -12,62 +12,55 @@
 
 #include "nullApiSampler.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
+
+///---
+
+/// wrapper for image
+class Image : public IBaseImage
 {
-    namespace api
-    {
-		namespace nul
-		{
+public:
+	Image(Thread* drv, const ImageCreationInfo& setup, const ISourceDataProvider* sourceData);
+	virtual ~Image();
 
-			///---
+	//--
 
-			/// wrapper for image
-			class Image : public IBaseImage
-			{
-			public:
-				Image(Thread* drv, const ImageCreationInfo& setup, const ISourceDataProvider* sourceData);
-				virtual ~Image();
+	INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
 
-				//--
+	//--
 
-				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
+	virtual IBaseImageView* createSampledView_ClientApi(const IBaseImageView::Setup& setup) override final;
+	virtual IBaseImageView* createReadOnlyView_ClientApi(const IBaseImageView::Setup& setup) override final;
+	virtual IBaseImageView* createWritableView_ClientApi(const IBaseImageView::Setup& setup) override final;
+	virtual IBaseImageView* createRenderTargetView_ClientApi(const IBaseImageView::Setup& setup) override final;
 
-				//--
+	//--
 
-				virtual IBaseImageView* createSampledView_ClientApi(const IBaseImageView::Setup& setup) override final;
-				virtual IBaseImageView* createReadOnlyView_ClientApi(const IBaseImageView::Setup& setup) override final;
-				virtual IBaseImageView* createWritableView_ClientApi(const IBaseImageView::Setup& setup) override final;
-				virtual IBaseImageView* createRenderTargetView_ClientApi(const IBaseImageView::Setup& setup) override final;
+	virtual void updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range) override final;
+	virtual void copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange) override final;
+	virtual void copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange) override final;
 
-				//--
+	//--
 
-				virtual void updateFromDynamicData(const void* data, uint32_t dataSize, const ResourceCopyRange& range) override final;
-				virtual void copyFromBuffer(IBaseBuffer* sourceBuffer, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange) override final;
-				virtual void copyFromImage(IBaseImage* sourceImage, const ResourceCopyRange& sourceRange, const ResourceCopyRange& targetRange) override final;
+private:
+	// internals
+};
 
-				//--
+//--
 
-			private:
-				// internals
-			};
+class ImageAnyView : public IBaseImageView
+{
+public:
+	ImageAnyView(Thread* owner, Image* img, const Setup& setup, ObjectType viewType);
+	virtual ~ImageAnyView();
 
-			//--
+	INLINE Image* image() const { return static_cast<Image*>(IBaseImageView::image()); }
+	INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
 
-			class ImageAnyView : public IBaseImageView
-			{
-			public:
-				ImageAnyView(Thread* owner, Image* img, const Setup& setup, ObjectType viewType);
-				virtual ~ImageAnyView();
+private:
+	// internals
+};
 
-				INLINE Image* image() const { return static_cast<Image*>(IBaseImageView::image()); }
-				INLINE Thread* owner() const { return static_cast<Thread*>(IBaseObject::owner()); }
+//--
 
-			private:
-				// internals
-			};
-
-			//--
-
-		} // nul
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

@@ -24,10 +24,8 @@
 #include "rendering/scene/include/renderingFrameRenderingService.h"
 #include "rendering/canvas/include/renderingCanvasService.h"
 
-namespace rendering
-{
-    namespace test
-    {
+BEGIN_BOOMER_NAMESPACE(rendering::test)
+
 
         SceneTestProject::SceneTestProject()
             : m_currentTest(nullptr)
@@ -214,7 +212,7 @@ namespace rendering
 
             // create output frame, this will fail if output is not valid
             {
-                command::CommandWriter cmd("TestScene");
+                GPUCommandWriter cmd("TestScene");
 
                 if (auto output = cmd.opAcquireOutput(m_renderingOutput))
                 {
@@ -310,7 +308,7 @@ namespace rendering
                 handleInputEvent(*evt);
         }
         
-        void SceneTestProject::prepareSceneCommandBuffers(command::CommandWriter& cmd, const scene::FrameCompositionTarget& target)
+        void SceneTestProject::prepareSceneCommandBuffers(GPUCommandWriter& cmd, const scene::FrameCompositionTarget& target)
         {
             // use simple camera position
             scene::CameraSetup cameraSetup;
@@ -333,7 +331,7 @@ namespace rendering
                 cmd.opAttachChildCommandBuffer(sceneRenderingCommands);
         }
 
-        void SceneTestProject::prepareCanvasCommandBuffers(command::CommandWriter& cmd, const scene::FrameCompositionTarget& target)
+        void SceneTestProject::prepareCanvasCommandBuffers(GPUCommandWriter& cmd, const scene::FrameCompositionTarget& target)
         {
 			base::canvas::Canvas canvas(target.targetRect.width(), target.targetRect.height());
 			renderCanvas(canvas);

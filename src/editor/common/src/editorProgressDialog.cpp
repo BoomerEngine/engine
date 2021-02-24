@@ -15,117 +15,117 @@
 #include "base/ui/include/uiTextLabel.h"
 #include "base/ui/include/uiProgressBar.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//---
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(ProgressDialog);
+RTTI_END_TYPE();
+
+ProgressDialog::ProgressDialog(StringView title, bool canCancel, bool keepAround)
+    : ui::Window(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, title)
 {
-    //---
+    layoutVertical();
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(ProgressDialog);
-    RTTI_END_TYPE();
+    //actions().bindCommand("Cancel"_id) = [windowRef]() { windowRef->requestClose(0); };
+    //actions().bindShortcut("Cancel"_id, "Escape");
 
-    ProgressDialog::ProgressDialog(StringView title, bool canCancel, bool keepAround)
-        : ui::Window(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, title)
+    m_progressText = createChild<ui::TextLabel>("Renaming files...");
+    m_progressText->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+    m_progressText->customMargins(5, 5, 5, 0);
+
+    m_progressBar = createChild<ui::ProgressBar>();
+    m_progressBar->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+    m_progressBar->customMinSize(600, 40);
+    m_progressBar->customMargins(5, 5, 5, 0);
+
+    m_innerArea = createChild<ui::IElement>();
+    m_innerArea->expand();
+    m_innerArea->customMargins(5, 5, 5, 0);
+
+    if (canCancel || keepAround)
     {
-        layoutVertical();
+        auto buttons = createChild();
+        buttons->layoutHorizontal();
+        buttons->customHorizontalAligment(ui::ElementHorizontalLayout::Right);
+        buttons->customMargins(5, 5, 5, 5);
 
-        //actions().bindCommand("Cancel"_id) = [windowRef]() { windowRef->requestClose(0); };
-        //actions().bindShortcut("Cancel"_id, "Escape");
-
-        m_progressText = createChild<ui::TextLabel>("Renaming files...");
-        m_progressText->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-        m_progressText->customMargins(5, 5, 5, 0);
-
-        m_progressBar = createChild<ui::ProgressBar>();
-        m_progressBar->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-        m_progressBar->customMinSize(600, 40);
-        m_progressBar->customMargins(5, 5, 5, 0);
-
-        m_innerArea = createChild<ui::IElement>();
-        m_innerArea->expand();
-        m_innerArea->customMargins(5, 5, 5, 0);
-
-        if (canCancel || keepAround)
+        if (canCancel)
         {
-            auto buttons = createChild();
-            buttons->layoutHorizontal();
-            buttons->customHorizontalAligment(ui::ElementHorizontalLayout::Right);
-            buttons->customMargins(5, 5, 5, 5);
+            m_cancelButton = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:cancel] Cancel");
+            m_cancelButton->addStyleClass("red"_id);
+            m_cancelButton->enable(true);
+            m_cancelButton->bind(ui::EVENT_CLICKED) = [this]() {
+                m_cancelButton->enable(false);
+                cmdCancel();
+            };
+        }
 
-            if (canCancel)
-            {
-                m_cancelButton = buttons->createChildWithType<ui::Button>("PushButton"_id, "[img:cancel] Cancel");
-                m_cancelButton->addStyleClass("red"_id);
-                m_cancelButton->enable(true);
-                m_cancelButton->bind(ui::EVENT_CLICKED) = [this]() {
-                    m_cancelButton->enable(false);
-                    cmdCancel();
-                };
-            }
-
-            if (keepAround)
-            {
-                m_closeButton = buttons->createChildWithType<ui::Button>("PushButton"_id, "Close");
+        if (keepAround)
+        {
+            m_closeButton = buttons->createChildWithType<ui::Button>("PushButton"_id, "Close");
+            m_closeButton->enable(false);
+            m_closeButton->bind(ui::EVENT_CLICKED) = [this]() {
                 m_closeButton->enable(false);
-                m_closeButton->bind(ui::EVENT_CLICKED) = [this]() {
-                    m_closeButton->enable(false);
-                    cmdClose();
-                };
-            }
+                cmdClose();
+            };
         }
     }
+}
 
-    ProgressDialog::~ProgressDialog()
+ProgressDialog::~ProgressDialog()
+{
+}
+
+void ProgressDialog::signalCanceled()
+{
+    if (!m_cancelFlag.exchange(true))
     {
+        runSync<ProgressDialog>([](ProgressDialog& dlg) {
+            if (dlg.m_cancelButton)
+                dlg.m_cancelButton->enable(false);
+            });
     }
+}
 
-    void ProgressDialog::signalCanceled()
-    {
-        if (!m_cancelFlag.exchange(true))
+void ProgressDialog::signalFinished()
+{
+    runSync<ProgressDialog>([](ProgressDialog& dlg)
         {
-            runSync<ProgressDialog>([](ProgressDialog& dlg) {
-                if (dlg.m_cancelButton)
-                    dlg.m_cancelButton->enable(false);
-                });
-        }
-    }
+            if (dlg.m_closeButton)
+                dlg.m_closeButton->enable(true);
+            else
+                dlg.requestClose(0);
+        });
+}
 
-    void ProgressDialog::signalFinished()
-    {
-        runSync<ProgressDialog>([](ProgressDialog& dlg)
-            {
-                if (dlg.m_closeButton)
-                    dlg.m_closeButton->enable(true);
-                else
-                    dlg.requestClose(0);
-            });
-    }
+void ProgressDialog::cmdCancel()
+{
+    m_cancelFlag = true;
+}
 
-    void ProgressDialog::cmdCancel()
-    {
-        m_cancelFlag = true;
-    }
+void ProgressDialog::cmdClose()
+{
+    requestClose(0);
+}
 
-    void ProgressDialog::cmdClose()
-    {
-        requestClose(0);
-    }
+bool ProgressDialog::checkCancelation() const
+{
+    return m_cancelFlag;
+}
 
-    bool ProgressDialog::checkCancelation() const
-    {
-        return m_cancelFlag;
-    }
+void ProgressDialog::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text)
+{
+    auto txt = StringBuf(text);
 
-    void ProgressDialog::reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text)
-    {
-        auto txt = StringBuf(text);
+    runSync<ProgressDialog>([currentCount, totalCount, txt](ProgressDialog& dlg)
+        {
+            dlg.m_progressBar->position(totalCount ? (currentCount / (float)totalCount) : 1.0f);
+            dlg.m_progressText->text(txt);
+        });
+}
 
-        runSync<ProgressDialog>([currentCount, totalCount, txt](ProgressDialog& dlg)
-            {
-                dlg.m_progressBar->position(totalCount ? (currentCount / (float)totalCount) : 1.0f);
-                dlg.m_progressText->text(txt);
-            });
-    }
+//--
 
-    //--
-
-} // editor
+END_BOOMER_NAMESPACE(ed)
 

@@ -7,12 +7,3 @@
 ***/
 
 #pragma once
-
-namespace base
-{
-    namespace world
-    {
-
-
-    } // world
-} // base

@@ -8,16 +8,3 @@
 
 #include "public.h"
 
-namespace base
-{
-    namespace script
-    {
-
-        //--
-
-        class CompiledProject;
-
-        //--
-
-    } // script
-} // base

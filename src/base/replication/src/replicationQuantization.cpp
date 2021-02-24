@@ -7,49 +7,45 @@
 #include "build.h"
 #include "replicationQuantization.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::replication)
+
+//--
+
+Quantization::Quantization()
 {
-    namespace replication
-    {
+    m_quantizationMaxValue = std::numeric_limits<uint32_t>::max();
+}
 
-        //--
+Quantization::Quantization(uint8_t bitCount)
+    : m_bitCount(bitCount)
+{
+    ASSERT(bitCount <= MAX_BITS);
+    m_quantizationMaxValue = (1U << bitCount) - 1;
+}
 
-        Quantization::Quantization()
-        {
-            m_quantizationMaxValue = std::numeric_limits<uint32_t>::max();
-        }
+Quantization::Quantization(uint8_t bitCount, float valueMin, float valueMax)
+    : m_bitCount(bitCount)
+{
+    ASSERT(bitCount <= MAX_BITS);
+    ASSERT(valueMin < valueMax);
+    m_quantizationMaxValue = (1U << bitCount) - 1;
+    m_quantizationMin = valueMin;
+    m_quantizationMax = valueMax;
+    m_quantizationStep = (m_quantizationMax - m_quantizationMin) / (1U << bitCount);
+    m_quantizationInvStep = (1U << bitCount) / (m_quantizationMax - m_quantizationMin);
+}
 
-        Quantization::Quantization(uint8_t bitCount)
-            : m_bitCount(bitCount)
-        {
-            ASSERT(bitCount <= MAX_BITS);
-            m_quantizationMaxValue = (1U << bitCount) - 1;
-        }
+Quantization::Quantization(uint8_t bitCount, float valueMax)
+{
+    ASSERT(bitCount <= MAX_BITS);
+    ASSERT(valueMax > 0.0f);
+    m_quantizationMaxValue = (1U << bitCount) - 1;
+    m_quantizationMin = 0.0f;
+    m_quantizationMax = valueMax;
+    m_quantizationStep = m_quantizationMax / (1U << bitCount);
+    m_quantizationInvStep = (1U << bitCount) / m_quantizationMax;
+}
 
-        Quantization::Quantization(uint8_t bitCount, float valueMin, float valueMax)
-            : m_bitCount(bitCount)
-        {
-            ASSERT(bitCount <= MAX_BITS);
-            ASSERT(valueMin < valueMax);
-            m_quantizationMaxValue = (1U << bitCount) - 1;
-            m_quantizationMin = valueMin;
-            m_quantizationMax = valueMax;
-            m_quantizationStep = (m_quantizationMax - m_quantizationMin) / (1U << bitCount);
-            m_quantizationInvStep = (1U << bitCount) / (m_quantizationMax - m_quantizationMin);
-        }
+//--
 
-        Quantization::Quantization(uint8_t bitCount, float valueMax)
-        {
-            ASSERT(bitCount <= MAX_BITS);
-            ASSERT(valueMax > 0.0f);
-            m_quantizationMaxValue = (1U << bitCount) - 1;
-            m_quantizationMin = 0.0f;
-            m_quantizationMax = valueMax;
-            m_quantizationStep = m_quantizationMax / (1U << bitCount);
-            m_quantizationInvStep = (1U << bitCount) / m_quantizationMax;
-        }
-
-        //--
-
-    } // replication
-} // base
+END_BOOMER_NAMESPACE(base::replication)

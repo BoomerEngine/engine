@@ -11,112 +11,109 @@
 #include "worldSystem.h"
 #include "base/containers/include/bitSet.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::world)
+
+//--
+
+class StreamingSystem;
+
+//--
+
+// mounted streaming island
+class BASE_WORLD_API StreamingIslandInfo
 {
-    namespace world
-    {
-        //--
+public:
+    uint32_t parentIndex = 0;
+    uint32_t index = 0;
+    bool alwaysLoaded = false;
 
-        class StreamingSystem;
+    Box streamingBox;
+    StreamingIslandPtr data;
 
-        //--
+    StreamingIslandInfo* parent = nullptr;
+    Array<StreamingIslandInfo*> children;
 
-        // mounted streaming island
-        class BASE_WORLD_API StreamingIslandInfo
-        {
-        public:
-            uint32_t parentIndex = 0;
-            uint32_t index = 0;
-            bool alwaysLoaded = false;
+    //--
 
-            Box streamingBox;
-            StreamingIslandPtr data;
+    StreamingIslandInfo();
+};
 
-            StreamingIslandInfo* parent = nullptr;
-            Array<StreamingIslandInfo*> children;
+//--
 
-            //--
+// world streaming update tasks
+class BASE_WORLD_API StreamingTask : public IReferencable
+{
+public:
+    StreamingTask(const Array<StreamingObserverInfo>& observers, const Array<StreamingIslandInfo>& islands, const Array<uint32_t>& attachedIslands, const BitSet<>& attachedIslandsMask);
 
-            StreamingIslandInfo();
-        };
+    /// request streaming task to be canceled
+    void requestCancel();
 
-        //--
+    /// process the task, can be called directly (blocking) 
+    /// but it should be called on job
+    CAN_YIELD void process();
 
-        // world streaming update tasks
-        class BASE_WORLD_API StreamingTask : public IReferencable
-        {
-        public:
-            StreamingTask(const Array<StreamingObserverInfo>& observers, const Array<StreamingIslandInfo>& islands, const Array<uint32_t>& attachedIslands, const BitSet<>& attachedIslandsMask);
+    //--
 
-            /// request streaming task to be canceled
-            void requestCancel();
+private:
+    Array<StreamingObserverInfo> m_observers;
 
-            /// process the task, can be called directly (blocking) 
-            /// but it should be called on job
-            CAN_YIELD void process();
+    Array<uint32_t> m_attachedIslands; // modified
+    BitSet<> m_attachedIslandsMask; // modified
 
-            //--
+    const Array<StreamingIslandInfo>& m_islands;
 
-        private:
-            Array<StreamingObserverInfo> m_observers;
+    Array<uint32_t> m_unloadedIslands;
+    Array<uint32_t> m_loadedIslands;
+    Array<StreamingIslandInstancePtr> m_loadedIslandsData;
 
-            Array<uint32_t> m_attachedIslands; // modified
-            BitSet<> m_attachedIslandsMask; // modified
+    friend class StreamingSystem;
+};
 
-            const Array<StreamingIslandInfo>& m_islands;
+//--
 
-            Array<uint32_t> m_unloadedIslands;
-            Array<uint32_t> m_loadedIslands;
-            Array<StreamingIslandInstancePtr> m_loadedIslandsData;
+/// world streaming system capable of loading dynamic content from compiled scene
+class BASE_WORLD_API StreamingSystem : public IWorldSystem
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(StreamingSystem, IWorldSystem);
 
-            friend class StreamingSystem;
-        };
+public:
+    StreamingSystem();
+    virtual ~StreamingSystem();
 
-        //--
+    //--
 
-        /// world streaming system capable of loading dynamic content from compiled scene
-        class BASE_WORLD_API StreamingSystem : public IWorldSystem
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(StreamingSystem, IWorldSystem);
+    /// unbind all loaded content
+    void unbindEntities();
 
-        public:
-            StreamingSystem();
-            virtual ~StreamingSystem();
+    /// attach compiled scene content
+    void bindScene(const CompiledScene* scene);
 
-            //--
+    //--
 
-            /// unbind all loaded content
-            void unbindEntities();
+    /// create streaming update tasks using current observers and other settings
+    /// NOTE: may return NULL if there's nothing to stream in/out
+    RefPtr<StreamingTask> createStreamingTask(const Array<StreamingObserverInfo>& observers) const;
 
-            /// attach compiled scene content
-            void bindScene(const CompiledScene* scene);
+    /// apply finished streaming update task
+    /// first outgoing entities are detached then new entities are attached
+    /// TODO: partial "budgeted" attach to minimize hitching
+    void applyStreamingTask(const StreamingTask* task);
 
-            //--
+protected:
+    virtual void handleShutdown() override;
 
-            /// create streaming update tasks using current observers and other settings
-            /// NOTE: may return NULL if there's nothing to stream in/out
-            RefPtr<StreamingTask> createStreamingTask(const Array<StreamingObserverInfo>& observers) const;
+    //--
 
-            /// apply finished streaming update task
-            /// first outgoing entities are detached then new entities are attached
-            /// TODO: partial "budgeted" attach to minimize hitching
-            void applyStreamingTask(const StreamingTask* task);
+    Array<StreamingIslandInfo> m_islands;
+    Array<StreamingIslandInstancePtr> m_islandInstances;
 
-        protected:
-            virtual void handleShutdown() override;
+    Array<uint32_t> m_attachedIslands;
+    BitSet<> m_attachedIslandsMask;
 
-            //--
+    //--
+};
 
-            Array<StreamingIslandInfo> m_islands;
-            Array<StreamingIslandInstancePtr> m_islandInstances;
+//--
 
-            Array<uint32_t> m_attachedIslands;
-            BitSet<> m_attachedIslandsMask;
-
-            //--
-        };
-
-        //--
-
-    } // world
-} // base
+END_BOOMER_NAMESPACE(base::world)

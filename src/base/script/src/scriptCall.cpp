@@ -11,30 +11,24 @@
 #include "scriptObject.h"
 #include "scriptCall.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+//---
+
+ScriptedCallRaw::ScriptedCallRaw(void* context, ClassType classPtr, StringID name)
+    : m_context(context)
+    , m_function(nullptr)
 {
-    namespace script
-    {
+    if (classPtr)
+        m_function = classPtr->findFunction(name);
+}
 
-        //---
+ScriptedCallRaw::ScriptedCallRaw(IObject* context, StringID name)
+    : m_context(context)
+    , m_function(nullptr)
+{
+    if (context)
+        m_function = context->cls()->findFunction(name);
+}
 
-        ScriptedCallRaw::ScriptedCallRaw(void* context, ClassType classPtr, StringID name)
-            : m_context(context)
-            , m_function(nullptr)
-        {
-            if (classPtr)
-                m_function = classPtr->findFunction(name);
-        }
-
-        ScriptedCallRaw::ScriptedCallRaw(IObject* context, StringID name)
-            : m_context(context)
-            , m_function(nullptr)
-        {
-            if (context)
-                m_function = context->cls()->findFunction(name);
-        }
-
-        //---
-
-    } // script
-} // base
+END_BOOMER_NAMESPACE(base::script)

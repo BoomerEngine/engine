@@ -9,18 +9,15 @@
 #include "build.h"
 #include "inputDevice.h"
 
-namespace base
-{
-    namespace input
-    {
-        RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IDevice);
-        RTTI_END_TYPE();
+BEGIN_BOOMER_NAMESPACE(base::input)
 
-        IDevice::IDevice()
-        {}
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IDevice);
+RTTI_END_TYPE();
 
-        IDevice::~IDevice()
-        {}
+IDevice::IDevice()
+{}
 
-    } // input
-} // base
+IDevice::~IDevice()
+{}
+
+END_BOOMER_NAMESPACE(base::input)

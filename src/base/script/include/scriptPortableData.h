@@ -11,61 +11,56 @@
 #include "base/memory/include/linearAllocator.h"
 #include "base/object/include/object.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::script)
+
+///---
+
+struct Stub;
+struct StubModule;
+struct StubFunction;
+struct StubClass;
+struct StubEnum;
+struct StubTypeDecl;
+
+///---
+
+/// serialized portable compiled script module
+/// contains all type definitions, stubs, and functions with portable opcodes
+class BASE_SCRIPT_API PortableData : public IObject
 {
-    namespace script
-    {
+    RTTI_DECLARE_VIRTUAL_CLASS(PortableData, IObject);
 
-        ///---
+public:
+    PortableData();
 
-        struct Stub;
-        struct StubModule;
-        struct StubFunction;
-        struct StubClass;
-        struct StubEnum;
-        struct StubTypeDecl;
+    //--
 
-        ///---
+    // get all the stubs
+    INLINE const Array<const Stub*>& allStubs() const { return m_stubs; }
 
-        /// serialized portable compiled script module
-        /// contains all type definitions, stubs, and functions with portable opcodes
-        class BASE_SCRIPT_API PortableData : public IObject
-        {
-            RTTI_DECLARE_VIRTUAL_CLASS(PortableData, IObject);
+    // get the export module
+    INLINE const StubModule* exportedModule() const { return m_exportModule; }
 
-        public:
-            PortableData();
+    //--
 
-            //--
+    // create new data
+    static RefPtr<PortableData> Create(const StubModule* rootExportModule);
 
-            // get all the stubs
-            INLINE const Array<const Stub*>& allStubs() const { return m_stubs; }
+private:
+    Buffer  m_packedData; // packed data
+    mem::LinearAllocator m_unpackMemory; // memory for all of the unpacked data
 
-            // get the export module
-            INLINE const StubModule* exportedModule() const { return m_exportModule; }
+    Array<const Stub*> m_stubs; // all stubs in the
+    const StubModule* m_exportModule; // exported module (contains all data actually defined in the script package)
 
-            //--
+    //--
 
-            // create new data
-            static RefPtr<PortableData> Create(const StubModule* rootExportModule);
+    // IObject
+    virtual void onPostLoad() override final;
 
-        private:
-            Buffer  m_packedData; // packed data
-            mem::LinearAllocator m_unpackMemory; // memory for all of the unpacked data
+    void unpackData();
+};
 
-            Array<const Stub*> m_stubs; // all stubs in the
-            const StubModule* m_exportModule; // exported module (contains all data actually defined in the script package)
+///---
 
-            //--
-
-            // IObject
-            virtual void onPostLoad() override final;
-
-            void unpackData();
-        };
-
-        ///---
-
-    } // script
-} // base
-
+END_BOOMER_NAMESPACE(base::script)

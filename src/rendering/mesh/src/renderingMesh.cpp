@@ -13,8 +13,7 @@
 #include "rendering/material/include/renderingMaterialInstance.h"
 #include "base/resource/include/resourceTags.h"
 
-namespace rendering
-{
+BEGIN_BOOMER_NAMESPACE(rendering)
 
     ///---
 

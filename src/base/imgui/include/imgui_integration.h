@@ -7,17 +7,13 @@
 
 #pragma once
 
-namespace base
-{
-    namespace input
-    {
-        class BaseEvent;
-    }
-    namespace canvas
-    {
-        class Canvas;
-    }
-}
+BEGIN_BOOMER_NAMESPACE(base::input)
+class BaseEvent;
+END_BOOMER_NAMESPACE(base::input)
+
+BEGIN_BOOMER_NAMESPACE(base::canvas)
+class Canvas;
+END_BOOMER_NAMESPACE(base::canvas)
 
 #undef LoadIcon // Window
 

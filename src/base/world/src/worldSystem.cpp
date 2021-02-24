@@ -11,77 +11,72 @@
 #include "world.h"
 #include "worldSystem.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::world)
+
+//---
+
+RTTI_BEGIN_TYPE_CLASS(DependsOnWorldSystemMetadata);
+RTTI_END_TYPE();
+
+DependsOnWorldSystemMetadata::DependsOnWorldSystemMetadata()
+{}
+
+//---
+
+RTTI_BEGIN_TYPE_CLASS(TickOrderWorldSystemMetadata);
+RTTI_END_TYPE();
+
+TickOrderWorldSystemMetadata::TickOrderWorldSystemMetadata()
+{}
+
+//---
+
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IWorldSystem);
+RTTI_END_TYPE();
+
+IWorldSystem::IWorldSystem()
+{}
+
+IWorldSystem::~IWorldSystem()
+{}
+
+bool IWorldSystem::handleInitialize(World& world)
 {
-    namespace world
-    {
+    DEBUG_CHECK_RETURN_V(!m_world, false);
+    m_world = &world;
+    return true;
+}
 
-        //---
+void IWorldSystem::handleShutdown()
+{}
 
-        RTTI_BEGIN_TYPE_CLASS(DependsOnWorldSystemMetadata);
-        RTTI_END_TYPE();
+void IWorldSystem::handlePreTick(double dt)
+{}
 
-        DependsOnWorldSystemMetadata::DependsOnWorldSystemMetadata()
-        {}
+void IWorldSystem::handleMainTickStart(double dt)
+{}
 
-        //---
+void IWorldSystem::handleMainTickFinish(double dt)
+{}
 
-        RTTI_BEGIN_TYPE_CLASS(TickOrderWorldSystemMetadata);
-        RTTI_END_TYPE();
+void IWorldSystem::handleMainTickPublish(double dt)
+{}
 
-        TickOrderWorldSystemMetadata::TickOrderWorldSystemMetadata()
-        {}
+void IWorldSystem::handlePostTick(double dt)
+{}
 
-        //---
+void IWorldSystem::handlePostTransform(double dt)
+{}
 
-        RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IWorldSystem);
-        RTTI_END_TYPE();
+void IWorldSystem::handleRendering(rendering::scene::FrameParams& info)
+{}
 
-        IWorldSystem::IWorldSystem()
-        {}
+/*void IWorldSystem::handleWorldContentAttached(const WorldPtr& worldPtr)
+{}
 
-        IWorldSystem::~IWorldSystem()
-        {}
+void IWorldSystem::handleWorldContentDetached(const WorldPtr& worldPtr)
+{}*/
 
-        bool IWorldSystem::handleInitialize(World& world)
-        {
-            DEBUG_CHECK_RETURN_V(!m_world, false);
-            m_world = &world;
-            return true;
-        }
+///---
 
-        void IWorldSystem::handleShutdown()
-        {}
-
-        void IWorldSystem::handlePreTick(double dt)
-        {}
-
-        void IWorldSystem::handleMainTickStart(double dt)
-        {}
-
-        void IWorldSystem::handleMainTickFinish(double dt)
-        {}
-
-        void IWorldSystem::handleMainTickPublish(double dt)
-        {}
-
-        void IWorldSystem::handlePostTick(double dt)
-        {}
-
-        void IWorldSystem::handlePostTransform(double dt)
-        {}
-
-        void IWorldSystem::handleRendering(rendering::scene::FrameParams& info)
-        {}
-
-        /*void IWorldSystem::handleWorldContentAttached(const WorldPtr& worldPtr)
-        {}
-
-        void IWorldSystem::handleWorldContentDetached(const WorldPtr& worldPtr)
-        {}*/
-
-        ///---
-
-    } // world
-} // base
-
+END_BOOMER_NAMESPACE(base::world)

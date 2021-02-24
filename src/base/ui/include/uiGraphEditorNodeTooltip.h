@@ -12,7 +12,3 @@
 #include "uiElement.h"
 #include "uiDragDrop.h"
 
-namespace ui
-{
-
-} // ui

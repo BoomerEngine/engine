@@ -57,65 +57,62 @@
 #define DECLARE_MODULE(_projectName)                            \
         DECLARE_MODULE_IMPL(_projectName)
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::modules)
+
+struct ModuleInfo
 {
-    namespace modules
+    const char*     m_name;
+    const char*     m_dateCompiled;
+    const char*     m_timeCompiled;
+    uint64_t              m_compilerVersion;
+    void*               m_moduleHandle;
+
+    INLINE ModuleInfo()
+        : m_name(nullptr)
+        , m_dateCompiled(nullptr)
+        , m_timeCompiled(nullptr)
+        , m_compilerVersion(0)
+        , m_moduleHandle(nullptr)
+    {}
+};
+
+struct ModuleInitialization
+{
+public:
+    typedef std::function<void()> TInitFunction;
+
+    INLINE ModuleInitialization( const TInitFunction& func)
+        : m_func(func)
+    {}
+
+    INLINE ~ModuleInitialization()
     {
-        struct ModuleInfo
+        run();
+    }
+
+    INLINE void run()
+    {
+        if (m_func)
         {
-            const char*     m_name;
-            const char*     m_dateCompiled;
-            const char*     m_timeCompiled;
-            uint64_t              m_compilerVersion;
-            void*               m_moduleHandle;
+            m_func();
+            m_func = TInitFunction();
+        }
+    }
 
-            INLINE ModuleInfo()
-                : m_name(nullptr)
-                , m_dateCompiled(nullptr)
-                , m_timeCompiled(nullptr)
-                , m_compilerVersion(0)
-                , m_moduleHandle(nullptr)
-            {}
-        };
+private:
+    TInitFunction m_func;
+};
 
-        struct ModuleInitialization
-        {
-        public:
-            typedef std::function<void()> TInitFunction;
+/// register information about a module being initialized
+extern BASE_SYSTEM_API void RegisterModule(const char* name, const char* dateCompiled, const char* timeCompiled, uint64_t compilerVer, void* moduleHandle);
 
-            INLINE ModuleInitialization( const TInitFunction& func)
-                : m_func(func)
-            {}
+/// get list of initialized modules
+extern BASE_SYSTEM_API void GetRegisteredModules(uint32_t maxEntries, ModuleInfo* outTable, uint32_t& outNumEntries);
 
-            INLINE ~ModuleInitialization()
-            {
-                run();
-            }
+/// load a dynamic module if its not yet loaded
+extern BASE_SYSTEM_API void LoadDynamicModule(const char* name);
 
-            INLINE void run()
-            {
-                if (m_func)
-                {
-                    m_func();
-                    m_func = TInitFunction();
-                }
-            }
+/// check if we have module loaded
+extern BASE_SYSTEM_API bool HasModuleLoaded(const char* name);
 
-        private:
-            TInitFunction m_func;
-        };
-
-        /// register information about a module being initialized
-        extern BASE_SYSTEM_API void RegisterModule(const char* name, const char* dateCompiled, const char* timeCompiled, uint64_t compilerVer, void* moduleHandle);
-
-        /// get list of initialized modules
-        extern BASE_SYSTEM_API void GetRegisteredModules(uint32_t maxEntries, ModuleInfo* outTable, uint32_t& outNumEntries);
-
-        /// load a dynamic module if its not yet loaded
-        extern BASE_SYSTEM_API void LoadDynamicModule(const char* name);
-
-        /// check if we have module loaded
-        extern BASE_SYSTEM_API bool HasModuleLoaded(const char* name);
-
-        } // module
-} // base
+END_BOOMER_NAMESPACE(base::modules)

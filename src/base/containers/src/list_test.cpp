@@ -13,4 +13,3 @@
 
 DECLARE_TEST_FILE(List);
 
-using namespace base;

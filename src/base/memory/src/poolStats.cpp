@@ -10,48 +10,44 @@
 #include "poolStats.h"
 #include "poolStatsInternal.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::mem)
+
+///--
+
+PoolStats::PoolStats()
 {
-    namespace mem
-    {
+}
 
-        ///--
+void PoolStats::notifyAllocation(PoolTag id, size_t size)
+{
+    prv::TheInternalPoolStats.notifyAllocation(id, size);
+}
 
-        PoolStats::PoolStats()
-        {
-        }
+void PoolStats::notifyFree(PoolTag id, size_t size)
+{
+    prv::TheInternalPoolStats.notifyFree(id, size);
+}
 
-        void PoolStats::notifyAllocation(PoolTag id, size_t size)
-        {
-            prv::TheInternalPoolStats.notifyAllocation(id, size);
-        }
+void PoolStats::resetGlobalStatistics()
+{
+    prv::TheInternalPoolStats.resetGlobalStatistics();
+}
 
-        void PoolStats::notifyFree(PoolTag id, size_t size)
-        {
-            prv::TheInternalPoolStats.notifyFree(id, size);
-        }
+void PoolStats::resetFrameStatistics()
+{
+    prv::TheInternalPoolStats.resetFrameStatistics();
+}
 
-        void PoolStats::resetGlobalStatistics()
-        {
-            prv::TheInternalPoolStats.resetGlobalStatistics();
-        }
+void PoolStats::stats(PoolTag id, PoolStatsData& outStats) const
+{
+    prv::TheInternalPoolStats.stats(id, outStats);
+}
 
-        void PoolStats::resetFrameStatistics()
-        {
-            prv::TheInternalPoolStats.resetFrameStatistics();
-        }
+void PoolStats::allStats(uint32_t count, PoolStatsData* outStats, uint32_t& outNumPools) const
+{
+    prv::TheInternalPoolStats.allStats(count, outStats, outNumPools);
+}
 
-        void PoolStats::stats(PoolTag id, PoolStatsData& outStats) const
-        {
-            prv::TheInternalPoolStats.stats(id, outStats);
-        }
+//---
 
-        void PoolStats::allStats(uint32_t count, PoolStatsData* outStats, uint32_t& outNumPools) const
-        {
-            prv::TheInternalPoolStats.allStats(count, outStats, outNumPools);
-        }
-
-        //---
-
-    } // mem
-} // base
+END_BOOMER_NAMESPACE(base::mem)

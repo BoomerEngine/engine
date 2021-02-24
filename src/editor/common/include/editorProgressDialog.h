@@ -10,45 +10,44 @@
 
 #include "editorResourceContainerWindow.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+///---
+
+/// basic progress update dialog
+class EDITOR_COMMON_API ProgressDialog : public ui::Window, public IProgressTracker
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(ProgressDialog, ui::Window);
 
-    ///---
+public:
+    ProgressDialog(StringView title, bool canCancel = false, bool keepAround = false);
+    virtual ~ProgressDialog();
 
-    /// basic progress update dialog
-    class EDITOR_COMMON_API ProgressDialog : public ui::Window, public IProgressTracker
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(ProgressDialog, ui::Window);
+    inline bool keepAround() const { return !m_closeButton.empty(); }
 
-    public:
-        ProgressDialog(StringView title, bool canCancel = false, bool keepAround = false);
-        virtual ~ProgressDialog();
+    void signalFinished(); // unlocks the "close" button or closes the dialog
+    void signalCanceled(); // signals external cancel request
 
-        inline bool keepAround() const { return !m_closeButton.empty(); }
+protected:
+    ui::ElementPtr m_innerArea;
 
-        void signalFinished(); // unlocks the "close" button or closes the dialog
-        void signalCanceled(); // signals external cancel request
+private:
+    ui::ProgressBarPtr m_progressBar;
+    ui::TextLabelPtr m_progressText;
 
-    protected:
-        ui::ElementPtr m_innerArea;
+    ui::ButtonPtr m_cancelButton;
+    ui::ButtonPtr m_closeButton;
 
-    private:
-        ui::ProgressBarPtr m_progressBar;
-        ui::TextLabelPtr m_progressText;
+    std::atomic<bool> m_cancelFlag = false;
 
-        ui::ButtonPtr m_cancelButton;
-        ui::ButtonPtr m_closeButton;
+    virtual void cmdCancel();
+    virtual void cmdClose();
 
-        std::atomic<bool> m_cancelFlag = false;
+    virtual bool checkCancelation() const override final;
+    virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
+};
 
-        virtual void cmdCancel();
-        virtual void cmdClose();
+///---
 
-        virtual bool checkCancelation() const override final;
-        virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
-    };
-
-    ///---
-
-} // editor
+END_BOOMER_NAMESPACE(ed)
 

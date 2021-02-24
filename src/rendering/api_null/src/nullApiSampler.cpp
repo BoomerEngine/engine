@@ -10,24 +10,17 @@
 #include "nullApiThread.h"
 #include "nullApiSampler.h"
 
-namespace rendering
-{
-    namespace api
-    {
-		namespace nul
-		{
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
 
-			//--
+//--
 
-			Sampler::Sampler(Thread* owner, const SamplerState& setup)
-				: IBaseSampler(owner, setup)
-			{}
+Sampler::Sampler(Thread* owner, const SamplerState& setup)
+	: IBaseSampler(owner, setup)
+{}
 
-			Sampler::~Sampler()
-			{}
+Sampler::~Sampler()
+{}
 
-			//--
+//--
 
-		} // nul
-    } // gl4
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::nul)

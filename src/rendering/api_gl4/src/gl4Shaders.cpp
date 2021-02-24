@@ -12,61 +12,54 @@
 #include "gl4ComputePipeline.h"
 #include "gl4GraphicsPipeline.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::gl4)
+
+//--
+
+Shaders::Shaders(Thread* drv, const ShaderData* data)
+	: IBaseShaders(drv, data)
 {
-    namespace api
-    {
-		namespace gl4
-		{
+	// start compiling the shader as soon as possible
+	// NOTE: this may fetch data from the shader cache
+	m_compilationJob = base::RefNew<ShaderCompilationJob>(data->data(), data->metadata());
+	drv->backgroundQueue()->pushNormalJob(m_compilationJob);
+}
 
-			//--
+Shaders::~Shaders()
+{
+	if (m_glProgram)
+	{
+		GL_PROTECT(glDeleteProgramPipelines(1, &m_glProgram));
+		m_glProgram = 0;
+	}
+}
 
-			Shaders::Shaders(Thread* drv, const ShaderData* data)
-				: IBaseShaders(drv, data)
-			{
-				// start compiling the shader as soon as possible
-				// NOTE: this may fetch data from the shader cache
-				m_compilationJob = base::RefNew<ShaderCompilationJob>(data->data(), data->metadata());
-				drv->backgroundQueue()->pushNormalJob(m_compilationJob);
-			}
+IBaseGraphicsPipeline* Shaders::createGraphicsPipeline_ClientApi(const GraphicsRenderStatesSetup& setup)
+{
+	DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderStage::Vertex), "Shader bundle has no vertex shader", nullptr);
+	DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderStage::Pixel), "Shader bundle has no pixel shader", nullptr);
+	return new GraphicsPipeline(owner(), this, setup);
+}
 
-			Shaders::~Shaders()
-			{
-				if (m_glProgram)
-				{
-					GL_PROTECT(glDeleteProgramPipelines(1, &m_glProgram));
-					m_glProgram = 0;
-				}
-			}
+IBaseComputePipeline* Shaders::createComputePipeline_ClientApi()
+{
+	DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderStage::Compute), "Shader bundle has no compute shader", nullptr);
+	return new ComputePipeline(owner(), this);
+}
 
-			IBaseGraphicsPipeline* Shaders::createGraphicsPipeline_ClientApi(const GraphicsRenderStatesSetup& setup)
-			{
-				DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderStage::Vertex), "Shader bundle has no vertex shader", nullptr);
-				DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderStage::Pixel), "Shader bundle has no pixel shader", nullptr);
-				return new GraphicsPipeline(owner(), this, setup);
-			}
+GLuint Shaders::object()
+{
+	if (m_glProgram == 0 && m_compilationJob)
+	{
+		m_compilationJob->waitUntilCompleted();
+		m_glProgram = m_compilationJob->extractCompiledProgram();
 
-			IBaseComputePipeline* Shaders::createComputePipeline_ClientApi()
-			{
-				DEBUG_CHECK_RETURN_EX_V(mask().test(ShaderStage::Compute), "Shader bundle has no compute shader", nullptr);
-				return new ComputePipeline(owner(), this);
-			}
+		m_compilationJob.reset();
+	}
 
-			GLuint Shaders::object()
-			{
-				if (m_glProgram == 0 && m_compilationJob)
-				{
-					m_compilationJob->waitUntilCompleted();
-					m_glProgram = m_compilationJob->extractCompiledProgram();
+	return m_glProgram;
+}
 
-					m_compilationJob.reset();
-				}
+//--
 
-				return m_glProgram;
-			}
-
-			//--
-
-		} // gl4
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api::gl4)

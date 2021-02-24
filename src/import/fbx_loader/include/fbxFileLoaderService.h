@@ -11,44 +11,44 @@
 #include "base/resource/include/resource.h"
 #include "base/app/include/localService.h"
 
-namespace fbx
+BEGIN_BOOMER_NAMESPACE(asset)
+
+//---
+
+struct FBXDataNode;
+struct FBXSkeletonBone;
+struct FBXSkeletonBuilder;
+struct FBXMaterialMapper;
+
+//---
+
+// service for  import/export, holds the  singletons
+class IMPORT_FBX_LOADER_API FBXFileLoadingService : public base::app::ILocalService
 {
-    //---
+    RTTI_DECLARE_VIRTUAL_CLASS(FBXFileLoadingService, base::app::ILocalService);
 
-    struct DataNode;
-    struct SkeletonBone;
-    struct SkeletonBuilder;
-    struct MaterialMapper;
+public:
+    FBXFileLoadingService();
+    virtual ~FBXFileLoadingService();
 
-    //---
+    /// get the raw FbxManager
+    INLINE fbxsdk::FbxManager* manager() const { return m_fbxManager; }
 
-    // service for  import/export, holds the  singletons
-    class IMPORT_FBX_LOADER_API FileLoadingService : public base::app::ILocalService
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(FileLoadingService, base::app::ILocalService);
-
-    public:
-        FileLoadingService();
-        virtual ~FileLoadingService();
-
-        /// get the raw FbxManager
-        INLINE fbxsdk::FbxManager* manager() const { return m_fbxManager; }
-
-        /// load the  blob from a data buffer
-        fbxsdk::FbxScene* loadScene(const base::Buffer& data, base::Matrix& outAssetToEngineConversionMatrix) const;
+    /// load the  blob from a data buffer
+    fbxsdk::FbxScene* loadScene(const base::Buffer& data, base::Matrix& outAssetToEngineConversionMatrix) const;
 
 
-    private:
-        // ILocalService
-        virtual base::app::ServiceInitializationResult onInitializeService(const base::app::CommandLine& cmdLine) override final;
-        virtual void onShutdownService() override final;
-        virtual void onSyncUpdate() override final;
+private:
+    // ILocalService
+    virtual base::app::ServiceInitializationResult onInitializeService(const base::app::CommandLine& cmdLine) override final;
+    virtual void onShutdownService() override final;
+    virtual void onSyncUpdate() override final;
 
-        fbxsdk::FbxManager* m_fbxManager;
-        base::Mutex m_lock;
-        int m_fbxFormatID;
-    };
+    fbxsdk::FbxManager* m_fbxManager;
+    base::Mutex m_lock;
+    int m_fbxFormatID;
+};
 
-    //---
+//---
 
-} // fbx
+END_BOOMER_NAMESPACE(assets)

@@ -9,43 +9,45 @@
 #include "base_app_glue.inl"
 #include "base/system/include/timing.h"
 
-namespace base
+//--
+
+BEGIN_BOOMER_NAMESPACE(base::app)
+
+class ILocalService;
+class IRemoteService;
+
+class App;
+class LocalServiceContainer;
+
+class IFramework;
+
+class CommandLine;
+
+class ICommand;
+typedef RefPtr<ICommand> CommandPtr;
+
+class CommandHost;
+typedef RefPtr<CommandHost> CommandHostPtr;
+
+END_BOOMER_NAMESPACE(base::app);
+
+//--
+
+BEGIN_BOOMER_NAMESPACE(base)
+
+/// get service
+extern BASE_APP_API void* GetServicePtr(int serviceIndex);
+
+/// get the local service by class
+template< typename T >
+INLINE T* GetService()
 {
-    namespace app
-    {
-        class ILocalService;
-        class IRemoteService;
+    static auto ptr  = (T*)GetServicePtr(reflection::ClassID<T>()->userIndex());
+    return ptr;
+}
 
-        class App;
-        class LocalServiceContainer;
+END_BOOMER_NAMESPACE(base)
 
-        class IFramework;
-
-        class CommandLine;
-
-        class ICommand;
-        typedef RefPtr<ICommand> CommandPtr;
-
-        class CommandHost;
-        typedef RefPtr<CommandHost> CommandHostPtr;
-
-    } // app
-
-    //--
-
-    /// get service
-    extern BASE_APP_API void* GetServicePtr(int serviceIndex);
-
-    /// get the local service by class
-    template< typename T >
-    INLINE T* GetService()
-    {
-        static auto ptr  = (T*)GetServicePtr(reflection::ClassID<T>()->userIndex());
-        return ptr;
-    }
-
-    //--
-
-} // base
+//--
 
 #include "configProperty.h"

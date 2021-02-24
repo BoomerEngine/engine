@@ -26,233 +26,230 @@
 	#include "apiWindowNull.h"
 #endif
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api)
+
+//--
+
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IBaseDevice);
+RTTI_END_TYPE();
+
+IBaseDevice::IBaseDevice()
+{}
+
+IBaseDevice::~IBaseDevice()
 {
-    namespace api
-    {
-		//--
+	DEBUG_CHECK_EX(m_thread == nullptr, "IBaseDevice was shut down incorectly");
+	DEBUG_CHECK_EX(m_windows == nullptr, "IBaseDevice was shut down incorectly");
+}
 
-		RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IBaseDevice);
-		RTTI_END_TYPE();
+base::Point IBaseDevice::maxRenderTargetSize() const
+{
+	base::InplaceArray<base::Rect, 8> displays;
+	m_windows->enumMonitorAreas(displays);
 
-		IBaseDevice::IBaseDevice()
-		{}
+	base::Point ret;
+	for (auto& info : displays)
+	{
+		ret.x = std::max<int>(ret.x, info.width());
+		ret.y = std::max<int>(ret.y, info.height());
+	}
 
-		IBaseDevice::~IBaseDevice()
-		{
-			DEBUG_CHECK_EX(m_thread == nullptr, "IBaseDevice was shut down incorectly");
-			DEBUG_CHECK_EX(m_windows == nullptr, "IBaseDevice was shut down incorectly");
-		}
+	ret.x = std::max<int>(ret.x, 1920);
+	ret.y = std::max<int>(ret.y, 1080);
 
-		base::Point IBaseDevice::maxRenderTargetSize() const
-		{
-			base::InplaceArray<base::Rect, 8> displays;
-			m_windows->enumMonitorAreas(displays);
+	return ret;
+}
 
-			base::Point ret;
-			for (auto& info : displays)
-			{
-				ret.x = std::max<int>(ret.x, info.width());
-				ret.y = std::max<int>(ret.y, info.height());
-			}
+bool IBaseDevice::initialize(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps)
+{
+	// create window manager
+	m_windows = createOptimalWindowManager(cmdLine);
+	if (!m_windows)
+	{
+		TRACE_ERROR("Rendering API failed to create internal window manager");
+		return false;
+	}
 
-			ret.x = std::max<int>(ret.x, 1920);
-			ret.y = std::max<int>(ret.y, 1080);
+	// create the runtime thread
+	auto thread = createOptimalThread(cmdLine);
+	if (!thread)
+	{
+		TRACE_ERROR("Rendering API failed to create internal thread");
 
-			return ret;
-		}
+		delete m_windows;
+		m_windows = nullptr;
 
-		bool IBaseDevice::initialize(const base::app::CommandLine& cmdLine, DeviceCaps& outCaps)
-		{
-			// create window manager
-			m_windows = createOptimalWindowManager(cmdLine);
-			if (!m_windows)
-			{
-				TRACE_ERROR("Rendering API failed to create internal window manager");
-				return false;
-			}
+		return false;
+	}
 
-			// create the runtime thread
-			auto thread = createOptimalThread(cmdLine);
-			if (!thread)
-			{
-				TRACE_ERROR("Rendering API failed to create internal thread");
+	// start the runtime thread
+	if (!thread->startThread(cmdLine, outCaps))
+	{
+		TRACE_ERROR("Rendering API failed to start internal thread");
 
-				delete m_windows;
-				m_windows = nullptr;
+		thread->stopThread();
+		delete thread;
 
-				return false;
-			}
+		delete m_windows;
+		m_windows = nullptr;
 
-			// start the runtime thread
-			if (!thread->startThread(cmdLine, outCaps))
-			{
-				TRACE_ERROR("Rendering API failed to start internal thread");
+		return false;
+	}
 
-				thread->stopThread();
-				delete thread;
+	// store thread
+	m_thread = thread;
 
-				delete m_windows;
-				m_windows = nullptr;
+	// we are initialized now
+	TRACE_INFO("Rendering device initialized");
+	return true;
+}
 
-				return false;
-			}
+void IBaseDevice::shutdown()
+{
+	// stop everything
+	if (m_thread)
+	{
+		m_thread->stopThread();
+		delete m_thread;
+		m_thread = nullptr;
+	}
 
-			// store thread
-			m_thread = thread;
+	// close the window manager
+	delete m_windows;
+	m_windows = nullptr;
+}
 
-			// we are initialized now
-			TRACE_INFO("Rendering device initialized");
-			return true;
-		}
+DeviceSyncInfo IBaseDevice::querySyncInfo() const
+{
+	return m_thread->syncInfo();
+}
 
-		void IBaseDevice::shutdown()
-		{
-			// stop everything
-			if (m_thread)
-			{
-				m_thread->stopThread();
-				delete m_thread;
-				m_thread = nullptr;
-			}
+bool IBaseDevice::registerCompletionCallback(DeviceCompletionType type, IDeviceCompletionCallback* callback)
+{
+	return m_thread->registerCompletionCallback(type, callback);
+}
 
-			// close the window manager
-			delete m_windows;
-			m_windows = nullptr;
-		}
+void IBaseDevice::sync(bool flush)
+{
+	PC_SCOPE_LVL1(DriverSync);
+	if (!flush)
+		m_windows->updateWindows();
+	m_thread->sync(flush);
+}
 
-		DeviceSyncInfo IBaseDevice::querySyncInfo() const
-		{
-			return m_thread->syncInfo();
-		}
+//--
 
-		bool IBaseDevice::registerCompletionCallback(DeviceCompletionType type, IDeviceCompletionCallback* callback)
-		{
-			return m_thread->registerCompletionCallback(type, callback);
-		}
+WindowManager* IBaseDevice::createOptimalWindowManager(const base::app::CommandLine& cmdLine)
+{
+	return createDefaultPlatformWindowManager(cmdLine);
+}
 
-		void IBaseDevice::sync(bool flush)
-		{
-			PC_SCOPE_LVL1(DriverSync);
-			if (!flush)
-				m_windows->updateWindows();
-			m_thread->sync(flush);
-		}
-
-		//--
-
-		WindowManager* IBaseDevice::createOptimalWindowManager(const base::app::CommandLine& cmdLine)
-		{
-			return createDefaultPlatformWindowManager(cmdLine);
-		}
-
-		WindowManager* IBaseDevice::createDefaultPlatformWindowManager(const base::app::CommandLine& cmdLine)
-		{
+WindowManager* IBaseDevice::createDefaultPlatformWindowManager(const base::app::CommandLine& cmdLine)
+{
 #ifdef PLATFORM_WINAPI
-			auto ret = new WindowManagerWinApi();
+	auto ret = new WindowManagerWinApi();
 #else
-			auto ret = new WindowManagerNull();
+	auto ret = new WindowManagerNull();
 #endif
 
-			if (!ret->initialize(true))
-			{
-				delete ret;
-				return nullptr;
-			}
+	if (!ret->initialize(true))
+	{
+		delete ret;
+		return nullptr;
+	}
 
-			return ret;
-		}
+	return ret;
+}
 
-		OutputObjectPtr IBaseDevice::createOutput(const OutputInitInfo& info)
-		{
-			if (auto* swapchain = m_thread->createOptimalSwapchain(info))
-			{
-				auto* output = new Output(m_thread, swapchain);
-				swapchain->windowInterface()->windowBindOwner(output->handle());
-				return base::RefNew<OutputObjectProxy>(output->handle(), m_thread->objectRegistry(), swapchain->flipped(), swapchain->windowInterface());
-			}
+OutputObjectPtr IBaseDevice::createOutput(const OutputInitInfo& info)
+{
+	if (auto* swapchain = m_thread->createOptimalSwapchain(info))
+	{
+		auto* output = new Output(m_thread, swapchain);
+		swapchain->windowInterface()->windowBindOwner(output->handle());
+		return base::RefNew<OutputObjectProxy>(output->handle(), m_thread->objectRegistry(), swapchain->flipped(), swapchain->windowInterface());
+	}
 
-			return nullptr;
-		}
+	return nullptr;
+}
 
-		BufferObjectPtr IBaseDevice::createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData)
-		{
-			BufferObject::Setup setup;
-			if (!validateBufferCreationSetup(info, setup))
-				return nullptr;
+BufferObjectPtr IBaseDevice::createBuffer(const BufferCreationInfo& info, const ISourceDataProvider* sourceData)
+{
+	BufferObject::Setup setup;
+	if (!validateBufferCreationSetup(info, setup))
+		return nullptr;
 
-			if (auto* obj = m_thread->createOptimalBuffer(info, sourceData))
-			{
-				return base::RefNew<BufferObjectProxy>(obj->handle(), m_thread->objectRegistry(), setup);
-			}
+	if (auto* obj = m_thread->createOptimalBuffer(info, sourceData))
+	{
+		return base::RefNew<BufferObjectProxy>(obj->handle(), m_thread->objectRegistry(), setup);
+	}
 
-			return nullptr;
-		}
+	return nullptr;
+}
 
-		ShaderObjectPtr IBaseDevice::createShaders(const ShaderData* shader)
-		{
-			if (auto* obj = m_thread->createOptimalShaders(shader))
-				return base::RefNew<ShadersObjectProxy>(obj->handle(), m_thread->objectRegistry(), shader->metadata());
+ShaderObjectPtr IBaseDevice::createShaders(const ShaderData* shader)
+{
+	if (auto* obj = m_thread->createOptimalShaders(shader))
+		return base::RefNew<ShadersObjectProxy>(obj->handle(), m_thread->objectRegistry(), shader->metadata());
 
-			return nullptr;
-		}
+	return nullptr;
+}
 
-		ImageObjectPtr IBaseDevice::createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData)
-		{
-			ImageObject::Setup setup;
-			if (!validateImageCreationSetup(info, setup))
-				return nullptr;
+ImageObjectPtr IBaseDevice::createImage(const ImageCreationInfo& info, const ISourceDataProvider* sourceData)
+{
+	ImageObject::Setup setup;
+	if (!validateImageCreationSetup(info, setup))
+		return nullptr;
 
-			if (auto* obj = m_thread->createOptimalImage(info, sourceData))
-			{
-				return base::RefNew<ImageObjectProxy>(obj->handle(), m_thread->objectRegistry(), setup);
-			}
+	if (auto* obj = m_thread->createOptimalImage(info, sourceData))
+	{
+		return base::RefNew<ImageObjectProxy>(obj->handle(), m_thread->objectRegistry(), setup);
+	}
 
-			return nullptr;
-		}
+	return nullptr;
+}
 
-		SamplerObjectPtr IBaseDevice::createSampler(const SamplerState& info)
-		{
-			if (auto* obj = m_thread->createOptimalSampler(info))
-				return base::RefNew<SamplerObject>(obj->handle(), m_thread->objectRegistry());
+SamplerObjectPtr IBaseDevice::createSampler(const SamplerState& info)
+{
+	if (auto* obj = m_thread->createOptimalSampler(info))
+		return base::RefNew<SamplerObject>(obj->handle(), m_thread->objectRegistry());
 			
-			return nullptr;
-		}
+	return nullptr;
+}
 
-		GraphicsRenderStatesObjectPtr IBaseDevice::createGraphicsRenderStates(const GraphicsRenderStatesSetup& states)
-		{
-			// TODO: share "cache" ?
+GraphicsRenderStatesObjectPtr IBaseDevice::createGraphicsRenderStates(const GraphicsRenderStatesSetup& states)
+{
+	// TODO: share "cache" ?
 
-			auto* obj = new IBaseGraphicsRenderStates(m_thread, states);
-			return base::RefNew<GraphicsRenderStatesObject>(obj->handle(), m_thread->objectRegistry(), states, obj->key());
-		}
+	auto* obj = new IBaseGraphicsRenderStates(m_thread, states);
+	return base::RefNew<GraphicsRenderStatesObject>(obj->handle(), m_thread->objectRegistry(), states, obj->key());
+}
 
-		//--
+//--
 
-		void IBaseDevice::enumMonitorAreas(base::Array<base::Rect>& outMonitorAreas) const
-		{
-			return m_windows->enumMonitorAreas(outMonitorAreas);
-		}
+void IBaseDevice::enumMonitorAreas(base::Array<base::Rect>& outMonitorAreas) const
+{
+	return m_windows->enumMonitorAreas(outMonitorAreas);
+}
 
-		void IBaseDevice::enumDisplays(base::Array<DisplayInfo>& outDisplayInfos) const
-		{
-			return m_windows->enumDisplays(outDisplayInfos);
-		}
+void IBaseDevice::enumDisplays(base::Array<DisplayInfo>& outDisplayInfos) const
+{
+	return m_windows->enumDisplays(outDisplayInfos);
+}
 
-		void IBaseDevice::enumResolutions(uint32_t displayIndex, base::Array<ResolutionInfo>& outResolutions) const
-		{
-			m_windows->enumResolutions(displayIndex, outResolutions);
-		}
+void IBaseDevice::enumResolutions(uint32_t displayIndex, base::Array<ResolutionInfo>& outResolutions) const
+{
+	m_windows->enumResolutions(displayIndex, outResolutions);
+}
 
-		//--
+//--
 
-		void IBaseDevice::submitWork(command::CommandBuffer* masterCommandBuffer, bool background)
-		{
-			(void)background; // no background rendering jobs on OpenGL :(
-			m_thread->submit(masterCommandBuffer);
-		}
+void IBaseDevice::submitWork(GPUCommandBuffer* masterCommandBuffer, bool background)
+{
+	(void)background; // no background rendering jobs on OpenGL :(
+	m_thread->submit(masterCommandBuffer);
+}
 
-		//--
+//--
 
-    } // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api)

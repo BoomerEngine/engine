@@ -11,45 +11,44 @@
 #include "editor/common/include/resourceEditorNativeFile.h"
 #include "rendering/mesh/include/renderingMesh.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+class MeshPreviewPanel;
+class MeshStructurePanel;
+class MeshMaterialsPanel;
+
+/// editor for meshes
+class EDITOR_MESH_EDITOR_API MeshEditor : public ResourceEditorNativeFile
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(MeshEditor, ResourceEditorNativeFile);
 
-    class MeshPreviewPanel;
-    class MeshStructurePanel;
-    class MeshMaterialsPanel;
+public:
+    MeshEditor(ManagedFileNativeResource* file);
+    virtual ~MeshEditor();
 
-    /// editor for meshes
-    class EDITOR_MESH_EDITOR_API MeshEditor : public ResourceEditorNativeFile
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(MeshEditor, ResourceEditorNativeFile);
+    //--
 
-    public:
-        MeshEditor(ManagedFileNativeResource* file);
-        virtual ~MeshEditor();
+    INLINE MeshPreviewPanel* previewPanel() const { return m_previewPanel; }
 
-        //--
+    //--
 
-        INLINE MeshPreviewPanel* previewPanel() const { return m_previewPanel; }
+    virtual void fillViewMenu(ui::MenuButtonContainer* menu) override;
 
-        //--
+private:
+    base::RefPtr<MeshPreviewPanel> m_previewPanel;
+    base::RefPtr<MeshStructurePanel> m_structurePanel;
+    base::RefPtr<MeshMaterialsPanel> m_materialsPanel;
 
-        virtual void fillViewMenu(ui::MenuButtonContainer* menu) override;
+    bool m_hasDefaultCamera = false;
+    base::Vector3 m_defaultCameraPosition;
+    base::Angles m_defaultCameraRotation;
 
-    private:
-        base::RefPtr<MeshPreviewPanel> m_previewPanel;
-        base::RefPtr<MeshStructurePanel> m_structurePanel;
-        base::RefPtr<MeshMaterialsPanel> m_materialsPanel;
+    void createInterface();
+    void updateMaterialHighlights();
 
-        bool m_hasDefaultCamera = false;
-        base::Vector3 m_defaultCameraPosition;
-        base::Angles m_defaultCameraRotation;
-
-        void createInterface();
-        void updateMaterialHighlights();
-
-        virtual bool initialize() override;
+    virtual bool initialize() override;
         
-        virtual void handleLocalReimport(const res::ResourcePtr& ptr) override;
-    };
+    virtual void handleLocalReimport(const res::ResourcePtr& ptr) override;
+};
 
-} // ed
+END_BOOMER_NAMESPACE(ed)

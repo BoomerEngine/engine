@@ -16,70 +16,65 @@
     #include "pipePOSIX.h"
 #endif
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::process)
+
+//---
+
+IOutputCallback::~IOutputCallback()
+{}
+
+//---
+
+IPipeReader::~IPipeReader()
+{}
+
+IPipeWriter::~IPipeWriter()
+{}
+
+IPipeWriter* IPipeWriter::Create()
 {
-    namespace process
-    {
-
-        //---
-
-        IOutputCallback::~IOutputCallback()
-        {}
-
-        //---
-
-        IPipeReader::~IPipeReader()
-        {}
-
-        IPipeWriter::~IPipeWriter()
-        {}
-
-        IPipeWriter* IPipeWriter::Create()
-        {
 #if defined(PLATFORM_WINDOWS)
-            return prv::WinPipeWriter::Create();
+    return prv::WinPipeWriter::Create();
 #elif defined(PLATFORM_POSIX)
-            return prv::POSIXPipeWriter::Create();
+    return prv::POSIXPipeWriter::Create();
 #else
-            return nullptr;
+    return nullptr;
 #endif
-        }
+}
 
-        IPipeWriter* IPipeWriter::Open(const char* pipeName)
-        {
+IPipeWriter* IPipeWriter::Open(const char* pipeName)
+{
 #if defined(PLATFORM_WINDOWS)
-            return prv::WinPipeWriter::Open(pipeName);
+    return prv::WinPipeWriter::Open(pipeName);
 #elif defined(PLATFORM_POSIX)
-            return prv::POSIXPipeWriter::Open(pipeName);
+    return prv::POSIXPipeWriter::Open(pipeName);
 #else
-            return nullptr;
+    return nullptr;
 #endif
-        }
+}
 
-        IPipeReader* IPipeReader::Create(IOutputCallback* callback)
-        {
+IPipeReader* IPipeReader::Create(IOutputCallback* callback)
+{
 #if defined(PLATFORM_WINDOWS)
-            return prv::WinPipeReader::Create(callback);
+    return prv::WinPipeReader::Create(callback);
 #elif defined(PLATFORM_POSIX)
-            return prv::POSIXPipeReader::Create(callback);
+    return prv::POSIXPipeReader::Create(callback);
 #else
-            return nullptr;
+    return nullptr;
 #endif
-        }
+}
 
-        IPipeReader* IPipeReader::Open(const char* pipeName, IOutputCallback* callback)
-        {
+IPipeReader* IPipeReader::Open(const char* pipeName, IOutputCallback* callback)
+{
 #if defined(PLATFORM_WINDOWS)
-            return prv::WinPipeReader::Open(pipeName, callback);
+    return prv::WinPipeReader::Open(pipeName, callback);
 #elif defined(PLATFORM_POSIX)
-            return prv::POSIXPipeReader::Open(pipeName, callback);
+    return prv::POSIXPipeReader::Open(pipeName, callback);
 #else
-            return nullptr;
+    return nullptr;
 #endif
-        }
+}
 
-        //---
+//---
 
-    } // threads
-
-} // inf
+END_BOOMER_NAMESPACE(base::process)

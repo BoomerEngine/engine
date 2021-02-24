@@ -10,14 +10,3 @@
 
 #include "base/containers/include/stringBuf.h"
 
-namespace base
-{
-    namespace parser
-    {
-
-       
-
-        ///-----
-
-    } // parser
-} // base

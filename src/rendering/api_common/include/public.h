@@ -8,98 +8,93 @@
 
 #include "rendering_api_common_glue.inl"
 
-namespace rendering
-{
-	namespace api
-	{
+BEGIN_BOOMER_NAMESPACE(rendering::api)
 
-		//--
+//--
 
-		class IBaseObject;
-		class IBaseDevice;
-		class IBaseThread;
+class IBaseObject;
+class IBaseDevice;
+class IBaseThread;
 		
-		class IBaseCopiableObject;
-		class IBaseFrameExecutor;
-		class IBaseObjectCache;
-		class IBaseSwapchain;
-		class IBaseBuffer;
-		class IBaseBufferView;
-		class IBaseImage;
-		class IBaseImageView;
-		class IBaseSampler;
-		class IBaseShaders;
-		class IBaseGraphicsRenderStates;
-		class IBaseVertexBindingLayout;
-		class IBaseDescriptorBindingLayout;
-		class IBaseGraphicsPipeline;
-		class IBaseComputePipeline;		
-		class IBaseRaytracePipeline;
-		class IBaseBackgroundJob;
-		class IBaseBackgroundQueue;
-		class IBaseDownloadArea;
+class IBaseCopiableObject;
+class IBaseFrameExecutor;
+class IBaseObjectCache;
+class IBaseSwapchain;
+class IBaseBuffer;
+class IBaseBufferView;
+class IBaseImage;
+class IBaseImageView;
+class IBaseSampler;
+class IBaseShaders;
+class IBaseGraphicsRenderStates;
+class IBaseVertexBindingLayout;
+class IBaseDescriptorBindingLayout;
+class IBaseGraphicsPipeline;
+class IBaseComputePipeline;		
+class IBaseRaytracePipeline;
+class IBaseBackgroundJob;
+class IBaseBackgroundQueue;
+class IBaseDownloadArea;
 
-		class ObjectRegistry;
-		class ObjectRegistryProxy;
+class ObjectRegistry;
+class ObjectRegistryProxy;
 
-		class WindowManager;
-		class FrameCompleteionQueue;
-		class FrameExecutionData;
+class WindowManager;
+class FrameCompleteionQueue;
+class FrameExecutionData;
 
-		class Output;
+class Output;
 
-		typedef base::RefPtr<IBaseBackgroundJob> BackgroundJobPtr;
+typedef base::RefPtr<IBaseBackgroundJob> BackgroundJobPtr;
 
-		//--
+//--
 
-		// type of api object (set in the IBaseObject)
-		enum class ObjectType : uint8_t
-		{
-			Unknown = 0,
+// type of api object (set in the IBaseObject)
+enum class ObjectType : uint8_t
+{
+	Unknown = 0,
 
-			Buffer,
-			Image,
-			Sampler,
-			Shaders,
-			Output,
+	Buffer,
+	Image,
+	Sampler,
+	Shaders,
+	Output,
 
-			ImageReadOnlyView,
-			ImageWritableView,
-			SampledImageView,
+	ImageReadOnlyView,
+	ImageWritableView,
+	SampledImageView,
 
-			RenderTargetView,
-			OutputRenderTargetView,
+	RenderTargetView,
+	OutputRenderTargetView,
 
-			BufferTypedView,
-			BufferUntypedView,
-			StructuredBufferView,
-			StructuredBufferWritableView,
+	BufferTypedView,
+	BufferUntypedView,
+	StructuredBufferView,
+	StructuredBufferWritableView,
 
-			GraphicsPassLayout,
-			GraphicsRenderStates,
-			GraphicsPipelineObject,
-			ComputePipelineObject,
+	GraphicsPassLayout,
+	GraphicsRenderStates,
+	GraphicsPipelineObject,
+	ComputePipelineObject,
 
-			DownloadArea,
-		};
+	DownloadArea,
+};
 
-		//--
+//--
 
-		typedef std::function<void(void)> FrameCompletionCallback;
+typedef std::function<void(void)> FrameCompletionCallback;
 
-		//--
+//--
 
-		/// type of transient buffer
-		enum class TransientBufferType
-		{
-			Unknown,
-			Staging,
-			Constants,
-			Geometry,
-		};
+/// type of transient buffer
+enum class TransientBufferType
+{
+	Unknown,
+	Staging,
+	Constants,
+	Geometry,
+};
 
-		//--
+//--
 
-	} // api
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::api)

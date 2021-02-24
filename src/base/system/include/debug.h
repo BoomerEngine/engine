@@ -8,89 +8,86 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::debug)
+
+//---
+
+class BASE_SYSTEM_API SymbolName
 {
-    namespace debug
-    {
-        //---
+public:
+    static const uint32_t MAX_SIZE = 512;
 
-        class BASE_SYSTEM_API SymbolName
-        {
-        public:
-            static const uint32_t MAX_SIZE = 512;
+    SymbolName();
 
-            SymbolName();
+    INLINE const char* c_str() const { return m_txt; }
 
-            INLINE const char* c_str() const { return m_txt; }
+    void set(const char* txt);
+    void append(const char* txt);
 
-            void set(const char* txt);
-            void append(const char* txt);
+private:
+    char m_txt[MAX_SIZE + 1];
+};
 
-        private:
-            char m_txt[MAX_SIZE + 1];
-        };
+//---
 
-        //---
+class BASE_SYSTEM_API Callstack
+{
+public:
+    static const uint32_t MAX_FRAMES = 64;
 
-        class BASE_SYSTEM_API Callstack
-        {
-        public:
-            static const uint32_t MAX_FRAMES = 64;
-
-            Callstack();
+    Callstack();
             
-            void reset();
-            void push(uint64_t address);
+    void reset();
+    void push(uint64_t address);
 
-            INLINE bool empty() const
-            {
-                return (m_size == 0);
-            }
+    INLINE bool empty() const
+    {
+        return (m_size == 0);
+    }
 
-            INLINE uint32_t size() const
-            {
-                return m_size;
-            }
+    INLINE uint32_t size() const
+    {
+        return m_size;
+    }
 
-            INLINE const uint64_t operator[](const uint32_t index) const
-            {
-                if (index < MAX_FRAMES)
-                    return m_frames[index];
-                return 0;
-            }
+    INLINE const uint64_t operator[](const uint32_t index) const
+    {
+        if (index < MAX_FRAMES)
+            return m_frames[index];
+        return 0;
+    }
 
-			void print(IFormatStream& f, const char* lineSearator = "\n") const;
+	void print(IFormatStream& f, const char* lineSearator = "\n") const;
 
-            uint64_t uniqueHash() const;
+    uint64_t uniqueHash() const;
 
-        private:
-            uint32_t m_size;
-            uint64_t m_frames[MAX_FRAMES];
-        };
+private:
+    uint32_t m_size;
+    uint64_t m_frames[MAX_FRAMES];
+};
 
-        //---
+//---
 
-        // Debug break function
-        extern BASE_SYSTEM_API void Break();
+// Debug break function
+extern BASE_SYSTEM_API void Break();
 
-        // Grab current callstack, returns number of function grabbed (0 if error)
-        extern BASE_SYSTEM_API bool GrabCallstack(uint32_t skipInitialFunctions, const void* exptr, Callstack& outCallstack);
+// Grab current callstack, returns number of function grabbed (0 if error)
+extern BASE_SYSTEM_API bool GrabCallstack(uint32_t skipInitialFunctions, const void* exptr, Callstack& outCallstack);
 
-        // Get human readable function name
-        extern BASE_SYSTEM_API bool TranslateSymbolName(uint64_t functionAddress, SymbolName& outSymbolName, SymbolName& outFileName);
+// Get human readable function name
+extern BASE_SYSTEM_API bool TranslateSymbolName(uint64_t functionAddress, SymbolName& outSymbolName, SymbolName& outFileName);
 
-        // Check if debugger is present (windows mostly)
-        extern BASE_SYSTEM_API bool DebuggerPresent();
+// Check if debugger is present (windows mostly)
+extern BASE_SYSTEM_API bool DebuggerPresent();
 
-        //--
+//--
 
-        // Get indexed callstack (as an easy to save number)
-        extern BASE_SYSTEM_API uint32_t CaptureCallstack(uint32_t skipInitialFunctions);
+// Get indexed callstack (as an easy to save number)
+extern BASE_SYSTEM_API uint32_t CaptureCallstack(uint32_t skipInitialFunctions);
 
-        // Resolve callstack by ID, can be used to print it
-        extern BASE_SYSTEM_API const Callstack& ResolveCapturedCallstack(uint32_t id);
+// Resolve callstack by ID, can be used to print it
+extern BASE_SYSTEM_API const Callstack& ResolveCapturedCallstack(uint32_t id);
 
-        //--
+//--
 
-    } // debug
-} // base
+END_BOOMER_NAMESPACE(base::debug)

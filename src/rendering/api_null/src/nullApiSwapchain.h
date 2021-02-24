@@ -10,30 +10,23 @@
 
 #include "rendering/api_common/include/apiSwapchain.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api::nul)
+
+///---
+
+class Swapchain : public IBaseWindowedSwapchain
 {
-    namespace api
-    {
-		namespace nul
-		{
-			///---
+public:
+	Swapchain(OutputClass cls, const WindowSetup& setup);
+	virtual ~Swapchain(); // can be destroyed only on render thread
 
-			class Swapchain : public IBaseWindowedSwapchain
-			{
-			public:
-				Swapchain(OutputClass cls, const WindowSetup& setup);
-				virtual ~Swapchain(); // can be destroyed only on render thread
+	virtual bool acquire() override final;
+	virtual void present(bool swap = true) override final;
 
-				virtual bool acquire() override final;
-				virtual void present(bool swap = true) override final;
+private:
+	bool m_bound = false;
+};
 
-			private:
-				bool m_bound = false;
-			};
+//--
 
-			//--
-
-		} // nul
-    } // api
-} // rendering
-
+END_BOOMER_NAMESPACE(rendering::api::nul)

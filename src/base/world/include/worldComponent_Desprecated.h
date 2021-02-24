@@ -11,11 +11,6 @@
 
 #include "base/script/include/scriptObject.h"
 
-namespace base
-{
-    namespace world
-    {
-
 #if 0
         //---
 
@@ -328,6 +323,3 @@ namespace base
 
         //---
 #endif
-
-    } // world
-} // base

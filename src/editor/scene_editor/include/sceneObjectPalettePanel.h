@@ -12,50 +12,50 @@
 #include "base/world/include/worldEntity.h"
 #include "base/ui/include/uiSimpleListModel.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//--
+
+struct SceneResourceBasedObjectFactoryInfo
 {
-    //--
+    RTTI_DECLARE_NONVIRTUAL_CLASS(SceneResourceBasedObjectFactoryInfo);
 
-    struct SceneResourceBasedObjectFactoryInfo
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(SceneResourceBasedObjectFactoryInfo);
+public:
+    ClassType resourceClass;
+    SpecificClassType<world::Entity> entityClass;
+    Array<SpecificClassType<world::Entity>> allowedEntityClasses;
+};
 
-    public:
-        ClassType resourceClass;
-        SpecificClassType<world::Entity> entityClass;
-        Array<SpecificClassType<world::Entity>> allowedEntityClasses;
-    };
+class SceneResourceBasedObjectFactoryListModel;
 
-    class SceneResourceBasedObjectFactoryListModel;
+//--
 
-    //--
+/// general object palette panel for scene editor
+class EDITOR_SCENE_EDITOR_API SceneObjectPalettePanel : public ui::IElement
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(SceneObjectPalettePanel, ui::IElement);
 
-    /// general object palette panel for scene editor
-    class EDITOR_SCENE_EDITOR_API SceneObjectPalettePanel : public ui::IElement
-    {
-        RTTI_DECLARE_VIRTUAL_CLASS(SceneObjectPalettePanel, ui::IElement);
+public:
+    SceneObjectPalettePanel(ScenePreviewContainer* preview);
+    virtual ~SceneObjectPalettePanel();
 
-    public:
-        SceneObjectPalettePanel(ScenePreviewContainer* preview);
-        virtual ~SceneObjectPalettePanel();
+    virtual void configSave(const ui::ConfigBlock& block) const;
+    virtual void configLoad(const ui::ConfigBlock& block);
 
-        virtual void configSave(const ui::ConfigBlock& block) const;
-        virtual void configLoad(const ui::ConfigBlock& block);
+    SpecificClassType<world::Entity> selectedEntityClass(ClassType resClass) const;
 
-        SpecificClassType<world::Entity> selectedEntityClass(ClassType resClass) const;
+private:
+    Array<SceneResourceBasedObjectFactoryInfo> m_resourceBindings;
 
-    private:
-        Array<SceneResourceBasedObjectFactoryInfo> m_resourceBindings;
+    ui::ListViewPtr m_classMappingList;
+    RefPtr<SceneResourceBasedObjectFactoryListModel> m_classMappingModel;
 
-        ui::ListViewPtr m_classMappingList;
-        RefPtr<SceneResourceBasedObjectFactoryListModel> m_classMappingModel;
+    ui::ListViewPtr m_favouritePrefabsList;
 
-        ui::ListViewPtr m_favouritePrefabsList;
+    void enumerateResourceClasses();
+    void createInterface();
+};
 
-        void enumerateResourceClasses();
-        void createInterface();
-    };
+//--
 
-    //--
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

@@ -10,26 +10,23 @@
 
 #include "base/resource/include/resource.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::world)
+
+//---
+
+/// Uncooked scene
+/// Layer is composed of a list of node templates
+class BASE_WORLD_API RawScene : public res::IResource
 {
-    namespace world
-    {
-        //---
+    RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
+    RTTI_DECLARE_VIRTUAL_CLASS(RawScene, res::IResource);
 
-        /// Uncooked scene
-        /// Layer is composed of a list of node templates
-        class BASE_WORLD_API RawScene : public res::IResource
-        {
-            RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
-            RTTI_DECLARE_VIRTUAL_CLASS(RawScene, res::IResource);
+public:
+    RawScene();
 
-        public:
-            RawScene();
+private:
+};
 
-        private:
-        };
+//---
 
-        //---
-
-    } // game
-} // base
+END_BOOMER_NAMESPACE(base::world)

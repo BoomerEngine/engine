@@ -11,113 +11,110 @@
 #include "ioFileIteratorWindows.h"
 #include "base/containers/include/utf8StringFunctions.h"
 
+BEGIN_BOOMER_NAMESPACE(base::io)
 
-namespace base
+namespace prv
 {
-    namespace io
+
+    WinFileIterator::WinFileIterator(const wchar_t* pathWithPattern, bool allowFiles, bool allowDirs)
+        : m_allowDirs(allowDirs)
+        , m_allowFiles(allowFiles)
     {
-        namespace prv
+        //wchar_t searchPattern[1024];
+        // Create the pattern
+        //memcpy(searchPattern, path.data(), path.length() * sizeof(wchar_t)); // TODO: fix
+		//wcscat_s(searchPattern, ARRAY_COUNT(searchPattern), pattern);
+
+        // Format the search path
+        m_findHandle = FindFirstFileW(pathWithPattern, &m_findData);
+
+        // Get first valid entry
+        while (!validateEntry())
+            if (!nextEntry())
+                break;
+    }
+
+    WinFileIterator::~WinFileIterator()
+    {
+        // Close search handle
+        if (m_findHandle != INVALID_HANDLE_VALUE)
         {
+            FindClose(m_findHandle);
+            m_findHandle = INVALID_HANDLE_VALUE;
+        }
+    }
 
-            WinFileIterator::WinFileIterator(const wchar_t* pathWithPattern, bool allowFiles, bool allowDirs)
-                : m_allowDirs(allowDirs)
-                , m_allowFiles(allowFiles)
-            {
-                //wchar_t searchPattern[1024];
-                // Create the pattern
-                //memcpy(searchPattern, path.data(), path.length() * sizeof(wchar_t)); // TODO: fix
-				//wcscat_s(searchPattern, ARRAY_COUNT(searchPattern), pattern);
+    const wchar_t* WinFileIterator::fileNameRaw() const
+    {
+        if (m_findHandle != INVALID_HANDLE_VALUE)
+            return m_findData.cFileName;
 
-                // Format the search path
-                m_findHandle = FindFirstFileW(pathWithPattern, &m_findData);
+        return nullptr;
+    }
 
-                // Get first valid entry
-                while (!validateEntry())
-                    if (!nextEntry())
-                        break;
-            }
+    const char* WinFileIterator::fileName() const
+    {
+        if (m_findHandle != INVALID_HANDLE_VALUE) {
+            utf8::FromUniChar(m_fileName, MAX_PATH-1, m_findData.cFileName, wcslen(m_findData.cFileName));
+            return m_fileName;
+        }
 
-            WinFileIterator::~WinFileIterator()
-            {
-                // Close search handle
-                if (m_findHandle != INVALID_HANDLE_VALUE)
-                {
-                    FindClose(m_findHandle);
-                    m_findHandle = INVALID_HANDLE_VALUE;
-                }
-            }
+        return nullptr;
+    }
 
-            const wchar_t* WinFileIterator::fileNameRaw() const
-            {
-                if (m_findHandle != INVALID_HANDLE_VALUE)
-                    return m_findData.cFileName;
+    bool WinFileIterator::validateEntry() const
+    {
+        if (m_findHandle == INVALID_HANDLE_VALUE)
+            return false;
 
-                return nullptr;
-            }
+        if (0 == wcscmp(m_findData.cFileName, L"."))
+            return false;
 
-            const char* WinFileIterator::fileName() const
-            {
-                if (m_findHandle != INVALID_HANDLE_VALUE) {
-                    utf8::FromUniChar(m_fileName, MAX_PATH-1, m_findData.cFileName, wcslen(m_findData.cFileName));
-                    return m_fileName;
-                }
+        if (0 == wcscmp(m_findData.cFileName, L".."))
+            return false;
 
-                return nullptr;
-            }
+        // Skip filtered
+        bool isDirectory = 0 != (m_findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+        if ((isDirectory && !m_allowDirs) || (!isDirectory && !m_allowFiles))
+            return false;
 
-            bool WinFileIterator::validateEntry() const
-            {
-                if (m_findHandle == INVALID_HANDLE_VALUE)
-                    return false;
+        return true;
+    }
 
-                if (0 == wcscmp(m_findData.cFileName, L"."))
-                    return false;
+    bool WinFileIterator::nextEntry()
+    {
+        if (m_findHandle == INVALID_HANDLE_VALUE)
+            return false;
 
-                if (0 == wcscmp(m_findData.cFileName, L".."))
-                    return false;
+        if (!FindNextFile(m_findHandle, &m_findData))
+        {
+            FindClose(m_findHandle);
+            m_findHandle = INVALID_HANDLE_VALUE;
+            return false;
+        }
 
-                // Skip filtered
-                bool isDirectory = 0 != (m_findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
-                if ((isDirectory && !m_allowDirs) || (!isDirectory && !m_allowFiles))
-                    return false;
+        return true;
+    }
 
-                return true;
-            }
+    void WinFileIterator::operator++(int)
+    {
+        while (nextEntry())
+            if (validateEntry())
+                break;
+    }
 
-            bool WinFileIterator::nextEntry()
-            {
-                if (m_findHandle == INVALID_HANDLE_VALUE)
-                    return false;
+    void WinFileIterator::operator++()
+    {
+        while (nextEntry())
+            if (validateEntry())
+                break;
+    }
 
-                if (!FindNextFile(m_findHandle, &m_findData))
-                {
-                    FindClose(m_findHandle);
-                    m_findHandle = INVALID_HANDLE_VALUE;
-                    return false;
-                }
+    WinFileIterator::operator bool() const
+    {
+        return m_findHandle != INVALID_HANDLE_VALUE;
+    }
 
-                return true;
-            }
+} // prv
 
-            void WinFileIterator::operator++(int)
-            {
-                while (nextEntry())
-                    if (validateEntry())
-                        break;
-            }
-
-            void WinFileIterator::operator++()
-            {
-                while (nextEntry())
-                    if (validateEntry())
-                        break;
-            }
-
-            WinFileIterator::operator bool() const
-            {
-                return m_findHandle != INVALID_HANDLE_VALUE;
-            }
-
-        } // prv
-    } // io
-} // base
+END_BOOMER_NAMESPACE(base::io)

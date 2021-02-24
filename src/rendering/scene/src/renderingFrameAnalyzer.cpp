@@ -9,22 +9,18 @@
 #include "build.h"
 #include "renderingFrameAnalyzer.h"
 
-namespace rendering
-{
-    namespace scene
-    {
+BEGIN_BOOMER_NAMESPACE(rendering::scene)
 
-        IFrameAnalyzer::~IFrameAnalyzer()
-        {}
+IFrameAnalyzer::~IFrameAnalyzer()
+{}
 
-        void IFrameAnalyzer::handleRegionBegin(const char* name, RegionType type)
-        {}
+void IFrameAnalyzer::handleRegionBegin(const char* name, RegionType type)
+{}
 
-        void IFrameAnalyzer::handleRegionEnd(RegionType type)
-        {}
+void IFrameAnalyzer::handleRegionEnd(RegionType type)
+{}
 
-        void IFrameAnalyzer::handleCommand(const command::OpBase* op)
-        {}
+void IFrameAnalyzer::handleCommand(const GPUBaseOpcode* op)
+{}
 
-    } // scene
-} // rendering
+END_BOOMER_NAMESPACE(rendering::scene)

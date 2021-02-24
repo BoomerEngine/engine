@@ -197,20 +197,20 @@ namespace application
 
     //--
 
-    void LauncherApp::renderGame(rendering::command::CommandWriter& parentCmd, const game::HostViewport& viewport)
+    void LauncherApp::renderGame(rendering::GPUCommandWriter& parentCmd, const game::HostViewport& viewport)
     {
-        rendering::command::CommandWriter cmd(parentCmd.opCreateChildCommandBuffer());
+        rendering::GPUCommandWriter cmd(parentCmd.opCreateChildCommandBuffer());
         m_gameHost->render(cmd, viewport);
     }
 
-    void LauncherApp::renderOverlay(rendering::command::CommandWriter& cmd, const game::HostViewport& viewport)
+    void LauncherApp::renderOverlay(rendering::GPUCommandWriter& cmd, const game::HostViewport& viewport)
     {
         // TODO: imgui debug panels 
     }
 
     void LauncherApp::renderFrame()
     {
-        rendering::command::CommandWriter cmd("AppFrame");
+        rendering::GPUCommandWriter cmd("AppFrame");
 
         if (auto output = cmd.opAcquireOutput(m_renderingOutput))
         {

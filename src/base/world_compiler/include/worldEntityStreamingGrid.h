@@ -12,67 +12,63 @@
 #include "base/world/include/worldEntity.h"
 #include "base/world/include/worldNodeTemplate.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::world)
+
+//---
+
+// cell in the streaming grid
+struct BASE_WORLD_COMPILER_API SourceStreamingGridCell
 {
-    namespace world
-    {
+    int cellX = 0;
+    int cellY = 0;
+    int level = 0;
 
-        //---
+    Array<RefPtr<SourceIsland>> islands;
+};
 
-        // cell in the streaming grid
-        struct BASE_WORLD_COMPILER_API SourceStreamingGridCell
-        {
-            int cellX = 0;
-            int cellY = 0;
-            int level = 0;
+//---
 
-            Array<RefPtr<SourceIsland>> islands;
-        };
+// cell in the streaming grid
+struct BASE_WORLD_COMPILER_API SourceStreamingGridLevel
+{
+    float cellSize = 0.0f;
+    Rect cellArea;
 
-        //---
+    Array<SourceStreamingGridCell> cells;
+};
 
-        // cell in the streaming grid
-        struct BASE_WORLD_COMPILER_API SourceStreamingGridLevel
-        {
-            float cellSize = 0.0f;
-            Rect cellArea;
+//--
 
-            Array<SourceStreamingGridCell> cells;
-        };
+// streaming grid
+struct BASE_WORLD_COMPILER_API SourceStreamingGrid
+{
+    float baseCellSize = 0.0f;
+    Rect baseCellArea;
+    Box streamingArea;
 
-        //--
+    Array<SourceStreamingGridLevel> levels; // levels - from smallest cell to largest
+};
 
-        // streaming grid
-        struct BASE_WORLD_COMPILER_API SourceStreamingGrid
-        {
-            float baseCellSize = 0.0f;
-            Rect baseCellArea;
-            Box streamingArea;
+//--
 
-            Array<SourceStreamingGridLevel> levels; // levels - from smallest cell to largest
-        };
+// initialize grid for given total world streaming box
+extern BASE_WORLD_COMPILER_API void InitializeGrid(const Box& totalStreamableArea, float smallestCellSize, float largestStreamingDistance, SourceStreamingGrid& outGrid);
 
-        //--
+// insert island into streaming grid
+extern BASE_WORLD_COMPILER_API void InsertIslandIntoGrid(SourceIsland* island, SourceStreamingGrid& outGrid);
 
-        // initialize grid for given total world streaming box
-        extern BASE_WORLD_COMPILER_API void InitializeGrid(const Box& totalStreamableArea, float smallestCellSize, float largestStreamingDistance, SourceStreamingGrid& outGrid);
+// print stats
+extern BASE_WORLD_COMPILER_API void DumpGrid(const SourceStreamingGrid& grid);
 
-        // insert island into streaming grid
-        extern BASE_WORLD_COMPILER_API void InsertIslandIntoGrid(SourceIsland* island, SourceStreamingGrid& outGrid);
+// collect non empty cells
+extern BASE_WORLD_COMPILER_API void CollectFinalCells(const SourceStreamingGrid& grid, Array<const SourceStreamingGridCell*>& outCells);
 
-        // print stats
-        extern BASE_WORLD_COMPILER_API void DumpGrid(const SourceStreamingGrid& grid);
+// build island from data
+extern BASE_WORLD_COMPILER_API RefPtr<StreamingIsland> BuildIsland(const SourceIsland* island);
 
-        // collect non empty cells
-        extern BASE_WORLD_COMPILER_API void CollectFinalCells(const SourceStreamingGrid& grid, Array<const SourceStreamingGridCell*>& outCells);
+// build cell data
+//extern BASE_WORLD_COMPILER_API RefPtr<StreamingSector> BuildSectorFromCell(const SourceStreamingGridCell& cell);
 
-        // build island from data
-        extern BASE_WORLD_COMPILER_API RefPtr<StreamingIsland> BuildIsland(const SourceIsland* island);
+//---
 
-        // build cell data
-        //extern BASE_WORLD_COMPILER_API RefPtr<StreamingSector> BuildSectorFromCell(const SourceStreamingGridCell& cell);
-
-        //---
-
-    } // world
-} // base
+END_BOOMER_NAMESPACE(base::world)

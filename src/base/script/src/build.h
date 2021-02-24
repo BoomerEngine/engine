@@ -8,16 +8,12 @@
 
 #include "public.h"
 
-namespace base
-{
-    namespace script
-    {
+BEGIN_BOOMER_NAMESPACE(base::script)
 
-        //--
+//--
 
-        class CompiledProject;
+class CompiledProject;
 
-        //--
+//--
 
-    } // script
-} // base
+END_BOOMER_NAMESPACE(base::script)

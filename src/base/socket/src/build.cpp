@@ -13,62 +13,59 @@
     #pragma comment(lib, "Ws2_32.lib")
 #endif
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::socket)
+
+void Initialize()
 {
-    namespace socket
-    {
-        void Initialize()
-        {
 #ifdef PLATFORM_WINDOWS
-            WSADATA wsaData;
-            int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
-            if (result != NO_ERROR) {
-                FATAL_ERROR(TempString("WSAStartup failed with error {}", result));
-                Shutdown();
-            }
+    WSADATA wsaData;
+    int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (result != NO_ERROR) {
+        FATAL_ERROR(TempString("WSAStartup failed with error {}", result));
+        Shutdown();
+    }
 #endif
-        }
+}
 
-        void Shutdown()
-        {
+void Shutdown()
+{
 #ifdef PLATFORM_WINDOWS
-            WSACleanup();
+    WSACleanup();
 #endif
-        }
+}
 
-        int GetSocketError()
-        {
+int GetSocketError()
+{
 #if defined (PLATFORM_WINDOWS)
-            return WSAGetLastError();
+    return WSAGetLastError();
 #else
-            return errno;
+    return errno;
 #endif
-        }
+}
 
-        bool WouldBlock(int error)
-        {
+bool WouldBlock(int error)
+{
 #if defined (PLATFORM_WINDOWS)
-            if (error == WSAEWOULDBLOCK)
-                return true;
+    if (error == WSAEWOULDBLOCK)
+        return true;
 #else
-            if (error == EWOULDBLOCK)
-                return true;
+    if (error == EWOULDBLOCK)
+        return true;
 #endif
-            return false;
-        }
+    return false;
+}
 
-        bool PortUnreachable(int error)
-        {
+bool PortUnreachable(int error)
+{
 #if defined (PLATFORM_WINDOWS)
-            return error == 10054;
+    return error == 10054;
 #else
-            // TODO: Do other systems do the naughty things Windows does?
-            return false;
+    // TODO: Do other systems do the naughty things Windows does?
+    return false;
 #endif
-        }
+}
 
-    } // socket
-} // base
+END_BOOMER_NAMESPACE(base::socket)
 
 DECLARE_MODULE(PROJECT_NAME)
 {

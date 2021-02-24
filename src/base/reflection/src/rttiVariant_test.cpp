@@ -15,7 +15,7 @@
 
 DECLARE_TEST_FILE(RttiVariant);
 
-using namespace base;
+BEGIN_BOOMER_NAMESPACE(base::test)
 
 TEST(VariantTest, CreateEmpty)
 {
@@ -231,43 +231,38 @@ TEST(VariantTest, CreateNestedVariants)
     ASSERT_EQ(42, str2);
 }
 
-namespace tests
+class VariantTestClass : public IObject
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(VariantTestClass, IObject);
 
-    class VariantTestClass : public IObject
+public:
+    int data = 0;
+    bool* destroyFlag = nullptr;
+
+    virtual ~VariantTestClass()
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(VariantTestClass, IObject);
+        if (destroyFlag)
+            *destroyFlag = true;
+    }
+};
 
-    public:
-        int data = 0;
-        bool* destroyFlag = nullptr;
-
-        virtual ~VariantTestClass()
-        {
-            if (destroyFlag)
-                *destroyFlag = true;
-        }
-    };
-
-    RTTI_BEGIN_TYPE_CLASS(VariantTestClass);
-    RTTI_END_TYPE();
-
-} // test
+RTTI_BEGIN_TYPE_CLASS(VariantTestClass);
+RTTI_END_TYPE();
 
 TEST(VariantTest, CreateVariantSharedPtr)
 {
-    auto ptr = RefNew<tests::VariantTestClass>();
+    auto ptr = RefNew<VariantTestClass>();
     Variant a = CreateVariant(ptr);
-    ASSERT_TRUE(a.type() == base::reflection::GetTypeObject<RefPtr<tests::VariantTestClass>>());
+    ASSERT_TRUE(a.type() == base::reflection::GetTypeObject<RefPtr<VariantTestClass>>());
 }
 
 TEST(VariantTest, SharedPtrVariantPointsToTheSameObject)
 {
-    auto ptr = RefNew<tests::VariantTestClass>();
+    auto ptr = RefNew<VariantTestClass>();
     Variant a = CreateVariant(ptr);
-    ASSERT_TRUE(a.type() == base::reflection::GetTypeObject<RefPtr<tests::VariantTestClass>>());
+    ASSERT_TRUE(a.type() == base::reflection::GetTypeObject<RefPtr<VariantTestClass>>());
 
-    const auto& str = *(const RefPtr<tests::VariantTestClass>*)a.data();
+    const auto& str = *(const RefPtr<VariantTestClass>*)a.data();
     ASSERT_EQ(str.get(), ptr.get());
 }
 
@@ -275,11 +270,11 @@ TEST(VariantTest, SharedPtrVariantKeepsObjectAlive)
 {
     bool destroyFlag = false;
 
-    auto ptr = RefNew<tests::VariantTestClass>();
+    auto ptr = RefNew<VariantTestClass>();
     ptr->destroyFlag = &destroyFlag;
 
     Variant a = CreateVariant(ptr);
-    ASSERT_TRUE(a.type() == base::reflection::GetTypeObject<RefPtr<tests::VariantTestClass>>());
+    ASSERT_TRUE(a.type() == base::reflection::GetTypeObject<RefPtr<VariantTestClass>>());
     ASSERT_FALSE(destroyFlag);
 
     ptr.reset();
@@ -302,3 +297,5 @@ TEST(Variant, CreateStruct)
     std::string pat = "variant(Matrix) = { \"class\" : \"Matrix\", \"id\" : \"1\", \"x\" : { \"class\" : \"Vector4\", \"id\" : \"1\", \"x\" : \"1.000000\"}, \"y\" : { \"class\" : \"Vector4\", \"id\" : \"2\", \"y\" : \"1.000000\"}, \"z\" : { \"class\" : \"Vector4\", \"id\" : \"3\", \"z\" : \"1.000000\"}, \"w\" : { \"class\" : \"Vector4\", \"id\" : \"4\", \"w\" : \"1.000000\"}}";
     ASSERT_EQ(pat, str);
 }*/
+
+END_BOOMER_NAMESPACE(base::test)

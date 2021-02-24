@@ -8,10 +8,7 @@
 
 #pragma once
 
-namespace rendering
-{
-    namespace api
-    {
+BEGIN_BOOMER_NAMESPACE(rendering::api)
         namespace gl4
         {
 

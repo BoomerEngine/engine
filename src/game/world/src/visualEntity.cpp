@@ -15,109 +15,108 @@
 #include "rendering/scene/include/renderingSceneCommand.h"
 #include "rendering/world/include/renderingSystem.h"
 
-namespace game
+BEGIN_BOOMER_NAMESPACE(game)
+
+//--
+
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IVisualEntity);
+RTTI_END_TYPE();
+
+IVisualEntity::IVisualEntity()
 {
-
-    //--
-
-    RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IVisualEntity);
-    RTTI_END_TYPE();
-
-    IVisualEntity::IVisualEntity()
-    {
-    }
+}
     
-    void IVisualEntity::handleAttach()
+void IVisualEntity::handleAttach()
+{
+    TBaseClass::handleAttach();
+    createRenderingProxy();
+}
+
+void IVisualEntity::handleDetach()
+{
+    TBaseClass::handleDetach();
+    destroyRenderingProxy();
+}
+
+void IVisualEntity::recreateRenderingProxy()
+{
+    if (attached())
     {
-        TBaseClass::handleAttach();
+        destroyRenderingProxy();
         createRenderingProxy();
     }
-
-    void IVisualEntity::handleDetach()
-    {
-        TBaseClass::handleDetach();
-        destroyRenderingProxy();
-    }
-
-    void IVisualEntity::recreateRenderingProxy()
-    {
-        if (attached())
-        {
-            destroyRenderingProxy();
-            createRenderingProxy();
-        }
-    }
+}
     
-    void IVisualEntity::createRenderingProxy()
-    {
-        DEBUG_CHECK_RETURN(!m_proxy);
+void IVisualEntity::createRenderingProxy()
+{
+    DEBUG_CHECK_RETURN(!m_proxy);
 
+    if (auto* scene = system<rendering::RenderingSystem>())
+    {
+        m_proxy = handleCreateProxy(scene->scene());
+
+        if (m_proxy)
+            scene->scene()->attachProxy(m_proxy);
+    }
+}
+
+void IVisualEntity::destroyRenderingProxy()
+{
+    if (m_proxy)
+    {
+        if (auto* scene = system<rendering::RenderingSystem>())
+            scene->scene()->dettachProxy(m_proxy);
+
+        m_proxy.reset();
+    }
+}
+
+void IVisualEntity::handleTransformUpdate(const base::AbsoluteTransform& transform)
+{
+    TBaseClass::handleTransformUpdate(transform);
+
+    if (m_proxy)
+    {
         if (auto* scene = system<rendering::RenderingSystem>())
         {
-            m_proxy = handleCreateProxy(scene->scene());
-
-            if (m_proxy)
-                scene->scene()->attachProxy(m_proxy);
+            scene->scene()->moveProxy(m_proxy, localToWorld());
         }
     }
+}
 
-    void IVisualEntity::destroyRenderingProxy()
+void IVisualEntity::handleSelectionChanged()
+{
+    TBaseClass::handleSelectionChanged();
+
+    if (m_proxy)
     {
-        if (m_proxy)
+        if (auto* scene = system<rendering::RenderingSystem>())
         {
-            if (auto* scene = system<rendering::RenderingSystem>())
-                scene->scene()->dettachProxy(m_proxy);
+            rendering::scene::ObjectProxyFlags clearFlags, setFlags;
 
-            m_proxy.reset();
+            if (selected())
+                setFlags |= rendering::scene::ObjectProxyFlagBit::Selected;
+            else
+                clearFlags |= rendering::scene::ObjectProxyFlagBit::Selected;
+
+            scene->scene()->changeProxyFlags(m_proxy, clearFlags, setFlags);
         }
     }
+}
 
-    void IVisualEntity::handleTransformUpdate(const base::AbsoluteTransform& transform)
-    {
-        TBaseClass::handleTransformUpdate(transform);
+bool IVisualEntity::initializeFromTemplateProperties(const base::ITemplatePropertyValueContainer& templateProperties)
+{
+    if (!TBaseClass::initializeFromTemplateProperties(templateProperties))
+        return false;
 
-        if (m_proxy)
-        {
-            if (auto* scene = system<rendering::RenderingSystem>())
-            {
-                scene->scene()->moveProxy(m_proxy, localToWorld());
-            }
-        }
-    }
+    return true;
+}
 
-    void IVisualEntity::handleSelectionChanged()
-    {
-        TBaseClass::handleSelectionChanged();
+void IVisualEntity::queryTemplateProperties(base::ITemplatePropertyBuilder& outTemplateProperties) const
+{
+    TBaseClass::queryTemplateProperties(outTemplateProperties);
+}
 
-        if (m_proxy)
-        {
-            if (auto* scene = system<rendering::RenderingSystem>())
-            {
-                rendering::scene::ObjectProxyFlags clearFlags, setFlags;
+//--
 
-                if (selected())
-                    setFlags |= rendering::scene::ObjectProxyFlagBit::Selected;
-                else
-                    clearFlags |= rendering::scene::ObjectProxyFlagBit::Selected;
-
-                scene->scene()->changeProxyFlags(m_proxy, clearFlags, setFlags);
-            }
-        }
-    }
-
-    bool IVisualEntity::initializeFromTemplateProperties(const base::ITemplatePropertyValueContainer& templateProperties)
-    {
-        if (!TBaseClass::initializeFromTemplateProperties(templateProperties))
-            return false;
-
-        return true;
-    }
-
-    void IVisualEntity::queryTemplateProperties(base::ITemplatePropertyBuilder& outTemplateProperties) const
-    {
-        TBaseClass::queryTemplateProperties(outTemplateProperties);
-    }
-
-    //--
-        
-} // game
+END_BOOMER_NAMESPACE(game)

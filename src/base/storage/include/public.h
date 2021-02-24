@@ -8,27 +8,22 @@
 
 #include "base_storage_glue.inl"
 
-namespace base
-{
-    namespace storage
-    {
+BEGIN_BOOMER_NAMESPACE(base::storage)
 
-        class XMLData;
-        typedef RefPtr<XMLData> XMLDataPtr;
-        typedef res::Ref< XMLData> XMLDataRef;
+class XMLData;
+typedef RefPtr<XMLData> XMLDataPtr;
+typedef res::Ref< XMLData> XMLDataRef;
 
-        class TableData;
-        typedef RefPtr<TableData> TableDataPtr;
+class TableData;
+typedef RefPtr<TableData> TableDataPtr;
 
-        class Table;
-        typedef RefPtr<Table> TablePtr;
+class Table;
+typedef RefPtr<Table> TablePtr;
 
-        class TableBuilder;
-        class TableEntry;
+class TableBuilder;
+class TableEntry;
 
-        typedef std::function<bool(const TableEntry & child)> TTableArrayIterator;
-        typedef std::function<bool(const char * key, const TableEntry& child)> TTableIterator;
+typedef std::function<bool(const TableEntry & child)> TTableArrayIterator;
+typedef std::function<bool(const char * key, const TableEntry& child)> TTableIterator;
 
-    } // storage
-} // base
-
+END_BOOMER_NAMESPACE(base::storage)

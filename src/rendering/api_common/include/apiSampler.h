@@ -12,33 +12,29 @@
 
 #include "rendering/device/include/renderingSamplerState.h"
 
-namespace rendering
+BEGIN_BOOMER_NAMESPACE(rendering::api)
+
+//---
+
+/// general sampler object
+class RENDERING_API_COMMON_API IBaseSampler : public IBaseObject
 {
-	namespace api
-	{
+public:
+	IBaseSampler(IBaseThread* owner, const SamplerState& setup);
+	virtual ~IBaseSampler();
 
-		//---
+	static const auto STATIC_TYPE = ObjectType::Sampler;
 
-		/// general sampler object
-		class RENDERING_API_COMMON_API IBaseSampler : public IBaseObject
-		{
-		public:
-			IBaseSampler(IBaseThread* owner, const SamplerState& setup);
-			virtual ~IBaseSampler();
+	//--
 
-			static const auto STATIC_TYPE = ObjectType::Sampler;
+	INLINE const SamplerState& state() const { return m_state; }
 
-			//--
+	//--
 
-			INLINE const SamplerState& state() const { return m_state; }
+private:
+	SamplerState m_state;
+};
 
-			//--
+//---
 
-		private:
-			SamplerState m_state;
-		};
-
-		//---
-
-	} // api
-} // rendering
+END_BOOMER_NAMESPACE(rendering::api)

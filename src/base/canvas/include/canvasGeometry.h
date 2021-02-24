@@ -30,94 +30,91 @@
 #pragma once
 #include "canvasStyle.h"
 
-namespace base
-{
-    namespace canvas
-    {
-		//--
+BEGIN_BOOMER_NAMESPACE(base::canvas)
+
+//--
 
 #pragma pack(push)
 #pragma pack(4)
-		struct Attributes
-		{
-			Vector2 base;
-			Vector2 extent;
-			Color innerColor;
-			Color outerColor;
-			float radius = 0.0f;
-			float feather = 0.0f;
-			float lineWidth = 0.0f;
+struct Attributes
+{
+	Vector2 base;
+	Vector2 extent;
+	Color innerColor;
+	Color outerColor;
+	float radius = 0.0f;
+	float feather = 0.0f;
+	float lineWidth = 0.0f;
 
-			//--
+	//--
 
-			bool operator==(const Attributes& other) const;
-			bool operator!=(const Attributes& other) const;
+	bool operator==(const Attributes& other) const;
+	bool operator!=(const Attributes& other) const;
 
-			static uint32_t CalcHash(const Attributes& style);
+	static uint32_t CalcHash(const Attributes& style);
 
-		private:
-			uint32_t _padding0 = 0;
-		};
+private:
+	uint32_t _padding0 = 0;
+};
 #pragma pack(pop)
 
-		static_assert(sizeof(Attributes) == 40, "Make sure there are no holes");
+static_assert(sizeof(Attributes) == 40, "Make sure there are no holes");
 
-		//--
+//--
 
-        /// Simple structure to hold renderable canvas geometry (vertices + draw commands)
-		/// Can be placed (instanced) in canvas with a custom transformation
-		/// NOTE: data cached here depends on the particular UVs and atlas placements or images in the storage!
-        struct BASE_CANVAS_API Geometry
-        {
-            RTTI_DECLARE_POOL(POOL_CANVAS)
+/// Simple structure to hold renderable canvas geometry (vertices + draw commands)
+/// Can be placed (instanced) in canvas with a custom transformation
+/// NOTE: data cached here depends on the particular UVs and atlas placements or images in the storage!
+struct BASE_CANVAS_API Geometry
+{
+    RTTI_DECLARE_POOL(POOL_CANVAS)
 
-        public:
-            Geometry();
-			Geometry(const Geometry& other);
-			Geometry(Geometry&& other);
-			Geometry& operator=(const Geometry& other);
-			Geometry& operator=(Geometry&& other);
-			~Geometry();
+public:
+    Geometry();
+	Geometry(const Geometry& other);
+	Geometry(Geometry&& other);
+	Geometry& operator=(const Geometry& other);
+	Geometry& operator=(Geometry&& other);
+	~Geometry();
 
-            //--
+    //--
 
-            INLINE bool empty() const { return batches.empty(); }
-			INLINE operator bool() const { return !batches.empty(); }
+    INLINE bool empty() const { return batches.empty(); }
+	INLINE operator bool() const { return !batches.empty(); }
 
-            //--
+    //--
 
-			// reset geometry without freeing memory
-			void reset();
+	// reset geometry without freeing memory
+	void reset();
 
-			// count used memory
-			uint32_t calcMemorySize() const;
+	// count used memory
+	uint32_t calcMemorySize() const;
 
-			//--
+	//--
 
-			Vector2 boundsMin;
-			Vector2 boundsMax;
+	Vector2 boundsMin;
+	Vector2 boundsMax;
 
-			Array<Vertex> vertices;
-			Array<Batch> batches;
-			Array<Attributes> attributes;
-			Array<uint8_t> customData;
+	Array<Vertex> vertices;
+	Array<Batch> batches;
+	Array<Attributes> attributes;
+	Array<uint8_t> customData;
 
-			//--
+	//--
 			
-			// directly append a batch to the geometry
-			void appendVertexBatch(const Vertex* vertices, uint32_t numVertices, const Batch& setup = Batch(), const RenderStyle* style = nullptr);
+	// directly append a batch to the geometry
+	void appendVertexBatch(const Vertex* vertices, uint32_t numVertices, const Batch& setup = Batch(), const RenderStyle* style = nullptr);
 
-			// directly append a batch to the geometry indexed triangle list batch to the geometry
-			void appendIndexedBatch(const Vertex* vertices, const uint16_t* indices, uint32_t numIndices, const Batch& setup = Batch(), const RenderStyle* style = nullptr);
+	// directly append a batch to the geometry indexed triangle list batch to the geometry
+	void appendIndexedBatch(const Vertex* vertices, const uint16_t* indices, uint32_t numIndices, const Batch& setup = Batch(), const RenderStyle* style = nullptr);
 
-			//--
+	//--
 
-		private:
-			int appendStyle(const RenderStyle& style);
-			void applyStyle(Vertex* vertices, uint32_t numVertices, const RenderStyle& style);
-        };
+private:
+	int appendStyle(const RenderStyle& style);
+	void applyStyle(Vertex* vertices, uint32_t numVertices, const RenderStyle& style);
+};
 
-		//--
+//--
 
-    } // canvas
-} // base
+END_BOOMER_NAMESPACE(base::canvas)

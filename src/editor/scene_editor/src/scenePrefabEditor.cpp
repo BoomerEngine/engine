@@ -17,105 +17,105 @@
 #include "editor/common/include/managedFileFormat.h"
 #include "editor/common/include/managedFileNativeResource.h"
 
-namespace ed
+BEGIN_BOOMER_NAMESPACE(ed)
+
+//---
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(ScenePrefabEditor);
+RTTI_END_TYPE();
+
+ScenePrefabEditor::ScenePrefabEditor(ManagedFileNativeResource* file)
+    : SceneCommonEditor(file, SceneContentNodeType::PrefabRoot, "Prefabs")
 {
-    //---
+}
 
-    RTTI_BEGIN_TYPE_NATIVE_CLASS(ScenePrefabEditor);
-    RTTI_END_TYPE();
+ScenePrefabEditor::~ScenePrefabEditor()
+{}
 
-    ScenePrefabEditor::ScenePrefabEditor(ManagedFileNativeResource* file)
-        : SceneCommonEditor(file, SceneContentNodeType::PrefabRoot, "Prefabs")
+void ScenePrefabEditor::recreateContent()
+{
+    if (auto rootNode = rtti_cast<SceneContentPrefabRoot>(m_content->root()))
     {
-    }
+        rootNode->detachAllChildren();
 
-    ScenePrefabEditor::~ScenePrefabEditor()
-    {}
-
-    void ScenePrefabEditor::recreateContent()
-    {
-        if (auto rootNode = rtti_cast<SceneContentPrefabRoot>(m_content->root()))
+        SceneContentNodePtr editableNode;
+        if (const auto prefabData = base::rtti_cast<base::world::Prefab>(resource()))
         {
-            rootNode->detachAllChildren();
-
-            SceneContentNodePtr editableNode;
-            if (const auto prefabData = base::rtti_cast<base::world::Prefab>(resource()))
+            if (auto root = prefabData->root())
             {
-                if (auto root = prefabData->root())
-                {
-                    editableNode = RefNew<SceneContentEntityNode>(StringBuf(root->m_name.view()), root);
-                    rootNode->attachChildNode(editableNode);
-                }
-            }
-
-            rootNode->resetModifiedStatus();
-
-            if (editableNode)
-                m_defaultEditMode->activeNode(editableNode);
-            else
-                m_defaultEditMode->activeNode(rootNode);
-        }
-    }
-
-    bool ScenePrefabEditor::checkGeneralSave() const
-    {
-        if (const auto& root = m_content->root())
-            return root->modified();
-
-        return false;
-    }
-
-    bool ScenePrefabEditor::save()
-    {
-        if (const auto& root = m_content->root())
-        {
-            if (const auto prefabData = base::rtti_cast<base::world::Prefab>(resource()))
-            {
-                world::NodeTemplatePtr rootNode;
-
-                if (!root->entities().empty())
-                {
-                    auto content = root->entities()[0];
-                    rootNode = content->compileDifferentialData();
-                }
-
-                prefabData->setup(rootNode);
-            }
-
-            if (TBaseClass::save())
-            {
-                root->resetModifiedStatus();
-                return true;
+                editableNode = RefNew<SceneContentEntityNode>(StringBuf(root->m_name.view()), root);
+                rootNode->attachChildNode(editableNode);
             }
         }
 
-        return false;
+        rootNode->resetModifiedStatus();
+
+        if (editableNode)
+            m_defaultEditMode->activeNode(editableNode);
+        else
+            m_defaultEditMode->activeNode(rootNode);
+    }
+}
+
+bool ScenePrefabEditor::checkGeneralSave() const
+{
+    if (const auto& root = m_content->root())
+        return root->modified();
+
+    return false;
+}
+
+bool ScenePrefabEditor::save()
+{
+    if (const auto& root = m_content->root())
+    {
+        if (const auto prefabData = base::rtti_cast<base::world::Prefab>(resource()))
+        {
+            world::NodeTemplatePtr rootNode;
+
+            if (!root->entities().empty())
+            {
+                auto content = root->entities()[0];
+                rootNode = content->compileDifferentialData();
+            }
+
+            prefabData->setup(rootNode);
+        }
+
+        if (TBaseClass::save())
+        {
+            root->resetModifiedStatus();
+            return true;
+        }
     }
 
-    //---
+    return false;
+}
 
-    class ScenePrefabResourceEditorOpener : public IResourceEditorOpener
+//---
+
+class ScenePrefabResourceEditorOpener : public IResourceEditorOpener
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(ScenePrefabResourceEditorOpener, IResourceEditorOpener);
+
+public:
+    virtual bool canOpen(const ManagedFileFormat& format) const override
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(ScenePrefabResourceEditorOpener, IResourceEditorOpener);
+        return format.nativeResourceClass() == base::world::Prefab::GetStaticClass();
+    }
 
-    public:
-        virtual bool canOpen(const ManagedFileFormat& format) const override
-        {
-            return format.nativeResourceClass() == base::world::Prefab::GetStaticClass();
-        }
+    virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
+    {
+        if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
+            return base::RefNew<ScenePrefabEditor>(nativeFile);
 
-        virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
-        {
-            if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-                return base::RefNew<ScenePrefabEditor>(nativeFile);
+        return nullptr;
+    }
+};
 
-            return nullptr;
-        }
-    };
+RTTI_BEGIN_TYPE_CLASS(ScenePrefabResourceEditorOpener);
+RTTI_END_TYPE();
 
-    RTTI_BEGIN_TYPE_CLASS(ScenePrefabResourceEditorOpener);
-    RTTI_END_TYPE();
+//---
 
-    //---
-
-} // ed
+END_BOOMER_NAMESPACE(ed)

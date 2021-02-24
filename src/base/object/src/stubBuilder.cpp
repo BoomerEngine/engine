@@ -13,64 +13,60 @@
 
 #include "base/memory/include/linearAllocator.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+//----
+
+StubBuilder::StubBuilder(mem::LinearAllocator& mem, const StubFactory& factory)
+	: m_mem(mem)
+	, m_factory(factory)
+{}
+
+StubBuilder::~StubBuilder()
 {
+	clear();
+}
 
-    //----
+void* StubBuilder::createData(uint32_t size)
+{
+	return m_mem.alloc(size, 4);
+}
 
-	StubBuilder::StubBuilder(mem::LinearAllocator& mem, const StubFactory& factory)
-		: m_mem(mem)
-		, m_factory(factory)
-	{}
-
-	StubBuilder::~StubBuilder()
+void StubBuilder::clear()
+{
+	for (IStub* stub : m_stubsToDestroy)
 	{
-		clear();
-	}
+		if (const auto* entry = m_factory.classInfo(stub->runtimeType()))
+			entry->cleanupFunc(stub);
+	}			
 
-	void* StubBuilder::createData(uint32_t size)
-	{
-		return m_mem.alloc(size, 4);
-	}
+	m_stubsToDestroy.reset();
+}
 
-	void StubBuilder::clear()
-	{
-		for (IStub* stub : m_stubsToDestroy)
-		{
-			if (const auto* entry = m_factory.classInfo(stub->runtimeType()))
-				entry->cleanupFunc(stub);
-		}			
+IStub* StubBuilder::createStub(StubTypeValue id)
+{
+	if (!id)
+		return nullptr;
 
-		m_stubsToDestroy.reset();
-	}
+	const auto* entry = m_factory.classInfo(id);
+	DEBUG_CHECK_RETURN_EX_V(entry, "Invalid stub type", nullptr);
 
-	IStub* StubBuilder::createStub(StubTypeValue id)
-	{
-		if (!id)
-			return nullptr;
+	auto* ptr = (IStub*) m_mem.alloc(entry->size, entry->alignment);
+	entry->initFunc(ptr);
 
-		const auto* entry = m_factory.classInfo(id);
-		DEBUG_CHECK_RETURN_EX_V(entry, "Invalid stub type", nullptr);
+	if (entry->cleanupFunc)
+		m_stubsToDestroy.pushBack(ptr);
 
-		auto* ptr = (IStub*) m_mem.alloc(entry->size, entry->alignment);
-		entry->initFunc(ptr);
+	DEBUG_CHECK_RETURN_EX_V(ptr->runtimeType() == id, TempString("Stub got created with type {} but registered as type {}", ptr->runtimeType(), id), nullptr);
 
-		if (entry->cleanupFunc)
-			m_stubsToDestroy.pushBack(ptr);
+	return ptr;
+}
 
-		DEBUG_CHECK_RETURN_EX_V(ptr->runtimeType() == id, TempString("Stub got created with type {} but registered as type {}", ptr->runtimeType(), id), nullptr);
+void* StubBuilder::allocateInternal(uint32_t size)
+{
+	return m_mem.alloc(size, 4);
+}
 
-		return ptr;
-	}
+//--
 
-	void* StubBuilder::allocateInternal(uint32_t size)
-	{
-		return m_mem.alloc(size, 4);
-	}
-
-	//--
-
-
-	//--
-
-} // base
+END_BOOMER_NAMESPACE(base)

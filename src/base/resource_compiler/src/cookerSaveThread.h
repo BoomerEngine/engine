@@ -13,51 +13,48 @@
 #include "base/resource/include/resourceLoader.h"
 #include "base/system/include/semaphoreCounter.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::res)
+
+//--
+
+/// cooker saving thread, saves to absolute paths
+class BASE_RESOURCE_COMPILER_API CookerSaveThread : public NoCopy
 {
-    namespace res
+public:
+    CookerSaveThread();
+    ~CookerSaveThread(); // note: will kill all jobs
+
+    /// wait for jobs to finish
+    void waitUntilDone();
+
+    /// schedule new content for saving
+    bool scheduleSave(const ResourcePtr& data, StringView path);
+
+private:
+    struct SaveJob : public NoCopy
     {
-        //--
+        RTTI_DECLARE_POOL(POOL_COOKING)
 
-        /// cooker saving thread, saves to absolute paths
-        class BASE_RESOURCE_COMPILER_API CookerSaveThread : public NoCopy
-        {
-        public:
-            CookerSaveThread();
-            ~CookerSaveThread(); // note: will kill all jobs
+    public:
+        ResourcePtr unsavedResource;
+        StringBuf absoultePath;
+    };
 
-            /// wait for jobs to finish
-            void waitUntilDone();
+    Queue<SaveJob*> m_saveJobQueue;
+    ResourcePtr m_saveCurrentResource;
+    SpinLock m_saveQueueLock;
 
-            /// schedule new content for saving
-            bool scheduleSave(const ResourcePtr& data, StringView path);
+    Semaphore m_saveThreadSemaphore;
+    Thread m_saveThread;
 
-        private:
-            struct SaveJob : public NoCopy
-            {
-                RTTI_DECLARE_POOL(POOL_COOKING)
+    std::atomic<uint32_t> m_saveThreadRequestExit;
 
-            public:
-                ResourcePtr unsavedResource;
-                StringBuf absoultePath;
-            };
+    ///--
 
-            Queue<SaveJob*> m_saveJobQueue;
-            ResourcePtr m_saveCurrentResource;
-            SpinLock m_saveQueueLock;
+    void processSavingThread();
+    bool saveSingleFile(const ResourcePtr& data, StringView path);
+};
 
-            Semaphore m_saveThreadSemaphore;
-            Thread m_saveThread;
+//--
 
-            std::atomic<uint32_t> m_saveThreadRequestExit;
-
-            ///--
-
-            void processSavingThread();
-            bool saveSingleFile(const ResourcePtr& data, StringView path);
-        };
-
-        //--
-
-    } // res
-} // base
+END_BOOMER_NAMESPACE(base::res)

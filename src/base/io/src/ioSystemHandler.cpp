@@ -9,20 +9,17 @@
 #include "build.h"
 #include "ioSystemHandler.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::io)
+
+namespace prv
 {
-    namespace io
-    {
-        namespace prv
-        {
 
-            ISystemHandler::ISystemHandler()
-            {}
+    ISystemHandler::ISystemHandler()
+    {}
 
-            ISystemHandler::~ISystemHandler()
-            {}
+    ISystemHandler::~ISystemHandler()
+    {}
 
-        } // prv
-    } // io
-} // base
+} // prv
 
+END_BOOMER_NAMESPACE(base::io)

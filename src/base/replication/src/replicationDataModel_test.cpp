@@ -16,522 +16,519 @@
 
 DECLARE_TEST_FILE(DataModelTest);
 
-using namespace base;
-using namespace base::replication;
+BEGIN_BOOMER_NAMESPACE(base::replication::test)
 
-namespace test
+//---
+
+class ReplicationTestObject : public IObject
 {
-    //---
+    RTTI_DECLARE_VIRTUAL_CLASS(ReplicationTestObject, IObject);
 
-    class ReplicationTestObject : public IObject
+public:
+    ReplicationTestObject()
+    {}
+};
+
+RTTI_BEGIN_TYPE_CLASS(ReplicationTestObject);
+RTTI_END_TYPE();
+
+struct TestReplicatedStruct_Simple
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_Simple);
+
+public:
+    bool m_bit = false;
+    uint8_t m_unsigned = 0;
+    short m_signed = 0;
+    float m_float = 0;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_Simple);
+    RTTI_PROPERTY(m_bit).metadata<replication::SetupMetadata>("b");
+    RTTI_PROPERTY(m_unsigned).metadata<replication::SetupMetadata>("u:6");
+    RTTI_PROPERTY(m_signed).metadata<replication::SetupMetadata>("s:12");
+    RTTI_PROPERTY(m_float).metadata<replication::SetupMetadata>("f:10,-1,1");
+RTTI_END_TYPE();
+
+//---
+
+struct TestReplicatedStruct_InnerStructPacked
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_InnerStructPacked);
+
+public:
+    TestReplicatedStruct_Simple m_struct;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_InnerStructPacked);
+    RTTI_PROPERTY(m_struct).metadata<replication::SetupMetadata>("");
+RTTI_END_TYPE();
+
+//---
+
+struct TestReplicatedStruct_String
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_String);
+
+public:
+    StringBuf m_str;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_String);
+    RTTI_PROPERTY(m_str).metadata<replication::SetupMetadata>();
+RTTI_END_TYPE();
+
+//---
+
+struct TestReplicatedStruct_StringLimited
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_StringLimited);
+
+public:
+    StringBuf m_str;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_StringLimited);
+    RTTI_PROPERTY(m_str).metadata<replication::SetupMetadata>("maxLength:10");
+RTTI_END_TYPE();
+
+//---
+
+struct TestReplicatedStruct_StringID
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_StringID);
+
+public:
+    StringID m_name;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_StringID);
+    RTTI_PROPERTY(m_name).metadata<replication::SetupMetadata>();
+RTTI_END_TYPE();
+
+//---
+
+struct TestReplicatedStruct_TypeRef
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_TypeRef);
+
+public:
+    SpecificClassType<IObject> m_type;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_TypeRef);
+    RTTI_PROPERTY(m_type).metadata<replication::SetupMetadata>();
+RTTI_END_TYPE();
+
+//---
+
+/*struct TestReplicatedStruct_ResRef
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_ResRef);
+
+public:
+    res::Ref<base::res::IResource> m_path;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_ResRef);
+    RTTI_PROPERTY(m_path).metadata<replication::SetupMetadata>();
+RTTI_END_TYPE();*/
+
+//---
+
+struct TestReplicatedStruct_ObjectPtr
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_ObjectPtr);
+
+public:
+    ObjectPtr m_obj;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_ObjectPtr);
+    RTTI_PROPERTY(m_obj).metadata<replication::SetupMetadata>();
+RTTI_END_TYPE();
+
+//---
+
+struct TestReplicatedStruct_WeakObjectPtr
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_WeakObjectPtr);
+
+public:
+    ObjectWeakPtr m_obj;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_WeakObjectPtr);
+    RTTI_PROPERTY(m_obj).metadata<replication::SetupMetadata>();
+RTTI_END_TYPE();
+
+//---
+
+struct TestVector3
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestVector3);
+
+public:
+    float x,y,z;
+
+    TestVector3()
+        : x(0), y(0), z(0)
+    {}
+
+    float squareLength() const
     {
-        RTTI_DECLARE_VIRTUAL_CLASS(ReplicationTestObject, IObject);
+        return x*x + y*y + z*z;
+    }
 
-    public:
-        ReplicationTestObject()
-        {}
-    };
-
-    RTTI_BEGIN_TYPE_CLASS(ReplicationTestObject);
-    RTTI_END_TYPE();
-
-    struct TestReplicatedStruct_Simple
+    float dot(const TestVector3& v) const
     {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_Simple);
+        return (x*v.x) + (y*v.y) + (z*v.z);
+    }
 
-    public:
-        bool m_bit = false;
-        uint8_t m_unsigned = 0;
-        short m_signed = 0;
-        float m_float = 0;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_Simple);
-        RTTI_PROPERTY(m_bit).metadata<replication::SetupMetadata>("b");
-        RTTI_PROPERTY(m_unsigned).metadata<replication::SetupMetadata>("u:6");
-        RTTI_PROPERTY(m_signed).metadata<replication::SetupMetadata>("s:12");
-        RTTI_PROPERTY(m_float).metadata<replication::SetupMetadata>("f:10,-1,1");
-    RTTI_END_TYPE();
-
-    //---
-
-    struct TestReplicatedStruct_InnerStructPacked
+    void normalize()
     {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_InnerStructPacked);
-
-    public:
-        TestReplicatedStruct_Simple m_struct;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_InnerStructPacked);
-        RTTI_PROPERTY(m_struct).metadata<replication::SetupMetadata>("");
-    RTTI_END_TYPE();
-
-    //---
-
-    struct TestReplicatedStruct_String
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_String);
-
-    public:
-        StringBuf m_str;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_String);
-        RTTI_PROPERTY(m_str).metadata<replication::SetupMetadata>();
-    RTTI_END_TYPE();
-
-    //---
-
-    struct TestReplicatedStruct_StringLimited
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_StringLimited);
-
-    public:
-        StringBuf m_str;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_StringLimited);
-        RTTI_PROPERTY(m_str).metadata<replication::SetupMetadata>("maxLength:10");
-    RTTI_END_TYPE();
-
-    //---
-
-    struct TestReplicatedStruct_StringID
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_StringID);
-
-    public:
-        StringID m_name;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_StringID);
-        RTTI_PROPERTY(m_name).metadata<replication::SetupMetadata>();
-    RTTI_END_TYPE();
-
-    //---
-
-    struct TestReplicatedStruct_TypeRef
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_TypeRef);
-
-    public:
-        SpecificClassType<IObject> m_type;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_TypeRef);
-        RTTI_PROPERTY(m_type).metadata<replication::SetupMetadata>();
-    RTTI_END_TYPE();
-
-    //---
-
-    /*struct TestReplicatedStruct_ResRef
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_ResRef);
-
-    public:
-        res::Ref<base::res::IResource> m_path;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_ResRef);
-        RTTI_PROPERTY(m_path).metadata<replication::SetupMetadata>();
-    RTTI_END_TYPE();*/
-
-    //---
-
-    struct TestReplicatedStruct_ObjectPtr
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_ObjectPtr);
-
-    public:
-        ObjectPtr m_obj;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_ObjectPtr);
-        RTTI_PROPERTY(m_obj).metadata<replication::SetupMetadata>();
-    RTTI_END_TYPE();
-
-    //---
-
-    struct TestReplicatedStruct_WeakObjectPtr
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_WeakObjectPtr);
-
-    public:
-        ObjectWeakPtr m_obj;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_WeakObjectPtr);
-        RTTI_PROPERTY(m_obj).metadata<replication::SetupMetadata>();
-    RTTI_END_TYPE();
-
-    //---
-
-    struct TestVector3
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestVector3);
-
-    public:
-        float x,y,z;
-
-        TestVector3()
-            : x(0), y(0), z(0)
-        {}
-
-        float squareLength() const
+        auto len = squareLength();
+        if (len > 0.000001f)
         {
-            return x*x + y*y + z*z;
+            len = 1.0f / std::sqrt(len);
+            x *= len;
+            y *= len;
+            z *= len;
+        }
+    }
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestVector3);
+    RTTI_PROPERTY(x).metadata<replication::SetupMetadata>();
+    RTTI_PROPERTY(y).metadata<replication::SetupMetadata>();
+    RTTI_PROPERTY(z).metadata<replication::SetupMetadata>();
+RTTI_END_TYPE();
+
+//--
+
+struct TestReplicatedStruct_InnerStruct
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_InnerStruct);
+
+public:
+    TestVector3 m_pos;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_InnerStruct);
+    RTTI_PROPERTY(m_pos).metadata<replication::SetupMetadata>();
+RTTI_END_TYPE();
+
+//--
+
+struct TestReplicatedStruct_Pos
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_Pos);
+
+public:
+    TestVector3 m_pos;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_Pos);
+    RTTI_PROPERTY(m_pos).metadata<replication::SetupMetadata>("pos");
+RTTI_END_TYPE();
+
+//--
+
+struct TestReplicatedStruct_DeltaPos
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_DeltaPos);
+
+public:
+    TestVector3 m_pos;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_DeltaPos);
+    RTTI_PROPERTY(m_pos).metadata<replication::SetupMetadata>("delta,10");
+RTTI_END_TYPE();
+
+//--
+
+struct TestReplicatedStruct_Normal
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_Normal);
+
+public:
+    TestVector3 m_pos;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_Normal);
+    RTTI_PROPERTY(m_pos).metadata<replication::SetupMetadata>("normal");
+RTTI_END_TYPE();
+
+//--
+
+struct TestReplicatedStruct_Dir
+{
+RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_Dir);
+
+public:
+    TestVector3 m_pos;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_Dir);
+    RTTI_PROPERTY(m_pos).metadata<replication::SetupMetadata>("dir");
+RTTI_END_TYPE();
+
+//--
+
+struct TestReplicatedStruct_PitchYaw
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_PitchYaw);
+
+public:
+    TestVector3 m_pos;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_PitchYaw);
+    RTTI_PROPERTY(m_pos).metadata<replication::SetupMetadata>("pitchYaw");
+RTTI_END_TYPE();
+
+//--
+
+struct TestReplicatedStruct_Angles
+{
+RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_Angles);
+
+public:
+    TestVector3 m_pos;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_Angles);
+    RTTI_PROPERTY(m_pos).metadata<replication::SetupMetadata>("angles");
+RTTI_END_TYPE();
+
+//--
+
+struct TestReplicatedStruct_Arrays
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_Arrays);
+
+public:
+    Array<bool> m_bools;
+    Array<float> m_floats;
+    Array<StringBuf> m_strings;
+};
+
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_Arrays);
+    RTTI_PROPERTY(m_bools).metadata<replication::SetupMetadata>("b,maxCount:10");
+    RTTI_PROPERTY(m_floats).metadata<replication::SetupMetadata>("f:10,-10,10,maxCount:10");
+    RTTI_PROPERTY(m_strings).metadata<replication::SetupMetadata>("maxCount:5");
+RTTI_END_TYPE();
+
+//--
+
+struct TestReplicatedStruct_TreeNode
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_TreeNode);
+
+public:
+    bool m_used = false;
+    float m_value = 0.0f;
+    Array<TestReplicatedStruct_TreeNode> m_children;
+
+    void insert(float value)
+    {
+        if (!m_used)
+        {
+            m_value = value;
+            m_children.resize(2);
+            m_used = true;
+            return;
         }
 
-        float dot(const TestVector3& v) const
+        if (value < m_value)
+            m_children[0].insert(value);
+        if (value > m_value)
+            m_children[1].insert(value);
+    }
+
+    void dump(Array<float>& outArray) const
+    {
+        if (m_used)
         {
-            return (x*v.x) + (y*v.y) + (z*v.z);
+            m_children[0].dump(outArray);
+            outArray.pushBack(m_value);
+            m_children[1].dump(outArray);
         }
+		else
+		{
+			DEBUG_CHECK(m_children.empty());
+			DEBUG_CHECK(m_value == 0.0f);
+		}
+    }
+};
 
-        void normalize()
-        {
-            auto len = squareLength();
-            if (len > 0.000001f)
-            {
-                len = 1.0f / std::sqrt(len);
-                x *= len;
-                y *= len;
-                z *= len;
-            }
-        }
-    };
+RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_TreeNode);
+    RTTI_PROPERTY(m_used).metadata<replication::SetupMetadata>("b");
+    RTTI_PROPERTY(m_value).metadata<replication::SetupMetadata>("f:10,0,1");
+    RTTI_PROPERTY(m_children).metadata<replication::SetupMetadata>("maxCount:2");
+RTTI_END_TYPE();
 
-    RTTI_BEGIN_TYPE_STRUCT(TestVector3);
-        RTTI_PROPERTY(x).metadata<replication::SetupMetadata>();
-        RTTI_PROPERTY(y).metadata<replication::SetupMetadata>();
-        RTTI_PROPERTY(z).metadata<replication::SetupMetadata>();
-    RTTI_END_TYPE();
+//---
 
-    //--
-
-    struct TestReplicatedStruct_InnerStruct
+class LocalKnowledgeBase : public IDataModelResolver, public IDataModelMapper
+{
+public:
+    LocalKnowledgeBase()
     {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_InnerStruct);
+        clear();
+    }
 
-    public:
-        TestVector3 m_pos;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_InnerStruct);
-        RTTI_PROPERTY(m_pos).metadata<replication::SetupMetadata>();
-    RTTI_END_TYPE();
-
-    //--
-
-    struct TestReplicatedStruct_Pos
+    void clear()
     {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_Pos);
+        m_nextObjectID = 1;
+        m_stringMap.clear();
+        m_strings.clear();
+        m_pathMap.clear();
+        m_paths.clear();
+        m_objectMap.clear();
+        m_objectReverseMap.clear();
+        m_strings.pushBack("");
+        m_paths.pushBack("");
+    }
 
-    public:
-        TestVector3 m_pos;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_Pos);
-        RTTI_PROPERTY(m_pos).metadata<replication::SetupMetadata>("pos");
-    RTTI_END_TYPE();
-
-    //--
-
-    struct TestReplicatedStruct_DeltaPos
+    virtual DataMappedID mapString(StringView txt) override final
     {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_DeltaPos);
+        if (txt.empty())
+            return 0;
 
-    public:
-        TestVector3 m_pos;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_DeltaPos);
-        RTTI_PROPERTY(m_pos).metadata<replication::SetupMetadata>("delta,10");
-    RTTI_END_TYPE();
-
-    //--
-
-    struct TestReplicatedStruct_Normal
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_Normal);
-
-    public:
-        TestVector3 m_pos;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_Normal);
-        RTTI_PROPERTY(m_pos).metadata<replication::SetupMetadata>("normal");
-    RTTI_END_TYPE();
-
-    //--
-
-    struct TestReplicatedStruct_Dir
-    {
-    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_Dir);
-
-    public:
-        TestVector3 m_pos;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_Dir);
-        RTTI_PROPERTY(m_pos).metadata<replication::SetupMetadata>("dir");
-    RTTI_END_TYPE();
-
-    //--
-
-    struct TestReplicatedStruct_PitchYaw
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_PitchYaw);
-
-    public:
-        TestVector3 m_pos;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_PitchYaw);
-        RTTI_PROPERTY(m_pos).metadata<replication::SetupMetadata>("pitchYaw");
-    RTTI_END_TYPE();
-
-    //--
-
-    struct TestReplicatedStruct_Angles
-    {
-    RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_Angles);
-
-    public:
-        TestVector3 m_pos;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_Angles);
-        RTTI_PROPERTY(m_pos).metadata<replication::SetupMetadata>("angles");
-    RTTI_END_TYPE();
-
-    //--
-
-    struct TestReplicatedStruct_Arrays
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_Arrays);
-
-    public:
-        Array<bool> m_bools;
-        Array<float> m_floats;
-        Array<StringBuf> m_strings;
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_Arrays);
-        RTTI_PROPERTY(m_bools).metadata<replication::SetupMetadata>("b,maxCount:10");
-        RTTI_PROPERTY(m_floats).metadata<replication::SetupMetadata>("f:10,-10,10,maxCount:10");
-        RTTI_PROPERTY(m_strings).metadata<replication::SetupMetadata>("maxCount:5");
-    RTTI_END_TYPE();
-
-    //--
-
-    struct TestReplicatedStruct_TreeNode
-    {
-        RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_TreeNode);
-
-    public:
-        bool m_used = false;
-        float m_value = 0.0f;
-        Array<TestReplicatedStruct_TreeNode> m_children;
-
-        void insert(float value)
-        {
-            if (!m_used)
-            {
-                m_value = value;
-                m_children.resize(2);
-                m_used = true;
-                return;
-            }
-
-            if (value < m_value)
-                m_children[0].insert(value);
-            if (value > m_value)
-                m_children[1].insert(value);
-        }
-
-        void dump(Array<float>& outArray) const
-        {
-            if (m_used)
-            {
-                m_children[0].dump(outArray);
-                outArray.pushBack(m_value);
-                m_children[1].dump(outArray);
-            }
-			else
-			{
-				DEBUG_CHECK(m_children.empty());
-				DEBUG_CHECK(m_value == 0.0f);
-			}
-        }
-    };
-
-    RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_TreeNode);
-        RTTI_PROPERTY(m_used).metadata<replication::SetupMetadata>("b");
-        RTTI_PROPERTY(m_value).metadata<replication::SetupMetadata>("f:10,0,1");
-        RTTI_PROPERTY(m_children).metadata<replication::SetupMetadata>("maxCount:2");
-    RTTI_END_TYPE();
-
-    //---
-
-    class LocalKnowledgeBase : public IDataModelResolver, public IDataModelMapper
-    {
-    public:
-        LocalKnowledgeBase()
-        {
-            clear();
-        }
-
-        void clear()
-        {
-            m_nextObjectID = 1;
-            m_stringMap.clear();
-            m_strings.clear();
-            m_pathMap.clear();
-            m_paths.clear();
-            m_objectMap.clear();
-            m_objectReverseMap.clear();
-            m_strings.pushBack("");
-            m_paths.pushBack("");
-        }
-
-        virtual DataMappedID mapString(StringView txt) override final
-        {
-            if (txt.empty())
-                return 0;
-
-            DataMappedID id = 0;
-            StringBuf str(txt);
-            if (m_stringMap.find(str, id))
-                return id;
-
-            id = (DataMappedID)m_strings.size();
-            m_strings.pushBack(str);
-            m_stringMap[str] = id;
+        DataMappedID id = 0;
+        StringBuf str(txt);
+        if (m_stringMap.find(str, id))
             return id;
-        }
 
-        virtual DataMappedID mapPath(StringView path, const char* pathSeparators) override final
-        {
-            if (path.empty())
-                return 0;
+        id = (DataMappedID)m_strings.size();
+        m_strings.pushBack(str);
+        m_stringMap[str] = id;
+        return id;
+    }
 
-            DataMappedID id = 0;
-            StringBuf str(path);
-            if (m_pathMap.find(str, id))
-                return id;
+    virtual DataMappedID mapPath(StringView path, const char* pathSeparators) override final
+    {
+        if (path.empty())
+            return 0;
 
-            id = (DataMappedID)m_paths.size();
-            m_paths.pushBack(str);
-            m_pathMap[str] = id;
+        DataMappedID id = 0;
+        StringBuf str(path);
+        if (m_pathMap.find(str, id))
             return id;
-        }
 
-        virtual DataMappedID mapObject(const IObject* obj) override final
-        {
-            DataMappedID id = 0;
-            m_objectMap.find(obj, id);
-            return id;
-        }
+        id = (DataMappedID)m_paths.size();
+        m_paths.pushBack(str);
+        m_pathMap[str] = id;
+        return id;
+    }
 
-        virtual bool resolveString(DataMappedID id, IFormatStream& ret) override final
+    virtual DataMappedID mapObject(const IObject* obj) override final
+    {
+        DataMappedID id = 0;
+        m_objectMap.find(obj, id);
+        return id;
+    }
+
+    virtual bool resolveString(DataMappedID id, IFormatStream& ret) override final
+    {
+        if (id && id < m_strings.size())
+            ret << m_strings[id];
+        return true;
+    }
+
+    virtual bool resolvePath(DataMappedID id, const char* pathSeparator, IFormatStream& ret) override final
+    {
+        if (id && id < m_paths.size())
+            ret << m_paths[id];
+        return true;
+    }
+
+    virtual bool resolveObject(DataMappedID id, ObjectPtr& outPtr) override final
+    {
+        if (!id)
         {
-            if (id && id < m_strings.size())
-                ret << m_strings[id];
+            outPtr = ObjectPtr();
             return true;
         }
 
-        virtual bool resolvePath(DataMappedID id, const char* pathSeparator, IFormatStream& ret) override final
-        {
-            if (id && id < m_paths.size())
-                ret << m_paths[id];
-            return true;
-        }
+        const IObject* ptr = nullptr;
+        m_objectReverseMap.find(id, ptr);
+        outPtr = AddRef(ptr);
+        return true;
+    }
 
-        virtual bool resolveObject(DataMappedID id, ObjectPtr& outPtr) override final
-        {
-            if (!id)
-            {
-                outPtr = ObjectPtr();
-                return true;
-            }
+    //--
 
-            const IObject* ptr = nullptr;
-            m_objectReverseMap.find(id, ptr);
-            outPtr = AddRef(ptr);
-            return true;
-        }
+    HashMap<StringBuf, DataMappedID> m_stringMap;
+    Array<StringBuf> m_strings;
 
-        //--
+    HashMap<StringBuf, DataMappedID> m_pathMap;
+    Array<StringBuf> m_paths;
 
-        HashMap<StringBuf, DataMappedID> m_stringMap;
-        Array<StringBuf> m_strings;
+    HashMap<const IObject*, DataMappedID> m_objectMap;
+    HashMap<DataMappedID, const IObject*> m_objectReverseMap;
 
-        HashMap<StringBuf, DataMappedID> m_pathMap;
-        Array<StringBuf> m_paths;
+    DataMappedID m_nextObjectID;
 
-        HashMap<const IObject*, DataMappedID> m_objectMap;
-        HashMap<DataMappedID, const IObject*> m_objectReverseMap;
-
-        DataMappedID m_nextObjectID;
-
-        DataMappedID allocObjectID()
-        {
-            return m_nextObjectID++;
-        }
-
-        void attachObject(DataMappedID id, ObjectPtr ptr)
-        {
-            m_objectMap[ptr.get()] = id;
-            m_objectReverseMap[id] = ptr.get();
-        }
-
-        void detachObject(DataMappedID id)
-        {
-            const IObject* obj = nullptr;
-            if (m_objectReverseMap.find(id, obj))
-            {
-                m_objectMap.remove(obj);
-                m_objectReverseMap.remove(id);
-            }
-        }
-    };
-
-    struct TransferTest
+    DataMappedID allocObjectID()
     {
-        TransferTest(test::LocalKnowledgeBase& kb)
-            : m_knowledge(kb)
-        {}
+        return m_nextObjectID++;
+    }
 
-        template< typename T >
-        void transfer(const T& input, T& output)
+    void attachObject(DataMappedID id, ObjectPtr ptr)
+    {
+        m_objectMap[ptr.get()] = id;
+        m_objectReverseMap[id] = ptr.get();
+    }
+
+    void detachObject(DataMappedID id)
+    {
+        const IObject* obj = nullptr;
+        if (m_objectReverseMap.find(id, obj))
         {
-            // create data model
-            auto rep = RefNew<DataModelRepository>();
-            auto model  = rep->buildModelForType(T::GetStaticClass());
-            ASSERT_TRUE(model);
-
-            // encode
-            BitWriter w;
-            model->encodeFromNativeData(&input, m_knowledge, w);
-
-            // decode
-            BitReader r(w.data(), w.bitSize());
-            model->decodeToNativeData(&output, m_knowledge, r);
-
-            ASSERT_EQ(r.bitPos(), w.bitSize());
+            m_objectMap.remove(obj);
+            m_objectReverseMap.remove(id);
         }
+    }
+};
 
-        test::LocalKnowledgeBase& m_knowledge;
-    };
+struct TransferTest
+{
+    TransferTest(LocalKnowledgeBase& kb)
+        : m_knowledge(kb)
+    {}
 
-} // test
+    template< typename T >
+    void transfer(const T& input, T& output)
+    {
+        // create data model
+        auto rep = RefNew<DataModelRepository>();
+        auto model  = rep->buildModelForType(T::GetStaticClass());
+        ASSERT_TRUE(model);
+
+        // encode
+        BitWriter w;
+        model->encodeFromNativeData(&input, m_knowledge, w);
+
+        // decode
+        BitReader r(w.data(), w.bitSize());
+        model->decodeToNativeData(&output, m_knowledge, r);
+
+        ASSERT_EQ(r.bitPos(), w.bitSize());
+    }
+
+    LocalKnowledgeBase& m_knowledge;
+};
+
+//--
 
 TEST(DataModel, CompiledSimple)
 {
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Simple::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_Simple::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(4, model->fields().size());
 
@@ -545,7 +542,7 @@ TEST(DataModel, CompileString)
 {
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_String::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_String::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::StringBuf, model->fields()[0].m_type);
@@ -557,7 +554,7 @@ TEST(DataModel, CompileStringLimited)
 {
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_StringLimited::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_StringLimited::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::StringBuf, model->fields()[0].m_type);
@@ -569,7 +566,7 @@ TEST(DataModel, CompileStringID)
 {
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_StringID::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_StringID::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::StringID, model->fields()[0].m_type);
@@ -581,7 +578,7 @@ TEST(DataModel, CompileTypeRef)
 {
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_TypeRef::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_TypeRef::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::TypeRef, model->fields()[0].m_type);
@@ -593,7 +590,7 @@ TEST(DataModel, CompileTypeRef)
 {
     DataModelRepository rep;
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_ResRef::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_ResRef::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::ResourceRef, model->fields()[0].m_type);
@@ -606,7 +603,7 @@ TEST(DataModel, CompileObjectPtr)
 {
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_ObjectPtr::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_ObjectPtr::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::ObjectPtr, model->fields()[0].m_type);
@@ -618,7 +615,7 @@ TEST(DataModel, CompileWeakObjectPtr)
 {
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_WeakObjectPtr::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_WeakObjectPtr::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::WeakObjectPtr, model->fields()[0].m_type);
@@ -630,12 +627,12 @@ TEST(DataModel, CompileInnerStruct)
 {
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_InnerStruct::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_InnerStruct::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::Struct, model->fields()[0].m_type);
 
-    auto innerModel  = rep->buildModelForType(test::TestVector3::GetStaticClass());
+    auto innerModel  = rep->buildModelForType(TestVector3::GetStaticClass());
     ASSERT_EQ(innerModel, model->fields()[0].m_structModel);
     ASSERT_EQ(PackingMode::Default, model->fields()[0].m_packing.m_mode);
     ASSERT_EQ(0, model->fields()[0].m_packing.m_maxLength);
@@ -646,7 +643,7 @@ TEST(DataModel, CompilePosStruct)
 {
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Pos::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_Pos::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::Packed, model->fields()[0].m_type);
@@ -659,7 +656,7 @@ TEST(DataModel, CompileDeltaPosStruct)
 {
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_DeltaPos::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_DeltaPos::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::Packed, model->fields()[0].m_type);
@@ -672,7 +669,7 @@ TEST(DataModel, CompileNormalStruct)
 {
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Normal::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_Normal::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::Packed, model->fields()[0].m_type);
@@ -685,7 +682,7 @@ TEST(DataModel, CompileDirStruct)
 {
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Dir::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_Dir::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::Packed, model->fields()[0].m_type);
@@ -698,7 +695,7 @@ TEST(DataModel, CompilePitchYawStruct)
 {
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_PitchYaw::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_PitchYaw::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::Packed, model->fields()[0].m_type);
@@ -711,7 +708,7 @@ TEST(DataModel, CompileAnglesStruct)
 {
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Angles::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_Angles::GetStaticClass());
     ASSERT_TRUE(model);
     ASSERT_EQ(1, model->fields().size());
     ASSERT_EQ(DataModelFieldType::Packed, model->fields()[0].m_type);
@@ -724,13 +721,13 @@ TEST(DataModel, CompileAnglesStruct)
 
 TEST(DataModel, EncodeSimple)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Simple::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_Simple::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_Simple s;
+    TestReplicatedStruct_Simple s;
 
     BitWriter w;
     model->encodeFromNativeData(&s, knowledge, w);
@@ -744,13 +741,13 @@ TEST(DataModel, EncodeSimple)
 
 TEST(DataModel, EncodeWritesEmptyString)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_String::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_String::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_String s;
+    TestReplicatedStruct_String s;
     s.m_str = "";
 
     BitWriter w;
@@ -762,13 +759,13 @@ TEST(DataModel, EncodeWritesEmptyString)
 
 TEST(DataModel, EncodeWritesUnlimitedString)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_String::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_String::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_String s;
+    TestReplicatedStruct_String s;
     s.m_str = "Ala ma kota! This string should not be cut!";
 
     BitWriter w;
@@ -780,13 +777,13 @@ TEST(DataModel, EncodeWritesUnlimitedString)
 
 TEST(DataModel, EncodeWritesLimitedString)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_StringLimited::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_StringLimited::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_StringLimited s;
+    TestReplicatedStruct_StringLimited s;
     s.m_str = "Ala ma kota! This string should be cut!";
 
     BitWriter w;
@@ -798,13 +795,13 @@ TEST(DataModel, EncodeWritesLimitedString)
 
 TEST(DataModel, EncodeWritesStringIDEmpty)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_StringID::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_StringID::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_StringID s;
+    TestReplicatedStruct_StringID s;
     s.m_name = StringID();
 
     BitWriter w;
@@ -819,13 +816,13 @@ TEST(DataModel, EncodeWritesStringIDEmpty)
 
 TEST(DataModel, EncodeWritesStringIDIntoKnowledgeDBase)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_StringID::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_StringID::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_StringID s;
+    TestReplicatedStruct_StringID s;
     s.m_name = StringID("Ala ma kota");
 
     BitWriter w;
@@ -841,13 +838,13 @@ TEST(DataModel, EncodeWritesStringIDIntoKnowledgeDBase)
 
 TEST(DataModel, EncodeWritesStringIDIntoKnowledgeDBase_OnlyOnce)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_StringID::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_StringID::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_StringID s;
+    TestReplicatedStruct_StringID s;
     s.m_name = StringID("Ala ma kota");
 
     BitWriter w;
@@ -866,13 +863,13 @@ TEST(DataModel, EncodeWritesStringIDIntoKnowledgeDBase_OnlyOnce)
 
 TEST(DataModel, EncodeWritesTypeRefEmpty)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_TypeRef::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_TypeRef::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_TypeRef s;
+    TestReplicatedStruct_TypeRef s;
 
     BitWriter w;
     model->encodeFromNativeData(&s, knowledge, w);
@@ -883,13 +880,13 @@ TEST(DataModel, EncodeWritesTypeRefEmpty)
 
 TEST(DataModel, EncodeWritesTypeRefOnce)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_TypeRef::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_TypeRef::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_TypeRef s;
+    TestReplicatedStruct_TypeRef s;
     s.m_type = IObject::GetStaticClass();
 
     BitWriter w;
@@ -902,13 +899,13 @@ TEST(DataModel, EncodeWritesTypeRefOnce)
 
 TEST(DataModel, EncodeWritesTypeRefOnlyOnce)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_TypeRef::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_TypeRef::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_TypeRef s;
+    TestReplicatedStruct_TypeRef s;
     s.m_type = IObject::GetStaticClass();
 
     BitWriter w;
@@ -924,13 +921,13 @@ TEST(DataModel, EncodeWritesTypeRefOnlyOnce)
 
 /*TEST(DataModel, EncodeWritesPathEmpty)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     DataModelRepository rep;
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_ResRef::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_ResRef::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_ResRef s;
+    TestReplicatedStruct_ResRef s;
 
     BitWriter w;
     model->encodeFromNativeData(&s, knowledge, w);
@@ -941,13 +938,13 @@ TEST(DataModel, EncodeWritesTypeRefOnlyOnce)
 
 TEST(DataModel, EncodeWritesPathWhenSet)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     DataModelRepository rep;
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_ResRef::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_ResRef::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_ResRef s;
+    TestReplicatedStruct_ResRef s;
     //s.m_path.set("dupa.txt");
 
     BitWriter w;
@@ -961,13 +958,13 @@ TEST(DataModel, EncodeWritesPathWhenSet)
 
 TEST(DataModel, EncodeWritesPathWhenSetOnlyOnce)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     DataModelRepository rep;
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_ResRef::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_ResRef::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_ResRef s;
+    TestReplicatedStruct_ResRef s;
     //s.m_path.set("dupa.txt");
 
     BitWriter w;
@@ -983,13 +980,13 @@ TEST(DataModel, EncodeWritesPathWhenSetOnlyOnce)
 
 TEST(DataModel, EncodeWritesObjectId)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_ObjectPtr::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_ObjectPtr::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_ObjectPtr s;
+    TestReplicatedStruct_ObjectPtr s;
 
     BitWriter w;
     model->encodeFromNativeData(&s, knowledge, w);
@@ -1000,13 +997,13 @@ TEST(DataModel, EncodeWritesObjectId)
 
 TEST(DataModel, EncodeWritesWeakObjectId)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_WeakObjectPtr::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_WeakObjectPtr::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_WeakObjectPtr s;
+    TestReplicatedStruct_WeakObjectPtr s;
 
     BitWriter w;
     model->encodeFromNativeData(&s, knowledge, w);
@@ -1017,13 +1014,13 @@ TEST(DataModel, EncodeWritesWeakObjectId)
 
 TEST(DataModel, EncodeWritesPos)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Pos::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_Pos::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_Pos s;
+    TestReplicatedStruct_Pos s;
     s.m_pos.x = 1.0f;
     s.m_pos.y = 2.0f;
     s.m_pos.z = 3.0f;
@@ -1037,13 +1034,13 @@ TEST(DataModel, EncodeWritesPos)
 
 TEST(DataModel, EncodeWritesDeltaPos)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_DeltaPos::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_DeltaPos::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_DeltaPos s;
+    TestReplicatedStruct_DeltaPos s;
     s.m_pos.x = 1.0f;
     s.m_pos.y = 2.0f;
     s.m_pos.z = 3.0f;
@@ -1057,13 +1054,13 @@ TEST(DataModel, EncodeWritesDeltaPos)
 
 TEST(DataModel, EncodeWritesNormal)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Normal::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_Normal::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_Normal s;
+    TestReplicatedStruct_Normal s;
     s.m_pos.x = 1.0f;
     s.m_pos.y = 2.0f;
     s.m_pos.z = 3.0f;
@@ -1077,13 +1074,13 @@ TEST(DataModel, EncodeWritesNormal)
 
 TEST(DataModel, EncodeWritesDir)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Dir::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_Dir::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_Dir s;
+    TestReplicatedStruct_Dir s;
     s.m_pos.x = 1.0f;
     s.m_pos.y = 2.0f;
     s.m_pos.z = 3.0f;
@@ -1097,13 +1094,13 @@ TEST(DataModel, EncodeWritesDir)
 
 TEST(DataModel, EncodePitchYaw)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_PitchYaw::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_PitchYaw::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_PitchYaw s;
+    TestReplicatedStruct_PitchYaw s;
     s.m_pos.x = 1.0f;
     s.m_pos.y = 2.0f;
     s.m_pos.z = 3.0f;
@@ -1117,13 +1114,13 @@ TEST(DataModel, EncodePitchYaw)
 
 TEST(DataModel, EncodeAngles)
 {
-    test::LocalKnowledgeBase knowledge;
+    LocalKnowledgeBase knowledge;
     auto rep = RefNew<DataModelRepository>();
 
-    auto model  = rep->buildModelForType(test::TestReplicatedStruct_Angles::GetStaticClass());
+    auto model  = rep->buildModelForType(TestReplicatedStruct_Angles::GetStaticClass());
     ASSERT_TRUE(model);
 
-    test::TestReplicatedStruct_Angles s;
+    TestReplicatedStruct_Angles s;
     s.m_pos.x = 1.0f;
     s.m_pos.y = 2.0f;
     s.m_pos.z = 3.0f;
@@ -1139,10 +1136,10 @@ TEST(DataModel, EncodeAngles)
 
 TEST(DataModelTransmit, SimpleFalse)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Simple s, out;
+    TestReplicatedStruct_Simple s, out;
     transfer.transfer(s, out);
 
     ASSERT_EQ(false, out.m_bit);
@@ -1150,10 +1147,10 @@ TEST(DataModelTransmit, SimpleFalse)
 
 TEST(DataModelTransmit, SimpleTrue)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Simple s, out;
+    TestReplicatedStruct_Simple s, out;
     s.m_bit = true;
     transfer.transfer(s, out);
 
@@ -1162,10 +1159,10 @@ TEST(DataModelTransmit, SimpleTrue)
 
 TEST(DataModelTransmit, SimpleUnsignedInRange)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Simple s, out;
+    TestReplicatedStruct_Simple s, out;
     s.m_unsigned = 10;
     transfer.transfer(s, out);
 
@@ -1174,10 +1171,10 @@ TEST(DataModelTransmit, SimpleUnsignedInRange)
 
 TEST(DataModelTransmit, SimpleUnsignedClampToRange)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Simple s, out;
+    TestReplicatedStruct_Simple s, out;
     s.m_unsigned = 255;
     transfer.transfer(s, out);
 
@@ -1186,10 +1183,10 @@ TEST(DataModelTransmit, SimpleUnsignedClampToRange)
 
 TEST(DataModelTransmit, SimpleSignedInRangePositive)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Simple s, out;
+    TestReplicatedStruct_Simple s, out;
     s.m_signed = 100;
     transfer.transfer(s, out);
 
@@ -1198,10 +1195,10 @@ TEST(DataModelTransmit, SimpleSignedInRangePositive)
 
 TEST(DataModelTransmit, SimpleSignedInRangeNegative)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Simple s, out;
+    TestReplicatedStruct_Simple s, out;
     s.m_signed = -100;
     transfer.transfer(s, out);
 
@@ -1210,10 +1207,10 @@ TEST(DataModelTransmit, SimpleSignedInRangeNegative)
 
 TEST(DataModelTransmit, SimpleSignedClampedToRangeMin)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Simple s, out;
+    TestReplicatedStruct_Simple s, out;
     s.m_signed = -4000;
     transfer.transfer(s, out);
 
@@ -1222,10 +1219,10 @@ TEST(DataModelTransmit, SimpleSignedClampedToRangeMin)
 
 TEST(DataModelTransmit, SimpleSignedClampedToRangeMax)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Simple s, out;
+    TestReplicatedStruct_Simple s, out;
     s.m_signed = 4000;
     transfer.transfer(s, out);
 
@@ -1234,10 +1231,10 @@ TEST(DataModelTransmit, SimpleSignedClampedToRangeMax)
 
 TEST(DataModelTransmit, SimpleFloatInRange)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Simple s, out;
+    TestReplicatedStruct_Simple s, out;
     s.m_float = 0.0f;
     transfer.transfer(s, out);
 
@@ -1246,10 +1243,10 @@ TEST(DataModelTransmit, SimpleFloatInRange)
 
 TEST(DataModelTransmit, SimpleFloatClampedToRangeMin)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Simple s, out;
+    TestReplicatedStruct_Simple s, out;
     s.m_float = -2.0f;
     transfer.transfer(s, out);
 
@@ -1258,10 +1255,10 @@ TEST(DataModelTransmit, SimpleFloatClampedToRangeMin)
 
 TEST(DataModelTransmit, SimpleFloatClampedToRangeMax)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Simple s, out;
+    TestReplicatedStruct_Simple s, out;
     s.m_float = 2.0f;
     transfer.transfer(s, out);
 
@@ -1270,10 +1267,10 @@ TEST(DataModelTransmit, SimpleFloatClampedToRangeMax)
 
 TEST(DataModelTransmit, StringEmpty)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_String s, out;
+    TestReplicatedStruct_String s, out;
     transfer.transfer(s, out);
 
     ASSERT_TRUE(out.m_str.empty());
@@ -1281,10 +1278,10 @@ TEST(DataModelTransmit, StringEmpty)
 
 TEST(DataModelTransmit, StringUnlimited)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_String s, out;
+    TestReplicatedStruct_String s, out;
     s.m_str = "This string should not be cut by the replication, even though it's very long";
     transfer.transfer(s, out);
 
@@ -1293,10 +1290,10 @@ TEST(DataModelTransmit, StringUnlimited)
 
 TEST(DataModelTransmit, StringLimited)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_StringLimited s, out;
+    TestReplicatedStruct_StringLimited s, out;
     s.m_str = "This string should be cut";
     transfer.transfer(s, out);
 
@@ -1305,10 +1302,10 @@ TEST(DataModelTransmit, StringLimited)
 
 TEST(DataModelTransmit, StringIDEmpty)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_StringID s, out;
+    TestReplicatedStruct_StringID s, out;
     transfer.transfer(s, out);
 
     ASSERT_TRUE(out.m_name.empty());
@@ -1316,10 +1313,10 @@ TEST(DataModelTransmit, StringIDEmpty)
 
 TEST(DataModelTransmit, StringIDValue)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_StringID s, out;
+    TestReplicatedStruct_StringID s, out;
     s.m_name = "StringIDValue"_id;
     transfer.transfer(s, out);
 
@@ -1328,10 +1325,10 @@ TEST(DataModelTransmit, StringIDValue)
 
 TEST(DataModelTransmit, FullStruct)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_InnerStruct s, out;
+    TestReplicatedStruct_InnerStruct s, out;
     s.m_pos.x = 3.1415926535f;
     s.m_pos.y = 2.7182818284f;
     s.m_pos.z = 1.41421356237f;
@@ -1345,10 +1342,10 @@ TEST(DataModelTransmit, FullStruct)
 
 TEST(DataModelTransmit, PackedStruct)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_InnerStructPacked s, out;
+    TestReplicatedStruct_InnerStructPacked s, out;
     s.m_struct.m_bit = true;
     s.m_struct.m_signed = 666;
     s.m_struct.m_unsigned = 42;
@@ -1364,10 +1361,10 @@ TEST(DataModelTransmit, PackedStruct)
 
 TEST(DataModelTransmit, Position)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Pos s, out;
+    TestReplicatedStruct_Pos s, out;
     s.m_pos.x = 100.0f;
     s.m_pos.y = 200.0f;
     s.m_pos.z = 300.0f;
@@ -1381,10 +1378,10 @@ TEST(DataModelTransmit, Position)
 
 TEST(DataModelTransmit, PositionClamp)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Pos s, out;
+    TestReplicatedStruct_Pos s, out;
     s.m_pos.x = FieldPacking::POSITION_XY_RANGE + 100.0f;
     s.m_pos.y = -FieldPacking::POSITION_XY_RANGE - 100.0f;
     s.m_pos.z = FieldPacking::POSITION_Z_RANGE + 100.0f;
@@ -1398,10 +1395,10 @@ TEST(DataModelTransmit, PositionClamp)
 
 TEST(DataModelTransmit, DeltaPosition)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_DeltaPos s, out;
+    TestReplicatedStruct_DeltaPos s, out;
     s.m_pos.x = 1.0f;
     s.m_pos.y = 2.0f;
     s.m_pos.z = 3.0f;
@@ -1416,10 +1413,10 @@ TEST(DataModelTransmit, DeltaPosition)
 
 TEST(DataModelTransmit, DeltaPositionClamped)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_DeltaPos s, out;
+    TestReplicatedStruct_DeltaPos s, out;
     s.m_pos.x = 20.0f;
     s.m_pos.y = -20.0f;
     s.m_pos.z = std::numeric_limits<float>::infinity();
@@ -1434,10 +1431,10 @@ TEST(DataModelTransmit, DeltaPositionClamped)
 
 TEST(DataModelTransmit, Normal)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Normal s, out;
+    TestReplicatedStruct_Normal s, out;
     s.m_pos.x = 1.0f;
     s.m_pos.y = 1.0f;
     s.m_pos.z = 1.0f;
@@ -1455,10 +1452,10 @@ TEST(DataModelTransmit, Normal)
 
 TEST(DataModelTransmit, RoughNormal)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Dir s, out;
+    TestReplicatedStruct_Dir s, out;
     s.m_pos.x = 1.0f;
     s.m_pos.y = 1.0f;
     s.m_pos.z = 1.0f;
@@ -1476,10 +1473,10 @@ TEST(DataModelTransmit, RoughNormal)
 
 TEST(DataModelTransmit, PitchYawNormal)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_PitchYaw s, out;
+    TestReplicatedStruct_PitchYaw s, out;
     s.m_pos.x = 100.0f;
     s.m_pos.y = 200.0f;
 
@@ -1491,10 +1488,10 @@ TEST(DataModelTransmit, PitchYawNormal)
 
 TEST(DataModelTransmit, PitchYawWraps)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_PitchYaw s, out;
+    TestReplicatedStruct_PitchYaw s, out;
     s.m_pos.x = 100.0f + 360.0f;
     s.m_pos.y = 200.0f - 360.0f;
 
@@ -1506,10 +1503,10 @@ TEST(DataModelTransmit, PitchYawWraps)
 
 TEST(DataModelTransmit, AnglesNormal)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Angles s, out;
+    TestReplicatedStruct_Angles s, out;
     s.m_pos.x = 100.0f;
     s.m_pos.y = 200.0f;
     s.m_pos.z = 300.0f;
@@ -1523,10 +1520,10 @@ TEST(DataModelTransmit, AnglesNormal)
 
 TEST(DataModelTransmit, AnglesNormalWraps)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Angles s, out;
+    TestReplicatedStruct_Angles s, out;
     s.m_pos.x = 100.0f + 360.0f;
     s.m_pos.y = 200.0f - 360.0f;
     s.m_pos.z = 300.0f + 3600.0f;
@@ -1542,10 +1539,10 @@ TEST(DataModelTransmit, AnglesNormalWraps)
 
 TEST(DataModelTransmit, TypeRefEmpty)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_TypeRef s, out;
+    TestReplicatedStruct_TypeRef s, out;
 
     transfer.transfer(s, out);
 
@@ -1554,10 +1551,10 @@ TEST(DataModelTransmit, TypeRefEmpty)
 
 TEST(DataModelTransmit, TypeRefClass)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_TypeRef s, out;
+    TestReplicatedStruct_TypeRef s, out;
     s.m_type = IObject::GetStaticClass();
 
     transfer.transfer(s, out);
@@ -1567,10 +1564,10 @@ TEST(DataModelTransmit, TypeRefClass)
 
 /*TEST(DataModelTransmit, TypeRefNonClassType)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_TypeRef s, out;
+    TestReplicatedStruct_TypeRef s, out;
     s.type = reflection::GetTypeObject< Array<ObjectPtr> >();
 
     transfer.transfer(s, out);
@@ -1582,10 +1579,10 @@ TEST(DataModelTransmit, TypeRefClass)
 
 /*TEST(DataModelTransmit, ResourceRefEmpty)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_ResRef s, out;
+    TestReplicatedStruct_ResRef s, out;
 
     transfer.transfer(s, out);
 
@@ -1594,10 +1591,10 @@ TEST(DataModelTransmit, TypeRefClass)
 
 TEST(DataModelTransmit, ResourceRef)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_ResRef s, out;
+    TestReplicatedStruct_ResRef s, out;
     //s.m_path.set("dupa.txt");
 
     transfer.transfer(s, out);
@@ -1609,10 +1606,10 @@ TEST(DataModelTransmit, ResourceRef)
 
 TEST(DataModelTransmit, ObjectPtrNull)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_ObjectPtr s, out;
+    TestReplicatedStruct_ObjectPtr s, out;
 
     transfer.transfer(s, out);
 
@@ -1621,12 +1618,12 @@ TEST(DataModelTransmit, ObjectPtrNull)
 
 TEST(DataModelTransmit, ObjectPtrRegistered)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_ObjectPtr s, out;
+    TestReplicatedStruct_ObjectPtr s, out;
 
-    s.m_obj = RefNew<test::ReplicationTestObject>();
+    s.m_obj = RefNew<ReplicationTestObject>();
     knowledge.attachObject(11, s.m_obj);
 
     transfer.transfer(s, out);
@@ -1638,10 +1635,10 @@ TEST(DataModelTransmit, ObjectPtrRegistered)
 
 TEST(DataModelTransmit, ObjectWeakPtrNull)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_WeakObjectPtr s, out;
+    TestReplicatedStruct_WeakObjectPtr s, out;
 
     transfer.transfer(s, out);
 
@@ -1650,12 +1647,12 @@ TEST(DataModelTransmit, ObjectWeakPtrNull)
 
 TEST(DataModelTransmit, ObjectWeakPtrRegistered)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_WeakObjectPtr s, out;
+    TestReplicatedStruct_WeakObjectPtr s, out;
 
-    auto obj = RefNew<test::ReplicationTestObject>();
+    auto obj = RefNew<ReplicationTestObject>();
     s.m_obj = obj;
 
     knowledge.attachObject(11, obj);
@@ -1669,10 +1666,10 @@ TEST(DataModelTransmit, ObjectWeakPtrRegistered)
 
 TEST(DataModelTransmit, Arrays)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Arrays s, out;
+    TestReplicatedStruct_Arrays s, out;
     for (uint32_t i=0; i<8; ++i)
         s.m_bools.pushBack(i & 1);
     for (uint32_t i=0; i<8; ++i)
@@ -1699,10 +1696,10 @@ TEST(DataModelTransmit, Arrays)
 
 TEST(DataModelTransmit, ArraysLimit)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_Arrays s, out;
+    TestReplicatedStruct_Arrays s, out;
     for (uint32_t i=0; i<20; ++i)
         s.m_bools.pushBack(i & 1);
 
@@ -1718,10 +1715,10 @@ TEST(DataModelTransmit, ArraysLimit)
 
 TEST(DataModelTransmit, TreeOfStructures)
 {
-    test::LocalKnowledgeBase knowledge;
-    test::TransferTest transfer(knowledge);
+    LocalKnowledgeBase knowledge;
+    TransferTest transfer(knowledge);
 
-    test::TestReplicatedStruct_TreeNode s, out;
+    TestReplicatedStruct_TreeNode s, out;
 
     srand(0);
     for (uint32_t i=0; i<50; ++i)
@@ -1741,3 +1738,6 @@ TEST(DataModelTransmit, TreeOfStructures)
 
 	EXPECT_EQ(orgValues.size(), transferedValues.size());
 }
+
+END_BOOMER_NAMESPACE(base::replication::test)
+

@@ -8,47 +8,44 @@
 
 #include "rttiArrayType.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::rtti)
+
+namespace prv
 {
-    namespace rtti
+
+    /// array specification for the native array type
+    class NativeArrayType : public IArrayType
     {
-        namespace prv
-        {
+    public:
+        NativeArrayType(Type innerType, uint32_t size);
+        virtual ~NativeArrayType();
 
-            /// array specification for the native array type
-            class NativeArrayType : public IArrayType
-            {
-            public:
-                NativeArrayType(Type innerType, uint32_t size);
-                virtual ~NativeArrayType();
+        virtual void construct(void *object) const override final;
+        virtual void destruct(void *object) const override final;
+        virtual void printToText(IFormatStream& f, const void* data, uint32_t flags = 0) const override final;
+        virtual bool parseFromString(StringView txt, void* data, uint32_t flags = 0) const override final;
 
-                virtual void construct(void *object) const override final;
-                virtual void destruct(void *object) const override final;
-                virtual void printToText(IFormatStream& f, const void* data, uint32_t flags = 0) const override final;
-                virtual bool parseFromString(StringView txt, void* data, uint32_t flags = 0) const override final;
+        virtual ArrayMetaType arrayMetaType() const override final;
+        virtual uint32_t arraySize(const void* data) const override final;
+        virtual uint32_t arrayCapacity(const void* data) const override final;
+		virtual uint32_t maxArrayCapacity(const void* data) const override final;
+        virtual bool canArrayBeResized() const override final;
+        virtual bool clearArrayElements(void* data) const override final;
+        virtual bool resizeArrayElements(void* data, uint32_t count) const override final;
+        virtual bool removeArrayElement(const void* data, uint32_t index) const override final;
+        virtual bool createArrayElement(void* data, uint32_t index) const override final;
+        virtual const void* arrayElementData(const void* data, uint32_t index) const override final;
+        virtual void* arrayElementData(void* data, uint32_t index) const override final;
 
-                virtual ArrayMetaType arrayMetaType() const override final;
-                virtual uint32_t arraySize(const void* data) const override final;
-                virtual uint32_t arrayCapacity(const void* data) const override final;
-				virtual uint32_t maxArrayCapacity(const void* data) const override final;
-                virtual bool canArrayBeResized() const override final;
-                virtual bool clearArrayElements(void* data) const override final;
-                virtual bool resizeArrayElements(void* data, uint32_t count) const override final;
-                virtual bool removeArrayElement(const void* data, uint32_t index) const override final;
-                virtual bool createArrayElement(void* data, uint32_t index) const override final;
-                virtual const void* arrayElementData(const void* data, uint32_t index) const override final;
-                virtual void* arrayElementData(void* data, uint32_t index) const override final;
+        //---
 
-                //---
+        static const char* TypePrefix;
+        static Type ParseType(StringParser& typeNameString, TypeSystem& typeSystem);
 
-                static const char* TypePrefix;
-                static Type ParseType(StringParser& typeNameString, TypeSystem& typeSystem);
+    private:
+        uint32_t m_elementCount;
+    };
 
-            private:
-                uint32_t m_elementCount;
-            };
+} // prv
 
-        } // prv
-    } // rtti
-} // base
-
+END_BOOMER_NAMESPACE(base::rtti)

@@ -8,113 +8,113 @@
 
 #pragma once
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base)
+
+///----
+
+INLINE StringID::StringID()
+    : indexValue(0)
+{}
+
+INLINE StringID::StringID(const StringID& other)
+    : indexValue(other.indexValue)
+{}
+
+INLINE StringID::StringID(const char* other)
 {
-    ///----
+	indexValue = Alloc(other);
+}
 
-    INLINE StringID::StringID()
-        : indexValue(0)
-    {}
+INLINE StringID::StringID(StringView other)
+{
+	indexValue = Alloc(other);
+}
 
-    INLINE StringID::StringID(const StringID& other)
-        : indexValue(other.indexValue)
-    {}
+template< uint32_t N >
+INLINE StringID::StringID(const BaseTempString<N>& other)
+{
+	indexValue = Alloc(other.c_str());
+}
 
-    INLINE StringID::StringID(const char* other)
-    {
-		indexValue = Alloc(other);
-    }
+INLINE bool StringID::operator==(StringID other) const
+{
+    return indexValue == other.indexValue;
+}
 
-	INLINE StringID::StringID(StringView other)
-	{
-		indexValue = Alloc(other);
-	}
+INLINE bool StringID::operator!=(StringID other) const
+{
+    return indexValue != other.indexValue;
+}
 
-    template< uint32_t N >
-    INLINE StringID::StringID(const BaseTempString<N>& other)
-    {
-		indexValue = Alloc(other.c_str());
-    }
+INLINE bool StringID::operator==(const char* other) const
+{
+    return view() == other;
+}
 
-    INLINE bool StringID::operator==(StringID other) const
-    {
-        return indexValue == other.indexValue;
-    }
+INLINE bool StringID::operator==(const StringBuf& other) const
+{
+    return view() == other;
+}
 
-    INLINE bool StringID::operator!=(StringID other) const
-    {
-        return indexValue != other.indexValue;
-    }
+INLINE bool StringID::operator!=(const char* other) const
+{
+    return view() != other;
+}
 
-    INLINE bool StringID::operator==(const char* other) const
-    {
-        return view() == other;
-    }
+INLINE bool StringID::operator!=(const StringBuf& other) const
+{
+    return view() != other;
+}
 
-    INLINE bool StringID::operator==(const StringBuf& other) const
-    {
-        return view() == other;
-    }
+INLINE bool StringID::operator<(StringID other) const
+{
+    return view() < other.view();
+}
 
-    INLINE bool StringID::operator!=(const char* other) const
-    {
-        return view() != other;
-    }
+INLINE StringID& StringID::operator=(StringID other)
+{
+    indexValue = other.indexValue;
+    return *this;
+}
 
-    INLINE bool StringID::operator!=(const StringBuf& other) const
-    {
-        return view() != other;
-    }
+INLINE bool StringID::empty() const
+{
+    return 0 == indexValue;
+}
 
-    INLINE bool StringID::operator<(StringID other) const
-    {
-        return view() < other.view();
-    }
+INLINE StringID::operator bool() const
+{
+    return 0 != indexValue;
+}
 
-    INLINE StringID& StringID::operator=(StringID other)
-    {
-        indexValue = other.indexValue;
-        return *this;
-    }
+INLINE uint32_t StringID::CalcHash(StringID id)
+{
+    return StringView::CalcHash(id.view());
+}
 
-    INLINE bool StringID::empty() const
-    {
-        return 0 == indexValue;
-    }
+INLINE uint32_t StringID::CalcHash(StringView txt)
+{
+    return StringView::CalcHash(txt);
+}
 
-    INLINE StringID::operator bool() const
-    {
-        return 0 != indexValue;
-    }
-
-    INLINE uint32_t StringID::CalcHash(StringID id)
-    {
-        return StringView::CalcHash(id.view());
-    }
-
-    INLINE uint32_t StringID::CalcHash(StringView txt)
-    {
-        return StringView::CalcHash(txt);
-    }
-
-    INLINE uint32_t StringID::CalcHash(const char* txt)
-    {
-        return StringView::CalcHash(txt);
-    }
+INLINE uint32_t StringID::CalcHash(const char* txt)
+{
+    return StringView::CalcHash(txt);
+}
         
-    INLINE const char* StringID::c_str() const
-    {
-        return st_StringTable.load() + indexValue;
-    }
+INLINE const char* StringID::c_str() const
+{
+    return st_StringTable.load() + indexValue;
+}
 
-    INLINE StringView StringID::view() const
-    {
-		return StringView(st_StringTable.load() + indexValue);
-    }
+INLINE StringView StringID::view() const
+{
+	return StringView(st_StringTable.load() + indexValue);
+}
 
-    INLINE uint32_t StringID::index() const
-    {
-        return indexValue;
-    }
+INLINE uint32_t StringID::index() const
+{
+    return indexValue;
+}
 
-} // base
+END_BOOMER_NAMESPACE(base)

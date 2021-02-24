@@ -8,38 +8,34 @@
 
 #include "base/containers/include/hashMap.h"
 
-namespace base
+BEGIN_BOOMER_NAMESPACE(base::replication)
+
+//--
+
+/// repository of all packing models created for structures
+class BASE_REPLICATION_API DataModelRepository : public IReferencable
 {
-    namespace replication
-    {
+public:
+    DataModelRepository();
+    ~DataModelRepository();
 
-        //--
+    //--
 
-        /// repository of all packing models created for structures
-        class BASE_REPLICATION_API DataModelRepository : public IReferencable
-        {
-        public:
-            DataModelRepository();
-            ~DataModelRepository();
+    /// ask for a data model for given compound type (struct/class)
+    const DataModel* buildModelForType(Type type);
 
-            //--
+    /// ask for a data model for given function (for RPC/messages)
+    const DataModel* buildModelForFunction(const rtti::Function* func);
 
-            /// ask for a data model for given compound type (struct/class)
-            const DataModel* buildModelForType(Type type);
+    //--
 
-            /// ask for a data model for given function (for RPC/messages)
-            const DataModel* buildModelForFunction(const rtti::Function* func);
+private:
+    Mutex m_lock;
 
-            //--
+    HashMap<StringID, DataModel*> m_compoundModels;
+    HashMap<StringBuf, DataModel*> m_functionModels;
+};
 
-        private:
-            Mutex m_lock;
+//--
 
-            HashMap<StringID, DataModel*> m_compoundModels;
-            HashMap<StringBuf, DataModel*> m_functionModels;
-        };
-
-        //--
-
-    } // replication
-} // base
+END_BOOMER_NAMESPACE(base::replication)
