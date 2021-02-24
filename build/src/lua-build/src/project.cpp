@@ -253,6 +253,8 @@ bool Configuration::parse(const char* path, const Commandline& cmd)
         }
     }
 
+    force = cmd.has("force");
+
     engineSourcesPath = engineSourcesPath.make_preferred();
     projectSourcesPath = projectSourcesPath.make_preferred();
     solutionPath = solutionPath.make_preferred();

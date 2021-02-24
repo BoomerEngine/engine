@@ -5,6 +5,7 @@
 //--
 
 struct CodeParserState;
+struct TokenStream;
 
 struct CodeTokenizer
 {
@@ -12,9 +13,18 @@ struct CodeTokenizer
 
     struct Conditional;
 
+    enum class CodeTokenType : uint8_t
+    {
+        CHAR,
+        IDENT,
+        NUMBER,
+        STRING,
+    };
+
     struct CodeToken
     {
         string_view text;
+        CodeTokenType type;
         int line = 0;
 
         Conditional* cond = nullptr;
@@ -32,49 +42,17 @@ struct CodeTokenizer
     struct Declaration
     {
         DeclarationType type;
-        string_view name;
-        vector<string_view> namespaces;
-    };
-
-    struct CodeSection
-    {        
-        vector<CodeToken> tokens;
-        vector<Declaration> declarations;
-    };
-
-    struct ConditionalOption
-    {
-        CodeToken command; // #ifdef #if #ifndef 
-        CodeToken arguments; // actual argument
-        CodeSection* section = nullptr;
-    };
-
-    struct Conditional
-    {
-        vector<ConditionalOption> options;
-        CodeSection* currentSection = nullptr;
+        string name;
+        string scope; // namespace
     };
 
     //--
 
-    //
-    // #if A
-    //   code
-    // #elif C
-    //   code3
-    //   #if B
-    //     code2
-    //   #endif
-    //   code4
-    // #else
-    //   #if B
-    //     code2
-    //   #endif
-    // #endif
-
     filesystem::path contextPath;
 
-    CodeSection* rootSection = nullptr;
+    vector<CodeToken> tokens;
+
+    vector<Declaration> declarations;
 
     CodeTokenizer();
     ~CodeTokenizer();
@@ -86,9 +64,6 @@ struct CodeTokenizer
 private:
     string code;
 
-    CodeSection* currentSection = nullptr;
-    vector<Conditional*> conditionalStack;
-
     void emitToken(CodeToken txt);
 
     void handleComment(CodeParserState& s);
@@ -97,22 +72,10 @@ private:
     void handleString(CodeParserState& s);
     void handleSingleChar(CodeParserState& s);
     void handleIdent(CodeParserState& s);
+    void handleNumber(CodeParserState& s);
     bool handlePreprocessor(CodeParserState& s);
 
-
-    struct ScopeState
-    {
-        struct Scope
-        {
-            const CodeToken* entryToken;
-            bool isNamespace = false;
-        };
-
-        vector<Scope> scopes;
-        vector<string_view> namespaces;
-    };
-
-    bool processCodeSection(CodeSection* section, ScopeState& state);
+    static bool ExtractNamespaceName(TokenStream& tokens, string& outName);
 };
 
 

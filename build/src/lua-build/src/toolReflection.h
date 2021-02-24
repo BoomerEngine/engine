@@ -6,6 +6,8 @@
 
 //--
 
+struct CodeGenerator;
+
 struct ProjectReflection
 {
     struct RefelctionFile
@@ -17,6 +19,7 @@ struct ProjectReflection
 
     struct RefelctionProject
     {
+        string mergedName;
         vector<RefelctionFile*> files;
         filesystem::path reflectionFilePath;
     };
@@ -29,6 +32,10 @@ struct ProjectReflection
     bool extract(const ProjectStructure& structure, const Configuration& config);
     bool tokenizeFiles();
     bool parseDeclarations();
+    bool generateReflection(CodeGenerator& gen) const;
+
+private:
+    bool generateReflectionForProject(const RefelctionProject& p, stringstream& f) const;
 };
 
 //--

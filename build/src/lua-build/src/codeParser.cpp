@@ -5,13 +5,10 @@
 
 CodeTokenizer::CodeTokenizer()
 {
-    rootSection = new CodeSection();
-    currentSection = rootSection;
 }
 
 CodeTokenizer::~CodeTokenizer()
 {
-    delete rootSection;
 }
 
 struct CodeParserState
@@ -56,9 +53,10 @@ struct CodeParserState
         }
     }
 
-    inline CodeTokenizer::CodeToken token(const char* fromPos, int fromLine)
+    inline CodeTokenizer::CodeToken token(const char* fromPos, int fromLine, CodeTokenizer::CodeTokenType type)
     {
         CodeTokenizer::CodeToken ret;
+        ret.type = type;
         ret.text = string_view(fromPos, pos - fromPos);
         ret.line = fromLine;
         return ret;
@@ -68,6 +66,11 @@ struct CodeParserState
 static inline bool IsTokenChar(char ch)
 {
     return (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || (ch == '_') || (ch == '.');
+}
+
+static inline bool IsNumberChar(char ch)
+{
+    return (ch >= '0' && ch <= '9');
 }
 
 bool CodeTokenizer::tokenize(string_view txt)
@@ -98,8 +101,12 @@ bool CodeTokenizer::tokenize(string_view txt)
                 return false;
         }
         else if (IsTokenChar(ch))
-        {            
+        {
             handleIdent(state);
+        }
+        else if (IsNumberChar(ch))
+        {
+            handleNumber(state);
         }
         else
         {
@@ -159,7 +166,7 @@ void CodeTokenizer::handleMultiLineComment(CodeParserState& s)
 
 void CodeTokenizer::emitToken(CodeToken txt)
 {
-    currentSection->tokens.push_back(txt);
+    tokens.push_back(txt);
 }
 
 void CodeTokenizer::handleString(CodeParserState& s)
@@ -189,7 +196,7 @@ void CodeTokenizer::handleString(CodeParserState& s)
         }
     }
 
-    emitToken(s.token(fromPos, fromLine));
+    emitToken(s.token(fromPos, fromLine, CodeTokenType::STRING));
 
     s.eat();    
 }
@@ -207,7 +214,23 @@ void CodeTokenizer::handleIdent(CodeParserState& s)
         s.eat();
     }
 
-    emitToken(s.token(fromPos, fromLine));
+    emitToken(s.token(fromPos, fromLine, CodeTokenType::IDENT));
+}
+
+void CodeTokenizer::handleNumber(CodeParserState& s)
+{
+    auto fromPos = s.pos;
+    auto fromLine = s.line;
+
+    while (s.hasContent())
+    {
+        char ch = s.peek();
+        if (!IsNumberChar(ch))
+            break;
+        s.eat();
+    }
+
+    emitToken(s.token(fromPos, fromLine, CodeTokenType::NUMBER));
 }
 
 void CodeTokenizer::handleSingleChar(CodeParserState& s)
@@ -217,7 +240,7 @@ void CodeTokenizer::handleSingleChar(CodeParserState& s)
 
     s.eat();
 
-    emitToken(s.token(fromPos, fromLine));
+    emitToken(s.token(fromPos, fromLine, CodeTokenType::CHAR));
 }
 
 bool CodeTokenizer::handlePreprocessor(CodeParserState& s)
@@ -253,7 +276,7 @@ bool CodeTokenizer::handlePreprocessor(CodeParserState& s)
         s.eat();
     }
 
-    auto command = s.token(fromPos, fromLine);
+    auto command = s.token(fromPos, fromLine, CodeTokenType::IDENT);
 
     /*while (s.hasContent())
     {
@@ -272,71 +295,14 @@ bool CodeTokenizer::handlePreprocessor(CodeParserState& s)
         s.eat();
     }
 
-    auto arguments = s.token(fromPos, fromLine);
-    
-    //cout << "(" << fromLine << "): " << command.text << " " << arguments.text << "\n";
+    auto arguments = s.token(fromPos, fromLine, CodeTokenType::STRING);
 
-    if (command.text == "endif")
-    {
-        if (conditionalStack.empty())
-        {
-            cout << contextPath.u8string() << "(" << fromLine << "): error:  Unexpected #endif\n";
-            return false;
-        }
-
-        conditionalStack.pop_back();
-
-        if (conditionalStack.empty())
-            currentSection = rootSection;
-        else
-            currentSection = conditionalStack.back()->currentSection;
-    }
-    else if (command.text == "if" || command.text == "ifdef" || command.text == "ifndef")
-    {
-        auto* section = new CodeSection();
-
-        auto* cond = new Conditional();
-        cond->options.emplace_back();
-        cond->options.back().section = section;
-        cond->options.back().command = command;
-        cond->options.back().arguments = arguments;
-        cond->options.back().command.cond = cond;
-        cond->currentSection = section;
-        conditionalStack.push_back(cond);
-
-        currentSection = section;
-    }
-    else if (command.text == "else" || command.text == "elif")
-    {
-        if (conditionalStack.empty())
-        {
-            cout << contextPath.u8string() << "(" << fromLine << "): error:  Unexpected #else\n";
-            return false;
-        }
-
-        auto* section = new CodeSection();
-
-        auto* cond = conditionalStack.back();
-        cond->options.emplace_back();
-        cond->options.back().section = section;
-        cond->options.back().command = command;
-        cond->options.back().arguments = arguments;
-        cond->options.back().command.cond = cond;
-        cond->currentSection = section;
-
-        currentSection = section;
-    }
+    // TODO: any "#pragma" ?
 
     return true;
 }
 
 //--
-
-bool CodeTokenizer::process()
-{
-    ScopeState state;
-    return processCodeSection(rootSection, state);
-}
 
 struct TokenStream
 {
@@ -344,7 +310,7 @@ struct TokenStream
         : tokens(tokens)
     {
         pos = 0;
-        end = tokens.size();
+        end = (int)tokens.size();
     }
 
     inline bool hasContent() const
@@ -368,82 +334,189 @@ struct TokenStream
     int end = 0;
 };
 
-bool CodeTokenizer::processCodeSection(CodeSection* section, ScopeState& state)
+bool CodeTokenizer::ExtractNamespaceName(TokenStream& s, string& outName)
 {
-    TokenStream s(section->tokens);
+    stringstream ss;
+
+    {
+        const auto& bracket = s.peek();
+        if (bracket.type != CodeTokenType::CHAR || bracket.text != "(")
+            return false;
+        s.eat();
+    }
+
+    bool hasParts = false;
+
+    while (s.hasContent())
+    {
+        if (s.peek().text == ")")
+        {
+            s.eat();
+
+            outName = ss.str();
+            return true;
+        }
+
+        if (hasParts)
+        {
+            if (s.peek(0).text != ":" || s.peek(1).text != ":")
+                return false;
+            s.eat(2);
+            ss << "::";
+        }
+
+        if (s.peek().type != CodeTokenType::IDENT)
+            return false;
+
+        ss << s.peek().text;
+        hasParts = true;
+
+        s.eat();
+    }
+
+    return false;
+}
+
+bool CodeTokenizer::process()
+{
+    TokenStream s(tokens);
 
     bool print = EndsWith(contextPath.u8string(), "file.c");
+
+    string activeNamespace = "";
 
     while (s.hasContent())
     {
         const auto& token = s.peek();
+        s.eat();
 
         if (print)
             cout << "Token '" << token.text << "' at line " << token.line << "\n";
 
-        if (token.text == "namespace")
+        if (token.text == "BEGIN_BOOMER_NAMESPACE" || token.text == "BEGIN_BOOMER_NAMESPACE_EX")
         {
-            const auto& ident = s.peek(1);
-            const auto& bracket = s.peek(2);
-
-            if (bracket.text == "{" && !ident.text.empty())
+            if (!activeNamespace.empty())
             {
-                ScopeState::Scope scope;
-                scope.entryToken = &bracket;
-                scope.isNamespace = true;
-                state.scopes.push_back(scope);
-
-                state.namespaces.push_back(ident.text);
-                s.eat(3);
-
-                continue;
-            }
-            else if (bracket.text == ";")
-            {
-                // using namespace crap;
-                s.eat(3);
-            }
-            else
-            {
-                //cout << "CRAP!\n";
-                s.eat(1);
-            }
-        }
-        else if (token.text == "{")
-        {
-            ScopeState::Scope scope;
-            scope.entryToken = &token;
-            scope.isNamespace = false;
-            state.scopes.push_back(scope);
-            s.eat();
-        }
-        else if (token.text == "}")
-        {
-            if (state.scopes.empty())
-            {
-                cout << contextPath.u8string() << "(" << token.line << "): error: Unexpected }\n";
+                cout << contextPath.u8string() << "(" << token.line << "): error: Nested BEGIN_BOOMER_NAMESPACE are not allowed\n";
                 return false;
             }
 
-            if (state.scopes.back().isNamespace)
+            if (!ExtractNamespaceName(s, activeNamespace))
             {
-                if (state.namespaces.empty())
-                {
-                    cout << contextPath.u8string() << "(" << token.line << "): error: Unexpected } ends a namespace that was not properly recognized\n";
-                    return false;
-                }
-                else
-                {
-                    state.namespaces.pop_back();
-                }
+                cout << contextPath.u8string() << "(" << token.line << "): error: Unable to parse namespace's name\n";
+                return false;
+            }
+        }
+        else if (token.text == "END_BOOMER_NAMESPACE")
+        {
+            if (activeNamespace.empty())
+            {
+                cout << contextPath.u8string() << "(" << token.line << "): error: Found END_BOOMER_NAMESPACE without previous BEGIN_BOOMER_NAMESPACE\n";
+                return false;
             }
 
-            state.scopes.pop_back();
-            s.eat();
+            string name;
+            if (!ExtractNamespaceName(s, name))
+            {
+                cout << contextPath.u8string() << "(" << token.line << "): error: Unable to parse namespace's name\n";
+                return false;
+            }
+
+            if (name != activeNamespace)
+            {
+                cout << contextPath.u8string() << "(" << token.line << "): error: Inconsistent namesapce name between BEGIN and END macros\n";
+                return false;
+            }
+
+            activeNamespace.clear();
         }
-        else
+        else if (token.text == "RTTI_BEGIN_TYPE_ENUM" || token.text == "BEGIN_BOOMER_TYPE_ENUM")
         {
-            s.eat();
+            if (activeNamespace.empty())
+            {
+                cout << contextPath.u8string() << "(" << token.line << "): error: Type declaration can only happen inside the boomer namespace BEGIN/END block\n";
+                return false;
+            }
+
+            string name;
+            if (!ExtractNamespaceName(s, name))
+            {
+                cout << contextPath.u8string() << "(" << token.line << "): error: Unable to parse type's name\n";
+                return false;
+            }
+
+            Declaration decl;
+            decl.name = name;
+            decl.scope = activeNamespace;
+            decl.type = DeclarationType::ENUM;
+            declarations.push_back(decl);
+        }
+        else if (token.text == "RTTI_BEGIN_TYPE_BITFIELD" || token.text == "BEGIN_BOOMER_TYPE_BITFIELD")
+        {
+            if (activeNamespace.empty())
+            {
+                cout << contextPath.u8string() << "(" << token.line << "): error: Type declaration can only happen inside the boomer namespace BEGIN/END block\n";
+                return false;
+            }
+
+            string name;
+            if (!ExtractNamespaceName(s, name))
+            {
+                cout << contextPath.u8string() << "(" << token.line << "): error: Unable to parse type's name\n";
+                return false;
+            }
+
+            Declaration decl;
+            decl.name = name;
+            decl.scope = activeNamespace;
+            decl.type = DeclarationType::BITFIELD;
+            declarations.push_back(decl);
+        }
+        else if (token.text == "RTTI_BEGIN_TYPE_NATIVE_CLASS" || token.text == "BEGIN_BOOMER_TYPE_RUNTIME_CLASS" 
+            || token.text == "RTTI_BEGIN_TYPE_ABSTRACT_CLASS" || token.text == "BEGIN_BOOMER_TYPE_ABSTRACT_CLASS"
+            || token.text == "RTTI_BEGIN_TYPE_CLASS" || token.text == "BEGIN_BOOMER_TYPE_CLASS"
+            || token.text == "RTTI_BEGIN_TYPE_STRUCT" || token.text == "BEGIN_BOOMER_TYPE_STRUCT")
+            
+        {
+            if (activeNamespace.empty())
+            {
+                cout << contextPath.u8string() << "(" << token.line << "): error: Type declaration can only happen inside the boomer namespace BEGIN/END block\n";
+                return false;
+            }
+
+            string name;
+            if (!ExtractNamespaceName(s, name))
+            {
+                cout << contextPath.u8string() << "(" << token.line << "): error: Unable to parse type's name\n";
+                return false;
+            }
+
+            Declaration decl;
+            decl.name = name;
+            decl.scope = activeNamespace;
+            decl.type = DeclarationType::CLASS;
+            declarations.push_back(decl);
+        }
+        else if (token.text == "RTTI_BEGIN_CUSTOM_TYPE" || token.text == "BEGIN_BOOMER_CUSTOM_TYPE")
+        {
+            if (activeNamespace.empty())
+            {
+                cout << contextPath.u8string() << "(" << token.line << "): error: Type declaration can only happen inside the boomer namespace BEGIN/END block\n";
+                return false;
+            }
+
+            string name;
+            if (!ExtractNamespaceName(s, name))
+            {
+                cout << contextPath.u8string() << "(" << token.line << "): error: Unable to parse type's name\n";
+                return false;
+            }
+
+            Declaration decl;
+            decl.name = name;
+            decl.scope = activeNamespace;
+            decl.type = DeclarationType::CUSTOM_TYPE;
+            declarations.push_back(decl);
         }
     }
 

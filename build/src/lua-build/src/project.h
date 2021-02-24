@@ -207,6 +207,8 @@ struct Configuration
     GeneratorType generator;
     ConfigurationType configuration;
 
+    bool force = false; // usually means force write all files
+
     filesystem::path builderExecutablePath;
     filesystem::path builderEnvPath;
 

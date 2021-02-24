@@ -3,6 +3,10 @@
   "Id": "07f80e9f-268d-4dfd-9b26-b62bcead1a78",
   "Items": [
     {
+      "Id": "d6abe501-f45e-47d1-8c03-74f0664049a9",
+      "Command": "-force"
+    },
+    {
       "Id": "39188646-5802-43cd-8ff2-fc7fa797486c",
       "Command": "-tool=reflection"
     },
