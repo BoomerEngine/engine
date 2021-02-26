@@ -44,6 +44,7 @@ struct CodeTokenizer
         DeclarationType type;
         string name;
         string scope; // namespace
+        string typeName; // namespace without the "boomer::"
     };
 
     //--
@@ -76,6 +77,7 @@ private:
     bool handlePreprocessor(CodeParserState& s);
 
     static bool ExtractNamespaceName(TokenStream& tokens, string& outName);
+    static bool ExtractEmptyBrackets(TokenStream& tokens);
 };
 
 

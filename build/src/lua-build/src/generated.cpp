@@ -209,7 +209,7 @@ bool CodeGenerator::saveFiles()
 
     uint32_t numSavedFiles = 0;
     for (const auto* file : files)
-        valid &= SaveFileFromString(file->absolutePath, file->content.str(), false, &numSavedFiles);
+        valid &= SaveFileFromString(file->absolutePath, file->content.str(), false, &numSavedFiles, file->customtTime);
 
     cout << "Saved " << numSavedFiles << " files\n";
 
@@ -303,7 +303,7 @@ bool CodeGenerator::generateAutomaticCodeForProject(GeneratedProject* project)
 
         for (const auto* dep : project->allDependencies)
         {
-            if (dep->mergedName == "base_reflection")
+            if (dep->mergedName == "core_reflection")
             {
                 needsReflection = true;
                 break;
@@ -320,8 +320,8 @@ bool CodeGenerator::generateAutomaticCodeForProject(GeneratedProject* project)
             project->files.push_back(info);
 
             // DO NOT WRITE
-            info->generatedFile = createFile(info->absolutePath);
-            valid &= generateProjectDefaultReflection(project, info->generatedFile->content);
+            //info->generatedFile = createFile(info->absolutePath);
+            //valid &= generateProjectDefaultReflection(project, info->generatedFile->content);
         }
     }        
 
@@ -405,10 +405,10 @@ bool CodeGenerator::projectRequiresStaticInit(const GeneratedProject* project) c
         return false;
 
     for (const auto* dep : project->allDependencies)
-        if (dep->mergedName == "base_system")
+        if (dep->mergedName == "core_system")
             return true;
 
-    return project->mergedName == "base_system";
+    return project->mergedName == "core_system";
 }
 
 bool CodeGenerator::generateProjectStaticInitFile(const GeneratedProject* project, stringstream& f)
@@ -493,7 +493,7 @@ bool CodeGenerator::generateProjectStaticInitFile(const GeneratedProject* projec
                 {
                     if (dep->originalProject->type == ProjectType::LocalLibrary)
                     {
-                        writelnf(f, "    base::modules::LoadDynamicModule(\"%s\");", dep->mergedName.c_str());
+                        writelnf(f, "    boomer::modules::LoadDynamicModule(\"%s\");", dep->mergedName.c_str());
                     }
                 }
             }
@@ -522,10 +522,10 @@ bool CodeGenerator::generateProjectAutoMainFile(const GeneratedProject* project,
     writeln(f, "");
     writeln(f, "#include \"build.h\"");
     writeln(f, "#include \"static_init.inl\"");
-    writeln(f, "#include \"base/app/include/launcherMacros.h\"");
-    writeln(f, "#include \"base/app/include/commandline.h\"");
-    writeln(f, "#include \"base/app/include/launcherPlatform.h\"");
-    writeln(f, "#include \"base/app/include/application.h\"");
+    writeln(f, "#include \"core/app/include/launcherMacros.h\"");
+    writeln(f, "#include \"core/app/include/commandline.h\"");
+    writeln(f, "#include \"core/app/include/launcherPlatform.h\"");
+    writeln(f, "#include \"core/app/include/application.h\"");
 
     writeln(f, "");
     writeln(f, "void* GCurrentModuleHandle = nullptr;");
@@ -533,7 +533,7 @@ bool CodeGenerator::generateProjectAutoMainFile(const GeneratedProject* project,
 
     //if (!noApp) {
         writeln(f, "");
-        writeln(f, "extern base::app::IApplication& GetApplicationInstance();");
+        writeln(f, "extern boomer::app::IApplication& GetApplicationInstance();");
         writeln(f, "");
     //}
 
@@ -548,7 +548,7 @@ bool CodeGenerator::generateProjectAutoMainFile(const GeneratedProject* project,
     writeln(f, "      InitializeStaticDependencies();");
     writeln(f, "");
     writeln(f, "      // parse system command line");
-    writeln(f, "      base::app::CommandLine cmdline;");
+    writeln(f, "      boomer::app::CommandLine cmdline;");
     writeln(f, "      if (!LAUNCHER_PARSE_CMDLINE())");
     writeln(f, "        return -1;");
     writeln(f, "");
@@ -569,11 +569,11 @@ bool CodeGenerator::generateProjectAutoMainFile(const GeneratedProject* project,
     //writeln(f, "        cmdline.addParam(\"moduleName\", MACRO_TXT(MODULE_NAME));");
     //writeln(f, "      #endif");
     //writeln(f, "");
-    //writeln(f, "      auto& app = base::platform::GetLaunchPlatform();");
+    //writeln(f, "      auto& app = boomer::platform::GetLaunchPlatform();");
     //writeln(f, "      return app.run(cmdline);");
 
     writeln(f, "      // initialize app");
-    writeln(f, "      auto& platform = base::platform::GetLaunchPlatform();");
+    writeln(f, "      auto& platform = boomer::platform::GetLaunchPlatform();");
     /*if (noApp)
         writeln(f, "      if (!platform.platformStart(cmdline, nullptr))");
     else*/
@@ -588,7 +588,7 @@ bool CodeGenerator::generateProjectAutoMainFile(const GeneratedProject* project,
     }
 
     writeln(f, "      // cleanup");
-    writeln(f, "      cmdline = base::app::CommandLine(); // prevent leaks past app.cleanup()");
+    writeln(f, "      cmdline = boomer::app::CommandLine(); // prevent leaks past app.cleanup()");
     writeln(f, "      platform.platformCleanup();");
 
     writeln(f, "      return 0;");

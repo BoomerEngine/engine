@@ -82,7 +82,7 @@ public:
 
 extern bool LoadFileToString(const filesystem::path& path, string& outText);
 
-extern bool SaveFileFromString(const filesystem::path& path, string_view txt, bool force = false, uint32_t* outCounter=nullptr);
+extern bool SaveFileFromString(const filesystem::path& path, string_view txt, bool force = false, uint32_t* outCounter=nullptr, filesystem::file_time_type customTime = filesystem::file_time_type());
 
 //--
 
@@ -91,6 +91,8 @@ extern bool EndsWith(string_view txt, string_view end);
 extern bool BeginsWith(string_view txt, string_view end);
 
 extern string_view PartBefore(string_view txt, string_view end);
+
+extern string_view PartAfter(string_view txt, string_view end);
 
 extern string MakeGenericPathEx(const filesystem::path& path);
 

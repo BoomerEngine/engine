@@ -334,6 +334,26 @@ struct TokenStream
     int end = 0;
 };
 
+bool CodeTokenizer::ExtractEmptyBrackets(TokenStream& s)
+{
+    {
+        const auto& bracket = s.peek();
+        if (bracket.type != CodeTokenType::CHAR || bracket.text != "(")
+            return false;
+        s.eat();
+    }
+
+
+    {
+        const auto& bracket = s.peek();
+        if (bracket.type != CodeTokenType::CHAR || bracket.text != ")")
+            return false;
+        s.eat();
+    }
+
+    return true;
+}
+
 bool CodeTokenizer::ExtractNamespaceName(TokenStream& s, string& outName)
 {
     stringstream ss;
@@ -393,7 +413,7 @@ bool CodeTokenizer::process()
         if (print)
             cout << "Token '" << token.text << "' at line " << token.line << "\n";
 
-        if (token.text == "BEGIN_BOOMER_NAMESPACE" || token.text == "BEGIN_BOOMER_NAMESPACE_EX")
+        if (token.text == "BEGIN_BOOMER_NAMESPACE")
         {
             if (!activeNamespace.empty())
             {
@@ -401,13 +421,48 @@ bool CodeTokenizer::process()
                 return false;
             }
 
-            if (!ExtractNamespaceName(s, activeNamespace))
+            if (!ExtractEmptyBrackets(s))
+            {
+                cout << contextPath.u8string() << "(" << token.line << "): error: This macro variant does not use a name\n";
+                return false;
+            }
+
+            activeNamespace = "boomer";
+        }
+        else if (token.text == "BEGIN_BOOMER_NAMESPACE_EX")
+        {
+            if (!activeNamespace.empty())
+            {
+                cout << contextPath.u8string() << "(" << token.line << "): error: Nested BEGIN_BOOMER_NAMESPACE are not allowed\n";
+                return false;
+            }
+
+            string name;
+            if (!ExtractNamespaceName(s, name))
             {
                 cout << contextPath.u8string() << "(" << token.line << "): error: Unable to parse namespace's name\n";
                 return false;
             }
+
+            activeNamespace = "boomer::" + name;
         }
         else if (token.text == "END_BOOMER_NAMESPACE")
+        {
+            if (activeNamespace.empty())
+            {
+                cout << contextPath.u8string() << "(" << token.line << "): error: Found END_BOOMER_NAMESPACE without previous BEGIN_BOOMER_NAMESPACE\n";
+                return false;
+            }
+
+            if (!ExtractEmptyBrackets(s))
+            {
+                cout << contextPath.u8string() << "(" << token.line << "): error: This macro variant does not use a name\n";
+                return false;
+            }
+
+            activeNamespace.clear();
+        }
+        else if (token.text == "END_BOOMER_NAMESPACE_EX")
         {
             if (activeNamespace.empty())
             {
@@ -422,9 +477,11 @@ bool CodeTokenizer::process()
                 return false;
             }
 
+            name = "boomer::" + name;
+
             if (name != activeNamespace)
             {
-                cout << contextPath.u8string() << "(" << token.line << "): error: Inconsistent namesapce name between BEGIN and END macros\n";
+                cout << contextPath.u8string() << "(" << token.line << "): error: Inconsistent namespace name between BEGIN and END macros\n";
                 return false;
             }
 
@@ -449,6 +506,12 @@ bool CodeTokenizer::process()
             decl.name = name;
             decl.scope = activeNamespace;
             decl.type = DeclarationType::ENUM;
+
+            decl.typeName = PartAfter(activeNamespace, "boomer::");
+            if (!decl.typeName.empty())
+                decl.typeName += "::";
+            decl.typeName += name;
+
             declarations.push_back(decl);
         }
         else if (token.text == "RTTI_BEGIN_TYPE_BITFIELD" || token.text == "BEGIN_BOOMER_TYPE_BITFIELD")
@@ -470,6 +533,12 @@ bool CodeTokenizer::process()
             decl.name = name;
             decl.scope = activeNamespace;
             decl.type = DeclarationType::BITFIELD;
+            
+            decl.typeName = PartAfter(activeNamespace, "boomer::");
+            if (!decl.typeName.empty())
+                decl.typeName += "::";
+            decl.typeName += name;
+
             declarations.push_back(decl);
         }
         else if (token.text == "RTTI_BEGIN_TYPE_NATIVE_CLASS" || token.text == "BEGIN_BOOMER_TYPE_RUNTIME_CLASS" 
@@ -495,6 +564,12 @@ bool CodeTokenizer::process()
             decl.name = name;
             decl.scope = activeNamespace;
             decl.type = DeclarationType::CLASS;
+            
+            decl.typeName = PartAfter(activeNamespace, "boomer::");
+            if (!decl.typeName.empty())
+                decl.typeName += "::";
+            decl.typeName += name;
+
             declarations.push_back(decl);
         }
         else if (token.text == "RTTI_BEGIN_CUSTOM_TYPE" || token.text == "BEGIN_BOOMER_CUSTOM_TYPE")
@@ -516,6 +591,12 @@ bool CodeTokenizer::process()
             decl.name = name;
             decl.scope = activeNamespace;
             decl.type = DeclarationType::CUSTOM_TYPE;
+            
+            decl.typeName = PartAfter(activeNamespace, "boomer::");
+            if (!decl.typeName.empty())
+                decl.typeName += "::";
+            decl.typeName += name;
+
             declarations.push_back(decl);
         }
     }

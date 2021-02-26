@@ -915,7 +915,7 @@ bool LoadFileToString(const filesystem::path& path, string& outText)
     }
 }
 
-bool SaveFileFromString(const filesystem::path& path, string_view txt, bool force /*= false*/, uint32_t* outCounter)
+bool SaveFileFromString(const filesystem::path& path, string_view txt, bool force /*= false*/, uint32_t* outCounter, filesystem::file_time_type customTime /*= filesystem::file_time_type()*/)
 {
     string newContent(txt);
 
@@ -923,8 +923,15 @@ bool SaveFileFromString(const filesystem::path& path, string_view txt, bool forc
     {
         string currentContent;
         if (LoadFileToString(path, currentContent))
+        {
             if (currentContent == txt)
+            {
+                if (customTime != filesystem::file_time_type())
+                    filesystem::last_write_time(path, customTime);
+
                 return true;
+            }
+        }
 
         cout << "File " << path << " has changed and has to be saved\n";
     }
@@ -990,6 +997,14 @@ string_view PartBefore(string_view txt, string_view end)
     auto pos = txt.find(end);
     if (pos != -1)
         return txt.substr(0, pos);
+    return "";
+}
+
+string_view PartAfter(string_view txt, string_view end)
+{
+    auto pos = txt.find(end);
+    if (pos != -1)
+        return txt.substr(pos + end.length());
     return "";
 }
 

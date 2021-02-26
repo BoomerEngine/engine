@@ -9,7 +9,7 @@ ProjectReflection::~ProjectReflection()
 
 }
 
-static bool ProjectsNeedsReflectionUpdate(const filesystem::path& reflectionFile, const vector<ProjectReflection::RefelctionFile*>& files)
+static bool ProjectsNeedsReflectionUpdate(const filesystem::path& reflectionFile, const vector<ProjectReflection::RefelctionFile*>& files, filesystem::file_time_type& outNewstTimestamp)
 {
     try
     {
@@ -18,14 +18,26 @@ static bool ProjectsNeedsReflectionUpdate(const filesystem::path& reflectionFile
 
         const auto reflectionFileTimestamp = filesystem::last_write_time(reflectionFile);
 
+        outNewstTimestamp = reflectionFileTimestamp;
+
+        bool hasChangedDetected = false;
         for (const auto* file : files)
         {
             const auto sourceFileTimestamp = filesystem::last_write_time(file->file->absolutePath);
             if (sourceFileTimestamp > reflectionFileTimestamp)
             {
-                cout << "File " << file->file->absolutePath << " detected as changed, reflection will have to be refreshed\n";
-                return true;
+                if (sourceFileTimestamp > outNewstTimestamp)
+                    outNewstTimestamp = sourceFileTimestamp;
+
+                hasChangedDetected = true;
             }
+        }
+
+
+        if (hasChangedDetected)
+        {
+            cout << "Some files used to build " << reflectionFile << " changed, reflection will have to be refreshed\n";
+            return true;
         }
 
         return false;
@@ -61,7 +73,8 @@ bool ProjectReflection::extract(const ProjectStructure& structure, const Configu
             {
                 const auto reflectionFilePath = config.solutionPath / "generated" / proj->mergedName / "reflection.inl";
 
-                if (config.force || ProjectsNeedsReflectionUpdate(reflectionFilePath, localFiles))
+                filesystem::file_time_type newestTimestamp;
+                if (ProjectsNeedsReflectionUpdate(reflectionFilePath, localFiles, newestTimestamp) || config.force)
                 {
                     // if we are sure that project will have to be refreshed than run the project configurator
                     // this is need to set the filter flags on files (ie. we may want to have different classes on different platforms)
@@ -84,6 +97,7 @@ bool ProjectReflection::extract(const ProjectStructure& structure, const Configu
                         projectWrapper->mergedName = proj->mergedName;
                         projectWrapper->reflectionFilePath = reflectionFilePath;
                         projectWrapper->files = std::move(localFiles);
+                        projectWrapper->reflectionFileTimstamp = newestTimestamp;
                         projects.push_back(projectWrapper);
                     }
                 }
@@ -139,6 +153,7 @@ bool ProjectReflection::generateReflection(CodeGenerator& gen) const
     for (const auto* p : projects)
     {
         auto file = gen.createFile(p->reflectionFilePath);
+        file->customtTime = p->reflectionFileTimstamp;
         valid &= generateReflectionForProject(*p, file->content);
     }
 
@@ -220,15 +235,15 @@ bool ProjectReflection::generateReflectionForProject(const RefelctionProject& p,
     writeln(f, "// --------------------------------------------------------------------------------");
     writeln(f, "");
 
-    writelnf(f, "void InitializeReflection_%s", p.mergedName.c_str());
+    writelnf(f, "void InitializeReflection_%s()", p.mergedName.c_str());
     writeln(f, "{");
     for (const auto& d : declarations)
     {
         if (d.declaration->type != CodeTokenizer::DeclarationType::GLOBAL_FUNC)
         {
-            writelnf(f, "%s::CreateType_%s(\"%s::%s\"); }",
+            writelnf(f, "%s::CreateType_%s(\"%s\");", 
                 d.declaration->scope.c_str(), d.declaration->name.c_str(),
-                d.declaration->scope.c_str(), d.declaration->name.c_str());
+                d.declaration->typeName.c_str());
         }
     }
 
@@ -236,7 +251,7 @@ bool ProjectReflection::generateReflectionForProject(const RefelctionProject& p,
     {
         if (d.declaration->type == CodeTokenizer::DeclarationType::GLOBAL_FUNC)
         {
-            writelnf(f, "%s::RegisterGlobalFunc_%s(); }",
+            writelnf(f, "%s::RegisterGlobalFunc_%s();",
                 d.declaration->scope.c_str(), d.declaration->name.c_str());
         }
         else
@@ -244,7 +259,7 @@ bool ProjectReflection::generateReflectionForProject(const RefelctionProject& p,
             /*writelnf(f, "%s::RegisterType_%s(\"%s::%s\"); }",
                 d.declaration->scope.c_str(), d.declaration->name.c_str(),
                 d.declaration->scope.c_str(), d.declaration->name.c_str());*/
-            writelnf(f, "%s::InitType_%s(); }",
+            writelnf(f, "%s::InitType_%s();",
                 d.declaration->scope.c_str(), d.declaration->name.c_str());
         }
     }

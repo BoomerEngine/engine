@@ -16,6 +16,8 @@ struct CodeGenerator
         {}
 
         filesystem::path absolutePath;
+        filesystem::file_time_type customtTime;
+
         stringstream content; // may be empty
     };
 

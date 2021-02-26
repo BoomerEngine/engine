@@ -22,6 +22,7 @@ struct ProjectReflection
         string mergedName;
         vector<RefelctionFile*> files;
         filesystem::path reflectionFilePath;
+        filesystem::file_time_type reflectionFileTimstamp;
     };
 
     vector<RefelctionFile*> files;
