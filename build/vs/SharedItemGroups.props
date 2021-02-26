@@ -58,14 +58,11 @@
     <GeneratePDB Condition="'$(GeneratePDB)' == ''">true</GeneratePDB>
 
     <!-- Output directory for published projects -->
-    <PublishDir>$(ProjectPublishPath)</PublishDir>
-    <PublishBinDir>$(PublishDir)$(Configuration)\</PublishBinDir>
-    <OutDir>$(PublishDir)$(Configuration)\</OutDir>    
-    <IntDir>$(ProjectOutputPath)$(Platform).$(Configuration)\obj\</IntDir>
-    <GeneratedDir>$(ProjectOutputPath)$(Platform).$(Configuration)\gen\</GeneratedDir>
+    <OutDir>$(ProjectPublishPath)</OutDir>
+    <IntDir>$(ProjectOutputPath)\obj\</IntDir>
 
     <!-- Output directory for EXEs and DLLS -->
-    <LocalDebuggerCommand Condition="'$(ConfigurationType)' == 'Application'">$(PublishDir)$(Configuration)\$(ProjectName).exe</LocalDebuggerCommand>
+    <LocalDebuggerCommand Condition="'$(ConfigurationType)' == 'Application'">$(ProjectPublishPath)$(ProjectName).exe</LocalDebuggerCommand>
   </PropertyGroup>
 
   <!-- Macros encoding the compilation/platform settings for the C++ -->
@@ -141,7 +138,7 @@
 	  <LanguageStandard>stdcpp17</LanguageStandard>
 
       <!-- Global additional includes (not related to platform, configuration nor project -->
-      <AdditionalIncludeDirectories>$(ProjectSourceRoot)include\;$(SharedIncludePath);$(GeneratedDir);$(SourcesRoot);$(LibraryIncludePath);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectSourceRoot)include\;$(SharedIncludePath);$(SourcesRoot);$(LibraryIncludePath);</AdditionalIncludeDirectories>
 
       <!-- We do want to generate debug information by default -->
       <DebugInformationFormat Condition="'$(Configuration)' == 'Debug'">ProgramDatabase</DebugInformationFormat>
@@ -168,7 +165,7 @@
     <ResourceCompile>
       <Culture>0x0409</Culture>
       <PreprocessorDefinitions>$(ProjectPreprocessorDefines);$(SharedPreprocessorDefines)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(ProjectSourceRoot)include\;$(SharedIncludePath);$(GeneratedDir);$(SourcesRoot);$(LibraryIncludePath);</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectSourceRoot)include\;$(SharedIncludePath);$(SourcesRoot);$(LibraryIncludePath);</AdditionalIncludeDirectories>
     </ResourceCompile>
 
     <!-- Linking setting for the EXE application -->

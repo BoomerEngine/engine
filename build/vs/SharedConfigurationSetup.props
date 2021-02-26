@@ -19,6 +19,11 @@
 	    <Configuration>Release</Configuration>
 	    <Platform>x64</Platform>
 	  </ProjectConfiguration>
+
+    <ProjectConfiguration Include="Final|x64">
+      <Configuration>Final</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
 	  
   </ItemGroup>
   
