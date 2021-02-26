@@ -12,13 +12,13 @@
 #include "scenePreviewContainer.h"
 #include "scenePreviewPanel.h"
 
-#include "rendering/scene/include/renderingScene.h"
-#include "rendering/scene/include/renderingFrameDebug.h"
-#include "rendering/scene/include/renderingFrameParams.h"
+#include "engine/rendering/include/renderingScene.h"
+#include "engine/rendering/include/renderingFrameDebug.h"
+#include "engine/rendering/include/renderingFrameParams.h"
 
-#include "base/world/include/world.h"
+#include "engine/world/include/world.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
      
@@ -54,7 +54,7 @@ void ScenePreviewPanel::requestRecreateGizmo()
     recreateGizmo();
 }
 
-void ScenePreviewPanel::handleRender(rendering::scene::FrameParams& frame)
+void ScenePreviewPanel::handleRender(rendering::FrameParams& frame)
 {
     TBaseClass::handleRender(frame);
 
@@ -85,25 +85,25 @@ ui::DragDropHandlerPtr ScenePreviewPanel::handleDragDrop(const ui::DragDropDataP
     return nullptr;
 }
 
-void ScenePreviewPanel::handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables)
+void ScenePreviewPanel::handlePointSelection(bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables)
 {
     if (auto editMode = m_editMode.lock())
         editMode->handlePointSelection(this, ctrl, shift, clientPosition, selectables);
 }
 
-void ScenePreviewPanel::handleAreaSelection(bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables)
+void ScenePreviewPanel::handleAreaSelection(bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables)
 {
     if (auto editMode = m_editMode.lock())
         editMode->handleAreaSelection(this, ctrl, shift, clientRect, selectables);
 }
 
-void ScenePreviewPanel::handleContextMenu(bool ctrl, bool shift, const ui::Position& absolutePosition, const base::Point& clientPosition, const rendering::scene::Selectable& objectUnderCursor, const base::AbsolutePosition* positionUnderCursor)
+void ScenePreviewPanel::handleContextMenu(bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const AbsolutePosition* positionUnderCursor)
 {
     if (auto editMode = m_editMode.lock())
         editMode->handleContextMenu(this, ctrl, shift, absolutePosition, clientPosition, objectUnderCursor, positionUnderCursor);
 }
 
-ui::InputActionPtr ScenePreviewPanel::handleMouseClick(const ui::ElementArea& area, const base::input::MouseClickEvent& evt)
+ui::InputActionPtr ScenePreviewPanel::handleMouseClick(const ui::ElementArea& area, const input::MouseClickEvent& evt)
 {
     if (evt.leftClicked() && m_gizmos)
     {
@@ -120,7 +120,7 @@ ui::InputActionPtr ScenePreviewPanel::handleMouseClick(const ui::ElementArea& ar
     return TBaseClass::handleMouseClick(area, evt);
 }
 
-bool ScenePreviewPanel::handleMouseMovement(const base::input::MouseMovementEvent& evt)
+bool ScenePreviewPanel::handleMouseMovement(const input::MouseMovementEvent& evt)
 {
     if (m_gizmos)
     {
@@ -131,7 +131,7 @@ bool ScenePreviewPanel::handleMouseMovement(const base::input::MouseMovementEven
     return TBaseClass::handleMouseMovement(evt);
 }
 
-bool ScenePreviewPanel::handleCursorQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, base::input::CursorType& outCursorType) const
+bool ScenePreviewPanel::handleCursorQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, input::CursorType& outCursorType) const
 {
     if (m_gizmos)
     {
@@ -144,7 +144,7 @@ bool ScenePreviewPanel::handleCursorQuery(const ui::ElementArea& area, const ui:
     return TBaseClass::handleCursorQuery(area, absolutePosition, outCursorType);
 }
 
-bool ScenePreviewPanel::handleKeyEvent(const base::input::KeyEvent& evt)
+bool ScenePreviewPanel::handleKeyEvent(const input::KeyEvent& evt)
 {
     if (auto editMode = m_editMode.lock())
         if (editMode->handleKeyEvent(this, evt))
@@ -167,12 +167,12 @@ bool ScenePreviewPanel::gizmoHost_hasSelection() const
     return false;
 }
 
-const rendering::scene::Camera& ScenePreviewPanel::gizmoHost_camera() const
+const Camera& ScenePreviewPanel::gizmoHost_camera() const
 {
     return cachedCamera();
 }
 
-base::Point ScenePreviewPanel::gizmoHost_viewportSize() const
+Point ScenePreviewPanel::gizmoHost_viewportSize() const
 {
     return cachedDrawArea().size();
 }
@@ -203,4 +203,4 @@ void ScenePreviewPanel::recreateGizmo()
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

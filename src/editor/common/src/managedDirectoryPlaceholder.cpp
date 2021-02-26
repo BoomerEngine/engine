@@ -11,10 +11,10 @@
 #include "managedDirectory.h"
 #include "managedDirectoryPlaceholder.h"
 
-#include "base/resource_compiler/include/importFileService.h"
-#include "base/image/include/image.h"
+#include "core/resource_compiler/include/importFileService.h"
+#include "core/image/include/image.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -49,5 +49,5 @@ const image::Image* ManagedDirectoryPlaceholder::typeThumbnail() const
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

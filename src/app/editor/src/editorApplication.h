@@ -6,27 +6,27 @@
 
 #pragma once
 
-#include "base/app/include/application.h"
+#include "core/app/include/application.h"
 #include "editor/common/include/editorService.h"
-#include "rendering/device/include/renderingOutput.h"
-#include "rendering/ui_host/include/renderingWindowRenderer.h"
+#include "gpu/device/include/renderingOutput.h"
+#include "engine/ui/include/nativeWindowRenderer.h"
 
-namespace application
+BEGIN_BOOMER_NAMESPACE()
+
+// editor application
+class EditorApp : public app::IApplication
 {
-    // editor application
-    class EditorApp : public base::app::IApplication
-    {
-    public:
-        virtual void cleanup() override final;
-        virtual bool initialize(const base::app::CommandLine& commandline) override final;
-        virtual void update() override final;
+public:
+    virtual void cleanup() override final;
+    virtual bool initialize(const app::CommandLine& commandline) override final;
+    virtual void update() override final;
 
-    private:
-        base::UniquePtr<ui::Renderer> m_renderer;
-        base::RefPtr<ui::DataStash> m_dataStash;
-        base::UniquePtr<rendering::NativeWindowRenderer> m_nativeRenderer;
-        base::NativeTimePoint m_lastUpdateTime;
-        base::UniquePtr<ed::Editor> m_editor;
-    };
+private:
+    UniquePtr<ui::Renderer> m_renderer;
+    RefPtr<ui::DataStash> m_dataStash;
+    UniquePtr<ui::NativeWindowRenderer> m_nativeRenderer;
+    NativeTimePoint m_lastUpdateTime;
+    UniquePtr<ed::Editor> m_editor;
+};
 
-} // application
+END_BOOMER_NAMESPACE()

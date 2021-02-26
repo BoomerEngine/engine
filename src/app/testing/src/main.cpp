@@ -7,10 +7,10 @@
 #include "build.h"
 #include "static_init.inl"
 
-#include "base/test/include/gtest/gtest.h"
-#include "base/fibers/include/fiberSystem.h"
-#include "base/io/include/ioSystem.h"
-#include "base/app/include/commandline.h"
+#include "core/test/include/gtest/gtest.h"
+#include "core/fibers/include/fiberSystem.h"
+#include "core/io/include/ioSystem.h"
+#include "core/app/include/commandline.h"
 
 void* GCurrentModuleHandle = nullptr;
 
@@ -38,28 +38,28 @@ void* GCurrentModuleHandle = nullptr;
 #define RESET
 #endif
 
-class TestLogSink : public base::logging::ILogSink
+class TestLogSink : public boomer::logging::ILogSink
 {
 public:
-    virtual bool print(base::logging::OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text) override
+    virtual bool print(boomer::logging::OutputLevel level, const char* file, uint32_t line, const char* module, const char* context, const char* text) override
     {
-        if (level == base::logging::OutputLevel::Spam)
+        if (level == boomer::logging::OutputLevel::Spam)
         {
             fprintf(stdout, RESET "%s" RESET "\n", text);
         }
-        else if (level == base::logging::OutputLevel::Info)
+        else if (level == boomer::logging::OutputLevel::Info)
         {
             fprintf(stdout, KWHT "%s" RESET "\n", text);
         }
-        else if (level == base::logging::OutputLevel::Warning)
+        else if (level == boomer::logging::OutputLevel::Warning)
         {
             fprintf(stdout, KYEL "%s" RESET "\n", text);
         }
-        else if (level == base::logging::OutputLevel::Error)
+        else if (level == boomer::logging::OutputLevel::Error)
         {
             fprintf(stderr, KRED "%s" RESET "\n", text);
         }
-        else if (level == base::logging::OutputLevel::Fatal)
+        else if (level == boomer::logging::OutputLevel::Fatal)
         {
             fprintf(stderr, KRED "%s" RESET "\n", text);
         }
@@ -68,7 +68,7 @@ public:
     }
 };
 
-class BasicErrorHandler : public base::logging::IErrorHandler
+class BasicErrorHandler : public boomer::logging::IErrorHandler
 {
 public:
     virtual void handleFatalError(const char* fileName, uint32_t fileLine, const char* txt) override final
@@ -87,15 +87,15 @@ int main(int argc, char **argv)
 {
     InitializeStaticDependencies();
 
-    Fibers::GetInstance().initialize(base::app::CommandLine());
-    base::profiler::Block::InitializeDisabled();
-	base::socket::Initialize();
+    boomer::Fibers::GetInstance().initialize(boomer::app::CommandLine());
+    boomer::profiler::Block::InitializeDisabled();
+	boomer::socket::Initialize();
 
     BasicErrorHandler testErrorHandler;
-    base::logging::IErrorHandler::BindListener(&testErrorHandler);
+    boomer::logging::IErrorHandler::BindListener(&testErrorHandler);
 
     TestLogSink testSink;
-    base::logging::Log::AttachGlobalSink(&testSink);
+    boomer::logging::Log::AttachGlobalSink(&testSink);
 
 #ifdef PLATFORM_LINUX
     signal(SIGPIPE, SIG_IGN);
@@ -104,7 +104,7 @@ int main(int argc, char **argv)
     testing::InitGoogleTest(&argc, argv);
     auto ret  = RUN_ALL_TESTS();
      
-    base::logging::Log::DetachGlobalSink(&testSink);
+    boomer::logging::Log::DetachGlobalSink(&testSink);
 
     return ret;
 }

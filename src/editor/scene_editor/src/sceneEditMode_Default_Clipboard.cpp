@@ -14,9 +14,9 @@
 #include "sceneEditMode_Default_Clipboard.h"
 #include "sceneEditMode_Default.h"
 
-#include "base/resource/include/objectIndirectTemplate.h"
+#include "core/resource/include/objectIndirectTemplate.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -106,4 +106,4 @@ SceneContentClipboardDataPtr BuildClipboardDataFromNodes(const Array<SceneConten
 
 //--
     
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

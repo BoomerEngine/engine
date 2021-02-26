@@ -13,11 +13,11 @@
 #include "sceneContentStructure.h"
 #include "sceneEditMode_Default.h"
 
-#include "base/world/include/worldPrefab.h"
+#include "engine/world/include/worldPrefab.h"
 #include "editor/common/include/managedFileFormat.h"
 #include "editor/common/include/managedFileNativeResource.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -39,7 +39,7 @@ void ScenePrefabEditor::recreateContent()
         rootNode->detachAllChildren();
 
         SceneContentNodePtr editableNode;
-        if (const auto prefabData = base::rtti_cast<base::world::Prefab>(resource()))
+        if (const auto prefabData = rtti_cast<Prefab>(resource()))
         {
             if (auto root = prefabData->root())
             {
@@ -69,9 +69,9 @@ bool ScenePrefabEditor::save()
 {
     if (const auto& root = m_content->root())
     {
-        if (const auto prefabData = base::rtti_cast<base::world::Prefab>(resource()))
+        if (const auto prefabData = rtti_cast<Prefab>(resource()))
         {
-            world::NodeTemplatePtr rootNode;
+            NodeTemplatePtr rootNode;
 
             if (!root->entities().empty())
             {
@@ -101,13 +101,13 @@ class ScenePrefabResourceEditorOpener : public IResourceEditorOpener
 public:
     virtual bool canOpen(const ManagedFileFormat& format) const override
     {
-        return format.nativeResourceClass() == base::world::Prefab::GetStaticClass();
+        return format.nativeResourceClass() == Prefab::GetStaticClass();
     }
 
-    virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
+    virtual RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
     {
         if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-            return base::RefNew<ScenePrefabEditor>(nativeFile);
+            return RefNew<ScenePrefabEditor>(nativeFile);
 
         return nullptr;
     }
@@ -118,4 +118,4 @@ RTTI_END_TYPE();
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

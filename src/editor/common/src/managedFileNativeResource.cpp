@@ -12,14 +12,14 @@
 #include "managedFileFormat.h"
 #include "resourceEditorNativeFile.h"
 
-#include "base/resource/include/resourceFileLoader.h"
-#include "base/resource/include/resourceMetadata.h"
-#include "base/resource/include/resourceFileSaver.h"
-#include "base/io/include/ioFileHandle.h"
-#include "base/resource_compiler/include/importFileService.h"
-#include "base/resource/include/resourceLoadingService.h"
+#include "core/resource/include/resourceFileLoader.h"
+#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/resourceFileSaver.h"
+#include "core/io/include/ioFileHandle.h"
+#include "core/resource_compiler/include/importFileService.h"
+#include "core/resource/include/resourceLoadingService.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -41,14 +41,14 @@ ManagedFileNativeResource::~ManagedFileNativeResource()
 res::ResourcePtr ManagedFileNativeResource::loadContent() const
 {
     // cannot load content of deleted file
-    DEBUG_CHECK_RETURN_EX_V(!isDeleted(), base::TempString("Cannot load content of deleted file '{}'", depotPath()), nullptr);
+    DEBUG_CHECK_RETURN_EX_V(!isDeleted(), TempString("Cannot load content of deleted file '{}'", depotPath()), nullptr);
 
     // open depot file 
     if (auto file = depot()->depot().createFileAsyncReader(depotPath()))
     {
         res::FileLoadingContext context;
         context.resourceLoadPath = res::ResourcePath(depotPath());
-        context.resourceLoader = base::GetService<res::LoadingService>()->loader();
+        context.resourceLoader = GetService<res::LoadingService>()->loader();
 
         if (LoadFile(file, context))
             return context.root<res::IResource>();
@@ -66,7 +66,7 @@ res::ResourcePtr ManagedFileNativeResource::loadContent() const
 res::MetadataPtr ManagedFileNativeResource::loadMetadata() const
 {
     // cannot load content of deleted file
-    DEBUG_CHECK_RETURN_EX_V(!isDeleted(), base::TempString("Cannot load content of deleted file '{}'", depotPath()), nullptr);
+    DEBUG_CHECK_RETURN_EX_V(!isDeleted(), TempString("Cannot load content of deleted file '{}'", depotPath()), nullptr);
 
     if (auto file = depot()->depot().createFileAsyncReader(depotPath()))
     {
@@ -87,7 +87,7 @@ void ManagedFileNativeResource::discardContent()
 
 bool ManagedFileNativeResource::storeContent(const res::ResourcePtr& content)
 {
-    DEBUG_CHECK_RETURN_EX_V(!isDeleted(), base::TempString("Cannot save content to deleted file '{}'", depotPath()), false);
+    DEBUG_CHECK_RETURN_EX_V(!isDeleted(), TempString("Cannot save content to deleted file '{}'", depotPath()), false);
     DEBUG_CHECK_RETURN_EX_V(content, "Nothing to save", false);
 
     bool saved = false;
@@ -140,5 +140,5 @@ bool ManagedFileNativeResource::canReimport() const
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

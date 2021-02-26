@@ -9,12 +9,12 @@
 #include "build.h"
 #include "sceneEditMode.h"
 #include "scenePreviewPanel.h"
-#include "base/ui/include/uiToolBar.h"
+#include "engine/ui/include/uiToolBar.h"
 #include "scenePreviewContainer.h"
-#include "base/ui/include/uiButton.h"
-#include "base/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiButton.h"
+#include "engine/ui/include/uiMenuBar.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
      
@@ -84,7 +84,7 @@ void ISceneEditMode::configurePanelToolbar(ScenePreviewContainer* container, con
 {
 }
     
-void ISceneEditMode::handleRender(ScenePreviewPanel* panel, rendering::scene::FrameParams& frame)
+void ISceneEditMode::handleRender(ScenePreviewPanel* panel, rendering::FrameParams& frame)
 {
 }
 
@@ -93,21 +93,21 @@ ui::InputActionPtr ISceneEditMode::handleMouseClick(ScenePreviewPanel* panel, co
     return nullptr;
 }
 
-bool ISceneEditMode::handleKeyEvent(ScenePreviewPanel* panel, const base::input::KeyEvent& evt)
+bool ISceneEditMode::handleKeyEvent(ScenePreviewPanel* panel, const input::KeyEvent& evt)
 {
     return false;
 }
 
-void ISceneEditMode::handlePointSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables)
+void ISceneEditMode::handlePointSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables)
 {}
 
-void ISceneEditMode::handleAreaSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables)
+void ISceneEditMode::handleAreaSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables)
 {}
 
-void ISceneEditMode::handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const base::Point& clientPosition, const rendering::scene::Selectable& objectUnderCursor, const base::AbsolutePosition* positionUnderCursor)
+void ISceneEditMode::handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const AbsolutePosition* positionUnderCursor)
 {}
 
-ui::DragDropHandlerPtr ISceneEditMode::handleDragDrop(ScenePreviewPanel* panel, const ui::DragDropDataPtr& data, const ui::Position& absolutePosition, const base::Point& clientPosition)
+ui::DragDropHandlerPtr ISceneEditMode::handleDragDrop(ScenePreviewPanel* panel, const ui::DragDropDataPtr& data, const ui::Position& absolutePosition, const Point& clientPosition)
 {
     return nullptr;
 }
@@ -240,7 +240,7 @@ void CreateDefaultGridButtons(ScenePreviewContainer* container, ui::ToolBar* too
         {
             static const float GridSizes[] = { 0.01f, 0.02f, 0.05f, 0.1f, 0.25f, 0.5f, 1.0f, 2.0f, 5.0f, 10.0f, 25.0f, 50.0f, 100.0f };
 
-            auto menu = base::RefNew<ui::MenuButtonContainer>();
+            auto menu = RefNew<ui::MenuButtonContainer>();
             auto gridSettings = container->gridSettings();
 
             menu->createCallback("Enable", gridSettings.positionGridEnabled ? "[img:tick]" : "") = [container]() {
@@ -284,7 +284,7 @@ void CreateDefaultGridButtons(ScenePreviewContainer* container, ui::ToolBar* too
         {
             static const float GridSizes[] = { 1.0f, 3.0f, 4.5f, 6.0f, 7.5f, 10.0f, 12.25f, 15.0f, 22.5f, 30.0f, 45.0f, 60.0f, 90.0f };
 
-            auto menu = base::RefNew<ui::MenuButtonContainer>();
+            auto menu = RefNew<ui::MenuButtonContainer>();
             auto gridSettings = container->gridSettings();
 
             menu->createCallback("Enable", gridSettings.rotationGridEnabled ? "[img:tick]" : "") = [container]() {
@@ -317,7 +317,7 @@ void CreateDefaultGridButtons(ScenePreviewContainer* container, ui::ToolBar* too
     {
         toolbar->createCallback(ui::ToolbarButtonSetup().caption("[img:snap] Snap")) = [container](ui::Button* button)
         {
-            auto menu = base::RefNew<ui::MenuButtonContainer>();
+            auto menu = RefNew<ui::MenuButtonContainer>();
 
             auto gridSettings = container->gridSettings();
 
@@ -350,7 +350,7 @@ void CreateDefaultSelectionButtons(ScenePreviewContainer* container, ui::ToolBar
     {
         toolbar->createCallback(ui::ToolbarButtonSetup().caption("[img:selection_point] Selection")) = [container](ui::Button* button)
         {
-            auto menu = base::RefNew<ui::MenuButtonContainer>();
+            auto menu = RefNew<ui::MenuButtonContainer>();
 
             auto selectionSettings = container->selectionSettings();
 
@@ -443,7 +443,7 @@ void CreateDefaultGizmoButtons(ScenePreviewContainer* container, ui::ToolBar* to
         {
             static const GizmoSpace GizmoSpaces[] = { GizmoSpace::World, GizmoSpace::Local, GizmoSpace::Parent, GizmoSpace::View };
 
-            auto menu = base::RefNew<ui::MenuButtonContainer>();
+            auto menu = RefNew<ui::MenuButtonContainer>();
             auto data = container->gizmoSettings();
 
             for (auto space : GizmoSpaces)
@@ -474,7 +474,7 @@ void CreateDefaultGizmoButtons(ScenePreviewContainer* container, ui::ToolBar* to
         {
             static const SceneGizmoTarget GizmoSpaces[] = { SceneGizmoTarget::WholeHierarchy, SceneGizmoTarget::SelectionOnly };
 
-            auto menu = base::RefNew<ui::MenuButtonContainer>();
+            auto menu = RefNew<ui::MenuButtonContainer>();
             auto data = container->gizmoSettings();
 
             for (auto space : GizmoSpaces)
@@ -539,4 +539,4 @@ void CreateDefaultCreationButtons(ScenePreviewContainer* container, ui::ToolBar*
 
 //--
     
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

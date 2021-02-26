@@ -10,7 +10,7 @@
 
 #include "sceneCommonEditor.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -32,4 +32,4 @@ protected:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

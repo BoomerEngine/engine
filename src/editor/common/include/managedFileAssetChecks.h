@@ -9,9 +9,9 @@
 #pragma once
 
 #include "managedItem.h"
-#include "base/resource_compiler/include/importFileFingerprint.h"
+#include "core/resource_compiler/include/importFileFingerprint.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -99,5 +99,5 @@ private:
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

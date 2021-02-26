@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "base/ui/include/uiSimpleListModel.h"
-#include "base/ui/include/uiAbstractItemModel.h"
-#include "base/ui/include/uiDragDrop.h"
+#include "engine/ui/include/uiSimpleListModel.h"
+#include "engine/ui/include/uiAbstractItemModel.h"
+#include "engine/ui/include/uiDragDrop.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -30,40 +30,40 @@ struct MeshMaterialPreviewSettings
 //--
 
 /// helper object for editable mesh material
-class MeshMaterialParameters : public base::IObject
+class MeshMaterialParameters : public IObject
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MeshMaterialParameters, base::IObject);
+    RTTI_DECLARE_VIRTUAL_CLASS(MeshMaterialParameters, IObject);
 
 public:
-    MeshMaterialParameters(rendering::MaterialInstance* data, base::StringID name);
+    MeshMaterialParameters(MaterialInstance* data, StringID name);
 
-    INLINE base::StringID name() const { return m_name; }
+    INLINE StringID name() const { return m_name; }
 
-    INLINE const rendering::MaterialInstancePtr& data() const { return m_data; }
+    INLINE const MaterialInstancePtr& data() const { return m_data; }
 
-    INLINE const base::StringBuf& displayString() const { return m_displayString; }
+    INLINE const StringBuf& displayString() const { return m_displayString; }
 
     bool updateDisplayString();
-    bool baseMaterial(const rendering::MaterialRef& material);
+    bool baseMaterial(const MaterialRef& material);
 
 private:
-    base::StringID m_name;
-    base::StringBuf m_displayString;
+    StringID m_name;
+    StringBuf m_displayString;
 
-    rendering::MaterialInstancePtr m_data;
+    MaterialInstancePtr m_data;
 };
 
 //--
 
 /// list model for material list
-class MeshMaterialListModel : public ui::SimpleTypedListModel<base::RefPtr<MeshMaterialParameters>>
+class MeshMaterialListModel : public ui::SimpleTypedListModel<RefPtr<MeshMaterialParameters>>
 {
 public:
     MeshMaterialListModel();
 
-    virtual bool compare(const base::RefPtr<MeshMaterialParameters>& a, const base::RefPtr<MeshMaterialParameters>& b, int colIndex) const override final;
-    virtual bool filter(const base::RefPtr<MeshMaterialParameters>& data, const ui::SearchPattern& filter, int colIndex = 0) const override final;
-    virtual base::StringBuf content(const base::RefPtr<MeshMaterialParameters>& data, int colIndex = 0) const override final;
+    virtual bool compare(const RefPtr<MeshMaterialParameters>& a, const RefPtr<MeshMaterialParameters>& b, int colIndex) const override final;
+    virtual bool filter(const RefPtr<MeshMaterialParameters>& data, const ui::SearchPattern& filter, int colIndex = 0) const override final;
+    virtual StringBuf content(const RefPtr<MeshMaterialParameters>& data, int colIndex = 0) const override final;
 
     virtual ui::DragDropHandlerPtr handleDragDropData(ui::AbstractItemView* view, const ui::ModelIndex& item, const ui::DragDropDataPtr& data, const ui::Position& pos) override final;
     virtual bool handleDragDropCompletion(ui::AbstractItemView* view, const ui::ModelIndex& item, const ui::DragDropDataPtr& data) override final;
@@ -83,18 +83,18 @@ class MeshMaterialsPanel : public ui::IElement
     RTTI_DECLARE_VIRTUAL_CLASS(MeshMaterialsPanel, ui::IElement);
 
 public:
-    MeshMaterialsPanel(base::ActionHistory* actionHistory);
+    MeshMaterialsPanel(ActionHistory* actionHistory);
 
     INLINE const MeshMaterialPreviewSettings& settings() const { return m_settings; }
 
-    void bindResource(const rendering::MeshPtr& mesh);
+    void bindResource(const MeshPtr& mesh);
 
     void showMaterials(const Array<StringID>& names);
 
     void collectSelectedMaterialNames(HashSet<StringID>& outNames) const;
                
 private:
-    rendering::MeshPtr m_mesh;
+    MeshPtr m_mesh;
 
     //--
 
@@ -105,7 +105,7 @@ private:
 
     ui::Timer m_captionsRefreshTimer;
 
-    base::RefPtr<MeshMaterialListModel> m_listModel;
+    RefPtr<MeshMaterialListModel> m_listModel;
 
     void refreshMaterialList();
     void refreshMaterialProperties();
@@ -114,4 +114,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

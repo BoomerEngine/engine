@@ -8,9 +8,9 @@
 
 #include "build.h"
 #include "versionControl.h"
-#include "base/containers/include/stringBuilder.h"
+#include "core/containers/include/stringBuilder.h"
 
-BEGIN_BOOMER_NAMESPACE(ed::vsc)
+BEGIN_BOOMER_NAMESPACE_EX(ed::vsc)
 
 //---
 
@@ -149,4 +149,4 @@ IVersionControl::~IVersionControl() {}
 
 //----
 
-END_BOOMER_NAMESPACE(ed::vsc)
+END_BOOMER_NAMESPACE_EX(ed::vsc)

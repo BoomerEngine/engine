@@ -9,9 +9,9 @@
 #include "build.h"
 
 #include "sceneContentDataView.h"
-#include "base/resource/include/objectIndirectTemplateDataView.h"
+#include "core/resource/include/objectIndirectTemplateDataView.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -28,4 +28,4 @@ DataViewPtr SceneContentEditableObject::createDataView() const
 
 //--
     
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

@@ -10,7 +10,7 @@
 #include "editorService.h"
 #include "editorBackgroundTask.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -68,4 +68,4 @@ void IBackgroundTask::reportProgress(uint64_t currentCount, uint64_t totalCount,
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

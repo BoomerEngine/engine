@@ -10,10 +10,10 @@
 
 #include "sceneEditMode.h"
 
-#include "base/ui/include/uiSimpleListModel.h"
-#include "base/ui/include/uiElement.h"
+#include "engine/ui/include/uiSimpleListModel.h"
+#include "engine/ui/include/uiElement.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -216,4 +216,4 @@ protected:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

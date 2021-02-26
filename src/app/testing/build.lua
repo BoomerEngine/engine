@@ -4,8 +4,8 @@
 ProjectType("app")
 ProjectOption("console")
 
-Dependency("base_system")
-Dependency("base_test")
-Dependency("base_app")
+Dependency("core_system")
+Dependency("core_test")
+Dependency("core_app")
 Dependency("*all_tests*")
 

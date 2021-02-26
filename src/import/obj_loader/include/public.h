@@ -8,16 +8,16 @@
 
 #include "import_obj_loader_glue.inl"
 
-BEGIN_BOOMER_NAMESPACE(assets)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 // parsed OBJ file, RAW data but in memory
 // this the "rawest" form of data that is cookable from .OBJ files
-class FormatOBJ;
-typedef base::RefPtr<FormatOBJ> FormatOBJPtr;
+class SourceAssetOBJ;
+typedef RefPtr<SourceAssetOBJ> SourceAssetOBJPtr;
 
 // parsed MTL file, RAW data but in memory
 // this the "rawest" form of data that is cookable from .MTL J files
-class FormatMTL;
-typedef base::RefPtr<FormatMTL> FormatMTLPtr;
+class SourceAssetMTL;
+typedef RefPtr<SourceAssetMTL> SourceAssetMTLPtr;
 
-END_BOOMER_NAMESPACE(assets)
+END_BOOMER_NAMESPACE_EX(assets)

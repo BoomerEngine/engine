@@ -9,16 +9,16 @@
 #pragma once
 
 #include "managedItem.h"
-#include "base/resource/include/resourceFileLoader.h"
+#include "core/resource/include/resourceFileLoader.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
 // file dependencies
 struct ManagedFileDependencies
 {
-    Array<base::res::FileLoadingDependency> dependencies;
+    Array<res::FileLoadingDependency> dependencies;
 };
 
 //---
@@ -83,4 +83,4 @@ protected:
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

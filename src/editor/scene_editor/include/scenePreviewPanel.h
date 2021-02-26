@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "rendering/ui_viewport/include/renderingScenePanel.h"
-#include "editor/gizmos/include/gizmoGroup.h"
+#include "editor/viewport/include/uiScenePanel.h"
+#include "editor/viewport/include/gizmoGroup.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
     
@@ -40,20 +40,20 @@ public:
     virtual void configLoad(const ui::ConfigBlock& block);
 
 private:
-    virtual void handleRender(rendering::scene::FrameParams& frame) override;
-    virtual void handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables) override;
-    virtual void handleAreaSelection(bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables) override;
-    virtual void handleContextMenu(bool ctrl, bool shift, const ui::Position& absolutePosition, const base::Point& clientPosition, const rendering::scene::Selectable& objectUnderCursor, const base::AbsolutePosition* positionUnderCursor) override;
-    virtual ui::InputActionPtr handleMouseClick(const ui::ElementArea& area, const base::input::MouseClickEvent& evt) override;
-    virtual bool handleMouseMovement(const base::input::MouseMovementEvent& evt) override;
-    virtual bool handleCursorQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, base::input::CursorType& outCursorType) const override;
-    virtual bool handleKeyEvent(const base::input::KeyEvent& evt) override;
+    virtual void handleRender(rendering::FrameParams& frame) override;
+    virtual void handlePointSelection(bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables) override;
+    virtual void handleAreaSelection(bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables) override;
+    virtual void handleContextMenu(bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const AbsolutePosition* positionUnderCursor) override;
+    virtual ui::InputActionPtr handleMouseClick(const ui::ElementArea& area, const input::MouseClickEvent& evt) override;
+    virtual bool handleMouseMovement(const input::MouseMovementEvent& evt) override;
+    virtual bool handleCursorQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, input::CursorType& outCursorType) const override;
+    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
     virtual ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
 
     virtual ui::IElement* gizmoHost_element() const override final;
     virtual bool gizmoHost_hasSelection() const override final;
-    virtual const rendering::scene::Camera& gizmoHost_camera() const override final;
-    virtual base::Point gizmoHost_viewportSize() const override final;
+    virtual const Camera& gizmoHost_camera() const override final;
+    virtual Point gizmoHost_viewportSize() const override final;
     virtual GizmoReferenceSpace gizmoHost_referenceSpace() const override final;
     virtual GizmoActionContextPtr gizmoHost_startAction() const override final;
 
@@ -67,4 +67,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

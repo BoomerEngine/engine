@@ -11,7 +11,7 @@
 #include "resourceEditor.h"
 #include "managedFileRawResource.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 ///---
 
@@ -41,5 +41,5 @@ private:
 
 ///---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

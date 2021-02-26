@@ -11,10 +11,10 @@
 #include "managedItem.h"
 #include "managedFile.h"
 
-#include "base/system/include/spinLock.h"
-#include "base/io/include/ioDirectoryWatcher.h"
+#include "core/system/include/spinLock.h"
+#include "core/io/include/ioDirectoryWatcher.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -225,4 +225,4 @@ protected:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

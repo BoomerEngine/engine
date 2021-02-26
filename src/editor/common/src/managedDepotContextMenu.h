@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -33,5 +33,5 @@ extern EDITOR_COMMON_API void OpenDepotFiles(ui::IElement* owner, const Array<Ma
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

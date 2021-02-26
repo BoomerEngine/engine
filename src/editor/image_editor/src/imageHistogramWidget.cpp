@@ -9,22 +9,22 @@
 #include "build.h"
 #include "imageHistogramWidget.h"
 #include "imageHistogramCalculation.h"
-#include "base/image/include/imageView.h"
-#include "base/canvas/include/canvas.h"
-#include "base/canvas/include/canvasGeometryBuilder.h"
-#include "base/ui/include/uiTextLabel.h"
+#include "core/image/include/imageView.h"
+#include "engine/canvas/include/canvas.h"
+#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/ui/include/uiTextLabel.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
-void ComputeHistogramUint8(uint8_t channel, const base::image::ImageView& view, ImageHistogramData& outData)
+void ComputeHistogramUint8(uint8_t channel, const image::ImageView& view, ImageHistogramData& outData)
 {
-    for (base::image::ImageViewSliceIterator z(view); z; ++z)
+    for (image::ImageViewSliceIterator z(view); z; ++z)
     {
-        for (base::image::ImageViewRowIterator y(z); y; ++y)
+        for (image::ImageViewRowIterator y(z); y; ++y)
         {
-            for (base::image::ImageViewPixelIterator x(y); x; ++x)
+            for (image::ImageViewPixelIterator x(y); x; ++x)
             {
                 auto val = x.data()[channel];
                 outData.buckets[val] += 1;
@@ -33,13 +33,13 @@ void ComputeHistogramUint8(uint8_t channel, const base::image::ImageView& view, 
     }
 }
 
-void ComputeHistogramUint16(uint8_t channel, const base::image::ImageView& view, ImageHistogramData& outData)
+void ComputeHistogramUint16(uint8_t channel, const image::ImageView& view, ImageHistogramData& outData)
 {
-    for (base::image::ImageViewSliceIterator z(view); z; ++z)
+    for (image::ImageViewSliceIterator z(view); z; ++z)
     {
-        for (base::image::ImageViewRowIterator y(z); y; ++y)
+        for (image::ImageViewRowIterator y(z); y; ++y)
         {
-            for (base::image::ImageViewPixelIterator x(y); x; ++x)
+            for (image::ImageViewPixelIterator x(y); x; ++x)
             {
                 auto val = ((const uint16_t*)x.data())[channel];
                 outData.buckets[val] += 1;
@@ -48,14 +48,14 @@ void ComputeHistogramUint16(uint8_t channel, const base::image::ImageView& view,
     }
 }
 
-base::RefPtr<ImageHistogramData> ComputeHistogram(uint8_t channel, const base::image::ImageView& view)
+RefPtr<ImageHistogramData> ComputeHistogram(uint8_t channel, const image::ImageView& view)
 {
     if (channel >= view.channels())
         return nullptr;
 
-    if (view.format() == base::image::PixelFormat::Uint8_Norm)
+    if (view.format() == image::PixelFormat::Uint8_Norm)
     {
-        auto ret = base::RefNew<ImageHistogramData>();
+        auto ret = RefNew<ImageHistogramData>();
         ret->minValue = 0.0f;
         ret->maxValue = 255.0f;
         ret->totalPixelCount = view.width() * view.height() * view.depth();
@@ -68,9 +68,9 @@ base::RefPtr<ImageHistogramData> ComputeHistogram(uint8_t channel, const base::i
 
         return ret;
     }
-    else if (view.format() == base::image::PixelFormat::Uint16_Norm)
+    else if (view.format() == image::PixelFormat::Uint16_Norm)
     {
-        auto ret = base::RefNew<ImageHistogramData>();
+        auto ret = RefNew<ImageHistogramData>();
         ret->minValue = 0.0f;
         ret->maxValue = 65535.0f;
         ret->totalPixelCount = view.width() * view.height() * view.depth();
@@ -100,7 +100,7 @@ ImageHistogramWidget::ImageHistogramWidget()
     customMinSize(0, 250);
 }
 
-void ImageHistogramWidget::addHistogram(const base::RefPtr<ImageHistogramData>& data, base::Color color, base::StringView caption)
+void ImageHistogramWidget::addHistogram(const RefPtr<ImageHistogramData>& data, Color color, StringView caption)
 {
     if (data)
     {
@@ -140,7 +140,7 @@ void ImageHistogramWidget::removeHistograms()
     m_histogramBucketMax = 1;
 }
 
-void ImageHistogramWidget::renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+void ImageHistogramWidget::renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderBackground(stash, drawArea, canvas, mergedOpacity);
 }
@@ -205,7 +205,7 @@ void ImageHistogramWidget::cacheHistogramGeometry()
     {
         for (auto& hist : m_histograms)
         {
-			base::canvas::GeometryBuilder b(hist.geometry);
+			canvas::GeometryBuilder b(hist.geometry);
 			b.blending(canvas::BlendOp::Addtive);
 			b.beginPath();
 			b.moveTo(0.0f, yBase);
@@ -229,7 +229,7 @@ void ImageHistogramWidget::cacheHistogramGeometry()
     }
 }
 
-bool ImageHistogramWidget::handleMouseMovement(const base::input::MouseMovementEvent& evt)
+bool ImageHistogramWidget::handleMouseMovement(const input::MouseMovementEvent& evt)
 {
     auto pos = (int)(evt.absolutePosition().x - cachedDrawArea().absolutePosition().x);
     if (pos != m_hoverPositionX)
@@ -252,7 +252,7 @@ ui::ElementPtr ImageHistogramWidget::queryTooltipElement(const ui::Position& abs
     if (m_histograms.empty())
         return nullptr;
 
-    auto text = base::RefNew<ui::TextLabel>();
+    auto text = RefNew<ui::TextLabel>();
     m_activeTooltip = text.weak();
 
     outArea = cachedDrawArea();
@@ -270,7 +270,7 @@ void ImageHistogramWidget::updateTooltip() const
         {
             const double value = m_histogramMin + (m_histogramMax - m_histogramMin) * ((double)m_hoverPositionX / m_cachedHistogramGeometryRefSize.x);
 
-            base::StringBuilder txt;
+            StringBuilder txt;
             txt.appendf("Bucket: {}   \n", Prec(value, 2));
 
             for (const auto& hist : m_histograms)
@@ -300,7 +300,7 @@ void ImageHistogramWidget::updateTooltip() const
     }
 }
 
-void ImageHistogramWidget::renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+void ImageHistogramWidget::renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
 
@@ -320,13 +320,13 @@ void ImageHistogramWidget::renderForeground(ui::DataStash& stash, const ui::Elem
 
     if (m_hoverPositionX >= 0 && !m_histograms.empty())
     {
-		base::canvas::Geometry g;
+		canvas::Geometry g;
 		{
-			base::canvas::GeometryBuilder b(g);
+			canvas::GeometryBuilder b(g);
 			b.beginPath();
 			b.moveTo(m_hoverPositionX, 0);
 			b.lineTo(m_hoverPositionX, drawArea.size().y);
-			b.strokeColor(base::Color::WHITE);
+			b.strokeColor(Color::WHITE);
 			b.stroke();
 		}
 
@@ -336,4 +336,4 @@ void ImageHistogramWidget::renderForeground(ui::DataStash& stash, const ui::Elem
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

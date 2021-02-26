@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "base/resource/include/resource.h"
-#include "base/resource_compiler/include/importInterface.h"
+#include "core/resource/include/resource.h"
+#include "core/resource_compiler/include/importInterface.h"
 #include "import/mesh_loader/include/renderingMeshImportConfig.h"
 
-BEGIN_BOOMER_NAMESPACE(asset)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 class FBXFile;
 struct FBXSkeletonBuilder;
@@ -21,9 +21,9 @@ struct FBXMaterialMapper;
 //--
 
 /// extension of import configuration specific for FBX meshes
-class IMPORT_FBX_LOADER_API FBXMeshImportConfig : public rendering::MeshImportConfig
+class IMPORT_FBX_LOADER_API FBXMeshImportConfig : public MeshImportConfig
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(FBXMeshImportConfig, rendering::MeshImportConfig);
+    RTTI_DECLARE_VIRTUAL_CLASS(FBXMeshImportConfig, MeshImportConfig);
 
 public:
     FBXMeshImportConfig();
@@ -35,26 +35,26 @@ public:
     bool m_createNodeMaterials = false;
 
     // base material template to use when importing materials
-    base::res::AsyncRef<rendering::IMaterial> m_baseMaterialTemplate;
+    res::AsyncRef<IMaterial> m_baseMaterialTemplate;
 };
 
 //--
 
 /// importer of FBX meshes
-class IMPORT_FBX_LOADER_API MeshImporter : public rendering::IGeneralMeshImporter
+class IMPORT_FBX_LOADER_API MeshImporter : public IGeneralMeshImporter
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MeshImporter, rendering::IGeneralMeshImporter);
+    RTTI_DECLARE_VIRTUAL_CLASS(MeshImporter, IGeneralMeshImporter);
 
 public:
     MeshImporter();
 
-    virtual base::res::ResourcePtr importResource(base::res::IResourceImporterInterface& importer) const override final;
+    virtual res::ResourcePtr importResource(res::IResourceImporterInterface& importer) const override final;
 
 protected:
-    virtual base::RefPtr<rendering::MaterialImportConfig> createMaterialImportConfig(const rendering::MeshImportConfig& cfg, base::StringView name) const override final;
+    virtual RefPtr<MaterialImportConfig> createMaterialImportConfig(const MeshImportConfig& cfg, StringView name) const override final;
 };
 
 //--
 
-END_BOOMER_NAMESPACE(asset)
+END_BOOMER_NAMESPACE_EX(assets)
 

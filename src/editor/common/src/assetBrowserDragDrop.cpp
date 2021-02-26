@@ -11,9 +11,9 @@
 #include "managedDirectory.h"
 #include "assetBrowser.h"
 
-#include "base/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiTextLabel.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -62,4 +62,4 @@ ui::ElementPtr AssetBrowserDirectoryDragDrop::createPreview() const
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

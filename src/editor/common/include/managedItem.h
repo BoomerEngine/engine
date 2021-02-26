@@ -10,7 +10,7 @@
 
 #include "versionControl.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -82,5 +82,5 @@ extern EDITOR_COMMON_API ManagedDirectory* SelectedDirectory();
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

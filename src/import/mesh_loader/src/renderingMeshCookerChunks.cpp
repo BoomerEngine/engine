@@ -12,14 +12,14 @@
 #include "meshopt/meshoptimizer.h"
 #include "mikktspace/mikktspace.h"
 
-BEGIN_BOOMER_NAMESPACE(rendering)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //---
 
 template< typename T >
-static base::Buffer UnpackQuadsToTriangles(const base::Buffer& buffer)
+static Buffer UnpackQuadsToTriangles(const Buffer& buffer)
 {
-    base::Buffer ret;
+    Buffer ret;
 
     const auto numQuads = (buffer.size() / sizeof(T)) / 4;
     if (numQuads > 0)
@@ -59,9 +59,9 @@ static void PackIndexData(const T* srcData, T* destData, uint32_t count, T verte
 }
 
 template< typename T >
-static base::Buffer GenerateQuadTriListIndexBuffer(uint32_t numVertices)
+static Buffer GenerateQuadTriListIndexBuffer(uint32_t numVertices)
 {
-    base::Buffer ret;
+    Buffer ret;
 
     DEBUG_CHECK_EX(numVertices % 4 == 0, "Strange number of vertices for a quad mesh");
     const auto numQuads = numVertices / 4;
@@ -87,9 +87,9 @@ static base::Buffer GenerateQuadTriListIndexBuffer(uint32_t numVertices)
 }
 
 template< typename T >
-static base::Buffer GenerateTriListIndexBuffer(uint32_t numVertices)
+static Buffer GenerateTriListIndexBuffer(uint32_t numVertices)
 {
-    base::Buffer ret;
+    Buffer ret;
 
     DEBUG_CHECK_EX(numVertices % 3 == 0, "Strange number of vertices for a triangle mesh");
     const auto numTriangles = numVertices / 3;
@@ -118,11 +118,11 @@ struct MeshChunkMikktInterface
 {
     uint32_t numFaces = 0;
     uint32_t verticesPerFace = 3;
-    base::Vector3* vertexData = nullptr;
-    base::Vector3* normalData = nullptr;
-    base::Vector3* tangentData = nullptr;
-    base::Vector3* bitangentData = nullptr;
-    base::Vector2* uvData = nullptr;
+    Vector3* vertexData = nullptr;
+    Vector3* normalData = nullptr;
+    Vector3* tangentData = nullptr;
+    Vector3* bitangentData = nullptr;
+    Vector2* uvData = nullptr;
 
     static const MeshChunkMikktInterface& self(const SMikkTSpaceContext* pContext)
     {
@@ -187,11 +187,11 @@ struct MeshChunkMikktInterface
     {
         numFaces = importChunk.numFaces;
         verticesPerFace = importChunk.faceQuads ? 4 : 3;
-        vertexData = (base::Vector3*) importChunk.vertexStreamData(MeshStreamType::Position_3F);
-        normalData = (base::Vector3*) importChunk.vertexStreamData(MeshStreamType::Normal_3F);
-        tangentData = (base::Vector3*) importChunk.vertexStreamData(MeshStreamType::Tangent_3F);
-        bitangentData = (base::Vector3*) importChunk.vertexStreamData(MeshStreamType::Binormal_3F);
-        uvData = (base::Vector2*) importChunk.vertexStreamData(MeshStreamType::TexCoord0_2F);
+        vertexData = (Vector3*) importChunk.vertexStreamData(MeshStreamType::Position_3F);
+        normalData = (Vector3*) importChunk.vertexStreamData(MeshStreamType::Normal_3F);
+        tangentData = (Vector3*) importChunk.vertexStreamData(MeshStreamType::Tangent_3F);
+        bitangentData = (Vector3*) importChunk.vertexStreamData(MeshStreamType::Binormal_3F);
+        uvData = (Vector2*) importChunk.vertexStreamData(MeshStreamType::TexCoord0_2F);
     }
 
     static SMikkTSpaceInterface& GetInterface()
@@ -226,7 +226,7 @@ ImportChunk::ImportChunk(const MeshRawChunk& sourceChunk)
     bounds = sourceChunk.bounds;
 }
 
-base::Buffer ImportChunk::buildTriangleListIndexBuffer() const
+Buffer ImportChunk::buildTriangleListIndexBuffer() const
 {
     if (faceQuads)
         return GenerateQuadTriListIndexBuffer<uint32_t>(numVertices);
@@ -288,14 +288,14 @@ void ImportChunk::computeFlatNormals()
 {
     auto data = createVertexStream(MeshStreamType::Normal_3F).data;
 
-    auto* normalPtr = (base::Vector3*)data.data();
-    auto* posPtr = (base::Vector3*)vertexStreamData(MeshStreamType::Position_3F);
+    auto* normalPtr = (Vector3*)data.data();
+    auto* posPtr = (Vector3*)vertexStreamData(MeshStreamType::Position_3F);
             
     if (faceQuads)
     {
         for (uint32_t i = 0; i < numFaces; ++i, normalPtr += 4, posPtr += 4)
         {
-            const auto normal = -base::TriangleNormal(posPtr[0], posPtr[1], posPtr[2]);
+            const auto normal = -TriangleNormal(posPtr[0], posPtr[1], posPtr[2]);
             normalPtr[0] = normal;
             normalPtr[1] = normal;
             normalPtr[2] = normal;
@@ -306,7 +306,7 @@ void ImportChunk::computeFlatNormals()
     {
         for (uint32_t i = 0; i < numFaces; ++i, normalPtr += 3, posPtr += 3)
         {
-            const auto normal = -base::TriangleNormal(posPtr[0], posPtr[1], posPtr[2]);
+            const auto normal = -TriangleNormal(posPtr[0], posPtr[1], posPtr[2]);
             normalPtr[0] = normal;
             normalPtr[1] = normal;
             normalPtr[2] = normal;
@@ -398,17 +398,17 @@ void BuildChunk::addChunk(const ImportChunk& sourceChunk)
     }
 }
 
-void BuildChunk::pack(const MeshVertexQuantizationHelper& quantization, base::IProgressTracker& progress)
+void BuildChunk::pack(const MeshVertexQuantizationHelper& quantization, IProgressTracker& progress)
 {
     uint32_t outputVertexCount = m_totalVertices;
     uint32_t outputIndexCount = m_totalIndices;
 
     // get vertex size
-    const uint32_t vertexSize = rendering::GetMeshVertexFormatInfo(m_format).stride;
+    const uint32_t vertexSize = GetMeshVertexFormatInfo(m_format).stride;
     const uint32_t indexSize = sizeof(uint32_t);
 
     // allocate big output
-    base::Buffer tempVertices, tempIndices;
+    Buffer tempVertices, tempIndices;
     tempVertices.init(POOL_TEMP, vertexSize * outputVertexCount);
     tempIndices.init(POOL_TEMP, indexSize * outputIndexCount);
 
@@ -418,10 +418,10 @@ void BuildChunk::pack(const MeshVertexQuantizationHelper& quantization, base::IP
         auto jobCounter = Fibers::GetInstance().createCounter("ChunkPackerWait", jobCount);
         for (const auto* sourceInfo : m_sourceChunks)
         {
-            auto* vertexWritePtr = base::OffsetPtr(tempVertices.data(), sourceInfo->firstVertexIndex * vertexSize);
-            auto* indexWritePtr = base::OffsetPtr(tempIndices.data(), sourceInfo->firstIndex * indexSize);
+            auto* vertexWritePtr = OffsetPtr(tempVertices.data(), sourceInfo->firstVertexIndex * vertexSize);
+            auto* indexWritePtr = OffsetPtr(tempIndices.data(), sourceInfo->firstIndex * indexSize);
 
-            base::Array<SourceMeshStream> sourceStreams;
+            Array<SourceMeshStream> sourceStreams;
             sourceStreams.reserve(sourceInfo->vertexDataStreams.size());
             for (const auto& sourceVertexStream : sourceInfo->vertexDataStreams)
             {
@@ -461,9 +461,9 @@ void BuildChunk::pack(const MeshVertexQuantizationHelper& quantization, base::IP
     // TOOD: optimize more
     if (m_mergeDuplicatedVertices)
     {
-        base::ScopeTimer timer;
+        ScopeTimer timer;
 
-        base::Array<uint32_t> remapTable;
+        Array<uint32_t> remapTable;
         const auto newVertexCount = OptimizeVertexBuffer(tempVertices.data(), outputVertexCount, m_format, remapTable);
         tempVertices = RemapVertexBuffer(tempVertices.data(), outputVertexCount, m_format, newVertexCount, remapTable.typedData());
         RemapIndexBuffer((uint32_t*)tempIndices.data(), outputIndexCount, remapTable.typedData());
@@ -473,7 +473,7 @@ void BuildChunk::pack(const MeshVertexQuantizationHelper& quantization, base::IP
 
         if (m_optimizeVertexCache)
         {
-            base::ScopeTimer timer;
+            ScopeTimer timer;
             OptimizeVertexCache((uint32_t*)tempIndices.data(), outputIndexCount, outputVertexCount); // TODO: optional cancelation
             TRACE_INFO("Optimized vertex cache for {} indices in {}", outputIndexCount, timer);
         }
@@ -484,7 +484,7 @@ void BuildChunk::pack(const MeshVertexQuantizationHelper& quantization, base::IP
 
         if (m_optimizeVertexFetch)
         {
-            base::ScopeTimer timer;
+            ScopeTimer timer;
             tempVertices = OptimizeVertexFetch(tempVertices.data(), outputVertexCount, m_format, (uint32_t*)tempIndices.data(), outputIndexCount); // TODO: optional internal cancelation
             TRACE_INFO("Optimized vertex fetch for {} vertices in {}", outputVertexCount, timer);
         }
@@ -500,7 +500,7 @@ void BuildChunk::pack(const MeshVertexQuantizationHelper& quantization, base::IP
 
     // pack vertices
     {
-        base::ScopeTimer timer;
+        ScopeTimer timer;
         m_unpackedVertexDataSize = tempVertices.size();
         m_packedVertexData = CompressVertexBuffer(tempVertices.data(), m_format, outputVertexCount);
         if (m_packedVertexData)
@@ -519,7 +519,7 @@ void BuildChunk::pack(const MeshVertexQuantizationHelper& quantization, base::IP
 
     // pack indices
     {
-        base::ScopeTimer timer;
+        ScopeTimer timer;
         m_unpackedIndexDataSize = tempIndices.size();
         m_packedIndexData = CompressIndexBuffer(tempIndices.data(), outputIndexCount, outputVertexCount);
         if (m_packedIndexData)
@@ -561,4 +561,4 @@ BuildChunk* BuildChunkRegistry::findBuildChunk(MeshVertexFormat format, uint32_t
 
 //---
     
-END_BOOMER_NAMESPACE(rendering)
+END_BOOMER_NAMESPACE_EX(assets)

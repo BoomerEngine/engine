@@ -10,7 +10,7 @@
 
 #include "editor/common/include/resourceEditorNativeFile.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 class MaterialPreviewPanel;
 class MaterialPreviewPanel;
@@ -28,14 +28,14 @@ public:
 
     INLINE MaterialPreviewPanel* previewPanel() const { return m_previewPanel; }
 
-    INLINE const rendering::MaterialInstancePtr& materialInstance() const { return m_instance; }
+    INLINE const MaterialInstancePtr& materialInstance() const { return m_instance; }
 
     //--
 
 private:
-    rendering::MaterialInstancePtr m_instance;
+    MaterialInstancePtr m_instance;
 
-    base::RefPtr<MaterialPreviewPanel> m_previewPanel;
+    RefPtr<MaterialPreviewPanel> m_previewPanel;
     ui::DataInspectorPtr m_properties;
 
     void createInterface();
@@ -44,4 +44,4 @@ private:
     virtual bool save() override;
 };
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

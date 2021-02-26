@@ -13,23 +13,23 @@
 #include "managedThumbnails.h"
 #include "managedDepot.h"
 
-#include "base/resource/include/resource.h"
-#include "base/resource/include/resource.h"
-#include "base/resource/include/resource.h"
-#include "base/containers/include/stringBuilder.h"
-#include "base/io/include/ioFileHandle.h"
-#include "base/resource/include/resourceThumbnail.h"
-#include "base/image/include/imageView.h"
-#include "base/image/include/image.h"
-#include "base/resource/include/resourceLoadingService.h"
-#include "base/resource/include/resourceFileLoader.h"
-#include "base/resource/include/resourceMetadata.h"
-#include "base/resource/include/resourceFileSaver.h"
-#include "base/resource_compiler/include/importFileService.h"
-#include "base/ui/include/uiMessageBox.h"
-#include "base/ui/include/uiElementConfig.h"
+#include "core/resource/include/resource.h"
+#include "core/resource/include/resource.h"
+#include "core/resource/include/resource.h"
+#include "core/containers/include/stringBuilder.h"
+#include "core/io/include/ioFileHandle.h"
+#include "core/resource/include/resourceThumbnail.h"
+#include "core/image/include/imageView.h"
+#include "core/image/include/image.h"
+#include "core/resource/include/resourceLoadingService.h"
+#include "core/resource/include/resourceFileLoader.h"
+#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/resourceFileSaver.h"
+#include "core/resource_compiler/include/importFileService.h"
+#include "engine/ui/include/uiMessageBox.h"
+#include "engine/ui/include/uiElementConfig.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -98,5 +98,5 @@ void ManagedFile::deleted(bool flag)
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

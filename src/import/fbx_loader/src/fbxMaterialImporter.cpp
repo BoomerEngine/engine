@@ -12,12 +12,12 @@
 #include "fbxFileLoaderService.h"
 #include "fbxFileData.h"
 
-#include "rendering/material/include/renderingMaterialInstance.h"
+#include "engine/material/include/renderingMaterialInstance.h"
 
-#include "base/app/include/localServiceContainer.h"
-#include "base/resource/include/resourceTags.h"
+#include "core/app/include/localServiceContainer.h"
+#include "core/resource/include/resourceTags.h"
 
-BEGIN_BOOMER_NAMESPACE(asset)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //--
 
@@ -30,7 +30,7 @@ FBXMaterialImportConfig::FBXMaterialImportConfig()
 {        
 }
 
-void FBXMaterialImportConfig::computeConfigurationKey(base::CRC64& crc) const
+void FBXMaterialImportConfig::computeConfigurationKey(CRC64& crc) const
 {
     TBaseClass::computeConfigurationKey(crc);
     crc << m_materialName.view();        
@@ -39,10 +39,10 @@ void FBXMaterialImportConfig::computeConfigurationKey(base::CRC64& crc) const
 //--
 
 RTTI_BEGIN_TYPE_CLASS(MaterialImporter);
-    RTTI_METADATA(base::res::ResourceCookedClassMetadata).addClass<rendering::MaterialInstance>();
-    RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtension("fbx").addSourceExtension("FBX");
-    RTTI_METADATA(base::res::ResourceCookerVersionMetadata).version(0);
-    RTTI_METADATA(base::res::ResourceImporterConfigurationClassMetadata).configurationClass<FBXMaterialImportConfig>();
+    RTTI_METADATA(res::ResourceCookedClassMetadata).addClass<MaterialInstance>();
+    RTTI_METADATA(res::ResourceSourceFormatMetadata).addSourceExtension("fbx").addSourceExtension("FBX");
+    RTTI_METADATA(res::ResourceCookerVersionMetadata).version(0);
+    RTTI_METADATA(res::ResourceImporterConfigurationClassMetadata).configurationClass<FBXMaterialImportConfig>();
 RTTI_END_TYPE();
 
 //--
@@ -79,7 +79,7 @@ RTTI_END_TYPE();
 
 //--
 
-static bool TryReadTexturePath(const FbxSurfaceMaterial& material, const char* propertyName, rendering::GeneralMaterialTextrureInfo& outTexture)
+static bool TryReadTexturePath(const FbxSurfaceMaterial& material, const char* propertyName, GeneralMaterialTextrureInfo& outTexture)
 {
     auto prop = material.FindProperty(propertyName, false);
     if (!prop.IsValid())
@@ -105,7 +105,7 @@ static bool TryReadTexturePath(const FbxSurfaceMaterial& material, const char* p
                         auto vScale = lTex->GetScaleV();
                         TRACE_INFO("UV setup for '{}': Offset: [{},{}], Scale: [{},{}]", lTex->GetFileName(), uOffset, vOffset, uScale, vScale);
 
-                        outTexture.path = base::StringBuf(lTex->GetFileName());
+                        outTexture.path = StringBuf(lTex->GetFileName());
                         return true;
                     }
                 }
@@ -129,7 +129,7 @@ static bool TryReadTexturePath(const FbxSurfaceMaterial& material, const char* p
                     auto vScale = lTex->GetScaleV();
                     TRACE_INFO("UV setup for '{}': Offset: [{},{}], Scale: [{},{}]", lTex->GetFileName(), uOffset, vOffset, uScale, vScale);
 
-                    outTexture.path = base::StringBuf(lTex->GetFileName());
+                    outTexture.path = StringBuf(lTex->GetFileName());
                     return true;
                 }
             }
@@ -144,10 +144,10 @@ static bool TryReadTexturePath(const FbxSurfaceMaterial& material, const char* p
 MaterialImporter::MaterialImporter()
 {}
 
-base::res::ResourcePtr MaterialImporter::importResource(base::res::IResourceImporterInterface& importer) const
+res::ResourcePtr MaterialImporter::importResource(res::IResourceImporterInterface& importer) const
 {
     // load the FBX data
-    auto importedScene = base::rtti_cast<fbx::LoadedFile>(importer.loadSourceAsset(importer.queryImportPath()));
+    auto importedScene = rtti_cast<FBXFile>(importer.loadSourceAsset(importer.queryImportPath()));
     if (!importedScene)
     {
         TRACE_ERROR("Failed to load scene from import file");
@@ -179,7 +179,7 @@ base::res::ResourcePtr MaterialImporter::importResource(base::res::IResourceImpo
     //--
 
     // setup general material
-    rendering::GeneralMaterialInfo info;
+    GeneralMaterialInfo info;
 
     // lighting mode
     {
@@ -192,14 +192,14 @@ base::res::ResourcePtr MaterialImporter::importResource(base::res::IResourceImpo
     }
 
     // load properties
-    TryReadTexturePath(*material, "DiffuseColor", info.textures[rendering::GeneralMaterialTextureType_Diffuse]);
-    TryReadTexturePath(*material, "NormalMap", info.textures[rendering::GeneralMaterialTextureType_Normal]);
-    TryReadTexturePath(*material, "SpecularColor", info.textures[rendering::GeneralMaterialTextureType_Specularity]);
-    TryReadTexturePath(*material, "EmissiveColor", info.textures[rendering::GeneralMaterialTextureType_Emissive]);        
+    TryReadTexturePath(*material, "DiffuseColor", info.textures[GeneralMaterialTextureType_Diffuse]);
+    TryReadTexturePath(*material, "NormalMap", info.textures[GeneralMaterialTextureType_Normal]);
+    TryReadTexturePath(*material, "SpecularColor", info.textures[GeneralMaterialTextureType_Specularity]);
+    TryReadTexturePath(*material, "EmissiveColor", info.textures[GeneralMaterialTextureType_Emissive]);        
 
     return importMaterial(importer, *config, info);
 }
 
-END_BOOMER_NAMESPACE(asset)
+END_BOOMER_NAMESPACE_EX(assets)
 
 

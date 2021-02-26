@@ -10,15 +10,15 @@
 #include "materialInstanceEditor.h"
 #include "materialPreviewPanel.h"
 
-#include "rendering/material/include/renderingMaterialInstance.h"
+#include "engine/material/include/renderingMaterialInstance.h"
 
-#include "base/ui/include/uiDockLayout.h"
-#include "base/ui/include/uiDataInspector.h"
+#include "engine/ui/include/uiDockLayout.h"
+#include "engine/ui/include/uiDataInspector.h"
 #include "editor/common/include/assetBrowser.h"
 #include "editor/common/include/managedFileFormat.h"
 #include "editor/common/include/managedFileNativeResource.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -37,7 +37,7 @@ MaterialInstanceEditor::~MaterialInstanceEditor()
 void MaterialInstanceEditor::createInterface()
 {
     {
-        auto tab = base::RefNew<ui::DockPanel>("[img:shader] Preview", "PreviewPanel");
+        auto tab = RefNew<ui::DockPanel>("[img:shader] Preview", "PreviewPanel");
         tab->layoutVertical();
 
         m_previewPanel = tab->createChild<MaterialPreviewPanel>();
@@ -47,7 +47,7 @@ void MaterialInstanceEditor::createInterface()
     }
 
     {
-        auto tab = base::RefNew<ui::DockPanel>("[img:properties] Properties", "PropertiesPanel");
+        auto tab = RefNew<ui::DockPanel>("[img:properties] Properties", "PropertiesPanel");
         tab->layoutVertical();
 
         m_properties = tab->createChild<ui::DataInspector>();
@@ -63,7 +63,7 @@ bool MaterialInstanceEditor::save()
     if (!TBaseClass::save())
         return false;
 
-    base::LoadResource<rendering::MaterialInstance>(file()->depotPath());
+    LoadResource<MaterialInstance>(file()->depotPath());
     return true;
 }
 
@@ -72,7 +72,7 @@ bool MaterialInstanceEditor::initialize()
     if (!TBaseClass::initialize())
         return false;
 
-    m_instance = rtti_cast<rendering::MaterialInstance>(resource());
+    m_instance = rtti_cast<MaterialInstance>(resource());
     if (!m_instance)
         return false;
 
@@ -90,14 +90,14 @@ class MaterialInstaceResourceEditorOpener : public IResourceEditorOpener
 public:
     virtual bool canOpen(const ManagedFileFormat& format) const override
     {
-        const auto graphClass = rendering::MaterialInstance::GetStaticClass();
+        const auto graphClass = MaterialInstance::GetStaticClass();
         return (format.nativeResourceClass() == graphClass);
     }
 
-    virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
+    virtual RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
     {
         if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-            return base::RefNew<MaterialInstanceEditor>(nativeFile);
+            return RefNew<MaterialInstanceEditor>(nativeFile);
                 
         return nullptr;
     }
@@ -108,4 +108,4 @@ RTTI_END_TYPE();
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

@@ -16,18 +16,18 @@
 #include "managedItem.h"
 #include "managedDirectory.h"
 
-#include "base/object/include/rttiDataView.h"
-#include "base/resource/include/resourceReferenceType.h"
-#include "base/resource/include/resourceAsyncReferenceType.h"
+#include "core/object/include/rttiDataView.h"
+#include "core/resource/include/resourceReferenceType.h"
+#include "core/resource/include/resourceAsyncReferenceType.h"
 
-#include "base/ui/include/uiDataBox.h"
-#include "base/ui/include/uiButton.h"
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiColorPickerBox.h"
-#include "base/ui/include/uiImage.h"
-#include "base/ui/include/uiEditBox.h"
+#include "engine/ui/include/uiDataBox.h"
+#include "engine/ui/include/uiButton.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiColorPickerBox.h"
+#include "engine/ui/include/uiImage.h"
+#include "engine/ui/include/uiEditBox.h"
 
-BEGIN_BOOMER_NAMESPACE(ui)
+BEGIN_BOOMER_NAMESPACE_EX(ui)
 
 //--
 
@@ -241,7 +241,7 @@ public:
 
     //--
 
-    virtual ui::DragDropDataPtr queryDragDropData(const base::input::BaseKeyFlags& keys, const ui::Position& position) const override
+    virtual ui::DragDropDataPtr queryDragDropData(const input::BaseKeyFlags& keys, const ui::Position& position) const override
     {
         if (m_currentFile)
             return RefNew<ed::AssetBrowserFileDragDrop>(m_currentFile);
@@ -387,4 +387,4 @@ RTTI_END_TYPE();
 
 //--
 
-END_BOOMER_NAMESPACE(ui)
+END_BOOMER_NAMESPACE_EX(ui)

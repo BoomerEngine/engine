@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "base/ui/include/uiSimpleTreeModel.h"
-#include "base/ui/include/uiElement.h"
+#include "engine/ui/include/uiSimpleTreeModel.h"
+#include "engine/ui/include/uiElement.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -25,15 +25,15 @@ public:
     // IAbstractItemModel
     virtual ui::ModelIndex parent(const ui::ModelIndex& item = ui::ModelIndex()) const override final;
     virtual bool hasChildren(const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
-    virtual void children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const override final;
+    virtual void children(const ui::ModelIndex& parent, Array<ui::ModelIndex>& outChildrenIndices) const override final;
     virtual bool compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex = 0) const override final;
     virtual bool filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex = 0) const override final;
-    virtual base::StringBuf displayContent(const ui::ModelIndex& id, int colIndex = 0) const override final;
+    virtual StringBuf displayContent(const ui::ModelIndex& id, int colIndex = 0) const override final;
 
-    virtual ui::PopupPtr contextMenu(ui::AbstractItemView* view, const base::Array<ui::ModelIndex>& indices) const override final;
+    virtual ui::PopupPtr contextMenu(ui::AbstractItemView* view, const Array<ui::ModelIndex>& indices) const override final;
     virtual ui::ElementPtr tooltip(ui::AbstractItemView* view, ui::ModelIndex id) const override final;
 
-    virtual ui::DragDropDataPtr queryDragDropData(const base::input::BaseKeyFlags& keys, const ui::ModelIndex& item) override final;
+    virtual ui::DragDropDataPtr queryDragDropData(const input::BaseKeyFlags& keys, const ui::ModelIndex& item) override final;
     virtual ui::DragDropHandlerPtr handleDragDropData(ui::AbstractItemView* view, const ui::ModelIndex& item, const ui::DragDropDataPtr& data, const ui::Position& pos) override final;
     virtual bool handleDragDropCompletion(ui::AbstractItemView* view, const ui::ModelIndex& item, const ui::DragDropDataPtr& data) override final;
     virtual bool handleIconClick(const ui::ModelIndex& item, int columnIndex) const override final;
@@ -116,7 +116,7 @@ private:
     ui::SearchBarPtr m_searchBar;
 
     ui::TreeViewPtr m_tree;
-    base::RefPtr<SceneContentTreeModel> m_treeModel;
+    RefPtr<SceneContentTreeModel> m_treeModel;
 
     void treeSelectionChanged();
 
@@ -130,4 +130,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

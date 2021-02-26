@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "base/ui/include/uiElement.h"
-#include "base/world/include/worldEntity.h"
-#include "base/ui/include/uiSimpleListModel.h"
+#include "engine/ui/include/uiElement.h"
+#include "engine/world/include/worldEntity.h"
+#include "engine/ui/include/uiSimpleListModel.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -22,8 +22,8 @@ struct SceneResourceBasedObjectFactoryInfo
 
 public:
     ClassType resourceClass;
-    SpecificClassType<world::Entity> entityClass;
-    Array<SpecificClassType<world::Entity>> allowedEntityClasses;
+    SpecificClassType<Entity> entityClass;
+    Array<SpecificClassType<Entity>> allowedEntityClasses;
 };
 
 class SceneResourceBasedObjectFactoryListModel;
@@ -42,7 +42,7 @@ public:
     virtual void configSave(const ui::ConfigBlock& block) const;
     virtual void configLoad(const ui::ConfigBlock& block);
 
-    SpecificClassType<world::Entity> selectedEntityClass(ClassType resClass) const;
+    SpecificClassType<Entity> selectedEntityClass(ClassType resClass) const;
 
 private:
     Array<SceneResourceBasedObjectFactoryInfo> m_resourceBindings;
@@ -58,4 +58,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

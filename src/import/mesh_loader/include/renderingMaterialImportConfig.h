@@ -8,18 +8,18 @@
 
 #pragma once
 
-#include "base/resource/include/resource.h"
-#include "base/resource/include/resourceMetadata.h"
-#include "base/resource_compiler/include/importInterface.h"
+#include "core/resource/include/resource.h"
+#include "core/resource/include/resourceMetadata.h"
+#include "core/resource_compiler/include/importInterface.h"
 
-BEGIN_BOOMER_NAMESPACE(rendering)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //---
 
 /// common manifest for importable materials 
-class IMPORT_MESH_LOADER_API MaterialImportConfig : public base::res::ResourceConfiguration
+class IMPORT_MESH_LOADER_API MaterialImportConfig : public res::ResourceConfiguration
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MaterialImportConfig, base::res::ResourceConfiguration);
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialImportConfig, res::ResourceConfiguration);
 
 public:
     MaterialImportConfig();
@@ -30,10 +30,10 @@ public:
     bool m_importTextures = true;
 
     // texture search path, relative to asset, typically ./textures
-    base::StringBuf m_textureSearchPath;
+    StringBuf m_textureSearchPath;
 
     // if not found texture is imported here using only it's file name
-    base::StringBuf m_textureImportPath;
+    StringBuf m_textureImportPath;
 
     //--
 
@@ -50,43 +50,43 @@ public:
 
     //--
 
-    base::StringBuf m_bindingColor;
-    base::StringBuf m_bindingMapColor;
-    base::StringBuf m_bindingMapColorMask;
-    base::StringBuf m_bindingMapBump;
-    base::StringBuf m_bindingMapNormal;
-    base::StringBuf m_bindingMapDissolve;
-    base::StringBuf m_bindingMapSpecular;
-    base::StringBuf m_bindingMapEmissive;
-    base::StringBuf m_bindingMapRoughness;
-    base::StringBuf m_bindingMapNormalSpecularity;
-    base::StringBuf m_bindingMapRoughnessSpecularity;
-    base::StringBuf m_bindingMapMetallic;
-    base::StringBuf m_bindingMapAmbientOcclusion;
+    StringBuf m_bindingColor;
+    StringBuf m_bindingMapColor;
+    StringBuf m_bindingMapColorMask;
+    StringBuf m_bindingMapBump;
+    StringBuf m_bindingMapNormal;
+    StringBuf m_bindingMapDissolve;
+    StringBuf m_bindingMapSpecular;
+    StringBuf m_bindingMapEmissive;
+    StringBuf m_bindingMapRoughness;
+    StringBuf m_bindingMapNormalSpecularity;
+    StringBuf m_bindingMapRoughnessSpecularity;
+    StringBuf m_bindingMapMetallic;
+    StringBuf m_bindingMapAmbientOcclusion;
         
-    base::StringBuf m_postfixColor;
-    base::StringBuf m_postfixColorMask;
-    base::StringBuf m_postfixNormal;
-    base::StringBuf m_postfixBump;
-    base::StringBuf m_postfixMask;
-    base::StringBuf m_postfixSpecular;
-    base::StringBuf m_postfixEmissive;
-    base::StringBuf m_postfixRoughness;
-    base::StringBuf m_postfixNormalSpecularity;
-    base::StringBuf m_postfixRoughnessSpecularity;
-    base::StringBuf m_postfixMetallic;
-    base::StringBuf m_postfixAmbientOcclusion;
+    StringBuf m_postfixColor;
+    StringBuf m_postfixColorMask;
+    StringBuf m_postfixNormal;
+    StringBuf m_postfixBump;
+    StringBuf m_postfixMask;
+    StringBuf m_postfixSpecular;
+    StringBuf m_postfixEmissive;
+    StringBuf m_postfixRoughness;
+    StringBuf m_postfixNormalSpecularity;
+    StringBuf m_postfixRoughnessSpecularity;
+    StringBuf m_postfixMetallic;
+    StringBuf m_postfixAmbientOcclusion;
 
     //--
 
-    virtual void computeConfigurationKey(base::CRC64& crc) const override;
+    virtual void computeConfigurationKey(CRC64& crc) const override;
 };
 
 //---
 
 struct GeneralMaterialTextrureInfo
 {
-    base::StringBuf path;
+    StringBuf path;
 
     INLINE operator bool() const { return !path.empty(); }
 };
@@ -113,47 +113,46 @@ struct GeneralMaterialInfo
 {
     bool forceUnlit = false;
 
-    base::Color color;
+    Color color;
 
     GeneralMaterialTextrureInfo textures[GeneralMaterialTextureType_MAX];
 };
 
-struct MaterialInstanceParam;
 struct LoadedTexture;
 struct LoadedTextures;
 
 /// generic material importer
-class IMPORT_MESH_LOADER_API IGeneralMaterialImporter : public base::res::IResourceImporter
+class IMPORT_MESH_LOADER_API IGeneralMaterialImporter : public res::IResourceImporter
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(IGeneralMaterialImporter, base::res::IResourceImporter);
+    RTTI_DECLARE_VIRTUAL_CLASS(IGeneralMaterialImporter, res::IResourceImporter);
 
 public:
     virtual ~IGeneralMaterialImporter();
 
 protected:
-    static base::StringView ExtractRootFileName(base::StringView assetFileName);
-    static base::StringBuf ConvertPathToTextureSearchPath(base::StringView assetPathToTexture);
-    static void GlueDepotPath(base::StringView path, bool isFileName, base::Array<base::StringView>& outPathParts);
-    static void EmitDepotPath(const base::Array<base::StringView>& pathParts, base::IFormatStream& f);
-    static base::StringBuf BuildTextureDepotPath(base::StringView referenceDepotPath, base::StringView textureImportPath, base::StringView assetFileName);
+    static StringView ExtractRootFileName(StringView assetFileName);
+    static StringBuf ConvertPathToTextureSearchPath(StringView assetPathToTexture);
+    static void GlueDepotPath(StringView path, bool isFileName, Array<StringView>& outPathParts);
+    static void EmitDepotPath(const Array<StringView>& pathParts, IFormatStream& f);
+    static StringBuf BuildTextureDepotPath(StringView referenceDepotPath, StringView textureImportPath, StringView assetFileName);
 
-    static bool WriteTexture(const TextureRef& textureRef, base::StringID name, base::Array<MaterialInstanceParam>& outParams);
+    static bool WriteTexture(const TextureRef& textureRef, StringID name, Array<MaterialInstanceParam>& outParams);
 
-    virtual bool tryApplyTexture(base::res::IResourceImporterInterface& importer, const MaterialImportConfig& config, base::StringView mappingParams, const rendering::MaterialTemplate* knownTemplate, const LoadedTexture& texture, base::Array<MaterialInstanceParam>& outParams) const;
+    virtual bool tryApplyTexture(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, StringView mappingParams, const MaterialTemplate* knownTemplate, const LoadedTexture& texture, Array<MaterialInstanceParam>& outParams) const;
         
-    bool loadTexture(base::res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialTextrureInfo& info, LoadedTexture& outLoadedTextures) const;
+    bool loadTexture(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialTextrureInfo& info, LoadedTexture& outLoadedTextures) const;
 
-    bool findAssetSourcePath(base::res::IResourceImporterInterface& importer, const base::Array<base::StringBuf>& paths, const base::Array<base::StringView>& suffixes, base::StringBuf& outPath) const;
+    bool findAssetSourcePath(res::IResourceImporterInterface& importer, const Array<StringBuf>& paths, const Array<StringView>& suffixes, StringBuf& outPath) const;
 
-    void loadAdditionalTextures(base::res::IResourceImporterInterface& importer, const MaterialImportConfig& config, LoadedTextures& outLoadedTextures) const;
+    void loadAdditionalTextures(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, LoadedTextures& outLoadedTextures) const;
 
     virtual MaterialRef loadBaseMaterial(const LoadedTextures& info, const MaterialImportConfig& config) const;
 
-    virtual MaterialInstancePtr importMaterial(base::res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialInfo& sourceMaterial) const;
+    virtual MaterialInstancePtr importMaterial(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialInfo& sourceMaterial) const;
 
-    virtual TextureRef importTextureRef(base::res::IResourceImporterInterface& importer, const MaterialImportConfig& csg, base::StringView assetPathToTexture, base::StringBuf& outAssetImportPath) const;
+    virtual TextureRef importTextureRef(res::IResourceImporterInterface& importer, const MaterialImportConfig& csg, StringView assetPathToTexture, StringBuf& outAssetImportPath) const;
 };
 
 //---
 
-END_BOOMER_NAMESPACE(rendering)
+END_BOOMER_NAMESPACE_EX(assets)

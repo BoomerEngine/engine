@@ -20,25 +20,25 @@
 #include "versionControl.h"
 #include "resourceEditor.h"
 
-#include "base/io/include/ioSystem.h"
-#include "base/app/include/commandline.h"
-#include "base/resource/include/resourceLoadingService.h"
-#include "base/ui/include/uiRenderer.h"
-#include "base/ui/include/uiElementConfig.h"
-#include "base/xml/include/xmlUtils.h"
-#include "base/xml/include/xmlDocument.h"
-#include "base/xml/include/xmlWrappers.h"
-#include "base/io/include/fileFormat.h"
-#include "base/net/include/tcpMessageServer.h"
-#include "base/net/include/messageConnection.h"
-#include "base/net/include/messagePool.h"
-#include "base/ui/include/uiDockLayout.h"
-#include "base/ui/include/uiButton.h"
+#include "core/io/include/ioSystem.h"
+#include "core/app/include/commandline.h"
+#include "core/resource/include/resourceLoadingService.h"
+#include "engine/ui/include/uiRenderer.h"
+#include "engine/ui/include/uiElementConfig.h"
+#include "core/xml/include/xmlUtils.h"
+#include "core/xml/include/xmlDocument.h"
+#include "core/xml/include/xmlWrappers.h"
+#include "core/io/include/fileFormat.h"
+#include "core/net/include/tcpMessageServer.h"
+#include "core/net/include/messageConnection.h"
+#include "core/net/include/messagePool.h"
+#include "engine/ui/include/uiDockLayout.h"
+#include "engine/ui/include/uiButton.h"
 #include "assetFileImportPrepareDialog.h"
-#include "base/ui/include/uiMessageBox.h"
-#include "base/fibers/include/backgroundJob.h"
+#include "engine/ui/include/uiMessageBox.h"
+#include "core/fibers/include/backgroundJob.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -110,7 +110,7 @@ bool Editor::initialize(ui::Renderer* renderer, const app::CommandLine& cmdLine)
     ManagedFileFormatRegistry::GetInstance().cacheFormats();
 
     // load config data (does not apply the config)
-    m_configPath = TempString("{}editor.config.xml", base::io::SystemPath(io::PathCategory::UserConfigDir));
+    m_configPath = TempString("{}editor.config.xml", io::SystemPath(io::PathCategory::UserConfigDir));
     m_configStorage->loadFromFile(m_configPath);
         
     // load open/save settings
@@ -280,7 +280,7 @@ bool Editor::showFileEditor(ManagedFile* file) const
 
 namespace prv
 {
-    class ManagedFileOpenerHelper : public base::ISingleton
+    class ManagedFileOpenerHelper : public ISingleton
     {
         DECLARE_SINGLETON(ManagedFileOpenerHelper);
 
@@ -413,7 +413,7 @@ bool Editor::closeFileEditor(ManagedFile* file, bool force)
     {
         if (editor->modified() && !force)
         {
-            base::StringBuilder txt;
+            StringBuilder txt;
             txt.appendf("File '{}' is [b][color:#F00]modified[/color][/b].\n \nDo you want to save it or discard the changes?", file->depotPath());
 
             ui::MessageBoxSetup setup;
@@ -624,7 +624,7 @@ io::OpenSavePersistentData& Editor::openSavePersistentData(StringView category)
         return **data;
 
     auto entry = new io::OpenSavePersistentData;
-    entry->directory = base::io::SystemPath(io::PathCategory::UserDocumentsDir);
+    entry->directory = io::SystemPath(io::PathCategory::UserDocumentsDir);
 
     m_openSavePersistentData[StringBuf(category)] = entry;
     return *entry;
@@ -655,7 +655,7 @@ bool Editor::saveToXML(ui::IElement* owner, StringView category, const std::func
     // ask for file path
     StringBuf selectedPath;
     const auto nativeHandle = windowNativeHandle(owner);
-    if (!base::io::ShowFileSaveDialog(nativeHandle, currentFileName, formatList, selectedPath, dialogSettings))
+    if (!io::ShowFileSaveDialog(nativeHandle, currentFileName, formatList, selectedPath, dialogSettings))
         return false;
 
     // extract file name
@@ -714,7 +714,7 @@ ObjectPtr Editor::loadFromXML(ui::IElement* owner, StringView category, Specific
     // ask for file path
     Array<StringBuf> selectedPaths;
     const auto nativeHandle = windowNativeHandle(owner);
-    if (!base::io::ShowFileOpenDialog(nativeHandle, false, formatList, selectedPaths, dialogSettings))
+    if (!io::ShowFileOpenDialog(nativeHandle, false, formatList, selectedPaths, dialogSettings))
         return false;
 
     // load the document from the file
@@ -858,7 +858,7 @@ void Editor::saveOpenedFiles() const
 
 //--
 
-class ProgressJobAdaptor : public base::IBackgroundJob
+class ProgressJobAdaptor : public IBackgroundJob
 {
 public:
     ProgressJobAdaptor(RefPtr<ProgressDialog> dlg, const TLongJobFunc& func)
@@ -913,4 +913,4 @@ Editor* GetEditor()
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

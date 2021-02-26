@@ -11,16 +11,27 @@
 #define FBXSDK_SHARED
 #include <fbxsdk.h>
 
-BEGIN_BOOMER_NAMESPACE(assets)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
-static base::Vector3 ToVector(const fbxsdk::FbxVector4& v)
+//---
+
+struct FBXDataNode;
+struct FBXSkeletonBone;
+struct FBXSkeletonBuilder;
+struct FBXMaterialMapper;
+
+class FBXFile;
+
+//--
+
+static Vector3 ToVector(const fbxsdk::FbxVector4& v)
 {
-    return base::Vector3((float)v[0], (float)v[1], (float)v[2]);
+    return Vector3((float)v[0], (float)v[1], (float)v[2]);
 }
 
-static base::Matrix ToMatrix(const fbxsdk::FbxMatrix& m)
+static Matrix ToMatrix(const fbxsdk::FbxMatrix& m)
 {
-    base::Matrix ret;
+    Matrix ret;
     ret.identity();
     ret.m[0][0] = (float)m.Get(0,0);
     ret.m[0][1] = (float)m.Get(1,0);
@@ -37,4 +48,4 @@ static base::Matrix ToMatrix(const fbxsdk::FbxMatrix& m)
     return ret;
 }
 
-END_BOOMER_NAMESPACE(assets)
+END_BOOMER_NAMESPACE_EX(assets)

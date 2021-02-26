@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "base/world/include/worldNodeTemplate.h"
+#include "engine/world/include/worldNodeTemplate.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -175,7 +175,7 @@ public:
     //--
 
     // enumerate classes of entities that can be initialized from a given primary resource
-    static void EnumEntityClassesForResource(ClassType resourceClass, Array<SpecificClassType<world::Entity>>& outEntityClasses);
+    static void EnumEntityClassesForResource(ClassType resourceClass, Array<SpecificClassType<Entity>>& outEntityClasses);
 
     //--
 
@@ -189,7 +189,7 @@ public:
     virtual void handleParentChanged();
     virtual void handleLocalVisibilityChanged();
     virtual void handleVisibilityChanged();
-    virtual void handleDebugRender(rendering::scene::FrameParams& frame) const;
+    virtual void handleDebugRender(rendering::FrameParams& frame) const;
 
     //--
 
@@ -347,7 +347,7 @@ protected:
     void updateBaseTemplates(const Array<const ObjectIndirectTemplate*>& baseTemplates);
 
     virtual void handleTransformUpdated();
-    virtual void handleDebugRender(rendering::scene::FrameParams& frame) const override;
+    virtual void handleDebugRender(rendering::FrameParams& frame) const override;
     virtual void handleParentChanged() override;
     virtual void handleDataPropertyChanged(const StringBuf& data);
     virtual void displayText(IFormatStream& txt) const override;
@@ -369,7 +369,7 @@ private:
 
 struct SceneContentEntityInstancedContent
 {
-    Array<world::NodeTemplatePrefabSetup> localPrefabs;
+    Array<NodeTemplatePrefabSetup> localPrefabs;
     Array<SceneContentNodePtr> childNodes;
 };
 
@@ -379,22 +379,22 @@ class EDITOR_SCENE_EDITOR_API SceneContentEntityNode : public SceneContentDataNo
     RTTI_DECLARE_VIRTUAL_CLASS(SceneContentEntityNode, SceneContentDataNode);
 
 public:
-    SceneContentEntityNode(const StringBuf& name, const world::NodeTemplatePtr& node, const Array<world::NodeTemplatePtr>& inheritedTemplated = Array<world::NodeTemplatePtr>());
+    SceneContentEntityNode(const StringBuf& name, const NodeTemplatePtr& node, const Array<NodeTemplatePtr>& inheritedTemplated = Array<NodeTemplatePtr>());
 
-    INLINE const Array<world::NodeTemplatePrefabSetup>& localPrefabs() const { return m_localPrefabs; }
+    INLINE const Array<NodeTemplatePrefabSetup>& localPrefabs() const { return m_localPrefabs; }
 
-    world::NodeTemplatePtr compileDifferentialData() const;
+    NodeTemplatePtr compileDifferentialData() const;
 
-    world::NodeTemplatePtr compileSnapshot() const;
+    NodeTemplatePtr compileSnapshot() const;
 
-    world::NodeTemplatePtr compiledForCopy() const;
+    NodeTemplatePtr compiledForCopy() const;
 
     void invalidateData();
 
     //--
 
     void extractCurrentInstancedContent(SceneContentEntityInstancedContent& outInstancedContent); // NOTE: destructive !
-    void createInstancedContent(const world::NodeTemplate* dataTemplate, SceneContentEntityInstancedContent& outInstancedContent) const;
+    void createInstancedContent(const NodeTemplate* dataTemplate, SceneContentEntityInstancedContent& outInstancedContent) const;
     void applyInstancedContent(const SceneContentEntityInstancedContent& content);
 
     //--
@@ -406,8 +406,8 @@ public:
     bool canExplodePrefab() const;
 
 private:
-    Array<world::NodeTemplatePtr> m_inheritedTemplates;
-    Array<world::NodeTemplatePrefabSetup> m_localPrefabs;
+    Array<NodeTemplatePtr> m_inheritedTemplates;
+    Array<NodeTemplatePrefabSetup> m_localPrefabs;
 
     bool m_dirtyVisualData = false;
     bool m_dirtyVisualTransform = false;
@@ -418,7 +418,7 @@ private:
     virtual void handleVisibilityChanged() override;
 
     void updateBaseTemplates();
-    void collectBaseNodes(const Array<world::NodeTemplatePrefabSetup>& localPrefabs, Array<const world::NodeTemplate*>& outBaseNodes) const;
+    void collectBaseNodes(const Array<NodeTemplatePrefabSetup>& localPrefabs, Array<const NodeTemplate*>& outBaseNodes) const;
 };
 
 //--
@@ -443,4 +443,4 @@ protected:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

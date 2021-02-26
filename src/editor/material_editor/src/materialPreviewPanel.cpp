@@ -7,23 +7,26 @@
 ***/
 
 #include "build.h"
-
 #include "materialPreviewPanel.h"
-#include "rendering/material/include/renderingMaterial.h"
-#include "rendering/mesh/include/renderingMesh.h"
-#include "rendering/scene/include/renderingScene.h"
-#include "base/ui/include/uiMenuBar.h"
+
 #include "editor/common/include/assetBrowser.h"
 #include "editor/common/include/managedFile.h"
 #include "editor/common/include/managedFileFormat.h"
-#include "base/ui/include/uiToolBar.h"
-#include "rendering/scene/include/renderingSceneObjects.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+#include "engine/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiToolBar.h"
+#include "engine/mesh/include/renderingMesh.h"
+#include "engine/material/include/renderingMaterial.h"
+
+#include "engine/rendering/include/renderingScene.h"
+#include "engine/rendering/include/renderingSceneObject.h"
+#include "engine/rendering/include/renderingSceneObject_Mesh.h"
+
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
-static base::res::StaticResource<rendering::Mesh> resDefaultCustomMesh("/engine/meshes/teapot.v4mesh");
+static res::StaticResource<Mesh> resDefaultCustomMesh("/engine/meshes/teapot.v4mesh");
 
 MaterialPreviewPanelSettings::MaterialPreviewPanelSettings()
 {
@@ -46,7 +49,7 @@ MaterialPreviewPanel::MaterialPreviewPanel()
 
     auto settings = cameraSettings();
     settings.mode = ui::CameraMode::OrbitPerspective;
-    settings.rotation = base::Angles(35.0f, 50.0f, 0.0f);
+    settings.rotation = Angles(35.0f, 50.0f, 0.0f);
     settings.position = settings.rotation.forward() * -2.0f;
     cameraSettings(settings);
 
@@ -79,20 +82,20 @@ void MaterialPreviewPanel::previewSettings(const MaterialPreviewPanelSettings& s
     }
 }
 
-void MaterialPreviewPanel::bindMaterial(const rendering::IMaterial* material)
+void MaterialPreviewPanel::bindMaterial(const IMaterial* material)
 {
     destroyVisualization();
     m_material = AddRef(material);
     createVisualization();
 }
 
-bool MaterialPreviewPanel::computeContentBounds(base::Box& outBox) const
+bool MaterialPreviewPanel::computeContentBounds(Box& outBox) const
 {
-    outBox = base::Box(base::Vector3::ZERO(), 0.5f);
+    outBox = Box(Vector3::ZERO(), 0.5f);
     return true;
 }
 
-void MaterialPreviewPanel::handleRender(rendering::scene::FrameParams& frame)
+void MaterialPreviewPanel::handleRender(rendering::FrameParams& frame)
 {
     TBaseClass::handleRender(frame);
 }
@@ -101,33 +104,33 @@ void MaterialPreviewPanel::destroyVisualization()
 {
     if (m_previewProxy)
     {
-        scene()->dettachProxy(m_previewProxy);
+        scene()->manager<rendering::ObjectManagerMesh>()->detachProxy(m_previewProxy);
         m_previewProxy.reset();
     }
 }
 
 ui::DragDropHandlerPtr MaterialPreviewPanel::handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
 {
-    if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
+    if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
         if (auto file = fileData->file())
-            if (file->fileFormat().loadableAsType(rendering::Mesh::GetStaticClass()))
-                return base::RefNew<ui::DragDropHandlerGeneric>(data, this, entryPosition);
+            if (file->fileFormat().loadableAsType(Mesh::GetStaticClass()))
+                return RefNew<ui::DragDropHandlerGeneric>(data, this, entryPosition);
 
     return TBaseClass::handleDragDrop(data, entryPosition);
 }
 
 void MaterialPreviewPanel::handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
 {
-    if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
+    if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
     {
         if (auto file = fileData->file())
         {
-            if (file->fileFormat().loadableAsType(rendering::Mesh::GetStaticClass()))
+            if (file->fileFormat().loadableAsType(Mesh::GetStaticClass()))
             {
                 auto settings = previewSettings();
 
                 // TODO: async
-                if (auto loadedMash = base::LoadResource<rendering::Mesh>(file->depotPath()))
+                if (auto loadedMash = LoadResource<Mesh>(file->depotPath()))
                 {
                     settings.customMesh = loadedMash;
                     settings.shape = MaterialPreviewShape::Custom;
@@ -138,11 +141,11 @@ void MaterialPreviewPanel::handleDragDropGenericCompletion(const ui::DragDropDat
     }
 }
 
-base::res::StaticResource<rendering::Mesh> resBoxMesh("/engine/meshes/cube.v4mesh");
-base::res::StaticResource<rendering::Mesh> resBoxSphere("/engine/meshes/sphere.v4mesh");
-base::res::StaticResource<rendering::Mesh> resBoxCylinder("/engine/meshes/cylinder.v4mesh");
-//base::res::StaticResource<rendering::Mesh> resBoxQuad("/engine/meshes/quad.v4mesh");
-base::res::StaticResource<rendering::Mesh> resBoxQuad("/engine/meshes/plane.v4mesh");
+res::StaticResource<Mesh> resBoxMesh("/engine/meshes/cube.v4mesh");
+res::StaticResource<Mesh> resBoxSphere("/engine/meshes/sphere.v4mesh");
+res::StaticResource<Mesh> resBoxCylinder("/engine/meshes/cylinder.v4mesh");
+//res::StaticResource<Mesh> resBoxQuad("/engine/meshes/quad.v4mesh");
+res::StaticResource<Mesh> resBoxQuad("/engine/meshes/plane.v4mesh");
 
 void MaterialPreviewPanel::createVisualization()
 {
@@ -154,7 +157,7 @@ void MaterialPreviewPanel::createVisualization()
 
         if (previewTemplate)
         {
-            rendering::MeshPtr mesh;
+            MeshPtr mesh;
             switch (m_previewSettings.shape)
             {
             case MaterialPreviewShape::Box: mesh = resBoxMesh.loadAndGet(); break;
@@ -166,19 +169,19 @@ void MaterialPreviewPanel::createVisualization()
 
             if (mesh)
             {
-                rendering::scene::ObjectProxyMesh::Setup desc;
+                rendering::ObjectProxyMesh::Setup desc;
                 desc.mesh = mesh;
                 desc.forcedLodLevel = 0;
                 desc.forceMaterial = m_material;
 
-                if (auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc))
+                if (auto proxy = rendering::ObjectProxyMesh::Compile(desc))
                 {
                     const auto minZ = mesh->bounds().min.z;
-                    const auto offset = base::Vector3(0, 0, -minZ);
+                    const auto offset = Vector3(0, 0, -minZ);
                     proxy->m_localToWorld.translation(offset);
 
                     m_previewProxy = proxy;
-                    scene()->attachProxy(m_previewProxy);
+                    scene()->manager<rendering::ObjectManagerMesh>()->attachProxy(m_previewProxy);
 
                     focusOnBounds(mesh->bounds() + offset, 1.0f, nullptr);
                 }
@@ -206,7 +209,7 @@ void MaterialPreviewPanel::createToolbarItems()
     {
         if (button)
         {
-            auto menu = base::RefNew<ui::MenuButtonContainer>();
+            auto menu = RefNew<ui::MenuButtonContainer>();
             buildShapePopup(menu);
             menu->showAsDropdown(button);
         }
@@ -218,4 +221,4 @@ void MaterialPreviewPanel::createToolbarItems()
 
 //--
     
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

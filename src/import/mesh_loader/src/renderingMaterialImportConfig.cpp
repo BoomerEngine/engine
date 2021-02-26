@@ -9,14 +9,14 @@
 #include "build.h"
 #include "renderingMaterialImportConfig.h"
 
-#include "rendering/texture/include/renderingStaticTexture.h"
-#include "rendering/material/include/renderingMaterial.h"
-#include "rendering/material/include/renderingMaterialInstance.h"
+#include "engine/texture/include/renderingStaticTexture.h"
+#include "engine/material/include/renderingMaterial.h"
+#include "engine/material/include/renderingMaterialInstance.h"
 
-#include "base/resource_compiler/include/importInterface.h"
-#include "rendering/material/include/renderingMaterialTemplate.h"
+#include "core/resource_compiler/include/importInterface.h"
+#include "engine/material/include/renderingMaterialTemplate.h"
 
-BEGIN_BOOMER_NAMESPACE(rendering)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //--
 
@@ -59,8 +59,8 @@ RTTI_END_TYPE();
 
 MaterialImportConfig::MaterialImportConfig()
 {
-    m_textureImportPath = base::StringBuf("../textures/");
-    m_textureSearchPath = base::StringBuf("../textures/");
+    m_textureImportPath = StringBuf("../textures/");
+    m_textureSearchPath = StringBuf("../textures/");
 
     m_bindingColor = "Color";
 
@@ -91,7 +91,7 @@ MaterialImportConfig::MaterialImportConfig()
     m_postfixAmbientOcclusion = "ao;AO";
 }
 
-void MaterialImportConfig::computeConfigurationKey(base::CRC64& crc) const
+void MaterialImportConfig::computeConfigurationKey(CRC64& crc) const
 {
     TBaseClass::computeConfigurationKey(crc);
 
@@ -139,26 +139,26 @@ IGeneralMaterialImporter::~IGeneralMaterialImporter()
 {
 }
 
-base::StringView IGeneralMaterialImporter::ExtractRootFileName(base::StringView assetFileName)
+StringView IGeneralMaterialImporter::ExtractRootFileName(StringView assetFileName)
 {
     auto name = assetFileName.afterLastOrFull("/").afterLastOrFull("\\");
     return name.beforeFirstOrFull(".");
 }
 
-base::StringBuf IGeneralMaterialImporter::ConvertPathToTextureSearchPath(base::StringView assetPathToTexture)
+StringBuf IGeneralMaterialImporter::ConvertPathToTextureSearchPath(StringView assetPathToTexture)
 {
-    base::StringBuf safeCoreName;
+    StringBuf safeCoreName;
     const auto coreName = ExtractRootFileName(assetPathToTexture);
     if (!MakeSafeFileName(coreName, safeCoreName))
-        return base::StringBuf();
+        return StringBuf();
 
-    static const auto textureExtension = base::res::IResource::GetResourceExtensionForClass(StaticTexture::GetStaticClass());
-    return base::TempString("{}.{}", safeCoreName, textureExtension);
+    static const auto textureExtension = res::IResource::GetResourceExtensionForClass(StaticTexture::GetStaticClass());
+    return TempString("{}.{}", safeCoreName, textureExtension);
 }
 
-void IGeneralMaterialImporter::GlueDepotPath(base::StringView path, bool isFileName, base::Array<base::StringView>& outPathParts)
+void IGeneralMaterialImporter::GlueDepotPath(StringView path, bool isFileName, Array<StringView>& outPathParts)
 {
-    base::InplaceArray<base::StringView, 10> pathParts;
+    InplaceArray<StringView, 10> pathParts;
     path.slice("/\\", false, pathParts);
 
     // skip the file name itself
@@ -188,7 +188,7 @@ void IGeneralMaterialImporter::GlueDepotPath(base::StringView path, bool isFileN
     }
 }
 
-void IGeneralMaterialImporter::EmitDepotPath(const base::Array<base::StringView>& pathParts, base::IFormatStream& f)
+void IGeneralMaterialImporter::EmitDepotPath(const Array<StringView>& pathParts, IFormatStream& f)
 {
     f << "/";
 
@@ -199,13 +199,13 @@ void IGeneralMaterialImporter::EmitDepotPath(const base::Array<base::StringView>
     }
 }
 
-base::StringBuf IGeneralMaterialImporter::BuildTextureDepotPath(base::StringView referenceDepotPath, base::StringView textureImportPath, base::StringView assetFileName)
+StringBuf IGeneralMaterialImporter::BuildTextureDepotPath(StringView referenceDepotPath, StringView textureImportPath, StringView assetFileName)
 {
-    base::InplaceArray<base::StringView, 20> pathParts;
+    InplaceArray<StringView, 20> pathParts;
     GlueDepotPath(referenceDepotPath, true, pathParts);
     GlueDepotPath(textureImportPath, false, pathParts);
 
-    base::StringBuilder txt;
+    StringBuilder txt;
     EmitDepotPath(pathParts, txt);
 
     txt << ConvertPathToTextureSearchPath(assetFileName);
@@ -213,21 +213,21 @@ base::StringBuf IGeneralMaterialImporter::BuildTextureDepotPath(base::StringView
     return txt.toString();
 }
 
-TextureRef IGeneralMaterialImporter::importTextureRef(base::res::IResourceImporterInterface& importer, const MaterialImportConfig& cfg, base::StringView assetPathToTexture, base::StringBuf& outAssetImportPath) const
+TextureRef IGeneralMaterialImporter::importTextureRef(res::IResourceImporterInterface& importer, const MaterialImportConfig& cfg, StringView assetPathToTexture, StringBuf& outAssetImportPath) const
 {
     // no path
     if (assetPathToTexture.empty())
-        return rendering::TextureRef();
+        return TextureRef();
 
     // not imported
     if (!cfg.m_importTextures)
-        return rendering::TextureRef();
+        return TextureRef();
 
     // crap
-    base::StringBuf tempAssetPathToTexture;
+    StringBuf tempAssetPathToTexture;
     if (assetPathToTexture.endsWithNoCase(".tif") || assetPathToTexture.endsWithNoCase(".tiff"))
     {
-        tempAssetPathToTexture = base::TempString("{}{}.tga", assetPathToTexture.baseDirectory(), assetPathToTexture.fileStem());
+        tempAssetPathToTexture = TempString("{}{}.tga", assetPathToTexture.baseDirectory(), assetPathToTexture.fileStem());
         assetPathToTexture = tempAssetPathToTexture;
     }
 
@@ -240,12 +240,12 @@ TextureRef IGeneralMaterialImporter::importTextureRef(base::res::IResourceImport
 
         // look for a depot file in existing depot
         const auto depotScanDepth = std::clamp<int>(cfg.m_depotSearchDepth, 0, 20);
-        base::StringBuf depotPath;
+        StringBuf depotPath;
         if (importer.findDepotFile(importer.queryResourcePath().view(), cfg.m_textureSearchPath, findableName, depotPath, depotScanDepth))
         {
             TRACE_INFO("Found '{}' at '{}'", assetPathToTexture, depotPath);
 
-            return rendering::TextureRef(base::res::ResourcePath(depotPath));
+            return TextureRef(res::ResourcePath(depotPath));
         }
     }
 
@@ -253,7 +253,7 @@ TextureRef IGeneralMaterialImporter::importTextureRef(base::res::IResourceImport
     if (cfg.m_textureImportPath)
     {
         // search in the vicinity of source asset
-        base::StringBuf foundTexturePath;
+        StringBuf foundTexturePath;
         const auto assetDepotScanDepth = std::clamp<int>(cfg.m_sourceAssetsSearchDepth, 0, 20);
         if (importer.findSourceFile(importer.queryImportPath(), assetPathToTexture, foundTexturePath, assetDepotScanDepth))
         {
@@ -268,7 +268,7 @@ TextureRef IGeneralMaterialImporter::importTextureRef(base::res::IResourceImport
             outAssetImportPath = foundTexturePath;
 
             // build a unloaded texture reference (so it can be saved)
-            return rendering::TextureRef(base::res::ResourcePath(depotPath));
+            return TextureRef(res::ResourcePath(depotPath));
         }
     }
 
@@ -277,25 +277,25 @@ TextureRef IGeneralMaterialImporter::importTextureRef(base::res::IResourceImport
     return nullptr;
 }
 
-static base::res::StaticResource<rendering::IMaterial> resUnlitMaterialBase("/engine/materials/std_unlit.v4mg");
+static res::StaticResource<IMaterial> resUnlitMaterialBase("/engine/materials/std_unlit.v4mg");
 
-static base::res::StaticResource<rendering::IMaterial> resDefaultMaterialBase("/engine/materials/std_pbr.v4mg");
-static base::res::StaticResource<rendering::IMaterial> resMaskedMaterialBase("/engine/materials/std_pbr_masked.v4mg");
-static base::res::StaticResource<rendering::IMaterial> resEmissiveMaterialBase("/engine/materials/std_pbr_emissive.v4mg");
+static res::StaticResource<IMaterial> resDefaultMaterialBase("/engine/materials/std_pbr.v4mg");
+static res::StaticResource<IMaterial> resMaskedMaterialBase("/engine/materials/std_pbr_masked.v4mg");
+static res::StaticResource<IMaterial> resEmissiveMaterialBase("/engine/materials/std_pbr_emissive.v4mg");
 
-static base::res::StaticResource<rendering::IMaterial> resDefaultMaterialNS("/engine/materials/std_pbr_ns.v4mg");
-static base::res::StaticResource<rendering::IMaterial> resMaskedMaterialNS("/engine/materials/std_pbr_masked_ns.v4mg");
-static base::res::StaticResource<rendering::IMaterial> resEmissiveMaterialNS("/engine/materials/std_pbr_emissive_ns.v4mg");
+static res::StaticResource<IMaterial> resDefaultMaterialNS("/engine/materials/std_pbr_ns.v4mg");
+static res::StaticResource<IMaterial> resMaskedMaterialNS("/engine/materials/std_pbr_masked_ns.v4mg");
+static res::StaticResource<IMaterial> resEmissiveMaterialNS("/engine/materials/std_pbr_emissive_ns.v4mg");
 
-static base::res::StaticResource<rendering::IMaterial> resDefaultMaterialRS("/engine/materials/std_pbr_rs.v4mg");
-static base::res::StaticResource<rendering::IMaterial> resMaskedMaterialRS("/engine/materials/std_pbr_masked_rs.v4mg");
-static base::res::StaticResource<rendering::IMaterial> resEmissiveMaterialRS("/engine/materials/std_pbr_emissive_rs.v4mg");
+static res::StaticResource<IMaterial> resDefaultMaterialRS("/engine/materials/std_pbr_rs.v4mg");
+static res::StaticResource<IMaterial> resMaskedMaterialRS("/engine/materials/std_pbr_masked_rs.v4mg");
+static res::StaticResource<IMaterial> resEmissiveMaterialRS("/engine/materials/std_pbr_emissive_rs.v4mg");
 
 
 struct LoadedTexture
 {
     TextureRef textureRef;
-    base::StringBuf importPath;
+    StringBuf importPath;
 
     INLINE operator bool() const
     {
@@ -311,7 +311,7 @@ struct LoadedTextures
 
 MaterialRef IGeneralMaterialImporter::loadBaseMaterial(const LoadedTextures& info, const MaterialImportConfig& config) const
 {
-    rendering::MaterialRef ret;
+    MaterialRef ret;
 
     if (info.forceUnlit)
         return resUnlitMaterialBase.loadAndGetAsRef();
@@ -344,7 +344,7 @@ MaterialRef IGeneralMaterialImporter::loadBaseMaterial(const LoadedTextures& inf
         return resDefaultMaterialBase.loadAndGetAsRef();
 }
 
-bool IGeneralMaterialImporter::WriteTexture(const rendering::TextureRef& textureRef, base::StringID name, base::Array<rendering::MaterialInstanceParam>& outParams)
+bool IGeneralMaterialImporter::WriteTexture(const TextureRef& textureRef, StringID name, Array<MaterialInstanceParam>& outParams)
 {
     if (!name || !textureRef)
         return false;
@@ -355,13 +355,13 @@ bool IGeneralMaterialImporter::WriteTexture(const rendering::TextureRef& texture
 
     auto& param = outParams.emplaceBack();
     param.name = name;
-    param.value = base::CreateVariant(textureRef);
+    param.value = CreateVariant(textureRef);
     return true;
 }
 
-bool IGeneralMaterialImporter::loadTexture(base::res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialTextrureInfo& info, LoadedTexture& outLoadedTexture) const
+bool IGeneralMaterialImporter::loadTexture(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialTextrureInfo& info, LoadedTexture& outLoadedTexture) const
 {
-    base::StringBuf importPath;
+    StringBuf importPath;
     if (auto textureRef = importTextureRef(importer, config, info.path, importPath))
     {
         outLoadedTexture.textureRef = textureRef;
@@ -372,13 +372,13 @@ bool IGeneralMaterialImporter::loadTexture(base::res::IResourceImporterInterface
     return false;
 }
 
-static void ExtractPathsAndStems(base::StringView importPath, base::Array<base::StringBuf>& outImportPaths)
+static void ExtractPathsAndStems(StringView importPath, Array<StringBuf>& outImportPaths)
 {
     if (importPath)
-        outImportPaths.pushBackUnique(base::StringBuf(importPath));        
+        outImportPaths.pushBackUnique(StringBuf(importPath));
 }
 
-bool IGeneralMaterialImporter::findAssetSourcePath(base::res::IResourceImporterInterface& importer, const base::Array<base::StringBuf>& paths, const base::Array<base::StringView>& suffixes, base::StringBuf& outPath) const
+bool IGeneralMaterialImporter::findAssetSourcePath(res::IResourceImporterInterface& importer, const Array<StringBuf>& paths, const Array<StringView>& suffixes, StringBuf& outPath) const
 {
     for (const auto& path : paths)
     {
@@ -390,7 +390,7 @@ bool IGeneralMaterialImporter::findAssetSourcePath(base::res::IResourceImporterI
             const auto stem = path.view().fileStem().beforeLastOrFull("_");
             for (const auto& suffix : suffixes)
             {
-                const auto sourceTexturePath = base::StringBuf(base::TempString("{}{}_{}.{}", dir, stem, suffix, ext));
+                const auto sourceTexturePath = StringBuf(TempString("{}{}_{}.{}", dir, stem, suffix, ext));
                 if (importer.checkSourceFile(sourceTexturePath))
                 {
                     TRACE_INFO("Auto-discovered existing texture '{}'", sourceTexturePath);
@@ -409,13 +409,13 @@ bool IGeneralMaterialImporter::findAssetSourcePath(base::res::IResourceImporterI
     return false;
 }
 
-void IGeneralMaterialImporter::loadAdditionalTextures(base::res::IResourceImporterInterface& importer, const MaterialImportConfig& config, LoadedTextures& outLoadedTextures) const
+void IGeneralMaterialImporter::loadAdditionalTextures(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, LoadedTextures& outLoadedTextures) const
 {
-    base::Array<base::StringBuf> importPaths;
+    Array<StringBuf> importPaths;
     for (const auto& tex : outLoadedTextures.textures)
         ExtractPathsAndStems(tex.importPath, importPaths);
 
-    base::StringView suffixes[GeneralMaterialTextureType_MAX];
+    StringView suffixes[GeneralMaterialTextureType_MAX];
     suffixes[GeneralMaterialTextureType_Diffuse] = config.m_postfixColor;
     suffixes[GeneralMaterialTextureType_DiffuseMask] = config.m_postfixColorMask;        
     suffixes[GeneralMaterialTextureType_Normal] = config.m_postfixNormal;
@@ -435,10 +435,10 @@ void IGeneralMaterialImporter::loadAdditionalTextures(base::res::IResourceImport
         if (tex.importPath || !suffixes[i])
             continue;
 
-        base::InplaceArray<base::StringView, 10> possibleSuffixes;
+        InplaceArray<StringView, 10> possibleSuffixes;
         suffixes[i].slice(";", false, possibleSuffixes);
 
-        base::StringBuf discoveredPath;
+        StringBuf discoveredPath;
         if (findAssetSourcePath(importer, importPaths, possibleSuffixes, discoveredPath))
         {
             GeneralMaterialTextrureInfo info;
@@ -449,7 +449,7 @@ void IGeneralMaterialImporter::loadAdditionalTextures(base::res::IResourceImport
     }
 }
 
-bool IGeneralMaterialImporter::tryApplyTexture(base::res::IResourceImporterInterface& importer, const MaterialImportConfig& config, base::StringView mappingParams, const rendering::MaterialTemplate* knownTemplate, const LoadedTexture& texture, base::Array<MaterialInstanceParam>& outParams) const
+bool IGeneralMaterialImporter::tryApplyTexture(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, StringView mappingParams, const MaterialTemplate* knownTemplate, const LoadedTexture& texture, Array<MaterialInstanceParam>& outParams) const
 {
     if (!knownTemplate)
         return false;
@@ -458,11 +458,11 @@ bool IGeneralMaterialImporter::tryApplyTexture(base::res::IResourceImporterInter
         return false;
 
     // bind to first matching param, NOTE: we only take into considerations parameters from the template
-    base::InplaceArray<base::StringView, 10> possibleParamNames;
+    InplaceArray<StringView, 10> possibleParamNames;
     mappingParams.slice(";", false, possibleParamNames);
     for (const auto paramNameStr : possibleParamNames)
     {
-        const auto paramName = base::StringID::Find(paramNameStr);
+        const auto paramName = StringID::Find(paramNameStr);
 
         MaterialTemplateParamInfo materialParam;
         if (knownTemplate->queryParameterInfo(paramName, materialParam))
@@ -481,7 +481,7 @@ bool IGeneralMaterialImporter::tryApplyTexture(base::res::IResourceImporterInter
     return false;
 }
 
-MaterialInstancePtr IGeneralMaterialImporter::importMaterial(base::res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialInfo& sourceMaterial) const
+MaterialInstancePtr IGeneralMaterialImporter::importMaterial(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialInfo& sourceMaterial) const
 {
     // load textures
     LoadedTextures loadedTextures;
@@ -504,7 +504,7 @@ MaterialInstancePtr IGeneralMaterialImporter::importMaterial(base::res::IResourc
         return nullptr;
 
     // gather parameters
-    base::Array<rendering::MaterialInstanceParam> importedParameters;
+    Array<MaterialInstanceParam> importedParameters;
     importedParameters.reserve(8);
 
     // apply properties
@@ -522,13 +522,13 @@ MaterialInstancePtr IGeneralMaterialImporter::importMaterial(base::res::IResourc
     tryApplyTexture(importer, config, config.m_bindingMapAmbientOcclusion, baseTemplate, loadedTextures.textures[GeneralMaterialTextureType_AO], importedParameters);
 
     // build the "imported material"
-    auto importedMaterial = base::RefNew<rendering::MaterialInstance>(baseMaterial, std::move(importedParameters));
+    auto importedMaterial = RefNew<MaterialInstance>(baseMaterial, std::move(importedParameters));
 
     // load existing material
-    const auto* existingMaterial = base::rtti_cast<rendering::MaterialInstance>(importer.existingData());
+    const auto* existingMaterial = rtti_cast<MaterialInstance>(importer.existingData());
 
     // get the "overlay" user parameters from existing material data
-    base::Array<rendering::MaterialInstanceParam> userParameters;
+    Array<MaterialInstanceParam> userParameters;
     if (existingMaterial)
     {
         // NOTE: copy only parameters that are actually changed
@@ -538,9 +538,9 @@ MaterialInstancePtr IGeneralMaterialImporter::importMaterial(base::res::IResourc
     }
 
     // build final material that uses the user parameters on top of the imported base material
-    return base::RefNew<rendering::MaterialInstance>(baseMaterial, std::move(userParameters), importedMaterial);
+    return RefNew<MaterialInstance>(baseMaterial, std::move(userParameters), importedMaterial);
 }
 
 //--
 
-END_BOOMER_NAMESPACE(rendering)
+END_BOOMER_NAMESPACE_EX(assets)

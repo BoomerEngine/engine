@@ -15,18 +15,18 @@
 #include "editor/common/include/managedFile.h"
 #include "editor/common/include/managedFileFormat.h"
 #include "editor/common/include/managedFileNativeResource.h"
-#include "base/ui/include/uiDockPanel.h"
-#include "base/ui/include/uiDockLayout.h"
-#include "base/ui/include/uiDataInspector.h"
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiToolBar.h"
-#include "base/ui/include/uiRuler.h"
-#include "base/ui/include/uiSplitter.h"
+#include "engine/ui/include/uiDockPanel.h"
+#include "engine/ui/include/uiDockLayout.h"
+#include "engine/ui/include/uiDataInspector.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiToolBar.h"
+#include "engine/ui/include/uiRuler.h"
+#include "engine/ui/include/uiSplitter.h"
 
-#include "rendering/mesh/include/renderingMesh.h"
-#include "base/ui/include/uiMenuBar.h"
+#include "engine/mesh/include/renderingMesh.h"
+#include "engine/ui/include/uiMenuBar.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -45,14 +45,14 @@ MeshEditor::~MeshEditor()
 void MeshEditor::createInterface()
 {
     {
-        auto tab = base::RefNew<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
+        auto tab = RefNew<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
         tab->layoutVertical();
 
         m_previewPanel = tab->createChild<MeshPreviewPanel>();
         m_previewPanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
         m_previewPanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
 
-        m_previewPanel->bind(EVENT_MATERIAL_CLICKED, this) = [this](base::Array<base::StringID> materialNames)
+        m_previewPanel->bind(EVENT_MATERIAL_CLICKED, this) = [this](Array<StringID> materialNames)
         {
             m_materialsPanel->showMaterials(materialNames);
         };
@@ -61,7 +61,7 @@ void MeshEditor::createInterface()
     }
 
     {
-        auto tab = base::RefNew<ui::DockPanel>("[img:tree] Structure", "StructurePanel");
+        auto tab = RefNew<ui::DockPanel>("[img:tree] Structure", "StructurePanel");
         tab->layoutVertical();
 
         m_structurePanel = tab->createChild<MeshStructurePanel>();
@@ -72,7 +72,7 @@ void MeshEditor::createInterface()
     }
 
     {
-        auto tab = base::RefNew<ui::DockPanel>("[img:color] Materials", "MaterialsPanel");
+        auto tab = RefNew<ui::DockPanel>("[img:color] Materials", "MaterialsPanel");
         tab->layoutVertical();
 
         m_materialsPanel = tab->createChild<MeshMaterialsPanel>(actionHistory());
@@ -111,7 +111,7 @@ bool MeshEditor::initialize()
     if (!TBaseClass::initialize())
         return false;
 
-    if (auto mesh = rtti_cast<rendering::Mesh>(resource()))
+    if (auto mesh = rtti_cast<Mesh>(resource()))
     {
         m_structurePanel->bindResource(mesh);
         m_previewPanel->previewMesh(mesh);
@@ -123,7 +123,7 @@ bool MeshEditor::initialize()
 
 void MeshEditor::handleLocalReimport(const res::ResourcePtr& ptr)
 {
-    if (auto mesh = rtti_cast<rendering::Mesh>(ptr))
+    if (auto mesh = rtti_cast<Mesh>(ptr))
     {
         m_structurePanel->bindResource(mesh);
         m_previewPanel->previewMesh(mesh);
@@ -153,13 +153,13 @@ class MeshResourceEditorOpener : public IResourceEditorOpener
 public:
     virtual bool canOpen(const ManagedFileFormat& format) const override
     {
-        return format.nativeResourceClass() == rendering::Mesh::GetStaticClass();
+        return format.nativeResourceClass() == Mesh::GetStaticClass();
     }
 
-    virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
+    virtual RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
     {
         if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-            return base::RefNew<MeshEditor>(nativeFile);
+            return RefNew<MeshEditor>(nativeFile);
 
         return nullptr;
     }
@@ -170,4 +170,4 @@ RTTI_END_TYPE();
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

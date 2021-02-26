@@ -10,17 +10,17 @@
 #include "imageCompression.h"
 #include "staticTextureImporter.h"
 
-#include "base/io/include/ioFileHandle.h"
-#include "base/image/include/image.h"
-#include "base/image/include/imageUtils.h"
-#include "base/app/include/localServiceContainer.h"
-#include "base/resource/include/resource.h"
-#include "base/containers/include/inplaceArray.h"
-#include "base/image/include/imageView.h"
-#include "base/image/include/freeImageLoader.h"
-#include "base/resource/include/resourceTags.h"
+#include "core/io/include/ioFileHandle.h"
+#include "core/image/include/image.h"
+#include "core/image/include/imageUtils.h"
+#include "core/app/include/localServiceContainer.h"
+#include "core/resource/include/resource.h"
+#include "core/containers/include/inplaceArray.h"
+#include "core/image/include/imageView.h"
+#include "core/image/include/freeImageLoader.h"
+#include "core/resource/include/resourceTags.h"
 
-BEGIN_BOOMER_NAMESPACE(assets)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //---
 
@@ -55,7 +55,7 @@ ImageCompressionSettings StaticTextureCompressionConfiguration::loadSettings() c
     return ret;
 }
 
-void StaticTextureCompressionConfiguration::computeConfigurationKey(base::CRC64& crc) const
+void StaticTextureCompressionConfiguration::computeConfigurationKey(CRC64& crc) const
 {
     TBaseClass::computeConfigurationKey(crc);
 
@@ -71,24 +71,24 @@ void StaticTextureCompressionConfiguration::computeConfigurationKey(base::CRC64&
 //---
 
 RTTI_BEGIN_TYPE_CLASS(StaticTextureFromImageImporter);
-    RTTI_METADATA(base::res::ResourceCookedClassMetadata).addClass<StaticTexture>();
-    RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtensions("bmp;dds;png;jpg;jpeg;jp2;jpx;tga;tif;tiff;hdr;exr;ppm;pbm;psd;xbm;nef;xpm;gif;webp");
-    RTTI_METADATA(base::res::ResourceImporterConfigurationClassMetadata).configurationClass<StaticTextureCompressionConfiguration>();
+    RTTI_METADATA(res::ResourceCookedClassMetadata).addClass<StaticTexture>();
+    RTTI_METADATA(res::ResourceSourceFormatMetadata).addSourceExtensions("bmp;dds;png;jpg;jpeg;jp2;jpx;tga;tif;tiff;hdr;exr;ppm;pbm;psd;xbm;nef;xpm;gif;webp");
+    RTTI_METADATA(res::ResourceImporterConfigurationClassMetadata).configurationClass<StaticTextureCompressionConfiguration>();
 RTTI_END_TYPE();
 
 StaticTextureFromImageImporter::StaticTextureFromImageImporter()
 {}
 
-static base::StringView GetTextureSuffix(base::StringView path)
+static StringView GetTextureSuffix(StringView path)
 {
     auto fileName = path.afterLastOrFull("/").beforeFirstOrFull(".");
     if (fileName.empty())
-        return base::StringBuf::EMPTY();
+        return StringBuf::EMPTY();
 
     return fileName.afterLast("_");
 }
 
-base::res::ResourcePtr StaticTextureFromImageImporter::importResource(base::res::IResourceImporterInterface& importer) const
+res::ResourcePtr StaticTextureFromImageImporter::importResource(res::IResourceImporterInterface& importer) const
 {
     // load the source data into memory
     // NOTE: we don't use source asset cache since image files are usually not imported many times over
@@ -101,7 +101,7 @@ base::res::ResourcePtr StaticTextureFromImageImporter::importResource(base::res:
     }
 
     // load the image itself
-    auto imageData = base::image::LoadImageWithFreeImage(bufferData.data(), bufferData.size());
+    auto imageData = image::LoadImageWithFreeImage(bufferData.data(), bufferData.size());
     if (!imageData)
     {
         TRACE_ERROR("Unable to load image from '{}'", importer.queryImportPath());
@@ -113,7 +113,7 @@ base::res::ResourcePtr StaticTextureFromImageImporter::importResource(base::res:
 
     // get settings 
     auto settings = config->loadSettings();
-    settings.m_suffix = base::StringBuf(GetTextureSuffix(importPath));
+    settings.m_suffix = StringBuf(GetTextureSuffix(importPath));
 
     // TODO: reuse compressed data if for some reason the format is the same
 
@@ -128,10 +128,10 @@ base::res::ResourcePtr StaticTextureFromImageImporter::importResource(base::res:
     // TODO: split data into streamable/persistent part
 
     // create the static texture
-    base::res::AsyncBuffer streamingData;
-    return base::RefNew<StaticTexture>(std::move(compressedData->data), std::move(streamingData), std::move(compressedData->mips), compressedData->info);
+    res::AsyncBuffer streamingData;
+    return RefNew<StaticTexture>(std::move(compressedData->data), std::move(streamingData), std::move(compressedData->mips), compressedData->info);
 }
 
 //---
     
-END_BOOMER_NAMESPACE(assets)
+END_BOOMER_NAMESPACE_EX(assets)

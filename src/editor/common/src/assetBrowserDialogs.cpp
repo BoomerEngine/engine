@@ -18,21 +18,21 @@
 #include "assetBrowserDialogs.h"
 #include "assetFileListSimpleModel.h"
 
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiListView.h"
-#include "base/ui/include/uiSearchBar.h"
-#include "base/ui/include/uiButton.h"
-#include "base/ui/include/uiColumnHeaderBar.h"
-#include "base/io/include/ioSystem.h"
-#include "base/ui/include/uiEditBox.h"
-#include "base/ui/include/uiCheckBox.h"
-#include "base/ui/include/uiProgressBar.h"
-#include "base/ui/include/uiTextValidation.h"
-//#include "base/resource_compiler/include/depotStructureRename.h"
-#include "base/ui/include/uiMessageBox.h"
-#include "base/system/include/thread.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiListView.h"
+#include "engine/ui/include/uiSearchBar.h"
+#include "engine/ui/include/uiButton.h"
+#include "engine/ui/include/uiColumnHeaderBar.h"
+#include "core/io/include/ioSystem.h"
+#include "engine/ui/include/uiEditBox.h"
+#include "engine/ui/include/uiCheckBox.h"
+#include "engine/ui/include/uiProgressBar.h"
+#include "engine/ui/include/uiTextValidation.h"
+//#include "core/resource_compiler/include/depotStructureRename.h"
+#include "engine/ui/include/uiMessageBox.h"
+#include "core/system/include/thread.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -270,7 +270,7 @@ void DeleteDepotItems(ui::IElement* owner, const Array<ManagedItem*>& items)
                         {
                             fileList->comment(item, "  [img:error] File is opened in editor");
                         }
-                        else if (!base::io::DeleteFile(file->absolutePath()))
+                        else if (!io::DeleteFile(file->absolutePath()))
                         {
                             fileList->comment(item, "  [img:error] Failed to delete physical file");
                         }
@@ -285,7 +285,7 @@ void DeleteDepotItems(ui::IElement* owner, const Array<ManagedItem*>& items)
                         {
                             fileList->comment(item, "  [img:error] Directory is bookmarked");
                         }
-                        else if (!base::io::DeleteDir(dir->absolutePath()))
+                        else if (!io::DeleteDir(dir->absolutePath()))
                         {
                             fileList->comment(item, "  [img:error] Failed to delete physical directory");
                         }
@@ -317,7 +317,7 @@ void DeleteDepotItems(ui::IElement* owner, const Array<ManagedItem*>& items)
 
 //--
 
-ConfigProperty<base::Array<ui::SearchPattern>> cvFileListSearchFilter("Editor", "FileListSearchFilter", {});
+ConfigProperty<Array<ui::SearchPattern>> cvFileListSearchFilter("Editor", "FileListSearchFilter", {});
 
 void ShowOpenedFilesList(ui::IElement* owner, ManagedFile* focusFile)
 {
@@ -412,7 +412,7 @@ void ShowOpenedFilesList(ui::IElement* owner, ManagedFile* focusFile)
 
 bool ShowSaveAsFileDialog(ui::IElement* owner, ManagedDirectory* specificDirectory, ClassType resourceClass, StringView message, StringView initialFileName, StringBuf& outDepotPath)
 {
-    auto window = base::RefNew<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, "Save as...");
+    auto window = RefNew<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, "Save as...");
     window->layoutVertical();
 
     auto windowRef = window.get();
@@ -518,12 +518,12 @@ bool ShowSaveAsFileDialog(ui::IElement* owner, ManagedDirectory* specificDirecto
 
 //--
 
-bool ShowGenericRenameDialog(ui::IElement* owner, const ManagedItem* item, base::res::RenameConfiguration& outSettings)
+bool ShowGenericRenameDialog(ui::IElement* owner, const ManagedItem* item, res::RenameConfiguration& outSettings)
 {
     /*auto* file = rtti_cast<ManagedFile>(item);
     auto* dir = rtti_cast<ManagedDirectory>(item);
 
-    auto window = base::RefNew<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, file ? "Rename file" : "Rename directory");
+    auto window = RefNew<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, file ? "Rename file" : "Rename directory");
     window->layoutVertical();
     window->customPadding(5, 5, 5, 5);
 
@@ -754,7 +754,7 @@ public:
         return filter.testString(data.sourceDepotPath);
     }
 
-    virtual base::StringBuf content(const RenameFileListModelEntry& data, int colIndex) const override
+    virtual StringBuf content(const RenameFileListModelEntry& data, int colIndex) const override
     {
         StringBuilder txt;
 
@@ -867,11 +867,11 @@ ManagedItem* RenameItem(ui::IElement* owner, ManagedItem* file)
                 if (progress.checkCancelation())
                     break;
                 progress.reportProgress(i, size, TempString("Waiting {}/{}", i, size));
-                base::Sleep(500);
+                Sleep(500);
             }
         }, "Waiting for rename...", false);
 
-/*        base::depot::RenameConfiguration settings;
+/*        depot::RenameConfiguration settings;
     settings.moveFilesNotCopy = true;
 
     // user input
@@ -926,4 +926,4 @@ bool CopyItems(ui::IElement* owner, const Array<ManagedItem*>& items, ManagedDir
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

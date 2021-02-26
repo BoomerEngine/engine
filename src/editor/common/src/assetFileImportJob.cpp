@@ -12,17 +12,17 @@
 #include "assetFileImportJob.h"
 #include "assetFileImportDetailsDialog.h"
 
-#include "base/io/include/ioSystem.h"
-#include "base/xml/include/xmlUtils.h"
-#include "base/app/include/commandline.h"
-#include "base/net/include/messageConnection.h"
-#include "base/resource/include/resourceFileLoader.h"
-#include "base/resource/include/resourceLoadingService.h"
-#include "base/resource_compiler/include/importCommandHelper.h"
-#include "base/resource_compiler/include/importInterface.h"
-#include "base/resource_compiler/include/importFileList.h"
+#include "core/io/include/ioSystem.h"
+#include "core/xml/include/xmlUtils.h"
+#include "core/app/include/commandline.h"
+#include "core/net/include/messageConnection.h"
+#include "core/resource/include/resourceFileLoader.h"
+#include "core/resource/include/resourceLoadingService.h"
+#include "core/resource_compiler/include/importCommandHelper.h"
+#include "core/resource_compiler/include/importInterface.h"
+#include "core/resource_compiler/include/importFileList.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 ///--
 
@@ -137,4 +137,4 @@ void AssetImportJob::queueJobProgressUpdate(StringView depotPath, uint64_t curre
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

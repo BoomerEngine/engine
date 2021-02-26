@@ -8,11 +8,11 @@
 
 #include "build.h"
 #include "imageProcessingSteps.h"
-#include "base/image/include/imageUtils.h"
-#include "base/image/include/imageView.h"
-#include "base/image/include/image.h"
+#include "core/image/include/imageUtils.h"
+#include "core/image/include/imageView.h"
+#include "core/image/include/image.h"
 
-BEGIN_BOOMER_NAMESPACE(assets)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //--
 
@@ -46,7 +46,7 @@ RTTI_END_TYPE();
 ImageProcessingStep_ChannelRemap::ImageProcessingStep_ChannelRemap()
 {}
 
-bool ImageProcessingStep_ChannelRemap::validate(base::IFormatStream& outErrors) const
+bool ImageProcessingStep_ChannelRemap::validate(IFormatStream& outErrors) const
 {
     return true;
 }
@@ -59,7 +59,7 @@ union ColorDefaults
     float FormatFloat32[4];
 };
 
-void ImageProcessingStep_ChannelRemap::process(base::image::ImageView& view, base::image::ImagePtr& tempImagePtr) const
+void ImageProcessingStep_ChannelRemap::process(image::ImageView& view, image::ImagePtr& tempImagePtr) const
 {
     auto sourceView = view;
 
@@ -69,8 +69,8 @@ void ImageProcessingStep_ChannelRemap::process(base::image::ImageView& view, bas
 
     if (channelCount != sourceView.channels())
     {
-        tempImagePtr = base::RefNew<base::image::Image>(view.format(), channelCount, sourceView.width(), sourceView.height(), sourceView.depth());
-        base::image::ConvertChannels(sourceView, tempImagePtr->view());
+        tempImagePtr = RefNew<image::Image>(view.format(), channelCount, sourceView.width(), sourceView.height(), sourceView.depth());
+        image::ConvertChannels(sourceView, tempImagePtr->view());
         view = tempImagePtr->view();
     }
 
@@ -78,28 +78,28 @@ void ImageProcessingStep_ChannelRemap::process(base::image::ImageView& view, bas
 
     switch (view.format())
     {
-        case base::image::PixelFormat::Uint8_Norm:
+        case image::PixelFormat::Uint8_Norm:
             colorDefaults.FormatUint8[0] = 0;
             colorDefaults.FormatUint8[1] = 0;
             colorDefaults.FormatUint8[1] = 0;
             colorDefaults.FormatUint8[2] = 255;
             break;
 
-        case base::image::PixelFormat::Uint16_Norm:
+        case image::PixelFormat::Uint16_Norm:
             colorDefaults.FormatUint16[0] = 0;
             colorDefaults.FormatUint16[1] = 0;
             colorDefaults.FormatUint16[1] = 0;
             colorDefaults.FormatUint16[2] = 65535;
             break;
 
-        case base::image::PixelFormat::Float16_Raw:
-            colorDefaults.FormatFloat16[0] = base::Float16Helper::Compress(0.0f);
-            colorDefaults.FormatFloat16[1] = base::Float16Helper::Compress(0.0f);
-            colorDefaults.FormatFloat16[1] = base::Float16Helper::Compress(0.0f);
-            colorDefaults.FormatFloat16[2] = base::Float16Helper::Compress(1.0f);
+        case image::PixelFormat::Float16_Raw:
+            colorDefaults.FormatFloat16[0] = Float16Helper::Compress(0.0f);
+            colorDefaults.FormatFloat16[1] = Float16Helper::Compress(0.0f);
+            colorDefaults.FormatFloat16[1] = Float16Helper::Compress(0.0f);
+            colorDefaults.FormatFloat16[2] = Float16Helper::Compress(1.0f);
             break;
 
-        case base::image::PixelFormat::Float32_Raw:
+        case image::PixelFormat::Float32_Raw:
             colorDefaults.FormatFloat32[0] = 0.0f;
             colorDefaults.FormatFloat32[1] = 0.0f;
             colorDefaults.FormatFloat32[1] = 0.0f;
@@ -121,9 +121,9 @@ void ImageProcessingStep_ChannelRemap::process(base::image::ImageView& view, bas
     channelMapping[2] = channelMappingValues[(int)m_blue];
     channelMapping[3] = channelMappingValues[(int)m_alpha];
 
-    base::image::CopyChannels(view, channelMapping, &colorDefaults);
+    image::CopyChannels(view, channelMapping, &colorDefaults);
 }
 
 //--
 
-END_BOOMER_NAMESPACE(assets)
+END_BOOMER_NAMESPACE_EX(assets)

@@ -10,22 +10,22 @@
 #include "imagePreviewPanel.h"
 #include "imagePreviewPanelElements.h"
 
-#include "rendering/device/include/renderingCommandWriter.h"
-#include "rendering/device/include/renderingDeviceService.h"
-#include "rendering/device/include/renderingDeviceApi.h"
+#include "gpu/device/include/renderingCommandWriter.h"
+#include "gpu/device/include/renderingDeviceService.h"
+#include "gpu/device/include/renderingDeviceApi.h"
 
-#include "base/canvas/include/canvasGeometryBuilder.h"
-#include "base/canvas/include/canvas.h"
-#include "base/image/include/imageView.h"
-#include "base/ui/include/uiElement.h"
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiToolBar.h"
-#include "base/ui/include/uiRuler.h"
-#include "base/ui/include/uiComboBox.h"
-#include "base/ui/include/uiTrackBar.h"
-#include "base/ui/include/uiWindow.h"
+#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/canvas/include/canvas.h"
+#include "core/image/include/imageView.h"
+#include "engine/ui/include/uiElement.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiToolBar.h"
+#include "engine/ui/include/uiRuler.h"
+#include "engine/ui/include/uiComboBox.h"
+#include "engine/ui/include/uiTrackBar.h"
+#include "engine/ui/include/uiWindow.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -46,7 +46,7 @@ void ImagePreviewPanel::previewSettings(const ImagePreviewPanelSettings& setting
     m_previewSettings = settings;
 }
 
-void ImagePreviewPanel::renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+void ImagePreviewPanel::renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
 
@@ -55,8 +55,8 @@ void ImagePreviewPanel::renderForeground(ui::DataStash& stash, const ui::Element
 
     for (auto* proxy : m_elementProxies)
     {
-        minPos = base::Min(proxy->virtualPlacement, minPos);
-        maxPos = base::Max(proxy->virtualPlacement + proxy->virtualSize, maxPos);
+        minPos = Min(proxy->virtualPlacement, minPos);
+        maxPos = Max(proxy->virtualPlacement + proxy->virtualSize, maxPos);
     }
 
     if (m_hoverPixelValid)
@@ -68,11 +68,11 @@ void ImagePreviewPanel::renderForeground(ui::DataStash& stash, const ui::Element
             float y0 = ((m_hoverPixelY) * m_viewScale.y) + m_viewOffset.y;
             float y1 = ((m_hoverPixelY+1)*m_viewScale.y) + m_viewOffset.y;
 
-			base::canvas::Geometry g;
+			canvas::Geometry g;
 
 			{
-				base::canvas::GeometryBuilder b(g);
-				b.fillColor(base::Color(64, 64, 64, 64));
+				canvas::GeometryBuilder b(g);
+				b.fillColor(Color(64, 64, 64, 64));
 				b.beginPath();
 				b.rect(x0, 0.0f, x1 - x0, drawArea.size().y);
 				b.fill();
@@ -88,11 +88,11 @@ void ImagePreviewPanel::renderForeground(ui::DataStash& stash, const ui::Element
             float x = ((m_hoverPixelX)*m_viewScale.x) + m_viewOffset.x;
             float y = ((m_hoverPixelY)*m_viewScale.y) + m_viewOffset.y;
 
-			base::canvas::Geometry g;
+			canvas::Geometry g;
 
 			{
-				base::canvas::GeometryBuilder b(g);
-				b.strokeColor(base::Color(64, 64, 64, 64));
+				canvas::GeometryBuilder b(g);
+				b.strokeColor(Color(64, 64, 64, 64));
 				b.beginPath();
 				b.moveTo(x, 0.0f);
 				b.lineTo(x, drawArea.size().y);
@@ -111,7 +111,7 @@ void ImagePreviewPanel::renderForeground(ui::DataStash& stash, const ui::Element
     {
         if (minPos.x < maxPos.x || minPos.y < maxPos.y)
         {
-            base::Rect activeImageRect;
+            Rect activeImageRect;
             activeImageRect.min.x = (int)std::floor(minPos.x);
             activeImageRect.min.y = (int)std::floor(minPos.y);
             activeImageRect.max.x = (int)std::ceil(maxPos.x);
@@ -126,7 +126,7 @@ void ImagePreviewPanel::renderForeground(ui::DataStash& stash, const ui::Element
     }
 }
 
-void ImagePreviewPanel::renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity)
+void ImagePreviewPanel::renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderBackground(stash, drawArea, canvas, mergedOpacity);
 }
@@ -138,25 +138,25 @@ void ImagePreviewPanel::updateTooltip() const
 
     if (m_previewPixelValid)
     {
-        base::Color previewColor;
+        Color previewColor;
         if (m_previewPixel.integerValues)
         {
-            previewColor.r = base::FloatTo255(m_previewPixel.color.x / m_previewPixel.maxValue);
-            previewColor.g = base::FloatTo255(m_previewPixel.color.y / m_previewPixel.maxValue);
-            previewColor.b = base::FloatTo255(m_previewPixel.color.z / m_previewPixel.maxValue);
+            previewColor.r = FloatTo255(m_previewPixel.color.x / m_previewPixel.maxValue);
+            previewColor.g = FloatTo255(m_previewPixel.color.y / m_previewPixel.maxValue);
+            previewColor.b = FloatTo255(m_previewPixel.color.z / m_previewPixel.maxValue);
             previewColor.a = 255;
         }
         else
         {
-            previewColor.r = base::FloatTo255(m_previewPixel.color.x);
-            previewColor.g = base::FloatTo255(m_previewPixel.color.y);
-            previewColor.b = base::FloatTo255(m_previewPixel.color.z);
+            previewColor.r = FloatTo255(m_previewPixel.color.x);
+            previewColor.g = FloatTo255(m_previewPixel.color.y);
+            previewColor.b = FloatTo255(m_previewPixel.color.z);
         }
 
         if (color)            
             color->customBackgroundColor(previewColor);
 
-        base::StringBuilder txt;
+        StringBuilder txt;
         txt.appendf("[{},{}]\n\n", m_previewPixel.x, m_previewPixel.y);
 
         if (m_previewPixel.channels >= 1)
@@ -209,7 +209,7 @@ void ImagePreviewPanel::updateTooltip() const
     }
 }
 
-bool ImagePreviewPanel::handleMouseMovement(const base::input::MouseMovementEvent& evt)
+bool ImagePreviewPanel::handleMouseMovement(const input::MouseMovementEvent& evt)
 {
     m_previewPixelValid = false;
 
@@ -221,7 +221,7 @@ bool ImagePreviewPanel::handleMouseMovement(const base::input::MouseMovementEven
 
     for (const auto* proxy : m_elementProxies)
     {
-        if (auto imageElement = base::rtti_cast<IImagePreviewElement>(proxy->element))
+        if (auto imageElement = rtti_cast<IImagePreviewElement>(proxy->element))
         {
             if (virtualPos.x >= proxy->virtualPlacement.x && virtualPos.x >= proxy->virtualPlacement.y)
             {
@@ -258,7 +258,7 @@ ui::ElementPtr ImagePreviewPanel::queryTooltipElement(const ui::Position& absolu
     if (!m_previewPixelValid)
         return nullptr;
 
-    auto list = base::RefNew<ui::IElement>();
+    auto list = RefNew<ui::IElement>();
     list->layoutVertical();
 
     auto color = list->createChild<ui::IElement>();
@@ -520,15 +520,15 @@ void ImagePreviewPanelWithToolbar::previewSettings(const ImagePreviewPanelSettin
     updateUIState();
 }
 
-void ImagePreviewPanelWithToolbar::bindImageView(const rendering::ImageSampledView* view, rendering::ImageContentColorSpace knownColorSpace)
+void ImagePreviewPanelWithToolbar::bindImageView(const gpu::ImageSampledView* view, assets::ImageContentColorSpace knownColorSpace)
 {
-    if (view && knownColorSpace == rendering::ImageContentColorSpace::Auto)
+    if (view && knownColorSpace == assets::ImageContentColorSpace::Auto)
     {
-        const auto formatClass = rendering::GetImageFormatInfo(view->image()->format()).formatClass;
-        if (formatClass == rendering::ImageFormatClass::SRGB)
-            knownColorSpace = rendering::ImageContentColorSpace::SRGB;
-        else if (formatClass == rendering::ImageFormatClass::FLOAT)
-            knownColorSpace = rendering::ImageContentColorSpace::HDR;
+        const auto formatClass = GetImageFormatInfo(view->image()->format()).formatClass;
+        if (formatClass == ImageFormatClass::SRGB)
+            knownColorSpace = assets::ImageContentColorSpace::SRGB;
+        else if (formatClass == ImageFormatClass::FLOAT)
+            knownColorSpace = assets::ImageContentColorSpace::HDR;
     }
 
     bool hadContent = !m_mainImageSRV.empty();
@@ -581,8 +581,8 @@ void ImagePreviewPanelWithToolbar::updateUIState()
 
     m_mipmapChoiceBox->visibility(true);
     m_sliceChoicebox->visibility(!settings.allSlices);
-    m_exposureControl->visibility(settings.colorSpace == rendering::ImageContentColorSpace::HDR);
-    m_toneMapMode->visibility(settings.colorSpace == rendering::ImageContentColorSpace::HDR);
+    m_exposureControl->visibility(settings.colorSpace == assets::ImageContentColorSpace::HDR);
+    m_toneMapMode->visibility(settings.colorSpace == assets::ImageContentColorSpace::HDR);
 
     if (settings.selectedMip == 0 && !settings.allSlices && m_mainImageSRV)
     {
@@ -606,14 +606,14 @@ void ImagePreviewPanelWithToolbar::updateMipmapList()
             auto mipDepth = std::max<uint32_t>(1, m_mainImageSRV->depth() >> i);
 
 			const auto viewType = m_mainImageSRV->image()->type();
-            if (viewType == rendering::ImageViewType::View1D || viewType == rendering::ImageViewType::View1DArray)
-                m_mipmapChoiceBox->addOption(base::TempString("Mip {} ({})", i, mipWidth));
-            else if (viewType == rendering::ImageViewType::View2D || viewType == rendering::ImageViewType::View2DArray)
-                m_mipmapChoiceBox->addOption(base::TempString("Mip {} ({}x{})", i, mipWidth, mipHeight));
-            else if (viewType == rendering::ImageViewType::ViewCube || viewType == rendering::ImageViewType::ViewCubeArray)
-                m_mipmapChoiceBox->addOption(base::TempString("Mip {} ({}x{})", i, mipWidth, mipHeight));
-            else if (viewType == rendering::ImageViewType::View3D)
-                m_mipmapChoiceBox->addOption(base::TempString("Mip {} ({}x{}x{})", i, mipWidth, mipHeight, mipDepth));
+            if (viewType == ImageViewType::View1D || viewType == ImageViewType::View1DArray)
+                m_mipmapChoiceBox->addOption(TempString("Mip {} ({})", i, mipWidth));
+            else if (viewType == ImageViewType::View2D || viewType == ImageViewType::View2DArray)
+                m_mipmapChoiceBox->addOption(TempString("Mip {} ({}x{})", i, mipWidth, mipHeight));
+            else if (viewType == ImageViewType::ViewCube || viewType == ImageViewType::ViewCubeArray)
+                m_mipmapChoiceBox->addOption(TempString("Mip {} ({}x{})", i, mipWidth, mipHeight));
+            else if (viewType == ImageViewType::View3D)
+                m_mipmapChoiceBox->addOption(TempString("Mip {} ({}x{}x{})", i, mipWidth, mipHeight, mipDepth));
         }
 
         m_mipmapChoiceBox->selectOption(settings.selectedMip);
@@ -635,12 +635,12 @@ void ImagePreviewPanelWithToolbar::updateSliceList()
     {
 		const auto viewType = m_mainImageSRV->image()->type();
 
-		if (viewType == rendering::ImageViewType::View1DArray || viewType == rendering::ImageViewType::View2DArray || viewType == rendering::ImageViewType::ViewCubeArray)
+		if (viewType == ImageViewType::View1DArray || viewType == ImageViewType::View2DArray || viewType == ImageViewType::ViewCubeArray)
 		{
 			auto settings = previewSettings();
 
 			for (uint32_t i = 0; i < m_numImageSlices; ++i)
-				m_sliceChoicebox->addOption(base::TempString("Slice {}", i));
+				m_sliceChoicebox->addOption(TempString("Slice {}", i));
 
 			m_sliceChoicebox->selectOption(settings.selectedSlice);
 			m_sliceChoicebox->enable(true);
@@ -668,13 +668,13 @@ void ImagePreviewPanelWithToolbar::recreatePreviewItems()
         const auto& settings = previewSettings();
         if (settings.selectedMip == 0 && settings.selectedSlice == 0 && !settings.allSlices && m_sourceImageSRV)
         {
-            auto element = base::RefNew<ImagePreviewElement>(view, m_sourceImageSRV);
+            auto element = RefNew<ImagePreviewElement>(view, m_sourceImageSRV);
             m_mainImagePreviewElements.pushBack(element);
             m_previewPanel->addElement(element, ui::Position(0,0));
         }
         else
         {
-            auto element = base::RefNew<ImagePreviewElement>(view, settings.selectedMip, settings.selectedSlice);
+            auto element = RefNew<ImagePreviewElement>(view, settings.selectedMip, settings.selectedSlice);
             m_mainImagePreviewElements.pushBack(element);
             m_previewPanel->addElement(element, ui::Position(0, 0));
         }
@@ -686,4 +686,4 @@ void ImagePreviewPanelWithToolbar::recreatePreviewItems()
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

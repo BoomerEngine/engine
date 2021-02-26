@@ -7,9 +7,9 @@
 ***/
 
 #pragma once
-#include "base/object/include/dataView.h"
+#include "core/object/include/dataView.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -25,4 +25,4 @@ struct SceneContentEditableObject
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

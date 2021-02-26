@@ -10,9 +10,9 @@
 
 #include "editor/common/include/resourceEditor.h"
 #include "editor/common/include/resourceEditorNativeFile.h"
-#include "rendering/material/include/renderingMaterialInstance.h"
+#include "engine/material/include/renderingMaterialInstance.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 class MaterialGraphEditorPanel;
 class MaterialPreviewPanel;
@@ -30,18 +30,18 @@ public:
 
     INLINE MaterialPreviewPanel* previewPanel() const { return m_previewPanel; }
     INLINE MaterialGraphEditorPanel* graphEditor() const { return m_graphEditor; }
-    INLINE rendering::MaterialGraph* graph() const { return m_graph; }
+    INLINE MaterialGraph* graph() const { return m_graph; }
 
     //--
 
 private:
-    base::RefPtr<rendering::MaterialGraph> m_graph;
-    base::RefPtr<rendering::MaterialInstance> m_previewMaterial;
+    RefPtr<MaterialGraph> m_graph;
+    RefPtr<MaterialInstance> m_previewMaterial;
 
     //---
 
-    base::RefPtr<MaterialPreviewPanel> m_previewPanel;
-    base::RefPtr<MaterialGraphEditorPanel> m_graphEditor;
+    RefPtr<MaterialPreviewPanel> m_previewPanel;
+    RefPtr<MaterialGraphEditorPanel> m_graphEditor;
     ui::GraphBlockPalettePtr m_graphPalette;
 
     ui::DataInspectorPtr m_properties;
@@ -65,4 +65,4 @@ private:
     virtual bool save() override;
 };
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

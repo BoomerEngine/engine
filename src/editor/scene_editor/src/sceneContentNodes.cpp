@@ -11,19 +11,19 @@
 #include "sceneContentStructure.h"
 #include "sceneContentNodes.h"
 
-#include "rendering/scene/include/renderingFrameDebug.h"
-#include "rendering/scene/include/renderingFrameParams.h"
+#include "engine/rendering/include/renderingFrameDebug.h"
+#include "engine/rendering/include/renderingFrameParams.h"
 
 #include "editor/common/include/managedFileNativeResource.h"
-#include "base/resource/include/objectIndirectTemplate.h"
-#include "base/ui/include/uiAbstractItemModel.h"
-#include "base/world/include/worldNodeTemplate.h"
-#include "base/world/include/worldPrefab.h"
-#include "base/resource/include/objectIndirectTemplateCompiler.h"
-#include "base/object/include/rttiResourceReferenceType.h"
-#include "base/world/include/worldEntity.h"
+#include "core/resource/include/objectIndirectTemplate.h"
+#include "engine/ui/include/uiAbstractItemModel.h"
+#include "engine/world/include/worldNodeTemplate.h"
+#include "engine/world/include/worldPrefab.h"
+#include "core/resource/include/objectIndirectTemplateCompiler.h"
+#include "core/object/include/rttiResourceReferenceType.h"
+#include "engine/world/include/worldEntity.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
     
 //---
 
@@ -92,7 +92,7 @@ static EulerTransform MergeTransforms(const Array<ObjectIndirectTemplatePtr>& te
     return ret;
 }
 
-static EulerTransform MergeTransforms(const Array<const world::NodeTemplate*>& templates)
+static EulerTransform MergeTransforms(const Array<const NodeTemplate*>& templates)
 {
     EulerTransform ret;
     bool first = true;
@@ -116,7 +116,7 @@ static EulerTransform MergeTransforms(const Array<const world::NodeTemplate*>& t
     return ret;
 }
 
-static EulerTransform MergeTransforms(const Array<world::NodeTemplatePtr>& templates)
+static EulerTransform MergeTransforms(const Array<NodeTemplatePtr>& templates)
 {
     EulerTransform ret;
     bool first = true;
@@ -689,7 +689,7 @@ void SceneContentNode::handleVisibilityChanged()
     postEvent(EVENT_CONTENT_NODE_VISIBILITY_CHANGED, selfRef);
 }
 
-void SceneContentNode::handleDebugRender(rendering::scene::FrameParams& frame) const
+void SceneContentNode::handleDebugRender(rendering::FrameParams& frame) const
 {
 }
 
@@ -868,10 +868,10 @@ void SceneContentDataNode::updateBaseTemplates(const Array<const ObjectIndirectT
     cacheTransformData();
 }
 
-void SceneContentDataNode::handleDebugRender(rendering::scene::FrameParams& frame) const
+void SceneContentDataNode::handleDebugRender(rendering::FrameParams& frame) const
 {
     // TEMPSHIT
-    rendering::scene::DebugDrawer dd(frame.geometry.solid);
+    rendering::DebugDrawer dd(frame.geometry.solid);
     dd.axes(cachedLocalToWorldMatrix(), 0.1f);
 }
 
@@ -1005,7 +1005,7 @@ void SceneContentDataNode::handleTransformUpdated()
 RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneContentEntityNode);
 RTTI_END_TYPE();
 
-static Array<const ObjectIndirectTemplate*> ExtractEntityData(const Array<world::NodeTemplatePtr>& sourceNodeData)
+static Array<const ObjectIndirectTemplate*> ExtractEntityData(const Array<NodeTemplatePtr>& sourceNodeData)
 {
     Array<const ObjectIndirectTemplate*> ret;
     ret.reserve(sourceNodeData.size());
@@ -1019,7 +1019,7 @@ static Array<const ObjectIndirectTemplate*> ExtractEntityData(const Array<world:
 
 TYPE_TLS uint32_t GPrefabInstancingDepth = 0;
 
-SceneContentEntityNode::SceneContentEntityNode(const StringBuf& name, const world::NodeTemplatePtr& node, const Array<world::NodeTemplatePtr>& inheritedTemplates)
+SceneContentEntityNode::SceneContentEntityNode(const StringBuf& name, const NodeTemplatePtr& node, const Array<NodeTemplatePtr>& inheritedTemplates)
     : SceneContentDataNode(SceneContentNodeType::Entity, name, node ? node->m_entityTemplate : RefNew<ObjectIndirectTemplate>())
     , m_inheritedTemplates(inheritedTemplates)
 {
@@ -1046,7 +1046,7 @@ void SceneContentEntityNode::extractCurrentInstancedContent(SceneContentEntityIn
     detachAllChildren();
 }
 
-static void SuckInPrefab(uint64_t nodeSeed, const world::NodeTemplatePrefabSetup& prefabEntry, HashSet<const world::Prefab*>& allVisitedPrefabs, Array<const world::NodeTemplate*>& outPrefabRoots)
+static void SuckInPrefab(uint64_t nodeSeed, const NodeTemplatePrefabSetup& prefabEntry, HashSet<const Prefab*>& allVisitedPrefabs, Array<const NodeTemplate*>& outPrefabRoots)
 {
     if (!prefabEntry.enabled)
         return;
@@ -1068,15 +1068,15 @@ static void SuckInPrefab(uint64_t nodeSeed, const world::NodeTemplatePrefabSetup
     outPrefabRoots.pushBack(prefabRootNode);
 }
 
-void SceneContentEntityNode::collectBaseNodes(const Array<world::NodeTemplatePrefabSetup>& localPrefabs, Array<const world::NodeTemplate*>& outBaseNodes) const
+void SceneContentEntityNode::collectBaseNodes(const Array<NodeTemplatePrefabSetup>& localPrefabs, Array<const NodeTemplate*>& outBaseNodes) const
 {
     const auto thisNodeSeed = 0;
 
     outBaseNodes.reset();
 
     // collect prefabs from inherited nodes
-    InplaceArray<const world::NodeTemplate*, 20> baseNodes;
-    HashSet<const world::Prefab*> visitedPrefabs;
+    InplaceArray<const NodeTemplate*, 20> baseNodes;
+    HashSet<const Prefab*> visitedPrefabs;
     for (const auto& temp : m_inheritedTemplates)
     {
         for (const auto& prefabAsset : temp->m_prefabAssets)
@@ -1093,7 +1093,7 @@ void SceneContentEntityNode::collectBaseNodes(const Array<world::NodeTemplatePre
 
 void SceneContentEntityNode::updateBaseTemplates()
 {
-    InplaceArray<const world::NodeTemplate*, 10> baseNodes;
+    InplaceArray<const NodeTemplate*, 10> baseNodes;
     collectBaseNodes(m_localPrefabs, baseNodes);
 
     InplaceArray<const ObjectIndirectTemplate*, 10> localBaseTemplates;
@@ -1116,7 +1116,7 @@ void SceneContentEntityNode::applyInstancedContent(const SceneContentEntityInsta
         attachChildNode(child);
 }
 
-void SceneContentEntityNode::createInstancedContent(const world::NodeTemplate* dataTemplate, SceneContentEntityInstancedContent& outContent) const
+void SceneContentEntityNode::createInstancedContent(const NodeTemplate* dataTemplate, SceneContentEntityInstancedContent& outContent) const
 {
     const auto thisNodeSeed = 0;
 
@@ -1128,7 +1128,7 @@ void SceneContentEntityNode::createInstancedContent(const world::NodeTemplate* d
         outContent.localPrefabs = dataTemplate->m_prefabAssets;
         
     // collect the entity template bases - first from the inherited nodes, second from local prefabs
-    InplaceArray<const world::NodeTemplate*, 10> baseContentNodes;
+    InplaceArray<const NodeTemplate*, 10> baseContentNodes;
     collectBaseNodes(outContent.localPrefabs, baseContentNodes);
 
     // create components
@@ -1210,8 +1210,8 @@ void SceneContentEntityNode::createInstancedContent(const world::NodeTemplate* d
     else
     {
         // collect names and data of child nodes
-        HashMap<StringID, Array<world::NodeTemplatePtr>> childMap;
-        HashMap<StringID, world::NodeTemplatePtr> localChildrenMap;
+        HashMap<StringID, Array<NodeTemplatePtr>> childMap;
+        HashMap<StringID, NodeTemplatePtr> localChildrenMap;
 
         // collect data from base templates to know the super set of all possible children we have
         for (const auto* temp : baseContentNodes)
@@ -1301,9 +1301,9 @@ void SceneContentEntityNode::handleVisibilityChanged()
     markDirty(SceneContentNodeDirtyBit::Visibility);
 }
 
-world::NodeTemplatePtr SceneContentEntityNode::compileSnapshot() const
+NodeTemplatePtr SceneContentEntityNode::compileSnapshot() const
 {
-    auto ret = RefNew<world::NodeTemplate>();
+    auto ret = RefNew<NodeTemplate>();
     ret->m_name = StringID(name());
         
     ret->m_entityTemplate = compileFlatData();
@@ -1342,9 +1342,9 @@ static bool HasLocalData(const SceneContentDataNode* node)
     return false;
 }
 
-world::NodeTemplatePtr SceneContentEntityNode::compileDifferentialData() const
+NodeTemplatePtr SceneContentEntityNode::compileDifferentialData() const
 {
-    auto ret = RefNew<world::NodeTemplate>();
+    auto ret = RefNew<NodeTemplate>();
     ret->m_name = StringID(name());
 
     // extract child entities
@@ -1389,18 +1389,18 @@ world::NodeTemplatePtr SceneContentEntityNode::compileDifferentialData() const
     return ret;
 }    
 
-world::NodeTemplatePtr SceneContentEntityNode::compiledForCopy() const
+NodeTemplatePtr SceneContentEntityNode::compiledForCopy() const
 {
     auto delta = compileDifferentialData();
 
     if (!m_inheritedTemplates.empty())
     {
-        InplaceArray<const world::NodeTemplate*, 10> baseTemplates;
+        InplaceArray<const NodeTemplate*, 10> baseTemplates;
         for (const auto& tmp : m_inheritedTemplates)
             baseTemplates.pushBack(tmp);
 
         if (!delta)
-            delta = RefNew<world::NodeTemplate>();
+            delta = RefNew<NodeTemplate>();
 
         delta = CompileWithInjectedBaseNodes(delta, baseTemplates);
     }
@@ -1434,9 +1434,9 @@ bool SceneContentBehaviorNode::canCopy() const
     return baseData().empty();
 }
 
-/*world::ComponentTemplatePtr SceneContentBehaviorNode::compileData() const
+/*ComponentTemplatePtr SceneContentBehaviorNode::compileData() const
 {
-    if (auto cur = rtti_cast<world::ComponentTemplate>(editableData()))
+    if (auto cur = rtti_cast<ComponentTemplate>(editableData()))
     {
         auto ret = CloneObject(cur);
         ret->rebase(baseData());
@@ -1448,14 +1448,14 @@ bool SceneContentBehaviorNode::canCopy() const
     return nullptr;
 }
 
-world::ComponentTemplatePtr SceneContentBehaviorNode::compileDifferentialData(bool& outAnyMeaningfulData) const
+ComponentTemplatePtr SceneContentBehaviorNode::compileDifferentialData(bool& outAnyMeaningfulData) const
 {
-    auto componentData = rtti_cast<world::ComponentTemplate>(editableData());
+    auto componentData = rtti_cast<ComponentTemplate>(editableData());
     DEBUG_CHECK_RETURN_V(componentData, nullptr);
 
     auto ret = CloneObject(componentData);
 
-    if (auto base = rtti_cast<world::ComponentTemplate>(baseData()))
+    if (auto base = rtti_cast<ComponentTemplate>(baseData()))
     {
         ret->placement(MakeTransformRelative(calcLocalToParent(), base->placement()));
         outAnyMeaningfulData |= IsDataNeeded(*ret);
@@ -1493,9 +1493,9 @@ void SceneContentBehaviorNode::handleLocalVisibilityChanged()
 
 //---
     
-void SceneContentNode::EnumEntityClassesForResource(ClassType resourceClass, Array<SpecificClassType<world::Entity>>& outEntityClasses)
+void SceneContentNode::EnumEntityClassesForResource(ClassType resourceClass, Array<SpecificClassType<Entity>>& outEntityClasses)
 {
-    InplaceArray<SpecificClassType<world::Entity>, 100> allComponentClasses;
+    InplaceArray<SpecificClassType<Entity>, 100> allComponentClasses;
     RTTI::GetInstance().enumClasses(allComponentClasses);
 
     for (const auto compClass : allComponentClasses)
@@ -1517,4 +1517,4 @@ void SceneContentNode::EnumEntityClassesForResource(ClassType resourceClass, Arr
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

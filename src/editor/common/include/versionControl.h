@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "base/system/include/registration.h"
-#include "base/io/include/timestamp.h"
+#include "core/system/include/registration.h"
+#include "core/io/include/timestamp.h"
 
-BEGIN_BOOMER_NAMESPACE(ed::vsc)
+BEGIN_BOOMER_NAMESPACE_EX(ed::vsc)
 
 /// file local user action
 enum class FileLocalAction : uint8_t
@@ -385,4 +385,4 @@ extern VersionControlPtr CreateLocalStub();
 
 //---
 
-END_BOOMER_NAMESPACE(ed::vsc)
+END_BOOMER_NAMESPACE_EX(ed::vsc)

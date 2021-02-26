@@ -15,29 +15,29 @@
 #include "sceneContentStructure.h"
 #include "sceneContentDataView.h"
 
-#include "base/ui/include/uiMenuBar.h"
-#include "base/ui/include/uiEditBox.h"
-#include "base/ui/include/uiListView.h"
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiDataInspector.h"
-#include "base/ui/include/uiDragger.h"
-#include "base/ui/include/uiGroup.h"
-#include "base/ui/include/uiClassPickerBox.h"
-#include "base/ui/include/uiNotebook.h"
-#include "base/ui/include/uiElement.h"
+#include "engine/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiEditBox.h"
+#include "engine/ui/include/uiListView.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiDataInspector.h"
+#include "engine/ui/include/uiDragger.h"
+#include "engine/ui/include/uiGroup.h"
+#include "engine/ui/include/uiClassPickerBox.h"
+#include "engine/ui/include/uiNotebook.h"
+#include "engine/ui/include/uiElement.h"
 
-#include "base/object/include/actionHistory.h"
-#include "base/object/include/action.h"
+#include "core/object/include/actionHistory.h"
+#include "core/object/include/action.h"
 
-#include "base/resource/include/objectIndirectTemplate.h"
-#include "base/resource/include/objectIndirectTemplateCompiler.h"
+#include "core/resource/include/objectIndirectTemplate.h"
+#include "core/resource/include/objectIndirectTemplateCompiler.h"
 
-#include "base/world/include/worldNodeTemplate.h"
-#include "base/world/include/worldEntityBehavior.h"
-#include "base/world/include/worldEntity.h"
-#include "base/world/include/worldPrefab.h"
+#include "engine/world/include/worldNodeTemplate.h"
+#include "engine/world/include/worldEntityBehavior.h"
+#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/worldPrefab.h"
 
-#include "base/containers/include/stringBuilder.h"
+#include "core/containers/include/stringBuilder.h"
 
 #include "editor/common/include/editorService.h"
 #include "editor/common/include/assetBrowser.h"
@@ -45,7 +45,7 @@
 #include "editor/common/include/managedFileFormat.h"
 #include "editor/common/include/managedDepot.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -146,21 +146,21 @@ SceneEditPrefabList::SceneEditPrefabList()
 
 ui::DragDropHandlerPtr SceneEditPrefabList::handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
 {
-    if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
+    if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
         if (auto file = fileData->file())
-            if (file->fileFormat().loadableAsType(world::Prefab::GetStaticClass()))
-                return base::RefNew<ui::DragDropHandlerGeneric>(data, this, entryPosition);
+            if (file->fileFormat().loadableAsType(Prefab::GetStaticClass()))
+                return RefNew<ui::DragDropHandlerGeneric>(data, this, entryPosition);
 
     return TBaseClass::handleDragDrop(data, entryPosition);
 }
 
 void SceneEditPrefabList::handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
 {
-    if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
+    if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
     {
         if (auto file = fileData->file())
         {
-            if (file->fileFormat().loadableAsType(world::Prefab::GetStaticClass()))
+            if (file->fileFormat().loadableAsType(Prefab::GetStaticClass()))
             {
                 call(EVENT_PREFABLIST_ADD_FILE, ManagedFilePtr(AddRef(file)));
             }
@@ -223,7 +223,7 @@ SceneDefaultPropertyInspectorPanel::SceneDefaultPropertyInspectorPanel(SceneEdit
             button->expand();
             button->bind(ui::EVENT_CLICKED) = [this]() {
                 if (auto file = GetEditor()->selectedFile())
-                    if (file->fileFormat().loadableAsType(world::Prefab::GetStaticClass()))
+                    if (file->fileFormat().loadableAsType(Prefab::GetStaticClass()))
                         m_host->cmdAddPrefabFile(m_nodes, file);
             };
         }
@@ -254,7 +254,7 @@ SceneDefaultPropertyInspectorPanel::SceneDefaultPropertyInspectorPanel(SceneEdit
 
         {
             auto panel = RefNew<ui::IElement>();
-            panel->customStyle<base::StringBuf>("title"_id, "[img:axis] Local");
+            panel->customStyle<StringBuf>("title"_id, "[img:axis] Local");
 
             m_transformLocalValues = panel->createChild<SceneNodeTransformValuesBox>(GizmoSpace::Local, this);
             m_transformLocalValues->expand();
@@ -264,7 +264,7 @@ SceneDefaultPropertyInspectorPanel::SceneDefaultPropertyInspectorPanel(SceneEdit
 
         {
             auto panel = RefNew<ui::IElement>();
-            panel->customStyle<base::StringBuf>("title"_id, "[img:world] World");
+            panel->customStyle<StringBuf>("title"_id, "[img:world] World");
 
             m_transformWorldValues = panel->createChild<SceneNodeTransformValuesBox>(GizmoSpace::World, this);
             m_transformWorldValues->expand();
@@ -665,10 +665,10 @@ private:
 static bool IsClassCompatible(const SceneContentDataNodePtr& dataNode, ClassType newDataClass)
 {
     if (dataNode->is<SceneContentEntityNode>())
-        return newDataClass->is<world::Entity>();
+        return newDataClass->is<Entity>();
 
     else if (dataNode->is<SceneContentBehaviorNode>())
-        return newDataClass->is<world::IEntityBehavior>();
+        return newDataClass->is<IEntityBehavior>();
 
     return false;
 }
@@ -702,11 +702,11 @@ void SceneDefaultPropertyInspectorPanel::changeDataClass(ClassType newDataClass,
 
 static ClassType SelectRootClass(ClassType currentClass)
 {
-    if (currentClass->is<world::Entity>())
-        return world::Entity::GetStaticClass();
+    if (currentClass->is<Entity>())
+        return Entity::GetStaticClass();
 
-    else if (currentClass->is<world::IEntityBehavior>())
-        return world::IEntityBehavior::GetStaticClass();
+    else if (currentClass->is<IEntityBehavior>())
+        return IEntityBehavior::GetStaticClass();
 
     return nullptr;
 }
@@ -731,18 +731,18 @@ void SceneDefaultPropertyInspectorPanel::cmdChangeClass()
             }
 
             if (allowEntityClass)
-                rootClass = world::Entity::GetStaticClass();
+                rootClass = Entity::GetStaticClass();
         }
 
         if (rootClass)
         {
-            m_classPicker = base::RefNew<ui::ClassPickerBox>(rootClass, m_commonClassType, false, false);
+            m_classPicker = RefNew<ui::ClassPickerBox>(rootClass, m_commonClassType, false, false);
 
             m_classPicker->bind(ui::EVENT_WINDOW_CLOSED) = [this]() {
                 m_classPicker.reset();
             };
 
-            m_classPicker->bind(ui::EVENT_CLASS_SELECTED) = [this](base::ClassType data) {
+            m_classPicker->bind(ui::EVENT_CLASS_SELECTED) = [this](ClassType data) {
                 changeDataClass(data, m_nodes);
             };
 
@@ -1369,4 +1369,4 @@ void SceneDefaultPropertyInspectorPanel::refreshPrefabList()
 
 //--
     
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

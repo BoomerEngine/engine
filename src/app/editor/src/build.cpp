@@ -19,15 +19,15 @@
 #include "reflection.inl"
 
 #include "editorApplication.h"
-#include "base/app/include/application.h"
+#include "core/app/include/application.h"
 
 DECLARE_MODULE(PROJECT_NAME)
 {
     // custom module initialization code
 }
 
-base::app::IApplication& GetApplicationInstance()
+boomer::app::IApplication& GetApplicationInstance()
 {
-    static application::EditorApp theApp;
+    static boomer::EditorApp theApp;
     return theApp;
 }

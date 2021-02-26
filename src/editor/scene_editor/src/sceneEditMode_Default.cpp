@@ -18,14 +18,14 @@
 #include "scenePreviewContainer.h"
 #include "scenePreviewPanel.h"
 
-#include "base/ui/include/uiMenuBar.h"
-#include "base/ui/include/uiClassPickerBox.h"
-#include "base/object/include/actionHistory.h"
-#include "base/world/include/worldEntity.h"
-#include "base/world/include/worldEntityBehavior.h"
-#include "base/ui/include/uiElementConfig.h"
+#include "engine/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiClassPickerBox.h"
+#include "core/object/include/actionHistory.h"
+#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/worldEntityBehavior.h"
+#include "engine/ui/include/uiElementConfig.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -37,16 +37,16 @@ SceneEditMode_Default::SceneEditMode_Default(ActionHistory* actionHistory)
 {
     m_panel = RefNew<SceneDefaultPropertyInspectorPanel>(this);
 
-    m_entityClassSelector = RefNew<ui::ClassPickerBox>(base::world::Entity::GetStaticClass(), nullptr, false, false, "", false);
-    m_behaviorClassSelector = RefNew<ui::ClassPickerBox>(base::world::IEntityBehavior::GetStaticClass(), nullptr, false, false, "", false);
+    m_entityClassSelector = RefNew<ui::ClassPickerBox>(Entity::GetStaticClass(), nullptr, false, false, "", false);
+    m_behaviorClassSelector = RefNew<ui::ClassPickerBox>(IEntityBehavior::GetStaticClass(), nullptr, false, false, "", false);
 
-    m_entityClassSelector->bind(ui::EVENT_CLASS_SELECTED) = [this](base::ClassType type)
+    m_entityClassSelector->bind(ui::EVENT_CLASS_SELECTED) = [this](ClassType type)
     {
         const auto* placement = m_contextMenuPlacementTransformValid ? &m_contextMenuPlacementTransform : nullptr;
         createEntityAtNodes(m_contextMenuContextNodes, type, placement);
     };
 
-    m_behaviorClassSelector->bind(ui::EVENT_CLASS_SELECTED) = [this](base::ClassType type)
+    m_behaviorClassSelector->bind(ui::EVENT_CLASS_SELECTED) = [this](ClassType type)
     {
         const auto* placement = m_contextMenuPlacementTransformValid ? &m_contextMenuPlacementTransform : nullptr;
         //createComponentAtNodes(m_contextMenuContextNodes, type, placement);
@@ -562,7 +562,7 @@ GizmoActionContextPtr SceneEditMode_Default::createGizmoAction(ScenePreviewConta
     return RefNew<SceneEditModeDefaultTransformAction>(const_cast<SceneEditMode_Default*>(this), panel, transformNodes, container->gridSettings(), container->gizmoSettings());
 }
 
-void SceneEditMode_Default::handleRender(ScenePreviewPanel* panel, rendering::scene::FrameParams& frame)
+void SceneEditMode_Default::handleRender(ScenePreviewPanel* panel, rendering::FrameParams& frame)
 {
     TBaseClass::handleRender(panel, frame);
     renderDragDrop(panel, frame);
@@ -573,7 +573,7 @@ ui::InputActionPtr SceneEditMode_Default::handleMouseClick(ScenePreviewPanel* pa
     return nullptr;
 }
 
-bool SceneEditMode_Default::handleKeyEvent(ScenePreviewPanel* panel, const base::input::KeyEvent& evt)
+bool SceneEditMode_Default::handleKeyEvent(ScenePreviewPanel* panel, const input::KeyEvent& evt)
 {
     if (evt.pressed())
     {
@@ -586,9 +586,9 @@ bool SceneEditMode_Default::handleKeyEvent(ScenePreviewPanel* panel, const base:
     return false;
 }
 
-void SceneEditMode_Default::processVisualSelection(bool ctrl, bool shift, const base::Array<rendering::scene::Selectable>& selectables)
+void SceneEditMode_Default::processVisualSelection(bool ctrl, bool shift, const Array<Selectable>& selectables)
 {
-    base::HashSet<SceneContentNodePtr> selectedNodes;
+    HashSet<SceneContentNodePtr> selectedNodes;
 
     if (shift || ctrl)
         selectedNodes = m_selection;
@@ -614,12 +614,12 @@ void SceneEditMode_Default::processVisualSelection(bool ctrl, bool shift, const 
     actionChangeSelection(selectedNodes.keys());
 }
 
-void SceneEditMode_Default::handlePointSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables)
+void SceneEditMode_Default::handlePointSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables)
 {
     processVisualSelection(ctrl, shift, selectables);
 }
 
-void SceneEditMode_Default::handleAreaSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables)
+void SceneEditMode_Default::handleAreaSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables)
 {
     processVisualSelection(ctrl, shift, selectables);
 }
@@ -636,4 +636,4 @@ void SceneEditMode_Default::handleTreeSelectionChange(const SceneContentNodePtr&
 
 //--
     
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

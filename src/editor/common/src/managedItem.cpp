@@ -12,7 +12,7 @@
 #include "managedDepot.h"
 #include "editorService.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -109,6 +109,6 @@ bool ManagedItem::ValidateDirectoryName(StringView txt)
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 
 

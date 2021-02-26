@@ -10,10 +10,10 @@
 #include "resourceEditorNativeFile.h"
 #include "managedFile.h"
 #include "managedFileNativeResource.h"
-#include "base/resource/include/resourceLoadingService.h"
-#include "base/ui/include/uiMessageBox.h"
+#include "core/resource/include/resourceLoadingService.h"
+#include "engine/ui/include/uiMessageBox.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
     
 //---
 
@@ -92,7 +92,7 @@ bool ResourceEditorNativeFile::save()
     if (!m_nativeFile->storeContent(m_resource))
         return false;
 
-    auto loadingService = base::GetService<base::res::LoadingService>();
+    auto loadingService = GetService<res::LoadingService>();
     auto resoureKey = res::ResourcePath(nativeFile()->depotPath());
     if (!loadingService->loadResource(resoureKey))
     {
@@ -111,5 +111,5 @@ void ResourceEditorNativeFile::cleanup()
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

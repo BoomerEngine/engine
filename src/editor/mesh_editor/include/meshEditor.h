@@ -9,9 +9,9 @@
 #pragma once
 
 #include "editor/common/include/resourceEditorNativeFile.h"
-#include "rendering/mesh/include/renderingMesh.h"
+#include "engine/mesh/include/renderingMesh.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 class MeshPreviewPanel;
 class MeshStructurePanel;
@@ -35,13 +35,13 @@ public:
     virtual void fillViewMenu(ui::MenuButtonContainer* menu) override;
 
 private:
-    base::RefPtr<MeshPreviewPanel> m_previewPanel;
-    base::RefPtr<MeshStructurePanel> m_structurePanel;
-    base::RefPtr<MeshMaterialsPanel> m_materialsPanel;
+    RefPtr<MeshPreviewPanel> m_previewPanel;
+    RefPtr<MeshStructurePanel> m_structurePanel;
+    RefPtr<MeshMaterialsPanel> m_materialsPanel;
 
     bool m_hasDefaultCamera = false;
-    base::Vector3 m_defaultCameraPosition;
-    base::Angles m_defaultCameraRotation;
+    Vector3 m_defaultCameraPosition;
+    Angles m_defaultCameraRotation;
 
     void createInterface();
     void updateMaterialHighlights();
@@ -51,4 +51,4 @@ private:
     virtual void handleLocalReimport(const res::ResourcePtr& ptr) override;
 };
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

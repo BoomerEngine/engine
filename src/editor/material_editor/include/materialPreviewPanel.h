@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "rendering/ui_viewport/include/renderingScenePanel.h"
+#include "editor/viewport/include/uiScenePanel.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -27,7 +27,7 @@ struct EDITOR_MATERIAL_EDITOR_API MaterialPreviewPanelSettings
 {
     MaterialPreviewShape shape = MaterialPreviewShape::Box;
     int mode = 0;
-    base::res::Ref<rendering::Mesh> customMesh;
+    res::Ref<Mesh> customMesh;
 
     MaterialPreviewPanelSettings();
 };
@@ -48,23 +48,23 @@ public:
     void previewSettings(const MaterialPreviewPanelSettings& settings);
     void previewShape(MaterialPreviewShape shape);
 
-    void bindMaterial(const rendering::IMaterial* material);
+    void bindMaterial(const IMaterial* material);
 
     virtual void buildShapePopup(ui::MenuButtonContainer* menu);
 
 private:
     MaterialPreviewPanelSettings m_previewSettings;
 
-    rendering::scene::ObjectProxyPtr m_previewProxy;
-    rendering::MaterialPtr m_material;
+    rendering::ObjectProxyMeshPtr m_previewProxy;
+    MaterialPtr m_material;
 
     void destroyVisualization();
     void createVisualization();
 
     void createToolbarItems();
 
-    virtual bool computeContentBounds(base::Box& outBox) const override;
-    virtual void handleRender(rendering::scene::FrameParams& frame) override;
+    virtual bool computeContentBounds(Box& outBox) const override;
+    virtual void handleRender(rendering::FrameParams& frame) override;
 
     virtual ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
     virtual void handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
@@ -72,4 +72,4 @@ private:
     
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

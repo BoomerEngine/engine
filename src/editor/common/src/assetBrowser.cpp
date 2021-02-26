@@ -14,14 +14,14 @@
 #include "managedDirectory.h"
 #include "managedDepot.h"
 
-#include "base/ui/include/uiTreeView.h"
-#include "base/ui/include/uiDockLayout.h"
-#include "base/ui/include/uiDockContainer.h"
-#include "base/ui/include/uiDockNotebook.h"
-#include "base/ui/include/uiSearchBar.h"
-#include "base/ui/include/uiElementConfig.h"
+#include "engine/ui/include/uiTreeView.h"
+#include "engine/ui/include/uiDockLayout.h"
+#include "engine/ui/include/uiDockContainer.h"
+#include "engine/ui/include/uiDockNotebook.h"
+#include "engine/ui/include/uiSearchBar.h"
+#include "engine/ui/include/uiElementConfig.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetBrowser);
 RTTI_END_TYPE();
@@ -339,4 +339,4 @@ void AssetBrowser::closeDirectoryTab(ManagedDirectory* dir)
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

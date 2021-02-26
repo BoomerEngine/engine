@@ -13,21 +13,21 @@
 #include "sceneContentStructure.h"
 #include "sceneEditMode_Default.h"
 
-#include "base/world/include/worldPrefab.h"
-#include "base/world/include/worldRawScene.h"
-#include "base/world/include/worldRawLayer.h"
+#include "engine/world/include/worldPrefab.h"
+#include "engine/world/include/worldRawScene.h"
+#include "engine/world/include/worldRawLayer.h"
 #include "editor/common/include/managedFileFormat.h"
 #include "editor/common/include/managedFile.h"
 #include "editor/common/include/managedFileNativeResource.h"
 #include "editor/common/include/managedItem.h"
 #include "editor/common/include/managedDirectory.h"
 #include "editor/common/include/editorService.h"
-#include "base/io/include/ioSystem.h"
-#include "base/ui/include/uiToolBar.h"
+#include "core/io/include/ioSystem.h"
+#include "engine/ui/include/uiToolBar.h"
 
 #undef DeleteFile
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -55,7 +55,7 @@ void SceneWorldEditor::cmdShowAssetBrowser()
     GetEditor()->showAssetBrowser();
 }
 
-static RefPtr<SceneContentWorldLayer> UnpackLayer(StringView name, const world::RawLayer* layer, Array<StringBuf>& outErrors)
+static RefPtr<SceneContentWorldLayer> UnpackLayer(StringView name, const RawLayer* layer, Array<StringBuf>& outErrors)
 {
     auto ret = RefNew<SceneContentWorldLayer>(StringBuf(name));
 
@@ -72,11 +72,11 @@ static void ExtractLayerStructure(const ManagedDirectory* dir, SceneContentNode*
 {
     for (const auto* file : dir->files())
     {
-        if (file->fileFormat().loadableAsType(world::RawLayer::GetStaticClass()))
+        if (file->fileFormat().loadableAsType(RawLayer::GetStaticClass()))
         {
             if (const auto* nativeFile = rtti_cast<ManagedFileNativeResource>(file))
             {
-                if (const auto layerData = rtti_cast<world::RawLayer>(nativeFile->loadContent()))
+                if (const auto layerData = rtti_cast<RawLayer>(nativeFile->loadContent()))
                 {
                     if (const auto layerNode = UnpackLayer(file->name().view().beforeFirst("."), layerData, outErrors))
                     {
@@ -138,16 +138,16 @@ bool SceneWorldEditor::checkGeneralSave() const
     return false;
 }
 
-static world::RawLayerPtr BuildLayerData(const SceneContentWorldLayer* data)
+static RawLayerPtr BuildLayerData(const SceneContentWorldLayer* data)
 {
-    Array<world::NodeTemplatePtr> nodes;
+    Array<NodeTemplatePtr> nodes;
     nodes.reserve(data->entities().size());
 
     for (const auto& content : data->entities())
         if (auto node = content->compileDifferentialData())
             nodes.pushBack(node);
 
-    auto ret = RefNew<world::RawLayer>();
+    auto ret = RefNew<RawLayer>();
     ret->setup(nodes);
     return ret;
 }
@@ -185,7 +185,7 @@ static void SaveLayerStructure(ManagedDirectory* dir, const SceneContentWorldDir
         {
             bool shouldSave = childDataLayer->modified();
 
-            auto layerExt = res::IResource::GetResourceExtensionForClass(world::RawLayer::GetStaticClass());
+            auto layerExt = res::IResource::GetResourceExtensionForClass(RawLayer::GetStaticClass());
 
             auto fullFileName = StringBuf(TempString("{}.{}", childDataLayer->name(), layerExt));
             auto* existingFile = rtti_cast<ManagedFileNativeResource>(dir->file(fullFileName, true));
@@ -272,9 +272,9 @@ bool SceneWorldEditor::save()
 
     // remove files that are no longer needed
     for (auto* file : filesToDelete)
-        base::io::DeleteFile(file->absolutePath());
+        io::DeleteFile(file->absolutePath());
     for (auto* dir : dirsToDelete)
-        base::io::DeleteDir(dir->absolutePath());
+        io::DeleteDir(dir->absolutePath());
 
     // mark as layers as saved
     m_content->root()->resetModifiedStatus(true);
@@ -290,13 +290,13 @@ class SceneWorldResourceEditorOpener : public IResourceEditorOpener
 public:
     virtual bool canOpen(const ManagedFileFormat& format) const override
     {
-        return format.nativeResourceClass() == base::world::RawScene::GetStaticClass();
+        return format.nativeResourceClass() == RawScene::GetStaticClass();
     }
 
-    virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
+    virtual RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
     {
         if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-            return base::RefNew<SceneWorldEditor>(nativeFile);
+            return RefNew<SceneWorldEditor>(nativeFile);
 
         return nullptr;
     }
@@ -307,4 +307,4 @@ RTTI_END_TYPE();
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

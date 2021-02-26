@@ -13,18 +13,18 @@
 #include "managedFileNativeResource.h"
 #include "managedDepotContextMenu.h"
 
-#include "base/canvas/include/canvas.h"
-#include "base/app/include/launcherPlatform.h"
-#include "base/ui/include/uiMenuBar.h"
-#include "base/ui/include/uiToolBar.h"
-#include "base/ui/include/uiDockContainer.h"
-#include "base/ui/include/uiDockLayout.h"
-#include "base/ui/include/uiWindowPopup.h"
-#include "base/ui/include/uiDockNotebook.h"
-#include "base/ui/include/uiElementConfig.h"
-#include "base/object/include/actionHistory.h"
+#include "engine/canvas/include/canvas.h"
+#include "core/app/include/launcherPlatform.h"
+#include "engine/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiToolBar.h"
+#include "engine/ui/include/uiDockContainer.h"
+#include "engine/ui/include/uiDockLayout.h"
+#include "engine/ui/include/uiWindowPopup.h"
+#include "engine/ui/include/uiDockNotebook.h"
+#include "engine/ui/include/uiElementConfig.h"
+#include "core/object/include/actionHistory.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -454,5 +454,5 @@ void IResourceEditorAspect::close()
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

@@ -10,16 +10,16 @@
 #include "fbxFileData.h"
 #include "fbxFileLoaderService.h"
 
-#include "base/io/include/ioFileHandle.h"
-#include "base/app/include/localServiceContainer.h"
-#include "base/containers/include/inplaceArray.h"
-#include "base/resource/include/resource.h"
-#include "rendering/mesh/include/renderingMeshStreamData.h"
-#include "rendering/mesh/include/renderingMeshStreamBuilder.h"
-#include "rendering/mesh/include/renderingMeshStreamIterator.h"
-#include "base/resource/include/resourceTags.h"
+#include "core/io/include/ioFileHandle.h"
+#include "core/app/include/localServiceContainer.h"
+#include "core/containers/include/inplaceArray.h"
+#include "core/resource/include/resource.h"
+#include "engine/mesh/include/renderingMeshStreamData.h"
+#include "engine/mesh/include/renderingMeshStreamBuilder.h"
+#include "engine/mesh/include/renderingMeshStreamIterator.h"
+#include "core/resource/include/resourceTags.h"
 
-BEGIN_BOOMER_NAMESPACE(asset)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //---
 
@@ -35,10 +35,10 @@ uint32_t MaterialMapper::addMaterial(const char* materialName)
         materialName = "DefaultMaterial";
 
     uint32_t ret = 0;
-    if (materialsMapping.find(base::StringView(materialName), ret))
+    if (materialsMapping.find(StringView(materialName), ret))
         return ret;
 
-    const auto materialNameString = base::StringBuf(materialName);
+    const auto materialNameString = StringBuf(materialName);
     materials.emplaceBack(materialNameString);        
     materialsMapping[materialNameString] = materials.lastValidIndex();
 
@@ -54,7 +54,7 @@ SkeletonBuilder::SkeletonBuilder()
     m_skeletonRawBonesMapping.reserve(256);
 }
 
-uint32_t SkeletonBuilder::addBone(const LoadedFile& owner, const DataNode* node)
+uint32_t SkeletonBuilder::addBone(const FBXFile& owner, const DataNode* node)
 {
     // invalid node, map to root
     if (!node)
@@ -83,7 +83,7 @@ uint32_t SkeletonBuilder::addBone(const LoadedFile& owner, const DataNode* node)
     return index;
 }
 
-uint32_t SkeletonBuilder::addBone(const LoadedFile& owner, const fbxsdk::FbxNode* node)
+uint32_t SkeletonBuilder::addBone(const FBXFile& owner, const fbxsdk::FbxNode* node)
 {
     // invalid node, map to root
     if (!node)
@@ -154,7 +154,7 @@ struct MeshVertexInfluence
 
 struct NormalVector
 {
-    base::Vector3 vector;
+    Vector3 vector;
 };
 
 struct SkinIndices
@@ -169,10 +169,10 @@ struct SkinWeights
 
 struct Position
 {
-    base::Vector3 vector;
+    Vector3 vector;
 };
 
-static void ExtractStreamElement(const FbxVector4& source, Position& writeTo, const base::Matrix& localToWorld)
+static void ExtractStreamElement(const FbxVector4& source, Position& writeTo, const Matrix& localToWorld)
 {
     writeTo.vector.x = source[0];
     writeTo.vector.y = source[1];
@@ -180,7 +180,7 @@ static void ExtractStreamElement(const FbxVector4& source, Position& writeTo, co
     writeTo.vector = localToWorld.transformPoint(writeTo.vector);
 }
 
-static void ExtractStreamElement(const FbxVector4& source, NormalVector& writeTo, const base::Matrix& localToWorld)
+static void ExtractStreamElement(const FbxVector4& source, NormalVector& writeTo, const Matrix& localToWorld)
 {
     writeTo.vector.x = source[0];
     writeTo.vector.y = source[1];
@@ -189,33 +189,33 @@ static void ExtractStreamElement(const FbxVector4& source, NormalVector& writeTo
     writeTo.vector.normalize();
 }
 
-static void ExtractStreamElement(const FbxVector4& source, base::Vector3& writeTo, const base::Matrix& localToWorld)
+static void ExtractStreamElement(const FbxVector4& source, Vector3& writeTo, const Matrix& localToWorld)
 {
     writeTo.x = source[0];
     writeTo.y = source[1];
     writeTo.z = source[2];
 }
 
-static void ExtractStreamElement(const FbxVector2& source, base::Vector2& writeTo, const base::Matrix& localToWorld)
+static void ExtractStreamElement(const FbxVector2& source, Vector2& writeTo, const Matrix& localToWorld)
 {
     writeTo.x = source[0];
     writeTo.y = source[1];
 }
 
-static void ExtractStreamElement(const FbxColor& source, base::Color& writeTo, const base::Matrix& localToWorld)
+static void ExtractStreamElement(const FbxColor& source, Color& writeTo, const Matrix& localToWorld)
 {
-    writeTo.r = base::FloatTo255(source.mRed);
-    writeTo.g = base::FloatTo255(source.mGreen);
-    writeTo.b = base::FloatTo255(source.mBlue);
-    writeTo.a = base::FloatTo255(source.mAlpha);
+    writeTo.r = FloatTo255(source.mRed);
+    writeTo.g = FloatTo255(source.mGreen);
+    writeTo.b = FloatTo255(source.mBlue);
+    writeTo.a = FloatTo255(source.mAlpha);
 }
 
-/*static void ExtractStreamElement(const FbxVector4& source, base::Vector3& writeTo)
+/*static void ExtractStreamElement(const FbxVector4& source, Vector3& writeTo)
 {
 }*/
 
 template< typename T, typename DataType >
-static void ExtractStreamData(const T* stream, const base::Matrix& localToWorld, uint32_t vertexIndex, uint32_t controlPointIndex, DataType& writeTo)
+static void ExtractStreamData(const T* stream, const Matrix& localToWorld, uint32_t vertexIndex, uint32_t controlPointIndex, DataType& writeTo)
 {
     if (stream)
     {
@@ -259,7 +259,7 @@ static void ExtractStreamData(const T* stream, const base::Matrix& localToWorld,
 }
 
 template< typename T, typename DataType >
-static void ExtractStreamDataUV(const T* stream, const base::Matrix& localToWorld, uint32_t vertexIndex, uint32_t controlPointIndex, DataType& writeTo, bool flipUV)
+static void ExtractStreamDataUV(const T* stream, const Matrix& localToWorld, uint32_t vertexIndex, uint32_t controlPointIndex, DataType& writeTo, bool flipUV)
 {
     if (stream)
     {
@@ -299,7 +299,7 @@ static void ExtractStreamDataUV(const T* stream, const base::Matrix& localToWorl
     }
 }
 
-struct FBXMeshStreams : public base::NoCopy
+struct FBXMeshStreams : public NoCopy
 {
     const FbxVector4* positions = nullptr;
     const FbxGeometryElementNormal* normals = nullptr;
@@ -312,14 +312,14 @@ struct FBXMeshStreams : public base::NoCopy
 
     const MeshVertexInfluence* skinInfluences = nullptr;
 
-    rendering::MeshStreamMask streamMask = 0;
+    MeshStreamMask streamMask = 0;
 
     bool flipUV = true;
     bool flipFaces = false;
 
     const fbxsdk::FbxMesh* mesh = nullptr;
 
-    FBXMeshStreams(const fbxsdk::FbxMesh* mesh_, const base::Array<MeshVertexInfluence>& skinningData)
+    FBXMeshStreams(const fbxsdk::FbxMesh* mesh_, const Array<MeshVertexInfluence>& skinningData)
         : mesh(mesh_)
     {
         // get mesh flags
@@ -342,28 +342,28 @@ struct FBXMeshStreams : public base::NoCopy
         uv1 = hasUV1 ? mesh->GetElementUV(1) : NULL;
 
         // determine stream mask for all chunks in this model
-        streamMask = rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Position_3F);
+        streamMask = MeshStreamMaskFromType(MeshStreamType::Position_3F);
         if (normals)
-            streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Normal_3F);
+            streamMask |= MeshStreamMaskFromType(MeshStreamType::Normal_3F);
         if (bitangents)
-            streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Binormal_3F);
+            streamMask |= MeshStreamMaskFromType(MeshStreamType::Binormal_3F);
         if (tangents)
-            streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Tangent_3F);
+            streamMask |= MeshStreamMaskFromType(MeshStreamType::Tangent_3F);
         if (color0)
-            streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Color0_4U8);
+            streamMask |= MeshStreamMaskFromType(MeshStreamType::Color0_4U8);
         if (color1)
-            streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::Color1_4U8);
+            streamMask |= MeshStreamMaskFromType(MeshStreamType::Color1_4U8);
         if (uv0)
-            streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::TexCoord0_2F);
+            streamMask |= MeshStreamMaskFromType(MeshStreamType::TexCoord0_2F);
         if (uv1)
-            streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::TexCoord1_2F);
+            streamMask |= MeshStreamMaskFromType(MeshStreamType::TexCoord1_2F);
 
         // skinning data
         if (!skinningData.empty())
         {
             skinInfluences = skinningData.typedData();
-            streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::SkinningIndices_4U8);
-            streamMask |= rendering::MeshStreamMaskFromType(rendering::MeshStreamType::SkinningWeights_4F);
+            streamMask |= MeshStreamMaskFromType(MeshStreamType::SkinningIndices_4U8);
+            streamMask |= MeshStreamMaskFromType(MeshStreamType::SkinningWeights_4F);
 
             // TODO: 8 bone skinning
         }
@@ -376,33 +376,33 @@ struct MeshWriteStreams
     NormalVector* writeNormal = nullptr;
     NormalVector* writeTangent = nullptr;
     NormalVector* writeBitangent = nullptr;
-    base::Vector2* writeUV0 = nullptr;
-    base::Vector2* writeUV1 = nullptr;
-    base::Color* writeColor0 = nullptr;
-    base::Color* writeColor1 = nullptr;
+    Vector2* writeUV0 = nullptr;
+    Vector2* writeUV1 = nullptr;
+    Color* writeColor0 = nullptr;
+    Color* writeColor1 = nullptr;
     SkinIndices* writeSkinIndices = nullptr;
     SkinWeights* writeSkinWeights = nullptr;
 
-    rendering::MeshRawStreamBuilder builder;
+    MeshRawStreamBuilder builder;
 
-    MeshWriteStreams(rendering::MeshTopologyType topology, uint32_t numFaces, rendering::MeshStreamMask streams)
+    MeshWriteStreams(MeshTopologyType topology, uint32_t numFaces, MeshStreamMask streams)
         : builder(topology)
     {
-        if (topology == rendering::MeshTopologyType::Triangles)
+        if (topology == MeshTopologyType::Triangles)
             builder.reserveVertices(numFaces * 3, streams);
-        else if (topology == rendering::MeshTopologyType::Quads)
+        else if (topology == MeshTopologyType::Quads)
             builder.reserveVertices(numFaces * 4, streams);
 
-        writePosition = (Position*)builder.vertexData<rendering::MeshStreamType::Position_3F>();
-        writeNormal = (NormalVector*)builder.vertexData<rendering::MeshStreamType::Normal_3F>();
-        writeBitangent = (NormalVector*)builder.vertexData<rendering::MeshStreamType::Binormal_3F>();
-        writeTangent = (NormalVector*)builder.vertexData<rendering::MeshStreamType::Tangent_3F>();
-        writeColor0 = builder.vertexData<rendering::MeshStreamType::Color0_4U8>();
-        writeColor1 = builder.vertexData<rendering::MeshStreamType::Color1_4U8>();
-        writeUV0 = builder.vertexData<rendering::MeshStreamType::TexCoord0_2F>();
-        writeUV1 = builder.vertexData<rendering::MeshStreamType::TexCoord1_2F>();
-        writeSkinIndices = (SkinIndices*)builder.vertexData<rendering::MeshStreamType::SkinningIndices_4U8>();
-        writeSkinWeights = (SkinWeights*)builder.vertexData<rendering::MeshStreamType::SkinningWeights_4F>();
+        writePosition = (Position*)builder.vertexData<MeshStreamType::Position_3F>();
+        writeNormal = (NormalVector*)builder.vertexData<MeshStreamType::Normal_3F>();
+        writeBitangent = (NormalVector*)builder.vertexData<MeshStreamType::Binormal_3F>();
+        writeTangent = (NormalVector*)builder.vertexData<MeshStreamType::Tangent_3F>();
+        writeColor0 = builder.vertexData<MeshStreamType::Color0_4U8>();
+        writeColor1 = builder.vertexData<MeshStreamType::Color1_4U8>();
+        writeUV0 = builder.vertexData<MeshStreamType::TexCoord0_2F>();
+        writeUV1 = builder.vertexData<MeshStreamType::TexCoord1_2F>();
+        writeSkinIndices = (SkinIndices*)builder.vertexData<MeshStreamType::SkinningIndices_4U8>();
+        writeSkinWeights = (SkinWeights*)builder.vertexData<MeshStreamType::SkinningWeights_4F>();
     }
 
     template< typename T >
@@ -424,9 +424,9 @@ struct MeshWriteStreams
         AdvancePointer(writeUV1, numVertices);
     }
 
-    void extract(rendering::MeshRawChunk& outChunk)
+    void extract(MeshRawChunk& outChunk)
     {
-        const auto* writePositionStart = (Position*)builder.vertexData<rendering::MeshStreamType::Position_3F>();
+        const auto* writePositionStart = (Position*)builder.vertexData<MeshStreamType::Position_3F>();
         const auto numVeritces = writePosition - writePositionStart;
 
         builder.numVeritces = numVeritces;
@@ -434,7 +434,7 @@ struct MeshWriteStreams
     }
 };
 
-static void ExtractVertex(const FBXMeshStreams& streams, const base::Matrix& localToWorld, uint32_t controlPoint, uint32_t vertexIndex, uint32_t uvVertexIndex, uint32_t j, MeshWriteStreams& outWriter)
+static void ExtractVertex(const FBXMeshStreams& streams, const Matrix& localToWorld, uint32_t controlPoint, uint32_t vertexIndex, uint32_t uvVertexIndex, uint32_t j, MeshWriteStreams& outWriter)
 {
     ExtractStreamElement(streams.positions[controlPoint], outWriter.writePosition[j], localToWorld);
     ExtractStreamData(streams.normals, localToWorld, vertexIndex, controlPoint, outWriter.writeNormal[j]);
@@ -461,7 +461,7 @@ static void ExtractVertex(const FBXMeshStreams& streams, const base::Matrix& loc
     }
 }
 
-static void ExtractTriangles(const FBXMeshStreams& streams, const base::Matrix& localToWorld, uint32_t polygonIndex, uint32_t vertexIndex, MeshWriteStreams& outWriter)
+static void ExtractTriangles(const FBXMeshStreams& streams, const Matrix& localToWorld, uint32_t polygonIndex, uint32_t vertexIndex, MeshWriteStreams& outWriter)
 {
     const auto polygonSize = streams.mesh->GetPolygonSize(polygonIndex);
 
@@ -506,7 +506,7 @@ static void ExtractTriangles(const FBXMeshStreams& streams, const base::Matrix& 
     }
 }
 
-static void ExtractQuad(const FBXMeshStreams& streams, const base::Matrix& localToWorld, uint32_t polygonIndex, uint32_t vertexIndex, MeshWriteStreams& outWriter)
+static void ExtractQuad(const FBXMeshStreams& streams, const Matrix& localToWorld, uint32_t polygonIndex, uint32_t vertexIndex, MeshWriteStreams& outWriter)
 {
     DEBUG_CHECK(streams.mesh->GetPolygonSize(polygonIndex) == 4);
 
@@ -542,7 +542,7 @@ static void ExtractQuad(const FBXMeshStreams& streams, const base::Matrix& local
     outWriter.advance(4);
 }
 
-void DataNode::extractSkinInfluences(const LoadedFile& owner, base::Array<MeshVertexInfluence>& outInfluences, SkeletonBuilder& outSkeleton, bool forceSkinToNode) const
+void DataNode::extractSkinInfluences(const FBXFile& owner, Array<MeshVertexInfluence>& outInfluences, SkeletonBuilder& outSkeleton, bool forceSkinToNode) const
 {
     // extract skinning
     const auto numVertices = m_mesh->GetControlPointsCount();
@@ -601,7 +601,7 @@ void DataNode::extractSkinInfluences(const LoadedFile& owner, base::Array<MeshVe
     }
 }
 
-void DataNode::extractBuildChunks(const LoadedFile& owner, base::Array<ChunkInfo>& outBuildChunks, MaterialMapper& outMaterials) const
+void DataNode::extractBuildChunks(const FBXFile& owner, Array<ChunkInfo>& outBuildChunks, MaterialMapper& outMaterials) const
 {
     // get number of vertices
     uint32_t numVertices = m_mesh->GetControlPointsCount();
@@ -639,8 +639,8 @@ void DataNode::extractBuildChunks(const LoadedFile& owner, base::Array<ChunkInfo
 
 
     // gather information about polygons in each chunk
-    base::InplaceArray<int, 64> localMaterialMapping;
-    base::InplaceArray<ChunkInfo, 64> materialChunksInfo;
+    InplaceArray<int, 64> localMaterialMapping;
+    InplaceArray<ChunkInfo, 64> materialChunksInfo;
     const auto numMaterials = std::max<uint32_t>(1, m_mesh->GetNode()->GetMaterialCount());
     {
         materialChunksInfo.resize(numMaterials);
@@ -724,13 +724,13 @@ void DataNode::extractBuildChunks(const LoadedFile& owner, base::Array<ChunkInfo
     }
 }
 
-static void ExtractChunkFaces(const FBXMeshStreams& source, const DataNode::ChunkInfo& buildChunk, const base::Matrix& localToWorld, MeshWriteStreams& outWriter)
+static void ExtractChunkFaces(const FBXMeshStreams& source, const DataNode::ChunkInfo& buildChunk, const Matrix& localToWorld, MeshWriteStreams& outWriter)
 {
     DEBUG_CHECK(buildChunk.polygonIndices.size() == buildChunk.firstVertexIndices.size());
 
     const auto numFaces = buildChunk.polygonIndices.size();
 
-    if (buildChunk.topology() == rendering::MeshTopologyType::Triangles)
+    if (buildChunk.topology() == MeshTopologyType::Triangles)
     {
         for (uint32_t i = 0; i < numFaces; ++i)
         {
@@ -750,7 +750,7 @@ static void ExtractChunkFaces(const FBXMeshStreams& source, const DataNode::Chun
     }
 }
 
-bool DataNode::exportToMeshModel(base::IProgressTracker& progress, const LoadedFile& owner, const DataMeshExportSetup& config, DataNodeMesh& outGeonetry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials) const
+bool DataNode::exportToMeshModel(IProgressTracker& progress, const FBXFile& owner, const DataMeshExportSetup& config, DataNodeMesh& outGeonetry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials) const
 {
     // no mesh data
     if (!m_mesh)
@@ -769,21 +769,21 @@ bool DataNode::exportToMeshModel(base::IProgressTracker& progress, const LoadedF
 
     // convert matrix
     //FbxAMatrix pivotMatrixInv = pivotMatrix.Inverse();
-    //base::Matrix vertexToPivot = ToMatrix(pivotMatrix);
+    //Matrix vertexToPivot = ToMatrix(pivotMatrix);
 
     // flip faces ?
-    base::Matrix meshToEngine;
+    Matrix meshToEngine;
     if (config.applyNodeTransform)
         meshToEngine = m_meshToLocal * m_localToWorld * config.assetToEngine;
     else
         meshToEngine = m_meshToLocal * config.assetToEngine;
 
     // prepare skin tables
-    base::Array<MeshVertexInfluence> skinInfluences;
+    Array<MeshVertexInfluence> skinInfluences;
     extractSkinInfluences(owner, skinInfluences, outSkeleton, config.forceSkinToNode);
 
     // extract build chunk
-    base::Array<ChunkInfo> buildChunks;
+    Array<ChunkInfo> buildChunks;
     extractBuildChunks(owner, buildChunks, outMaterials);
 
     // source stream data
@@ -820,10 +820,10 @@ bool DataNode::exportToMeshModel(base::IProgressTracker& progress, const LoadedF
 
 //---
 
-RTTI_BEGIN_TYPE_CLASS(LoadedFile);
+RTTI_BEGIN_TYPE_CLASS(FBXFile);
 RTTI_END_TYPE();
 
-LoadedFile::LoadedFile()
+FBXFile::FBXFile()
 {
     m_nodes.reserve(256);
     m_nodeMap.reserve(256);
@@ -831,7 +831,7 @@ LoadedFile::LoadedFile()
 
 bool GFBXSceneClosed = false;
 
-LoadedFile::~LoadedFile()
+FBXFile::~FBXFile()
 {
     if (m_fbxScene)
     {
@@ -841,14 +841,14 @@ LoadedFile::~LoadedFile()
     }
 }
 
-const FbxSurfaceMaterial* LoadedFile::findMaterial(base::StringView name) const
+const FbxSurfaceMaterial* FBXFile::findMaterial(StringView name) const
 {
     const FbxSurfaceMaterial* ret = nullptr;
     m_materialMap.find(name, ret);
     return ret;
 }
 
-const DataNode* LoadedFile::findDataNode(const fbxsdk::FbxNode* fbxNode) const
+const DataNode* FBXFile::findDataNode(const fbxsdk::FbxNode* fbxNode) const
 {
     const DataNode* ret = nullptr;
     m_nodeMap.find(fbxNode, ret);
@@ -869,7 +869,7 @@ INLINE static T InitialValue(const FbxPropertyT<T>& prop)
     return const_cast<FbxPropertyT<T>&>(prop).EvaluateValue(t); // TODO: fix once FBX SDK comes to it's senses
 }
 
-void LoadedFile::walkStructure(const fbxsdk::FbxAMatrix& fbxParentToWorld, const base::Matrix& spaceConversionMatrix, const fbxsdk::FbxNode* node, DataNode* parentDataNode)
+void FBXFile::walkStructure(const fbxsdk::FbxAMatrix& fbxParentToWorld, const Matrix& spaceConversionMatrix, const fbxsdk::FbxNode* node, DataNode* parentDataNode)
 {
     // get the local pose of the node
     FbxAMatrix fbxLocalToParent;
@@ -937,7 +937,7 @@ void LoadedFile::walkStructure(const fbxsdk::FbxAMatrix& fbxParentToWorld, const
     localNode->m_localToWorld = localToWorld;
     localNode->m_meshToLocal = meshToLocal;
     //localNode->m_localToParent = localNode->m_localToWorld * worldToParent;
-    localNode->m_name = base::StringView(node->GetName());
+    localNode->m_name = StringView(node->GetName());
     localNode->m_parent = parentDataNode;
     if (parentDataNode)
         parentDataNode->m_children.pushBack(localNode);
@@ -1004,7 +1004,7 @@ void LoadedFile::walkStructure(const fbxsdk::FbxAMatrix& fbxParentToWorld, const
                     if (!m_materialMap.contains(materialName))
                     {
                         TRACE_INFO("Discovered FBX material '{}'", materialName);
-                        m_materialMap[base::StringBuf(materialName)] = lMaterial;
+                        m_materialMap[StringBuf(materialName)] = lMaterial;
                         m_materials.pushBack(lMaterial);
                     }
                 }
@@ -1025,7 +1025,7 @@ void LoadedFile::walkStructure(const fbxsdk::FbxAMatrix& fbxParentToWorld, const
     }
 }    
 
-uint64_t LoadedFile::calcMemoryUsage() const
+uint64_t FBXFile::calcMemoryUsage() const
 {
     return m_fbxDataSize;
 }
@@ -1033,22 +1033,22 @@ uint64_t LoadedFile::calcMemoryUsage() const
 //---
 
 /// source asset loader for OBJ data
-class FBXAssetLoader : public base::res::ISourceAssetLoader
+class FBXAssetLoader : public res::ISourceAssetLoader
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(FBXAssetLoader, base::res::ISourceAssetLoader);
+    RTTI_DECLARE_VIRTUAL_CLASS(FBXAssetLoader, res::ISourceAssetLoader);
 
 public:
-    virtual base::res::SourceAssetPtr loadFromMemory(base::StringView importPath, base::StringView contextPath, base::Buffer data) const override
+    virtual res::SourceAssetPtr loadFromMemory(StringView importPath, StringView contextPath, Buffer data) const override
     {
         if (!data)
             return nullptr;
 
-        base::Matrix spaceConversionMatrix;
-        auto scene = base::GetService<FileLoadingService>()->loadScene(data, spaceConversionMatrix);
+        Matrix spaceConversionMatrix;
+        auto scene = GetService<FBXFileLoadingService>()->loadScene(data, spaceConversionMatrix);
         if (!scene)
             return nullptr;
 
-        auto ret = base::RefNew<LoadedFile>();
+        auto ret = RefNew<FBXFile>();
         ret->m_fbxDataSize = data.size();
         ret->m_fbxScene = scene;
 
@@ -1063,9 +1063,9 @@ public:
 };
 
 RTTI_BEGIN_TYPE_CLASS(FBXAssetLoader);
-    RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtensions("fbx").addSourceExtensions("FBX");
+    RTTI_METADATA(res::ResourceSourceFormatMetadata).addSourceExtensions("fbx").addSourceExtensions("FBX");
 RTTI_END_TYPE();
 
 //--
 
-END_BOOMER_NAMESPACE(asset)
+END_BOOMER_NAMESPACE_EX(assets)

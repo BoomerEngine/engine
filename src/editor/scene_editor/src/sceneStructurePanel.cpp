@@ -13,22 +13,22 @@
 #include "scenePreviewContainer.h"
 #include "sceneEditMode.h"
 
-#include "base/world/include/worldPrefab.h"
+#include "engine/world/include/worldPrefab.h"
 #include "editor/common/include/assetBrowser.h"
 #include "editor/common/include/managedFile.h"
 #include "editor/common/include/managedFileFormat.h"
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiSearchBar.h"
-#include "base/ui/include/uiComboBox.h"
-#include "base/ui/include/uiElementConfig.h"
-#include "base/ui/include/uiMessageBox.h"
-#include "base/ui/include/uiInputBox.h"
-#include "base/ui/include/uiTreeView.h"
-#include "base/ui/include/uiMenuBar.h"
-#include "base/ui/include/uiColumnHeaderBar.h"
-#include "base/object/include/object.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiSearchBar.h"
+#include "engine/ui/include/uiComboBox.h"
+#include "engine/ui/include/uiElementConfig.h"
+#include "engine/ui/include/uiMessageBox.h"
+#include "engine/ui/include/uiInputBox.h"
+#include "engine/ui/include/uiTreeView.h"
+#include "engine/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiColumnHeaderBar.h"
+#include "core/object/include/object.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -87,7 +87,7 @@ bool SceneContentTreeModel::hasChildren(const ui::ModelIndex& parent /*= ui::Mod
     return false;
 }
 
-void SceneContentTreeModel::children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const
+void SceneContentTreeModel::children(const ui::ModelIndex& parent, Array<ui::ModelIndex>& outChildrenIndices) const
 {
     if (!parent)
     {
@@ -144,7 +144,7 @@ bool SceneContentTreeModel::filter(const ui::ModelIndex& id, const ui::SearchPat
     return true;
 }
 
-base::StringBuf SceneContentTreeModel::displayContent(const ui::ModelIndex& id, int colIndex /*= 0*/) const
+StringBuf SceneContentTreeModel::displayContent(const ui::ModelIndex& id, int colIndex /*= 0*/) const
 {
     if (id.model() == this)
     {
@@ -185,7 +185,7 @@ base::StringBuf SceneContentTreeModel::displayContent(const ui::ModelIndex& id, 
         }
     }
 
-    return base::StringBuf::EMPTY();
+    return StringBuf::EMPTY();
 }
 
 ui::ModelIndex SceneContentTreeModel::indexForNode(const SceneContentNode* node) const
@@ -201,7 +201,7 @@ SceneContentNodePtr SceneContentTreeModel::nodeForIndex(const ui::ModelIndex& id
     return id.lock<SceneContentNode>();
 }
 
-ui::PopupPtr SceneContentTreeModel::contextMenu(ui::AbstractItemView* view, const base::Array<ui::ModelIndex>& indices) const
+ui::PopupPtr SceneContentTreeModel::contextMenu(ui::AbstractItemView* view, const Array<ui::ModelIndex>& indices) const
 {
     if (m_preview)
     {
@@ -263,7 +263,7 @@ RTTI_END_TYPE();
 
 //--
 
-ui::DragDropDataPtr SceneContentTreeModel::queryDragDropData(const base::input::BaseKeyFlags& keys, const ui::ModelIndex& id)
+ui::DragDropDataPtr SceneContentTreeModel::queryDragDropData(const input::BaseKeyFlags& keys, const ui::ModelIndex& id)
 {
     if (id.model() == this)
         if (auto* node = id.unsafe<SceneContentNode>())
@@ -279,16 +279,16 @@ ui::DragDropHandlerPtr SceneContentTreeModel::handleDragDropData(ui::AbstractIte
     {
         if (auto* node = id.unsafe<SceneContentNode>())
         {
-            if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
+            if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
             {
                 if (auto file = fileData->file())
                     if (node->canAttach(SceneContentNodeType::Entity))
-                        return base::RefNew<ui::DragDropHandlerGeneric>(data, view, pos);
+                        return RefNew<ui::DragDropHandlerGeneric>(data, view, pos);
             }
-            else if (auto nodeData = base::rtti_cast<SceneNodeDragDropData>(data))
+            else if (auto nodeData = rtti_cast<SceneNodeDragDropData>(data))
             {
                 if (node->canAttach(nodeData->data()->type()))
-                    return base::RefNew<ui::DragDropHandlerGeneric>(data, view, pos);
+                    return RefNew<ui::DragDropHandlerGeneric>(data, view, pos);
             }
         }
     }
@@ -306,12 +306,12 @@ bool SceneContentTreeModel::handleDragDropCompletion(ui::AbstractItemView* view,
             {
                 if (auto mode = m_preview->mode())
                 {
-                    if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
+                    if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
                     {
                         if (auto file = fileData->file())
                             return mode->handleTreeResourceDrop(AddRef(node), file);
                     }
-                    else if (auto nodeData = base::rtti_cast<SceneNodeDragDropData>(data))
+                    else if (auto nodeData = rtti_cast<SceneNodeDragDropData>(data))
                     {
                         return mode->handleTreeNodeDrop(AddRef(node), nodeData->data());
                     }
@@ -904,4 +904,4 @@ void SceneStructurePanel::handleTreeObjectPaste(bool relative)
 
 //--
     
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

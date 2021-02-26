@@ -13,24 +13,24 @@
 #include "fbxFileLoaderService.h"
 #include "fbxFileData.h"
 
-#include "rendering/mesh/include/renderingMesh.h"
-#include "rendering/material/include/renderingMaterialInstance.h"
+#include "engine/mesh/include/renderingMesh.h"
+#include "engine/material/include/renderingMaterialInstance.h"
 
-#include "base/io/include/ioFileHandle.h"
-#include "base/app/include/localServiceContainer.h"
-#include "base/resource/include/resource.h"
-#include "base/containers/include/inplaceArray.h"
-#include "base/resource/include/resourceTags.h"
+#include "core/io/include/ioFileHandle.h"
+#include "core/app/include/localServiceContainer.h"
+#include "core/resource/include/resource.h"
+#include "core/containers/include/inplaceArray.h"
+#include "core/resource/include/resourceTags.h"
 
 #include "import/mesh_loader/include/renderingMeshCooker.h"
 
-BEGIN_BOOMER_NAMESPACE(asset)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //--
 
 RTTI_BEGIN_TYPE_CLASS(FBXMeshImportConfig);
-    //RTTI_METADATA(base::res::ResourceManifestExtensionMetadata).extension("mesh.meta");
-    //RTTI_METADATA(base::res::ResourceDescriptionMetadata).description("FBX Import SetupMetadata");
+    //RTTI_METADATA(res::ResourceManifestExtensionMetadata).extension("mesh.meta");
+    //RTTI_METADATA(res::ResourceDescriptionMetadata).description("FBX Import SetupMetadata");
     RTTI_CATEGORY("FBXTuning");
     RTTI_PROPERTY(m_applyNodeTransform).editable("Export meshes in world space instead of centered at pivot").overriddable();
     RTTI_PROPERTY(m_forceNodeSkin).editable("Skin all meshes to parent nodes").overriddable();
@@ -44,15 +44,15 @@ FBXMeshImportConfig::FBXMeshImportConfig()
 //--
 
 RTTI_BEGIN_TYPE_CLASS(MeshImporter);
-    RTTI_METADATA(base::res::ResourceCookedClassMetadata).addClass<rendering::Mesh>();
-    RTTI_METADATA(base::res::ResourceSourceFormatMetadata).addSourceExtension("fbx").addSourceExtension("FBX");
-    RTTI_METADATA(base::res::ResourceCookerVersionMetadata).version(0);
-    RTTI_METADATA(base::res::ResourceImporterConfigurationClassMetadata).configurationClass<FBXMeshImportConfig>();
+    RTTI_METADATA(res::ResourceCookedClassMetadata).addClass<Mesh>();
+    RTTI_METADATA(res::ResourceSourceFormatMetadata).addSourceExtension("fbx").addSourceExtension("FBX");
+    RTTI_METADATA(res::ResourceCookerVersionMetadata).version(0);
+    RTTI_METADATA(res::ResourceImporterConfigurationClassMetadata).configurationClass<FBXMeshImportConfig>();
 RTTI_END_TYPE();
 
 //--
 
-static bool BuildModels(base::IProgressTracker& progress, const LoadedFile& sourceGeometry, const DataMeshExportSetup& config, DataNodeMesh& outModel, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials)
+static bool BuildModels(IProgressTracker& progress, const FBXFile& sourceGeometry, const DataMeshExportSetup& config, DataNodeMesh& outModel, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials)
 {
     const auto& nodes = sourceGeometry.nodes();
 
@@ -63,7 +63,7 @@ static bool BuildModels(base::IProgressTracker& progress, const LoadedFile& sour
         if (node->m_type == DataNodeType::VisualMesh)
         {
             // update status, also support cancellation
-            progress.reportProgress(i, nodes.size(), base::TempString("Processing node '{}'", node->m_name));
+            progress.reportProgress(i, nodes.size(), TempString("Processing node '{}'", node->m_name));
             if (progress.checkCancelation())
                 return false;
 
@@ -80,18 +80,18 @@ static bool BuildModels(base::IProgressTracker& progress, const LoadedFile& sour
 MeshImporter::MeshImporter()
 {}
 
-base::RefPtr<rendering::MaterialImportConfig> MeshImporter::createMaterialImportConfig(const rendering::MeshImportConfig& cfg, base::StringView name) const
+RefPtr<MaterialImportConfig> MeshImporter::createMaterialImportConfig(const MeshImportConfig& cfg, StringView name) const
 {
-    auto ret = base::RefNew<FBXMaterialImportConfig>();
-    ret->m_materialName = base::StringBuf(name);
+    auto ret = RefNew<FBXMaterialImportConfig>();
+    ret->m_materialName = StringBuf(name);
     ret->markPropertyOverride("materialName"_id);
     return ret;
 }
 
-base::res::ResourcePtr MeshImporter::importResource(base::res::IResourceImporterInterface& importer) const
+res::ResourcePtr MeshImporter::importResource(res::IResourceImporterInterface& importer) const
 {
     // load the FBX data
-    auto importedScene = base::rtti_cast<fbx::LoadedFile>(importer.loadSourceAsset(importer.queryImportPath()));
+    auto importedScene = rtti_cast<FBXFile>(importer.loadSourceAsset(importer.queryImportPath()));
     if (!importedScene)
     {
         TRACE_ERROR("Failed to load scene from import file");
@@ -102,12 +102,12 @@ base::res::ResourcePtr MeshImporter::importResource(base::res::IResourceImporter
     auto importConfig = importer.queryConfigration<FBXMeshImportConfig>();
 
     // create output mesh
-    auto existingMesh = base::rtti_cast<rendering::Mesh>(importer.existingData());
+    auto existingMesh = rtti_cast<Mesh>(importer.existingData());
 
     //---
 
     // build the scaling matrix
-    auto assetToEngine = importConfig->calcAssetToEngineConversionMatrix(rendering::MeshImportUnits::Centimeters, rendering::MeshImportSpace::LeftHandYUp);
+    auto assetToEngine = importConfig->calcAssetToEngineConversionMatrix(MeshImportUnits::Centimeters, MeshImportSpace::LeftHandYUp);
 
     // setup config
     DataMeshExportSetup meshExportConfig;
@@ -124,10 +124,10 @@ base::res::ResourcePtr MeshImporter::importResource(base::res::IResourceImporter
     BuildModels(importer, *importedScene, meshExportConfig, mesh, skeleton, materials);
 
     // prepare mesh export setup
-    rendering::MeshInitData initData;
+    MeshInitData initData;
 
     // pack mesh streams into render chunks
-    rendering::BuildChunks(mesh.chunks, *importConfig, importer, initData.chunks, initData.bounds);
+    BuildChunks(mesh.chunks, *importConfig, importer, initData.chunks, initData.bounds);
 
     //----
 
@@ -175,7 +175,7 @@ base::res::ResourcePtr MeshImporter::importResource(base::res::IResourceImporter
         const auto materialName = materials.materials[i];
 
         auto& entry = initData.materials.emplaceBack();
-        entry.name = base::StringID(materialName);
+        entry.name = StringID(materialName);
         entry.material = buildSingleMaterial(importer, *importConfig, materialName, "", i, existingMesh);
     }
         
@@ -192,8 +192,8 @@ base::res::ResourcePtr MeshImporter::importResource(base::res::IResourceImporter
     //--
         
     // attach payloads
-    return base::RefNew<rendering::Mesh>(std::move(initData));
+    return RefNew<Mesh>(std::move(initData));
 }
 
-END_BOOMER_NAMESPACE(asset)
+END_BOOMER_NAMESPACE_EX(assets)
 

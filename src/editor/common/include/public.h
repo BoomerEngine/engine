@@ -8,8 +8,6 @@
 
 #include "editor_common_glue.inl"
 
-using namespace base;
-
 // event to observe files in depot, all events have "ManagedFilePtr" as data
 DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_CREATED, ManagedFilePtr);
 DECLARE_GLOBAL_EVENT(EVENT_MANAGED_DEPOT_FILE_DELETED, ManagedFilePtr);
@@ -52,7 +50,7 @@ DECLARE_GLOBAL_EVENT(EVENT_MANAGED_PLACEHOLDER_DISCARDED);
 DECLARE_GLOBAL_EVENT(EVENT_MANAGED_PLACEHOLDER_ACCEPTED);
 
 
-BEGIN_BOOMER_NAMESPACE(ed::vsc)
+BEGIN_BOOMER_NAMESPACE_EX(ed::vsc)
 
 class IChangelist;
 typedef RefPtr<IChangelist> ChangelistPtr;
@@ -63,9 +61,9 @@ typedef UniquePtr<IVersionControl> VersionControlPtr;
 struct FileState;
 struct Result;
 
-END_BOOMER_NAMESPACE(ed::vsc)
+END_BOOMER_NAMESPACE_EX(ed::vsc)
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 ///---
 
@@ -150,6 +148,8 @@ enum class AssetBrowserContext : uint8_t
     EditorTabHeader,
 };
 
-END_BOOMER_NAMESPACE(ed)
-
 using input::KeyCode;
+
+END_BOOMER_NAMESPACE_EX(ed)
+
+

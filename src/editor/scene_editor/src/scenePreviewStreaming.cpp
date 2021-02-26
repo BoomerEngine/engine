@@ -10,19 +10,19 @@
 #include "scenePreviewStreaming.h"
 #include "sceneContentNodes.h"
 
-#include "rendering/scene/include/renderingScene.h"
-#include "rendering/scene/include/renderingFrameDebug.h"
-#include "rendering/scene/include/renderingFrameParams.h"
+#include "engine/rendering/include/renderingScene.h"
+#include "engine/rendering/include/renderingFrameDebug.h"
+#include "engine/rendering/include/renderingFrameParams.h"
 
-#include "base/world/include/worldNodeTemplate.h"
-#include "base/world/include/world.h"
-#include "base/world/include/worldEntity.h"
+#include "engine/world/include/worldNodeTemplate.h"
+#include "engine/world/include/world.h"
+#include "engine/world/include/worldEntity.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
      
-SceneNodeVisualizationHandler::SceneNodeVisualizationHandler(world::World* targetWorld)
+SceneNodeVisualizationHandler::SceneNodeVisualizationHandler(World* targetWorld)
     : m_world(targetWorld)
 {}
 
@@ -192,19 +192,19 @@ bool SceneNodeVisualizationHandler::CheckProxy(const RefWeakPtr<SceneNodeVisuali
     return false;
 }
 
-static void ApplySelectionFlagToEntity(world::Entity* entity, bool flag)
+static void ApplySelectionFlagToEntity(Entity* entity, bool flag)
 {
     if (entity)
         entity->requestSelectionChange(flag);
 }
 
-static void ApplySelectables(world::Entity* entity, uint32_t nodeObjectID)
+static void ApplySelectables(Entity* entity, uint32_t nodeObjectID)
 {
     if (entity)
         entity->bindSelectionOwner(nodeObjectID);
 }
 
-void SceneNodeVisualizationHandler::ApplyProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex, const world::EntityPtr& entity)
+void SceneNodeVisualizationHandler::ApplyProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex, const EntityPtr& entity)
 {
     if (auto handler = self.lock())
     {
@@ -235,18 +235,18 @@ void SceneNodeVisualizationHandler::ApplyProxy(const RefWeakPtr<SceneNodeVisuali
     }
 }
 
-CAN_YIELD void SceneNodeVisualizationHandler::CompileEntityData(const RefWeakPtr<SceneNodeVisualizationHandler>& self, const world::NodeTemplatePtr& data, uint32_t versionIndex, uint32_t proxyIndex, uint32_t proxyGeneration)
+CAN_YIELD void SceneNodeVisualizationHandler::CompileEntityData(const RefWeakPtr<SceneNodeVisualizationHandler>& self, const NodeTemplatePtr& data, uint32_t versionIndex, uint32_t proxyIndex, uint32_t proxyGeneration)
 {
     DEBUG_CHECK_RETURN(data);
 
     // check if should even start
     if (CheckProxy(self, proxyIndex, proxyGeneration, versionIndex))
     {
-        InplaceArray<const world::NodeTemplate*, 1> sourceTemplates;
+        InplaceArray<const NodeTemplate*, 1> sourceTemplates;
         sourceTemplates.pushBack(data);
 
         // compile entity - this may load resources
-        if (auto entity = world::CompileEntity(sourceTemplates))
+        if (auto entity = CompileEntity(sourceTemplates))
         {
             ApplyProxy(self, proxyIndex, proxyGeneration, versionIndex, entity);
         }
@@ -289,7 +289,7 @@ bool SceneNodeVisualizationHandler::retrieveBoundsForProxy(const SceneContentNod
     return  false;
 }
 
-SceneContentNodePtr SceneNodeVisualizationHandler::resolveSelectable(const rendering::scene::Selectable& selectable) const
+SceneContentNodePtr SceneNodeVisualizationHandler::resolveSelectable(const Selectable& selectable) const
 {
     auto lock = CreateLock(m_proxyLock);
 
@@ -402,4 +402,4 @@ void SceneNodeVisualizationHandler::updateProxy(const SceneContentNode* node, Sc
 
 //--
     
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

@@ -8,15 +8,15 @@
 
 #include "build.h"
 #include "materialGraphEditorPanel.h"
-#include "base/ui/include/uiScintillaTextEditor.h"
-#include "base/ui/include/uiDataInspector.h"
-#include "base/ui/include/uiGraphEditor.h"
-#include "base/ui/include/uiGraphEditorNode.h"
+#include "engine/ui/include/uiScintillaTextEditor.h"
+#include "engine/ui/include/uiDataInspector.h"
+#include "engine/ui/include/uiGraphEditor.h"
+#include "engine/ui/include/uiGraphEditorNode.h"
 
-#include "rendering/material_graph/include/renderingMaterialGraph.h"
-#include "rendering/material_graph/include/renderingMaterialGraphBlock.h"
+#include "engine/material_graph/include/renderingMaterialGraph.h"
+#include "engine/material_graph/include/renderingMaterialGraphBlock.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -31,7 +31,7 @@ MaterialGraphInnerEditorPanel::MaterialGraphInnerEditorPanel()
 RTTI_BEGIN_TYPE_NATIVE_CLASS(MaterialGraphEditorPanel);
 RTTI_END_TYPE();
 
-MaterialGraphEditorPanel::MaterialGraphEditorPanel(const base::ActionHistoryPtr& actions)
+MaterialGraphEditorPanel::MaterialGraphEditorPanel(const ActionHistoryPtr& actions)
     : m_hasValidSelection(false)
 {
     layoutVertical();
@@ -47,8 +47,8 @@ MaterialGraphEditorPanel::MaterialGraphEditorPanel(const base::ActionHistoryPtr&
 
         m_graphEditor->enumSelectedElements([this](ui::VirtualAreaElement* elem)
             {
-                if (auto* node = base::rtti_cast<ui::GraphEditorBlockNode>(elem))
-                    if (auto block = base::rtti_cast<rendering::MaterialGraphBlock>(node->block()))
+                if (auto* node = rtti_cast<ui::GraphEditorBlockNode>(elem))
+                    if (auto block = rtti_cast<MaterialGraphBlock>(node->block()))
                         m_selectedBlocks.pushBack(block);
                 return false;
             });
@@ -62,7 +62,7 @@ MaterialGraphEditorPanel::MaterialGraphEditorPanel(const base::ActionHistoryPtr&
 MaterialGraphEditorPanel::~MaterialGraphEditorPanel()
 {}
 
-void MaterialGraphEditorPanel::bindGraph(const rendering::MaterialGraphPtr& graph)
+void MaterialGraphEditorPanel::bindGraph(const MaterialGraphPtr& graph)
 {
     m_graph = graph;
 
@@ -105,4 +105,4 @@ bool MaterialGraphEditorPanel::hasSelection() const
 
 //--
     
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

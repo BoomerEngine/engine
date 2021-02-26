@@ -6,30 +6,30 @@
 
 #pragma once
 
-#include "base/app/include/application.h"
+#include "core/app/include/application.h"
 
-namespace application
+BEGIN_BOOMER_NAMESPACE()
+
+class BCCLogSinkWithErrorCapture;
+
+// commandline processor application
+class BCCApp : public app::IApplication
 {
+public:
+    BCCApp();
+    virtual ~BCCApp();
 
-    class BCCLogSinkWithErrorCapture;
+    virtual bool initialize(const app::CommandLine& commandline) override final;
+    virtual void update() override final;
+    virtual void cleanup() override final;
 
-    // commandline processor application
-    class BCCApp : public base::app::IApplication
-    {
-    public:
-        BCCApp();
-        virtual ~BCCApp();
+    UniquePtr<BCCLogSinkWithErrorCapture> m_globalSink;
+    app::CommandHostPtr m_commandHost;
 
-        virtual bool initialize(const base::app::CommandLine& commandline) override final;
-        virtual void update() override final;
-        virtual void cleanup() override final;
+    NativeTimePoint m_startedTime;
 
-        base::UniquePtr<BCCLogSinkWithErrorCapture> m_globalSink;
-        base::app::CommandHostPtr m_commandHost;
+    void runInternal();
+};
 
-        base::NativeTimePoint m_startedTime;
+END_BOOMER_NAMESPACE()
 
-        void runInternal();
-    };
-
-} // application

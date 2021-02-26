@@ -16,24 +16,24 @@
 #include "scenePreviewContainer.h"
 #include "sceneEditMode_Default.h"
 
-#include "base/object/include/actionHistory.h"
+#include "core/object/include/actionHistory.h"
 #include "editor/common/include/managedFile.h"
 #include "editor/common/include/managedFileFormat.h"
 #include "editor/common/include/managedFileNativeResource.h"
-#include "base/ui/include/uiDockPanel.h"
-#include "base/ui/include/uiDockLayout.h"
-#include "base/ui/include/uiDataInspector.h"
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiToolBar.h"
-#include "base/ui/include/uiRuler.h"
-#include "base/ui/include/uiSplitter.h"
-#include "base/ui/include/uiMenuBar.h"
-#include "base/ui/include/uiElementConfig.h"
-#include "base/world/include/world.h"
-#include "base/world/include/worldPrefab.h"
-#include "base/resource/include/objectIndirectTemplate.h"
+#include "engine/ui/include/uiDockPanel.h"
+#include "engine/ui/include/uiDockLayout.h"
+#include "engine/ui/include/uiDataInspector.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiToolBar.h"
+#include "engine/ui/include/uiRuler.h"
+#include "engine/ui/include/uiSplitter.h"
+#include "engine/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiElementConfig.h"
+#include "engine/world/include/world.h"
+#include "engine/world/include/worldPrefab.h"
+#include "core/resource/include/objectIndirectTemplate.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -60,7 +60,7 @@ void SceneCommonEditor::createContentStructure()
 void SceneCommonEditor::createInterface()
 {
     {
-        auto tab = base::RefNew<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
+        auto tab = RefNew<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
         tab->layoutVertical();
 
         m_previewContainer = tab->createChild<ScenePreviewContainer>(m_content, m_defaultEditMode);
@@ -87,7 +87,7 @@ void SceneCommonEditor::createInterface()
     }
 
     {
-        auto tab = base::RefNew<ui::DockPanel>("[img:tree] Structure", "StructurePanel");
+        auto tab = RefNew<ui::DockPanel>("[img:tree] Structure", "StructurePanel");
         tab->layoutVertical();
 
         m_structurePanel = tab->createChild<SceneStructurePanel>(m_content, m_previewContainer);
@@ -98,7 +98,7 @@ void SceneCommonEditor::createInterface()
     }
 
     {
-        auto tab = base::RefNew<ui::DockPanel>("[img:color] Inspector", "InspectorPanel");
+        auto tab = RefNew<ui::DockPanel>("[img:color] Inspector", "InspectorPanel");
         tab->expand();
         tab->layoutVertical();
 
@@ -110,7 +110,7 @@ void SceneCommonEditor::createInterface()
     }
 
     {
-        auto tab = base::RefNew<ui::DockPanel>("[img:class] Object Palette", "PalettePanel");
+        auto tab = RefNew<ui::DockPanel>("[img:class] Object Palette", "PalettePanel");
         tab->expand();
         tab->layoutVertical();
 
@@ -265,4 +265,4 @@ bool SceneCommonEditor::checkGeneralDelete() const
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

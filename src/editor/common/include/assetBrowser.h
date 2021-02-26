@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "base/ui/include/uiDragDrop.h"
-#include "base/ui/include/uiWindow.h"
+#include "engine/ui/include/uiDragDrop.h"
+#include "engine/ui/include/uiWindow.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 ///--
 
@@ -107,6 +107,6 @@ private:
 
 ///--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 
 

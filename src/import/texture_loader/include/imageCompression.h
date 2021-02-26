@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "rendering/texture/include/renderingStaticTexture.h"
+#include "engine/texture/include/renderingStaticTexture.h"
 
-BEGIN_BOOMER_NAMESPACE(assets)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //--
 
@@ -92,7 +92,7 @@ struct IMPORT_TEXTURE_LOADER_API ImageCompressionSettings
 public:
     ImageCompressionSettings();
 
-    base::StringBuf m_suffix;
+    StringBuf m_suffix;
 
     ImageContentType m_contentType = ImageContentType::Auto;
     ImageContentColorSpace m_contentColorSpace = ImageContentColorSpace::Auto;
@@ -107,23 +107,23 @@ public:
 
 //--
 
-struct IMPORT_TEXTURE_LOADER_API ImageCompressedResult : public base::IReferencable
+struct IMPORT_TEXTURE_LOADER_API ImageCompressedResult : public IReferencable
 {
-    base::Buffer data;
-    base::Array<StaticTextureMip> mips;
+    Buffer data;
+    Array<StaticTextureMip> mips;
     TextureInfo info;
 
-    ImageObjectPtr createPreviewTexture() const;
+    //gpu::ImageObjectPtr createPreviewTexture() const;
 };
 
 //--
 
 /// determine storage size needed for compressed data
-extern IMPORT_TEXTURE_LOADER_API uint32_t CalcCompressedImageDataSize(const base::image::ImageView& data, ImageCompressionFormat format);
+extern IMPORT_TEXTURE_LOADER_API uint32_t CalcCompressedImageDataSize(const image::ImageView& data, ImageCompressionFormat format);
 
 /// bake data for compressed texture (single slice)
-extern IMPORT_TEXTURE_LOADER_API base::RefPtr<ImageCompressedResult> CompressImage(const base::image::ImageView& data, const ImageCompressionSettings& settings, base::IProgressTracker& progress);
+extern IMPORT_TEXTURE_LOADER_API RefPtr<ImageCompressedResult> CompressImage(const image::ImageView& data, const ImageCompressionSettings& settings, IProgressTracker& progress);
 
 //--
 
-END_BOOMER_NAMESPACE(assets)
+END_BOOMER_NAMESPACE_EX(assets)

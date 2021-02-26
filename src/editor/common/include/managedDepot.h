@@ -8,13 +8,13 @@
 
 #pragma once
 
-#include "base/io/include/ioDirectoryWatcher.h"
-#include "base/system/include/spinLock.h"
-#include "base/system/include/mutex.h"
-#include "base/resource/include/resourceLoader.h"
-#include "base/resource/include/depotService.h"
+#include "core/io/include/ioDirectoryWatcher.h"
+#include "core/system/include/spinLock.h"
+#include "core/system/include/mutex.h"
+#include "core/resource/include/resourceLoader.h"
+#include "core/resource/include/depotService.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -109,4 +109,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

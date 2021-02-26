@@ -23,15 +23,15 @@
 #include "managedFilePlaceholder.h"
 #include "managedDirectoryPlaceholder.h"
 
-#include "base/ui/include/uiImage.h"
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiMenuBar.h"
-#include "base/ui/include/uiWindowPopup.h"
-#include "base/ui/include/uiAbstractItemView.h"
-#include "base/ui/include/uiCheckBox.h"
-#include "base/ui/include/uiStyleValue.h"
+#include "engine/ui/include/uiImage.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiWindowPopup.h"
+#include "engine/ui/include/uiAbstractItemView.h"
+#include "engine/ui/include/uiCheckBox.h"
+#include "engine/ui/include/uiStyleValue.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -262,7 +262,7 @@ bool AssetBrowserDirContentModel::hasChildren(const ui::ModelIndex& parent) cons
     return !parent && !m_items.empty();
 }
 
-void AssetBrowserDirContentModel::children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const
+void AssetBrowserDirContentModel::children(const ui::ModelIndex& parent, Array<ui::ModelIndex>& outChildrenIndices) const
 {
     if (!parent)
     {
@@ -418,4 +418,4 @@ void AssetBrowserDirContentModel::visualize(const ui::ModelIndex& id, int column
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "base/ui/include/uiElement.h"
-#include "base/ui/include/uiCanvasArea.h"
+#include "engine/ui/include/uiElement.h"
+#include "engine/ui/include/uiCanvasArea.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -39,30 +39,30 @@ class EDITOR_IMAGE_EDITOR_API ImagePreviewElement : public IImagePreviewElement
     RTTI_DECLARE_VIRTUAL_CLASS(ImagePreviewElement, IImagePreviewElement);
 
 public:
-    ImagePreviewElement(const rendering::ImageSampledView* view, const rendering::ImageSampledView* sourceView);
-    ImagePreviewElement(const rendering::ImageSampledView* view, int mipIndex=0, int sliceIndex=0);
+    ImagePreviewElement(const gpu::ImageSampledView* view, const gpu::ImageSampledView* sourceView);
+    ImagePreviewElement(const gpu::ImageSampledView* view, int mipIndex=0, int sliceIndex=0);
     ~ImagePreviewElement();
 
     virtual void configure(const ImagePreviewPanelSettings& settings) override;
     virtual void prepareGeometry(ui::CanvasArea* owner, float sx, float sy, ui::Size& outCanvasSizeAtCurrentScale) override;
-    virtual void render(ui::CanvasArea* owner, float x, float y, float sx, float sy, base::canvas::Canvas& canvas, float mergedOpacity)  override;
+    virtual void render(ui::CanvasArea* owner, float x, float y, float sx, float sy, canvas::Canvas& canvas, float mergedOpacity)  override;
 
     void mip(int mip);
 
 protected:
-	rendering::ImageSampledViewPtr m_view;
-	rendering::ImageSampledViewPtr m_sourceView;
+    gpu::ImageSampledViewPtr m_view;
+    gpu::ImageSampledViewPtr m_sourceView;
 
     int m_mipIndex = 0;
     int m_sliceIndex = 0;
 
-    base::UniquePtr<ImagePreviewPanelSettings> m_settings; // updated only on configure
+    UniquePtr<ImagePreviewPanelSettings> m_settings; // updated only on configure
 };
 
 //--
 
-extern void RenderPixelBackground(base::canvas::Canvas& canvas, const ui::Position& tl, const ui::Position& br, const ui::ElementArea& drawArea, const base::Rect& activeImageArea, float colorFrac);
+extern void RenderPixelBackground(canvas::Canvas& canvas, const ui::Position& tl, const ui::Position& br, const ui::ElementArea& drawArea, const Rect& activeImageArea, float colorFrac);
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

@@ -13,11 +13,11 @@
 #include "managedDirectory.h"
 #include "managedFile.h"
 
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiCheckBox.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiCheckBox.h"
 #include "managedFileFormat.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
     
 //--
 
@@ -40,7 +40,7 @@ ui::ModelIndex AssetItemsSimpleListModel::parent(const ui::ModelIndex& item) con
     return ui::ModelIndex();
 }
 
-void AssetItemsSimpleListModel::children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const
+void AssetItemsSimpleListModel::children(const ui::ModelIndex& parent, Array<ui::ModelIndex>& outChildrenIndices) const
 {
     if (!parent)
     {
@@ -279,7 +279,7 @@ ui::ModelIndex AssetPlainFilesSimpleListModel::parent(const ui::ModelIndex& item
     return ui::ModelIndex();
 }
 
-void AssetPlainFilesSimpleListModel::children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const
+void AssetPlainFilesSimpleListModel::children(const ui::ModelIndex& parent, Array<ui::ModelIndex>& outChildrenIndices) const
 {
     if (!parent)
     {
@@ -429,4 +429,4 @@ void AssetPlainFilesSimpleListModel::visualize(const ui::ModelIndex& id, int col
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

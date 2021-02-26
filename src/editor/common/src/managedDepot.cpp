@@ -13,19 +13,19 @@
 
 #include "editorService.h"
 
-#include "base/app/include/localServiceContainer.h"
-#include "base/app/include/localService.h"
-#include "base/system/include/thread.h"
-#include "base/ui/include/uiElementConfig.h"
+#include "core/app/include/localServiceContainer.h"
+#include "core/app/include/localService.h"
+#include "core/system/include/thread.h"
+#include "engine/ui/include/uiElementConfig.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
 ManagedDepot::ManagedDepot()
 {
     // get depot
-    m_depot = base::GetService<base::DepotService>();
+    m_depot = GetService<DepotService>();
 
     // event key for listening our events
     m_eventKey = MakeUniqueEventKey("ManagedDepot");
@@ -258,7 +258,7 @@ void ManagedDepot::update()
 
 //---
 
-base::ConfigProperty<double> cvManagedDepotDirectoryRefreshTimeout("Editor.ManagedDepot", "DirectoryRefreshTimeout", 0.5);
+ConfigProperty<double> cvManagedDepotDirectoryRefreshTimeout("Editor.ManagedDepot", "DirectoryRefreshTimeout", 0.5);
 
 void ManagedDepot::handleDepotFileNotificataion(StringView path)
 {
@@ -289,5 +289,5 @@ void ManagedDepot::processDepotFileNotificataion()
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

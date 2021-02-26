@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "base/app/include/application.h"
-#include "base/system/include/task.h"
-#include "base/io/include/ioSystem.h"
+#include "core/app/include/application.h"
+#include "core/system/include/task.h"
+#include "core/io/include/ioSystem.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -208,4 +208,4 @@ extern EDITOR_COMMON_API Editor* GetEditor();
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

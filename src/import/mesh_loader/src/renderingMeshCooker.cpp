@@ -12,12 +12,12 @@
 #include "renderingMeshCookerChunks.h"
 #include "renderingMeshImportConfig.h"
 
-#include "rendering/material/include/renderingMaterialInstance.h"
-#include "rendering/material/include/renderingMaterialTemplate.h"
-#include "rendering/texture/include/renderingTexture.h"
-#include "base/resource/include/resourceLoadingService.h"
+#include "engine/material/include/renderingMaterialInstance.h"
+#include "engine/material/include/renderingMaterialTemplate.h"
+#include "engine/texture/include/renderingTexture.h"
+#include "core/resource/include/resourceLoadingService.h"
 
-BEGIN_BOOMER_NAMESPACE(rendering)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //--
 
@@ -28,13 +28,13 @@ MeshVertexFormat SelectBestVertexFormat(const ImportChunk& chunk, const MeshImpo
 
 //--
 
-static void ExtractImportChunks(const base::Array<MeshRawChunk>& sourceMesh, ImportChunkRegistry& outImportChunks)
+static void ExtractImportChunks(const Array<MeshRawChunk>& sourceMesh, ImportChunkRegistry& outImportChunks)
 {
-    outImportChunks.bounds = base::Box();
+    outImportChunks.bounds = Box();
 
     for (const auto& sourceChunk : sourceMesh)
     {
-        auto importChunk = base::RefNew<ImportChunk>(sourceChunk);
+        auto importChunk = RefNew<ImportChunk>(sourceChunk);
         outImportChunks.importChunks.pushBack(importChunk);
         outImportChunks.bounds.merge(sourceChunk.bounds);
     }
@@ -78,9 +78,9 @@ static void FlipVectors(T* ptr, uint32_t count)
     }
 }
 
-static bool CalculateNormals(const ImportChunkRegistry& importChunks, const MeshImportConfig& settings, base::IProgressTracker& progress)
+static bool CalculateNormals(const ImportChunkRegistry& importChunks, const MeshImportConfig& settings, IProgressTracker& progress)
 {        
-    base::Array<ImportChunk*> importChunksToRecalculate;
+    Array<ImportChunk*> importChunksToRecalculate;
 
     const auto recalculationMode = settings.m_normalRecalculation;
     for (auto& chunk : importChunks.importChunks)
@@ -106,11 +106,11 @@ static bool CalculateNormals(const ImportChunkRegistry& importChunks, const Mesh
         
     if (settings.m_flipNormals)
     {
-        RunFiberForFeach<base::RefPtr<ImportChunk>>("FlipNormals", importChunks.importChunks, 0, [&progress](ImportChunk* chunk)
+        RunFiberForFeach<RefPtr<ImportChunk>>("FlipNormals", importChunks.importChunks, 0, [&progress](ImportChunk* chunk)
             {
                 if (!progress.checkCancelation())
                 {
-                    auto normalData = (base::Vector3*) chunk->vertexStreamData(MeshStreamType::Normal_3F);
+                    auto normalData = (Vector3*) chunk->vertexStreamData(MeshStreamType::Normal_3F);
                     FlipVectors(normalData, chunk->numVertices);
                 }
             });
@@ -121,9 +121,9 @@ static bool CalculateNormals(const ImportChunkRegistry& importChunks, const Mesh
 
 //--
 
-static bool CalculateTangents(const ImportChunkRegistry& importChunks, const MeshImportConfig& settings, base::IProgressTracker& progress)
+static bool CalculateTangents(const ImportChunkRegistry& importChunks, const MeshImportConfig& settings, IProgressTracker& progress)
 {
-    base::Array<ImportChunk*> importChunkToRecompute;
+    Array<ImportChunk*> importChunkToRecompute;
     const auto recalculationMode = settings.m_tangentsRecalculation;
     for (auto& chunk : importChunks.importChunks)
     {
@@ -148,11 +148,11 @@ static bool CalculateTangents(const ImportChunkRegistry& importChunks, const Mes
 
     if (settings.m_flipTangent)
     {
-        RunFiberForFeach<base::RefPtr<ImportChunk>>("FlipTangents", importChunks.importChunks, 0, [&progress](ImportChunk* chunk)
+        RunFiberForFeach<RefPtr<ImportChunk>>("FlipTangents", importChunks.importChunks, 0, [&progress](ImportChunk* chunk)
             {
                 if (!progress.checkCancelation())
                 {
-                    auto normalData = (base::Vector3*) chunk->vertexStreamData(MeshStreamType::Tangent_3F);
+                    auto normalData = (Vector3*) chunk->vertexStreamData(MeshStreamType::Tangent_3F);
                     FlipVectors(normalData, chunk->numVertices);
                 }
             });
@@ -160,11 +160,11 @@ static bool CalculateTangents(const ImportChunkRegistry& importChunks, const Mes
 
     if (settings.m_flipBitangent)
     {
-        RunFiberForFeach<base::RefPtr<ImportChunk>>("FlipTangents", importChunks.importChunks, 0, [&progress](ImportChunk* chunk)
+        RunFiberForFeach<RefPtr<ImportChunk>>("FlipTangents", importChunks.importChunks, 0, [&progress](ImportChunk* chunk)
             {
                 if (!progress.checkCancelation())
                 {
-                    auto normalData = (base::Vector3*) chunk->vertexStreamData(MeshStreamType::Binormal_3F);
+                    auto normalData = (Vector3*) chunk->vertexStreamData(MeshStreamType::Binormal_3F);
                     FlipVectors(normalData, chunk->numVertices);
                 }
             });
@@ -205,10 +205,10 @@ static void GenerateBuildChunks(const ImportChunkRegistry& importChunks, BuildCh
 
 //--
 
-static bool PackData(const BuildChunkRegistry& builder, const MeshImportConfig& settings, base::IProgressTracker& progress)
+static bool PackData(const BuildChunkRegistry& builder, const MeshImportConfig& settings, IProgressTracker& progress)
 {
     // collect chunks with quantization bounds
-    base::Box quantizationBounds;
+    Box quantizationBounds;
     for (const auto& buildChunk : builder.m_buildChunks)
         if (buildChunk->m_quantizationGroup != -1)
             for (const auto& sourceChunk : buildChunk->m_sourceChunks)
@@ -230,8 +230,8 @@ static bool PackData(const BuildChunkRegistry& builder, const MeshImportConfig& 
 
     // pack build chunks
     {
-        base::ScopeTimer timer;
-        RunFiberForFeach<base::RefPtr<BuildChunk>>("PackMeshChunk", builder.m_buildChunks, 0, [&quantization, &builder, &progress](BuildChunk* chunk)
+        ScopeTimer timer;
+        RunFiberForFeach<RefPtr<BuildChunk>>("PackMeshChunk", builder.m_buildChunks, 0, [&quantization, &builder, &progress](BuildChunk* chunk)
             {
                 if (!progress.checkCancelation())
                     chunk->pack(quantization, progress);
@@ -255,7 +255,7 @@ static bool PackData(const BuildChunkRegistry& builder, const MeshImportConfig& 
 
 //--
 
-/*void ExportMaterials(const Mesh& sourceMesh, const MeshImportConfig& settings, base::Array<MeshMaterial>& outExportMaterials)
+/*void ExportMaterials(const Mesh& sourceMesh, const MeshImportConfig& settings, Array<MeshMaterial>& outExportMaterials)
 {
     outExportMaterials.reserve(sourceMesh.materials().size());
     for (const auto& sourceMaterial : sourceMesh.materials())
@@ -263,7 +263,7 @@ static bool PackData(const BuildChunkRegistry& builder, const MeshImportConfig& 
         auto& exportInfo = outExportMaterials.emplaceBack();
         exportInfo.name = sourceMaterial.name;
 
-        exportInfo.baseMaterial = base::RefNew<MaterialInstance>();
+        exportInfo.baseMaterial = RefNew<MaterialInstance>();
 
         if (sourceMaterial.flags.test(MeshMaterialFlagBit::Unlit))
         {
@@ -283,20 +283,20 @@ static bool PackData(const BuildChunkRegistry& builder, const MeshImportConfig& 
 
         for (const auto& param : sourceMaterial.parameters.parameters())
         {
-            if (param.data.type() == base::reflection::GetTypeObject<base::StringBuf>())
+            if (param.data.type() == reflection::GetTypeObject<StringBuf>())
             {
-                base::StringBuf texturePath;
+                StringBuf texturePath;
                 if (param.data.get(texturePath))
                 {
-                    const auto texture = base::LoadResource<rendering::ITexture>(texturePath);
+                    const auto texture = LoadResource<ITexture>(texturePath);
                     exportInfo.baseMaterial->writeParameter(param.name, texture);
                     TRACE_INFO("Bound texture '{}' to '{}'", texture.key(), param.name);
                 }
             }
         }
 
-        auto loader = base::GetService<base::res::LoadingService>()->loader();
-        exportInfo.material = base::rtti_cast<MaterialInstance>(exportInfo.baseMaterial->clone(nullptr, loader));
+        auto loader = GetService<res::LoadingService>()->loader();
+        exportInfo.material = rtti_cast<MaterialInstance>(exportInfo.baseMaterial->clone(nullptr, loader));
 
         // apply material overrides on material as specified in the manifest
         if (const auto materialInfo = settings.materialManifest->findMaterial(exportInfo.name))
@@ -306,7 +306,7 @@ static bool PackData(const BuildChunkRegistry& builder, const MeshImportConfig& 
 
 //--
 
-void ExportChunks(const BuildChunkRegistry& builder, base::Array<MeshChunk>& outChunks)
+void ExportChunks(const BuildChunkRegistry& builder, Array<MeshChunk>& outChunks)
 {
     outChunks.reserve(builder.m_buildChunks.size());
 
@@ -330,7 +330,7 @@ void ExportChunks(const BuildChunkRegistry& builder, base::Array<MeshChunk>& out
 
 //--
 
-bool BuildChunks(const base::Array<MeshRawChunk>& sourceChunks, const MeshImportConfig& settings, base::IProgressTracker& progressTracker, base::Array<MeshChunk>& outRenderChunks, base::Box& outBounds)
+bool BuildChunks(const Array<MeshRawChunk>& sourceChunks, const MeshImportConfig& settings, IProgressTracker& progressTracker, Array<MeshChunk>& outRenderChunks, Box& outBounds)
 {
     PC_SCOPE_LVL0(BuildChunks);
 
@@ -361,7 +361,7 @@ bool BuildChunks(const base::Array<MeshRawChunk>& sourceChunks, const MeshImport
 
     // prevent invalid bounds
     if (outBounds.empty())
-        outBounds = base::Box(base::Vector3(0, 0, 0), 1.0f);
+        outBounds = Box(Vector3(0, 0, 0), 1.0f);
 
     // export final chunks
     ExportChunks(buildChunks, outRenderChunks);
@@ -370,4 +370,4 @@ bool BuildChunks(const base::Array<MeshRawChunk>& sourceChunks, const MeshImport
      
 //---
     
-END_BOOMER_NAMESPACE(rendering)
+END_BOOMER_NAMESPACE_EX(assets)

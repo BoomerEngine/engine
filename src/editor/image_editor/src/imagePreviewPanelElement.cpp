@@ -10,43 +10,45 @@
 #include "imagePreviewPanelElements.h"
 #include "imagePreviewPanel.h"
 
-#include "rendering/device/include/renderingCommandWriter.h"
-#include "rendering/device/include/renderingDeviceService.h"
-#include "rendering/device/include/renderingDeviceApi.h"
-#include "rendering/canvas/include/renderingCanvasBatchRenderer.h"
-#include "rendering/device/include/renderingDescriptor.h"
-#include "rendering/device/include/renderingDeviceGlobalObjects.h"
-#include "rendering/device/include/renderingShader.h"
+#include "gpu/device/include/renderingCommandWriter.h"
+#include "gpu/device/include/renderingDeviceService.h"
+#include "gpu/device/include/renderingDeviceApi.h"
+#include "gpu/device/include/renderingDescriptor.h"
+#include "gpu/device/include/renderingDeviceGlobalObjects.h"
+#include "gpu/device/include/renderingShader.h"
 
-#include "base/canvas/include/canvasGeometryBuilder.h"
-#include "base/image/include/imageView.h"
-#include "base/ui/include/uiElement.h"
-#include "base/ui/include/uiTextLabel.h"
+#include "engine/canvas/include/canvasBatchRenderer.h"
+#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/canvas/include/canvas.h"
+#include "engine/ui/include/uiElement.h"
+#include "engine/ui/include/uiTextLabel.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+#include "core/image/include/imageView.h"
+
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
-//base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomHandlerChecker("/editor/shaders/canvas_checkers.csl");
+//res::StaticResource<ShaderLibrary> resCanvasCustomHandlerChecker("/editor/shaders/canvas_checkers.csl");
 
 /*struct CanvasCheckersData
 {
-    base::Rect validRect;
-    base::Vector4 colorA;
-    base::Vector4 colorB;
+    Rect validRect;
+    Vector4 colorA;
+    Vector4 colorB;
 };
 
 /// custom rendering handler
-class CanvasCheckersHandler : public rendering::canvas::ICanvasRendererCustomBatchHandler
+class CanvasCheckersHandler : public canvas::ICanvasRendererCustomBatchHandler
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CanvasCheckersHandler, rendering::canvas::ICanvasRendererCustomBatchHandler);
+    RTTI_DECLARE_VIRTUAL_CLASS(CanvasCheckersHandler, canvas::ICanvasRendererCustomBatchHandler);
 
 public:
-    virtual void initialize(rendering::IDevice* drv) override final
+    virtual void initialize(IDevice* drv) override final
     {
     }
 
-    virtual void render(rendering::GPUCommandWriter& cmd, const base::canvas::Canvas& canvas, const rendering::canvas::CanvasRenderingParams& params, uint32_t firstIndex, uint32_t numIndices, uint32_t numPayloads, const rendering::canvas::CanvasCustomBatchPayload* payloads) override
+    virtual void render(gpu::CommandWriter& cmd, const canvas::Canvas& canvas, const canvas::CanvasRenderingParams& params, uint32_t firstIndex, uint32_t numIndices, uint32_t numPayloads, const canvas::CanvasCustomBatchPayload* payloads) override
     {
         if (auto shader = resCanvasCustomHandlerChecker.loadAndGet())
         {
@@ -58,7 +60,7 @@ public:
 
                 struct
                 {
-                    rendering::ConstantsView constants;
+                    ConstantsView constants;
                 } params;
 
                 params.constants = cmd.opUploadConstants(config);
@@ -76,14 +78,14 @@ RTTI_END_TYPE();*/
 //--
 
 /// custom rendering handler
-class CanvasImagePreviewHandler : public rendering::canvas::ICanvasSimpleBatchRenderer
+class CanvasImagePreviewHandler : public canvas::ICanvasSimpleBatchRenderer
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CanvasImagePreviewHandler, rendering::canvas::ICanvasSimpleBatchRenderer);
+    RTTI_DECLARE_VIRTUAL_CLASS(CanvasImagePreviewHandler, canvas::ICanvasSimpleBatchRenderer);
 
 public:
     struct PrivateData
     {
-        rendering::ImageSampledView* texture = nullptr;
+        gpu::ImageSampledView* texture = nullptr;
         bool showRed = true;
         bool showGreen = true;
         bool showBlue = true;
@@ -96,18 +98,18 @@ public:
         int toneMapMode = 0;
     };
 
-    virtual rendering::ShaderObjectPtr loadMainShaderFile() override final
+    virtual gpu::ShaderObjectPtr loadMainShaderFile() override final
     {
-        return rendering::LoadStaticShaderDeviceObject("editor/canvas_image_preview.fx");
+        return gpu::LoadStaticShaderDeviceObject("editor/canvas_image_preview.fx");
     }
 
-    virtual void render(rendering::GPUCommandWriter& cmd, const RenderData& data, uint32_t firstVertex, uint32_t numVertices) const override
+    virtual void render(gpu::CommandWriter& cmd, const RenderData& data, uint32_t firstVertex, uint32_t numVertices) const override
     {
         const auto& srcData = *(const PrivateData*)data.customData;
 
         struct
         {
-            base::Vector4 colorSelector;
+            Vector4 colorSelector;
             int mip = 0;
             int colorSpace = 0; // 0-texture is in sRGB mode - output directly, 1-texture is linear, take gamma, 2-HDR with no tone mapping, 3-HDR with tonemapping
             float colorSpaceScale = 1.0f;
@@ -123,10 +125,10 @@ public:
         constants.colorSpaceScale = srcData.colorSpaceScale;
         constants.toneMapMode = srcData.toneMapMode;
 
-        rendering::DescriptorEntry desc[3];
+        gpu::DescriptorEntry desc[3];
         desc[0].constants(constants);
-        desc[1] = srcData.pointFilter ? rendering::Globals().SamplerClampPoint : rendering::Globals().SamplerClampBiLinear;
-        desc[2] = srcData.texture ? srcData.texture : rendering::Globals().TextureWhite;
+        desc[1] = srcData.pointFilter ? gpu::Globals().SamplerClampPoint : gpu::Globals().SamplerClampBiLinear;
+        desc[2] = srcData.texture ? srcData.texture : gpu::Globals().TextureWhite;
 
         cmd.opBindDescriptor("ExtraParams"_id, desc);
 
@@ -139,26 +141,26 @@ RTTI_END_TYPE();
 
 //--
 
-/*base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomCompressedTexturePreview("/editor/shaders/canvas_texture_compression_preview.csl");
+/*res::StaticResource<ShaderLibrary> resCanvasCustomCompressedTexturePreview("/editor/shaders/canvas_texture_compression_preview.csl");
 
 struct CanvasTextureCompressionPreviewParams
 {
         
-    rendering::ImageView texture;
-    rendering::ImageView texture2;
+    ImageView texture;
+    ImageView texture2;
 };
 
 /// custom rendering handler
-class CanvasTextureCompressionPreviewHandler : public rendering::canvas::ICanvasRendererCustomBatchHandler
+class CanvasTextureCompressionPreviewHandler : public canvas::ICanvasRendererCustomBatchHandler
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CanvasTextureCompressionPreviewHandler, rendering::canvas::ICanvasRendererCustomBatchHandler);
+    RTTI_DECLARE_VIRTUAL_CLASS(CanvasTextureCompressionPreviewHandler, canvas::ICanvasRendererCustomBatchHandler);
 
 public:
-    virtual void initialize(rendering::IDevice* drv) override final
+    virtual void initialize(IDevice* drv) override final
     {
     }
 
-    virtual void render(rendering::GPUCommandWriter& cmd, const base::canvas::Canvas& canvas, const rendering::canvas::CanvasRenderingParams& params, uint32_t firstIndex, uint32_t numIndices, uint32_t numPayloads, const rendering::canvas::CanvasCustomBatchPayload* payloads) override
+    virtual void render(gpu::CommandWriter& cmd, const canvas::Canvas& canvas, const canvas::CanvasRenderingParams& params, uint32_t firstIndex, uint32_t numIndices, uint32_t numPayloads, const canvas::CanvasCustomBatchPayload* payloads) override
     {
         if (auto shader = resCanvasCustomCompressedTexturePreview.loadAndGet())
         {
@@ -170,9 +172,9 @@ public:
 
                 struct
                 {
-                    rendering::ConstantsView constants;
-                    rendering::ImageView texture;
-                    rendering::ImageView texture2;
+                    ConstantsView constants;
+                    ImageView texture;
+                    ImageView texture2;
                 } params;
 
                 params.constants = cmd.opUploadConstants(config.constants);
@@ -191,19 +193,19 @@ RTTI_END_TYPE();*/
 
 //--
 
-/*base::res::StaticResource<rendering::ShaderLibrary> resCanvasCustomHandlerPixelGrid("/editor/shaders/canvas_pixel_grid.csl");
+/*res::StaticResource<ShaderLibrary> resCanvasCustomHandlerPixelGrid("/editor/shaders/canvas_pixel_grid.csl");
 
 /// custom rendering handler
-class CanvasImagePixelGridHandler : public rendering::canvas::ICanvasRendererCustomBatchHandler
+class CanvasImagePixelGridHandler : public canvas::ICanvasRendererCustomBatchHandler
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CanvasImagePixelGridHandler, rendering::canvas::ICanvasRendererCustomBatchHandler);
+    RTTI_DECLARE_VIRTUAL_CLASS(CanvasImagePixelGridHandler, canvas::ICanvasRendererCustomBatchHandler);
 
 public:
-    virtual void initialize(rendering::IDevice* drv) override final
+    virtual void initialize(IDevice* drv) override final
     {
     }
 
-    virtual void render(rendering::GPUCommandWriter& cmd, const base::canvas::Canvas& canvas, const rendering::canvas::CanvasRenderingParams& params, uint32_t firstIndex, uint32_t numIndices, uint32_t numPayloads, const rendering::canvas::CanvasCustomBatchPayload* payloads) override
+    virtual void render(gpu::CommandWriter& cmd, const canvas::Canvas& canvas, const canvas::CanvasRenderingParams& params, uint32_t firstIndex, uint32_t numIndices, uint32_t numPayloads, const canvas::CanvasCustomBatchPayload* payloads) override
     {
         if (auto shader = resCanvasCustomHandlerPixelGrid.loadAndGet())
         {
@@ -211,11 +213,11 @@ public:
             {
                 const auto& payload = payloads[i];
 
-                const auto& config = *(const base::Rect*)payload.data;
+                const auto& config = *(const Rect*)payload.data;
 
                 struct
                 {
-                    rendering::ConstantsView constants;
+                    ConstantsView constants;
                 } params;
 
                 params.constants = cmd.opUploadConstants(config);
@@ -232,61 +234,61 @@ RTTI_END_TYPE();*/
 
 //--
 
-static rendering::ImageFormat BestPreviewFormat(const base::image::Image& image)
+static ImageFormat BestPreviewFormat(const image::Image& image)
 {
     switch (image.format())
     {
-    case base::image::PixelFormat::Uint8_Norm:
+    case image::PixelFormat::Uint8_Norm:
     {
         switch (image.channels())
         {
-        case 1: return rendering::ImageFormat::R8_UNORM;
-        case 2: return rendering::ImageFormat::RG8_UNORM;
-        case 3: return rendering::ImageFormat::RGB8_UNORM;
-        case 4: return rendering::ImageFormat::RGBA8_UNORM;
+        case 1: return ImageFormat::R8_UNORM;
+        case 2: return ImageFormat::RG8_UNORM;
+        case 3: return ImageFormat::RGB8_UNORM;
+        case 4: return ImageFormat::RGBA8_UNORM;
         }
         break;
     }
 
-    case base::image::PixelFormat::Uint16_Norm:
+    case image::PixelFormat::Uint16_Norm:
     {
         switch (image.channels())
         {
-        case 1: return rendering::ImageFormat::R16_UNORM;
-        case 2: return rendering::ImageFormat::RG16_UNORM;
-        case 3: return rendering::ImageFormat::RGBA16_UNORM;
-        case 4: return rendering::ImageFormat::RGBA16_UNORM;
+        case 1: return ImageFormat::R16_UNORM;
+        case 2: return ImageFormat::RG16_UNORM;
+        case 3: return ImageFormat::RGBA16_UNORM;
+        case 4: return ImageFormat::RGBA16_UNORM;
         }
         break;
     }
 
-    case base::image::PixelFormat::Float16_Raw:
+    case image::PixelFormat::Float16_Raw:
     {
         switch (image.channels())
         {
-        case 1: return rendering::ImageFormat::R16F;
-        case 2: return rendering::ImageFormat::RG16F;
-        case 3: return rendering::ImageFormat::RGBA16F;
-        case 4: return rendering::ImageFormat::RGBA16F;
+        case 1: return ImageFormat::R16F;
+        case 2: return ImageFormat::RG16F;
+        case 3: return ImageFormat::RGBA16F;
+        case 4: return ImageFormat::RGBA16F;
         }
         break;
     }
 
-    case base::image::PixelFormat::Float32_Raw:
+    case image::PixelFormat::Float32_Raw:
     {
         switch (image.channels())
         {
-        case 1: return rendering::ImageFormat::R32F;
-        case 2: return rendering::ImageFormat::RG32F;
-        case 3: return rendering::ImageFormat::RGB32F;
-        case 4: return rendering::ImageFormat::RGBA32F;
+        case 1: return ImageFormat::R32F;
+        case 2: return ImageFormat::RG32F;
+        case 3: return ImageFormat::RGB32F;
+        case 4: return ImageFormat::RGBA32F;
         }
         break;
     }
     }
 
     DEBUG_CHECK(!"Invalid format");
-    return rendering::ImageFormat::UNKNOWN;
+    return ImageFormat::UNKNOWN;
 }
 
 //--
@@ -307,12 +309,12 @@ bool IImagePreviewElement::queryColor(float x, float y, ImagePreviewPixel& outPi
 RTTI_BEGIN_TYPE_NATIVE_CLASS(ImagePreviewElement);
 RTTI_END_TYPE();
 
-ImagePreviewElement::ImagePreviewElement(const rendering::ImageSampledView* view, const rendering::ImageSampledView* sourceView)
+ImagePreviewElement::ImagePreviewElement(const gpu::ImageSampledView* view, const gpu::ImageSampledView* sourceView)
     : m_view(AddRef(view))
     , m_sourceView(AddRef(sourceView))
 {}
 
-ImagePreviewElement::ImagePreviewElement(const rendering::ImageSampledView* view, int mipIndex /*= 0*/, int sliceIndex /*= 0*/)
+ImagePreviewElement::ImagePreviewElement(const gpu::ImageSampledView* view, int mipIndex /*= 0*/, int sliceIndex /*= 0*/)
     : m_view(AddRef(view))
     , m_sourceView(AddRef(view))
     , m_mipIndex(mipIndex)
@@ -339,7 +341,7 @@ void ImagePreviewElement::configure(const ImagePreviewPanelSettings& settings)
     m_settings.create(settings);
 }
 
-void ImagePreviewElement::render(ui::CanvasArea* owner, float x, float y, float sx, float sy, base::canvas::Canvas& canvas, float mergedOpacity)
+void ImagePreviewElement::render(ui::CanvasArea* owner, float x, float y, float sx, float sy, canvas::Canvas& canvas, float mergedOpacity)
 {
     if (!m_settings || !m_view)
         return;
@@ -349,10 +351,10 @@ void ImagePreviewElement::render(ui::CanvasArea* owner, float x, float y, float 
     auto width = m_view->width();
     auto height = m_view->height();
 
-    base::canvas::Canvas::QuadSetup quad;
+    canvas::Canvas::QuadSetup quad;
     quad.x1 = sx * width;
     quad.y1 = sy * height;
-    quad.op = m_settings->premultiply ? base::canvas::BlendOp::AlphaPremultiplied : base::canvas::BlendOp::AlphaBlend;
+    quad.op = m_settings->premultiply ? canvas::BlendOp::AlphaPremultiplied : canvas::BlendOp::AlphaBlend;
     quad.wrap = false;
 
     CanvasImagePreviewHandler::PrivateData setup;
@@ -365,36 +367,36 @@ void ImagePreviewElement::render(ui::CanvasArea* owner, float x, float y, float 
     setup.mip = m_mipIndex;
     setup.slice = m_sliceIndex;
 
-    if (m_settings->colorSpace == rendering::ImageContentColorSpace::SRGB)
+    if (m_settings->colorSpace == assets::ImageContentColorSpace::SRGB)
     {
         setup.colorSpace = 1;
         setup.colorSpaceScale = 1.0f;
     }
-    else if (m_settings->colorSpace == rendering::ImageContentColorSpace::Linear)
+    else if (m_settings->colorSpace == assets::ImageContentColorSpace::Linear)
     {
         setup.colorSpace = 0;
         setup.colorSpaceScale = 1.0f;
     }
-    else if (m_settings->colorSpace == rendering::ImageContentColorSpace::HDR)
+    else if (m_settings->colorSpace == assets::ImageContentColorSpace::HDR)
     {
         setup.colorSpace = 2;
         setup.toneMapMode = m_settings->toneMapMode;
         setup.colorSpaceScale = m_settings->exposureAdj;
     }
 
-    canvas.quadEx<CanvasImagePreviewHandler>(base::canvas::Placement(x, y), quad, setup);
+    canvas.quadEx<CanvasImagePreviewHandler>(canvas::Placement(x, y), quad, setup);
 }
 
 //--
 
-void RenderPixelBackground(base::canvas::Canvas& canvas, const ui::Position& tl, const ui::Position& br, const ui::ElementArea& drawArea, const base::Rect& activeImageArea, float colorFrac)
+void RenderPixelBackground(canvas::Canvas& canvas, const ui::Position& tl, const ui::Position& br, const ui::ElementArea& drawArea, const Rect& activeImageArea, float colorFrac)
 {
     /*if (!activeImageArea.empty())
     {
-        base::Color color = base::Color::GRAY;
-        color.a = base::FloatTo255(colorFrac);
+        Color color = Color::GRAY;
+        color.a = FloatTo255(colorFrac);
 
-        base::canvas::Canvas::RawVertex v[4];
+        canvas::Canvas::RawVertex v[4];
         v[0].uv.x = tl.x;
         v[0].uv.y = tl.y;
         v[1].uv.x = br.x;
@@ -424,19 +426,19 @@ void RenderPixelBackground(base::canvas::Canvas& canvas, const ui::Position& tl,
         i[4] = 2;
         i[5] = 3;
 
-        base::canvas::Canvas::RawGeometry geom;
+        canvas::Canvas::RawGeometry geom;
         geom.indices = i;
         geom.vertices = v;
         geom.numIndices = 6;
 
-        static const auto customDrawerId = rendering::canvas::GetHandlerIndex<CanvasImagePixelGridHandler>();
+        static const auto customDrawerId = canvas::GetHandlerIndex<CanvasImagePixelGridHandler>();
 
-        const auto style = base::canvas::SolidColor(base::Color::WHITE);
-        const auto op = base::canvas::CompositeOperation::Blend;
+        const auto style = canvas::SolidColor(Color::WHITE);
+        const auto op = canvas::CompositeOperation::Blend;
         canvas.place(style, geom, customDrawerId, canvas.uploadCustomPayloadData(activeImageArea), op);
     }*/
 }
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

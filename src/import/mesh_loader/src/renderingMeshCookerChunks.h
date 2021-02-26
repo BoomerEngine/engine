@@ -8,34 +8,34 @@
 
 #pragma once
 
-#include "rendering/mesh/include/renderingMesh.h"
-#include "rendering/mesh/include/renderingMeshFormat.h"
-#include "rendering/mesh/include/renderingMeshStreamData.h"
+#include "engine/mesh/include/renderingMesh.h"
+#include "engine/mesh/include/renderingMeshFormat.h"
+#include "engine/mesh/include/renderingMeshStreamData.h"
 
-BEGIN_BOOMER_NAMESPACE(rendering)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //---
 
-struct ImportChunk : public base::IReferencable
+struct ImportChunk : public IReferencable
 {
     uint32_t renderMask = 0;
     uint32_t detailMask = 0;
     uint32_t materialIndex = 0;
 
-    base::Array<MeshRawChunkData> vertexDataStreams;
+    Array<MeshRawChunkData> vertexDataStreams;
     MeshStreamMask vertexDataStreamMask;
     uint32_t numVertices = 0;
 
     uint32_t numFaces = 0;
     bool faceQuads = false;
 
-    base::Box bounds;
+    Box bounds;
 
     ImportChunk(const MeshRawChunk& sourceChunk);
 
     //--
 
-    base::Buffer buildTriangleListIndexBuffer() const;
+    Buffer buildTriangleListIndexBuffer() const;
 
     //--
 
@@ -57,10 +57,10 @@ struct ImportChunk : public base::IReferencable
     void computeTangentSpace(float angleThreshold);
 };
 
-struct ImportChunkRegistry : public base::NoCopy
+struct ImportChunkRegistry : public NoCopy
 {
-    base::Array<base::RefPtr<ImportChunk>> importChunks;
-    base::Box bounds;
+    Array<RefPtr<ImportChunk>> importChunks;
+    Box bounds;
 
     ImportChunkRegistry();
     ~ImportChunkRegistry();
@@ -68,7 +68,7 @@ struct ImportChunkRegistry : public base::NoCopy
 
 //---
 
-struct BuildChunk : public base::IReferencable
+struct BuildChunk : public IReferencable
 {
     MeshVertexFormat m_format = MeshVertexFormat::Static;
     uint32_t m_material = 0;
@@ -83,9 +83,9 @@ struct BuildChunk : public base::IReferencable
         RTTI_DECLARE_POOL(POOL_MESH_BUILDER)
     public:
 
-        base::Array<MeshRawChunkData> vertexDataStreams;
+        Array<MeshRawChunkData> vertexDataStreams;
         MeshStreamMask vertexDataStreamMask;
-        base::Buffer indexData;
+        Buffer indexData;
 
         uint32_t numVertices = 0;
         uint32_t numIndices = 0;
@@ -93,23 +93,23 @@ struct BuildChunk : public base::IReferencable
         uint32_t firstVertexIndex = 0;
         uint32_t firstIndex = 0;
 
-        base::Box bounds;
+        Box bounds;
     };
 
-    base::Array<SourceChunkInfo*> m_sourceChunks;
-    base::SpinLock m_sourceChunksLock;
+    Array<SourceChunkInfo*> m_sourceChunks;
+    SpinLock m_sourceChunksLock;
 
     uint32_t m_unpackedVertexDataSize = 0;
     uint32_t m_unpackedIndexDataSize = 0;
-    base::Buffer m_packedVertexData;
-    base::Buffer m_packedIndexData;
+    Buffer m_packedVertexData;
+    Buffer m_packedIndexData;
 
     uint32_t m_finalIndexCount = 0;
     uint32_t m_finalVertexCount = 0;
 
     int m_quantizationGroup = -1; // not quantized
-    base::Vector3 m_quantizationOffset = base::Vector3(0,0,0);
-    base::Vector3 m_quantizationScale = base::Vector3(1,1,1);
+    Vector3 m_quantizationOffset = Vector3(0,0,0);
+    Vector3 m_quantizationScale = Vector3(1,1,1);
 
     bool m_mergeDuplicatedVertices = true;
     bool m_optimizeVertexCache = true;
@@ -121,12 +121,12 @@ struct BuildChunk : public base::IReferencable
     ~BuildChunk();
 
     void addChunk(const ImportChunk& sourceChunk);
-    void pack(const MeshVertexQuantizationHelper& quantization, base::IProgressTracker& progress);
+    void pack(const MeshVertexQuantizationHelper& quantization, IProgressTracker& progress);
 };
 
 //---
 
-struct BuildChunkRegistry : public base::NoCopy
+struct BuildChunkRegistry : public NoCopy
 {
     BuildChunkRegistry();
     ~BuildChunkRegistry();
@@ -137,9 +137,9 @@ struct BuildChunkRegistry : public base::NoCopy
 
     //
 
-    base::Array<base::RefPtr<BuildChunk>> m_buildChunks;
+    Array<RefPtr<BuildChunk>> m_buildChunks;
 };
 
 //---
 
-END_BOOMER_NAMESPACE(rendering)
+END_BOOMER_NAMESPACE_EX(assets)

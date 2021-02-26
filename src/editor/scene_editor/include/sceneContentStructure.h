@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -47,7 +47,7 @@ public:
     //--
 
     // render in-editor debug representation of entities
-    void handleDebugRender(rendering::scene::FrameParams& frame) const;
+    void handleDebugRender(rendering::FrameParams& frame) const;
 
     //--
 
@@ -88,4 +88,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

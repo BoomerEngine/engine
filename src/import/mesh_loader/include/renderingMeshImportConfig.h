@@ -8,12 +8,13 @@
 
 #pragma once
 
-#include "base/resource/include/resource.h"
-#include "base/resource/include/resourceMetadata.h"
 #include "renderingMaterialImportConfig.h"
-#include "base/resource_compiler/include/importInterface.h"
 
-BEGIN_BOOMER_NAMESPACE(rendering)
+#include "core/resource/include/resource.h"
+#include "core/resource/include/resourceMetadata.h"
+#include "core/resource_compiler/include/importInterface.h"
+
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //---
 
@@ -43,10 +44,10 @@ enum class MeshImportSpace : uint8_t
 extern IMPORT_MESH_LOADER_API float ScaleFactorForUnits(MeshImportUnits units);
 
 // get the "content to engine" space conversion matrix - NOTE, no space unit conversion
-extern IMPORT_MESH_LOADER_API base::Matrix CalcContentToEngineMatrix(MeshImportSpace space);
+extern IMPORT_MESH_LOADER_API Matrix CalcContentToEngineMatrix(MeshImportSpace space);
 
 // calculate "content to engine" space conversion matrix that includes the units 
-extern IMPORT_MESH_LOADER_API base::Matrix CalcContentToEngineMatrix(MeshImportSpace space, MeshImportUnits units);
+extern IMPORT_MESH_LOADER_API Matrix CalcContentToEngineMatrix(MeshImportSpace space, MeshImportUnits units);
 
 //---
           
@@ -73,9 +74,9 @@ enum class MeshNormalComputationMode : uint8_t
 
 /// common manifest for assets importable into mesh formats
 /// contains coordinate system conversion and other setup for geometry importing from outside sources
-class IMPORT_MESH_LOADER_API MeshImportConfig : public base::res::ResourceConfiguration
+class IMPORT_MESH_LOADER_API MeshImportConfig : public res::ResourceConfiguration
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MeshImportConfig, base::res::ResourceConfiguration);
+    RTTI_DECLARE_VIRTUAL_CLASS(MeshImportConfig, res::ResourceConfiguration);
 
 public:
     MeshImportConfig();
@@ -92,11 +93,11 @@ public:
 
     // global translation to apply to mesh when importing
     // NOTE: applied AFTER the normal space transform
-    base::Vector3 globalTranslation = base::Vector3(0,0,0);
+    Vector3 globalTranslation = Vector3(0,0,0);
 
     // global rotation to apply to mesh when importing
     // NOTE: applied AFTER the normal space transform
-    base::Angles globalRotation = base::Angles(0,0,0);
+    Angles globalRotation = Angles(0,0,0);
 
     // global scale to apply to mesh when importing
     // NOTE: applied AFTER the normal space transform
@@ -112,13 +113,13 @@ public:
 
     // material import
     bool m_importMaterials = true; // import materials
-    base::StringBuf m_materialSearchPath;
-    base::StringBuf m_materialImportPath;
+    StringBuf m_materialSearchPath;
+    StringBuf m_materialImportPath;
 
     // texture import
     bool m_importTextures = true; // import textures
-    base::StringBuf m_textureSearchPath;
-    base::StringBuf m_textureImportPath;
+    StringBuf m_textureSearchPath;
+    StringBuf m_textureImportPath;
 
     //--
 
@@ -148,7 +149,7 @@ public:
 
     // calculate the space conversion matrix for given content type
     // NOTE: includes custom transformation specified in the manifest itself
-    base::Matrix calcAssetToEngineConversionMatrix(MeshImportUnits defaultAssetUnits, MeshImportSpace defaultAssetSpace) const;
+    Matrix calcAssetToEngineConversionMatrix(MeshImportUnits defaultAssetUnits, MeshImportSpace defaultAssetSpace) const;
 
     //--
 
@@ -164,33 +165,33 @@ public:
 
     //--
 
-    virtual void computeConfigurationKey(base::CRC64& crc) const override;
+    virtual void computeConfigurationKey(CRC64& crc) const override;
 };
 
 //---
 
 /// general mesh importer, contains common functions
-class IMPORT_MESH_LOADER_API IGeneralMeshImporter : public base::res::IResourceImporter
+class IMPORT_MESH_LOADER_API IGeneralMeshImporter : public res::IResourceImporter
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(IGeneralMeshImporter, base::res::IResourceImporter);
+    RTTI_DECLARE_VIRTUAL_CLASS(IGeneralMeshImporter, res::IResourceImporter);
 
 public:
     virtual ~IGeneralMeshImporter();
 
 protected:
-    static void EmitDepotPath(const base::Array<base::StringView>& pathParts, base::IFormatStream& f);
-    static void GlueDepotPath(base::StringView path, bool isFileName, base::Array<base::StringView>& outPathParts);
+    static void EmitDepotPath(const Array<StringView>& pathParts, IFormatStream& f);
+    static void GlueDepotPath(StringView path, bool isFileName, Array<StringView>& outPathParts);
 
-    static base::StringBuf BuildMaterialFileName(base::StringView name, uint32_t materialIndex);
-    static base::StringBuf BuildAssetDepotPath(base::StringView referenceDepotPath, base::StringView materialImportPath, base::StringView materialFileName);
+    static StringBuf BuildMaterialFileName(StringView name, uint32_t materialIndex);
+    static StringBuf BuildAssetDepotPath(StringView referenceDepotPath, StringView materialImportPath, StringView materialFileName);
 
-    virtual base::RefPtr<MaterialImportConfig> createMaterialImportConfig(const MeshImportConfig& cfg, base::StringView name) const = 0;
+    virtual RefPtr<MaterialImportConfig> createMaterialImportConfig(const MeshImportConfig& cfg, StringView name) const = 0;
 
-    virtual MaterialRef buildSingleMaterialRef(base::res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, base::StringView name, base::StringView materialLibraryName, uint32_t materialIndex) const;
+    virtual MaterialRef buildSingleMaterialRef(res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, StringView name, StringView materialLibraryName, uint32_t materialIndex) const;
 
-    virtual MaterialInstancePtr buildSingleMaterial(base::res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, base::StringView name, base::StringView materialLibraryName, uint32_t materialIndex, const Mesh* existingMesh) const;
+    virtual MaterialInstancePtr buildSingleMaterial(res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, StringView name, StringView materialLibraryName, uint32_t materialIndex, const Mesh* existingMesh) const;
 };
 
 //---
 
-END_BOOMER_NAMESPACE(rendering)
+END_BOOMER_NAMESPACE_EX(assets)

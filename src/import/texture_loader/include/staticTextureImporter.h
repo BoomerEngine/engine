@@ -9,17 +9,17 @@
 #pragma once
 
 #include "imageCompression.h"
-#include "base/resource_compiler/include/importInterface.h"
-#include "base/resource/include/resourceMetadata.h"
+#include "core/resource_compiler/include/importInterface.h"
+#include "core/resource/include/resourceMetadata.h"
 
-BEGIN_BOOMER_NAMESPACE(assets)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //--
 
 /// texture compression configuration
-class IMPORT_TEXTURE_LOADER_API StaticTextureCompressionConfiguration : public base::res::ResourceConfiguration
+class IMPORT_TEXTURE_LOADER_API StaticTextureCompressionConfiguration : public res::ResourceConfiguration
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureCompressionConfiguration, base::res::ResourceConfiguration);
+    RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureCompressionConfiguration, res::ResourceConfiguration);
 
 public:
     StaticTextureCompressionConfiguration();
@@ -34,7 +34,7 @@ public:
     ImageValidPixelsMaskingMode m_compressionMasking = ImageValidPixelsMaskingMode::Auto;
     ImageCompressionQuality m_compressionQuality = ImageCompressionQuality::Normal;
 
-    virtual void computeConfigurationKey(base::CRC64& crc) const override;
+    virtual void computeConfigurationKey(CRC64& crc) const override;
 
     ImageCompressionSettings loadSettings() const;
 };
@@ -42,16 +42,16 @@ public:
 //--
 
 // importer for static textures from images
-class IMPORT_TEXTURE_LOADER_API StaticTextureFromImageImporter : public base::res::IResourceImporter
+class IMPORT_TEXTURE_LOADER_API StaticTextureFromImageImporter : public res::IResourceImporter
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureFromImageImporter, base::res::IResourceImporter);
+    RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureFromImageImporter, res::IResourceImporter);
 
 public:
     StaticTextureFromImageImporter();
 
-    virtual base::res::ResourcePtr importResource(base::res::IResourceImporterInterface& importer) const override final;
+    virtual res::ResourcePtr importResource(res::IResourceImporterInterface& importer) const override final;
 };
 
 //--
 
-END_BOOMER_NAMESPACE(assets)
+END_BOOMER_NAMESPACE_EX(assets)

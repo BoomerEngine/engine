@@ -9,9 +9,9 @@
 #pragma once
 
 #include "sceneEditMode.h"
-#include "editor/gizmos/include/gizmoGroup.h"
+#include "editor/viewport/include/gizmoGroup.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -29,7 +29,7 @@ public:
 
     //--
 
-    world::NodeTemplatePtr packedEntityData;
+    NodeTemplatePtr packedEntityData;
     ObjectIndirectTemplatePtr packedComponentData;
 
     //--
@@ -54,4 +54,4 @@ extern EDITOR_SCENE_EDITOR_API SceneContentClipboardDataPtr BuildClipboardDataFr
 
 //--    
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

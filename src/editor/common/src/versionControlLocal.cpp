@@ -10,7 +10,7 @@
 #include "versionControl.h"
 #include "versionControlLocal.h"
 
-BEGIN_BOOMER_NAMESPACE(ed::vsc)
+BEGIN_BOOMER_NAMESPACE_EX(ed::vsc)
 
 namespace local
 {
@@ -202,4 +202,4 @@ namespace local
 
 } // local
 
-END_BOOMER_NAMESPACE(ed::vsc)
+END_BOOMER_NAMESPACE_EX(ed::vsc)

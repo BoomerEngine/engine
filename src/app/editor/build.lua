@@ -5,10 +5,9 @@ ProjectType("app")
 ProjectOption("devonly")
 ProjectOption("main")
 
-Dependency("base_*")
+Dependency("core_*")
+Dependency("gpu_*")
+Dependency("engine_*")
 Dependency("import_*")
-Dependency("rendering_*")
-Dependency("physics_*")
 Dependency("editor_*")
-Dependency("game_*")
 

@@ -3,21 +3,22 @@
 
 ProjectType("library")
 
-Dependency("base_system")
-Dependency("base_memory")
-Dependency("base_containers")
-Dependency("base_config")
-Dependency("base_object")
-Dependency("base_reflection")
-Dependency("base_resource")
-Dependency("base_resource_compiler")
-Dependency("base_math")
-Dependency("base_image")
-Dependency("base_fibers")
-Dependency("base_app")
+Dependency("core_system")
+Dependency("core_memory")
+Dependency("core_containers")
+Dependency("core_config")
+Dependency("core_object")
+Dependency("core_reflection")
+Dependency("core_resource")
+Dependency("core_resource_compiler")
+Dependency("core_math")
+Dependency("core_image")
+Dependency("core_fibers")
+Dependency("core_app")
 
-Dependency("rendering_device")
-Dependency("rendering_texture")
+--Dependency("gpu_device")
+
+Dependency("engine_texture")
 
 ProjectOption("devonly")
 

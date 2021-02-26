@@ -8,7 +8,7 @@
 
 #include "editor_scene_editor_glue.inl"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -124,4 +124,4 @@ typedef DirectFlags<SceneContentNodeDirtyBit> SceneContentNodeDirtyFlags;
 
 ///---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

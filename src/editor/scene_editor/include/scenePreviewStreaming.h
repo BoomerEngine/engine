@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "base/memory/include/structurePool.h"
+#include "core/memory/include/structurePool.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -26,7 +26,7 @@ public:
     AbsoluteTransform placement;
 
     std::atomic<uint32_t> version = 0;
-    world::EntityPtr entity;
+    EntityPtr entity;
 
     bool visible = true;
     bool effectSelection = false;
@@ -38,7 +38,7 @@ public:
 class SceneNodeVisualizationHandler : public IReferencable
 {
 public:
-    SceneNodeVisualizationHandler(world::World* targetWorld);
+    SceneNodeVisualizationHandler(World* targetWorld);
     ~SceneNodeVisualizationHandler();
 
     void clearAllProxies();
@@ -50,10 +50,10 @@ public:
 
     bool retrieveBoundsForProxy(const SceneContentNode* node, Box& outBounds) const;
 
-    SceneContentNodePtr resolveSelectable(const rendering::scene::Selectable& selectable) const;
+    SceneContentNodePtr resolveSelectable(const Selectable& selectable) const;
 
 private:
-    world::World* m_world;
+    World* m_world;
 
     mem::StructurePool<SceneNodeVisualization> m_proxyPool;
 
@@ -71,7 +71,7 @@ private:
     {
         uint32_t index;
         uint32_t generation;
-        world::EntityPtr newEntity;
+        EntityPtr newEntity;
     };
 
     Array<ProxyToReattach> m_reattachList;
@@ -84,10 +84,10 @@ private:
     void reattachProxies();
 
     static bool CheckProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex);
-    static void ApplyProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex, const world::EntityPtr& entity);
-    static CAN_YIELD void CompileEntityData(const RefWeakPtr<SceneNodeVisualizationHandler>& self, const world::NodeTemplatePtr& data, uint32_t versionIndex, uint32_t proxyIndex, uint32_t proxyGeneration);
+    static void ApplyProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex, const EntityPtr& entity);
+    static CAN_YIELD void CompileEntityData(const RefWeakPtr<SceneNodeVisualizationHandler>& self, const NodeTemplatePtr& data, uint32_t versionIndex, uint32_t proxyIndex, uint32_t proxyGeneration);
 };
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

@@ -23,18 +23,18 @@
 #include "managedItemCollection.h"
 #include "managedFileNativeResource.h"
 
-#include "base/canvas/include/canvas.h"
-#include "base/app/include/launcherPlatform.h"
-#include "base/ui/include/uiRenderer.h"
-#include "base/ui/include/uiDockLayout.h"
-#include "base/ui/include/uiDockNotebook.h"
-#include "base/ui/include/uiDockContainer.h"
-#include "base/ui/include/uiElementConfig.h"
-#include "base/ui/include/uiButton.h"
-#include "base/resource/include/resourceMetadata.h"
-#include "base/resource_compiler/include/importFileList.h"
+#include "engine/canvas/include/canvas.h"
+#include "core/app/include/launcherPlatform.h"
+#include "engine/ui/include/uiRenderer.h"
+#include "engine/ui/include/uiDockLayout.h"
+#include "engine/ui/include/uiDockNotebook.h"
+#include "engine/ui/include/uiDockContainer.h"
+#include "engine/ui/include/uiElementConfig.h"
+#include "engine/ui/include/uiButton.h"
+#include "core/resource/include/resourceMetadata.h"
+#include "core/resource_compiler/include/importFileList.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -66,7 +66,7 @@ IBaseResourceContainerWindow::IBaseResourceContainerWindow(StringView tag, Strin
     m_dockArea = createChild<ui::DockContainer>();
     m_dockArea->layout().notebook()->styleType("FileNotebook"_id);
 
-    auto listButton = base::RefNew<ui::Button>("[img:page_zoom] Files");
+    auto listButton = RefNew<ui::Button>("[img:page_zoom] Files");
     listButton->styleType("BackgroundButton"_id);
     listButton->customVerticalAligment(ui::ElementVerticalLayout::Middle);
     listButton->customMargins(ui::Offsets(5, 0, 5, 0));
@@ -225,5 +225,5 @@ FloatingResourceContainerWindow::~FloatingResourceContainerWindow()
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

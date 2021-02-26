@@ -12,18 +12,18 @@
 #include "managedFile.h"
 #include "managedDepot.h"
 
-#include "base/containers/include/inplaceArray.h"
-#include "base/io/include/ioSystem.h"
-#include "base/system/include/thread.h"
-#include "base/image/include/image.h"
+#include "core/containers/include/inplaceArray.h"
+#include "core/io/include/ioSystem.h"
+#include "core/system/include/thread.h"
+#include "core/image/include/image.h"
 #include "managedFileFormat.h"
-#include "base/io/include/ioFileHandle.h"
-#include "base/resource/include/resourceFileSaver.h"
+#include "core/io/include/ioFileHandle.h"
+#include "core/resource/include/resourceFileSaver.h"
 #include "managedFileNativeResource.h"
 #include "managedFileRawResource.h"
 #include "managedItemCollection.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -209,7 +209,7 @@ ManagedDirectory* ManagedDirectory::createDirectory(StringView name)
         {
             curDir->deleted(false);
 
-            base::io::CreatePath(TempString("{}{}/", absolutePath(), name));
+            io::CreatePath(TempString("{}{}/", absolutePath(), name));
 
             curDir->populate(); // just in case it was not really deleted
         }
@@ -232,7 +232,7 @@ ManagedDirectory* ManagedDirectory::createDirectory(StringView name)
     }
 
     // create the physical path in file system
-    if (!base::io::CreatePath(TempString("{}{}/", absolutePath(), name)))
+    if (!io::CreatePath(TempString("{}{}/", absolutePath(), name)))
     {
         TRACE_ERROR("Failed to create directory '{}' in '{}': failed to create physical directory on disk", name, depotPath());
         return nullptr;
@@ -330,7 +330,7 @@ ManagedFile* ManagedDirectory::createFile(StringView fileName, const res::Resour
     }
 
     // file already exists, do not overwrite
-    if (base::io::FileExists(TempString("{}{}", absolutePath(), fileName)))
+    if (io::FileExists(TempString("{}{}", absolutePath(), fileName)))
     {
         TRACE_ERROR("Unable to create '{}' in '{}': file already exists on disk", fileName, depotPath());
         return file(fileName, true);
@@ -429,7 +429,7 @@ ManagedFile* ManagedDirectory::createFile(StringView fileName, Buffer initialCon
     }
 
     // file already exists, do not overwrite
-    if (base::io::FileExists(TempString("{}{}", absolutePath(), fileName)))
+    if (io::FileExists(TempString("{}{}", absolutePath(), fileName)))
     {
         TRACE_ERROR("Unable to create '{}' in '{}': file already exists on disk", fileName, depotPath());
         return file(fileName, true);
@@ -623,5 +623,5 @@ bool ManagedDirectory::collectFiles(CollectionContext& context, bool recursive, 
     return ret;
 }
         
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

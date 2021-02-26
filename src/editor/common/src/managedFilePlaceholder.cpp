@@ -12,9 +12,9 @@
 #include "managedFileFormat.h"
 #include "managedFilePlaceholder.h"
 #include "managedThumbnails.h"
-#include "base/resource_compiler/include/importFileService.h"
+#include "core/resource_compiler/include/importFileService.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -60,5 +60,5 @@ void ManagedFilePlaceholder::rename(StringView name)
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

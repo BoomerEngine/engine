@@ -9,17 +9,17 @@
 #include "build.h"
 #include "managedFileFormat.h"
 
-#include "base/config/include/configGroup.h"
-#include "base/config/include/configEntry.h"
-#include "base/config/include/configSystem.h"
-#include "base/image/include/image.h"
-#include "base/resource/include/resource.h"
-#include "base/resource/include/resource.h"
-#include "base/resource/include/resourceFactory.h"
-#include "base/resource/include/resourceTags.h"
-#include "base/resource_compiler/include/importInterface.h"
+#include "core/config/include/configGroup.h"
+#include "core/config/include/configEntry.h"
+#include "core/config/include/configSystem.h"
+#include "core/image/include/image.h"
+#include "core/resource/include/resource.h"
+#include "core/resource/include/resource.h"
+#include "core/resource/include/resourceFactory.h"
+#include "core/resource/include/resourceTags.h"
+#include "core/resource_compiler/include/importInterface.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 ///---
 
@@ -86,7 +86,7 @@ ManagedFileFormat::ManagedFileFormat(StringView extension)
 
     // get config entry for the file
     // TODO: move somewhere else
-    if (const auto& configGroup = base::config::FindGroup(TempString("Format.{}", extension)))
+    if (const auto& configGroup = config::FindGroup(TempString("Format.{}", extension)))
         m_description = configGroup->entryValue("Description", m_description);
 
     // debug log
@@ -138,7 +138,7 @@ const image::Image* ManagedFileFormat::thumbnail() const
     {
         m_thumbnailLoadAttempted = true;
 
-        auto classThumbnailImage = base::LoadImageFromDepotPath(TempString("/engine/interface/thumbnails/{}.png", m_extension));
+        auto classThumbnailImage = LoadImageFromDepotPath(TempString("/engine/interface/thumbnails/{}.png", m_extension));
         if (classThumbnailImage)
         {
             m_thumbnail = classThumbnailImage;
@@ -231,6 +231,6 @@ void ManagedFileFormatRegistry::deinit()
 
 ///---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 
 

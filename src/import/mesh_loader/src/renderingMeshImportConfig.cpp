@@ -8,11 +8,11 @@
 
 #include "build.h"
 #include "renderingMeshImportConfig.h"
-#include "rendering/mesh/include/renderingMesh.h"
-#include "rendering/material/include/renderingMaterial.h"
-#include "rendering/material/include/renderingMaterialInstance.h"
+#include "engine/mesh/include/renderingMesh.h"
+#include "engine/material/include/renderingMaterial.h"
+#include "engine/material/include/renderingMaterialInstance.h"
 
-BEGIN_BOOMER_NAMESPACE(rendering)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //--
 
@@ -86,11 +86,11 @@ RTTI_END_TYPE();
 
 MeshImportConfig::MeshImportConfig()
 {
-    m_materialImportPath = base::StringBuf("../materials/");
-    m_materialSearchPath = base::StringBuf("../materials/");
+    m_materialImportPath = StringBuf("../materials/");
+    m_materialSearchPath = StringBuf("../materials/");
 
-    m_textureImportPath = base::StringBuf("../textures/");
-    m_textureSearchPath = base::StringBuf("../textures/");
+    m_textureImportPath = StringBuf("../textures/");
+    m_textureSearchPath = StringBuf("../textures/");
 }
 
 float GetScaleFactorForUnits(MeshImportUnits units)
@@ -107,35 +107,35 @@ float GetScaleFactorForUnits(MeshImportUnits units)
     return 1.0f;
 }
 
-base::Matrix GetOrientationMatrixForSpace(MeshImportSpace space)
+Matrix GetOrientationMatrixForSpace(MeshImportSpace space)
 {
     switch (space)
     {
         case MeshImportSpace::RightHandZUp:
-            return base::Matrix::IDENTITY();
+            return Matrix::IDENTITY();
 
         case MeshImportSpace::RightHandYUp:
-            return base::Matrix(1, 0, 0, 0, 0, -1, 0, 1, 0); // -1 to keep the stuff right handed
+            return Matrix(1, 0, 0, 0, 0, -1, 0, 1, 0); // -1 to keep the stuff right handed
 
         case MeshImportSpace::LeftHandZUp:
-            return base::Matrix(1, 0, 0, 0, -1, 0, 0, 0, 1);
+            return Matrix(1, 0, 0, 0, -1, 0, 0, 0, 1);
 
         case MeshImportSpace::LeftHandYUp:
-            return base::Matrix(1, 0, 0, 0, 0, 1, 0, 1, 0); // swapping Y and Z causes the space to flip
+            return Matrix(1, 0, 0, 0, 0, 1, 0, 1, 0); // swapping Y and Z causes the space to flip
     }
 
     // default space
-    return base::Matrix::IDENTITY();
+    return Matrix::IDENTITY();
 }
 
-base::Matrix CalcContentToEngineMatrix(MeshImportSpace space, MeshImportUnits units)
+Matrix CalcContentToEngineMatrix(MeshImportSpace space, MeshImportUnits units)
 {
     auto orientationMatrix = GetOrientationMatrixForSpace(space);
     orientationMatrix.scaleInner(GetScaleFactorForUnits(units));
     return orientationMatrix;
 }
 
-base::Matrix MeshImportConfig::calcAssetToEngineConversionMatrix(MeshImportUnits defaultAssetUnits, MeshImportSpace defaultAssetSpace) const
+Matrix MeshImportConfig::calcAssetToEngineConversionMatrix(MeshImportUnits defaultAssetUnits, MeshImportSpace defaultAssetSpace) const
 {
     // select setup
     auto importUnits = resolveUnits(defaultAssetUnits);
@@ -145,13 +145,13 @@ base::Matrix MeshImportConfig::calcAssetToEngineConversionMatrix(MeshImportUnits
     auto orientationMatrix = CalcContentToEngineMatrix(importSpace, importUnits);
 
     // calculate the additional setup matrix
-    auto additionalTransformMatrix = base::Matrix::BuildTRS(globalTranslation, globalRotation, globalScale);
+    auto additionalTransformMatrix = Matrix::BuildTRS(globalTranslation, globalRotation, globalScale);
     return orientationMatrix * additionalTransformMatrix;
 }
 
 //--
 
-void MeshImportConfig::computeConfigurationKey(base::CRC64& crc) const
+void MeshImportConfig::computeConfigurationKey(CRC64& crc) const
 {
     TBaseClass::computeConfigurationKey(crc);
 
@@ -205,20 +205,20 @@ IGeneralMeshImporter::~IGeneralMeshImporter()
 {}
 
 
-base::StringBuf IGeneralMeshImporter::BuildMaterialFileName(base::StringView name, uint32_t materialIndex)
+StringBuf IGeneralMeshImporter::BuildMaterialFileName(StringView name, uint32_t materialIndex)
 {
-    static const auto ext = base::res::IResource::GetResourceExtensionForClass(rendering::MaterialInstance::GetStaticClass());
+    static const auto ext = res::IResource::GetResourceExtensionForClass(MaterialInstance::GetStaticClass());
 
-    base::StringBuf fileName;
-    if (!base::MakeSafeFileName(name, fileName))
-        fileName = base::TempString("Material{}", materialIndex);
+    StringBuf fileName;
+    if (!MakeSafeFileName(name, fileName))
+        fileName = TempString("Material{}", materialIndex);
 
     ASSERT(ValidateFileName(fileName));
 
-    return base::TempString("{}.{}", fileName, ext);
+    return TempString("{}.{}", fileName, ext);
 }
 
-void IGeneralMeshImporter::EmitDepotPath(const base::Array<base::StringView>& pathParts, base::IFormatStream& f)
+void IGeneralMeshImporter::EmitDepotPath(const Array<StringView>& pathParts, IFormatStream& f)
 {
     f << "/";
 
@@ -229,9 +229,9 @@ void IGeneralMeshImporter::EmitDepotPath(const base::Array<base::StringView>& pa
     }
 }
 
-void IGeneralMeshImporter::GlueDepotPath(base::StringView path, bool isFileName, base::Array<base::StringView>& outPathParts)
+void IGeneralMeshImporter::GlueDepotPath(StringView path, bool isFileName, Array<StringView>& outPathParts)
 {
-    base::InplaceArray<base::StringView, 10> pathParts;
+    InplaceArray<StringView, 10> pathParts;
     path.slice("/\\", false, pathParts);
 
     // skip the file name itself
@@ -261,13 +261,13 @@ void IGeneralMeshImporter::GlueDepotPath(base::StringView path, bool isFileName,
     }
 }
 
-base::StringBuf IGeneralMeshImporter::BuildAssetDepotPath(base::StringView referenceDepotPath, base::StringView materialImportPath, base::StringView materialFileName)
+StringBuf IGeneralMeshImporter::BuildAssetDepotPath(StringView referenceDepotPath, StringView materialImportPath, StringView materialFileName)
 {
-    base::InplaceArray<base::StringView, 20> pathParts;
+    InplaceArray<StringView, 20> pathParts;
     GlueDepotPath(referenceDepotPath, true, pathParts);
     GlueDepotPath(materialImportPath, false, pathParts);
 
-    base::StringBuilder txt;
+    StringBuilder txt;
     EmitDepotPath(pathParts, txt);
 
     txt << materialFileName;
@@ -277,29 +277,29 @@ base::StringBuf IGeneralMeshImporter::BuildAssetDepotPath(base::StringView refer
 
 //--
 
-static base::StringBuf TransformRelativePath(base::res::IResourceImporterInterface& importer, base::StringView secondaryImportPath, base::StringView searchPath)
+static StringBuf TransformRelativePath(res::IResourceImporterInterface& importer, StringView secondaryImportPath, StringView searchPath)
 {
     if (!searchPath)
-        return base::StringBuf::EMPTY();
+        return StringBuf::EMPTY();
 
     if (!secondaryImportPath)
         secondaryImportPath = importer.queryImportPath();
 
     secondaryImportPath = secondaryImportPath.baseDirectory();
 
-    base::StringBuf mergedAbsolutePath;
-    if (!base::ApplyRelativePath(importer.queryResourcePath(), searchPath, mergedAbsolutePath))
-        return base::StringBuf(searchPath); // try our luck with search path directly
+    StringBuf mergedAbsolutePath;
+    if (!ApplyRelativePath(importer.queryResourcePath(), searchPath, mergedAbsolutePath))
+        return StringBuf(searchPath); // try our luck with search path directly
 
-    base::StringBuf relativePath;
-    if (!base::BuildRelativePath(secondaryImportPath, mergedAbsolutePath, relativePath))
-        return base::StringBuf(searchPath); // try our luck with search path directly
+    StringBuf relativePath;
+    if (!BuildRelativePath(secondaryImportPath, mergedAbsolutePath, relativePath))
+        return StringBuf(searchPath); // try our luck with search path directly
 
     TRACE_INFO("Search path '{}' relative to '{}' translated to '{}' relative to '{}'", searchPath, importer.queryImportPath(), relativePath, secondaryImportPath);
     return relativePath;        
 }
 
-MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(base::res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, base::StringView name, base::StringView materialLibraryName, uint32_t materialIndex) const
+MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, StringView name, StringView materialLibraryName, uint32_t materialIndex) const
 {
     // don't import
     if (!cfg.m_importMaterials)
@@ -311,11 +311,11 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(base::res::IResourceImp
     {
         TRACE_INFO("Looking for material file '{}'...", materialFileName);
 
-        base::StringBuf materialDepotPath;
+        StringBuf materialDepotPath;
         if (importer.findDepotFile(importer.queryResourcePath(), cfg.m_materialSearchPath, materialFileName, materialDepotPath, cfg.m_depotSearchDepth))
         {
             TRACE_INFO("Existing material file found at '{}'", materialDepotPath);
-            return MaterialRef(base::res::ResourcePath(materialDepotPath));
+            return MaterialRef(res::ResourcePath(materialDepotPath));
         }
     }
 
@@ -325,8 +325,8 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(base::res::IResourceImp
         // check if the imported material already exists
         const auto depotPath = BuildAssetDepotPath(importer.queryResourcePath().view(), cfg.m_materialImportPath, materialFileName);
 
-        const auto materialImportConfig = createMaterialImportConfig(cfg, name);// base::RefNew<MTLMaterialImportConfig>();
-//                materialImportConfig->m_materialName = base::StringBuf(name);
+        const auto materialImportConfig = createMaterialImportConfig(cfg, name);// RefNew<MTLMaterialImportConfig>();
+//                materialImportConfig->m_materialName = StringBuf(name);
         materialImportConfig->m_importTextures = cfg.m_importTextures;
         materialImportConfig->m_depotSearchDepth = cfg.m_depotSearchDepth;
         materialImportConfig->m_sourceAssetsSearchDepth = cfg.m_sourceAssetsSearchDepth;
@@ -342,7 +342,7 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(base::res::IResourceImp
 
         if (materialLibraryName)
         {
-            base::StringBuf resolvedMaterialLibraryPath;
+            StringBuf resolvedMaterialLibraryPath;
             if (importer.findSourceFile(importer.queryImportPath(), materialLibraryName, resolvedMaterialLibraryPath))
             {
                 // build depot path for the imported texture
@@ -364,7 +364,7 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(base::res::IResourceImp
                 importer.followupImport(resolvedMaterialLibraryPath, depotPath, materialImportConfig);
 
                 // build a unloaded material reference (so it can be saved)
-                return rendering::MaterialRef(base::res::ResourcePath(depotPath));
+                return MaterialRef(res::ResourcePath(depotPath));
             }
         }
         else
@@ -385,17 +385,17 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(base::res::IResourceImp
             importer.followupImport(importer.queryImportPath(), depotPath, materialImportConfig);
 
             // build a unloaded material reference (so it can be saved)
-            return rendering::MaterialRef(base::res::ResourcePath(depotPath));
+            return MaterialRef(res::ResourcePath(depotPath));
         }
     }
 
     // no material imported
-    return rendering::MaterialRef();
+    return MaterialRef();
 }
 
-MaterialInstancePtr IGeneralMeshImporter::buildSingleMaterial(base::res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, base::StringView name, base::StringView materialLibraryName, uint32_t materialIndex, const Mesh* existingMesh) const
+MaterialInstancePtr IGeneralMeshImporter::buildSingleMaterial(res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, StringView name, StringView materialLibraryName, uint32_t materialIndex, const Mesh* existingMesh) const
 {
-    base::Array<MaterialInstanceParam> existingParameters;
+    Array<MaterialInstanceParam> existingParameters;
 
     if (existingMesh)
     {
@@ -410,7 +410,7 @@ MaterialInstancePtr IGeneralMeshImporter::buildSingleMaterial(base::res::IResour
     }
 
     const auto baseMaterial = buildSingleMaterialRef(importer, cfg, name, materialLibraryName, materialIndex);
-    return base::RefNew<rendering::MaterialInstance>(baseMaterial, std::move(existingParameters));
+    return RefNew<MaterialInstance>(baseMaterial, std::move(existingParameters));
 }
 
-END_BOOMER_NAMESPACE(rendering)
+END_BOOMER_NAMESPACE_EX(assets)

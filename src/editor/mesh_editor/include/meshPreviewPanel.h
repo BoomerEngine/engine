@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "rendering/ui_viewport/include/renderingScenePanel.h"
+#include "editor/viewport/include/uiScenePanel.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -29,7 +29,7 @@ struct MeshPreviewPanelSettings
 
     bool isolateMaterials = false;
     bool highlightMaterials = false;
-    base::HashSet<base::StringID> selectedMaterials;
+    HashSet<StringID> selectedMaterials;
 };
 
 //--
@@ -55,10 +55,10 @@ public:
     void changePreviewSettings(const std::function<void(MeshPreviewPanelSettings&)>& func);
 
     // set preview material
-    void previewMaterial(base::StringID name, rendering::MaterialPtr data);
+    void previewMaterial(StringID name, MaterialPtr data);
 
     // set preview mesh
-    void previewMesh(const rendering::MeshPtr& ptr);
+    void previewMesh(const MeshPtr& ptr);
 
     //--
 
@@ -66,23 +66,23 @@ public:
     virtual void configLoad(const ui::ConfigBlock& block);
 
 private:
-    rendering::MeshPtr m_mesh;
+    MeshPtr m_mesh;
 
     MeshPreviewPanelSettings m_previewSettings;
-    base::HashMap<base::StringID, rendering::MaterialPtr> m_previewMaterials;
+    HashMap<StringID, MaterialPtr> m_previewMaterials;
 
-    base::Array<rendering::scene::ObjectProxyPtr> m_proxies;
+    Array<rendering::ObjectProxyMeshPtr> m_proxies;
 
-    base::Box m_lastBounds;
+    Box m_lastBounds;
 
     void destroyPreviewElements();
     void createPreviewElements();
 
-    virtual void handleRender(rendering::scene::FrameParams& frame) override;
-    virtual void handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables) override;
-    virtual void handleAreaSelection(bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables) override;
+    virtual void handleRender(rendering::FrameParams& frame) override;
+    virtual void handlePointSelection(bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables) override;
+    virtual void handleAreaSelection(bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables) override;
 };
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

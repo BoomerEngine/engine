@@ -13,19 +13,19 @@
 #include "scenePreviewStreaming.h"
 #include "sceneContentStructure.h"
 
-#include "rendering/scene/include/renderingScene.h"
-#include "rendering/scene/include/renderingFrameDebug.h"
-#include "rendering/scene/include/renderingFrameParams.h"
+#include "engine/rendering/include/renderingScene.h"
+#include "engine/rendering/include/renderingFrameDebug.h"
+#include "engine/rendering/include/renderingFrameParams.h"
 
-#include "base/ui/include/uiToolBar.h"
-#include "base/world/include/world.h"
+#include "engine/ui/include/uiToolBar.h"
+#include "engine/world/include/world.h"
 #include "sceneContentNodes.h"
-#include "base/ui/include/uiElementConfig.h"
-#include "base/ui/include/uiSplitter.h"
-#include "base/ui/include/uiFourWaySplitter.h"
-#include "base/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiElementConfig.h"
+#include "engine/ui/include/uiSplitter.h"
+#include "engine/ui/include/uiFourWaySplitter.h"
+#include "engine/ui/include/uiMenuBar.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -140,10 +140,10 @@ SceneLayoutSettings::SceneLayoutSettings()
     viewportState[Viewport_Main].camera.rotation = Angles(20.0f, 40.0f, 0.0f);
     viewportState[Viewport_Main].camera.position = -viewportState[Viewport_Main].camera.rotation.forward() * 3.0f;
 
-    viewportState[Viewport_Main].panel.renderMode = rendering::scene::FrameRenderMode::Default;
-    viewportState[Viewport_Extra1].panel.renderMode = rendering::scene::FrameRenderMode::WireframePassThrough;
-    viewportState[Viewport_Extra2].panel.renderMode = rendering::scene::FrameRenderMode::WireframePassThrough;
-    viewportState[Viewport_Extra3].panel.renderMode = rendering::scene::FrameRenderMode::WireframePassThrough;
+    viewportState[Viewport_Main].panel.renderMode = rendering::FrameRenderMode::Default;
+    viewportState[Viewport_Extra1].panel.renderMode = rendering::FrameRenderMode::WireframePassThrough;
+    viewportState[Viewport_Extra2].panel.renderMode = rendering::FrameRenderMode::WireframePassThrough;
+    viewportState[Viewport_Extra3].panel.renderMode = rendering::FrameRenderMode::WireframePassThrough;
 }
 
 //--
@@ -207,7 +207,7 @@ static bool IsDevivedNode(const SceneContentNode* node)
     return false;
 }
 
-SceneContentNodePtr ScenePreviewContainer::resolveSelectable(const rendering::scene::Selectable& selectable, bool raw /*= false*/) const
+SceneContentNodePtr ScenePreviewContainer::resolveSelectable(const Selectable& selectable, bool raw /*= false*/) const
 {
     auto node = m_visualization->resolveSelectable(selectable);
 
@@ -370,7 +370,7 @@ void ScenePreviewContainer::updateWorld()
 
 void ScenePreviewContainer::createWorld()
 {
-    m_world = RefNew<world::World>();
+    m_world = RefNew<World>();
     m_lastWorldTick.resetToNow();
 
     m_visualization = RefNew<SceneNodeVisualizationHandler>(m_world);
@@ -686,4 +686,4 @@ void ScenePreviewContainer::focusBounds(const Box& box)
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

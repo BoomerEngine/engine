@@ -17,13 +17,13 @@
 #include "managedFileNativeResource.h"
 #include "managedFilePlaceholder.h"
 
-#include "base/ui/include/uiImage.h"
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiTextValidation.h"
-#include "base/ui/include/uiEditBox.h"
+#include "engine/ui/include/uiImage.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiTextValidation.h"
+#include "engine/ui/include/uiEditBox.h"
 #include "managedDirectoryPlaceholder.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -137,7 +137,7 @@ AssetBrowserPlaceholderFileVis::AssetBrowserPlaceholderFileVis(ManagedFilePlaceh
     m_label->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
     m_label->customMargins(3.0f);
 
-    auto selfRef = base::RefWeakPtr<AssetBrowserPlaceholderFileVis>(this);
+    auto selfRef = RefWeakPtr<AssetBrowserPlaceholderFileVis>(this);
 
     m_label->bind(ui::EVENT_TEXT_ACCEPTED) = [selfRef]()
     {
@@ -145,8 +145,8 @@ AssetBrowserPlaceholderFileVis::AssetBrowserPlaceholderFileVis(ManagedFilePlaceh
         {
             self->m_filePlaceholder->rename(self->m_label->text());
             self->m_label->enable(false);
-            base::DispatchGlobalEvent(self->m_filePlaceholder->eventKey(), EVENT_MANAGED_PLACEHOLDER_ACCEPTED);
-            base::DispatchGlobalEvent(self->m_filePlaceholder->depot()->eventKey(), EVENT_MANAGED_DEPOT_PLACEHOLDER_ACCEPTED, ManagedItemPtr(AddRef(self->item())));
+            DispatchGlobalEvent(self->m_filePlaceholder->eventKey(), EVENT_MANAGED_PLACEHOLDER_ACCEPTED);
+            DispatchGlobalEvent(self->m_filePlaceholder->depot()->eventKey(), EVENT_MANAGED_DEPOT_PLACEHOLDER_ACCEPTED, ManagedItemPtr(AddRef(self->item())));
         }
     };
 
@@ -156,8 +156,8 @@ AssetBrowserPlaceholderFileVis::AssetBrowserPlaceholderFileVis(ManagedFilePlaceh
         if (auto self = selfRef.lock())
         {
             self->m_label->enable(false);
-            base::DispatchGlobalEvent(self->m_filePlaceholder->eventKey(), EVENT_MANAGED_PLACEHOLDER_DISCARDED);
-            base::DispatchGlobalEvent(self->m_filePlaceholder->depot()->eventKey(), EVENT_MANAGED_DEPOT_PLACEHOLDER_DISCARDED, ManagedItemPtr(AddRef(self->item())));
+            DispatchGlobalEvent(self->m_filePlaceholder->eventKey(), EVENT_MANAGED_PLACEHOLDER_DISCARDED);
+            DispatchGlobalEvent(self->m_filePlaceholder->depot()->eventKey(), EVENT_MANAGED_DEPOT_PLACEHOLDER_DISCARDED, ManagedItemPtr(AddRef(self->item())));
         }
     };    
 }
@@ -196,7 +196,7 @@ AssetBrowserPlaceholderDirectoryVis::AssetBrowserPlaceholderDirectoryVis(Managed
     m_label->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
     m_label->customMargins(3.0f);
 
-    auto selfRef = base::RefWeakPtr<AssetBrowserPlaceholderDirectoryVis>(this);
+    auto selfRef = RefWeakPtr<AssetBrowserPlaceholderDirectoryVis>(this);
 
     m_label->bind(ui::EVENT_TEXT_ACCEPTED) = [selfRef]()
     {
@@ -204,8 +204,8 @@ AssetBrowserPlaceholderDirectoryVis::AssetBrowserPlaceholderDirectoryVis(Managed
         {
             self->m_directoryPlaceholder->rename(self->m_label->text());
             self->m_label->enable(false);
-            base::DispatchGlobalEvent(self->m_directoryPlaceholder->eventKey(), EVENT_MANAGED_PLACEHOLDER_ACCEPTED);
-            base::DispatchGlobalEvent(self->m_directoryPlaceholder->depot()->eventKey(), EVENT_MANAGED_DEPOT_PLACEHOLDER_ACCEPTED, ManagedItemPtr(AddRef(self->item())));
+            DispatchGlobalEvent(self->m_directoryPlaceholder->eventKey(), EVENT_MANAGED_PLACEHOLDER_ACCEPTED);
+            DispatchGlobalEvent(self->m_directoryPlaceholder->depot()->eventKey(), EVENT_MANAGED_DEPOT_PLACEHOLDER_ACCEPTED, ManagedItemPtr(AddRef(self->item())));
         }
     };
 
@@ -215,8 +215,8 @@ AssetBrowserPlaceholderDirectoryVis::AssetBrowserPlaceholderDirectoryVis(Managed
         if (auto self = selfRef.lock())
         {
             self->m_label->enable(false);
-            base::DispatchGlobalEvent(self->m_directoryPlaceholder->eventKey(), EVENT_MANAGED_PLACEHOLDER_DISCARDED);
-            base::DispatchGlobalEvent(self->m_directoryPlaceholder->depot()->eventKey(), EVENT_MANAGED_DEPOT_PLACEHOLDER_DISCARDED, ManagedItemPtr(AddRef(self->item())));
+            DispatchGlobalEvent(self->m_directoryPlaceholder->eventKey(), EVENT_MANAGED_PLACEHOLDER_DISCARDED);
+            DispatchGlobalEvent(self->m_directoryPlaceholder->depot()->eventKey(), EVENT_MANAGED_DEPOT_PLACEHOLDER_DISCARDED, ManagedItemPtr(AddRef(self->item())));
         }
     };
 }
@@ -233,4 +233,4 @@ void AssetBrowserPlaceholderDirectoryVis::resizeIcon(uint32_t size)
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

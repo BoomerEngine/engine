@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "base/ui/include/uiWindow.h"
-#include "base/ui/include/uiDockContainer.h"
-#include "base/ui/include/uiDockPanel.h"
+#include "engine/ui/include/uiWindow.h"
+#include "engine/ui/include/uiDockContainer.h"
+#include "engine/ui/include/uiDockPanel.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 ///---
 
@@ -26,7 +26,7 @@ enum class ResourceEditorFeatureBit : uint32_t
     CopyPaste = FLAG(4), // show the "copy/paste" stuff
 };
 
-typedef base::DirectFlags<ResourceEditorFeatureBit> ResourceEditorFeatureFlags;
+typedef DirectFlags<ResourceEditorFeatureBit> ResourceEditorFeatureFlags;
 
 ///---
 
@@ -194,4 +194,4 @@ public:
 
 ///---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

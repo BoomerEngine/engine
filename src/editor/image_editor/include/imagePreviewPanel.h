@@ -8,11 +8,11 @@
 
 #pragma once
 
-#include "base/ui/include/uiElement.h"
-#include "base/ui/include/uiCanvasArea.h"
+#include "engine/ui/include/uiElement.h"
+#include "engine/ui/include/uiCanvasArea.h"
 #include "import/texture_loader/include/imageCompression.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -38,14 +38,14 @@ struct ImagePreviewPanelSettings
     int toneMapMode = 0;
     float exposureAdj = 0.0f;
 
-    rendering::ImageContentColorSpace colorSpace;
+    assets::ImageContentColorSpace colorSpace;
 };
 
 //--
 
 struct ImagePreviewPixel
 {
-    base::Vector4 color;
+    Vector4 color;
     bool integerValues = false;
     double maxValue = 1.0f;
     uint8_t channels = 0;
@@ -71,17 +71,17 @@ public:
 private:
     ImagePreviewPanelSettings m_previewSettings;
 
-    virtual void renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
-    virtual void renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
-    virtual bool handleMouseMovement(const base::input::MouseMovementEvent& evt) override;
+    virtual void renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual void renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual bool handleMouseMovement(const input::MouseMovementEvent& evt) override;
     virtual void handleHoverLeave(const ui::Position& absolutePosition) override;
 
     virtual ui::ElementPtr queryTooltipElement(const ui::Position& absolutePosition, ui::ElementArea& outArea) const override;
 
     void updateTooltip() const;
 
-    mutable base::RefWeakPtr<ui::TextLabel> m_activeTooltipText;
-    mutable base::RefWeakPtr<ui::IElement> m_activeTooltipColor;
+    mutable RefWeakPtr<ui::TextLabel> m_activeTooltipText;
+    mutable RefWeakPtr<ui::IElement> m_activeTooltipColor;
 
     ImagePreviewPixel m_previewPixel;
     bool m_previewPixelValid = false;
@@ -105,7 +105,7 @@ public:
     //--
 
     // preview panel
-    INLINE const base::RefPtr<ImagePreviewPanel>& panel() const { return m_previewPanel; }
+    INLINE const RefPtr<ImagePreviewPanel>& panel() const { return m_previewPanel; }
 
     // toolbar
     INLINE const ui::ToolBarPtr& toolbar() const { return m_previewToolbar; }
@@ -117,12 +117,12 @@ public:
     //--
 
     // bind a generic texture view
-    void bindImageView(const rendering::ImageSampledView* image, rendering::ImageContentColorSpace knownColorSpace = rendering::ImageContentColorSpace::Auto);
+    void bindImageView(const gpu::ImageSampledView* image, assets::ImageContentColorSpace knownColorSpace = assets::ImageContentColorSpace::Auto);
 
     //--
 
 private:
-    base::RefPtr<ImagePreviewPanel> m_previewPanel;
+    RefPtr<ImagePreviewPanel> m_previewPanel;
     ui::ToolBarPtr m_previewToolbar;
 
     ui::HorizontalRulerPtr m_previewHorizontalRuler;
@@ -140,10 +140,10 @@ private:
     uint32_t m_numImageSlices = 0;
     uint32_t m_numImageMips = 0;
 
-	rendering::ImageSampledViewPtr m_mainImageSRV;
-	rendering::ImageSampledViewPtr m_sourceImageSRV;
+    gpu::ImageSampledViewPtr m_mainImageSRV;
+	gpu::ImageSampledViewPtr m_sourceImageSRV;
 
-    base::Array<base::RefPtr<ImagePreviewElement>> m_mainImagePreviewElements;
+    Array<RefPtr<ImagePreviewElement>> m_mainImagePreviewElements;
 
     void updateMipmapList();
     void updateSliceList();
@@ -153,4 +153,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "rendering/ui_viewport/include/cameraController.h"
-#include "rendering/ui_viewport/include/renderingScenePanel.h"
+#include "editor/viewport/include/viewportCameraController.h"
+#include "editor/viewport/include/uiScenePanel.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -41,7 +41,7 @@ struct EDITOR_SCENE_EDITOR_API SceneLayoutViewportSettings
     RTTI_DECLARE_NONVIRTUAL_CLASS(SceneLayoutViewportSettings);
 
 public:
-    ui::CameraControllerSettings camera;
+    ui::ViewportCameraControllerSettings camera;
     ui::RenderingScenePanelSettings panel;
 
     SceneLayoutViewportSettings();
@@ -160,7 +160,7 @@ public:
     INLINE const SceneEditModePtr& mode() const { return m_editMode; }
 
     // preview world displayed in all the panels
-    INLINE const base::world::WorldPtr& world() const { return m_world; }
+    INLINE const WorldPtr& world() const { return m_world; }
 
     //--
 
@@ -208,7 +208,7 @@ public:
     //--
 
     // resolve rendering selectable to scene node
-    SceneContentNodePtr resolveSelectable(const rendering::scene::Selectable& selectable, bool raw=false) const;
+    SceneContentNodePtr resolveSelectable(const Selectable& selectable, bool raw=false) const;
 
     //--
 
@@ -235,7 +235,7 @@ public:
     void focusBounds(const Box& box);
 
 private:
-    world::WorldPtr m_world;
+    WorldPtr m_world;
 
     NativeTimePoint m_lastWorldTick;
     float m_worldTickRatio = 1.0f;
@@ -282,4 +282,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

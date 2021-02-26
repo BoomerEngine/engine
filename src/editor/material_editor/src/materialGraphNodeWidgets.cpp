@@ -10,34 +10,34 @@
 #include "materialGraphEditor.h"
 #include "materialGraphNodeWidgets.h"
 
-#include "base/ui/include/uiEditBox.h"
-#include "base/object/include/dataView.h"
-#include "base/object/include/rttiDataView.h"
-#include "base/ui/include/uiDataBox.h"
-#include "base/graph/include/graphBlock.h"
+#include "engine/ui/include/uiEditBox.h"
+#include "core/object/include/dataView.h"
+#include "core/object/include/rttiDataView.h"
+#include "engine/ui/include/uiDataBox.h"
+#include "core/graph/include/graphBlock.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
 RTTI_BEGIN_TYPE_CLASS(MaterialGraphConstantScalarWidget);
     RTTI_METADATA(ui::GraphNodeInnerWidgetBlockClassMetadata)
-        .addBlockClass("rendering::MaterialGraphBlock_ConstFloat"_id)
-        .addBlockClass("rendering::MaterialGraphBlock_ConstVector2"_id)
-        .addBlockClass("rendering::MaterialGraphBlock_ConstVector3"_id)
-        .addBlockClass("rendering::MaterialGraphBlock_ConstVector4"_id);
+        .addBlockClass("MaterialGraphBlock_ConstFloat"_id)
+        .addBlockClass("MaterialGraphBlock_ConstVector2"_id)
+        .addBlockClass("MaterialGraphBlock_ConstVector3"_id)
+        .addBlockClass("MaterialGraphBlock_ConstVector4"_id);
 RTTI_END_TYPE();
 
-bool MaterialGraphConstantScalarWidget::bindToBlock(base::graph::Block* block)
+bool MaterialGraphConstantScalarWidget::bindToBlock(graph::Block* block)
 {
     if (block)
     {
         if (auto proxy = block->createDataView())
         {
-            base::rtti::DataViewInfo info;
+            rtti::DataViewInfo info;
             if (proxy->describeDataView("value", info).valid())
             {
-                info.flags |= base::rtti::DataViewInfoFlagBit::VerticalEditor;
+                info.flags |= rtti::DataViewInfoFlagBit::VerticalEditor;
                 if (auto box = ui::IDataBox::CreateForType(info))
                 {
                     box->bindData(proxy, "value"); // TODO: bind undo redo
@@ -59,7 +59,7 @@ bool MaterialGraphConstantScalarWidget::bindToBlock(base::graph::Block* block)
     return false;
 }
 
-void MaterialGraphConstantScalarWidget::bindToActionHistory(base::ActionHistory* history)
+void MaterialGraphConstantScalarWidget::bindToActionHistory(ActionHistory* history)
 {
     if (m_box)
         m_box->bindActionHistory(history);
@@ -68,19 +68,19 @@ void MaterialGraphConstantScalarWidget::bindToActionHistory(base::ActionHistory*
 //--
 
 RTTI_BEGIN_TYPE_CLASS(MaterialGraphConstantColorWidget);
-    RTTI_METADATA(ui::GraphNodeInnerWidgetBlockClassMetadata).addBlockClass("rendering::MaterialGraphBlock_ConstColor"_id);
+    RTTI_METADATA(ui::GraphNodeInnerWidgetBlockClassMetadata).addBlockClass("MaterialGraphBlock_ConstColor"_id);
 RTTI_END_TYPE();
 
-bool MaterialGraphConstantColorWidget::bindToBlock(base::graph::Block* block)
+bool MaterialGraphConstantColorWidget::bindToBlock(graph::Block* block)
 {
     if (block)
     {
         if (auto proxy = block->createDataView())
         {
-            base::rtti::DataViewInfo info;
+            rtti::DataViewInfo info;
             if (proxy->describeDataView("color", info).valid())
             {
-                info.flags |= base::rtti::DataViewInfoFlagBit::VerticalEditor;
+                info.flags |= rtti::DataViewInfoFlagBit::VerticalEditor;
                 if (auto box = ui::IDataBox::CreateForType(info))
                 {
                     box->bindData(proxy, "color");
@@ -99,7 +99,7 @@ bool MaterialGraphConstantColorWidget::bindToBlock(base::graph::Block* block)
     return false;
 }
 
-void MaterialGraphConstantColorWidget::bindToActionHistory(base::ActionHistory* history)
+void MaterialGraphConstantColorWidget::bindToActionHistory(ActionHistory* history)
 {
     if (m_box)
         m_box->bindActionHistory(history);
@@ -107,4 +107,4 @@ void MaterialGraphConstantColorWidget::bindToActionHistory(base::ActionHistory* 
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

@@ -12,13 +12,13 @@
 #include "managedFileAssetChecks.h"
 #include "managedFileNativeResource.h"
 
-#include "base/resource_compiler/include/importFileService.h"
-#include "base/resource/include/resourceMetadata.h"
-#include "base/resource_compiler/include/importer.h"
-#include "base/resource_compiler/include/importSourceAssetRepository.h"
-#include "base/ui/include/uiElement.h"
+#include "core/resource_compiler/include/importFileService.h"
+#include "core/resource/include/resourceMetadata.h"
+#include "core/resource_compiler/include/importer.h"
+#include "core/resource_compiler/include/importSourceAssetRepository.h"
+#include "engine/ui/include/uiElement.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -186,5 +186,5 @@ void ManagedFileSourceAssetCheck::runCheck()
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

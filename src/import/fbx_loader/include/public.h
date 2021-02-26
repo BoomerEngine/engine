@@ -20,9 +20,9 @@ namespace fbxsdk
 
 } // fbxsdk
 
-BEGIN_BOOMER_NAMESPACE(assets)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 class FBXFile;
-typedef base::RefPtr<FBXFile> FBXFilePtr;
+typedef RefPtr<FBXFile> FBXFilePtr;
 
-END_BOOMER_NAMESPACE(assets)
+END_BOOMER_NAMESPACE_EX(assets)

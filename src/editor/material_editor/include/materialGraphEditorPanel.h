@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "base/ui/include/uiGraphEditor.h"
+#include "engine/ui/include/uiGraphEditor.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -36,14 +36,14 @@ class EDITOR_MATERIAL_EDITOR_API MaterialGraphEditorPanel : public ui::IElement
     RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphEditorPanel, ui::IElement);
 
 public:
-    MaterialGraphEditorPanel(const base::ActionHistoryPtr& actions);
+    MaterialGraphEditorPanel(const ActionHistoryPtr& actions);
     virtual ~MaterialGraphEditorPanel();
 
     // get current selection
-    INLINE const base::Array<base::RefPtr<rendering::MaterialGraphBlock>>& selectedBlocks() const { return m_selectedBlocks; }
+    INLINE const Array<RefPtr<MaterialGraphBlock>>& selectedBlocks() const { return m_selectedBlocks; }
 
     // set graph
-    void bindGraph(const rendering::MaterialGraphPtr& graph);
+    void bindGraph(const MaterialGraphPtr& graph);
 
     // actions
     void actionCopySelection();
@@ -54,13 +54,13 @@ public:
     bool hasSelection() const;
 
 private:
-    base::RefPtr<MaterialGraphInnerEditorPanel> m_graphEditor;
-    base::Array<base::RefPtr<rendering::MaterialGraphBlock>> m_selectedBlocks;
+    RefPtr<MaterialGraphInnerEditorPanel> m_graphEditor;
+    Array<RefPtr<MaterialGraphBlock>> m_selectedBlocks;
 
-    rendering::MaterialGraphPtr m_graph;
+    MaterialGraphPtr m_graph;
     bool m_hasValidSelection = false;
 };
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

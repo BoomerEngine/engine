@@ -8,15 +8,15 @@
 
 #pragma once
 
-#include "base/app/include/command.h"
+#include "core/app/include/command.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 ///--
 
 struct BackgroundTaskProgress
 {
-    base::StringBuf text;
+    StringBuf text;
     uint64_t timestamp = 0;
     uint64_t currentCount = 0;
     uint64_t totalCount = 0;
@@ -25,7 +25,7 @@ struct BackgroundTaskProgress
 ///--
 
 /// editor side host that runs the command
-class EDITOR_COMMON_API IBackgroundTask : public IReferencable, public base::IProgressTracker
+class EDITOR_COMMON_API IBackgroundTask : public IReferencable, public IProgressTracker
 {
     RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IBackgroundTask);
 
@@ -84,5 +84,5 @@ private:
 
 ///---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

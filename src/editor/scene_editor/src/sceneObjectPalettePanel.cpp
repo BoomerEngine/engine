@@ -9,14 +9,14 @@
 #include "build.h"
 #include "sceneObjectPalettePanel.h"
 #include "sceneContentNodes.h"
-#include "base/ui/include/uiSplitter.h"
-#include "base/ui/include/uiListView.h"
-#include "base/ui/include/uiSearchBar.h"
-#include "base/ui/include/uiTextLabel.h"
-#include "base/resource/include/resourceTags.h"
-#include "base/ui/include/uiComboBox.h"
+#include "engine/ui/include/uiSplitter.h"
+#include "engine/ui/include/uiListView.h"
+#include "engine/ui/include/uiSearchBar.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "core/resource/include/resourceTags.h"
+#include "engine/ui/include/uiComboBox.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 class ScenePreviewContainer;
 
@@ -48,7 +48,7 @@ void SceneObjectPalettePanel::enumerateResourceClasses()
 
     for (const auto resClass : allResourceClasses)
     {
-        Array<SpecificClassType<world::Entity>> entityClasses;
+        Array<SpecificClassType<Entity>> entityClasses;
         SceneContentNode::EnumEntityClassesForResource(resClass, entityClasses);
 
         if (!entityClasses.empty())
@@ -169,9 +169,9 @@ public:
         return filter.testString(data->resourceClass->name().view());
     }
 
-    virtual base::StringBuf content(SceneResourceBasedObjectFactoryInfo* data, int colIndex = 0) const override
+    virtual StringBuf content(SceneResourceBasedObjectFactoryInfo* data, int colIndex = 0) const override
     {
-        return base::StringBuf(data->resourceClass->name().view());
+        return StringBuf(data->resourceClass->name().view());
     }
 
     virtual void visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const override
@@ -223,7 +223,7 @@ void SceneObjectPalettePanel::createInterface()
     }
 }
 
-SpecificClassType<world::Entity> SceneObjectPalettePanel::selectedEntityClass(ClassType resClass) const
+SpecificClassType<Entity> SceneObjectPalettePanel::selectedEntityClass(ClassType resClass) const
 {
     for (const auto res : m_resourceBindings)
         if (res.resourceClass == resClass)
@@ -250,4 +250,4 @@ void SceneObjectPalettePanel::configLoad(const ui::ConfigBlock& block)
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

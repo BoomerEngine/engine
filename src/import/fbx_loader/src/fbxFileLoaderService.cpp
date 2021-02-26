@@ -9,32 +9,32 @@
 #include "build.h"
 #include "fbxFileLoaderService.h"
 
-#include "base/io/include/ioFileHandle.h"
-#include "base/app/include/localServiceContainer.h"
-#include "base/containers/include/inplaceArray.h"
-#include "base/resource/include/resource.h"
+#include "core/io/include/ioFileHandle.h"
+#include "core/app/include/localServiceContainer.h"
+#include "core/containers/include/inplaceArray.h"
+#include "core/resource/include/resource.h"
 
-BEGIN_BOOMER_NAMESPACE(asset) 
-{
+BEGIN_BOOMER_NAMESPACE_EX(assets)
+
 //---
 
-RTTI_BEGIN_TYPE_CLASS(FileLoadingService);
+RTTI_BEGIN_TYPE_CLASS(FBXFileLoadingService);
 RTTI_END_TYPE();
 
-FileLoadingService::FileLoadingService()
+FBXFileLoadingService::FBXFileLoadingService()
     : m_fbxManager(nullptr)
 {}
 
-FileLoadingService::~FileLoadingService()
+FBXFileLoadingService::~FBXFileLoadingService()
 {}
 
-base::app::ServiceInitializationResult FileLoadingService::onInitializeService(const base::app::CommandLine& cmdLine)
+app::ServiceInitializationResult FBXFileLoadingService::onInitializeService(const app::CommandLine& cmdLine)
 {
     m_fbxManager = FbxManager::Create();
     if (!m_fbxManager)
     {
         TRACE_ERROR("Unable to create FBX Manager! FBX import/export will not be avaiable");
-        return base::app::ServiceInitializationResult::Silenced;
+        return app::ServiceInitializationResult::Silenced;
     }
 
     TRACE_SPAM("Autodesk FBX SDK version {}", m_fbxManager->GetVersion());
@@ -61,12 +61,12 @@ base::app::ServiceInitializationResult FileLoadingService::onInitializeService(c
     // get format
     m_fbxFormatID = m_fbxManager->GetIOPluginRegistry()->FindReaderIDByDescription("FBX (*.fbx)");
 
-    return base::app::ServiceInitializationResult::Finished;
+    return app::ServiceInitializationResult::Finished;
 }
 
 extern bool GFBXSceneClosed;
 
-void FileLoadingService::onShutdownService()
+void FBXFileLoadingService::onShutdownService()
 {
 	GFBXSceneClosed = true;
 
@@ -77,7 +77,7 @@ void FileLoadingService::onShutdownService()
     }
 }
 
-void FileLoadingService::onSyncUpdate()
+void FBXFileLoadingService::onSyncUpdate()
 {
 
 }
@@ -88,7 +88,7 @@ namespace helper
     class MemoryStreamClass : public FbxStream
     {
     public:
-        MemoryStreamClass(int formatID, const base::Buffer& data)
+        MemoryStreamClass(int formatID, const Buffer& data)
             : m_data(data)
             , m_pos(0)
             , m_size(0)
@@ -188,7 +188,7 @@ namespace helper
         }
 
     private:
-        base::Buffer m_data;
+        Buffer m_data;
         const uint8_t* m_dataPtr;
         mutable uint64_t m_pos;
         uint64_t m_size;
@@ -221,7 +221,7 @@ static void ResetPivot(FbxNode* node)
     node->ResetPivotSetAndConvertAnimation(1.0f, false, false);
 }
 
-fbxsdk::FbxScene* FileLoadingService::loadScene(const base::Buffer& data, base::Matrix& outAssetToEngineConversionMatrix) const
+fbxsdk::FbxScene* FBXFileLoadingService::loadScene(const Buffer& data, Matrix& outAssetToEngineConversionMatrix) const
 {
     FbxImporter* lImporter = nullptr;
     FbxScene* lScene = nullptr;
@@ -231,7 +231,7 @@ fbxsdk::FbxScene* FileLoadingService::loadScene(const base::Buffer& data, base::
 
     // create and initialize the importer
     {
-        auto lock = base::CreateLock(m_lock);
+        auto lock = CreateLock(m_lock);
 
         // Create an importer.
         auto lImporter = FbxImporter::Create(m_fbxManager, "");
@@ -289,7 +289,7 @@ fbxsdk::FbxScene* FileLoadingService::loadScene(const base::Buffer& data, base::
     }
 
     /*// Convert axes to engine
-    auto conversionMatrix = base::Matrix::IDENTITY();
+    auto conversionMatrix = Matrix::IDENTITY();
     {
         // get conversion matrix between our current space and the intended space
         FbxAMatrix a;
@@ -307,7 +307,7 @@ fbxsdk::FbxScene* FileLoadingService::loadScene(const base::Buffer& data, base::
         conversionMatrix = ToMatrix(b * a.Inverse());
 
         // FBX uses cm for it's scale, we use meters, make sure this gets converted
-        const auto nativeScaleFactor = base::Vector3(0.01f, 0.01f, 0.01f);
+        const auto nativeScaleFactor = Vector3(0.01f, 0.01f, 0.01f);
         conversionMatrix.scaleColumns(nativeScaleFactor);
     }
 
@@ -325,4 +325,4 @@ fbxsdk::FbxScene* FileLoadingService::loadScene(const base::Buffer& data, base::
 
 //---
 
-END_BOOMER_NAMESPACE(asset)
+END_BOOMER_NAMESPACE_EX(assets)

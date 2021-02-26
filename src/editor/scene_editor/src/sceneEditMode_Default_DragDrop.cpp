@@ -17,28 +17,28 @@
 #include "scenePreviewPanel.h"
 #include "sceneObjectPalettePanel.h"
 
-#include "base/ui/include/uiMenuBar.h"
-#include "base/ui/include/uiClassPickerBox.h"
-#include "base/ui/include/uiRenderer.h"
-#include "base/object/include/actionHistory.h"
-#include "base/object/include/action.h"
-#include "base/world/include/world.h"
-#include "base/world/include/worldEntity.h"
-#include "base/world/include/worldEntityBehavior.h"
-#include "base/resource/include/objectIndirectTemplate.h"
-#include "base/resource/include/objectIndirectTemplateCompiler.h"
-#include "base/world/include/worldNodeTemplate.h"
+#include "engine/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiClassPickerBox.h"
+#include "engine/ui/include/uiRenderer.h"
+#include "core/object/include/actionHistory.h"
+#include "core/object/include/action.h"
+#include "engine/world/include/world.h"
+#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/worldEntityBehavior.h"
+#include "core/resource/include/objectIndirectTemplate.h"
+#include "core/resource/include/objectIndirectTemplateCompiler.h"
+#include "engine/world/include/worldNodeTemplate.h"
 #include "editor/common/include/managedFileFormat.h"
 #include "editor/common/include/managedDirectory.h"
-#include "base/world/include/worldPrefab.h"
+#include "engine/world/include/worldPrefab.h"
 #include "editor/common/include/editorService.h"
 #include "editor/common/src/assetBrowserDialogs.h"
 #include "editor/common/include/assetBrowser.h"
-#include "base/ui/include/uiDragDrop.h"
+#include "engine/ui/include/uiDragDrop.h"
 
-#include "rendering/scene/include/renderingFrameDebug.h"
+#include "engine/rendering/include/renderingFrameDebug.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -67,13 +67,13 @@ public:
         ObjectIndirectTemplateCompiler compiler;
         compiler.addTemplate(compTemplate);
 
-        if (auto finalEntityClass = compiler.compileClass().cast<world::Entity>())
+        if (auto finalEntityClass = compiler.compileClass().cast<Entity>())
         {
-            auto defaultEntity = (world::Entity*)finalEntityClass->defaultObject();
+            auto defaultEntity = (Entity*)finalEntityClass->defaultObject();
             finalEntityClass = defaultEntity->determineEntityTemplateClass(compiler);
             if (finalEntityClass)
             {
-                if (auto entity = finalEntityClass->create<world::Entity>())
+                if (auto entity = finalEntityClass->create<Entity>())
                 {
                     if (entity->initializeFromTemplateProperties(compiler))
                     {
@@ -89,11 +89,11 @@ public:
 
     void buildPrefabPreview(const ManagedFile* file)
     {
-        if (const auto prefab = LoadResource<world::Prefab>(file->depotPath()))
+        if (const auto prefab = LoadResource<Prefab>(file->depotPath()))
         {
             const auto& rootPlacement = AbsoluteTransform::ROOT();
 
-            InplaceArray<world::EntityPtr, 20> allEntities;
+            InplaceArray<EntityPtr, 20> allEntities;
             prefab->compile(StringID(), rootPlacement, allEntities);
 
             for (const auto& ent : allEntities)
@@ -119,13 +119,13 @@ public:
         }
     }
 
-    void attach(world::World* world)
+    void attach(World* world)
     {
         for (const auto& ent : m_entities)
             world->attachEntity(ent.entity);
     }
 
-    void detach(world::World* world)
+    void detach(World* world)
     {
         for (const auto& ent : m_entities)
             world->detachEntity(ent.entity);
@@ -134,13 +134,13 @@ public:
 private:
     AbsoluteTransform m_placement;
 
-    struct Entity
+    struct EntityInfo
     {
-        world::EntityPtr entity;
+        EntityPtr entity;
         Transform relativePlacementTransform;
     };
 
-    Array<Entity> m_entities;
+    Array<EntityInfo> m_entities;
 
     std::atomic<bool> m_ready = false;
 };
@@ -150,9 +150,9 @@ private:
 class SceneObjectDragDropCreationHandler : public ui::IDragDropHandler
 {
 public:
-    typedef std::function<void(const base::AbsoluteTransform&)> TCreateFunc;
+    typedef std::function<void(const AbsoluteTransform&)> TCreateFunc;
 
-    SceneObjectDragDropCreationHandler(const ui::DragDropDataPtr& data, ui::IElement* target, const ui::Position& initialPosition, ui::RenderingPanelDepthBufferQuery* depthData, world::World* world, const SceneGridSettings& gridSettings, const TCreateFunc& createFunc, SceneObjectDragDropPreview* preview)
+    SceneObjectDragDropCreationHandler(const ui::DragDropDataPtr& data, ui::IElement* target, const ui::Position& initialPosition, ui::RenderingPanelDepthBufferQuery* depthData, World* world, const SceneGridSettings& gridSettings, const TCreateFunc& createFunc, SceneObjectDragDropPreview* preview)
         : ui::IDragDropHandler(data, target, initialPosition)
         , m_gridSettings(gridSettings)
         , m_depthBuffer(AddRef(depthData))
@@ -197,9 +197,9 @@ public:
 
     void updatePosition(const ui::Position& absolutePos) const
     {
-        base::Point clientPos = absolutePos - target()->cachedDrawArea().absolutePosition();
+        Point clientPos = absolutePos - target()->cachedDrawArea().absolutePosition();
 
-        base::AbsolutePosition worldPos;
+        AbsolutePosition worldPos;
         if (m_depthBuffer->calcWorldPosition(clientPos.x, clientPos.y, worldPos))
         {
             if (m_gridSettings.positionGridEnabled)
@@ -210,7 +210,7 @@ public:
                 auto snappedX = Snap(x, m_gridSettings.positionGridSize);
                 auto snappedY = Snap(y, m_gridSettings.positionGridSize);
                 auto snappedZ = Snap(z, m_gridSettings.positionGridSize);
-                m_positionUnderCursor = base::AbsolutePosition(snappedX, snappedY, snappedZ);
+                m_positionUnderCursor = AbsolutePosition(snappedX, snappedY, snappedZ);
             }
             else
             {
@@ -260,35 +260,35 @@ public:
             m_currentPreview->move(m_positionUnderCursor);
     }
 
-    void render(ScenePreviewPanel* panel, rendering::scene::FrameParams& frame)
+    void render(ScenePreviewPanel* panel, rendering::FrameParams& frame)
     {
         if (m_positionUnderCursorValid)
         {
-            rendering::scene::DebugDrawer dd(frame.geometry.solid);
-            dd.color(base::Color::CYAN);
+            rendering::DebugDrawer dd(frame.geometry.solid);
+            dd.color(Color::CYAN);
             dd.solidSphere(m_positionUnderCursor.approximate(), 0.05f);
         }
     }
 
 private:
-    base::RefPtr<ui::RenderingPanelDepthBufferQuery> m_depthBuffer;
+    RefPtr<ui::RenderingPanelDepthBufferQuery> m_depthBuffer;
 
     SceneGridSettings m_gridSettings;
 
-    mutable base::AbsolutePosition m_positionUnderCursor;
+    mutable AbsolutePosition m_positionUnderCursor;
     mutable bool m_positionUnderCursorValid = false;
 
     RefPtr<SceneObjectDragDropPreview> m_loadingPreview;
     RefPtr<SceneObjectDragDropPreview> m_currentPreview;
 
-    world::World* m_world = nullptr;
+    World* m_world = nullptr;
 
     TCreateFunc m_createFunc;
 };
 
 //--
 
-ui::DragDropHandlerPtr SceneEditMode_Default::handleDragDrop(ScenePreviewPanel* panel, const ui::DragDropDataPtr& data, const ui::Position& absolutePosition, const base::Point& clientPosition)
+ui::DragDropHandlerPtr SceneEditMode_Default::handleDragDrop(ScenePreviewPanel* panel, const ui::DragDropDataPtr& data, const ui::Position& absolutePosition, const Point& clientPosition)
 {
     // we need target when a new node will be added
     auto activeNode = m_activeNode.lock();
@@ -302,16 +302,16 @@ ui::DragDropHandlerPtr SceneEditMode_Default::handleDragDrop(ScenePreviewPanel* 
     // file
     RefPtr<SceneObjectDragDropPreview> previewObject;
     SceneObjectDragDropCreationHandler::TCreateFunc createFunc;
-    if (auto fileData = base::rtti_cast<AssetBrowserFileDragDrop>(data))
+    if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
     {
         if (auto file = fileData->file())
         {
             const auto resClass = file->fileFormat().nativeResourceClass();
             if (activeNode->canAttach(SceneContentNodeType::Entity))
             {
-                if (resClass.is<world::Prefab>())
+                if (resClass.is<Prefab>())
                 {
-                    createFunc = [this, file, targetNodes](const base::AbsoluteTransform& placement)
+                    createFunc = [this, file, targetNodes](const AbsoluteTransform& placement)
                     {
                         createPrefabAtNodes(targetNodes, file, &placement);
                     };
@@ -326,7 +326,7 @@ ui::DragDropHandlerPtr SceneEditMode_Default::handleDragDrop(ScenePreviewPanel* 
                 {
                     if (auto entityClass = m_objectPalette->selectedEntityClass(resClass))
                     {
-                        createFunc = [this, file, targetNodes, entityClass](const base::AbsoluteTransform& placement)
+                        createFunc = [this, file, targetNodes, entityClass](const AbsoluteTransform& placement)
                         {
                             createEntityAtNodes(targetNodes, entityClass, &placement, file);
                         };
@@ -359,7 +359,7 @@ void SceneEditMode_Default::updateDragDrop()
         handler->update();
 }
 
-void SceneEditMode_Default::renderDragDrop(ScenePreviewPanel* panel, rendering::scene::FrameParams& frame)
+void SceneEditMode_Default::renderDragDrop(ScenePreviewPanel* panel, rendering::FrameParams& frame)
 {
     if (auto handler = m_dragDropHandler.lock())
         handler->render(panel, frame);
@@ -367,5 +367,5 @@ void SceneEditMode_Default::renderDragDrop(ScenePreviewPanel* panel, rendering::
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

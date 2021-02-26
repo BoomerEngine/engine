@@ -13,9 +13,9 @@
 #include "managedFileNativeResource.h"
 #include "assetFileSmallImportIndicator.h"
 
-#include "base/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiTextLabel.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -33,7 +33,7 @@ AssetFileSmallImportIndicator::AssetFileSmallImportIndicator(ManagedFileNativeRe
 
     bind(EVENT_IMPORT_STATUS_CHANGED) = [this]() { updateStatus(); };
 
-    m_checker = base::RefNew<ManagedFileImportStatusCheck>(m_file, this);
+    m_checker = RefNew<ManagedFileImportStatusCheck>(m_file, this);
 
     m_events.bind(file->eventKey(), EVENT_MANAGED_FILE_RELOADED) = [this]()
     {
@@ -49,7 +49,7 @@ void AssetFileSmallImportIndicator::recheck()
         m_checker.reset();
     }
 
-    m_checker = base::RefNew<ManagedFileImportStatusCheck>(m_file, this);
+    m_checker = RefNew<ManagedFileImportStatusCheck>(m_file, this);
 }
 
 AssetFileSmallImportIndicator::~AssetFileSmallImportIndicator()
@@ -122,4 +122,4 @@ void AssetFileSmallImportIndicator::updateStatus()
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

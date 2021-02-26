@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- [# filter: natvis #] -->
-<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
-   <Type Name="io::AbsolutePath">
-     <DisplayString>{m_buf.m_buf.data,su}</DisplayString>
-     <StringView>m_buf.m_buf.data,su</StringView>
-  </Type>
-</AutoVisualizer>

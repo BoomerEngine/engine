@@ -20,32 +20,32 @@
 #include "assetFileImportPrepareDialog.h"
 #include "assetBrowserTabFiles.h"
 
-#include "base/ui/include/uiImage.h"
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiMenuBar.h"
-#include "base/ui/include/uiWindow.h"
-#include "base/ui/include/uiAbstractItemView.h"
-#include "base/ui/include/uiCheckBox.h"
-#include "base/ui/include/uiStyleValue.h"
-#include "base/ui/include/uiEditBox.h"
-#include "base/ui/include/uiComboBox.h"
-#include "base/ui/include/uiToolBar.h"
-#include "base/ui/include/uiSplitter.h"
-#include "base/ui/include/uiListView.h"
-#include "base/ui/include/uiColumnHeaderBar.h"
-#include "base/ui/include/uiNotebook.h"
-#include "base/ui/include/uiDockNotebook.h"
-#include "base/ui/include/uiDataInspector.h"
-#include "base/ui/include/uiTextValidation.h"
-#include "base/resource_compiler/include/importInterface.h"
-#include "base/resource_compiler/include/importFileService.h"
-#include "base/io/include/ioSystem.h"
-#include "base/resource/include/resourceMetadata.h"
-#include "base/resource_compiler/include/importFileList.h"
-#include "base/ui/include/uiSearchBar.h"
+#include "engine/ui/include/uiImage.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiWindow.h"
+#include "engine/ui/include/uiAbstractItemView.h"
+#include "engine/ui/include/uiCheckBox.h"
+#include "engine/ui/include/uiStyleValue.h"
+#include "engine/ui/include/uiEditBox.h"
+#include "engine/ui/include/uiComboBox.h"
+#include "engine/ui/include/uiToolBar.h"
+#include "engine/ui/include/uiSplitter.h"
+#include "engine/ui/include/uiListView.h"
+#include "engine/ui/include/uiColumnHeaderBar.h"
+#include "engine/ui/include/uiNotebook.h"
+#include "engine/ui/include/uiDockNotebook.h"
+#include "engine/ui/include/uiDataInspector.h"
+#include "engine/ui/include/uiTextValidation.h"
+#include "core/resource_compiler/include/importInterface.h"
+#include "core/resource_compiler/include/importFileService.h"
+#include "core/io/include/ioSystem.h"
+#include "core/resource/include/resourceMetadata.h"
+#include "core/resource_compiler/include/importFileList.h"
+#include "engine/ui/include/uiSearchBar.h"
 #include "assetFileImportJob.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -359,7 +359,7 @@ ui::ModelIndex AssetImportListModel::parent(const ui::ModelIndex& item /*= ui::M
     return ui::ModelIndex();
 }
 
-void AssetImportListModel::children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const
+void AssetImportListModel::children(const ui::ModelIndex& parent, Array<ui::ModelIndex>& outChildrenIndices) const
 {
     if (!parent)
     {
@@ -427,7 +427,7 @@ void AssetImportListModel::visualize(const ui::ModelIndex& item, int columnCount
                     fileName->validation(ui::MakeFilenameValidationFunction());
                     fileName->expand();
 
-                    fileName->bind(ui::EVENT_TEXT_MODIFIED) = [this, file](base::StringBuf name)
+                    fileName->bind(ui::EVENT_TEXT_MODIFIED) = [this, file](StringBuf name)
                     {
                         if (file->targetFileName != name)
                         {
@@ -547,10 +547,10 @@ ui::PopupPtr AssetImportListModel::contextMenu(ui::AbstractItemView* view, const
 
         if (const auto path = fileSourceAssetAbsolutePath(rootFile))
         {
-            if (base::io::FileExists(path))
+            if (io::FileExists(path))
             {
                 menu->createCallback("Show source asset...", "[img:find_blue]") = [path]() {
-                    base::io::ShowFileExplorer(path);
+                    io::ShowFileExplorer(path);
                 };
             }
         }
@@ -903,4 +903,4 @@ void AssetImportPrepareDialog::cmdStartImport(bool force)
 
 ///--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

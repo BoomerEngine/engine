@@ -8,16 +8,16 @@
 
 #include "build.h"
 #include "managedThumbnails.h"
-#include "base/image/include/image.h"
-#include "base/io/include/ioSystem.h"
-#include "base/io/include/ioDirectoryWatcher.h"
-#include "base/containers/include/stringParser.h"
-#include "base/process/include/process.h"
-#include "base/resource/include/resourceThumbnail.h"
+#include "core/image/include/image.h"
+#include "core/io/include/ioSystem.h"
+#include "core/io/include/ioDirectoryWatcher.h"
+#include "core/containers/include/stringParser.h"
+#include "core/process/include/process.h"
+#include "core/resource/include/resourceThumbnail.h"
 
 #include "editorService.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 ///---
 
@@ -176,7 +176,7 @@ void ManagedThumbnailHelper::processLoadingJob(ManagedFile* file)
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 
 
 

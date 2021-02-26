@@ -10,7 +10,7 @@
 #include "sceneContentStructure.h"
 #include "sceneContentNodes.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -30,7 +30,7 @@ SceneContentStructure::SceneContentStructure(SceneContentNodeType rootNodeType)
 SceneContentStructure::~SceneContentStructure()
 {}
 
-void SceneContentStructure::handleDebugRender(rendering::scene::FrameParams& frame) const
+void SceneContentStructure::handleDebugRender(rendering::FrameParams& frame) const
 {
     for (const auto& ent : m_nodes)
         ent->handleDebugRender(frame);
@@ -130,4 +130,4 @@ void SceneContentStructure::visitDirtyNodes(const std::function<void(const Scene
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

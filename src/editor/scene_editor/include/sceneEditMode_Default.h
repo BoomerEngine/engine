@@ -9,9 +9,9 @@
 #pragma once
 
 #include "sceneEditMode.h"
-#include "editor/gizmos/include/gizmoGroup.h"
+#include "editor/viewport/include/gizmoGroup.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -44,13 +44,13 @@ public:
     virtual void configureEditMenu(ui::MenuButtonContainer* menu) override;
     virtual void configureViewMenu(ui::MenuButtonContainer* menu) override;
 
-    virtual void handleRender(ScenePreviewPanel* panel, rendering::scene::FrameParams& frame) override;
+    virtual void handleRender(ScenePreviewPanel* panel, rendering::FrameParams& frame) override;
     virtual ui::InputActionPtr handleMouseClick(ScenePreviewPanel* panel, const input::MouseClickEvent& evt) override;
-    virtual bool handleKeyEvent(ScenePreviewPanel* panel, const base::input::KeyEvent& evt) override;
-    virtual void handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const base::Point& clientPosition, const rendering::scene::Selectable& objectUnderCursor, const base::AbsolutePosition* positionUnderCursor) override;
-    virtual void handlePointSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables) override;
-    virtual void handleAreaSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables) override;
-    virtual ui::DragDropHandlerPtr handleDragDrop(ScenePreviewPanel* panel, const ui::DragDropDataPtr& data, const ui::Position& absolutePosition, const base::Point& clientPosition) override;
+    virtual bool handleKeyEvent(ScenePreviewPanel* panel, const input::KeyEvent& evt) override;
+    virtual void handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const AbsolutePosition* positionUnderCursor) override;
+    virtual void handlePointSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables) override;
+    virtual void handleAreaSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables) override;
+    virtual ui::DragDropHandlerPtr handleDragDrop(ScenePreviewPanel* panel, const ui::DragDropDataPtr& data, const ui::Position& absolutePosition, const Point& clientPosition) override;
     virtual void handleUpdate(float dt);
         
     virtual void handleTreeContextMenu(ui::MenuButtonContainer* menu, const SceneContentNodePtr& context, const Array<SceneContentNodePtr>& selection) override;
@@ -142,7 +142,7 @@ protected:
     void processUnwrapPrefab(const Array<SceneContentNodePtr>& selection, bool explode);
     void processReplaceWithClipboard(const Array<SceneContentNodePtr>& selection);
 
-    void processGenericPrefabAction(const Array<SceneContentNodePtr>& nodes, const std::function<world::NodeTemplatePtr(world::NodeTemplate* currentData)>& func);
+    void processGenericPrefabAction(const Array<SceneContentNodePtr>& nodes, const std::function<NodeTemplatePtr(NodeTemplate* currentData)>& func);
 
     void processCreateLayer(const Array<SceneContentNodePtr>& selection);
     void processCreateDirectory(const Array<SceneContentNodePtr>& selection);
@@ -169,7 +169,7 @@ protected:
 
     SceneContentNodeWeakPtr m_activeNode;
 
-    void processVisualSelection(bool ctrl, bool shift, const base::Array<rendering::scene::Selectable>& selectables);
+    void processVisualSelection(bool ctrl, bool shift, const Array<Selectable>& selectables);
 
     void createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass, const AbsoluteTransform* initialPlacement = nullptr, const ManagedFile* resourceFile = nullptr);
     //void createEntityWithComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const AbsoluteTransform* initialPlacement = nullptr, const ManagedFile* resourceFile = nullptr);
@@ -216,7 +216,7 @@ protected:
 
     RefWeakPtr<SceneObjectDragDropCreationHandler> m_dragDropHandler;
 
-    void renderDragDrop(ScenePreviewPanel* panel, rendering::scene::FrameParams& frame);
+    void renderDragDrop(ScenePreviewPanel* panel, rendering::FrameParams& frame);
     void updateDragDrop();
 
     //--
@@ -241,10 +241,10 @@ class ISceneObjectPreview : public IReferencable
 public:
     ISceneObjectPreview();
 
-    virtual void attachToWorld(world::World* world) = 0;
-    virtual void detachFromWorld(world::World* world) = 0;
+    virtual void attachToWorld(World* world) = 0;
+    virtual void detachFromWorld(World* world) = 0;
 };
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

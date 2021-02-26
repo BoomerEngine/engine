@@ -11,25 +11,25 @@
 #include "materialPreviewPanel.h"
 #include "materialGraphEditorPanel.h"
 
-#include "base/resource/include/resource.h"
+#include "core/resource/include/resource.h"
 #include "editor/common/include/managedFile.h"
 #include "editor/common/include/managedFileFormat.h"
 #include "editor/common/include/managedFileNativeResource.h"
 #include "editor/common/include/assetBrowser.h"
-#include "base/ui/include/uiDockLayout.h"
-#include "base/ui/include/uiDockPanel.h"
-#include "base/ui/include/uiDataInspector.h"
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiToolBar.h"
-#include "base/ui/include/uiSplitter.h"
-#include "base/ui/include/uiGraphEditorNodePalette.h"
-#include "base/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiDockLayout.h"
+#include "engine/ui/include/uiDockPanel.h"
+#include "engine/ui/include/uiDataInspector.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiToolBar.h"
+#include "engine/ui/include/uiSplitter.h"
+#include "engine/ui/include/uiGraphEditorNodePalette.h"
+#include "engine/ui/include/uiMenuBar.h"
 
-#include "rendering/material_graph/include/renderingMaterialGraph.h"
-#include "rendering/material_graph/include/renderingMaterialGraphBlock.h"
-#include "rendering/material/include/renderingMaterialTemplate.h"
+#include "engine/material_graph/include/renderingMaterialGraph.h"
+#include "engine/material_graph/include/renderingMaterialGraphBlock.h"
+#include "engine/material/include/renderingMaterialTemplate.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -93,7 +93,7 @@ bool MaterialGraphEditor::checkGeneralDelete() const
 void MaterialGraphEditor::createInterface()
 {
     {
-        auto tab = base::RefNew<ui::DockPanel>("[img:schema_graph] Graph", "GraphPanel");
+        auto tab = RefNew<ui::DockPanel>("[img:schema_graph] Graph", "GraphPanel");
         tab->layoutVertical();
 
         m_graphEditor = tab->createChild<MaterialGraphEditorPanel>(actionHistory());
@@ -108,7 +108,7 @@ void MaterialGraphEditor::createInterface()
     }
 
     {
-        auto tab = base::RefNew<ui::DockPanel>("[img:shader] Preview", "PreviewPanel");
+        auto tab = RefNew<ui::DockPanel>("[img:shader] Preview", "PreviewPanel");
         tab->layoutVertical();
 
         m_previewPanel = tab->createChild<MaterialPreviewPanel>();
@@ -118,7 +118,7 @@ void MaterialGraphEditor::createInterface()
     }
 
     {
-        auto tab = base::RefNew<ui::DockPanel>("[img:properties] Properties", "PropertiesPanel");
+        auto tab = RefNew<ui::DockPanel>("[img:properties] Properties", "PropertiesPanel");
         tab->layoutVertical();
 
         m_properties = tab->createChild<ui::DataInspector>();
@@ -129,7 +129,7 @@ void MaterialGraphEditor::createInterface()
     }
 
     {
-        auto tab = base::RefNew<ui::DockPanel>("[img:class] Palette", "PalettePanel");
+        auto tab = RefNew<ui::DockPanel>("[img:class] Palette", "PalettePanel");
         tab->layoutVertical();
 
         m_graphPalette = tab->createChild<ui::GraphBlockPalette>();
@@ -144,14 +144,14 @@ bool MaterialGraphEditor::initialize()
     if (!TBaseClass::initialize())
         return false;
 
-    m_graph = base::rtti_cast<rendering::MaterialGraph>(resource());
+    m_graph = rtti_cast<MaterialGraph>(resource());
     if (!m_graph)
         return false;
 
     m_graphEditor->bindGraph(m_graph);
     m_graphPalette->setRootClasses(m_graph->graph());
 
-    m_previewMaterial = base::RefNew<rendering::MaterialInstance>();
+    m_previewMaterial = RefNew<MaterialInstance>();
     m_previewPanel->bindMaterial(m_previewMaterial);
 
     updatePreviewMaterial();
@@ -201,14 +201,14 @@ class MaterialGraphResourceEditorOpener : public IResourceEditorOpener
 public:
     virtual bool canOpen(const ManagedFileFormat& format) const override
     {
-        const auto graphClass = rendering::MaterialGraph::GetStaticClass();
+        const auto graphClass = MaterialGraph::GetStaticClass();
         return (format.nativeResourceClass() == graphClass);
     }
 
-    virtual base::RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
+    virtual RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
     {
         if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-            return base::RefNew<MaterialGraphEditor>(nativeFile);
+            return RefNew<MaterialGraphEditor>(nativeFile);
 
         return nullptr;
     }
@@ -219,4 +219,4 @@ RTTI_END_TYPE();
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

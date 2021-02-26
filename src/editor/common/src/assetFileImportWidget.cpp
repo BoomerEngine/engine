@@ -13,13 +13,13 @@
 #include "managedFileAssetChecks.h"
 #include "assetFileImportWidget.h"
 
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiImage.h"
-#include "base/ui/include/uiEditBox.h"
-#include "base/ui/include/uiMessageBox.h"
-#include "base/resource/include/resourceMetadata.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiImage.h"
+#include "engine/ui/include/uiEditBox.h"
+#include "engine/ui/include/uiMessageBox.h"
+#include "core/resource/include/resourceMetadata.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -143,7 +143,7 @@ void AssetFileImportWidget::cmdRecheckeck()
         m_fileNameText->text(m_file->depotPath());
         m_statusText->text("[img:hourglass] Checking...");
 
-        m_checker = base::RefNew<ManagedFileImportStatusCheck>(m_file, this);
+        m_checker = RefNew<ManagedFileImportStatusCheck>(m_file, this);
     }
 }
 
@@ -233,4 +233,4 @@ void AssetFileImportWidget::updateStatus()
     m_statusText->text(ImportStatusToDisplayText(status, true));
 }
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

@@ -10,9 +10,9 @@
 
 #include "managedDepot.h"
 
-#include "base/ui/include/uiDockPanel.h"
+#include "engine/ui/include/uiDockPanel.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -137,4 +137,4 @@ extern bool ImportNewFiles(ui::IElement* owner, const ManagedFileFormat* format,
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

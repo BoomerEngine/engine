@@ -10,36 +10,36 @@
 #include "meshPreviewPanel.h"
 #include "meshMaterialsPanel.h"
 
-#include "rendering/mesh/include/renderingMesh.h"
-#include "rendering/material/include/renderingMaterialInstance.h"
-#include "rendering/material/include/renderingMaterialTemplate.h"
+#include "engine/mesh/include/renderingMesh.h"
+#include "engine/material/include/renderingMaterialInstance.h"
+#include "engine/material/include/renderingMaterialTemplate.h"
 
 #include "editor/common/include/assetBrowser.h"
 #include "editor/common/include/managedFile.h"
 #include "editor/common/include/managedFileFormat.h"
 
-#include "base/ui/include/uiDataInspector.h"
-#include "base/ui/include/uiDockLayout.h"
-#include "base/ui/include/uiSplitter.h"
-#include "base/ui/include/uiListView.h"
-#include "base/ui/include/uiSearchBar.h"
-#include "base/ui/include/uiDragDrop.h"
-#include "base/ui/include/uiCheckBox.h"
+#include "engine/ui/include/uiDataInspector.h"
+#include "engine/ui/include/uiDockLayout.h"
+#include "engine/ui/include/uiSplitter.h"
+#include "engine/ui/include/uiListView.h"
+#include "engine/ui/include/uiSearchBar.h"
+#include "engine/ui/include/uiDragDrop.h"
+#include "engine/ui/include/uiCheckBox.h"
 
-#include "base/resource/include/resourcePath.h"
-#include "base/resource/include/resourceLoadingService.h"
-#include "base/object/include/dataViewNative.h"
-#include "base/object/include/rttiDataView.h"
-#include "base/ui/include/uiToolBar.h"
+#include "core/resource/include/resourcePath.h"
+#include "core/resource/include/resourceLoadingService.h"
+#include "core/object/include/dataViewNative.h"
+#include "core/object/include/rttiDataView.h"
+#include "engine/ui/include/uiToolBar.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
 RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshMaterialParameters);
 RTTI_END_TYPE();
 
-MeshMaterialParameters::MeshMaterialParameters(rendering::MaterialInstance* data, base::StringID name)
+MeshMaterialParameters::MeshMaterialParameters(MaterialInstance* data, StringID name)
     : m_name(name)
     , m_data(AddRef(data))
 {
@@ -48,7 +48,7 @@ MeshMaterialParameters::MeshMaterialParameters(rendering::MaterialInstance* data
 
 bool MeshMaterialParameters::updateDisplayString()
 {
-    base::StringBuilder txt;
+    StringBuilder txt;
 
     txt.append("[img:material] ");
     txt.append(m_name);
@@ -65,7 +65,7 @@ bool MeshMaterialParameters::updateDisplayString()
             bool hasTextureOverrides = false;
             bool hasParamOverrides = false;
 
-            base::InplaceArray<rendering::MaterialTemplateParamInfo, 30> params;
+            InplaceArray<MaterialTemplateParamInfo, 30> params;
             materialTemplate->queryAllParameterInfos(params);
 
             for (const auto& param : params)
@@ -73,7 +73,7 @@ bool MeshMaterialParameters::updateDisplayString()
                 if (m_data->checkParameterOverride(param.name))
                 {
                     const auto metaType = param.type->metaType();
-                    if (metaType == base::rtti::MetaType::ResourceRef || metaType == base::rtti::MetaType::AsyncResourceRef)
+                    if (metaType == rtti::MetaType::ResourceRef || metaType == rtti::MetaType::AsyncResourceRef)
                         hasTextureOverrides = true;
                     else
                         hasParamOverrides = true;
@@ -101,7 +101,7 @@ bool MeshMaterialParameters::updateDisplayString()
     return false;
 }
 
-bool MeshMaterialParameters::baseMaterial(const rendering::MaterialRef& material)
+bool MeshMaterialParameters::baseMaterial(const MaterialRef& material)
 {
     if (m_data)
     {
@@ -136,17 +136,17 @@ ui::ModelIndex MeshMaterialListModel::findMaterial(StringID name) const
     return ui::ModelIndex();
 }
 
-bool MeshMaterialListModel::compare(const base::RefPtr<MeshMaterialParameters>& a, const base::RefPtr<MeshMaterialParameters>& b, int colIndex) const
+bool MeshMaterialListModel::compare(const RefPtr<MeshMaterialParameters>& a, const RefPtr<MeshMaterialParameters>& b, int colIndex) const
 {
     return a->name().view() < b->name().view();
 }
 
-bool MeshMaterialListModel::filter(const base::RefPtr<MeshMaterialParameters>& data, const ui::SearchPattern& filter, int colIndex /*= 0*/) const
+bool MeshMaterialListModel::filter(const RefPtr<MeshMaterialParameters>& data, const ui::SearchPattern& filter, int colIndex /*= 0*/) const
 {
     return filter.testString(data->name().view());
 }
 
-base::StringBuf MeshMaterialListModel::content(const base::RefPtr<MeshMaterialParameters>& data, int colIndex /*= 0*/) const
+StringBuf MeshMaterialListModel::content(const RefPtr<MeshMaterialParameters>& data, int colIndex /*= 0*/) const
 {
     return data->displayString();
 }
@@ -156,11 +156,11 @@ ui::DragDropHandlerPtr MeshMaterialListModel::handleDragDropData(ui::AbstractIte
     if (auto elem = data(item))
     {
         // can we handle this data ?
-        auto fileData = base::rtti_cast<ed::AssetBrowserFileDragDrop>(dragData);
+        auto fileData = rtti_cast<ed::AssetBrowserFileDragDrop>(dragData);
         if (fileData && fileData->file())
         {
-            if (fileData->file()->fileFormat().loadableAsType(rendering::IMaterial::GetStaticClass()))
-                return base::RefNew<ui::DragDropHandlerGeneric>(dragData, view, pos);
+            if (fileData->file()->fileFormat().loadableAsType(IMaterial::GetStaticClass()))
+                return RefNew<ui::DragDropHandlerGeneric>(dragData, view, pos);
         }
     }
 
@@ -172,10 +172,10 @@ bool MeshMaterialListModel::handleDragDropCompletion(ui::AbstractItemView* view,
 {
     if (auto elem = data(item))
     {
-        auto fileData = base::rtti_cast<ed::AssetBrowserFileDragDrop>(dragData);
+        auto fileData = rtti_cast<ed::AssetBrowserFileDragDrop>(dragData);
         if (fileData && fileData->file())
         {
-            if (auto material = base::LoadResource<rendering::IMaterial>(fileData->file()->depotPath()))
+            if (auto material = LoadResource<IMaterial>(fileData->file()->depotPath()))
             {
                 return elem->baseMaterial(material);
             }
@@ -190,7 +190,7 @@ bool MeshMaterialListModel::handleDragDropCompletion(ui::AbstractItemView* view,
 RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshMaterialsPanel);
 RTTI_END_TYPE();
 
-MeshMaterialsPanel::MeshMaterialsPanel(base::ActionHistory* actionHistory)
+MeshMaterialsPanel::MeshMaterialsPanel(ActionHistory* actionHistory)
     : m_captionsRefreshTimer(this, "UpdateCaptions"_id)
 {
     layoutVertical();
@@ -229,7 +229,7 @@ MeshMaterialsPanel::MeshMaterialsPanel(base::ActionHistory* actionHistory)
 
         searchBar->bindItemView(m_list);
 
-        m_listModel = base::RefNew<MeshMaterialListModel>();
+        m_listModel = RefNew<MeshMaterialListModel>();
         m_list->model(m_listModel);
     }
 
@@ -253,7 +253,7 @@ MeshMaterialsPanel::MeshMaterialsPanel(base::ActionHistory* actionHistory)
     refreshMaterialList();
 }
 
-void MeshMaterialsPanel::bindResource(const rendering::MeshPtr& mesh)
+void MeshMaterialsPanel::bindResource(const MeshPtr& mesh)
 {
     if (m_mesh != mesh)
     {
@@ -292,7 +292,7 @@ void MeshMaterialsPanel::refreshMaterialProperties()
 
 void MeshMaterialsPanel::refreshMaterialList()
 {
-    base::StringID selectedMaterialName;
+    StringID selectedMaterialName;
 
     if (m_list->selectionRoot())
     {
@@ -302,12 +302,12 @@ void MeshMaterialsPanel::refreshMaterialList()
 
     m_listModel->clear();
 
-    base::RefPtr<MeshMaterialParameters> materialToSelect;
+    RefPtr<MeshMaterialParameters> materialToSelect;
     if (m_mesh)
     {
         for (const auto& mat : m_mesh->materials())
         {
-            auto entry = base::RefNew<MeshMaterialParameters>(mat.material, mat.name);
+            auto entry = RefNew<MeshMaterialParameters>(mat.material, mat.name);
             m_listModel->add(entry);
 
             if (entry->name() == selectedMaterialName)
@@ -334,4 +334,4 @@ void MeshMaterialsPanel::updateCaptions()
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

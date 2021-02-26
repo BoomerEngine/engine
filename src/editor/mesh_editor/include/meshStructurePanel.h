@@ -8,15 +8,15 @@
 
 #pragma once
 
-#include "base/ui/include/uiSimpleTreeModel.h"
-#include "base/ui/include/uiElement.h"
+#include "engine/ui/include/uiSimpleTreeModel.h"
+#include "engine/ui/include/uiElement.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
 // mesh structure node
-class EDITOR_MESH_EDITOR_API MeshStructureNode : public base::IReferencable
+class EDITOR_MESH_EDITOR_API MeshStructureNode : public IReferencable
 {
     RTTI_DECLARE_VIRTUAL_ROOT_CLASS(MeshStructureNode);
 
@@ -35,20 +35,20 @@ public:
         {}
     };
 
-    MeshStructureNode(base::StringView txt, base::StringID type, Data data = Data());
+    MeshStructureNode(StringView txt, StringID type, Data data = Data());
     virtual ~MeshStructureNode();
 
-    INLINE const base::StringBuf& caption() const { return m_caption; }
-    INLINE base::StringID type() const { return m_type; }
+    INLINE const StringBuf& caption() const { return m_caption; }
+    INLINE StringID type() const { return m_type; }
     INLINE const Data& data() const { return m_data; }
 
 private:
-    base::StringBuf m_caption;
-    base::StringID m_type;
+    StringBuf m_caption;
+    StringID m_type;
     Data m_data;
 };
 
-typedef base::RefPtr<MeshStructureNode> MeshStructureNodePtr;
+typedef RefPtr<MeshStructureNode> MeshStructureNodePtr;
 
 //--
 
@@ -61,7 +61,7 @@ public:
 
     virtual bool compare(const MeshStructureNodePtr& a, const MeshStructureNodePtr& b, int colIndex) const override final;
     virtual bool filter(const MeshStructureNodePtr& data, const ui::SearchPattern& filter, int colIndex = 0) const override final;
-    virtual base::StringBuf displayContent(const MeshStructureNodePtr& data, int colIndex = 0) const override final;
+    virtual StringBuf displayContent(const MeshStructureNodePtr& data, int colIndex = 0) const override final;
 };
 
 //--
@@ -75,15 +75,15 @@ public:
     MeshStructurePanel();
     virtual ~MeshStructurePanel();
 
-    void bindResource(const rendering::MeshPtr& mesh);
+    void bindResource(const MeshPtr& mesh);
 
 private:
-    rendering::MeshPtr m_mesh;
+    MeshPtr m_mesh;
 
     ui::TreeViewPtr m_tree;
-    base::RefPtr<MeshStructureTreeModel> m_treeModel;
+    RefPtr<MeshStructureTreeModel> m_treeModel;
 };
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

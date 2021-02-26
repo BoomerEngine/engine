@@ -9,13 +9,13 @@
 #include "build.h"
 #include "editorProgressDialog.h"
 
-#include "base/ui/include/uiRenderer.h"
-#include "base/ui/include/uiElement.h"
-#include "base/ui/include/uiButton.h"
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiProgressBar.h"
+#include "engine/ui/include/uiRenderer.h"
+#include "engine/ui/include/uiElement.h"
+#include "engine/ui/include/uiButton.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiProgressBar.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -127,5 +127,5 @@ void ProgressDialog::reportProgress(uint64_t currentCount, uint64_t totalCount, 
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

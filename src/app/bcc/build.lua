@@ -5,6 +5,7 @@ ProjectType("app")
 ProjectOption("console")
 ProjectOption("main")
 
-Dependency("base_*")
+Dependency("core_*")
+Dependency("engine_*")
 Dependency("import_*")
 

@@ -21,27 +21,27 @@
 #include "managedFilePlaceholder.h"
 #include "managedDirectoryPlaceholder.h"
 
-#include "base/resource/include/resourceFactory.h"
-#include "base/io/include/ioSystem.h"
-#include "base/app/include/localServiceContainer.h"
-#include "base/image/include/image.h"
-#include "base/ui/include/uiListView.h"
-#include "base/ui/include/uiTrackBar.h"
-#include "base/ui/include/uiButton.h"
-#include "base/ui/include/uiEditBox.h"
-#include "base/ui/include/uiMenuBar.h"
-#include "base/ui/include/uiMessageBox.h"
-#include "base/ui/include/uiToolBar.h"
-#include "base/ui/include/uiDockLayout.h"
-#include "base/ui/include/uiDockNotebook.h"
-#include "base/ui/include/uiSearchBar.h"
-#include "base/resource_compiler/include/importInterface.h"
-#include "base/resource_compiler/include/importFileService.h"
-#include "base/io/include/fileFormat.h"
-#include "base/ui/include/uiRenderer.h"
-#include "base/ui/include/uiElementConfig.h"
+#include "core/resource/include/resourceFactory.h"
+#include "core/io/include/ioSystem.h"
+#include "core/app/include/localServiceContainer.h"
+#include "core/image/include/image.h"
+#include "engine/ui/include/uiListView.h"
+#include "engine/ui/include/uiTrackBar.h"
+#include "engine/ui/include/uiButton.h"
+#include "engine/ui/include/uiEditBox.h"
+#include "engine/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiMessageBox.h"
+#include "engine/ui/include/uiToolBar.h"
+#include "engine/ui/include/uiDockLayout.h"
+#include "engine/ui/include/uiDockNotebook.h"
+#include "engine/ui/include/uiSearchBar.h"
+#include "core/resource_compiler/include/importInterface.h"
+#include "core/resource_compiler/include/importFileService.h"
+#include "core/io/include/fileFormat.h"
+#include "engine/ui/include/uiRenderer.h"
+#include "engine/ui/include/uiElementConfig.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -498,7 +498,7 @@ void AssetBrowserTabFiles::createNewDirectory()
 {
     if (m_dir)
     {
-        if (const auto addHocDir = base::RefNew<ManagedDirectoryPlaceholder>(depot(), m_dir, "New Directory"))
+        if (const auto addHocDir = RefNew<ManagedDirectoryPlaceholder>(depot(), m_dir, "New Directory"))
         {
             if (auto index = m_filesModel->addAdHocElement(addHocDir))
             {
@@ -527,7 +527,7 @@ void AssetBrowserTabFiles::createNewFile(const ManagedFileFormat* format)
     if (m_dir)
     {
         const auto initialFileName = m_dir->adjustFileName(TempString("New{}", format->description()));
-        if (const auto addHocFile = base::RefNew<ManagedFilePlaceholder>(depot(), m_dir, initialFileName, format))
+        if (const auto addHocFile = RefNew<ManagedFilePlaceholder>(depot(), m_dir, initialFileName, format))
         {
             if (auto index = m_filesModel->addAdHocElement(addHocFile))
             {
@@ -556,7 +556,7 @@ void AssetBrowserTabFiles::duplicateFile(ManagedFile* sourceFile)
     DEBUG_CHECK_RETURN_EX(sourceFile != nullptr, "Nothing to duplicate")
 
     const auto initialFileName = m_dir->adjustFileName(TempString("{}_copy", sourceFile->name().view().fileStem()));
-    if (const auto addHocFile = base::RefNew<ManagedFilePlaceholder>(depot(), m_dir, initialFileName, &sourceFile->fileFormat()))
+    if (const auto addHocFile = RefNew<ManagedFilePlaceholder>(depot(), m_dir, initialFileName, &sourceFile->fileFormat()))
     {
         if (auto index = m_filesModel->addAdHocElement(addHocFile))
         {
@@ -668,7 +668,7 @@ bool ImportNewFiles(ui::IElement* owner, const ManagedFileFormat* format, Manage
         // ask for files
         auto nativeHandle = GetEditor()->windowNativeHandle(owner);
         Array<StringBuf> importPaths;
-        if (!base::io::ShowFileOpenDialog(nativeHandle, true, importFormats, importPaths, GImportFiles))
+        if (!io::ShowFileOpenDialog(nativeHandle, true, importFormats, importPaths, GImportFiles))
             return false;
 
         // convert the absolute paths to the source paths
@@ -712,4 +712,4 @@ bool AssetBrowserTabFiles::importNewFile(const ManagedFileFormat* format)
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

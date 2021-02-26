@@ -10,11 +10,11 @@
 #include "renderingMeshCooker.h"
 #include "meshopt/meshoptimizer.h"
 
-BEGIN_BOOMER_NAMESPACE(rendering)
+BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //---
 
-void UnpackChunkIntoStreams(const void* vertexData, MeshVertexFormat format, base::Array<meshopt_Stream>& outStreams)
+void UnpackChunkIntoStreams(const void* vertexData, MeshVertexFormat format, Array<meshopt_Stream>& outStreams)
 {
     const auto& formatInfo = GetMeshVertexFormatInfo(format);
     for (uint32_t i = 0; i < formatInfo.numStreams; ++i)
@@ -22,13 +22,13 @@ void UnpackChunkIntoStreams(const void* vertexData, MeshVertexFormat format, bas
         const auto& formatEntry = formatInfo.streams[i];
 
         auto& outStreamEntry = outStreams.emplaceBack();
-        outStreamEntry.data = base::OffsetPtr(vertexData, formatEntry.dataOffset);
+        outStreamEntry.data = OffsetPtr(vertexData, formatEntry.dataOffset);
         outStreamEntry.size = formatEntry.dataSize;
         outStreamEntry.stride = formatInfo.stride;
     }
 }
 
-uint32_t OptimizeVertexBuffer(const void* vertexData, uint32_t vertexCount, MeshVertexFormat format, base::Array<uint32_t>& outRemapTable)
+uint32_t OptimizeVertexBuffer(const void* vertexData, uint32_t vertexCount, MeshVertexFormat format, Array<uint32_t>& outRemapTable)
 {
     PC_SCOPE_LVL1(OptimizeVertexBuffer);
 
@@ -40,11 +40,11 @@ uint32_t OptimizeVertexBuffer(const void* vertexData, uint32_t vertexCount, Mesh
     return meshopt_generateVertexRemap(outRemapTable.typedData(), nullptr, vertexCount, vertexData, vertexCount, formatInfo.stride);
 }
 
-base::Buffer RemapVertexBuffer(const void* currentVertexData, uint32_t currentVertexCount, MeshVertexFormat format, uint32_t newVertexCount, const uint32_t* oldToNewRemapTable)
+Buffer RemapVertexBuffer(const void* currentVertexData, uint32_t currentVertexCount, MeshVertexFormat format, uint32_t newVertexCount, const uint32_t* oldToNewRemapTable)
 {
     const auto& formatInfo = GetMeshVertexFormatInfo(format);
 
-    base::Buffer outputData;
+    Buffer outputData;
     outputData.init(POOL_TEMP, formatInfo.stride * newVertexCount, 16);
 
     meshopt_remapVertexBuffer(outputData.data(), currentVertexData, currentVertexCount, formatInfo.stride, oldToNewRemapTable);
@@ -62,11 +62,11 @@ void OptimizeVertexCache(uint32_t* currentIndexData, uint32_t currentIndexCount,
     meshopt_optimizeVertexCache(currentIndexData, currentIndexData, currentIndexCount, currentVertexCount);
 }
 
-base::Buffer OptimizeVertexFetch(const void* currentVertexData, uint32_t currentVertexCount, MeshVertexFormat format, uint32_t* currentIndexData, uint32_t currentIndexCount)
+Buffer OptimizeVertexFetch(const void* currentVertexData, uint32_t currentVertexCount, MeshVertexFormat format, uint32_t* currentIndexData, uint32_t currentIndexCount)
 {
     const auto& formatInfo = GetMeshVertexFormatInfo(format);
 
-    base::Buffer outputData;
+    Buffer outputData;
     outputData.init(POOL_TEMP, formatInfo.stride * currentVertexCount, 16);
 
     meshopt_optimizeVertexFetch(outputData.data(), currentIndexData, currentIndexCount, currentVertexData, currentVertexCount, formatInfo.stride);
@@ -74,18 +74,18 @@ base::Buffer OptimizeVertexFetch(const void* currentVertexData, uint32_t current
     return outputData;
 }
 
-base::Buffer CompressVertexBuffer(const void* currentVertexData, MeshVertexFormat format, uint32_t count)
+Buffer CompressVertexBuffer(const void* currentVertexData, MeshVertexFormat format, uint32_t count)
 {
     const auto& formatInfo = GetMeshVertexFormatInfo(format);
 
     const auto maxSize = meshopt_encodeVertexBufferBound(count, formatInfo.stride);
 
-    base::Buffer worstCaseBuffer;
+    Buffer worstCaseBuffer;
     worstCaseBuffer.init(POOL_TEMP, maxSize);
 
     const auto actualSize = meshopt_encodeVertexBuffer(worstCaseBuffer.data(), worstCaseBuffer.size(), currentVertexData, count, formatInfo.stride);
     if (actualSize == 0)
-        return base::Buffer();
+        return Buffer();
 
     DEBUG_CHECK(actualSize <= maxSize);
     worstCaseBuffer.adjustSize(actualSize);
@@ -93,16 +93,16 @@ base::Buffer CompressVertexBuffer(const void* currentVertexData, MeshVertexForma
     return worstCaseBuffer;
 }
 
-base::Buffer CompressIndexBuffer(const void* currentIndexData, uint32_t indexCount, uint32_t vertexCount)
+Buffer CompressIndexBuffer(const void* currentIndexData, uint32_t indexCount, uint32_t vertexCount)
 {
     const auto maxSize = meshopt_encodeIndexBufferBound(indexCount, vertexCount);
 
-    base::Buffer worstCaseBuffer;
+    Buffer worstCaseBuffer;
     worstCaseBuffer.init(POOL_TEMP, maxSize);
 
     const auto actualSize = meshopt_encodeIndexBuffer(worstCaseBuffer.data(), worstCaseBuffer.size(), (const uint32_t*)currentIndexData, indexCount);
     if (actualSize == 0)
-        return base::Buffer();
+        return Buffer();
 
     DEBUG_CHECK(actualSize <= maxSize);
     worstCaseBuffer.adjustSize(actualSize);
@@ -112,4 +112,4 @@ base::Buffer CompressIndexBuffer(const void* currentIndexData, uint32_t indexCou
 
 //---
     
-END_BOOMER_NAMESPACE(rendering)
+END_BOOMER_NAMESPACE_EX(assets)

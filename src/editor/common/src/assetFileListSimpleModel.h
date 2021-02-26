@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "base/ui/include/uiSimpleListModel.h"
+#include "engine/ui/include/uiSimpleListModel.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -58,7 +58,7 @@ public:
     //--
 
 private:
-    struct Item : public base::IReferencable
+    struct Item : public IReferencable
     {
         ui::ModelIndex index;
         ManagedItem* item = nullptr;
@@ -67,12 +67,12 @@ private:
         StringBuf comment;
     };
 
-    Array<base::RefPtr<Item>> m_items;
+    Array<RefPtr<Item>> m_items;
     HashMap<ManagedItem*, Item*> m_itemMap;
 
     virtual bool hasChildren(const ui::ModelIndex& parent) const override final;
     virtual ui::ModelIndex parent(const ui::ModelIndex& item = ui::ModelIndex()) const override final;
-    virtual void children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const override final;
+    virtual void children(const ui::ModelIndex& parent, Array<ui::ModelIndex>& outChildrenIndices) const override final;
     virtual void visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const override final;
     virtual bool compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex = 0) const override final;
     virtual bool filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex = 0) const override final;
@@ -116,7 +116,7 @@ public:
     //--
 
 private:
-    struct Item : public base::IReferencable
+    struct Item : public IReferencable
     {
         ui::ModelIndex index;
         ManagedFile* file = nullptr;
@@ -127,12 +127,12 @@ private:
         StringBuf directory;
     };
 
-    Array<base::RefPtr<Item>> m_items;
+    Array<RefPtr<Item>> m_items;
     HashMap<ManagedFile*, Item*> m_itemMap;
 
     virtual bool hasChildren(const ui::ModelIndex& parent) const override final;
     virtual ui::ModelIndex parent(const ui::ModelIndex& item = ui::ModelIndex()) const override final;
-    virtual void children(const ui::ModelIndex& parent, base::Array<ui::ModelIndex>& outChildrenIndices) const override final;
+    virtual void children(const ui::ModelIndex& parent, Array<ui::ModelIndex>& outChildrenIndices) const override final;
     virtual void visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const override final;
     virtual bool compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex = 0) const override final;
     virtual bool filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex = 0) const override final;
@@ -141,4 +141,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

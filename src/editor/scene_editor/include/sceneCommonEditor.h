@@ -9,9 +9,9 @@
 #pragma once
 
 #include "editor/common/include/resourceEditorNativeFile.h"
-#include "base/world/include/worldPrefab.h"
+#include "engine/world/include/worldPrefab.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -47,15 +47,15 @@ public:
     virtual void configSave(const ui::ConfigBlock& block) const override;
 
 protected:
-    base::RefPtr<ScenePreviewContainer> m_previewContainer;
-    base::RefPtr<SceneStructurePanel> m_structurePanel;
-    base::RefPtr<SceneObjectPalettePanel> m_palettePanel;
+    RefPtr<ScenePreviewContainer> m_previewContainer;
+    RefPtr<SceneStructurePanel> m_structurePanel;
+    RefPtr<SceneObjectPalettePanel> m_palettePanel;
     ui::ScrollAreaPtr m_inspectorPanel;
 
-    base::RefPtr<SceneEditMode_Default> m_defaultEditMode;
+    RefPtr<SceneEditMode_Default> m_defaultEditMode;
         
-    base::RefPtr<SceneContentStructure> m_content;
-    base::world::WorldPtr m_previewWorld;
+    RefPtr<SceneContentStructure> m_content;
+    WorldPtr m_previewWorld;
 
     SceneContentNodeType m_rootContentType;
 
@@ -85,4 +85,4 @@ protected:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

@@ -20,12 +20,12 @@
 #include "assetBrowserDialogs.h"
 #include "assetBrowserTabFiles.h"
 
-#include "base/ui/include/uiMenuBar.h"
-#include "base/ui/include/uiElement.h"
-#include "base/ui/include/uiRenderer.h"
-#include "base/io/include/ioSystem.h"
+#include "engine/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiElement.h"
+#include "engine/ui/include/uiRenderer.h"
+#include "core/io/include/ioSystem.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 ///---
 
@@ -67,7 +67,7 @@ void CloseDepotFiles(ui::IElement* owner, const Array<ManagedFile*>& files)
 
 void ReimportDepotFiles(ui::IElement* owner, const Array<ManagedFile*>& files)
 {
-    base::Array<ManagedFileNativeResource*> filesToReimport;
+    Array<ManagedFileNativeResource*> filesToReimport;
     for (auto* file : files)
     {
         if (auto* nativeFile = rtti_cast<ManagedFileNativeResource>(file))
@@ -254,7 +254,7 @@ void BuildDepotContextMenu(ui::IElement* owner, ui::MenuButtonContainer& menu, c
                 auto absolutePath = file->absolutePath();
                 if (!absolutePath.empty())
                 {
-                    menu.createCallback("Show in files...", "[img:zoom]") = [absolutePath]() { base::io::ShowFileExplorer(absolutePath); };
+                    menu.createCallback("Show in files...", "[img:zoom]") = [absolutePath]() { io::ShowFileExplorer(absolutePath); };
                     menu.createSeparator();
                 }
             }
@@ -315,5 +315,5 @@ void BuildDepotContextMenu(ui::IElement* owner, ui::MenuButtonContainer& menu, c
 
 ///---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

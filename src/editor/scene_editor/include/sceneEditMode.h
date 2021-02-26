@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "rendering/scene/include/renderingSelectable.h"
-#include "editor/gizmos/include/gizmoReferenceSpace.h"
+#include "editor/viewport/include/gizmoReferenceSpace.h"
+#include "core/object/include/objectSelection.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -74,25 +74,25 @@ public:
     //--
 
     // render edit mode content, called for each panel separately
-    virtual void handleRender(ScenePreviewPanel* panel, rendering::scene::FrameParams& frame);
+    virtual void handleRender(ScenePreviewPanel* panel, rendering::FrameParams& frame);
 
     // handle custom viewport click (if no handler is returned we default to camera movement/selection)
     virtual ui::InputActionPtr handleMouseClick(ScenePreviewPanel* panel, const input::MouseClickEvent& evt);
 
     // handle custom viewport action-less keyboard event
-    virtual bool handleKeyEvent(ScenePreviewPanel* panel, const base::input::KeyEvent& evt);
+    virtual bool handleKeyEvent(ScenePreviewPanel* panel, const input::KeyEvent& evt);
 
     // handle viewport selection result
-    virtual void handlePointSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables);
+    virtual void handlePointSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables);
 
     // handle viewport selection result
-    virtual void handleAreaSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables);
+    virtual void handleAreaSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables);
 
     // handle viewport context menu
-    virtual void handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const base::Point& clientPosition, const rendering::scene::Selectable& objectUnderCursor, const base::AbsolutePosition* positionUnderCursor);
+    virtual void handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const AbsolutePosition* positionUnderCursor);
 
     // handle viewport drag&drop
-    virtual ui::DragDropHandlerPtr handleDragDrop(ScenePreviewPanel* panel, const ui::DragDropDataPtr& data, const ui::Position& absolutePosition, const base::Point& clientPosition);
+    virtual ui::DragDropHandlerPtr handleDragDrop(ScenePreviewPanel* panel, const ui::DragDropDataPtr& data, const ui::Position& absolutePosition, const Point& clientPosition);
 
     //--
 
@@ -167,4 +167,4 @@ extern EDITOR_SCENE_EDITOR_API void CreateDefaultCreationButtons(ScenePreviewCon
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

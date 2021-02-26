@@ -9,13 +9,14 @@
 #include "build.h"
 #include "meshPreviewPanel.h"
 
-#include "rendering/scene/include/renderingScene.h"
-#include "rendering/mesh/include/renderingMesh.h"
-#include "rendering/scene/include/renderingSceneObjects.h"
-#include "rendering/scene/include/renderingFrameParams.h"
-#include "rendering/scene/include/renderingFrameDebug.h"
+#include "engine/rendering/include/renderingScene.h"
+#include "engine/mesh/include/renderingMesh.h"
+#include "engine/rendering/include/renderingSceneObject.h"
+#include "engine/rendering/include/renderingSceneObject_Mesh.h"
+#include "engine/rendering/include/renderingFrameParams.h"
+#include "engine/rendering/include/renderingFrameDebug.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
      
@@ -40,7 +41,7 @@ void MeshPreviewPanel::configLoad(const ui::ConfigBlock& block)
     TBaseClass::configLoad(block);
 }
 
-void MeshPreviewPanel::previewMesh(const rendering::MeshPtr& ptr)
+void MeshPreviewPanel::previewMesh(const MeshPtr& ptr)
 {
     if (m_mesh != ptr)
     {
@@ -53,7 +54,7 @@ void MeshPreviewPanel::previewMesh(const rendering::MeshPtr& ptr)
             if (m_lastBounds.empty() || !m_lastBounds.contains(m_mesh->bounds()))
             {
                 auto resetRotation = m_lastBounds.empty();
-                auto idealRotation = base::Angles(40, 30, 0);
+                auto idealRotation = Angles(40, 30, 0);
 
                 m_lastBounds = m_mesh->bounds();
                 focusOnBounds(m_lastBounds, 1.0f, resetRotation ? &idealRotation : nullptr);
@@ -76,7 +77,7 @@ void MeshPreviewPanel::changePreviewSettings(const std::function<void(MeshPrevie
     createPreviewElements();
 }
 
-void MeshPreviewPanel::previewMaterial(base::StringID name, rendering::MaterialPtr data)
+void MeshPreviewPanel::previewMaterial(StringID name, MaterialPtr data)
 {
     if (m_previewMaterials[name] != data)
     {
@@ -89,7 +90,7 @@ void MeshPreviewPanel::previewMaterial(base::StringID name, rendering::MaterialP
     }
 }
 
-void MeshPreviewPanel::handleRender(rendering::scene::FrameParams& frame)
+void MeshPreviewPanel::handleRender(rendering::FrameParams& frame)
 {
     TBaseClass::handleRender(frame);
 
@@ -97,16 +98,16 @@ void MeshPreviewPanel::handleRender(rendering::scene::FrameParams& frame)
     {
         if (m_previewSettings.showBounds)
         {
-            rendering::scene::DebugDrawer lines(frame.geometry.solid);
-            lines.color(base::Color::YELLOW);
+            rendering::DebugDrawer lines(frame.geometry.solid);
+            lines.color(Color::YELLOW);
             lines.wireBox(m_mesh->bounds());
         }
     }
 }
 
-void MeshPreviewPanel::handlePointSelection(bool ctrl, bool shift, const base::Point& clientPosition, const base::Array<rendering::scene::Selectable>& selectables)
+void MeshPreviewPanel::handlePointSelection(bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables)
 {
-    base::Array<base::StringID> materialNames;
+    Array<StringID> materialNames;
 
     if (m_mesh)
     {
@@ -127,7 +128,7 @@ void MeshPreviewPanel::handlePointSelection(bool ctrl, bool shift, const base::P
     call(EVENT_MATERIAL_CLICKED, materialNames);
 }
 
-void MeshPreviewPanel::handleAreaSelection(bool ctrl, bool shift, const base::Rect& clientRect, const base::Array<rendering::scene::Selectable>& selectables)
+void MeshPreviewPanel::handleAreaSelection(bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables)
 {
 
 }
@@ -135,7 +136,7 @@ void MeshPreviewPanel::handleAreaSelection(bool ctrl, bool shift, const base::Re
 void MeshPreviewPanel::destroyPreviewElements()
 {
     for (const auto& proxy : m_proxies)
-        scene()->dettachProxy(proxy);
+        scene()->manager<rendering::ObjectManagerMesh>()->detachProxy(proxy);
     m_proxies.clear();
 }
 
@@ -145,7 +146,7 @@ void MeshPreviewPanel::createPreviewElements()
 
     if (m_mesh)
     {
-		rendering::scene::ObjectProxyMesh::Setup desc;
+		rendering::ObjectProxyMesh::Setup desc;
         desc.mesh = m_mesh;
         desc.forcedLodLevel = m_previewSettings.forceLod;
 			
@@ -157,9 +158,9 @@ void MeshPreviewPanel::createPreviewElements()
                 for (auto materialName : m_previewSettings.selectedMaterials.keys())
                     desc.excludedMaterialMask.insert(materialName);
 
-                if (auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc))
+                if (auto proxy = rendering::ObjectProxyMesh::Compile(desc))
                 {
-                    proxy->m_selectable = rendering::scene::Selectable(42, 0);
+                    proxy->m_selectable = Selectable(42, 0);
                     m_proxies.pushBack(proxy);
                 }
             }
@@ -169,27 +170,27 @@ void MeshPreviewPanel::createPreviewElements()
 			for (auto materialName : m_previewSettings.selectedMaterials.keys())
 				desc.selectiveMaterialMask.insert(materialName);
 
-			if (auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc))
+			if (auto proxy = rendering::ObjectProxyMesh::Compile(desc))
 			{
-				proxy->m_flags.configure(rendering::scene::ObjectProxyFlagBit::Selected, m_previewSettings.highlightMaterials);
-                proxy->m_selectable = rendering::scene::Selectable(42, 0);
+				proxy->m_flags.configure(rendering::ObjectProxyFlagBit::Selected, m_previewSettings.highlightMaterials);
+                proxy->m_selectable = Selectable(42, 0);
 				m_proxies.pushBack(proxy);
 			}
         }
         else
         {
-			if (auto proxy = rendering::scene::ObjectProxyMesh::Compile(desc))
+			if (auto proxy = rendering::ObjectProxyMesh::Compile(desc))
 			{
-				proxy->m_selectable = rendering::scene::Selectable(42, 0);
+				proxy->m_selectable = Selectable(42, 0);
 				m_proxies.pushBack(proxy);
 			}
         }
     }
 
     for (auto& proxy : m_proxies)
-        scene()->attachProxy(proxy);
+        scene()->manager<rendering::ObjectManagerMesh>()->attachProxy(proxy);
 }
 
 //--
     
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

@@ -12,7 +12,7 @@
 #include "managedDepot.h"
 #include "managedDirectory.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -100,4 +100,4 @@ StringBuf AssetDepotTreeModel::displayContent(ManagedItem* data, int colIndex /*
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

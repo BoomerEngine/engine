@@ -12,7 +12,7 @@
 #include "managedItem.h"
 #include "managedItemCollection.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -58,6 +58,6 @@ bool ManagedFileCollection::containsFile(ManagedFile* file) const
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 
 

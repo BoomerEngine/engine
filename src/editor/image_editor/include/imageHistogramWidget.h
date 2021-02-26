@@ -8,10 +8,10 @@
 
 #pragma once
 
-#include "base/ui/include/uiElement.h"
-#include "base/canvas/include/canvasGeometry.h"
+#include "engine/ui/include/uiElement.h"
+#include "engine/canvas/include/canvasGeometry.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -27,13 +27,13 @@ class EDITOR_IMAGE_EDITOR_API ImageHistogramWidget : public ui::IElement
 public:
     ImageHistogramWidget();
 
-    void addHistogram(const base::RefPtr<ImageHistogramData>& data, base::Color color, base::StringView caption);
+    void addHistogram(const RefPtr<ImageHistogramData>& data, Color color, StringView caption);
     void removeHistograms();
 
 protected:
-    virtual void renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
-    virtual void renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, base::canvas::Canvas& canvas, float mergedOpacity) override;
-    virtual bool handleMouseMovement(const base::input::MouseMovementEvent& evt) override;
+    virtual void renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual void renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual bool handleMouseMovement(const input::MouseMovementEvent& evt) override;
     virtual void handleHoverLeave(const ui::Position& absolutePosition) override;
 
     virtual ui::ElementPtr queryTooltipElement(const ui::Position& absolutePosition, ui::ElementArea& outArea) const override;
@@ -46,23 +46,23 @@ protected:
 
     struct Histogram
     {
-        base::RefPtr<ImageHistogramData> data;
-        base::Color color;
-        base::StringView caption;
-        base::Array<CollapsedBucket> collapsedBuckets;
+        RefPtr<ImageHistogramData> data;
+        Color color;
+        StringView caption;
+        Array<CollapsedBucket> collapsedBuckets;
         uint32_t collapsedBucketsMaxValue = 0;
-        base::canvas::Geometry geometry;
+        canvas::Geometry geometry;
     };
 
     double m_histogramMin = 0.0;
     double m_histogramMax = 1.0;
     uint32_t m_histogramBucketMax = 0;
 
-    base::Array<Histogram> m_histograms;
+    Array<Histogram> m_histograms;
 
     ui::Size m_cachedHistogramGeometryRefSize;
 
-    mutable base::RefWeakPtr<ui::TextLabel> m_activeTooltip;
+    mutable RefWeakPtr<ui::TextLabel> m_activeTooltip;
 
     int m_hoverPositionX = -1;
 
@@ -73,4 +73,4 @@ protected:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

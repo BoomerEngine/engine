@@ -11,9 +11,9 @@
 #include "managedFileFormat.h"
 #include "managedItem.h"
 #include "managedDepot.h"
-#include "base/io/include/ioFileHandle.h"
+#include "core/io/include/ioFileHandle.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -110,4 +110,4 @@ bool ManagedFileRawResource::storeContent(const Buffer& data)
     return saved;
 }
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

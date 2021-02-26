@@ -9,16 +9,16 @@
 #include "build.h"
 #include "imageHistogramWidget.h"
 #include "imageHistogramCalculation.h"
-#include "rendering/device/include/renderingCommandBuffer.h"
-#include "rendering/device/include/renderingCommandWriter.h"
-#include "rendering/device/include/renderingDeviceService.h"
-#include "rendering/device/include/renderingDeviceApi.h"
+#include "gpu/device/include/renderingCommandBuffer.h"
+#include "gpu/device/include/renderingCommandWriter.h"
+#include "gpu/device/include/renderingDeviceService.h"
+#include "gpu/device/include/renderingDeviceApi.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
-base::ConfigProperty<int> cvNumImageHistogramBuckets("Editor.Image", "NumHistogramBuckets", 256);
+ConfigProperty<int> cvNumImageHistogramBuckets("Editor.Image", "NumHistogramBuckets", 256);
 
 //---
 
@@ -33,14 +33,14 @@ ImageHistogramPendingData::~ImageHistogramPendingData()
 {
 }
 
-void ImageHistogramPendingData::processRetreivedData(const void* untypedDataPtr, uint32_t dataSize, const rendering::ResourceCopyRange& info)
+void ImageHistogramPendingData::processRetreivedData(const void* untypedDataPtr, uint32_t dataSize, const gpu::ResourceCopyRange& info)
 {
 	const auto expectedSize = (2 + m_numBuckets) * sizeof(uint32_t);
 	if (expectedSize == dataSize)
 	{
 		const auto* dataPtr = (const uint32_t*)untypedDataPtr;
 
-		m_data = base::RefNew<ImageHistogramData>();
+		m_data = RefNew<ImageHistogramData>();
 		m_data->channel = m_channel;
 		m_data->totalPixelCount = m_totalPixelCount;
 		m_data->minValue = reinterpret_cast<const float&>(dataPtr[0]);
@@ -53,7 +53,7 @@ void ImageHistogramPendingData::processRetreivedData(const void* untypedDataPtr,
 	}
 }
 
-const base::RefPtr<ImageHistogramData> ImageHistogramPendingData::fetchDataIfReady()
+const RefPtr<ImageHistogramData> ImageHistogramPendingData::fetchDataIfReady()
 {
     auto lock = CreateLock(m_lock);
     return m_data;
@@ -61,7 +61,7 @@ const base::RefPtr<ImageHistogramData> ImageHistogramPendingData::fetchDataIfRea
     
 //--
 
-//base::res::StaticResource<rendering::ShaderLibrary> resComputeImagePreviewHistogram("/editor/shaders/canvas_rendering_panel_integration.csl");
+//res::StaticResource<ShaderLibrary> resComputeImagePreviewHistogram("/editor/shaders/canvas_rendering_panel_integration.csl");
 
 //--
 
@@ -75,13 +75,13 @@ const base::RefPtr<ImageHistogramData> ImageHistogramPendingData::fetchDataIfRea
 
 struct ComputeHistogramParams
 {
-    rendering::ConstantsView Params;
-    rendering::ImageView InputImage;
-    rendering::BufferView MinMax;
-    rendering::BufferView Buckets;
+    ConstantsView Params;
+    ImageView InputImage;
+    BufferView MinMax;
+    BufferView Buckets;
 };*/
 
-base::RefPtr<ImageHistogramPendingData> ComputeHistogram(const rendering::ImageSampledView* view, const ImageComputationSettings& settings)
+RefPtr<ImageHistogramPendingData> ComputeHistogram(const gpu::ImageSampledView* view, const ImageComputationSettings& settings)
 {
     /*if (view.empty())
         return nullptr;
@@ -92,23 +92,23 @@ base::RefPtr<ImageHistogramPendingData> ComputeHistogram(const rendering::ImageS
     if (settings.sliceIndex < 0 || settings.sliceIndex >= view.numArraySlices())
         return nullptr;
 
-    if (view.viewType() != rendering::ImageViewType::View2D)
+    if (view.viewType() != ImageViewType::View2D)
         return nullptr;
 
-    auto commandBuffer = rendering::GPUCommandBuffer::Alloc();
+    auto commandBuffer = gpu::CommandBuffer::Alloc();
     if (!commandBuffer)
         return nullptr;
 
     const auto bucketCount = 256;
 
     auto downloadDataSize = (2 + bucketCount) * sizeof(uint32_t);
-    auto downloadBuffer = base::RefNew<rendering::DownloadBuffer>();
+    auto downloadBuffer = RefNew<DownloadBuffer>();
 
     {
-        rendering::GPUCommandWriter cmd("ComputeHistogram");
+        gpu::CommandWriter cmd("ComputeHistogram");
 
         // create the buffer for computations
-        rendering::TransientBufferView histogramBuffer(rendering::BufferViewFlag::ShaderReadable, rendering::TransientBufferAccess::ShaderReadWrite, downloadDataSize, 0, true);
+        TransientBufferView histogramBuffer(BufferViewFlag::ShaderReadable, TransientBufferAccess::ShaderReadWrite, downloadDataSize, 0, true);
         cmd.opAllocTransientBuffer(histogramBuffer);
 
         // download buffer
@@ -116,15 +116,15 @@ base::RefPtr<ImageHistogramPendingData> ComputeHistogram(const rendering::ImageS
 
         // issue to rendering
         // TODO: idea of background work would be nice
-        base::GetService<DeviceService>()->device()->submitWork(cmd.release());
+        GetService<DeviceService>()->device()->submitWork(cmd.release());
     }
 
     // create wrapper
     const auto totalPixels = view.width() * view.height();
-    return base::RefNew<ImageHistogramPendingData>(downloadBuffer, totalPixels, bucketCount, settings.channel);*/
+    return RefNew<ImageHistogramPendingData>(downloadBuffer, totalPixels, bucketCount, settings.channel);*/
     return nullptr;
 }
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

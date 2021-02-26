@@ -10,9 +10,9 @@
 
 #include "sceneEditMode.h"
 #include "scenePreviewContainer.h"
-#include "editor/gizmos/include/gizmo.h"
+#include "editor/viewport/include/gizmo.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -27,11 +27,11 @@ public:
     virtual const GizmoReferenceSpace& capturedReferenceSpace() const override final;
 
     virtual void revert() override final;
-    virtual void preview(const base::Transform& deltaTransform) override final;
-    virtual void apply(const base::Transform& deltaTransform) override final;
+    virtual void preview(const Transform& deltaTransform) override final;
+    virtual void apply(const Transform& deltaTransform) override final;
 
-    virtual bool filterTranslation(const base::Vector3& deltaTranslationInSpace, base::Transform& outTransform) const override final;
-    virtual bool filterRotation(const base::Angles& rotationAnglesInSpace, base::Transform& outTransform) const override final;
+    virtual bool filterTranslation(const Vector3& deltaTranslationInSpace, Transform& outTransform) const override final;
+    virtual bool filterRotation(const Angles& rotationAnglesInSpace, Transform& outTransform) const override final;
 
 private:
     SceneEditMode_Default* m_mode = nullptr;
@@ -54,7 +54,7 @@ private:
     SceneGridSettings m_grid;
     SceneGizmoSettings m_gizmo;
 
-    void applyDeltaTransform(const base::Transform& deltaTransform);
+    void applyDeltaTransform(const Transform& deltaTransform);
 };
 
 //--
@@ -108,4 +108,4 @@ extern EDITOR_SCENE_EDITOR_API void ResetWorldTransformField(AbsoluteTransform& 
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

@@ -17,23 +17,23 @@
 #include "scenePreviewPanel.h"
 #include "sceneObjectPalettePanel.h"
 
-#include "base/world/include/worldEntity.h"
-#include "base/world/include/worldEntityBehavior.h"
-#include "base/world/include/worldNodeTemplate.h"
-#include "base/world/include/worldPrefab.h"
+#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/worldEntityBehavior.h"
+#include "engine/world/include/worldNodeTemplate.h"
+#include "engine/world/include/worldPrefab.h"
 #include "editor/common/include/managedFileFormat.h"
 #include "editor/common/include/managedDirectory.h"
 #include "editor/common/include/editorService.h"
 #include "editor/common/src/assetBrowserDialogs.h"
 #include "editor/common/include/managedDepot.h"
-#include "base/ui/include/uiMenuBar.h"
-#include "base/ui/include/uiClassPickerBox.h"
-#include "base/ui/include/uiRenderer.h"
-#include "base/object/include/actionHistory.h"
-#include "base/object/include/action.h"
-#include "base/resource/include/objectIndirectTemplate.h"
+#include "engine/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiClassPickerBox.h"
+#include "engine/ui/include/uiRenderer.h"
+#include "core/object/include/actionHistory.h"
+#include "core/object/include/action.h"
+#include "core/resource/include/objectIndirectTemplate.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -195,7 +195,7 @@ void SceneEditMode_Default::buildContextMenu_Create(ui::MenuButtonContainer* men
     {
         if (activeFile)
         {
-            if (activeFileResourceClass.is<world::Prefab>())
+            if (activeFileResourceClass.is<Prefab>())
             {
                 menu->createCallback(TempString("Add prefab '{}'", activeFile->name().view().fileStem()), "[img:add]") = [this, activeFile]()
                 {
@@ -473,5 +473,5 @@ void SceneEditMode_Default::buildContextMenu_Resources(ui::MenuButtonContainer* 
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

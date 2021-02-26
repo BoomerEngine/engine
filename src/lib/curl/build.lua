@@ -8,8 +8,8 @@ LibraryInclude("include")
 if PlatformName == "windows" then
 
     if ConfigurationName == "debug" then
-        LibraryLink("lib/win/libcurld.lib")
-        Deploy("lib/win/libcurld.dll")
+        LibraryLink("lib/win/libcurl_debug.lib")
+        Deploy("lib/win/libcurl_debug.dll")
     else
         LibraryLink("lib/win/libcurl.lib")
         Deploy("lib/win/libcurl.dll")

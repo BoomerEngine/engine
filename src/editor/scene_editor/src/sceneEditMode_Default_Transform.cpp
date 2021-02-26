@@ -15,9 +15,9 @@
 #include "sceneEditMode_Default_UI.h"
 #include "sceneEditMode_Default_Transform.h"
 
-#include "base/object/include/actionHistory.h"
+#include "core/object/include/actionHistory.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -61,7 +61,7 @@ void SceneEditModeDefaultTransformAction::revert()
         entry.node->changeLocalPlacement(entry.initialLocalTransform);
 }
 
-void SceneEditModeDefaultTransformAction::applyDeltaTransform(const base::Transform& deltaTransform)
+void SceneEditModeDefaultTransformAction::applyDeltaTransform(const Transform& deltaTransform)
 {
     for (auto& entry : m_nodes)
     {
@@ -70,7 +70,7 @@ void SceneEditModeDefaultTransformAction::applyDeltaTransform(const base::Transf
     }
 }
 
-void SceneEditModeDefaultTransformAction::preview(const base::Transform& deltaTransform)
+void SceneEditModeDefaultTransformAction::preview(const Transform& deltaTransform)
 {
     applyDeltaTransform(deltaTransform);
 
@@ -86,7 +86,7 @@ void SceneEditModeDefaultTransformAction::preview(const base::Transform& deltaTr
     m_mode->handleTransformsChanged();
 }
 
-void SceneEditModeDefaultTransformAction::apply(const base::Transform& deltaTransform)
+void SceneEditModeDefaultTransformAction::apply(const Transform& deltaTransform)
 {
     applyDeltaTransform(deltaTransform);
 
@@ -112,25 +112,17 @@ void SceneEditModeDefaultTransformAction::apply(const base::Transform& deltaTran
 static double Snap(double value, float grid, bool filter)
 {
     if (filter)
-    {
-        return base::Snap(value, (double)grid);
-    }
+        return boomer::Snap(value, (double)grid);
     else
-    {
         return value;
-    }
 }
 
 static float Snap(float value, float grid, bool filter)
 {
     if (filter)
-    {
-        return base::Snap(value, grid);
-    }
+        return boomer::Snap(value, grid);
     else
-    {
         return value;
-    }
 }
 
 static float IsNearZero(float value)
@@ -139,7 +131,7 @@ static float IsNearZero(float value)
     return value >= -eps && value <= eps;
 }
 
-bool SceneEditModeDefaultTransformAction::filterTranslation(const base::Vector3& deltaTranslationInSpace, base::Transform& outTransform) const
+bool SceneEditModeDefaultTransformAction::filterTranslation(const Vector3& deltaTranslationInSpace, Transform& outTransform) const
 {
     if (deltaTranslationInSpace.isNearZero())
     {
@@ -157,11 +149,11 @@ bool SceneEditModeDefaultTransformAction::filterTranslation(const base::Vector3&
         auto snappedX = Snap(x, m_grid.positionGridSize, !IsNearZero(deltaTranslationInSpace.x) && m_gizmo.enableX && m_grid.positionGridEnabled);
         auto snappedY = Snap(y, m_grid.positionGridSize, !IsNearZero(deltaTranslationInSpace.y) && m_gizmo.enableY && m_grid.positionGridEnabled);
         auto snappedZ = Snap(z, m_grid.positionGridSize, !IsNearZero(deltaTranslationInSpace.z) && m_gizmo.enableZ && m_grid.positionGridEnabled);
-        fullWorldPos = base::AbsolutePosition(snappedX, snappedY, snappedZ);
+        fullWorldPos = AbsolutePosition(snappedX, snappedY, snappedZ);
 
         // compute final delta
         auto finalDelta = fullWorldPos - m_referenceSpace.absoluteTransform().position();
-        outTransform = base::Transform(finalDelta);
+        outTransform = Transform(finalDelta);
     }
     else
     {
@@ -175,22 +167,22 @@ bool SceneEditModeDefaultTransformAction::filterTranslation(const base::Vector3&
         //move += referenceSpace.axis(1) * snappedY;
         //move += referenceSpace.axis(2) * snappedZ;
         //TRACE_INFO("Move: {}, {}, {}", move.x, move.y, move.z);
-        auto move = base::Vector3(snappedX, snappedY, snappedZ);
+        auto move = Vector3(snappedX, snappedY, snappedZ);
 
-        outTransform = base::Transform(move);
+        outTransform = Transform(move);
     }
 
     return true;
 }
 
-bool SceneEditModeDefaultTransformAction::filterRotation(const base::Angles& rotationAnglesInSpace, base::Transform& outTransform) const
+bool SceneEditModeDefaultTransformAction::filterRotation(const Angles& rotationAnglesInSpace, Transform& outTransform) const
 {
     auto snappedX = Snap(rotationAnglesInSpace.roll, m_grid.rotationGridSize, m_gizmo.enableX && m_grid.rotationGridEnabled);
     auto snappedY = Snap(rotationAnglesInSpace.pitch, m_grid.rotationGridSize, m_gizmo.enableY && m_grid.rotationGridEnabled);
     auto snappedZ = Snap(rotationAnglesInSpace.yaw, m_grid.rotationGridSize, m_gizmo.enableZ && m_grid.rotationGridEnabled);
 
-    auto finalRot = base::Angles(snappedY, snappedZ, snappedX);
-    outTransform = base::Transform(Vector3::ZERO(), finalRot.toQuat());
+    auto finalRot = Angles(snappedY, snappedZ, snappedX);
+    outTransform = Transform(Vector3::ZERO(), finalRot.toQuat());
     return true;
 }
 
@@ -520,4 +512,4 @@ ActionPtr SceneEditModeDefaultTransformDragger::createAction() const
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

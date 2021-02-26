@@ -4,8 +4,7 @@
 ProjectType("app")
 ProjectOption("main")
 
-Dependency("base_*")
-Dependency("rendering_*")
-Dependency("physics_*")
-Dependency("game_*")
+Dependency("core_*")
+Dependency("engine_*")
+Dependency("gpu_*")
 

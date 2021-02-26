@@ -10,7 +10,7 @@
 
 #include "versionControl.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 class ManagedFileFormatRegistry;
 
@@ -141,5 +141,5 @@ private:
 
 ///----
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

@@ -10,7 +10,7 @@
 
 #include "versionControl.h"
 
-BEGIN_BOOMER_NAMESPACE(ed::vsc)
+BEGIN_BOOMER_NAMESPACE_EX(ed::vsc)
 
 namespace local
 {
@@ -81,4 +81,4 @@ VersionControlPtr CreateLocalStub()
     return CreateUniquePtr<local::LocalVersionControl>();
 }
 
-END_BOOMER_NAMESPACE(ed::vsc)
+END_BOOMER_NAMESPACE_EX(ed::vsc)

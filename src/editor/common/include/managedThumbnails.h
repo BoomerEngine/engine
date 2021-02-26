@@ -8,18 +8,18 @@
 
 #pragma once
 
-#include "base/io/include/ioDirectoryWatcher.h"
-#include "base/system/include/spinLock.h"
-#include "base/system/include/mutex.h"
-#include "base/resource/include/resourceLoader.h"
-#include "base/io/include/timestamp.h"
+#include "core/io/include/ioDirectoryWatcher.h"
+#include "core/system/include/spinLock.h"
+#include "core/system/include/mutex.h"
+#include "core/resource/include/resourceLoader.h"
+#include "core/io/include/timestamp.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
 /// frontend for thumbnail loading/generation
-class EDITOR_COMMON_API ManagedThumbnailHelper : public base::NoCopy
+class EDITOR_COMMON_API ManagedThumbnailHelper : public NoCopy
 {
 public:
     ManagedThumbnailHelper();
@@ -69,5 +69,5 @@ private:
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
  

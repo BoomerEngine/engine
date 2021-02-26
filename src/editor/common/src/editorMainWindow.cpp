@@ -24,21 +24,21 @@
 #include "managedItemCollection.h"
 #include "managedFileNativeResource.h"
 
-#include "base/canvas/include/canvas.h"
-#include "base/app/include/launcherPlatform.h"
-#include "base/ui/include/uiRenderer.h"
-#include "base/ui/include/uiDockLayout.h"
-#include "base/ui/include/uiDockNotebook.h"
-#include "base/ui/include/uiDockContainer.h"
-#include "base/ui/include/uiElementConfig.h"
-#include "base/ui/include/uiButton.h"
-#include "base/ui/include/uiMessageBox.h"
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiProgressBar.h"
-#include "base/resource/include/resourceMetadata.h"
-#include "base/resource_compiler/include/importFileList.h"
+#include "engine/canvas/include/canvas.h"
+#include "core/app/include/launcherPlatform.h"
+#include "engine/ui/include/uiRenderer.h"
+#include "engine/ui/include/uiDockLayout.h"
+#include "engine/ui/include/uiDockNotebook.h"
+#include "engine/ui/include/uiDockContainer.h"
+#include "engine/ui/include/uiElementConfig.h"
+#include "engine/ui/include/uiButton.h"
+#include "engine/ui/include/uiMessageBox.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiProgressBar.h"
+#include "core/resource/include/resourceMetadata.h"
+#include "core/resource_compiler/include/importFileList.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -215,5 +215,5 @@ void MainWindow::queryInitialPlacementSetup(ui::WindowInitialPlacementSetup& out
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 

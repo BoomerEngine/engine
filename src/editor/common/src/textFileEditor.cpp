@@ -13,12 +13,12 @@
 #include "assetBrowser.h"
 #include "assetBrowserTabFiles.h"
 
-#include "base/ui/include/uiScintillaTextEditor.h"
-#include "base/ui/include/uiToolBar.h"
-#include "base/ui/include/uiMenuBar.h"
-#include "base/ui/include/uiDockLayout.h"
+#include "engine/ui/include/uiScintillaTextEditor.h"
+#include "engine/ui/include/uiToolBar.h"
+#include "engine/ui/include/uiMenuBar.h"
+#include "engine/ui/include/uiDockLayout.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -132,4 +132,4 @@ RTTI_END_TYPE();
 
 //---
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

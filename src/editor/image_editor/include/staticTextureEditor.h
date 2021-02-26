@@ -11,7 +11,7 @@
 #include "editor/common/include/resourceEditor.h"
 #include "editor/common/include/resourceEditorNativeFile.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
@@ -30,7 +30,7 @@ public:
 
     INLINE ImagePreviewPanelWithToolbar* previewPanel() const { return m_previewPanel; }
 
-    INLINE const rendering::StaticTexturePtr& texture() const { return m_texture; }
+    INLINE const StaticTexturePtr& texture() const { return m_texture; }
 
     //--
 
@@ -38,7 +38,7 @@ public:
     virtual void handleLocalReimport(const res::ResourcePtr& ptr) override;
 
 private:
-    rendering::StaticTexturePtr m_texture;
+    StaticTexturePtr m_texture;
 
     ImageHistogramWidget* m_colorHistogram;
     ImageHistogramWidget* m_lumHistogram;
@@ -48,7 +48,7 @@ private:
 
     ui::TextLabel* m_imageInfoLabel;
 
-    base::Array<base::RefPtr<ImageHistogramPendingData>> m_pendingHistograms;
+    Array<RefPtr<ImageHistogramPendingData>> m_pendingHistograms;
     ui::Timer m_histogramCheckTimer;
 
     void createInterface();
@@ -60,4 +60,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)

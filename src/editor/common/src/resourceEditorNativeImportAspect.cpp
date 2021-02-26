@@ -15,20 +15,20 @@
 #include "resourceEditorNativeImportAspect.h"
 #include "assetFileImportWidget.h"
 
-#include "base/ui/include/uiButton.h"
-#include "base/ui/include/uiTextLabel.h"
-#include "base/ui/include/uiDataInspector.h"
-#include "base/ui/include/uiDockLayout.h"
-#include "base/resource/include/resourceMetadata.h"
-#include "base/resource_compiler/include/importFileService.h"
-#include "base/resource_compiler/include/importInterface.h"
-#include "base/resource_compiler/include/importSaveThread.h"
-#include "base/resource_compiler/include/importQueue.h"
-#include "base/resource_compiler/include/importFileService.h"
-#include "base/resource_compiler/include/importSourceAssetRepository.h"
-#include "base/resource/include/resourceLoadingService.h"
+#include "engine/ui/include/uiButton.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiDataInspector.h"
+#include "engine/ui/include/uiDockLayout.h"
+#include "core/resource/include/resourceMetadata.h"
+#include "core/resource_compiler/include/importFileService.h"
+#include "core/resource_compiler/include/importInterface.h"
+#include "core/resource_compiler/include/importSaveThread.h"
+#include "core/resource_compiler/include/importQueue.h"
+#include "core/resource_compiler/include/importFileService.h"
+#include "core/resource_compiler/include/importSourceAssetRepository.h"
+#include "core/resource/include/resourceLoadingService.h"
 
-BEGIN_BOOMER_NAMESPACE(ed)
+BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
@@ -103,7 +103,7 @@ bool ResourceEditorNativeImportAspect::initialize(ResourceEditor* editor)
     //--
 
     {
-        auto importPanel = base::RefNew<ui::DockPanel>("[img:import] Import", "ImportSettings");
+        auto importPanel = RefNew<ui::DockPanel>("[img:import] Import", "ImportSettings");
         importPanel->layoutVertical();
 
         {
@@ -321,5 +321,5 @@ bool ResourceEditorNativeImportAspect::inplaceReimportWorker(IProgressTracker& p
 
 //--
 
-END_BOOMER_NAMESPACE(ed)
+END_BOOMER_NAMESPACE_EX(ed)
 
