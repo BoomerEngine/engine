@@ -1,0 +1,149 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resources.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include <Windows.h>
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// Polish (Poland) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_PLK)
+LANGUAGE LANG_POLISH, SUBLANG_DEFAULT
+#pragma code_page(1250)
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ASSERT DIALOGEX 0, 0, 667, 410
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_CAPTION | WS_SYSMENU
+CAPTION "Boomer Engine Runtime Error"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Error occured during execution of Boomer Engine Runtime:",-1,7,7,188,8
+    EDITTEXT        IDC_ERROR_TEXT,7,22,653,48,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER | WS_VSCROLL,WS_EX_CLIENTEDGE
+    PUSHBUTTON      "&Ignore",IDC_IGNORE,4,372,155,31
+    PUSHBUTTON      "&Break",IDC_BREAK,338,372,155,31
+    PUSHBUTTON      "&Exit",IDC_EXIT,505,372,155,31
+    PUSHBUTTON      "&Disable",IDC_DISABLE,171,372,155,31
+    LTEXT           "Callstack retrieved from application (can be invalid):",-1,7,78,166,8
+    EDITTEXT        IDC_ERROR_CALLSTACK,7,91,653,276,ES_MULTILINE | ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER | WS_VSCROLL,WS_EX_CLIENTEDGE
+END
+
+IDD_PROGRESS DIALOGEX 0, 0, 358, 57
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | DS_CENTER | WS_POPUP | WS_CAPTION
+EXSTYLE WS_EX_TOPMOST
+CAPTION "<Title>"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         "<Text>",IDC_PROGRESS_TEXT,"Static",SS_LEFTNOWORDWRAP | WS_GROUP,3,4,230,8
+    CONTROL         "Progress1",IDC_PROGRESS_BAR,"msctls_progress32",PBS_SMOOTH | WS_BORDER,3,17,349,14
+    LTEXT           "ETA: 00:00",IDC_PROGRESS_TIME,13,40,50,8
+    LTEXT           "Mem: 100 MB",IDC_PROGRESS_MEM,93,40,50,8
+    PUSHBUTTON      "Cancel",IDCANCEL,302,38,50,14
+END
+
+IDD_SPLASH DIALOGEX 0, 0, 280, 162
+STYLE DS_SETFONT | DS_FIXEDSYS | DS_CENTER | WS_POPUP
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    CONTROL         IDB_SPLASH,-1,"Static",SS_BITMAP,0,0,280,162
+    LTEXT           "Build 0.4.9.1045",IDC_BUILD_TEXT,7,139,260,8
+    LTEXT           "Loading editor...",IDC_PROGRESS_TEXT,5,152,260,8
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ASSERT, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 660
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 403
+    END
+
+    IDD_PROGRESS, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        RIGHTMARGIN, 300
+        TOPMARGIN, 7
+        BOTTOMMARGIN, 37
+    END
+
+    IDD_SPLASH, DIALOG
+    BEGIN
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resources.h\0"
+    "#include <windows.h>\r\n"
+    "#define IDC_STATIC -1\r\n"
+    "\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""/r/n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// AFX_DIALOG_LAYOUT
+//
+
+IDD_ASSERT AFX_DIALOG_LAYOUT
+BEGIN
+    0
+END
+
+#endif    // Polish (Poland) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

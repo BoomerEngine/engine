@@ -1,0 +1,56 @@
+/***
+* Boomer Engine v4
+* Written by Tomasz Jonarski (RexDex)
+* Source code licensed under LGPL 3.0 license
+*
+* [# filter: api #]
+***/
+
+#pragma once
+
+#include "core/system/include/spinLock.h"
+
+BEGIN_BOOMER_NAMESPACE_EX(gpu::api)
+
+//---
+
+// indexed completion list - clients can register for particular number 
+// and when host "updates" the version all subscribed numbers are called
+class GPU_API_COMMON_API FrameCompleteionQueue : public NoCopy
+{
+public:
+	FrameCompleteionQueue();
+	~FrameCompleteionQueue(); // must be empty when destroyed
+
+	//--
+
+	// current fame counter
+	INLINE uint64_t frameIndex() const { return m_currentFrameIndex; }
+
+	//--
+
+	// signal all waiting notifications
+	void signalNotifications(uint64_t newFrameIndex);
+
+	// register for expiration of frame N, will be called once we reached AT LEAST frame N+1 (but we can skip ahead)
+	// NOTE: it's impossible to register notification to expired frame - only to current and future ones
+	bool registerNotification(uint64_t frameIndex, IDeviceCompletionCallback* callback);
+
+	// register a function base notification
+	bool registerNotification(uint64_t frameIndex, const std::function<void(void)>& func);
+
+	//--
+
+private:
+	static const auto MAX_LEAD_COUNTER = 8; // we can register up to this frames in the future
+
+	SpinLock m_lock;
+
+	uint64_t m_currentFrameIndex = 0;
+
+	Array<DeviceCompletionCallbackPtr> m_callbacks[MAX_LEAD_COUNTER]; // list modulo N
+};
+
+//---
+
+END_BOOMER_NAMESPACE_EX(gpu::api)
