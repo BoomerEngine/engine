@@ -8,7 +8,7 @@
 
 #include "core/app/include/application.h"
 #include "editor/common/include/editorService.h"
-#include "gpu/device/include/renderingOutput.h"
+#include "gpu/device/include/output.h"
 #include "engine/ui/include/nativeWindowRenderer.h"
 
 BEGIN_BOOMER_NAMESPACE()

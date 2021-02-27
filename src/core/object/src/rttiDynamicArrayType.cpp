@@ -29,6 +29,8 @@ namespace prv
         : IArrayType(FormatDynamicArrayTypeName(innerType->name()), innerType)
 		, m_helper(nullptr)
     {
+        TRACE_INFO("!! created dynamic array type: '{}'", name());
+
         m_traits.size = sizeof(BaseArray);
         m_traits.alignment = __alignof(BaseArray);
         m_traits.initializedFromZeroMem = true; // BaseArray is fine with zero memory init

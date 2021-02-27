@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "gpu/device/include/renderingObject.h"
-#include "gpu/device/include/renderingObjectID.h"
+#include "gpu/device/include/object.h"
+#include "gpu/device/include/objectID.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api)
 

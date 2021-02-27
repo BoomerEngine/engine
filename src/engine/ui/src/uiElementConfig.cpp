@@ -8,9 +8,9 @@
 
 #include "build.h"
 #include "uiElementConfig.h"
-#include "core/config/include/configStorage.h"
-#include "core/config/include/configGroup.h"
-#include "core/config/include/configEntry.h"
+#include "core/config/include/storage.h"
+#include "core/config/include/group.h"
+#include "core/config/include/entry.h"
 #include "core/app/include/configProperty.h"
 #include "core/xml/include/xmlUtils.h"
 #include "core/xml/include/xmlDocument.h"

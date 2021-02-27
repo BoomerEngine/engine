@@ -12,9 +12,9 @@
 #include "renderingMeshCookerChunks.h"
 #include "renderingMeshImportConfig.h"
 
-#include "engine/material/include/renderingMaterialInstance.h"
-#include "engine/material/include/renderingMaterialTemplate.h"
-#include "engine/texture/include/renderingTexture.h"
+#include "engine/material/include/materialInstance.h"
+#include "engine/material/include/materialTemplate.h"
+#include "engine/texture/include/texture.h"
 #include "core/resource/include/resourceLoadingService.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)

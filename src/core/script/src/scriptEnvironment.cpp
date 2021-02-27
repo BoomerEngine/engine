@@ -22,9 +22,9 @@
 #include "core/object/include/rttiClassRefType.h"
 #include "core/object/include/rttiArrayType.h"
 #include "core/object/include/rttiHandleType.h"
-#include "core/config/include/configSystem.h"
-#include "core/config/include/configGroup.h"
-#include "core/config/include/configEntry.h"
+#include "core/config/include/system.h"
+#include "core/config/include/group.h"
+#include "core/config/include/entry.h"
 #include "core/app/include/localServiceContainer.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(script)

@@ -9,7 +9,7 @@
 #pragma once
 
 #include "editor/common/include/resourceEditorNativeFile.h"
-#include "engine/world/include/worldPrefab.h"
+#include "engine/world/include/prefab.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

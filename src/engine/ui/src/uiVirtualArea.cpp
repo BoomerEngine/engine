@@ -15,7 +15,7 @@
 
 #include "engine/canvas/include/canvas.h"
 #include "engine/font/include/fontInputText.h"
-#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/canvas/include/geometryBuilder.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 

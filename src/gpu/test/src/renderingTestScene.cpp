@@ -10,8 +10,8 @@
 #include "renderingTest.h"
 #include "renderingTestScene.h"
 
-#include "gpu/device/include/renderingDescriptor.h"
-#include "gpu/device/include/renderingImage.h"
+#include "gpu/device/include/descriptor.h"
+#include "gpu/device/include/image.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::test)
 

@@ -9,7 +9,7 @@
 #pragma once
 
 #include "engine/ui/include/uiElement.h"
-#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/entity.h"
 #include "engine/ui/include/uiSimpleListModel.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)

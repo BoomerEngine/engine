@@ -10,8 +10,8 @@
 #pragma once
 
 #include "apiWindow.h"
-#include "gpu/device/include/renderingOutput.h"
-#include "gpu/device/include/renderingDeviceApi.h"
+#include "gpu/device/include/output.h"
+#include "gpu/device/include/device.h"
 
 #include <Windows.h>
 

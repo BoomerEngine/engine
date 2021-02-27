@@ -10,8 +10,8 @@
 #include "renderingTest.h"
 #include "renderingTestScene.h"
 
-#include "gpu/device/include/renderingDeviceApi.h"
-#include "gpu/device/include/renderingCommandWriter.h"
+#include "gpu/device/include/device.h"
+#include "gpu/device/include/commandWriter.h"
 #include "core/image/include/imageUtils.h"
 #include "core/image/include/imageView.h"
 #include "core/image/include/image.h"

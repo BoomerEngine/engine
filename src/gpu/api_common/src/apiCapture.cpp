@@ -9,9 +9,9 @@
 #include "build.h"
 #include "apiCapture.h"
 
-#include "gpu/device/include/renderingCommandBuffer.h"
-#include "gpu/device/include/renderingCommands.h"
-#include "gpu/device/include/renderingDeviceApi.h"
+#include "gpu/device/include/commandBuffer.h"
+#include "gpu/device/include/commands.h"
+#include "gpu/device/include/device.h"
 
 #ifdef PLATFORM_WINAPI
 #include <Windows.h>

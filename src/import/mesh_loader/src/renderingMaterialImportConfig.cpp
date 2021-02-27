@@ -9,18 +9,19 @@
 #include "build.h"
 #include "renderingMaterialImportConfig.h"
 
-#include "engine/texture/include/renderingStaticTexture.h"
-#include "engine/material/include/renderingMaterial.h"
-#include "engine/material/include/renderingMaterialInstance.h"
+#include "engine/texture/include/staticTexture.h"
+#include "engine/material/include/material.h"
+#include "engine/material/include/materialInstance.h"
 
 #include "core/resource_compiler/include/importInterface.h"
-#include "engine/material/include/renderingMaterialTemplate.h"
+#include "engine/material/include/materialTemplate.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //--
 
 RTTI_BEGIN_TYPE_CLASS(MaterialImportConfig);
+    RTTI_OLD_NAME("rendering::MaterialImportConfig");
     RTTI_CATEGORY("Texture import");
     RTTI_PROPERTY(m_importTextures).editable().overriddable();
     RTTI_PROPERTY(m_textureSearchPath).editable().overriddable();

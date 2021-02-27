@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "gpu/device/include/renderingShaderStubs.h"
+#include "gpu/device/include/shaderStubs.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api::gl4)
 

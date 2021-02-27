@@ -16,7 +16,7 @@
 
 #include "core/input/include/inputStructures.h"
 #include "core/image/include/image.h"
-#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/canvas/include/geometryBuilder.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 

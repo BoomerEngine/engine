@@ -10,8 +10,8 @@
 
 #include "apiObject.h"
 
-#include "gpu/device/include/renderingShaderData.h"
-#include "gpu/device/include/renderingShader.h"
+#include "gpu/device/include/shaderData.h"
+#include "gpu/device/include/shader.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api)
 

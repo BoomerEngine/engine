@@ -312,6 +312,9 @@ namespace helper
         if (!originalType)
             return false;
 
+        else if (originalType == targetType)
+            return true;
+
         else if (originalType->metaType() == MetaType::ResourceRef && targetType->metaType() == MetaType::ResourceRef)
             return true;
 
@@ -322,10 +325,7 @@ namespace helper
             return true;
 
         else if (originalType->metaType() == MetaType::Array && targetType->metaType() == MetaType::Array)
-        {
-            if (originalType.innerType() == targetType.innerType())
-                return true;
-        }
+            return AreTypesBinaryComaptible(originalType.innerType(), targetType.innerType());
 
         return false;
     }
@@ -393,6 +393,9 @@ void IClassType::readBinary(TypeSerializationContext& typeContext, stream::Opcod
                 void* targetData = prop->offsetPtr(data);
                 if (!ConvertData(tempData.data(), tempData.type(), targetData, prop->type()))
                 {
+                    TRACE_INFO("Property '{}' in class '{}' was saved with type '{}' not now is of type '{}'. We will attempt automatic conversion",
+                        propertyName, name(), typeName, prop->type());
+
                     // we failed to convert the type automatically but still allow for the recovery
                     handlePropertyTypeChange(typeContext, propertyName, type, tempData.data(), prop->type(), targetData);
                 }

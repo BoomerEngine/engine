@@ -12,7 +12,7 @@
 #include "fbxFileLoaderService.h"
 #include "fbxFileData.h"
 
-#include "engine/material/include/renderingMaterialInstance.h"
+#include "engine/material/include/materialInstance.h"
 
 #include "core/app/include/localServiceContainer.h"
 #include "core/resource/include/resourceTags.h"
@@ -22,6 +22,7 @@ BEGIN_BOOMER_NAMESPACE_EX(assets)
 //--
 
 RTTI_BEGIN_TYPE_CLASS(FBXMaterialImportConfig);
+    RTTI_OLD_NAME("fbx::FBXMaterialImportConfig");
     RTTI_CATEGORY("Material");
     RTTI_PROPERTY(m_materialName).editable("Name of the material to import").overriddable();
 RTTI_END_TYPE();

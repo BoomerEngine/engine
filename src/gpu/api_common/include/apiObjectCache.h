@@ -8,8 +8,8 @@
 
 #pragma once
 
-#include "gpu/device/include/renderingDescriptorID.h"
-#include "gpu/device/include/renderingShaderMetadata.h"
+#include "gpu/device/include/descriptorID.h"
+#include "gpu/device/include/shaderMetadata.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api)
 

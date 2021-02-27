@@ -23,20 +23,20 @@
 #include "core/object/include/actionHistory.h"
 #include "core/object/include/action.h"
 #include "engine/world/include/world.h"
-#include "engine/world/include/worldEntity.h"
-#include "engine/world/include/worldEntityBehavior.h"
+#include "engine/world/include/entity.h"
+#include "engine/world/include/entityBehavior.h"
 #include "core/resource/include/objectIndirectTemplate.h"
 #include "core/resource/include/objectIndirectTemplateCompiler.h"
-#include "engine/world/include/worldNodeTemplate.h"
+#include "engine/world/include/nodeTemplate.h"
 #include "editor/common/include/managedFileFormat.h"
 #include "editor/common/include/managedDirectory.h"
-#include "engine/world/include/worldPrefab.h"
+#include "engine/world/include/prefab.h"
 #include "editor/common/include/editorService.h"
 #include "editor/common/src/assetBrowserDialogs.h"
 #include "editor/common/include/assetBrowser.h"
 #include "engine/ui/include/uiDragDrop.h"
 
-#include "engine/rendering/include/renderingFrameDebug.h"
+#include "engine/rendering/include/debug.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

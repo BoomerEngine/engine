@@ -9,8 +9,8 @@
 #include "build.h"
 #include "renderingTest.h"
 
-#include "gpu/device/include/renderingDeviceApi.h"
-#include "gpu/device/include/renderingBuffer.h"
+#include "gpu/device/include/device.h"
+#include "gpu/device/include/buffer.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::test)
 

@@ -11,10 +11,10 @@
 #include "core/app/include/launcherPlatform.h"
 #include "core/input/include/inputContext.h"
 
-#include "gpu/device/include/renderingDeviceApi.h"
-#include "gpu/device/include/renderingDeviceService.h"
-#include "gpu/device/include/renderingOutput.h"
-#include "gpu/device/include/renderingCommandWriter.h"
+#include "gpu/device/include/device.h"
+#include "gpu/device/include/deviceService.h"
+#include "gpu/device/include/output.h"
+#include "gpu/device/include/commandWriter.h"
 
 #include "engine/game/include/game.h"
 #include "engine/game/include/gameHost.h"

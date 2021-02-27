@@ -10,9 +10,9 @@
 #include "importerMtl.h"
 #include "fileMtl.h"
 
-#include "engine/material/include/renderingMaterialInstance.h"
-#include "engine/material/include/renderingMaterialTemplate.h"
-#include "engine/texture/include/renderingTexture.h"
+#include "engine/material/include/materialInstance.h"
+#include "engine/material/include/materialTemplate.h"
+#include "engine/texture/include/texture.h"
 
 #include "core/resource/include/resourceTags.h"
 #include "core/resource_compiler/include/importInterface.h"
@@ -24,6 +24,7 @@ BEGIN_BOOMER_NAMESPACE_EX(assets)
 RTTI_BEGIN_TYPE_CLASS(MTLMaterialImportConfig);
     RTTI_CATEGORY("Material");
     RTTI_PROPERTY(m_materialName).editable("Name of the material to import").overriddable();
+    RTTI_OLD_NAME("wavefront::MTLMaterialImportConfig");
 RTTI_END_TYPE();
 
 MTLMaterialImportConfig::MTLMaterialImportConfig()
@@ -39,6 +40,7 @@ void MTLMaterialImportConfig::computeConfigurationKey(CRC64& crc) const
 //--
 
 RTTI_BEGIN_TYPE_CLASS(MTLMaterialImporter);
+    RTTI_OLD_NAME("wavefront::MTLMaterialImporter");
     RTTI_METADATA(res::ResourceCookedClassMetadata).addClass<MaterialInstance>();
     RTTI_METADATA(res::ResourceSourceFormatMetadata).addSourceExtension("mtl");
     RTTI_METADATA(res::ResourceCookerVersionMetadata).version(5);

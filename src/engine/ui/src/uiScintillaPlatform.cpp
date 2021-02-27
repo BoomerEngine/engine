@@ -36,7 +36,7 @@
 #include "engine/font/include/fontInputText.h"
 #include "engine/font/include/fontGlyphBuffer.h"
 #include "engine/canvas/include/canvas.h"
-#include "engine/canvas/include/canvasGeometry.h"
+#include "engine/canvas/include/geometry.h"
 
 namespace Scintilla
 {

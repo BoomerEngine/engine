@@ -22,9 +22,9 @@
 #include "gpu/api_common/include/apiExecution.h"
 #include "gpu/api_common/include/apiObjectRegistry.h"
 #include "gpu/api_common/include/apiOutput.h"
-#include "gpu/device/include/renderingDeviceApi.h"
-#include "gpu/device/include/renderingDescriptorInfo.h"
-#include "gpu/device/include/renderingDescriptor.h"
+#include "gpu/device/include/device.h"
+#include "gpu/device/include/descriptorInfo.h"
+#include "gpu/device/include/descriptor.h"
 #include "core/image/include/imageRect.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api::gl4)

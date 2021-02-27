@@ -10,10 +10,10 @@
 #include "build.h"
 #include "renderingCanvasTest.h"
 
-#include "engine/canvas/include/canvasGeometryBuilder.h"
-#include "engine/canvas/include/canvasGeometry.h"
+#include "engine/canvas/include/geometryBuilder.h"
+#include "engine/canvas/include/geometry.h"
 #include "engine/canvas/include/canvas.h"
-#include "engine/canvas/include/canvasStyle.h"
+#include "engine/canvas/include/style.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
 

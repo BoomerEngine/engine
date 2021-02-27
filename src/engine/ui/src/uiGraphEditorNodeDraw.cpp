@@ -17,7 +17,7 @@
 #include "core/graph/include/graphSocket.h"
 #include "core/graph/include/graphConnection.h"
 #include "engine/font/include/fontInputText.h"
-#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/canvas/include/geometryBuilder.h"
 #include "engine/font/include/fontGlyphBuffer.h"
 #include "engine/canvas/include/canvas.h"
 

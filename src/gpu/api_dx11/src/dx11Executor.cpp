@@ -11,7 +11,7 @@
 #include "dx11Thread.h"
 
 #include "gpu/api_common/include/apiExecution.h"
-#include "gpu/device/include/renderingDeviceApi.h"
+#include "gpu/device/include/device.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api::dx11)
 

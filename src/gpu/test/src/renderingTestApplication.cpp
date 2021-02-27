@@ -9,10 +9,10 @@
 #include "build.h"
 #include "renderingTest.h"
 
-#include "gpu/device/include/renderingCommandBuffer.h"
-#include "gpu/device/include/renderingDeviceApi.h"
-#include "gpu/device/include/renderingOutput.h"
-#include "gpu/device/include/renderingDeviceService.h"
+#include "gpu/device/include/commandBuffer.h"
+#include "gpu/device/include/device.h"
+#include "gpu/device/include/output.h"
+#include "gpu/device/include/deviceService.h"
 
 #include "core/app/include/launcherPlatform.h"
 #include "core/app/include/commandline.h"

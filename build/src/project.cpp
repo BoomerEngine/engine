@@ -19,7 +19,7 @@ string Configuration::mergedName() const
 
 bool Configuration::parse(const char* path, const Commandline& cmd)
 {
-    builderExecutablePath = path;
+    builderExecutablePath = filesystem::absolute(path);
     if (!filesystem::is_regular_file(builderExecutablePath))
     {
         cout << "Invalid local executable name: " << builderExecutablePath << "\n";
@@ -27,6 +27,7 @@ bool Configuration::parse(const char* path, const Commandline& cmd)
     }
 
     builderEnvPath = builderExecutablePath.parent_path().parent_path();
+    cout << "EnvPath: " << builderEnvPath << "\n";
 
     if (!filesystem::is_directory(builderEnvPath / "vs"))
     {

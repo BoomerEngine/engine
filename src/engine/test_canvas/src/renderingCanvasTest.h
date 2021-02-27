@@ -11,10 +11,10 @@
 #include "core/object/include/rttiMetadata.h"
 #include "core/resource/include/resourceLoader.h"
 
-#include "engine/canvas/include/canvasGeometryBuilder.h"
-#include "engine/canvas/include/canvasGeometry.h"
+#include "engine/canvas/include/geometryBuilder.h"
+#include "engine/canvas/include/geometry.h"
 #include "engine/canvas/include/canvas.h"
-#include "engine/canvas/include/canvasStyle.h"
+#include "engine/canvas/include/style.h"
 
 #include "core/image/include/image.h"
 #include "core/image/include/imageView.h"

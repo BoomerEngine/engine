@@ -15,11 +15,11 @@
 #include "core/input/include/inputStructures.h"
 #include "engine/canvas/include/canvas.h"
 
-#include "gpu/device/include/renderingDeviceApi.h"
-#include "gpu/device/include/renderingOutput.h"
-#include "gpu/device/include/renderingCommandBuffer.h"
-#include "gpu/device/include/renderingDeviceService.h"
-#include "gpu/device/include/renderingCommandWriter.h"
+#include "gpu/device/include/device.h"
+#include "gpu/device/include/output.h"
+#include "gpu/device/include/commandBuffer.h"
+#include "gpu/device/include/deviceService.h"
+#include "gpu/device/include/commandWriter.h"
 #include "engine/ui/include/nativeWindowRenderer.h"
 
 #include "core/app/include/launcherPlatform.h"

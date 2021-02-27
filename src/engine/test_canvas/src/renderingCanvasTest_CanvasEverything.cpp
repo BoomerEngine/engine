@@ -10,10 +10,10 @@
 #include "build.h"
 #include "renderingCanvasTest.h"
 
-#include "engine/canvas/include/canvasGeometryBuilder.h"
-#include "engine/canvas/include/canvasGeometry.h"
+#include "engine/canvas/include/geometryBuilder.h"
+#include "engine/canvas/include/geometry.h"
 #include "engine/canvas/include/canvas.h"
-#include "engine/canvas/include/canvasStyle.h"
+#include "engine/canvas/include/style.h"
 #include "engine/font/include/font.h"
 #include "engine/font/include/fontGlyphBuffer.h"
 #include "engine/font/include/fontInputText.h"
@@ -21,7 +21,7 @@
 #include "core/containers/include/utf8StringFunctions.h"
 #include "engine/font/include/fontGlyph.h"
 #include "core/input/include/inputStructures.h"
-#include "engine/canvas/include/canvasAtlas.h"
+#include "engine/canvas/include/atlas.h"
 
 #ifdef PLATFORM_MSVC
 #pragma warning (disable: 4706) // assignment within conditional expression

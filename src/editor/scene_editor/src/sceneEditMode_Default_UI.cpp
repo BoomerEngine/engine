@@ -32,10 +32,10 @@
 #include "core/resource/include/objectIndirectTemplate.h"
 #include "core/resource/include/objectIndirectTemplateCompiler.h"
 
-#include "engine/world/include/worldNodeTemplate.h"
-#include "engine/world/include/worldEntityBehavior.h"
-#include "engine/world/include/worldEntity.h"
-#include "engine/world/include/worldPrefab.h"
+#include "engine/world/include/nodeTemplate.h"
+#include "engine/world/include/entityBehavior.h"
+#include "engine/world/include/entity.h"
+#include "engine/world/include/prefab.h"
 
 #include "core/containers/include/stringBuilder.h"
 

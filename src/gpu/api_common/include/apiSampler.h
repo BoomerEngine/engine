@@ -10,7 +10,7 @@
 
 #include "apiObject.h"
 
-#include "gpu/device/include/renderingSamplerState.h"
+#include "gpu/device/include/samplerState.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api)
 

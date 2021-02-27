@@ -22,7 +22,7 @@
 #include "engine/ui/include/uiToolBar.h"
 #include "engine/ui/include/uiMenuBar.h"
 #include "engine/ui/include/uiWindowPopup.h"
-#include "engine/canvas/include/canvasAtlas.h"
+#include "engine/canvas/include/atlas.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
 

@@ -10,9 +10,9 @@
 #include "sceneTest.h"
 
 #include "engine/world/include/world.h"
-#include "engine/world/include/worldEntity.h"
-#include "engine/mesh/include/renderingMesh.h"
-#include "engine/rendering/include/renderingFrameCameraContext.h"
+#include "engine/world/include/entity.h"
+#include "engine/mesh/include/mesh.h"
+#include "engine/rendering/include/cameraContext.h"
 
 #include "core/input/include/inputStructures.h"
 

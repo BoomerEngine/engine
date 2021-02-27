@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "gpu/device/include/renderingImage.h"
+#include "gpu/device/include/image.h"
 
 #include "apiObject.h"
 

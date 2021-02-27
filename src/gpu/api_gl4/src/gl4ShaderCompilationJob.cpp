@@ -10,7 +10,7 @@
 #include "gl4ShaderCompilationJob.h"
 #include "gl4ShaderCompiler.h"
 
-#include "gpu/device/include/renderingShaderStubs.h"
+#include "gpu/device/include/shaderStubs.h"
 #include "core/object/include/stubLoader.h"
 #include "core/system/include/thread.h"
 

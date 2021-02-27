@@ -11,10 +11,10 @@
 #include "uiRenderer.h"
 
 #include "engine/canvas/include/canvas.h"
-#include "engine/canvas/include/canvasStyle.h"
-#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/canvas/include/style.h"
+#include "engine/canvas/include/geometryBuilder.h"
 
-#include "gpu/device/include/renderingOutput.h"
+#include "gpu/device/include/output.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 

@@ -15,12 +15,12 @@
 
 #include "engine/ui/include/uiMenuBar.h"
 #include "engine/ui/include/uiToolBar.h"
-#include "engine/mesh/include/renderingMesh.h"
-#include "engine/material/include/renderingMaterial.h"
+#include "engine/mesh/include/mesh.h"
+#include "engine/material/include/material.h"
 
-#include "engine/rendering/include/renderingScene.h"
-#include "engine/rendering/include/renderingSceneObject.h"
-#include "engine/rendering/include/renderingSceneObject_Mesh.h"
+#include "engine/rendering/include/scene.h"
+#include "engine/rendering/include/object.h"
+#include "engine/rendering/include/objectMesh.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

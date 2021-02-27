@@ -12,7 +12,7 @@
 #include "gl4Utils.h"
 #include "gl4ObjectCache.h"
 
-#include "gpu/device/include/renderingDeviceApi.h"
+#include "gpu/device/include/device.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api::gl4)
 

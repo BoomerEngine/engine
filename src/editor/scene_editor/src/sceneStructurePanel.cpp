@@ -13,7 +13,7 @@
 #include "scenePreviewContainer.h"
 #include "sceneEditMode.h"
 
-#include "engine/world/include/worldPrefab.h"
+#include "engine/world/include/prefab.h"
 #include "editor/common/include/assetBrowser.h"
 #include "editor/common/include/managedFile.h"
 #include "editor/common/include/managedFileFormat.h"

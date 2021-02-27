@@ -475,8 +475,8 @@ struct OutputInitInfo;
 
 END_BOOMER_NAMESPACE_EX(gpu)
 
-#include "renderingObjectID.h"
-#include "renderingImageFormat.h"
+#include "objectID.h"
+#include "imageFormat.h"
 
 #ifndef BUILD_RELEASE
 #define VALIDATE_RESOURCE_LAYOUTS

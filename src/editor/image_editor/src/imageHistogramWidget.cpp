@@ -11,7 +11,7 @@
 #include "imageHistogramCalculation.h"
 #include "core/image/include/imageView.h"
 #include "engine/canvas/include/canvas.h"
-#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/canvas/include/geometryBuilder.h"
 #include "engine/ui/include/uiTextLabel.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)

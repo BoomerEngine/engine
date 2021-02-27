@@ -9,7 +9,7 @@
 #pragma once
 
 #include "apiObject.h"
-#include "gpu/device/include/renderingGraphicsStates.h"
+#include "gpu/device/include/graphicsStates.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api)
 

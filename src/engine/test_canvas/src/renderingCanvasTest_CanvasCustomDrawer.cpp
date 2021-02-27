@@ -9,16 +9,16 @@
 #include "build.h"
 #include "renderingCanvasTest.h"
 
-#include "gpu/device/include/renderingCommandWriter.h"
-#include "gpu/device/include/renderingShader.h"
-#include "gpu/device/include/renderingDescriptor.h"
+#include "gpu/device/include/commandWriter.h"
+#include "gpu/device/include/shader.h"
+#include "gpu/device/include/descriptor.h"
 
-#include "engine/canvas/include/canvasBatchRenderer.h"
-#include "engine/canvas/include/canvasGeometryBuilder.h"
-#include "engine/canvas/include/canvasGeometry.h"
+#include "engine/canvas/include/batchRenderer.h"
+#include "engine/canvas/include/geometryBuilder.h"
+#include "engine/canvas/include/geometry.h"
 #include "engine/canvas/include/canvas.h"
-#include "engine/canvas/include/canvasStyle.h"
-#include "engine/canvas/include/canvasAtlas.h"
+#include "engine/canvas/include/style.h"
+#include "engine/canvas/include/atlas.h"
 #include "engine/font/include/font.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)

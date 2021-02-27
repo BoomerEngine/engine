@@ -14,9 +14,9 @@
 #include "apiComputePipeline.h"
 #include "apiGraphicsRenderStates.h"
 
-#include "gpu/device/include/renderingShaderData.h"
-#include "gpu/device/include/renderingPipeline.h"
-#include "gpu/device/include/renderingShaderMetadata.h"
+#include "gpu/device/include/shaderData.h"
+#include "gpu/device/include/pipeline.h"
+#include "gpu/device/include/shaderMetadata.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api)
 

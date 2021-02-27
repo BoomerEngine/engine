@@ -5,6 +5,7 @@
 ***/
 
 #include "build.h"
+#include "static_init.inl"
 #include "reflection.inl"
 
 #include "core/app/include/application.h"

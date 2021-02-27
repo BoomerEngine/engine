@@ -10,7 +10,7 @@
 
 #include "engine/font/include/font.h"
 #include "engine/font/include/fontInputText.h"
-#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/canvas/include/geometryBuilder.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 

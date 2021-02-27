@@ -9,7 +9,7 @@
 #include "build.h"
 #include "apiObjectCache.h"
 
-#include "gpu/device/include/renderingDescriptor.h"
+#include "gpu/device/include/descriptor.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api)
 

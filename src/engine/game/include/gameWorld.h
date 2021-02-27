@@ -8,8 +8,8 @@
 #pragma once
 
 #include "engine/world/include/world.h"
-#include "engine/world/include/worldEntity.h"
-#include "engine/world/include/worldStreamingSystem.h"
+#include "engine/world/include/entity.h"
+#include "engine/world/include/streamingSystem.h"
 
 BEGIN_BOOMER_NAMESPACE()
 

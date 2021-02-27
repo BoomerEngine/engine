@@ -10,7 +10,7 @@
 
 #include "editor/common/include/resourceEditor.h"
 #include "editor/common/include/resourceEditorNativeFile.h"
-#include "engine/material/include/renderingMaterialInstance.h"
+#include "engine/material/include/materialInstance.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

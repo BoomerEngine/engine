@@ -13,8 +13,8 @@
 #include "core/image/include/imageView.h"
 #include "core/image/include/imageUtils.h"
 
-#include "gpu/device/include/renderingDeviceService.h"
-#include "gpu/device/include/renderingDeviceApi.h"
+#include "gpu/device/include/deviceService.h"
+#include "gpu/device/include/device.h"
 
 #include "squish/squish.h"
 #include "bc6h/BC6H_Encode.h"

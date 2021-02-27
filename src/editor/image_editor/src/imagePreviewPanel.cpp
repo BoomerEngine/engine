@@ -10,11 +10,11 @@
 #include "imagePreviewPanel.h"
 #include "imagePreviewPanelElements.h"
 
-#include "gpu/device/include/renderingCommandWriter.h"
-#include "gpu/device/include/renderingDeviceService.h"
-#include "gpu/device/include/renderingDeviceApi.h"
+#include "gpu/device/include/commandWriter.h"
+#include "gpu/device/include/deviceService.h"
+#include "gpu/device/include/device.h"
 
-#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/canvas/include/geometryBuilder.h"
 #include "engine/canvas/include/canvas.h"
 #include "core/image/include/imageView.h"
 #include "engine/ui/include/uiElement.h"

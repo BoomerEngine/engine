@@ -9,9 +9,9 @@
 #include "build.h"
 #include "managedFileFormat.h"
 
-#include "core/config/include/configGroup.h"
-#include "core/config/include/configEntry.h"
-#include "core/config/include/configSystem.h"
+#include "core/config/include/group.h"
+#include "core/config/include/entry.h"
+#include "core/config/include/system.h"
 #include "core/image/include/image.h"
 #include "core/resource/include/resource.h"
 #include "core/resource/include/resource.h"

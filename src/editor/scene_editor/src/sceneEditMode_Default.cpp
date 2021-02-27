@@ -21,8 +21,8 @@
 #include "engine/ui/include/uiMenuBar.h"
 #include "engine/ui/include/uiClassPickerBox.h"
 #include "core/object/include/actionHistory.h"
-#include "engine/world/include/worldEntity.h"
-#include "engine/world/include/worldEntityBehavior.h"
+#include "engine/world/include/entity.h"
+#include "engine/world/include/entityBehavior.h"
 #include "engine/ui/include/uiElementConfig.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)

@@ -20,8 +20,8 @@
 #include "uiDragDrop.h"
 
 #include "engine/canvas/include/canvas.h"
-#include "engine/canvas/include/canvasGeometryBuilder.h"
-#include "engine/canvas/include/canvasGeometry.h"
+#include "engine/canvas/include/geometryBuilder.h"
+#include "engine/canvas/include/geometry.h"
 #include "core/system/include/scopeLock.h"
 #include "core/object/include/rttiHandleType.h"
 #include "core/object/include/rttiProperty.h"

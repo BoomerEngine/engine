@@ -13,8 +13,8 @@
 #include "fbxFileLoaderService.h"
 #include "fbxFileData.h"
 
-#include "engine/mesh/include/renderingMesh.h"
-#include "engine/material/include/renderingMaterialInstance.h"
+#include "engine/mesh/include/mesh.h"
+#include "engine/material/include/materialInstance.h"
 
 #include "core/io/include/ioFileHandle.h"
 #include "core/app/include/localServiceContainer.h"
@@ -29,6 +29,7 @@ BEGIN_BOOMER_NAMESPACE_EX(assets)
 //--
 
 RTTI_BEGIN_TYPE_CLASS(FBXMeshImportConfig);
+    RTTI_OLD_NAME("fbx::FBXMeshImportConfig");
     //RTTI_METADATA(res::ResourceManifestExtensionMetadata).extension("mesh.meta");
     //RTTI_METADATA(res::ResourceDescriptionMetadata).description("FBX Import SetupMetadata");
     RTTI_CATEGORY("FBXTuning");

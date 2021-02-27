@@ -11,17 +11,17 @@
 #include "sceneContentStructure.h"
 #include "sceneContentNodes.h"
 
-#include "engine/rendering/include/renderingFrameDebug.h"
-#include "engine/rendering/include/renderingFrameParams.h"
+#include "engine/rendering/include/debug.h"
+#include "engine/rendering/include/params.h"
 
 #include "editor/common/include/managedFileNativeResource.h"
 #include "core/resource/include/objectIndirectTemplate.h"
 #include "engine/ui/include/uiAbstractItemModel.h"
-#include "engine/world/include/worldNodeTemplate.h"
-#include "engine/world/include/worldPrefab.h"
+#include "engine/world/include/nodeTemplate.h"
+#include "engine/world/include/prefab.h"
 #include "core/resource/include/objectIndirectTemplateCompiler.h"
 #include "core/object/include/rttiResourceReferenceType.h"
-#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/entity.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
     

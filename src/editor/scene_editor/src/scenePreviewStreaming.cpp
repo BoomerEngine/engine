@@ -10,13 +10,13 @@
 #include "scenePreviewStreaming.h"
 #include "sceneContentNodes.h"
 
-#include "engine/rendering/include/renderingScene.h"
-#include "engine/rendering/include/renderingFrameDebug.h"
-#include "engine/rendering/include/renderingFrameParams.h"
+#include "engine/rendering/include/scene.h"
+#include "engine/rendering/include/debug.h"
+#include "engine/rendering/include/params.h"
 
-#include "engine/world/include/worldNodeTemplate.h"
+#include "engine/world/include/nodeTemplate.h"
 #include "engine/world/include/world.h"
-#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/entity.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

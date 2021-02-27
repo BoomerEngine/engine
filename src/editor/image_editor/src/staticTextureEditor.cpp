@@ -26,9 +26,9 @@
 #include "core/resource/include/resourceReference.h"
 #include "engine/ui/include/uiNotebook.h"
 
-#include "engine/texture/include/renderingStaticTexture.h"
-#include "engine/texture/include/renderingTexture.h"
-#include "gpu/device/include/renderingImage.h"
+#include "engine/texture/include/staticTexture.h"
+#include "engine/texture/include/texture.h"
+#include "gpu/device/include/image.h"
 #include "editor/common/include/managedFileNativeResource.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)

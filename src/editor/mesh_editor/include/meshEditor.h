@@ -9,7 +9,7 @@
 #pragma once
 
 #include "editor/common/include/resourceEditorNativeFile.h"
-#include "engine/mesh/include/renderingMesh.h"
+#include "engine/mesh/include/mesh.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

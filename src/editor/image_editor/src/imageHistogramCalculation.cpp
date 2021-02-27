@@ -9,10 +9,10 @@
 #include "build.h"
 #include "imageHistogramWidget.h"
 #include "imageHistogramCalculation.h"
-#include "gpu/device/include/renderingCommandBuffer.h"
-#include "gpu/device/include/renderingCommandWriter.h"
-#include "gpu/device/include/renderingDeviceService.h"
-#include "gpu/device/include/renderingDeviceApi.h"
+#include "gpu/device/include/commandBuffer.h"
+#include "gpu/device/include/commandWriter.h"
+#include "gpu/device/include/deviceService.h"
+#include "gpu/device/include/device.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

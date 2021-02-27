@@ -10,7 +10,7 @@
 #include "nullApiThread.h"
 #include "nullApiBuffer.h"
 
-#include "gpu/device/include/renderingDeviceApi.h"
+#include "gpu/device/include/device.h"
 
 #include "core/memory/include/poolStats.h"
 

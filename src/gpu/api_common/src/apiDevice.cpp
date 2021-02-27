@@ -18,7 +18,7 @@
 #include "apiImage.h"
 #include "apiGraphicsRenderStates.h"
 
-#include "gpu/device/include/renderingPipeline.h"
+#include "gpu/device/include/pipeline.h"
 
 #ifdef PLATFORM_WINAPI
 	#include "apiWindowWinApi.h"

@@ -16,14 +16,14 @@
 #include "core/system/include/scopeLock.h"
 #include "core/system/include/thread.h"
 
-#include "gpu/device/include/renderingCommandBuffer.h"
-#include "gpu/device/include/renderingCommandWriter.h"
-#include "gpu/device/include/renderingObject.h"
-#include "gpu/device/include/renderingDeviceApi.h"
-#include "gpu/device/include/renderingDeviceService.h"
-#include "gpu/device/include/renderingOutput.h"
+#include "gpu/device/include/commandBuffer.h"
+#include "gpu/device/include/commandWriter.h"
+#include "gpu/device/include/object.h"
+#include "gpu/device/include/device.h"
+#include "gpu/device/include/deviceService.h"
+#include "gpu/device/include/output.h"
 
-#include "engine/canvas/include/canvasService.h"
+#include "engine/canvas/include/service.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 

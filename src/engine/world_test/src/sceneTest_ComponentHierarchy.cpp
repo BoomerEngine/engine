@@ -10,8 +10,8 @@
 #include "sceneTest.h"
 #include "sceneTestUtil.h"
 
-#include "engine/mesh/include/renderingMesh.h"
-#include "engine/world/include/worldEntity.h"
+#include "engine/mesh/include/mesh.h"
+#include "engine/world/include/entity.h"
 #include "engine/world/include/world.h"
 //#include "game/world/include/meshEntity.h"
 

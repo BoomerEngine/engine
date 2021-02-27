@@ -9,7 +9,7 @@
 #pragma once
 
 #include "uiElement.h"
-#include "engine/canvas/include/canvasGeometry.h"
+#include "engine/canvas/include/geometry.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 

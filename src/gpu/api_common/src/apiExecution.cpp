@@ -16,11 +16,11 @@
 #include "apiImage.h"
 #include "apiBuffer.h"
 
-#include "gpu/device/include/renderingCommandBuffer.h"
-#include "gpu/device/include/renderingCommands.h"
-#include "gpu/device/include/renderingDeviceApi.h"
-#include "gpu/device/include/renderingDescriptorInfo.h"
-#include "gpu/device/include/renderingDescriptor.h"
+#include "gpu/device/include/commandBuffer.h"
+#include "gpu/device/include/commands.h"
+#include "gpu/device/include/device.h"
+#include "gpu/device/include/descriptorInfo.h"
+#include "gpu/device/include/descriptor.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api)
 
@@ -139,7 +139,8 @@ void IBaseFrameExecutor::executeSingle(CommandBuffer* commandBuffer)
 		switch (cmd->op)
 		{
 #define RENDER_COMMAND_OPCODE(x) case CommandCode::##x: { run##x(*static_cast<const Op##x*>(cmd)); break; }
-#include "gpu/device/include/renderingCommandOpcodes.inl"
+#include "gpu/device/include/commandOpcodes.inl"
+
 #undef RENDER_COMMAND_OPCODE
 		default:
 			DEBUG_CHECK(!"Unsupported command recorded");

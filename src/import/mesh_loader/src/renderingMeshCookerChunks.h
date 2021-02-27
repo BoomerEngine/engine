@@ -8,9 +8,9 @@
 
 #pragma once
 
-#include "engine/mesh/include/renderingMesh.h"
-#include "engine/mesh/include/renderingMeshFormat.h"
-#include "engine/mesh/include/renderingMeshStreamData.h"
+#include "engine/mesh/include/mesh.h"
+#include "engine/mesh/include/format.h"
+#include "engine/mesh/include/streamData.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 

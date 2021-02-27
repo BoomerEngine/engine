@@ -9,7 +9,7 @@
 
 #include "core/app/include/launcherPlatform.h"
 
-#include "gpu/device/include/renderingDeviceService.h"
+#include "gpu/device/include/deviceService.h"
 
 #include "engine/ui/include/uiStyleLibrary.h"
 #include "engine/ui/include/uiDataStash.h"

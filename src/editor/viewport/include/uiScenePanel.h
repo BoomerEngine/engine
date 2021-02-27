@@ -10,8 +10,8 @@
 
 #include "viewportCameraController.h"
 
-#include "engine/rendering/include/renderingFrameFilters.h"
-#include "engine/rendering/include/renderingFrameParams.h"
+#include "engine/rendering/include/filters.h"
+#include "engine/rendering/include/params.h"
 #include "engine/ui/include/uiRenderingPanel.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)

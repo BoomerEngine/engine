@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "engine/world/include/worldNodeTemplate.h"
+#include "engine/world/include/nodeTemplate.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

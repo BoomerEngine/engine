@@ -6,7 +6,7 @@
 ***/
 
 #pragma once
-#include "../../device/include/renderingDeviceApi.h"
+#include "../../device/include/device.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api)
 

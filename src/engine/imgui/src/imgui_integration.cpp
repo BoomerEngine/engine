@@ -12,8 +12,8 @@
 #include "engine/canvas/include/canvas.h"
 #include "core/input/include/inputStructures.h"
 #include "core/image/include/imageUtils.h"
-#include "engine/canvas/include/canvasService.h"
-#include "engine/canvas/include/canvasAtlas.h"
+#include "engine/canvas/include/service.h"
+#include "engine/canvas/include/atlas.h"
 
 namespace ImGui
 {

@@ -10,7 +10,7 @@
 #include "materialInstanceEditor.h"
 #include "materialPreviewPanel.h"
 
-#include "engine/material/include/renderingMaterialInstance.h"
+#include "engine/material/include/materialInstance.h"
 
 #include "engine/ui/include/uiDockLayout.h"
 #include "engine/ui/include/uiDataInspector.h"

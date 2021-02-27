@@ -16,7 +16,7 @@
 #include "uiTextLabel.h"
 
 #include "core/input/include/inputStructures.h"
-#include "engine/canvas/include/canvasGeometry.h"
+#include "engine/canvas/include/geometry.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 

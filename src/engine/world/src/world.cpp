@@ -9,10 +9,10 @@
 
 #include "build.h"
 #include "world.h"
-#include "worldSystem.h"
-#include "worldEntity.h"
-#include "worldPrefab.h"
-#include "worldNodePath.h"
+#include "system.h"
+#include "entity.h"
+#include "prefab.h"
+#include "path.h"
 
 #include "engine/imgui/include/imgui.h"
 

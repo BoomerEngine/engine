@@ -159,7 +159,21 @@ Type TypeSystem::findType(StringID typeName)
     if (m_alternativeTypes.find(typeName, type))
         return type;
 
-    return createDynamicType_NoLock(typeName.c_str());
+    if (auto dynamicType = createDynamicType_NoLock(typeName.c_str()))
+        return dynamicType;
+
+    if (typeName.view().beginsWith("base::"))
+    {
+        auto correctedName = StringID(typeName.view().afterFirst("base::"));
+        return findType(correctedName);
+    }
+    else if (typeName.view().beginsWith("rendering::"))
+    {
+        auto correctedName = StringID(typeName.view().afterFirst("rendering::"));
+        return findType(correctedName);
+    }
+
+    return nullptr;
 }
 
 ClassType TypeSystem::findClass(StringID name)
@@ -172,6 +186,17 @@ ClassType TypeSystem::findClass(StringID name)
 
     if (m_alternativeTypes.find(name, type))
         return type.toClass();
+
+    if (name.view().beginsWith("base::"))
+    {
+        auto correctedName = StringID(name.view().afterFirst("base::"));
+        return findClass(correctedName);
+    }
+    else if (name.view().beginsWith("rendering::"))
+    {
+        auto correctedName = StringID(name.view().afterFirst("rendering::"));
+        return findClass(correctedName);
+    }
 
     return nullptr;
 }

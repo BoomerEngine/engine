@@ -13,8 +13,8 @@
 #include "engine/ui/include/uiGraphEditor.h"
 #include "engine/ui/include/uiGraphEditorNode.h"
 
-#include "engine/material_graph/include/renderingMaterialGraph.h"
-#include "engine/material_graph/include/renderingMaterialGraphBlock.h"
+#include "engine/material_graph/include/graph.h"
+#include "engine/material_graph/include/graphBlock.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

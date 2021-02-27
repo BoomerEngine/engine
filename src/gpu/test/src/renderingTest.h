@@ -8,15 +8,15 @@
 
 #pragma once
 
-#include "gpu/device/include/renderingDeviceApi.h"
-#include "gpu/device/include/renderingCommandWriter.h"
-#include "gpu/device/include/renderingShader.h"
-#include "gpu/device/include/renderingGraphicsStates.h"
-#include "gpu/device/include/renderingFramebuffer.h"
-#include "gpu/device/include/renderingDescriptor.h"
-#include "gpu/device/include/renderingImage.h"
-#include "gpu/device/include/renderingImage.h"
-#include "gpu/device/include/renderingShaderSelector.h"
+#include "gpu/device/include/device.h"
+#include "gpu/device/include/commandWriter.h"
+#include "gpu/device/include/shader.h"
+#include "gpu/device/include/graphicsStates.h"
+#include "gpu/device/include/framebuffer.h"
+#include "gpu/device/include/descriptor.h"
+#include "gpu/device/include/image.h"
+#include "gpu/device/include/image.h"
+#include "gpu/device/include/shaderSelector.h"
 
 #include "core/object/include/rttiMetadata.h"
 

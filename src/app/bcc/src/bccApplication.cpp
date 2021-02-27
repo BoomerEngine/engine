@@ -5,8 +5,8 @@
 ***/
 
 #include "build.h"
-
 #include "bccApplication.h"
+
 #include "core/app/include/application.h"
 #include "core/app/include/command.h"
 #include "core/app/include/commandline.h"

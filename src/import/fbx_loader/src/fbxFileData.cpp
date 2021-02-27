@@ -14,9 +14,9 @@
 #include "core/app/include/localServiceContainer.h"
 #include "core/containers/include/inplaceArray.h"
 #include "core/resource/include/resource.h"
-#include "engine/mesh/include/renderingMeshStreamData.h"
-#include "engine/mesh/include/renderingMeshStreamBuilder.h"
-#include "engine/mesh/include/renderingMeshStreamIterator.h"
+#include "engine/mesh/include/streamData.h"
+#include "engine/mesh/include/streamBuilder.h"
+#include "engine/mesh/include/streamIterator.h"
 #include "core/resource/include/resourceTags.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)

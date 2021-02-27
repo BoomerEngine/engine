@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/entity.h"
 #include "core/object/include/object.h"
 
 BEGIN_BOOMER_NAMESPACE()

@@ -9,7 +9,7 @@
 #pragma once
 
 #include "engine/ui/include/uiElement.h"
-#include "gpu/device/include/renderingResources.h"
+#include "gpu/device/include/resources.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

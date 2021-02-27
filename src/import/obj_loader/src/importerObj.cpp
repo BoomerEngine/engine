@@ -14,9 +14,9 @@
 
 #include "import/mesh_loader/include/renderingMeshCooker.h"
 
-#include "engine/mesh/include/renderingMeshStreamBuilder.h"
-#include "engine/material/include/renderingMaterialInstance.h"
-#include "engine/mesh/include/renderingMesh.h"
+#include "engine/mesh/include/streamBuilder.h"
+#include "engine/material/include/materialInstance.h"
+#include "engine/mesh/include/mesh.h"
 
 #include "core/io/include/ioFileHandle.h"
 #include "core/io/include/ioSystem.h"
@@ -41,6 +41,7 @@ RTTI_BEGIN_TYPE_ENUM(OBJMeshAttributeMode);
 RTTI_END_TYPE();
 
 RTTI_BEGIN_TYPE_CLASS(OBJMeshImportConfig);
+    RTTI_OLD_NAME("wavefront::OBJMeshImportConfig");
     RTTI_CATEGORY("Topology");
     RTTI_PROPERTY(forceTriangles).editable("Force triangles at output, even if we had quads").overriddable();
     RTTI_CATEGORY("Mesh streams");
@@ -77,6 +78,7 @@ void OBJMeshImportConfig::computeConfigurationKey(CRC64& crc) const
 //--
 
 RTTI_BEGIN_TYPE_CLASS(OBJMeshImporter);
+    RTTI_OLD_NAME("wavefront::OBJMeshImporter");
     RTTI_METADATA(res::ResourceCookedClassMetadata).addClass<Mesh>();
     RTTI_METADATA(res::ResourceSourceFormatMetadata).addSourceExtension("obj");
     RTTI_METADATA(res::ResourceCookerVersionMetadata).version(3);

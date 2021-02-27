@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "gpu/device/include/renderingDeviceGlobalObjects.h"
+#include "gpu/device/include/globalObjects.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::test)
 

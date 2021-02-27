@@ -10,7 +10,7 @@
 
 #include "core/app/include/application.h"
 
-#include "engine/rendering/include/renderingSceneStats.h"
+#include "engine/rendering/include/stats.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
 

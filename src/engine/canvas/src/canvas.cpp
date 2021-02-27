@@ -9,9 +9,9 @@
 #include "build.h"
 
 #include "canvas.h"
-#include "canvasService.h"
-#include "canvasGeometry.h"
-#include "canvasGeometryBuilder.h"
+#include "service.h"
+#include "geometry.h"
+#include "geometryBuilder.h"
 #include "engine/font/include/fontGlyphBuffer.h"
 #include "engine/font/include/fontInputText.h"
 

@@ -45,8 +45,8 @@
 #include "scintilla/AutoComplete.h"
 #include "scintilla/ScintillaBase.h"
 
-#include "engine/canvas/include/canvasGeometry.h"
-#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/canvas/include/geometry.h"
+#include "engine/canvas/include/geometryBuilder.h"
 #include "engine/canvas/include/canvas.h"
 
 #include "uiScintillaPlatform.h"

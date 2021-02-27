@@ -15,7 +15,7 @@
 #include "core/containers/include/stringBuilder.h"
 #include "engine/canvas/include/canvas.h"
 #include "core/containers/include/utf8StringFunctions.h"
-#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/canvas/include/geometryBuilder.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 

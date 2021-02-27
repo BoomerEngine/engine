@@ -23,7 +23,7 @@
 #include "engine/ui/include/uiRuler.h"
 #include "engine/ui/include/uiSplitter.h"
 
-#include "engine/mesh/include/renderingMesh.h"
+#include "engine/mesh/include/mesh.h"
 #include "engine/ui/include/uiMenuBar.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)

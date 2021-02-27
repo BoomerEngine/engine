@@ -17,15 +17,15 @@
 #include "core/app/include/launcherPlatform.h"
 #include "engine/imgui/include/debugPageService.h"
 
-#include "gpu/device/include/renderingDeviceApi.h"
-#include "gpu/device/include/renderingOutput.h"
-#include "gpu/device/include/renderingCommandBuffer.h"
-#include "gpu/device/include/renderingDeviceService.h"
-#include "gpu/device/include/renderingCommandWriter.h"
-#include "engine/rendering/include/renderingFrameRenderingService.h"
-#include "engine/rendering/include/renderingFrameParams.h"
-#include "engine/rendering/include/renderingFrameCameraContext.h"
-#include "engine/canvas/include/canvasService.h"
+#include "gpu/device/include/device.h"
+#include "gpu/device/include/output.h"
+#include "gpu/device/include/commandBuffer.h"
+#include "gpu/device/include/deviceService.h"
+#include "gpu/device/include/commandWriter.h"
+#include "engine/rendering/include/service.h"
+#include "engine/rendering/include/params.h"
+#include "engine/rendering/include/cameraContext.h"
+#include "engine/canvas/include/service.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
 

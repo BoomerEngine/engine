@@ -12,8 +12,8 @@
 #include "gizmoGroup.h"
 #include "viewportCameraSetup.h"
 
-#include "engine/rendering/include/renderingFrameDebug.h"
-#include "engine/rendering/include/renderingFrameParams.h"
+#include "engine/rendering/include/debug.h"
+#include "engine/rendering/include/params.h"
 #include "core/input/include/inputStructures.h"
 #include "engine/ui/include/uiInputAction.h"
 #include "engine/ui/include/uiElement.h"

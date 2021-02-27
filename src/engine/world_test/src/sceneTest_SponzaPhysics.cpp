@@ -10,7 +10,7 @@
 #include "sceneTest.h"
 
 //#include "game/world/include/meshEntity.h"
-#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/entity.h"
 #include "engine/world/include/world.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)

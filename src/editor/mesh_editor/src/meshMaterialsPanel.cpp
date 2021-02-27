@@ -10,9 +10,9 @@
 #include "meshPreviewPanel.h"
 #include "meshMaterialsPanel.h"
 
-#include "engine/mesh/include/renderingMesh.h"
-#include "engine/material/include/renderingMaterialInstance.h"
-#include "engine/material/include/renderingMaterialTemplate.h"
+#include "engine/mesh/include/mesh.h"
+#include "engine/material/include/materialInstance.h"
+#include "engine/material/include/materialTemplate.h"
 
 #include "editor/common/include/assetBrowser.h"
 #include "editor/common/include/managedFile.h"

@@ -11,9 +11,9 @@
 #include "gameWorld.h"
 #include "gameWorldLoader.h"
 
-#include "engine/world/include/worldCompiledScene.h"
-#include "engine/world/include/worldStreamingSystem.h"
-#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/compiledScene.h"
+#include "engine/world/include/streamingSystem.h"
+#include "engine/world/include/entity.h"
 #include "engine/world/include/world.h"
 
 BEGIN_BOOMER_NAMESPACE()

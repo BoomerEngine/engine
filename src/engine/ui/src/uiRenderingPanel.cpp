@@ -9,16 +9,16 @@
 #include "build.h"
 #include "uiRenderingPanel.h"
 
-#include "gpu/device/include/renderingCommandBuffer.h"
-#include "gpu/device/include/renderingCommandWriter.h"
-#include "gpu/device/include/renderingObject.h"
-#include "gpu/device/include/renderingDeviceApi.h"
-#include "gpu/device/include/renderingDeviceService.h"
-#include "gpu/device/include/renderingOutput.h"
-#include "gpu/device/include/renderingDescriptor.h"
+#include "gpu/device/include/commandBuffer.h"
+#include "gpu/device/include/commandWriter.h"
+#include "gpu/device/include/object.h"
+#include "gpu/device/include/device.h"
+#include "gpu/device/include/deviceService.h"
+#include "gpu/device/include/output.h"
+#include "gpu/device/include/descriptor.h"
 
-#include "engine/canvas/include/canvasBatchRenderer.h"
-#include "engine/canvas/include/canvasGeometry.h"
+#include "engine/canvas/include/batchRenderer.h"
+#include "engine/canvas/include/geometry.h"
 #include "engine/canvas/include/canvas.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)

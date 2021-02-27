@@ -8,16 +8,16 @@
 ***/
 
 #include "build.h"
-#include "worldEntitySoup.h"
-#include "worldEntityIslandGeneration.h"
-#include "worldEntityStreamingGrid.h"
+#include "entitySoup.h"
+#include "islandGeneration.h"
+#include "streamingGrid.h"
 
 #include "core/app/include/command.h"
 #include "core/app/include/commandline.h"
 #include "core/resource/include/resourceLoadingService.h"
 #include "core/resource/include/resourceLoader.h"
-#include "engine/world/include/worldRawScene.h"
-#include "engine/world/include/worldCompiledScene.h"
+#include "engine/world/include/rawScene.h"
+#include "engine/world/include/compiledScene.h"
 #include "core/resource/include/resourceFileSaver.h"
 #include "core/io/include/ioFileHandle.h"
 #include "core/resource/include/depotService.h"

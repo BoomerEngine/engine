@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "engine/texture/include/renderingStaticTexture.h"
+#include "engine/texture/include/staticTexture.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 

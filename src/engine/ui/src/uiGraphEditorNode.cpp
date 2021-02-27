@@ -17,7 +17,7 @@
 
 #include "core/graph/include/graphBlock.h"
 #include "core/graph/include/graphSocket.h"
-#include "engine/canvas/include/canvasGeometry.h"
+#include "engine/canvas/include/geometry.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 

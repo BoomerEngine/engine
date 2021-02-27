@@ -11,8 +11,8 @@
 #include "gizmoReferenceSpace.h"
 
 #include "viewportCameraSetup.h"
-#include "engine/rendering/include/renderingFrameDebug.h"
-#include "engine/rendering/include/renderingFrameParams.h"
+#include "engine/rendering/include/debug.h"
+#include "engine/rendering/include/params.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

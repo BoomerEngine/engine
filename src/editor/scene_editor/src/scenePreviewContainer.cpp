@@ -13,9 +13,9 @@
 #include "scenePreviewStreaming.h"
 #include "sceneContentStructure.h"
 
-#include "engine/rendering/include/renderingScene.h"
-#include "engine/rendering/include/renderingFrameDebug.h"
-#include "engine/rendering/include/renderingFrameParams.h"
+#include "engine/rendering/include/scene.h"
+#include "engine/rendering/include/debug.h"
+#include "engine/rendering/include/params.h"
 
 #include "engine/ui/include/uiToolBar.h"
 #include "engine/world/include/world.h"

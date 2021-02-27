@@ -25,9 +25,9 @@
 #include "engine/ui/include/uiGraphEditorNodePalette.h"
 #include "engine/ui/include/uiMenuBar.h"
 
-#include "engine/material_graph/include/renderingMaterialGraph.h"
-#include "engine/material_graph/include/renderingMaterialGraphBlock.h"
-#include "engine/material/include/renderingMaterialTemplate.h"
+#include "engine/material_graph/include/graph.h"
+#include "engine/material_graph/include/graphBlock.h"
+#include "engine/material/include/materialTemplate.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

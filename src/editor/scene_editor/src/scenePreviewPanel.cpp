@@ -12,9 +12,9 @@
 #include "scenePreviewContainer.h"
 #include "scenePreviewPanel.h"
 
-#include "engine/rendering/include/renderingScene.h"
-#include "engine/rendering/include/renderingFrameDebug.h"
-#include "engine/rendering/include/renderingFrameParams.h"
+#include "engine/rendering/include/scene.h"
+#include "engine/rendering/include/debug.h"
+#include "engine/rendering/include/params.h"
 
 #include "engine/world/include/world.h"
 

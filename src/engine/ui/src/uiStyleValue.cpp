@@ -15,7 +15,7 @@
 #include "core/containers/include/stringBuilder.h"
 #include "core/containers/include/utf8StringFunctions.h"
 #include "core/resource/include/resourceReferenceType.h"
-#include "engine/canvas/include/canvasStyle.h"
+#include "engine/canvas/include/style.h"
 #include "core/containers/include/stringParser.h"
 #include "engine/font/include/font.h"
 #include "core/parser/include/textToken.h"

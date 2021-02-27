@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "gpu/device/include/renderingCommands.h"
+#include "gpu/device/include/commands.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api)
 
@@ -206,7 +206,8 @@ public:
 	INLINE IBaseObjectCache* cache() const { return m_objectCache; }
 
 #define RENDER_COMMAND_OPCODE(x) virtual void run##x(const Op##x& op) = 0;
-#include "gpu/device/include/renderingCommandOpcodes.inl"
+#include "gpu/device/include/commandOpcodes.inl"
+
 #undef RENDER_COMMAND_OPCODE
 
 	void execute(CommandBuffer* commandBuffer);

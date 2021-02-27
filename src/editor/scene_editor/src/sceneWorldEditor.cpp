@@ -13,9 +13,9 @@
 #include "sceneContentStructure.h"
 #include "sceneEditMode_Default.h"
 
-#include "engine/world/include/worldPrefab.h"
-#include "engine/world/include/worldRawScene.h"
-#include "engine/world/include/worldRawLayer.h"
+#include "engine/world/include/prefab.h"
+#include "engine/world/include/rawScene.h"
+#include "engine/world/include/rawLayer.h"
 #include "editor/common/include/managedFileFormat.h"
 #include "editor/common/include/managedFile.h"
 #include "editor/common/include/managedFileNativeResource.h"

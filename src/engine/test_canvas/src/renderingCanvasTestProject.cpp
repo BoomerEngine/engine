@@ -10,18 +10,18 @@
 #include "renderingCanvasTest.h"
 #include "renderingCanvasTestProject.h"
 
-#include "gpu/device/include/renderingDeviceApi.h"
-#include "gpu/device/include/renderingOutput.h"
-#include "gpu/device/include/renderingCommandBuffer.h"
-#include "gpu/device/include/renderingDeviceService.h"
-#include "gpu/device/include/renderingCommandWriter.h"
+#include "gpu/device/include/device.h"
+#include "gpu/device/include/output.h"
+#include "gpu/device/include/commandBuffer.h"
+#include "gpu/device/include/deviceService.h"
+#include "gpu/device/include/commandWriter.h"
 
 #include "core/app/include/application.h"
 #include "core/app/include/launcherPlatform.h"
 #include "core/input/include/inputContext.h"
 #include "core/input/include/inputStructures.h"
 
-#include "engine/canvas/include/canvasService.h"
+#include "engine/canvas/include/service.h"
 #include "engine/canvas/include/canvas.h"
 
 

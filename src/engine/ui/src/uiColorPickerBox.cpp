@@ -15,7 +15,7 @@
 #include "uiRenderer.h"
 #include "uiTrackBar.h"
 #include "engine/canvas/include/canvas.h"
-#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/canvas/include/geometryBuilder.h"
 #include "uiInputAction.h"
 #include "uiNotebook.h"
 

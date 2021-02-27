@@ -20,7 +20,7 @@
 #include "core/graph/include/graphSocket.h"
 #include "core/graph/include/graphBlock.h"
 #include "core/object/include/actionHistory.h"
-#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/canvas/include/geometryBuilder.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 

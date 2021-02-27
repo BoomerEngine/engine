@@ -16,8 +16,8 @@
 #include "engine/ui/include/uiElement.h"
 #include "engine/ui/include/uiElementConfig.h"
 
-#include "gpu/device/include/renderingDeviceService.h"
-#include "gpu/device/include/renderingDeviceApi.h"
+#include "gpu/device/include/deviceService.h"
+#include "gpu/device/include/device.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 

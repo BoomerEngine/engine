@@ -9,12 +9,12 @@
 #include "build.h"
 #include "meshPreviewPanel.h"
 
-#include "engine/rendering/include/renderingScene.h"
-#include "engine/mesh/include/renderingMesh.h"
-#include "engine/rendering/include/renderingSceneObject.h"
-#include "engine/rendering/include/renderingSceneObject_Mesh.h"
-#include "engine/rendering/include/renderingFrameParams.h"
-#include "engine/rendering/include/renderingFrameDebug.h"
+#include "engine/rendering/include/scene.h"
+#include "engine/mesh/include/mesh.h"
+#include "engine/rendering/include/object.h"
+#include "engine/rendering/include/objectMesh.h"
+#include "engine/rendering/include/params.h"
+#include "engine/rendering/include/debug.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

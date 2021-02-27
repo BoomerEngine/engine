@@ -9,15 +9,15 @@
 #include "build.h"
 #include "uiScenePanel.h"
 
-#include "engine/rendering/include/renderingFrameParams.h"
-#include "engine/rendering/include/renderingFrameDebug.h"
-#include "engine/rendering/include/renderingFrameRenderingService.h"
-#include "engine/rendering/include/renderingFrameCameraContext.h"
-#include "engine/rendering/include/renderingScene.h"
+#include "engine/rendering/include/params.h"
+#include "engine/rendering/include/debug.h"
+#include "engine/rendering/include/service.h"
+#include "engine/rendering/include/cameraContext.h"
+#include "engine/rendering/include/scene.h"
 #include "engine/ui/include/uiRenderingPanel.h"
 #include "engine/ui/include/uiInputAction.h"
-#include "engine/canvas/include/canvasGeometry.h"
-#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/canvas/include/geometry.h"
+#include "engine/canvas/include/geometryBuilder.h"
 #include "engine/canvas/include/canvas.h"
 #include "engine/ui/include/uiToolBar.h"
 #include "engine/ui/include/uiMenuBar.h"
@@ -26,10 +26,10 @@
 #include "core/system/include/thread.h"
 #include "core/object/include/objectSelection.h"
 
-#include "gpu/device/include/renderingCommandBuffer.h"
-#include "gpu/device/include/renderingDeviceApi.h"
-#include "gpu/device/include/renderingDeviceService.h"
-#include "gpu/device/include/renderingResources.h"
+#include "gpu/device/include/commandBuffer.h"
+#include "gpu/device/include/device.h"
+#include "gpu/device/include/deviceService.h"
+#include "gpu/device/include/resources.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 

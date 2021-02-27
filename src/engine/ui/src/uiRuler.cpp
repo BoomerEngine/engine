@@ -9,7 +9,7 @@
 #include "build.h"
 #include "uiRuler.h"
 #include "engine/canvas/include/canvas.h"
-#include "engine/canvas/include/canvasGeometryBuilder.h"
+#include "engine/canvas/include/geometryBuilder.h"
 #include "uiStyleValue.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)

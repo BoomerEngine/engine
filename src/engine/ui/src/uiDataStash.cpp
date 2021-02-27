@@ -15,7 +15,7 @@
 #include "core/image/include/image.h"
 #include "core/image/include/imageView.h"
 #include "core/image/include/imageUtils.h"
-#include "engine/canvas/include/canvasAtlas.h"
+#include "engine/canvas/include/atlas.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 

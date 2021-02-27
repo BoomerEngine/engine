@@ -8,9 +8,9 @@
 
 #include "build.h"
 #include "configProperty.h"
-#include "core/config/include/configStorage.h"
-#include "core/config/include/configGroup.h"
-#include "core/config/include/configEntry.h"
+#include "core/config/include/storage.h"
+#include "core/config/include/group.h"
+#include "core/config/include/entry.h"
 #include "core/containers/include/hashSet.h"
 #include "core/containers/include/inplaceArray.h"
 #include "core/object/include/rttiArrayType.h"

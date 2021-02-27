@@ -17,7 +17,7 @@
 #include "apiBackgroundJobs.h"
 #include "apiUtils.h"
 
-#include "gpu/device/include/renderingCommandBuffer.h"
+#include "gpu/device/include/commandBuffer.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api)
 
