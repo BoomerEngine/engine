@@ -1,7 +1,9 @@
 #include "common.h"
 #include "toolMake.h"
+#include "toolReflection.h"
 #include "generated.h"
 #include "generatorVS.h"
+#include "generatorCMAKE.h"
 
 //--
 
@@ -25,10 +27,10 @@ bool ToolMake::run(const Configuration& config)
     if (!structure.setupProjects(config))
         return false;
 
-    if (!structure.resolveProjectDependencies())
+    if (!structure.resolveProjectDependencies(config))
         return false;
 
-    cout << "Found " << totalFiles << " total files across " << structure.projects.size() << " projects\n";
+    std::cout << "Found " << totalFiles << " total files across " << structure.projects.size() << " projects\n";
 
     if (!structure.deployFiles(config))
         return false;
@@ -49,7 +51,18 @@ bool ToolMake::run(const Configuration& config)
         if (!gen.generateSolution())
             return false;
         if (!gen.generateProjects())
-            return false;        
+            return false;
+    }
+    else if (config.generator == GeneratorType::CMake)
+    {
+        if (!GenerateInlinedReflection(config, structure, codeGenerator))
+            return false;
+
+        SolutionGeneratorCMAKE gen(config, codeGenerator);
+        if (!gen.generateSolution())
+            return false;
+        if (!gen.generateProjects())
+            return false;
     }
 
     if (!codeGenerator.saveFiles())

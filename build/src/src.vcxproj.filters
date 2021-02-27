@@ -112,6 +112,7 @@
     <ClCompile Include="generated.cpp" />
     <ClCompile Include="toolReflection.cpp" />
     <ClCompile Include="codeParser.cpp" />
+    <ClCompile Include="generatedCMAKE.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="lua">
@@ -211,6 +212,7 @@
     <ClInclude Include="generatorVS.h" />
     <ClInclude Include="toolReflection.h" />
     <ClInclude Include="codeParser.h" />
+    <ClInclude Include="generatorCMAKE.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\src\base\config\build.lua" />

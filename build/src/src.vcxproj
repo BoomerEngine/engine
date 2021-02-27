@@ -66,6 +66,7 @@
       <PrecompiledHeaderFile>common.h</PrecompiledHeaderFile>
     </ClCompile>
     <ClCompile Include="generated.cpp" />
+    <ClCompile Include="generatedCMAKE.cpp" />
     <ClCompile Include="generatedVS.cpp" />
     <ClCompile Include="lua\lapi.c">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
@@ -180,6 +181,7 @@
     <ClInclude Include="codeParser.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="generated.h" />
+    <ClInclude Include="generatorCMAKE.h" />
     <ClInclude Include="generatorVS.h" />
     <ClInclude Include="lua\lapi.h" />
     <ClInclude Include="lua\lauxlib.h" />

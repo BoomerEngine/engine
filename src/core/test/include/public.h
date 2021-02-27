@@ -21,4 +21,5 @@
     #endif
 #endif
 
+#undef DECLARE_TEST_FILE
 #define DECLARE_TEST_FILE(x) void InitTests_##x() {};

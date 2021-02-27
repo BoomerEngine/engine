@@ -5,8 +5,6 @@
 CodeGenerator::CodeGenerator(const Configuration& config)
     : config(config)
 {
-    useStaticLinking = (config.build == BuildType::Standalone);
-
     rootGroup = new GeneratedGroup;
     rootGroup->name = "BoomerEngine";
     rootGroup->mergedName = "BoomerEngine";
@@ -17,16 +15,15 @@ CodeGenerator::CodeGenerator(const Configuration& config)
 
 struct OrderedGraphBuilder
 {
-    unordered_map<CodeGenerator::GeneratedProject*, int> depthMap;
-    
+    std::unordered_map<CodeGenerator::GeneratedProject*, int> depthMap;    
 
-    bool insertProject(CodeGenerator::GeneratedProject* p, int depth, vector<CodeGenerator::GeneratedProject*>& stack)
+    bool insertProject(CodeGenerator::GeneratedProject* p, int depth, std::vector<CodeGenerator::GeneratedProject*>& stack)
     {
         if (find(stack.begin(), stack.end(), p) != stack.end())
         {
-            cout << "Recursive project dependencies found when project '" << p->mergedName << "' was encountered second time\n";
+            std::cout << "Recursive project dependencies found when project '" << p->mergedName << "' was encountered second time\n";
             for (const auto* proj : stack)
-                cout << "  Reachable from '" << proj->mergedName << "'\n";
+                std::cout << "  Reachable from '" << proj->mergedName << "'\n";
             return false;
         }
 
@@ -47,11 +44,11 @@ struct OrderedGraphBuilder
         return true;
     }
 
-    void extractOrderedList(vector<CodeGenerator::GeneratedProject*>& outList) const
+    void extractOrderedList(std::vector<CodeGenerator::GeneratedProject*>& outList) const
     {
-        vector<pair<CodeGenerator::GeneratedProject*, int>> pairs;
-        copy(depthMap.begin(), depthMap.end(), std::back_inserter(pairs));
-        sort(pairs.begin(), pairs.end(), [](const auto& a, const auto& b) -> bool { 
+        std::vector<std::pair<CodeGenerator::GeneratedProject*, int>> pairs;
+        std::copy(depthMap.begin(), depthMap.end(), std::back_inserter(pairs));
+        std::sort(pairs.begin(), pairs.end(), [](const auto& a, const auto& b) -> bool {
             if (a.second != b.second)
                 return a.second > b.second;
             return a.first->mergedName < b.first->mergedName;
@@ -62,7 +59,7 @@ struct OrderedGraphBuilder
     }
 };
 
-CodeGenerator::GeneratedGroup* CodeGenerator::findOrCreateGroup(string_view name, GeneratedGroup* parent)
+CodeGenerator::GeneratedGroup* CodeGenerator::findOrCreateGroup(std::string_view name, GeneratedGroup* parent)
 {
     for (auto* group : parent->children)
         if (group->name == name)
@@ -70,16 +67,16 @@ CodeGenerator::GeneratedGroup* CodeGenerator::findOrCreateGroup(string_view name
 
     auto* group = new GeneratedGroup;
     group->name = name;
-    group->mergedName = parent->mergedName + "." + string(name);
+    group->mergedName = parent->mergedName + "." + std::string(name);
     group->parent = parent;
     group->assignedVSGuid = GuidFromText(group->mergedName);
     parent->children.push_back(group);
     return group;
 }
 
-CodeGenerator::GeneratedGroup* CodeGenerator::createGroup(string_view name)
+CodeGenerator::GeneratedGroup* CodeGenerator::createGroup(std::string_view name)
 {
-    vector<string_view> parts;
+    std::vector<std::string_view> parts;
     SplitString(name, ".", parts);
 
     auto* cur = rootGroup;
@@ -119,13 +116,22 @@ bool CodeGenerator::extractProjects(const ProjectStructure& structure)
             {
                 auto* info = new GeneratedProjectFile;
                 info->absolutePath = file->absolutePath;
-                info->filterPath = filesystem::relative(file->absolutePath.parent_path(), proj->rootPath).u8string();                
+                info->filterPath = fs::relative(file->absolutePath.parent_path(), proj->rootPath).u8string();                
                 if (info->filterPath == ".")
                     info->filterPath.clear();
                 info->name = file->name;
                 info->originalFile = file;
                 info->type = file->type;
                 info->useInCurrentBuild = file->checkFilter(config.platform);
+
+                if (config.build != BuildType::Development)
+                {
+                    if (EndsWith(file->name, "_test.cpp") || EndsWith(file->name, "_tests.cpp"))
+                    {
+                        info->useInCurrentBuild = false;
+                    }
+                }
+
                 generatorProject->files.push_back(info);
             }
 
@@ -153,7 +159,7 @@ bool CodeGenerator::extractProjects(const ProjectStructure& structure)
     bool validDeps = true;
     for (auto* proj : projects)
     {
-        vector<CodeGenerator::GeneratedProject*> stack;
+        std::vector<CodeGenerator::GeneratedProject*> stack;
         stack.push_back(proj);
 
         OrderedGraphBuilder graph;
@@ -166,7 +172,7 @@ bool CodeGenerator::extractProjects(const ProjectStructure& structure)
     {
         auto temp = std::move(projects);
 
-        vector<CodeGenerator::GeneratedProject*> stack;
+        std::vector<CodeGenerator::GeneratedProject*> stack;
 
         OrderedGraphBuilder graph;
         for (auto* proj : temp)
@@ -183,7 +189,7 @@ bool CodeGenerator::extractProjects(const ProjectStructure& structure)
         proj->localGlueHeader += "_glue.inl";
 
         const auto publicHeader = proj->originalProject->rootPath / "include/public.h";
-        if (filesystem::is_regular_file(publicHeader))
+        if (fs::is_regular_file(publicHeader))
             proj->localPublicHeader = publicHeader;
     }
 
@@ -196,7 +202,7 @@ bool CodeGenerator::extractProjects(const ProjectStructure& structure)
 
 //--
 
-CodeGenerator::GeneratedFile* CodeGenerator::createFile(const filesystem::path& path)
+CodeGenerator::GeneratedFile* CodeGenerator::createFile(const fs::path& path)
 {
     auto file = new GeneratedFile(path);
     files.push_back(file);
@@ -211,11 +217,11 @@ bool CodeGenerator::saveFiles()
     for (const auto* file : files)
         valid &= SaveFileFromString(file->absolutePath, file->content.str(), false, &numSavedFiles, file->customtTime);
 
-    cout << "Saved " << numSavedFiles << " files\n";
+    std::cout << "Saved " << numSavedFiles << " files\n";
 
     if (!valid)
     {
-        cout << "Failed to save some output files, generated solution may not be valid\n";
+        std::cout << "Failed to save some output files, generated solution may not be valid\n";
         return false;
     }
 
@@ -289,11 +295,11 @@ bool CodeGenerator::generateAutomaticCodeForProject(GeneratedProject* project)
 
     if (project->originalProject->type == ProjectType::LocalApplication || project->originalProject->type == ProjectType::LocalLibrary)
     {
-        auto reflectionFilePath = project->generatedPath / "reflection.inl";
+        auto reflectionFilePath = project->generatedPath / "reflection.cpp";
 
         try
         {
-            //filesystem::remove(reflectionFilePath);
+            //fs::remove(reflectionFilePath);
         }
         catch (...)
         {
@@ -301,23 +307,32 @@ bool CodeGenerator::generateAutomaticCodeForProject(GeneratedProject* project)
 
         bool needsReflection = false;
 
-        for (const auto* dep : project->allDependencies)
+        if (project->mergedName == "core_reflection")
         {
-            if (dep->mergedName == "core_reflection")
+            needsReflection = true;
+        }
+        else
+        {
+            for (const auto* dep : project->allDependencies)
             {
-                needsReflection = true;
-                break;
+                if (dep->mergedName == "core_reflection")
+                {
+                    needsReflection = true;
+                    break;
+                }
             }
         }
 
         if (needsReflection)
         {
             auto* info = new GeneratedProjectFile;
-            info->type = ProjectFileType::CppHeader;
+            info->type = ProjectFileType::CppSource;
             info->absolutePath = reflectionFilePath;
             info->filterPath = "_generated";
-            info->name = "reflection.inl";
+            info->name = "reflection.cpp";
             project->files.push_back(info);
+
+            project->hasReflection = true;
 
             // DO NOT WRITE
             //info->generatedFile = createFile(info->absolutePath);
@@ -340,10 +355,34 @@ bool CodeGenerator::generateExtraCodeForProject(GeneratedProject* project)
             valid &= processBisonFile(project, file);
     }
 
+    // move build.cpp to the front of the list
+    for (auto it = project->files.begin(); it != project->files.end(); ++it)
+    {
+        auto* file = *it;
+        if (file->name == "build.cpp")
+        {
+            project->files.erase(it);
+            project->files.insert(project->files.begin(), file);
+            break;
+        }
+    }
+
     return valid;
 }
 
-bool CodeGenerator::generateProjectGlueFile(const GeneratedProject* project, stringstream& f)
+bool CodeGenerator::shouldStaticLinkProject(const GeneratedProject* project) const
+{
+    if (project->originalProject->flagForceStaticLibrary)
+        return true;
+    else if (project->originalProject->flagForceSharedLibrary)
+        return false;
+    else
+        return (config.libs == LibraryType::Static);
+
+    return false;
+}
+
+bool CodeGenerator::generateProjectGlueFile(const GeneratedProject* project, std::stringstream& f)
 {
     auto macroName = ToUpper(project->mergedName) + "_GLUE";
     auto apiName = ToUpper(project->mergedName) + "_API";
@@ -359,7 +398,7 @@ bool CodeGenerator::generateProjectGlueFile(const GeneratedProject* project, str
     writeln(f, "#define " + macroName);
     writeln(f, "");
 
-    if (useStaticLinking)
+    if (shouldStaticLinkProject(project))
     {
         writeln(f, "#define " + apiName);
     }
@@ -387,7 +426,7 @@ bool CodeGenerator::generateProjectGlueFile(const GeneratedProject* project, str
     return true;
 }
 
-bool CodeGenerator::generateProjectDefaultReflection(const GeneratedProject* project, stringstream& f)
+bool CodeGenerator::generateProjectDefaultReflection(const GeneratedProject* project, std::stringstream& f)
 {
     writeln(f, "/// Boomer Engine v4 by Tomasz \"RexDex\" Jonarski");
     writeln(f, "/// RTTI Glue Code Generator is under MIT License");
@@ -411,7 +450,7 @@ bool CodeGenerator::projectRequiresStaticInit(const GeneratedProject* project) c
     return project->mergedName == "core_system";
 }
 
-bool CodeGenerator::generateProjectStaticInitFile(const GeneratedProject* project, stringstream& f)
+bool CodeGenerator::generateProjectStaticInitFile(const GeneratedProject* project, std::stringstream& f)
 {
     writeln(f, "/***");
     writeln(f, "* Boomer Engine Static Lib Initialization Code");
@@ -422,9 +461,10 @@ bool CodeGenerator::generateProjectStaticInitFile(const GeneratedProject* projec
 
     // determine if project requires static initialization (the apps and console apps require that)
     // then pull in the library linkage, for apps we pull much more crap
+    const bool staticLink = shouldStaticLinkProject(project);
     if (config.generator == GeneratorType::VisualStudio)
     {
-        if (!useStaticLinking)
+        if (!staticLink)
         {
             for (const auto* dep : project->originalProject->resolvedDependencies)
             {
@@ -432,7 +472,7 @@ bool CodeGenerator::generateProjectStaticInitFile(const GeneratedProject* projec
                 {
                     for (const auto& linkPath : dep->libraryLinkFile)
                     {
-                        stringstream ss;
+                        std::stringstream ss;
                         ss << linkPath;
                         writelnf(f, "#pragma comment( lib, %s )", ss.str().c_str());
                     }
@@ -441,7 +481,7 @@ bool CodeGenerator::generateProjectStaticInitFile(const GeneratedProject* projec
         }
         else if (project->originalProject->type == ProjectType::LocalApplication)
         {
-            unordered_set<const ProjectStructure::ProjectInfo*> exportedLibs;
+            std::unordered_set<const ProjectStructure::ProjectInfo*> exportedLibs;
 
             for (const auto* proj : project->allDependencies)
             {
@@ -453,7 +493,7 @@ bool CodeGenerator::generateProjectStaticInitFile(const GeneratedProject* projec
                         {
                             for (const auto& linkPath : dep->libraryLinkFile)
                             {
-                                stringstream ss;
+                                std::stringstream ss;
                                 ss << linkPath;
                                 writelnf(f, "#pragma comment( lib, %s)", ss.str().c_str());
                             }
@@ -472,7 +512,7 @@ bool CodeGenerator::generateProjectStaticInitFile(const GeneratedProject* projec
 
         if (!project->allDependencies.empty())
         {
-            if (useStaticLinking)
+            if (staticLink)
             {
                 // if we build based on static libraries we need to "touch" the initialization code from other modules
                 for (const auto* dep : project->allDependencies)
@@ -509,7 +549,7 @@ bool CodeGenerator::generateProjectStaticInitFile(const GeneratedProject* projec
     return true;
 }
 
-bool CodeGenerator::generateProjectAutoMainFile(const GeneratedProject* project, stringstream& f)
+bool CodeGenerator::generateProjectAutoMainFile(const GeneratedProject* project, std::stringstream& f)
 {
     auto isConsole = project->originalProject->flagConsole;
 
@@ -604,19 +644,19 @@ bool CodeGenerator::processBisonFile(GeneratedProject* project, const GeneratedP
     auto* tool = project->originalProject->findToolByName("bison");
     if (!tool)
     {
-        cout << "BISON library not linked by current project\n";
+        std::cout << "BISON library not linked by current project\n";
         return false;
     }
 
     const auto coreName = PartBefore(file->name, ".");
 
-    string parserFileName = string(coreName) + "_Parser.cpp";
-    string symbolsFileName = string(coreName) + "_Symbols.h";
-    string reportFileName = string(coreName) + "_Report.txt";
+    std::string parserFileName = std::string(coreName) + "_Parser.cpp";
+    std::string symbolsFileName = std::string(coreName) + "_Symbols.h";
+    std::string reportFileName = std::string(coreName) + "_Report.txt";
 
-    filesystem::path parserFile = project->generatedPath / parserFileName;
-    filesystem::path symbolsFile = project->generatedPath / symbolsFileName;
-    filesystem::path reportPath = project->generatedPath / reportFileName;
+    fs::path parserFile = project->generatedPath / parserFileName;
+    fs::path symbolsFile = project->generatedPath / symbolsFileName;
+    fs::path reportPath = project->generatedPath / reportFileName;
 
     parserFile = parserFile.make_preferred();
     symbolsFile = symbolsFile.make_preferred();
@@ -625,16 +665,16 @@ bool CodeGenerator::processBisonFile(GeneratedProject* project, const GeneratedP
     if (IsFileSourceNewer(file->absolutePath, parserFile))
     {
         std::error_code ec;
-        if (!filesystem::is_directory(project->generatedPath))
+        if (!fs::is_directory(project->generatedPath))
         {
-            if (!filesystem::create_directories(project->generatedPath, ec))
+            if (!fs::create_directories(project->generatedPath, ec))
             {
-                cout << "BISON tool failed because output directory can't be created\n";
+                std::cout << "BISON tool failed because output directory can't be created\n";
                 return false;
             }
         }
 
-        stringstream params;
+        std::stringstream params;
         params << tool->executablePath.u8string() << " ";
         params << "\"" << file->absolutePath.u8string() << "\" ";
         params << "-o\"" << parserFile.u8string() << "\" ";
@@ -642,17 +682,17 @@ bool CodeGenerator::processBisonFile(GeneratedProject* project, const GeneratedP
         params << "--report-file=\"" << reportPath.u8string() << "\" ";
         params << "--verbose";
 
-        const auto activeDir = filesystem::current_path();
+        const auto activeDir = fs::current_path();
         const auto bisonDir = tool->executablePath.parent_path();
-        filesystem::current_path(bisonDir);
+        fs::current_path(bisonDir);
 
         auto code = std::system(params.str().c_str());
 
-        filesystem::current_path(activeDir);
+        fs::current_path(activeDir);
 
         if (code != 0)
         {
-            cout << "BISON tool failed with exit code " << code << "\n";
+            std::cout << "BISON tool failed with exit code " << code << "\n";
             return false;
         }
     }

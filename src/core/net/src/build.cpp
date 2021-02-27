@@ -9,7 +9,6 @@
 
 #include "build.h"
 #include "static_init.inl"
-#include "reflection.inl"
 
 #ifdef PLATFORM_WINDOWS
     #include <WinSock2.h>

@@ -17,6 +17,8 @@
 #include "engine/font/include/fontInputText.h"
 #include "engine/canvas/include/geometryBuilder.h"
 
+#pragma optimize ("", off)
+
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 
 //--
@@ -694,7 +696,7 @@ void VirtualArea::renderBackground(DataStash& stash, const ElementArea& drawArea
 
 void VirtualArea::adjustCustomOverlayElementsPixelScale(float& scale) const
 {
-    scale *= m_viewScale;// InvScale;
+    scale = m_viewScale;// InvScale;
 }
 
 void VirtualArea::renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, canvas::Canvas& canvas, float mergedOpacity)
@@ -1012,7 +1014,7 @@ public:
 				builder.fillColor(fillColor);
 
 				builder.beginPath();
-				builder.rect(minX, minY, maxX, maxY);
+				builder.rect(minX, minY, maxX-minX, maxY-minY);
 				builder.fill();
 				builder.stroke();
 			}

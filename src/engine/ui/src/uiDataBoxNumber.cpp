@@ -164,7 +164,7 @@ static void CalcDragValueT(T base, int64_t steps, int numDigits, bool rangeEnabl
 
         }*/
 
-        static T StepValues[7] = { 1.0, 0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001 };
+        static T StepValues[7] = { (T)1.0, (T)0.1, (T)0.01, (T)0.001, (T)0.0001, (T)0.00001, (T)0.000001 };
         const T step = StepValues[std::clamp<int>(numDigits, 0, ARRAY_COUNT(StepValues) - 1)];
 
         result = base + (step * steps);

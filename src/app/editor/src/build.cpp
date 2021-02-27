@@ -5,7 +5,6 @@
 ***/
 
 #include "build.h"
-#include "reflection.inl"
 
 #include "editorApplication.h"
 #include "core/app/include/application.h"

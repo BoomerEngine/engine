@@ -8,7 +8,6 @@
 ***/
 
 #include "build.h"
-#include "reflection.inl"
 
 DECLARE_MODULE(PROJECT_NAME)
 {

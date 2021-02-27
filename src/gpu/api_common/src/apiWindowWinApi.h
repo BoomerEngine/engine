@@ -162,6 +162,7 @@ private:
 	Array<WindowWinApi*> m_windows;
 	Mutex m_windowsLock;
 
+	SpinLock m_windowsToCloseOnMainThreadLock;
 	Array<uint64_t> m_windowsToCloseOnMainThread;
 
 	bool m_duringUpdate = false;

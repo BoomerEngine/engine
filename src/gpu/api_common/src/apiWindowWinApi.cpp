@@ -1069,9 +1069,9 @@ void WindowManagerWinApi::updateWindows()
 	DEBUG_CHECK_RETURN_EX(Fibers::GetInstance().isMainThread(), "Windows can only be updated from main thread");
 
 	{
-		m_windowsLock.acquire();
+		m_windowsToCloseOnMainThreadLock.acquire();
 		auto closedWindow = std::move(m_windowsToCloseOnMainThread);
-		m_windowsLock.release();
+		m_windowsToCloseOnMainThreadLock.release();
 
 		for (auto hwnd : closedWindow)
 			closeWindow(hwnd);
@@ -1116,12 +1116,9 @@ uint64_t WindowManagerWinApi::createWindow(const OutputInitInfo& initInfo)
 
 void WindowManagerWinApi::closeWindow(uint64_t handle)
 {
-	DEBUG_CHECK_RETURN_EX(!m_duringUpdate, "Closing window from within a message loop");
-
-	auto lock = CreateLock(m_windowsLock);
-
 	if (Fibers::GetInstance().isMainThread())
 	{
+        auto lock = CreateLock(m_windowsLock);
 		for (auto wnd : m_windows)
 		{
 			if (wnd->handle() == (HWND)handle)
@@ -1133,6 +1130,7 @@ void WindowManagerWinApi::closeWindow(uint64_t handle)
 	}
 	else
 	{
+		auto lock = CreateLock(m_windowsToCloseOnMainThreadLock);
 		m_windowsToCloseOnMainThread.pushBack(handle);
 	}
 }

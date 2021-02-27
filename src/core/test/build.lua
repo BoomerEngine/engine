@@ -2,6 +2,7 @@
 -- Written by Tomasz Jonarski (RexDex)
 
 ProjectType("library")
+ProjectOption("devonly")
 
 Dependency("core_system")
 Dependency("core_memory")

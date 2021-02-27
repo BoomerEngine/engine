@@ -14,6 +14,8 @@
 #include "gl4Utils.h"
 #include "gl4ObjectCache.h"
 
+#pragma optimize("", off)
+
 BEGIN_BOOMER_NAMESPACE_EX(gpu::api::gl4)
 
 ///---
@@ -169,6 +171,10 @@ void Image::ensureCreated()
             GLenum glBaseType = 0; // GL_FLOAT
             bool compressed = false;
             DecomposeTextureFormat(m_glFormat, glBaseFormat, glBaseType, &compressed);
+
+			DEBUG_CHECK_EX(atom.sourceData != nullptr, "Missing source data");
+			if (atom.sourceData == nullptr)
+				continue;
 
             // get texture type
             switch (m_glViewType)

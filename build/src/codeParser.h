@@ -23,7 +23,7 @@ struct CodeTokenizer
 
     struct CodeToken
     {
-        string_view text;
+        std::string_view text;
         CodeTokenType type;
         int line = 0;
 
@@ -42,28 +42,28 @@ struct CodeTokenizer
     struct Declaration
     {
         DeclarationType type;
-        string name;
-        string scope; // namespace
-        string typeName; // namespace without the "boomer::"
+        std::string name;
+        std::string scope; // namespace
+        std::string typeName; // namespace without the "boomer::"
     };
 
     //--
 
-    filesystem::path contextPath;
+    fs::path contextPath;
 
-    vector<CodeToken> tokens;
+    std::vector<CodeToken> tokens;
 
-    vector<Declaration> declarations;
+    std::vector<Declaration> declarations;
 
     CodeTokenizer();
     ~CodeTokenizer();
 
-    bool tokenize(string_view txt);
+    bool tokenize(std::string_view txt);
 
     bool process();
 
 private:
-    string code;
+    std::string code;
 
     void emitToken(CodeToken txt);
 
@@ -76,7 +76,7 @@ private:
     void handleNumber(CodeParserState& s);
     bool handlePreprocessor(CodeParserState& s);
 
-    static bool ExtractNamespaceName(TokenStream& tokens, string& outName);
+    static bool ExtractNamespaceName(TokenStream& tokens, std::string& outName);
     static bool ExtractEmptyBrackets(TokenStream& tokens);
 };
 

@@ -29,7 +29,7 @@ void GraphEditor::buildBlockPopupMenu(GraphEditorBlockNode* node, MenuButtonCont
     {
         if (block->hasConnections())
         {
-            menu.createCallback("Remove all connections", "[img:delete]", "Del") = [this, node]() {
+            menu.createCallback("Remove all connections", "[img:delete]", "Delete") = [this, node]() {
                 actionRemoveBlockConnections(node->block());
             };
             menu.createSeparator();

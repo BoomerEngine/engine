@@ -11,14 +11,14 @@ struct CodeGenerator
 
     struct GeneratedFile
     {
-        GeneratedFile(const filesystem::path& path)
+        GeneratedFile(const fs::path& path)
             : absolutePath(path)
         {}
 
-        filesystem::path absolutePath;
-        filesystem::file_time_type customtTime;
+        fs::path absolutePath;
+        fs::file_time_type customtTime;
 
-        stringstream content; // may be empty
+        std::stringstream content; // may be empty
     };
 
     struct GeneratedProjectFile
@@ -26,49 +26,51 @@ struct CodeGenerator
         const ProjectStructure::FileInfo* originalFile = nullptr; // may be empty
         GeneratedFile* generatedFile = nullptr; // may be empty
 
-        string name;
-        string filterPath; // platform\\win
+        std::string name;
+        std::string filterPath; // platform\\win
         ProjectFileType type = ProjectFileType::Unknown;
 
         bool useInCurrentBuild = true;
 
-        filesystem::path absolutePath; // location
+        fs::path absolutePath; // location
     };
 
     struct GeneratedProject;
         
     struct GeneratedGroup
     {
-        string name;
-        string mergedName;
+        std::string name;
+        std::string mergedName;
 
-        string assignedVSGuid;
+        std::string assignedVSGuid;
 
         GeneratedGroup* parent = nullptr;
-        vector<GeneratedGroup*> children;
-        vector<GeneratedProject*> projects;
+        std::vector<GeneratedGroup*> children;
+        std::vector<GeneratedProject*> projects;
     };
     
     struct GeneratedProject
     {
         const ProjectStructure::ProjectInfo* originalProject;
 
+        bool hasReflection = false;
+
         GeneratedGroup* group = nullptr;
 
-        string mergedName;
-        filesystem::path generatedPath; // generated/base_math/
-        filesystem::path outputPath; // output/base_math/
-        filesystem::path projectPath; // project/base_math/
+        std::string mergedName;
+        fs::path generatedPath; // generated/base_math/
+        fs::path outputPath; // output/base_math/
+        fs::path projectPath; // project/base_math/
 
-        filesystem::path localGlueHeader; // _glue.inl file
-        filesystem::path localPublicHeader; // include/public.h file
+        fs::path localGlueHeader; // _glue.inl file
+        fs::path localPublicHeader; // include/public.h file
 
-        vector<GeneratedProject*> directDependencies;
-        vector<GeneratedProject*> allDependencies;
+        std::vector<GeneratedProject*> directDependencies;
+        std::vector<GeneratedProject*> allDependencies;
 
-        vector<GeneratedProjectFile*> files; // may be empty
+        std::vector<GeneratedProjectFile*> files; // may be empty
 
-        string assignedVSGuid;
+        std::string assignedVSGuid;
     };
 
     bool extractProjects(const ProjectStructure& structure);
@@ -79,28 +81,26 @@ struct CodeGenerator
 
     bool saveFiles();
 
-    GeneratedFile* createFile(const filesystem::path& path);
+    GeneratedFile* createFile(const fs::path& path);
 
-    GeneratedGroup* createGroup(string_view name);
+    GeneratedGroup* createGroup(std::string_view name);
 
     GeneratedGroup* rootGroup = nullptr;
 
-    vector<GeneratedProject*> projects;
+    std::vector<GeneratedProject*> projects;
 
-    vector<filesystem::path> sourceRoots;
+    std::vector<fs::path> sourceRoots;
 
 private:
     //--
 
     Configuration config;
 
-    bool useStaticLinking = false;
+    fs::path sharedGlueFolder;
 
-    filesystem::path sharedGlueFolder;
+    std::vector<GeneratedFile*> files; // may be empty
 
-    vector<GeneratedFile*> files; // may be empty
-
-    unordered_map<const ProjectStructure::ProjectInfo*, GeneratedProject*> projectsMap;
+    std::unordered_map<const ProjectStructure::ProjectInfo*, GeneratedProject*> projectsMap;
 
     //--
 
@@ -112,16 +112,17 @@ private:
 
     bool processBisonFile(GeneratedProject* project, const GeneratedProjectFile* file);
 
-    bool generateProjectGlueFile(const GeneratedProject* project, stringstream& outContent);
-    bool generateProjectStaticInitFile(const GeneratedProject* project, stringstream& outContent);
-    bool generateProjectAutoMainFile(const GeneratedProject* project, stringstream& outContent);
-    bool generateProjectDefaultReflection(const GeneratedProject* project, stringstream& outContent);
+    bool generateProjectGlueFile(const GeneratedProject* project, std::stringstream& outContent);
+    bool generateProjectStaticInitFile(const GeneratedProject* project, std::stringstream& outContent);
+    bool generateProjectAutoMainFile(const GeneratedProject* project, std::stringstream& outContent);
+    bool generateProjectDefaultReflection(const GeneratedProject* project, std::stringstream& outContent);
 
     bool projectRequiresStaticInit(const GeneratedProject* project) const;
 
     bool shouldUseFile(const ProjectStructure::FileInfo* file) const;
+    bool shouldStaticLinkProject(const GeneratedProject* project) const;
 
-    GeneratedGroup* findOrCreateGroup(string_view name, GeneratedGroup* parent);
+    GeneratedGroup* findOrCreateGroup(std::string_view name, GeneratedGroup* parent);
 
     //--
 

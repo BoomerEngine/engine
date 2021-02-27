@@ -3,6 +3,14 @@
   "Id": "07f80e9f-268d-4dfd-9b26-b62bcead1a78",
   "Items": [
     {
+      "Id": "bd10dc9a-2a1d-4c4a-86d8-e8f9ab13d8b8",
+      "Command": "-interactive"
+    },
+    {
+      "Id": "b034bffb-e6fa-4d34-8a38-9895cb133222",
+      "Command": "-generator=cmake"
+    },
+    {
       "Id": "d6abe501-f45e-47d1-8c03-74f0664049a9",
       "Command": "-force"
     },

@@ -366,6 +366,7 @@ protected:
     ElementWeakPtr m_currentTooltipOwner;
     ElementArea m_currentTooltipOwnerArea;
     PopupPtr m_currentTooltip;
+    bool m_tooltipFrozenUntilNextMouseMove = false;
 
     void resetTooltip();
     void updateTooltip();

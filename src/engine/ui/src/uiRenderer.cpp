@@ -20,6 +20,8 @@
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 
+#pragma optimize("", off)
+
 //---
 
 ConfigProperty<float> cvHoverDuration("UI", "HoverDurationMS", 200.0f);
@@ -487,6 +489,7 @@ void Renderer::updateWindowRepresentation(WindowInfo& window)
         // if we had native representation for it destroy it
         if (window.nativeId)
         {
+            TRACE_WARNING("Destroying window native ID {}", window.nativeId);
             m_native->windowDestroy(window.nativeId);
             window.nativeId = 0;
         }
@@ -591,7 +594,10 @@ void Renderer::updateWindowState(WindowInfo& window)
     if (requests)
     {
         if (requests->requestClose)
+        {
+            TRACE_WARNING("Requested window {} to close", window.nativeId);
             window.closeAndRemove = true;
+        }
 
         if (requests->requestActivation)
             m_native->windowSetFocus(window.nativeId);
@@ -654,6 +660,7 @@ void Renderer::updateFocusRequest()
     if (m_requestFocusElementSet)
     {
         m_requestFocusElementSet = false;
+        m_tooltipFrozenUntilNextMouseMove = true;
         focus(m_requestFocusElement.lock().get());
     }
 
@@ -680,7 +687,10 @@ void Renderer::updateHoverPosition()
     {
         const auto absolutePosition = m_native->mousePosition();
         if (absolutePosition != m_lastHoverUpdatePosition)
+        {
             m_lastHoverUpdateTime = NativeTimePoint::Now();
+            m_tooltipFrozenUntilNextMouseMove = false;
+        }
 
         m_lastHoverUpdatePosition = absolutePosition;
 
@@ -1038,7 +1048,7 @@ void Renderer::updateTooltip()
     }
 
     // try to create a new tooltip
-    if (!m_currentTooltip && m_lastHoverUpdateTime.timeTillNow().toMiliSeconds() > cvHoverDuration.get())
+    if (!m_currentTooltip && m_lastHoverUpdateTime.timeTillNow().toMiliSeconds() > cvHoverDuration.get() && !m_tooltipFrozenUntilNextMouseMove)
     {
         for (ElementChildToParentIterator it(m_currentHoverElement); it; ++it)
         {

@@ -271,7 +271,7 @@ namespace prv
 
     uint32_t PathCache::computeStrokeVertexCount(LineJoin lineJoin, LineCap lineCap, float strokeWidth) const
     {
-        auto ncap = CalcCurveDivs(strokeWidth, PI, tessTol); // calculate divisions per half circle.
+        auto ncap = CalcCurveDivs(strokeWidth, (float)(PI), tessTol); // calculate divisions per half circle.
 
         uint32_t ret = 0;
         for (auto& path : paths)

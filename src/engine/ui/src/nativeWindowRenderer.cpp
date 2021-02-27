@@ -138,6 +138,10 @@ void NativeWindowRenderer::windowDestroy(NativeWindowID id)
         delete window;
         m_nativeWindowMap.remove(id);
     }
+    else
+    {
+        TRACE_WARNING("Native window ID {} not found", id);
+    }
 }
 
 input::EventPtr NativeWindowRenderer::windowPullInputEvent(NativeWindowID id)

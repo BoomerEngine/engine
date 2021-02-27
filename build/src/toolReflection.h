@@ -19,14 +19,14 @@ struct ProjectReflection
 
     struct RefelctionProject
     {
-        string mergedName;
-        vector<RefelctionFile*> files;
-        filesystem::path reflectionFilePath;
-        filesystem::file_time_type reflectionFileTimstamp;
+        std::string mergedName;
+        std::vector<RefelctionFile*> files;
+        fs::path reflectionFilePath;
+        fs::file_time_type reflectionFileTimstamp;
     };
 
-    vector<RefelctionFile*> files;
-    vector<RefelctionProject*> projects;
+    std::vector<RefelctionFile*> files;
+    std::vector<RefelctionProject*> projects;
 
     ~ProjectReflection();
 
@@ -36,7 +36,7 @@ struct ProjectReflection
     bool generateReflection(CodeGenerator& gen) const;
 
 private:
-    bool generateReflectionForProject(const RefelctionProject& p, stringstream& f) const;
+    bool generateReflectionForProject(const RefelctionProject& p, std::stringstream& f) const;
 };
 
 //--
@@ -51,5 +51,6 @@ public:
 private:
 };
 
+extern bool GenerateInlinedReflection(const Configuration& config, ProjectStructure& structure, CodeGenerator& codeGenerator);
 
 //--

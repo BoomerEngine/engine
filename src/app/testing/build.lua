@@ -3,6 +3,7 @@
 
 ProjectType("app")
 ProjectOption("console")
+ProjectOption("devonly")
 
 Dependency("core_system")
 Dependency("core_test")

@@ -9,8 +9,7 @@
 ***/
 
 #include "build.h"
-//#include "reflection.inl"
-#include "static_init.inl"
+//#include "static_init.inl"
 
 DECLARE_MODULE(PROJECT_NAME)
 {

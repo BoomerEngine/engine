@@ -11,9 +11,10 @@ SolutionGeneratorVS::SolutionGeneratorVS(const Configuration& config, CodeGenera
     , m_gen(gen)
 {
     m_visualStudioScriptsPath = config.builderEnvPath / "vs";
+    m_buildWithLibs = (config.libs == LibraryType::Static);
 }
 
-void SolutionGeneratorVS::printSolutionDeclarations(stringstream& f, const CodeGenerator::GeneratedGroup* g)
+void SolutionGeneratorVS::printSolutionDeclarations(std::stringstream& f, const CodeGenerator::GeneratedGroup* g)
 {
     writelnf(f, "Project(\"{2150E333-8FDC-42A3-9474-1A3956D46DE8}\") = \"%s\", \"%s\", \"%s\"", g->name.c_str(), g->name.c_str(), g->assignedVSGuid.c_str());
     writeln(f, "EndProject");
@@ -31,7 +32,7 @@ void SolutionGeneratorVS::printSolutionDeclarations(stringstream& f, const CodeG
     }
 }
 
-void SolutionGeneratorVS::printSolutionParentLinks(stringstream& f, const CodeGenerator::GeneratedGroup* g)
+void SolutionGeneratorVS::printSolutionParentLinks(std::stringstream& f, const CodeGenerator::GeneratedGroup* g)
 {
     for (const auto* child : g->children)
     {
@@ -62,12 +63,14 @@ static const char* NameVisualStudioConfiguration(ConfigurationType config)
 
 bool SolutionGeneratorVS::generateSolution()
 {
-    auto* file = m_gen.createFile(m_config.solutionPath / "boomer.sln");
+    const auto solutionFileName = std::string("boomer.") + m_config.mergedName() + ".sln";
+
+    auto* file = m_gen.createFile(m_config.solutionPath / solutionFileName);
     auto& f = file->content;
 
-    cout << "-------------------------------------------------------------------------------------------\n";
-    cout << "-- SOLUTION FILE: " << file->absolutePath << "\n";
-    cout << "-------------------------------------------------------------------------------------------\n";
+    std::cout << "-------------------------------------------------------------------------------------------\n";
+    std::cout << "-- SOLUTION FILE: " << file->absolutePath << "\n";
+    std::cout << "-------------------------------------------------------------------------------------------\n";
 
     writeln(f, "Microsoft Visual Studio Solution File, Format Version 12.00");
     /*if (toolset.equals("v140")) {
@@ -163,7 +166,7 @@ bool SolutionGeneratorVS::generateProjects()
     return true;
 }
 
-void SolutionGeneratorVS::extractSourceRoots(const CodeGenerator::GeneratedProject* project, vector<filesystem::path>& outPaths) const
+void SolutionGeneratorVS::extractSourceRoots(const CodeGenerator::GeneratedProject* project, std::vector<fs::path>& outPaths) const
 {
     for (const auto& sourceRoot : m_gen.sourceRoots)
         outPaths.push_back(sourceRoot);
@@ -175,7 +178,7 @@ void SolutionGeneratorVS::extractSourceRoots(const CodeGenerator::GeneratedProje
     outPaths.push_back(project->generatedPath);
 }
 
-bool SolutionGeneratorVS::generateSourcesProjectFile(const CodeGenerator::GeneratedProject* project, stringstream& f) const
+bool SolutionGeneratorVS::generateSourcesProjectFile(const CodeGenerator::GeneratedProject* project, std::stringstream& f) const
 {
     writeln(f, "<?xml version=\"1.0\" encoding=\"utf-8\"?>");
     writeln(f, "<!-- Auto generated file, please do not edit -->");
@@ -190,7 +193,7 @@ bool SolutionGeneratorVS::generateSourcesProjectFile(const CodeGenerator::Genera
 
     {
         f << "  <SourcesRoot>";
-        vector<filesystem::path> sourceRoots;
+        std::vector<fs::path> sourceRoots;
         extractSourceRoots(project, sourceRoots);
 
         for (auto& root : sourceRoots)
@@ -208,7 +211,7 @@ bool SolutionGeneratorVS::generateSourcesProjectFile(const CodeGenerator::Genera
         f << "</LibraryIncludePath>\n";
     }
 
-    const auto relativeSourceDir = filesystem::relative(project->originalProject->rootPath, project->originalProject->group->rootPath);
+    const auto relativeSourceDir = fs::relative(project->originalProject->rootPath, project->originalProject->group->rootPath);
 
     writelnf(f, " 	<ProjectOutputPath>%s\\</ProjectOutputPath>", project->outputPath.u8string().c_str());
     writelnf(f, " 	<ProjectGeneratedPath>%s\\</ProjectGeneratedPath>", project->generatedPath.u8string().c_str());
@@ -219,6 +222,11 @@ bool SolutionGeneratorVS::generateSourcesProjectFile(const CodeGenerator::Genera
     if (project->originalProject->flagWarn3)
         writeln(f, "     <ProjectWarningLevel>Level3</ProjectWarningLevel>");
 
+    if (m_buildWithLibs)
+        writeln(f, " <SolutionType>StaticLibraries</SolutionType>");
+    else
+        writeln(f, " <SolutionType>SharedLibraries</SolutionType>");
+
     if (project->originalProject->type == ProjectType::LocalApplication)
     {
         if (project->originalProject->flagConsole)
@@ -226,30 +234,36 @@ bool SolutionGeneratorVS::generateSourcesProjectFile(const CodeGenerator::Genera
         else
             writeln(f, " 	<ModuleType>App</ModuleType>");
     }
-    else
-        writeln(f, " 	<ModuleType>Lib</ModuleType>");
+    else if (project->originalProject->type == ProjectType::LocalLibrary)
+    {
+        if (project->originalProject->flagForceSharedLibrary)
+            writeln(f, " 	<ModuleType>DynamicLibrary</ModuleType>");
+        else if (project->originalProject->flagForceStaticLibrary)
+            writeln(f, " 	<ModuleType>StaticLibrary</ModuleType>");
+        else
+        {
+            if (m_buildWithLibs)
+                writeln(f, " 	<ModuleType>StaticLibrary</ModuleType>");
+            else
+                writeln(f, " 	<ModuleType>DynamicLibrary</ModuleType>");
+        }
+    }
 
-    if (m_config.build == BuildType::Standalone)
-        writeln(f, " 	<SolutionType>Player</SolutionType>");
-    else
-        writeln(f, " 	<SolutionType>Dev</SolutionType>");
+    f << " 	<ProjectPreprocessorDefines>$(ProjectPreprocessorDefines);";
 
-    writelnf(f, " 	<ProjectPreprocessorDefines>%s_EXPORTS;PROJECT_NAME=%s;$(ProjectPreprocessorDefines)</ProjectPreprocessorDefines>", 
-        ToUpper(project->mergedName).c_str(), project->mergedName.c_str());
-
-    string perProjectDefines = "";
+    f << ToUpper(project->mergedName) << "_EXPORTS;";
+    f << "PROJECT_NAME=" << project->mergedName << ";";
 
     if (project->originalProject->flagConsole)
-        perProjectDefines += "CONSOLE";
-    
+        f  << "CONSOLE;";
+
+    if (project->hasReflection)
+        f << "BUILD_WITH_REFLECTION;";
+
     for (const auto* dep : project->allDependencies)
-    {
-        if (!perProjectDefines.empty()) perProjectDefines += ";";
-        perProjectDefines += "HAS_";
-        perProjectDefines += ToUpper(dep->mergedName);
-    }
-    if (!perProjectDefines.empty())
-        writelnf(f, " 	<ProjectPreprocessorDefines>%s;$(ProjectPreprocessorDefines)</ProjectPreprocessorDefines>", perProjectDefines.c_str());
+        f << "HAS_" << ToUpper(dep->mergedName) << ";";
+
+    f << "</ProjectPreprocessorDefines>\n";
 
     writelnf(f, " 	<ProjectGuid>%s</ProjectGuid>", project->assignedVSGuid.c_str());
     writeln(f, "</PropertyGroup>");
@@ -269,14 +283,33 @@ bool SolutionGeneratorVS::generateSourcesProjectFile(const CodeGenerator::Genera
     writeln(f, "</ItemGroup>");
 
     writeln(f, "<ItemGroup>");
-    for (const auto* dep : project->directDependencies)
+    if (m_buildWithLibs && (project->originalProject->type == ProjectType::LocalApplication))
     {
-        auto projectFilePath = dep->projectPath / dep->mergedName;
-        projectFilePath += ".vcxproj";
+        for (const auto* dep : project->allDependencies)
+        {
+            auto projectFilePath = dep->projectPath / dep->mergedName;
+            projectFilePath += ".vcxproj";
 
-        writelnf(f, " <ProjectReference Include=\"%s\">", projectFilePath.u8string().c_str());
-        writelnf(f, "   <Project>%s</Project>", dep->assignedVSGuid.c_str());
-        writeln(f, " </ProjectReference>");
+            writelnf(f, " <ProjectReference Include=\"%s\">", projectFilePath.u8string().c_str());
+            writelnf(f, "   <Project>%s</Project>", dep->assignedVSGuid.c_str());
+            writeln(f, " </ProjectReference>");
+        }
+    }
+    else
+    {
+        for (const auto* dep : project->directDependencies)
+        {
+            // when building static libs they are linked together at the end, we don't have to keep track of local dependencies
+            if (m_buildWithLibs && dep->originalProject->type != ProjectType::RttiGenerator)
+                continue;
+
+            auto projectFilePath = dep->projectPath / dep->mergedName;
+            projectFilePath += ".vcxproj";
+
+            writelnf(f, " <ProjectReference Include=\"%s\">", projectFilePath.u8string().c_str());
+            writelnf(f, "   <Project>%s</Project>", dep->assignedVSGuid.c_str());
+            writeln(f, " </ProjectReference>");
+        }
     }
     writeln(f, "</ItemGroup>");
 
@@ -294,7 +327,7 @@ bool SolutionGeneratorVS::generateSourcesProjectFile(const CodeGenerator::Genera
     return true;
 }
 
-bool SolutionGeneratorVS::generateSourcesProjectFileEntry(const CodeGenerator::GeneratedProject* project, const CodeGenerator::GeneratedProjectFile* file, stringstream& f) const
+bool SolutionGeneratorVS::generateSourcesProjectFileEntry(const CodeGenerator::GeneratedProject* project, const CodeGenerator::GeneratedProjectFile* file, std::stringstream& f) const
 {
     switch (file->type)
     {
@@ -363,13 +396,13 @@ bool SolutionGeneratorVS::generateSourcesProjectFileEntry(const CodeGenerator::G
     return true;
 }
 
-static void AddFilterSection(string_view path, vector<string>& outFilterSections)
+static void AddFilterSection(std::string_view path, std::vector<std::string>& outFilterSections)
 {
     if (outFilterSections.end() == find(outFilterSections.begin(), outFilterSections.end(), path))
-        outFilterSections.push_back(string(path));
+        outFilterSections.push_back(std::string(path));
 }
 
-static void AddFilterSectionRecursive(string_view path, vector<string>& outFilterSections)
+static void AddFilterSectionRecursive(std::string_view path, std::vector<std::string>& outFilterSections)
 {
     auto pos = path.find_last_of('\\');
     if (pos != -1)
@@ -382,13 +415,13 @@ static void AddFilterSectionRecursive(string_view path, vector<string>& outFilte
     
 }
 
-bool SolutionGeneratorVS::generateSourcesProjectFilters(const CodeGenerator::GeneratedProject* project, stringstream& f) const
+bool SolutionGeneratorVS::generateSourcesProjectFilters(const CodeGenerator::GeneratedProject* project, std::stringstream& f) const
 {
     writeln(f, "<?xml version=\"1.0\" encoding=\"utf-8\"?>");
     writeln(f, "<!-- Auto generated file, please do not edit -->");
     writeln(f, "<Project ToolsVersion=\"4.0\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">");
 
-    vector<string> filterSections;
+    std::vector<std::string> filterSections;
 
     // file entries
     {
@@ -445,7 +478,7 @@ bool SolutionGeneratorVS::generateSourcesProjectFilters(const CodeGenerator::Gen
     return true;
 }
 
-bool SolutionGeneratorVS::generateRTTIGenProjectFile(const CodeGenerator::GeneratedProject* project, stringstream& f) const
+bool SolutionGeneratorVS::generateRTTIGenProjectFile(const CodeGenerator::GeneratedProject* project, std::stringstream& f) const
 {
     writeln(f, "<?xml version=\"1.0\" encoding=\"utf-8\"?>");
     writeln(f, "<!-- Auto generated file, please do not edit -->");
@@ -454,23 +487,23 @@ bool SolutionGeneratorVS::generateRTTIGenProjectFile(const CodeGenerator::Genera
 
     writelnf(f, "<Import Project=\"%s\\SharedConfigurationSetup.props\"/>", m_visualStudioScriptsPath.u8string().c_str());
 
-    writeln(f, "<PropertyGroup>");
+    writeln(f,  "<PropertyGroup>");
     writelnf(f, "  <PlatformToolset>%s</PlatformToolset>", VS_TOOLSET_VERSION);
     writelnf(f, "  <VCProjectVersion>%s</VCProjectVersion>", VS_PROJECT_VERSION);
-    writeln(f, "  <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>");
-    writeln(f, " 	<ModuleType>Empty</ModuleType>");
-    writeln(f, " 	<SolutionType>Dev</SolutionType>");
-    writelnf(f, " 	<ProjectGuid>%s</ProjectGuid>", project->assignedVSGuid.c_str());
-    writeln(f, " 	<DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>");
-    writeln(f, "</PropertyGroup>");
-    writeln(f, "  <PropertyGroup>");
-    writeln(f, "    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>");
-    writeln(f, "  </PropertyGroup>");
-    writeln(f, "  <ItemDefinitionGroup>");
-    writeln(f, "    <PreBuildEvent>");
+    writeln(f,  "  <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>");
+    writeln(f,  "  <ModuleType>Empty</ModuleType>");
+    writeln(f,   " <SolutionType>SharedLibraries</SolutionType>");
+    writelnf(f, "  <ProjectGuid>%s</ProjectGuid>", project->assignedVSGuid.c_str());
+    writeln(f,  "  <DisableFastUpToDateCheck>true</DisableFastUpToDateCheck>");
+    writeln(f,  "</PropertyGroup>");
+    writeln(f,  "  <PropertyGroup>");
+    writeln(f,  "    <PreBuildEventUseInBuild>true</PreBuildEventUseInBuild>");
+    writeln(f,  "  </PropertyGroup>");
+    writeln(f,  "  <ItemDefinitionGroup>");
+    writeln(f,  "    <PreBuildEvent>");
 
     {
-        stringstream cmd;
+        std::stringstream cmd;
         f << "      <Command>";
         f << m_config.builderExecutablePath.u8string() << " ";
         f << "-tool=reflection ";
@@ -478,7 +511,10 @@ bool SolutionGeneratorVS::generateRTTIGenProjectFile(const CodeGenerator::Genera
             f << "-engineDir=" << m_config.engineRootPath.u8string() << " ";
         if (!m_config.projectRootPath.empty())
             f << "-projectDir=" << m_config.projectRootPath.u8string() << " ";
-        f << "-build=" << NameBuildType(m_config.build) << " ";
+        f << "-build=" << NameEnumOption(m_config.build) << " ";
+        f << "-config=" << NameEnumOption(m_config.configuration) << " ";
+        f << "-platform=" << NameEnumOption(m_config.platform) << " ";
+        f << "-libs=" << NameEnumOption(m_config.libs) << " ";
         f << "</Command>\n";
     }
 
@@ -565,7 +601,7 @@ private List<Path> generateUniqueFilterPaths(List<File> files)
     // get all (unique) filter paths nicely in a set
     return new ArrayList<>(files.stream()
         .map(file->file.attributes.value("filter")) // we are only interested in files with the filter attribute
-        .map(attr->Paths.get(attr)) // convert the string to a relative path
+        .map(attr->Paths.get(attr)) // convert the std::string to a relative path
         .flatMap(path->decompilePathIntoSubPaths(path)) // convert a single path into pieces
         .sorted(Comparator.comparingInt(a->a.getNameCount())) // sort all path pieces so the smaller paths comes first
         .collect(Collectors.toCollection(() -> new LinkedHashSet<>())));

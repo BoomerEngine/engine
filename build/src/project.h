@@ -49,17 +49,17 @@ struct ProjectStructure
         ProjectFileType type = ProjectFileType::Unknown;
         ProjectFilePlatformFilter filter = ProjectFilePlatformFilter::Any;
 
-        string name; // "test.cpp"
+        std::string name; // "test.cpp"
 
         bool flagUsePch = true;
         bool flagWarn3 = false;
         bool flagExcluded = false;
 
-        string projectRelativePath; // path in project "src/vector3.cpp"
-        string rootRelativePath; // path relative to the source root, ie. "base/math/src/vector3.cpp"
-        filesystem::path absolutePath; // full path to file on disk "Z:\\BoomerEngine\\src\\base\\math\\src\\vector3.cpp"
+        std::string projectRelativePath; // path in project "src/vector3.cpp"
+        std::string rootRelativePath; // path relative to the source root, ie. "base/math/src/vector3.cpp"
+        fs::path absolutePath; // full path to file on disk "Z:\\BoomerEngine\\src\\base\\math\\src\\vector3.cpp"
 
-        bool toggleFlag(string_view name, bool value);
+        bool toggleFlag(std::string_view name, bool value);
 
         bool checkFilter(PlatformType platform) const;
     };
@@ -69,26 +69,26 @@ struct ProjectStructure
     struct ProjectGroup
     {
         ProjectGroupType type;
-        filesystem::path rootPath; // where did we start scanning
-        vector<ProjectInfo*> projects; // in this group only
+        fs::path rootPath; // where did we start scanning
+        std::vector<ProjectInfo*> projects; // in this group only
     };
 
     struct DeployInfo
     {
-        filesystem::path sourcePath; // where is the source file to deploy
-        string deployTarget; // the local path in the bin folder, usually just the file name
+        fs::path sourcePath; // where is the source file to deploy
+        std::string deployTarget; // the local path in the bin folder, usually just the file name
     };
 
     struct ToolInfo
     {
-        string name;
-        filesystem::path executablePath; // where is the executable located
+        std::string name;
+        fs::path executablePath; // where is the executable located
     };
 
     struct ProjectInfo
     {
-        string name; // "math" - directory name
-        string mergedName; // base_math
+        std::string name; // "math" - directory name
+        std::string mergedName; // base_math
 
         bool hasScriptErrors = false;
         bool hasTests = false;
@@ -100,31 +100,34 @@ struct ProjectStructure
         bool flagConsole = false;
         bool flagDevOnly = false;
         bool flagGenerateMain = false;
+        bool flagNoSymbols = false;
+        bool flagForceSharedLibrary = false;
+        bool flagForceStaticLibrary = false;
 
         ProjectType type;
         ProjectGroup* group;
 
-        filesystem::path rootPath; // directory with "build.lua"    
+        fs::path rootPath; // directory with "build.lua"    
 
-        vector<string> dependencies;
-        vector<string> optionalDependencies;
-        vector<ProjectInfo*> resolvedDependencies;
+        std::vector<std::string> dependencies;
+        std::vector<std::string> optionalDependencies;
+        std::vector<ProjectInfo*> resolvedDependencies;
 
-        vector<string> localDefines; // local defines to add when compiling this project alone
-        vector<string> globalDefines; // global defines to add for the whole solution (usually stuff like HAS_EDITOR, HAS_PHYSX4, etc)
+        std::vector<std::string> localDefines; // local defines to add when compiling this project alone
+        std::vector<std::string> globalDefines; // global defines to add for the whole solution (usually stuff like HAS_EDITOR, HAS_PHYSX4, etc)
 
-        vector<filesystem::path> libraryInlcudePaths; // include paths to use
-        vector<filesystem::path> libraryLinkFile; // additional files to link with
+        std::vector<fs::path> libraryInlcudePaths; // include paths to use
+        std::vector<fs::path> libraryLinkFile; // additional files to link with
 
-        vector<DeployInfo> deployList; // list of additional files to deploy to binary directory
+        std::vector<DeployInfo> deployList; // list of additional files to deploy to binary directory
         
-        vector<ToolInfo> tools;
+        std::vector<ToolInfo> tools;
 
         //--
 
-        vector<FileInfo*> files;
-        unordered_map<string, FileInfo*> filesMapByName;
-        unordered_map<string, FileInfo*> filesMapByRelativePath;
+        std::vector<FileInfo*> files;
+        std::unordered_map<std::string, FileInfo*> filesMapByName;
+        std::unordered_map<std::string, FileInfo*> filesMapByRelativePath;
 
         //--
 
@@ -134,15 +137,15 @@ struct ProjectStructure
 
         bool setupProject(const Configuration& config); // runs lua to discover content of the project, NOTE: result may depend on the configuration
 
-        bool toggleFlag(string_view name, bool value);
+        bool toggleFlag(std::string_view name, bool value);
 
-        void addProjectDependency(string_view name, bool optional=false);
-        void addLocalDefine(string_view name);
-        void addGlobalDefine(string_view name);
+        void addProjectDependency(std::string_view name, bool optional=false);
+        void addLocalDefine(std::string_view name);
+        void addGlobalDefine(std::string_view name);
         
-        FileInfo* findFileByRelativePath(string_view name) const; // src/test/crap.cpp
+        FileInfo* findFileByRelativePath(std::string_view name) const; // src/test/crap.cpp
 
-        const ToolInfo* findToolByName(string_view name) const;
+        const ToolInfo* findToolByName(std::string_view name) const;
 
     private:
         static int ExportAtPanic(lua_State* L);
@@ -160,41 +163,41 @@ struct ProjectStructure
         static int ExportLibraryLink(lua_State* L); // string
         static int ExportTool(lua_State* L); // string, string
 
-        bool internalAddStringOnce(vector<string>& deps, string_view name);
+        bool internalAddStringOnce(std::vector<std::string>& deps, std::string_view name);
 
         void internalRegisterFunctions(lua_State* L);
         void internalRegisterFunction(lua_State* L, const char* name, lua_CFunction ptr);
 
         void internalExportConfiguration(lua_State* L, const Configuration& config);
 
-        void scanFilesAtDir(const filesystem::path& directoryPath, bool headersOnly);
-        bool internalTryAddFileFromPath(const filesystem::path& absolutePath, bool headersOnly);
+        void scanFilesAtDir(const fs::path& directoryPath, bool headersOnly);
+        bool internalTryAddFileFromPath(const fs::path& absolutePath, bool headersOnly);
 
-        static ProjectFileType FileTypeForExtension(string_view ext);
-        static ProjectFilePlatformFilter FilterTypeByName(string_view ext);
+        static ProjectFileType FileTypeForExtension(std::string_view ext);
+        static ProjectFilePlatformFilter FilterTypeByName(std::string_view ext);
     };
 
-    vector<ProjectGroup*> groups;
-    vector<ProjectInfo*> projects;
-    unordered_map<string, ProjectInfo*> projectsMap;
+    std::vector<ProjectGroup*> groups;
+    std::vector<ProjectInfo*> projects;
+    std::unordered_map<std::string, ProjectInfo*> projectsMap;
 
     ~ProjectStructure();
 
-    void scanProjects(ProjectGroupType group, filesystem::path rootScanPath);
+    void scanProjects(ProjectGroupType group, fs::path rootScanPath);
 
     bool setupProjects(const Configuration& config);
     bool scanContent(uint32_t& outTotalFiles);
 
-    ProjectInfo* findProject(string_view name);
+    ProjectInfo* findProject(std::string_view name);
 
-    bool resolveProjectDependencies();
+    bool resolveProjectDependencies(const Configuration& config);
 
     bool deployFiles(const Configuration& config);
 
 private:
-    void scanProjectsAtDir(ProjectGroup* group, vector<string_view>& directoryNames, filesystem::path directoryPath);
-    bool resolveProjectDependency(string_view name, vector<ProjectInfo*>& outProjects);
-    void addProjectDependency(ProjectInfo* project, vector<ProjectInfo*>& outProjects);
+    void scanProjectsAtDir(ProjectGroup* group, std::vector<std::string_view>& directoryNames, fs::path directoryPath);
+    bool resolveProjectDependency(std::string_view name, std::vector<ProjectInfo*>& outProjects);
+    void addProjectDependency(ProjectInfo* project, std::vector<ProjectInfo*>& outProjects);
 };
 
 //--
@@ -205,25 +208,30 @@ struct Configuration
     BuildType build;
     PlatformType platform;
     GeneratorType generator;
+    LibraryType libs;
     ConfigurationType configuration;
 
     bool force = false; // usually means force write all files
 
-    filesystem::path builderExecutablePath;
-    filesystem::path builderEnvPath;
+    fs::path builderExecutablePath;
+    fs::path builderEnvPath;
 
-    filesystem::path engineRootPath;
-    filesystem::path projectRootPath;
+    fs::path engineRootPath;
+    fs::path projectRootPath;
 
-    filesystem::path engineSourcesPath;
-    filesystem::path projectSourcesPath; // may be empty
+    fs::path engineSourcesPath;
+    fs::path projectSourcesPath; // may be empty
 
-    filesystem::path solutionPath; // build folder
-    filesystem::path deployPath; // "bin" folder when all crap is written
+    fs::path solutionPath; // build folder
+    fs::path deployPath; // "bin" folder when all crap is written
 
     // windows.vs2019.standalone.final
     // linux.cmake.dev.release
-    string mergedName() const;
+    std::string mergedName() const;
 
-    bool parse(const char* executable, const Commandline& cmd);    
+    bool parseOptions(const char* executable, const Commandline& cmd);
+    bool parsePaths(const char* executable, const Commandline& cmd);
+
+    bool save(const fs::path& path) const;
+    bool load(const fs::path& path);
 };

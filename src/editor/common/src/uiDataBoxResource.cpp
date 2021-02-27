@@ -69,7 +69,7 @@ public:
 
             {
                 auto buttons = rightContainer->createChild<ui::IElement>();
-                buttons->layoutHorizontal();
+                buttons->layoutVertical();
                 m_buttonBar = buttons;
 
                 {

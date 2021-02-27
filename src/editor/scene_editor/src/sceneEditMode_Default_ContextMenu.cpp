@@ -269,7 +269,7 @@ void SceneEditMode_Default::buildContextMenu_Clipboard(ui::MenuButtonContainer* 
         };
 
         // delete
-        menu->createCallback("Delete", "[img:delete]", "Del", canDelete) = [this, setup]()
+        menu->createCallback("Delete", "[img:delete]", "Delete", canDelete) = [this, setup]()
         {
             processObjectDeletion(setup.selection);
         };

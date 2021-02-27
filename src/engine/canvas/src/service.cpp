@@ -88,7 +88,7 @@ void CanvasService::onSyncUpdate()
 bool CanvasService::registerAtlas(IAtlas* atlas, ImageAtlasIndex& outIndex)
 {
 	DEBUG_CHECK_RETURN_EX_V(atlas != nullptr, "Invalid atlas to register", false);
-	DEBUG_CHECK_RETURN_EX_V(atlas->index() != 0, "Atlas already registered", false);
+	DEBUG_CHECK_RETURN_EX_V(atlas->index() == 0, "Atlas already registered", false);
 
 	for (uint32_t i = 1; i < MAX_ATLASES; ++i)
 	{

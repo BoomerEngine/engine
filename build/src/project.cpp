@@ -3,56 +3,81 @@
 
 //--
 
-string Configuration::mergedName() const
+std::string Configuration::mergedName() const
 {
-    string ret;
+    std::string ret;
     ret.reserve(100);
-    ret += NamePlatformType(platform);
+    ret += NameEnumOption(platform);
     ret += ".";
-    ret += NameGeneratorType(generator);
+    ret += NameEnumOption(generator);
     ret += ".";
-    ret += NameBuildType(build);
+    ret += NameEnumOption(build);
     ret += ".";
-    ret += NameConfigurationType(configuration);
+    ret += NameEnumOption(libs);
+    ret += ".";
+    ret += NameEnumOption(configuration);
     return ret;
 }
 
-bool Configuration::parse(const char* path, const Commandline& cmd)
+bool Configuration::save(const fs::path& path) const
 {
-    builderExecutablePath = filesystem::absolute(path);
-    if (!filesystem::is_regular_file(builderExecutablePath))
+    return SaveFileFromString(path, mergedName());
+}
+
+bool Configuration::load(const fs::path& path)
+{
+    std::string str;
+    if (!LoadFileToString(path, str))
+        return false;
+
+    std::vector<std::string_view> parts;
+    SplitString(str, ".", parts);
+    if (parts.size() != 5)
+        return false;
+
+    bool valid = ParsePlatformType(parts[0], platform);
+    valid &= ParseGeneratorType(parts[1], generator);
+    valid &= ParseBuildType(parts[2], build);
+    valid &= ParseLibraryType(parts[3], libs);
+    valid &= ParseConfigurationType(parts[4], configuration);
+    return valid;
+}
+
+bool Configuration::parseOptions(const char* path, const Commandline& cmd)
+{
+    builderExecutablePath = fs::absolute(path);
+    if (!fs::is_regular_file(builderExecutablePath))
     {
-        cout << "Invalid local executable name: " << builderExecutablePath << "\n";
+        std::cout << "Invalid local executable name: " << builderExecutablePath << "\n";
         return false;
     }
 
     builderEnvPath = builderExecutablePath.parent_path().parent_path();
-    cout << "EnvPath: " << builderEnvPath << "\n";
+    std::cout << "EnvPath: " << builderEnvPath << "\n";
 
-    if (!filesystem::is_directory(builderEnvPath / "vs"))
+    if (!fs::is_directory(builderEnvPath / "vs"))
     {
-        cout << "Lua-build is run from invalid directory and does not have required local files\n";
+        std::cout << "Lua-build is run from invalid directory and does not have required local files (vs folder is missing)\n";
+        return false;
+    }
+
+    if (!fs::is_directory(builderEnvPath / "cmake"))
+    {
+        std::cout << "Lua-build is run from invalid directory and does not have required local files (cmake folder is missing)\n";
         return false;
     }
 
     {
         const auto& str = cmd.get("tool");
         if (str.empty())
-        {
-            //cout << "No tool specified, defaulting to solution generation\n";
             this->tool = ToolType::SolutionGenerator;
-        }
         else if (str == "make")
-        {
             this->tool = ToolType::SolutionGenerator;
-        }
         else if (str == "reflection")
-        {
             this->tool = ToolType::ReflectionGenerator;
-        }
         else
         {
-            cout << "Invalid tool specified\n";
+            std::cout << "Invalid tool specified\n";
             return false;
         }
     }
@@ -61,20 +86,11 @@ bool Configuration::parse(const char* path, const Commandline& cmd)
         const auto& str = cmd.get("build");
         if (str.empty())
         {
-           //cout << "No build type specified, defaulting to development\n";
             this->build = BuildType::Development;
         }
-        else if (str == "dev")
+        else if (!ParseBuildType(str, this->build))
         {
-            this->build = BuildType::Development;
-        }
-        else if (str == "standalone")
-        {
-            this->build = BuildType::Standalone;
-        }
-        else
-        {
-            cout << "Invalid build type specified\n";
+            std::cout << "Invalid build type '" << str << "'specified\n";
             return false;
         }
     }
@@ -83,58 +99,11 @@ bool Configuration::parse(const char* path, const Commandline& cmd)
         const auto& str = cmd.get("platform");
         if (str.empty())
         {
-            //cout << "No platform type specified, defaulting to native\n";
             this->platform = PlatformType::Windows;
         }
-        else if (str == "windows")
+        else if (!ParsePlatformType(str, this->platform))
         {
-            this->platform = PlatformType::Windows;
-        }
-        else if (str == "linux")
-        {
-            this->platform = PlatformType::Linux;
-        }
-        else
-        {
-            cout << "Invalid build type specified\n";
-            return false;
-        }
-    }
-
-    {
-        const auto& str = cmd.get("config");
-        if (str.empty())
-        {
-            if (this->build == BuildType::Development)
-            {
-                //cout << "No configuration type specified, defaulting to Debug\n";
-                this->configuration = ConfigurationType::Debug;
-            }
-            else 
-            {
-                //cout << "No configuration type specified, defaulting to Checked\n";
-                this->configuration = ConfigurationType::Checked;
-            }
-        }
-        else if (str == "debug")
-        {
-            this->configuration = ConfigurationType::Debug;
-        }
-        else if (str == "checked")
-        {
-            this->configuration = ConfigurationType::Checked;
-        }
-        else if (str == "release")
-        {
-            this->configuration = ConfigurationType::Release;
-        }
-        else if (str == "final")
-        {
-            this->configuration = ConfigurationType::Final;
-        }
-        else
-        {
-            cout << "Invalid configuration type specified\n";
+            std::cout << "Invalid platform type '" << str << "'specified\n";
             return false;
         }
     }
@@ -144,48 +113,75 @@ bool Configuration::parse(const char* path, const Commandline& cmd)
         if (str.empty())
         {
             if (this->platform == PlatformType::Windows || this->platform == PlatformType::UWP)
-            {
-                //cout << "No generator type specified, defaulting to VisualStudio\n";
                 this->generator = GeneratorType::VisualStudio;
-            }
             else
-            {
-                //cout << "No generator type specified, defaulting to CMAKE\n";
                 this->generator = GeneratorType::CMake;
-            }
         }
-        else if (str == "vs")
+        else if (!ParseGeneratorType(str, this->generator))
         {
-            this->generator = GeneratorType::VisualStudio;
-        }
-        else if (str == "cmake")
-        {
-            this->generator = GeneratorType::CMake;
-        }
-        else
-        {
-            cout << "Invalid generator type specified\n";
+            std::cout << "Invalid generator type '" << str << "'specified\n";
             return false;
         }
     }
 
-    filesystem::path rootPath;
+    {
+        const auto& str = cmd.get("libs");
+        if (str.empty())
+        {
+            if (this->build == BuildType::Development)
+                this->libs = LibraryType::Shared;
+            else
+                this->libs = LibraryType::Static;
+        }
+        else if (!ParseLibraryType(str, this->libs))
+        {
+            std::cout << "Invalid library type '" << str << "'specified\n";
+            return false;
+        }
+    }
+
+    {
+        const auto& str = cmd.get("config");
+        if (str.empty())
+        {
+            if (this->build == BuildType::Development)
+                this->configuration = ConfigurationType::Debug;
+            else
+                this->configuration = ConfigurationType::Final;
+        }
+        else if (!ParseConfigurationType(str, this->configuration))
+        {
+            std::cout << "Invalid configuration type '" << str << "'specified\n";
+            return false;
+        }
+    }
+
+    force = cmd.has("force");
+
+    return true;
+}
+
+bool Configuration::parsePaths(const char* executable, const Commandline& cmd)
+{
+    //--
+
+    fs::path rootPath;
 
     {
         const auto& str = cmd.get("engineDir");
         if (str.empty())
         {
-            //cout << "No engine path specified, using current directory\n";
-            engineRootPath = filesystem::current_path();
+            //std::cout << "No engine path specified, using current directory\n";
+            engineRootPath = fs::current_path();
         }
         else
         {
-            engineRootPath = filesystem::path(str);
+            engineRootPath = fs::path(str);
 
             std::error_code ec;
-            if (!filesystem::is_directory(engineRootPath))
+            if (!fs::is_directory(engineRootPath))
             {
-                cout << "Specified engine directory does not exist\n";
+                std::cout << "Specified engine directory does not exist\n";
                 return false;
             }
         }
@@ -193,9 +189,9 @@ bool Configuration::parse(const char* path, const Commandline& cmd)
         rootPath = engineRootPath;
 
         this->engineSourcesPath = engineRootPath / "src";
-        if (!filesystem::is_directory(engineSourcesPath))
+        if (!fs::is_directory(engineSourcesPath))
         {
-            cout << "Specified engine directory has no source directory\n";
+            std::cout << "Specified engine directory has no source directory\n";
             return false;
         }
     }
@@ -204,9 +200,9 @@ bool Configuration::parse(const char* path, const Commandline& cmd)
         const auto& str = cmd.get("deployDir");
         if (str.empty())
         {
-            //cout << "No deploy directory specified, using default one\n";
+            //std::cout << "No deploy directory specified, using default one\n";
 
-            string solutionPartialPath = ".bin/";
+            std::string solutionPartialPath = ".bin/";
             solutionPartialPath += mergedName();
 
             this->deployPath = rootPath / solutionPartialPath;
@@ -217,11 +213,11 @@ bool Configuration::parse(const char* path, const Commandline& cmd)
         }
 
         std::error_code ec;
-        if (!filesystem::is_directory(deployPath, ec))
+        if (!fs::is_directory(deployPath, ec))
         {
-            if (!filesystem::create_directories(deployPath, ec))
+            if (!fs::create_directories(deployPath, ec))
             {
-                cout << "Failed to create deploy directory " << deployPath << "\n";
+                std::cout << "Failed to create deploy directory " << deployPath << "\n";
                 return false;
             }
         }
@@ -231,9 +227,9 @@ bool Configuration::parse(const char* path, const Commandline& cmd)
         const auto& str = cmd.get("outDir");
         if (str.empty())
         {
-            //cout << "No output directory specified, using default one\n";
+            //std::cout << "No output directory specified, using default one\n";
 
-            string solutionPartialPath = ".temp/";
+            std::string solutionPartialPath = ".temp/";
             solutionPartialPath += mergedName();
 
             this->solutionPath = rootPath / solutionPartialPath;
@@ -244,34 +240,20 @@ bool Configuration::parse(const char* path, const Commandline& cmd)
         }
 
         std::error_code ec;
-        if (!filesystem::is_directory(solutionPath, ec))
+        if (!fs::is_directory(solutionPath, ec))
         {
-            if (!filesystem::create_directories(solutionPath, ec))
+            if (!fs::create_directories(solutionPath, ec))
             {
-                cout << "Failed to create solution directory " << solutionPath << "\n";
+                std::cout << "Failed to create solution directory " << solutionPath << "\n";
                 return false;
             }
         }
     }
 
-    force = cmd.has("force");
-
     engineSourcesPath = engineSourcesPath.make_preferred();
     projectSourcesPath = projectSourcesPath.make_preferred();
     solutionPath = solutionPath.make_preferred();
     deployPath = deployPath.make_preferred();
-
-    /*cout << "Config.Tool: " << (int)this->tool << "\n";
-    cout << "Config.Generator: " << (int)this->generator << "\n";
-    cout << "Config.Platform: " << (int)this->platform << "\n";
-    cout << "Config.Build: " << (int)this->build << "\n";
-    cout << "Config.Configuration: " << (int)this->configuration << "\n";
-    cout << "Config.EngineSources: " << this->engineSourcesPath << "\n";
-    cout << "Config.ProjectSources: " << this->projectSourcesPath << "\n";
-    cout << "Config.OutputDir: " << this->solutionPath << "\n";
-    cout << "Config.DeployDir: " << this->deployPath << "\n";
-    cout << "Config.ExecPath: " << this->builderExecutablePath << "\n";
-    cout << "Config.EnvPath: " << this->builderEnvPath << "\n";*/
 
     return true;
 }
@@ -353,9 +335,9 @@ void ProjectStructure::ProjectInfo::internalExportConfiguration(lua_State* L, co
 
     switch (config.build)
     {
-        case BuildType::Standalone:
+        case BuildType::Shipment:
         {
-            lua_pushstring(L, "standalone");
+            lua_pushstring(L, "shipment");
             lua_setglobal(L, "BuildName");
             break;
         }
@@ -367,6 +349,9 @@ void ProjectStructure::ProjectInfo::internalExportConfiguration(lua_State* L, co
             break;
         }
     }
+
+    lua_pushboolean(L, config.libs == LibraryType::Static);
+    lua_setglobal(L, "UseStaticLibs");
 
     switch (config.configuration)
     {
@@ -405,7 +390,7 @@ bool ProjectStructure::ProjectInfo::setupProject(const Configuration& config)
     lua_State* L = luaL_newstate();  /* create state */
     if (L == NULL)
     {
-        cout << "Cannot create state: not enough memory\n";
+        std::cout << "Cannot create state: not enough memory\n";
         return false;
     }
 
@@ -417,20 +402,20 @@ bool ProjectStructure::ProjectInfo::setupProject(const Configuration& config)
     internalExportConfiguration(L, config);
 
     auto scriptFilePath = rootPath / "build.lua";
-    string code;
+    std::string code;
     if (!LoadFileToString(scriptFilePath, code))
     {
-        cout << "Cannot create state: not enough memory\n";
+        std::cout << "Cannot create state: not enough memory\n";
         return false;
     }
 
     int ret = luaL_loadstring(L, code.c_str());
     if (LUA_OK != ret)
     {
-        string_view text = luaL_checkstring(L, 1);
+        std::string_view text = luaL_checkstring(L, 1);
 
-        cout << "Failed to parse build script at " << scriptFilePath << "\n";
-        cout << "LUA error: " << text << "\n";
+        std::cout << "Failed to parse build script at " << scriptFilePath << "\n";
+        std::cout << "LUA error: " << text << "\n";
 
         lua_close(L);
         return false;
@@ -439,10 +424,10 @@ bool ProjectStructure::ProjectInfo::setupProject(const Configuration& config)
     ret = lua_pcall(L, 0, 0, 0);
     if (LUA_OK != ret)
     {
-        string_view text = luaL_checkstring(L, 1);
+        std::string_view text = luaL_checkstring(L, 1);
 
-        cout << "Failed to run loaded script at " << scriptFilePath << "\n";
-        cout << "LUA error: " << text << "\n";
+        std::cout << "Failed to run loaded script at " << scriptFilePath << "\n";
+        std::cout << "LUA error: " << text << "\n";
         lua_close(L);
         return false;
     }
@@ -450,7 +435,7 @@ bool ProjectStructure::ProjectInfo::setupProject(const Configuration& config)
     return !hasScriptErrors;
 }
 
-ProjectFileType ProjectStructure::ProjectInfo::FileTypeForExtension(string_view ext)
+ProjectFileType ProjectStructure::ProjectInfo::FileTypeForExtension(std::string_view ext)
 {
     if (ext == ".h" || ext == ".hpp" || ext == ".hxx" || ext == ".inl")
         return ProjectFileType::CppHeader;
@@ -466,7 +451,7 @@ ProjectFileType ProjectStructure::ProjectInfo::FileTypeForExtension(string_view 
     return ProjectFileType::Unknown;
 }
 
-ProjectFilePlatformFilter ProjectStructure::ProjectInfo::FilterTypeByName(string_view ext)
+ProjectFilePlatformFilter ProjectStructure::ProjectInfo::FilterTypeByName(std::string_view ext)
 {
     if (ext == "windows")
         return ProjectFilePlatformFilter::Windows;
@@ -480,7 +465,7 @@ ProjectFilePlatformFilter ProjectStructure::ProjectInfo::FilterTypeByName(string
     return ProjectFilePlatformFilter::Invalid;
 }
 
-bool ProjectStructure::ProjectInfo::internalTryAddFileFromPath(const filesystem::path& absolutePath, bool headersOnly)
+bool ProjectStructure::ProjectInfo::internalTryAddFileFromPath(const fs::path& absolutePath, bool headersOnly)
 {
     const auto ext = absolutePath.extension().u8string();
 
@@ -498,14 +483,14 @@ bool ProjectStructure::ProjectInfo::internalTryAddFileFromPath(const filesystem:
     file->type = type;
     file->absolutePath = absolutePath;
     file->name = shortName;
-    file->projectRelativePath = MakeGenericPathEx(filesystem::relative(absolutePath, rootPath));
-    file->rootRelativePath = MakeGenericPathEx(filesystem::relative(absolutePath, group->rootPath));
+    file->projectRelativePath = MakeGenericPathEx(fs::relative(absolutePath, rootPath));
+    file->rootRelativePath = MakeGenericPathEx(fs::relative(absolutePath, group->rootPath));
 
     if (EndsWith(file->name, "_test.cpp") || EndsWith(file->name, "_tests.cpp"))
     {
         if (!hasTests)
         {
-            //cout << "Project '" << mergedName << "' determined to have tests\n";
+            //std::cout << "Project '" << mergedName << "' determined to have tests\n";
             hasTests = true;
         }
     }
@@ -517,13 +502,13 @@ bool ProjectStructure::ProjectInfo::internalTryAddFileFromPath(const filesystem:
     return true;    
 }
 
-void ProjectStructure::ProjectInfo::scanFilesAtDir(const filesystem::path& directoryPath, bool headersOnly)
+void ProjectStructure::ProjectInfo::scanFilesAtDir(const fs::path& directoryPath, bool headersOnly)
 {
     try
     {
-        if (filesystem::is_directory(directoryPath))
+        if (fs::is_directory(directoryPath))
         {
-            for (const auto& entry : filesystem::directory_iterator(directoryPath))
+            for (const auto& entry : fs::directory_iterator(directoryPath))
             {
                 const auto name = entry.path().filename().u8string();
 
@@ -534,20 +519,20 @@ void ProjectStructure::ProjectInfo::scanFilesAtDir(const filesystem::path& direc
             }
         }
     }
-    catch (filesystem::filesystem_error& e)
+    catch (fs::filesystem_error& e)
     {
-        cout << "Filesystem Error: " << e.what() << "\n";
+        std::cout << "Filesystem Error: " << e.what() << "\n";
     }
 }
 
 bool ProjectStructure::ProjectInfo::scanContent()
 {
     const auto buildPath = rootPath / "build.lua";
-    if (filesystem::is_regular_file(buildPath))
+    if (fs::is_regular_file(buildPath))
         internalTryAddFileFromPath(buildPath, false);
 
     const auto sourcesPath = rootPath / "src";
-    if (filesystem::is_directory(sourcesPath))
+    if (fs::is_directory(sourcesPath))
     {
         scanFilesAtDir(rootPath / "include", true);
         scanFilesAtDir(rootPath / "res", false);
@@ -565,8 +550,8 @@ bool ProjectStructure::ProjectInfo::scanContent()
 int ProjectStructure::ProjectInfo::ExportAtPanic(lua_State* L)
 {
     auto* self = (ProjectInfo*)L->selfPtr;
-    string_view name = luaL_checkstring(L, 1);
-    cout << "Project '" << self->mergedName << "' encountered critical script error: " << name << "\n";
+    std::string_view name = luaL_checkstring(L, 1);
+    std::cout << "Project '" << self->mergedName << "' encountered critical script error: " << name << "\n";
     self->hasScriptErrors = true;
     return 0;
 }
@@ -574,8 +559,8 @@ int ProjectStructure::ProjectInfo::ExportAtPanic(lua_State* L)
 int ProjectStructure::ProjectInfo::ExportAtError(lua_State* L)
 {
     auto* self = (ProjectInfo*)L->selfPtr;
-    string_view name = luaL_checkstring(L, 1);
-    cout << "Project '" << self->mergedName << "' encountered script error: " << name << "\n";
+    std::string_view name = luaL_checkstring(L, 1);
+    std::cout << "Project '" << self->mergedName << "' encountered script error: " << name << "\n";
     self->hasScriptErrors = true;
     return 0;
 }
@@ -583,12 +568,12 @@ int ProjectStructure::ProjectInfo::ExportAtError(lua_State* L)
 int ProjectStructure::ProjectInfo::ExportProjectOption(lua_State* L)
 {
     auto* self = (ProjectInfo*)L->selfPtr;
-    string_view name = luaL_checkstring(L, 1);
+    std::string_view name = luaL_checkstring(L, 1);
     bool value = lua_isnoneornil(L, 2) ? true : lua_toboolean(L, 3);
 
     if (!self->toggleFlag(name, value))
     {
-        cout << "Project '" << self->mergedName << "' uses invalid flag: '" << name << "'\n";
+        std::cout << "Project '" << self->mergedName << "' uses invalid flag: '" << name << "'\n";
         self->hasScriptErrors = true;
     }
 
@@ -598,8 +583,8 @@ int ProjectStructure::ProjectInfo::ExportProjectOption(lua_State* L)
 int ProjectStructure::ProjectInfo::ExportFileOption(lua_State* L)
 {
     auto* self = (ProjectInfo*)L->selfPtr;
-    string_view name = luaL_checkstring(L, 1);
-    string_view flag = luaL_checkstring(L, 2);
+    std::string_view name = luaL_checkstring(L, 1);
+    std::string_view flag = luaL_checkstring(L, 2);
     bool value = lua_isnoneornil(L, 3) ? true : lua_toboolean(L, 3);
 
     if (auto* file = self->findFileByRelativePath(name))
@@ -608,7 +593,7 @@ int ProjectStructure::ProjectInfo::ExportFileOption(lua_State* L)
     }
     else
     {
-        cout << "Unknown file '" << name << "'\n";
+        std::cout << "Unknown file '" << name << "'\n";
         self->hasScriptErrors = true;
     }
 
@@ -618,13 +603,13 @@ int ProjectStructure::ProjectInfo::ExportFileOption(lua_State* L)
 int ProjectStructure::ProjectInfo::ExportFileFilter(lua_State* L)
 {
     auto* self = (ProjectInfo*)L->selfPtr;
-    string_view name = luaL_checkstring(L, 1);
-    string_view flag = luaL_checkstring(L, 2);
+    std::string_view name = luaL_checkstring(L, 1);
+    std::string_view flag = luaL_checkstring(L, 2);
 
     auto filter = FilterTypeByName(flag);
     if (filter == ProjectFilePlatformFilter::Invalid)
     {
-        cout << "File'" << self->mergedName << "' has invalid platform filter: '" << name << "'\n";
+        std::cout << "File'" << self->mergedName << "' has invalid platform filter: '" << name << "'\n";
         self->hasScriptErrors = true;
     }
     else
@@ -635,7 +620,7 @@ int ProjectStructure::ProjectInfo::ExportFileFilter(lua_State* L)
         }
         else
         {
-            cout << "Unknown file '" << name << "'\n";
+            std::cout << "Unknown file '" << name << "'\n";
             self->hasScriptErrors = true;
         }
     }
@@ -646,18 +631,18 @@ int ProjectStructure::ProjectInfo::ExportFileFilter(lua_State* L)
 int ProjectStructure::ProjectInfo::ExportDeploy(lua_State* L)
 {
     auto* self = (ProjectInfo*)L->selfPtr;
-    string_view path = luaL_checkstring(L, 1);
+    std::string_view path = luaL_checkstring(L, 1);
 
     auto fullPath = self->rootPath / path;
     std::error_code ec;
-    if (!filesystem::exists(fullPath, ec))
+    if (!fs::exists(fullPath, ec))
     {
-        cout << "Referenced deployment file '" << path << "' does not exist in the library folder\n";
+        std::cout << "Referenced deployment file '" << path << "' does not exist in the library folder\n";
         self->hasScriptErrors = true;
     }
-    else if (!filesystem::is_regular_file(fullPath, ec))
+    else if (!fs::is_regular_file(fullPath, ec))
     {
-        cout << "Referenced deployment object '" << path << "' is not a file\n";
+        std::cout << "Referenced deployment object '" << path << "' is not a file\n";
         self->hasScriptErrors = true;
     }
     else
@@ -679,21 +664,21 @@ int ProjectStructure::ProjectInfo::ExportDeploy(lua_State* L)
 int ProjectStructure::ProjectInfo::ExportTool(lua_State* L)
 {
     auto* self = (ProjectInfo*)L->selfPtr;
-    string_view name = luaL_checkstring(L, 1);
-    string_view path = luaL_checkstring(L, 2);
+    std::string_view name = luaL_checkstring(L, 1);
+    std::string_view path = luaL_checkstring(L, 2);
 
     auto fullPath = self->rootPath / path;
     fullPath = fullPath.make_preferred();
 
     std::error_code ec;
-    if (!filesystem::exists(fullPath, ec))
+    if (!fs::exists(fullPath, ec))
     {
-        cout << "Referenced binary file '" << path << "' does not exist\n";
+        std::cout << "Referenced binary file '" << path << "' does not exist\n";
         self->hasScriptErrors = true;
     }
-    else if (!filesystem::is_regular_file(fullPath, ec))
+    else if (!fs::is_regular_file(fullPath, ec))
     {
-        cout << "Referenced binary file '" << path << "' is not a file\n";
+        std::cout << "Referenced binary file '" << path << "' is not a file\n";
         self->hasScriptErrors = true;
     }
     else
@@ -710,18 +695,18 @@ int ProjectStructure::ProjectInfo::ExportTool(lua_State* L)
 int ProjectStructure::ProjectInfo::ExportLibraryInclude(lua_State* L)
 {
     auto* self = (ProjectInfo*)L->selfPtr;
-    string_view path = luaL_checkstring(L, 1);
+    std::string_view path = luaL_checkstring(L, 1);
 
     auto fullPath = self->rootPath / path;
     std::error_code ec;
-    if (!filesystem::exists(fullPath, ec))
+    if (!fs::exists(fullPath, ec))
     {
-        cout << "Referenced include path '" << path << "' does not exist in the library folder\n";
+        std::cout << "Referenced include path '" << path << "' does not exist in the library folder\n";
         self->hasScriptErrors = true;
     }
-    else if (!filesystem::is_directory(fullPath, ec))
+    else if (!fs::is_directory(fullPath, ec))
     {
-        cout << "Referenced include path '" << path << "' is not a directory\n";
+        std::cout << "Referenced include path '" << path << "' is not a directory\n";
         self->hasScriptErrors = true;
     }
     else
@@ -736,20 +721,20 @@ int ProjectStructure::ProjectInfo::ExportLibraryInclude(lua_State* L)
 int ProjectStructure::ProjectInfo::ExportLibraryLink(lua_State* L)
 {
     auto* self = (ProjectInfo*)L->selfPtr;
-    string_view path = luaL_checkstring(L, 1);
+    std::string_view path = luaL_checkstring(L, 1);
 
     auto fullPath = self->rootPath / path;
     fullPath = fullPath.make_preferred();
 
     std::error_code ec;
-    if (!filesystem::exists(fullPath, ec))
+    if (!fs::exists(fullPath, ec))
     {
-        cout << "Referenced file '" << path << "' does not exist in the library folder\n";
+        std::cout << "Referenced file '" << path << "' does not exist in the library folder\n";
         self->hasScriptErrors = true;
     }
-    else if (!filesystem::is_regular_file(fullPath, ec))
+    else if (!fs::is_regular_file(fullPath, ec))
     {
-        cout << "Referenced object '" << path << "' is not a file\n";
+        std::cout << "Referenced object '" << path << "' is not a file\n";
         self->hasScriptErrors = true;
     }
     else
@@ -764,7 +749,7 @@ int ProjectStructure::ProjectInfo::ExportLibraryLink(lua_State* L)
 int ProjectStructure::ProjectInfo::ExportProjectType(lua_State* L)
 {
     auto* self = (ProjectInfo*)L->selfPtr;
-    string_view name = luaL_checkstring(L, 1);
+    std::string_view name = luaL_checkstring(L, 1);
     if (name == "library")
         self->type = ProjectType::LocalLibrary;
     else if (name == "app")
@@ -773,13 +758,13 @@ int ProjectStructure::ProjectInfo::ExportProjectType(lua_State* L)
         self->type = ProjectType::ExternalLibrary;
     else
     {
-        cout << "Project '" << self->mergedName << "' has invalid type: '" << name << "'\n";
+        std::cout << "Project '" << self->mergedName << "' has invalid type: '" << name << "'\n";
     }
 
     return 0;
 }
 
-bool ProjectStructure::ProjectInfo::toggleFlag(string_view name, bool value)
+bool ProjectStructure::ProjectInfo::toggleFlag(std::string_view name, bool value)
 {
     if (name == "warn3")
     {
@@ -811,44 +796,64 @@ bool ProjectStructure::ProjectInfo::toggleFlag(string_view name, bool value)
         flagGenerateMain = value;
         return true;
     }
+    else if (name == "nosymbols")
+    {
+        flagNoSymbols = !value;
+        return true;
+    }
+    else if (name == "symbols")
+    {
+        flagNoSymbols = !value;
+        return true;
+    }
+    else if (name == "forceShared")
+    {
+        flagForceSharedLibrary = value;
+        return true;
+    }
+    else if (name == "forceStatic")
+    {
+        flagForceStaticLibrary = value;
+        return true;
+    }
 
     return false;
 }
 
-void ProjectStructure::ProjectInfo::addProjectDependency(string_view name, bool optional /*= false*/)
+void ProjectStructure::ProjectInfo::addProjectDependency(std::string_view name, bool optional /*= false*/)
 {
     internalAddStringOnce(optional ? optionalDependencies : dependencies, name);   
 }
 
-bool ProjectStructure::ProjectInfo::internalAddStringOnce(vector<string>& deps, string_view name)
+bool ProjectStructure::ProjectInfo::internalAddStringOnce(std::vector<std::string>& deps, std::string_view name)
 {
     for (const auto& str : deps)
         if (str == name)
             return false;
 
-    deps.push_back(string(name));
+    deps.push_back(std::string(name));
     return true;
 }
 
-void ProjectStructure::ProjectInfo::addLocalDefine(string_view name)
+void ProjectStructure::ProjectInfo::addLocalDefine(std::string_view name)
 {
     internalAddStringOnce(localDefines, name);
 }
 
-void ProjectStructure::ProjectInfo::addGlobalDefine(string_view name)
+void ProjectStructure::ProjectInfo::addGlobalDefine(std::string_view name)
 {
     internalAddStringOnce(globalDefines, name);
 }
 
-ProjectStructure::FileInfo* ProjectStructure::ProjectInfo::findFileByRelativePath(string_view name) const
+ProjectStructure::FileInfo* ProjectStructure::ProjectInfo::findFileByRelativePath(std::string_view name) const
 {
-    auto it = filesMapByRelativePath.find(string(name));
+    auto it = filesMapByRelativePath.find(std::string(name));
     if (it != filesMapByRelativePath.end())
         return it->second;
     return nullptr;
 }
 
-const ProjectStructure::ToolInfo* ProjectStructure::ProjectInfo::findToolByName(string_view name) const
+const ProjectStructure::ToolInfo* ProjectStructure::ProjectInfo::findToolByName(std::string_view name) const
 {
     for (auto& tool : tools)
         if (tool.name == name)
@@ -882,7 +887,7 @@ bool ProjectStructure::FileInfo::checkFilter(PlatformType platform) const
     return true;
 }
 
-bool ProjectStructure::FileInfo::toggleFlag(string_view name, bool value)
+bool ProjectStructure::FileInfo::toggleFlag(std::string_view name, bool value)
 {
     if (name == "exclude")
     {
@@ -905,14 +910,14 @@ bool ProjectStructure::FileInfo::toggleFlag(string_view name, bool value)
         return true;
     }
 
-    cout << "Unknown file option '" << name << "' used on file " << absolutePath << "\n";
+    std::cout << "Unknown file option '" << name << "' used on file " << absolutePath << "\n";
     return false;
 }
 
 int ProjectStructure::ProjectInfo::ExportLinkProject(lua_State* L)
 {
     auto* self = (ProjectInfo*)L->selfPtr;
-    string_view name = luaL_checkstring(L, 1);
+    std::string_view name = luaL_checkstring(L, 1);
     self->addProjectDependency(name);
     return 0;
 }
@@ -920,7 +925,7 @@ int ProjectStructure::ProjectInfo::ExportLinkProject(lua_State* L)
 int ProjectStructure::ProjectInfo::ExportLinkOptionalProject(lua_State* L)
 {
     auto* self = (ProjectInfo*)L->selfPtr;
-    string_view name = luaL_checkstring(L, 1);
+    std::string_view name = luaL_checkstring(L, 1);
     self->addProjectDependency(name, true);
     return 0;
 }
@@ -928,7 +933,7 @@ int ProjectStructure::ProjectInfo::ExportLinkOptionalProject(lua_State* L)
 int ProjectStructure::ProjectInfo::ExportLocalDefine(lua_State* L)
 {
     auto* self = (ProjectInfo*)L->selfPtr;
-    string_view name = luaL_checkstring(L, 1);
+    std::string_view name = luaL_checkstring(L, 1);
     self->addLocalDefine(name);
     return 0;
 }
@@ -936,7 +941,7 @@ int ProjectStructure::ProjectInfo::ExportLocalDefine(lua_State* L)
 int ProjectStructure::ProjectInfo::ExportGlobalDefine(lua_State* L)
 {
     auto* self = (ProjectInfo*)L->selfPtr;
-    string_view name = luaL_checkstring(L, 1);
+    std::string_view name = luaL_checkstring(L, 1);
     self->addGlobalDefine(name);
     return 0;
 }
@@ -949,9 +954,9 @@ ProjectStructure::~ProjectStructure()
         delete group;
 }
 
-static string BuildMergedProjectName(const vector<string_view>& parts)
+static std::string BuildMergedProjectName(const std::vector<std::string_view>& parts)
 {
-    string ret;
+    std::string ret;
 
     for (const auto& name : parts)
     {
@@ -963,13 +968,13 @@ static string BuildMergedProjectName(const vector<string_view>& parts)
     return ret;
 }
 
-void ProjectStructure::scanProjectsAtDir(ProjectGroup* group, vector<string_view>& directoryNames, filesystem::path directoryPath)
+void ProjectStructure::scanProjectsAtDir(ProjectGroup* group, std::vector<std::string_view>& directoryNames, fs::path directoryPath)
 {
     bool hasBuildLua = false;
 
     try
     {
-        for (const auto& entry : filesystem::directory_iterator(directoryPath))
+        for (const auto& entry : fs::directory_iterator(directoryPath))
         {
             const auto name = entry.path().filename().u8string();
 
@@ -988,9 +993,9 @@ void ProjectStructure::scanProjectsAtDir(ProjectGroup* group, vector<string_view
             }
         }
     }
-    catch (filesystem::filesystem_error& e)
+    catch (fs::filesystem_error& e)
     {
-        cout << "Filesystem Error: " << e.what() << "\n";
+        std::cout << "Filesystem Error: " << e.what() << "\n";
     }
 
     if (hasBuildLua)
@@ -999,7 +1004,7 @@ void ProjectStructure::scanProjectsAtDir(ProjectGroup* group, vector<string_view
         project->type = ProjectType::Disabled;
         project->group = group;
         project->mergedName = BuildMergedProjectName(directoryNames);
-        project->name = string(directoryNames.back());
+        project->name = std::string(directoryNames.back());
         project->rootPath = directoryPath;
 
         group->projects.push_back(project);
@@ -1007,26 +1012,26 @@ void ProjectStructure::scanProjectsAtDir(ProjectGroup* group, vector<string_view
 
         projectsMap[project->mergedName] = project;
 
-        //cout << "Found project '" << project->mergedName << "' at " << project->rootPath << "\n";
+        //std::cout << "Found project '" << project->mergedName << "' at " << project->rootPath << "\n";
     }
 }
 
-ProjectStructure::ProjectInfo* ProjectStructure::findProject(string_view name)
+ProjectStructure::ProjectInfo* ProjectStructure::findProject(std::string_view name)
 {
-    auto it = projectsMap.find(string(name));
+    auto it = projectsMap.find(std::string(name));
     if (it != projectsMap.end())
         return it->second;
     return nullptr;
 }
 
-void ProjectStructure::addProjectDependency(ProjectInfo* project, vector<ProjectInfo*>& outProjects)
+void ProjectStructure::addProjectDependency(ProjectInfo* project, std::vector<ProjectInfo*>& outProjects)
 {
     auto it = std::find(outProjects.begin(), outProjects.end(), project);
     if (it == outProjects.end())
         outProjects.push_back(project);
 }
 
-bool ProjectStructure::resolveProjectDependency(string_view name, vector<ProjectInfo*>& outProjects)
+bool ProjectStructure::resolveProjectDependency(std::string_view name, std::vector<ProjectInfo*>& outProjects)
 {
     if (name == "*all_tests*")
     {
@@ -1052,7 +1057,7 @@ bool ProjectStructure::resolveProjectDependency(string_view name, vector<Project
         {
             if (proj->type == ProjectType::LocalApplication)
             {
-                cout << "Project '" << proj->mergedName << "' is an application and can't be a dependency\n";
+                std::cout << "Project '" << proj->mergedName << "' is an application and can't be a dependency\n";
                 return true;
             }
 
@@ -1064,16 +1069,20 @@ bool ProjectStructure::resolveProjectDependency(string_view name, vector<Project
     return false;
 }
 
-bool ProjectStructure::resolveProjectDependencies()
+bool ProjectStructure::resolveProjectDependencies(const Configuration& config)
 {
     bool hasValidDeps = true;
 
     // create the special rtti generator project
-    auto* rttiGenerator = new ProjectInfo();
-    rttiGenerator->name = "_rtti_gen";
-    rttiGenerator->mergedName = "_rtti_gen";
-    rttiGenerator->type = ProjectType::RttiGenerator;
-    projects.push_back(rttiGenerator);
+    ProjectInfo* rttiGenerator = nullptr;
+    if (config.generator == GeneratorType::VisualStudio)
+    {
+        rttiGenerator = new ProjectInfo();
+        rttiGenerator->name = "_rtti_gen";
+        rttiGenerator->mergedName = "_rtti_gen";
+        rttiGenerator->type = ProjectType::RttiGenerator;
+        projects.push_back(rttiGenerator);
+    }
 
     // check and resolve dependencies
     for (auto* proj : projects)
@@ -1082,13 +1091,14 @@ bool ProjectStructure::resolveProjectDependencies()
 
         if (proj->type == ProjectType::LocalApplication || proj->type == ProjectType::LocalLibrary)
         {
-            proj->resolvedDependencies.push_back(rttiGenerator);
+            if (rttiGenerator)
+                proj->resolvedDependencies.push_back(rttiGenerator);
 
             for (const auto& dep : proj->dependencies)
             {
                 if (!resolveProjectDependency(dep, proj->resolvedDependencies))
                 {
-                    cout << "Project '" << proj->mergedName << "' has dependency '" << dep << "' that can't be properly resolved!\n";
+                    std::cout << "Project '" << proj->mergedName << "' has dependency '" << dep << "' that can't be properly resolved!\n";
                     proj->hasMissingDependencies = true;
                     hasValidDeps = false;
                 }
@@ -1099,32 +1109,32 @@ bool ProjectStructure::resolveProjectDependencies()
         }
         else if (!proj->dependencies.empty())
         {
-            cout << "Project '" << proj->mergedName << "' has dependencies even though it's not a source-code based project\n";
+            std::cout << "Project '" << proj->mergedName << "' has dependencies even though it's not a source-code based project\n";
         }
     }
 
     if (!hasValidDeps)
     {
-        cout << "There are project with invalid dependencies, can't continue solution generation\n";
+        std::cout << "There are project with invalid dependencies, can't continue solution generation\n";
         return false;
     }
 
     return true;
 }
 
-void ProjectStructure::scanProjects(ProjectGroupType groupType, filesystem::path rootScanPath)
+void ProjectStructure::scanProjects(ProjectGroupType groupType, fs::path rootScanPath)
 {
-    cout << "Scanning for projects at " << rootScanPath << "\n";
+    std::cout << "Scanning for projects at " << rootScanPath << "\n";
 
     auto* group = new ProjectGroup;
     group->type = groupType;
     group->rootPath = rootScanPath;
     groups.push_back(group);
 
-    vector<string_view> directoryNames;
+    std::vector<std::string_view> directoryNames;
     scanProjectsAtDir(group, directoryNames, rootScanPath);
 
-    cout << "Discovered " << group->projects.size() << " project(s)\n";
+    std::cout << "Discovered " << group->projects.size() << " project(s)\n";
 }
 
 bool ProjectStructure::setupProjects(const Configuration& config)
@@ -1161,7 +1171,7 @@ bool ProjectStructure::deployFiles(const Configuration& config)
     {
         for (const auto& deploy : proj->deployList)
         {
-            filesystem::path targetPath = config.deployPath / deploy.deployTarget;
+            fs::path targetPath = config.deployPath / deploy.deployTarget;
             valid &= CopyNewerFile(deploy.sourcePath, targetPath);
         }
     }

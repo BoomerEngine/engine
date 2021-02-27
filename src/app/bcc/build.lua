@@ -4,6 +4,7 @@
 ProjectType("app")
 ProjectOption("console")
 ProjectOption("main")
+ProjectOption("devonly")
 
 Dependency("core_*")
 Dependency("engine_*")

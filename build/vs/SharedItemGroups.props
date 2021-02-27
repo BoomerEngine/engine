@@ -16,12 +16,12 @@
     <!-- For non final configs the modules are compiled into DLLs and the apps into EXE files. For final config, the modules are compiled into static libs and the apps into EXE files -->
     <ConfigurationType Condition="'$(ModuleType)'=='App'">Application</ConfigurationType>
     <ConfigurationType Condition="'$(ModuleType)'=='ConsoleApp'">Application</ConfigurationType>
-    <ConfigurationType Condition="'$(SolutionType)'=='Dev' and '$(ModuleType)'=='Lib'">DynamicLibrary</ConfigurationType>
-    <ConfigurationType Condition="'$(SolutionType)'=='Player' and '$(ModuleType)'=='Lib'">StaticLibrary</ConfigurationType>
+    <ConfigurationType Condition="'$(ModuleType)'=='DynamicLibrary'">DynamicLibrary</ConfigurationType>
+    <ConfigurationType Condition="'$(ModuleType)'=='StaticLibrary'">StaticLibrary</ConfigurationType>
 
     <!-- The whole program optimization (LTCG) is enabled only for the final configuration -->
-    <WholeProgramOptimization Condition="'$(SolutionType)'=='Dev'">false</WholeProgramOptimization>
-	<WholeProgramOptimization Condition="'$(SolutionType)'=='Player'">true</WholeProgramOptimization>
+    <WholeProgramOptimization Condition="'$(Configuration)'=='Final'">true</WholeProgramOptimization>
+	<WholeProgramOptimization Condition="'$(Configuration)'!='Final'">false</WholeProgramOptimization>
 
     <!-- Debug CRT libraries are used only in the Debug configuration -->
     <UseDebugLibraries Condition="'$(Configuration)' == 'Debug'">true</UseDebugLibraries>
@@ -31,6 +31,7 @@
     <DebugInformationFormat Condition="'$(Configuration)' == 'Debug'">ProgramDatabase</DebugInformationFormat>
     <DebugInformationFormat Condition="'$(Configuration)' == 'Checked'">ProgramDatabase</DebugInformationFormat>
     <DebugInformationFormat Condition="'$(Configuration)' == 'Release'">ProgramDatabase</DebugInformationFormat>
+    <DebugInformationFormat Condition="'$(Configuration)' == 'Final'">ProgramDatabase</DebugInformationFormat>
 
     <!-- Link time code generation is enabled only for the Final build -->
     <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
@@ -39,8 +40,7 @@
     <LinkIncremental Condition="'$(Configuration)'=='Release'">true</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)'=='Checked'">true</LinkIncremental>
     <LinkIncremental Condition="'$(Configuration)'=='Debug'">true</LinkIncremental>
-    <!-- LinkIncremental Condition="'$(SolutionType)'=='Player'">false</LinkIncremental-->
-	<LinkIncremental Condition="'$(SolutionType)'=='Player'">true</LinkIncremental>
+	<LinkIncremental Condition="'$(Configuration)'=='Final'">false</LinkIncremental>
 
     <!-- Unicode is used in all configurations -->
     <CharacterSet>Unicode</CharacterSet>
@@ -79,11 +79,11 @@
     <SharedPreprocessorDefines Condition="'$(Platform)'=='Win32'">$(SharedPreprocessorDefines);_WIN32</SharedPreprocessorDefines>
 
     <!-- Distingush between DLLs and LIBs -->
-    <SharedPreprocessorDefines Condition="'$(ConfigurationType)'=='DynamicLibrary'">$(SharedPreprocessorDefines);BUILD_DLL</SharedPreprocessorDefines>
-    <SharedPreprocessorDefines Condition="'$(ConfigurationType)'!='DynamicLibrary'">$(SharedPreprocessorDefines);BUILD_LIB</SharedPreprocessorDefines>
+    <SharedPreprocessorDefines Condition="'$(ModuleType)'=='DynamicLibrary'">$(SharedPreprocessorDefines);BUILD_DLL</SharedPreprocessorDefines>
+    <SharedPreprocessorDefines Condition="'$(ModuleType)'!='DynamicLibrary'">$(SharedPreprocessorDefines);BUILD_LIB</SharedPreprocessorDefines>
 
     <!-- Monolith builds are for final platform only-->
-    <SharedPreprocessorDefines Condition="'$(SolutionType)'=='Player'">$(SharedPreprocessorDefines);BUILD_AS_LIBS;BUILD_FINAL</SharedPreprocessorDefines>
+    <SharedPreprocessorDefines Condition="'$(SolutionType)'=='StaticLibraries' or '$(ModuleType)'=='StaticLibrary'">$(SharedPreprocessorDefines);BUILD_AS_LIBS;</SharedPreprocessorDefines>
 
     <!-- Expose the name of the module (on disk) this project was included from to the code and application -->
     <SharedPreprocessorDefines Condition="'$(ProjectModuleName)'!=''">$(SharedPreprocessorDefines);MODULE_NAME=$(ProjectModuleName)</SharedPreprocessorDefines>

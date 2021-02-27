@@ -7,7 +7,6 @@
 
 #include "build.h"
 #include "static_init.inl"
-#include "reflection.inl"
 
 DECLARE_MODULE(PROJECT_NAME)
 {

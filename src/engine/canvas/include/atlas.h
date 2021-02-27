@@ -43,7 +43,7 @@ public:
 	//--
 
 private:
-	ImageAtlasIndex m_index;
+	ImageAtlasIndex m_index = 0;
 };
 
 //--

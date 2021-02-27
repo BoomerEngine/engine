@@ -547,6 +547,8 @@ static MouseButtonIndex DecodeButtonIndex(UINT uMsg)
     return 0;
 }
 
+#pragma optimize("",off)
+
 uint64_t ContextWinApi::windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool& processed)
 {
     switch (uMsg)
@@ -615,31 +617,31 @@ uint64_t ContextWinApi::windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
                 Vector3 delta;
                 delta.z = (short)HIWORD(wParam) / (float)WHEEL_DELTA;
 
-                POINT pos;
-                pos.x = (short)LOWORD(lParam);
-                pos.y = (short)HIWORD(lParam);
+                POINT screenPos;
+                screenPos.x = (short)LOWORD(lParam);
+                screenPos.y = (short)HIWORD(lParam);
 
-                POINT screenPoint = pos;
-                ::ClientToScreen(hWnd, &screenPoint);
+                POINT windowPos = screenPos;
+                ::ScreenToClient(hWnd, &windowPos);
 
                 if (m_activeCaptureMode)
                 {
                     if (m_activeCaptureMode == 2)
                     {
-                        screenPoint = m_activeCaptureInitialMousePos;
-                        pos = screenPoint;
-                        ::ScreenToClient(m_hWnd, &pos); // always report the original capture position
+                        screenPos = m_activeCaptureInitialMousePos;
+                        windowPos = screenPos;
+                        ::ScreenToClient(m_hWnd, &windowPos); // always report the original capture position
                     }
                     else if (m_activeCaptureMode == 1)
                     {
-                        m_activeCaptureLastMousePos = screenPoint;
+                        m_activeCaptureLastMousePos = screenPos;
                     }
 
-                    m_mouse.mouseMovement(Point(pos.x, pos.y), Point(screenPoint.x, screenPoint.y), delta, true);
+                    m_mouse.mouseMovement(Point(windowPos.x, windowPos.y), Point(screenPos.x, screenPos.y), delta, true);
                 }
                 else
                 {
-                    m_mouse.mouseMovement(Point(pos.x, pos.y), Point(screenPoint.x, screenPoint.y), delta, false);
+                    m_mouse.mouseMovement(Point(windowPos.x, windowPos.y), Point(screenPos.x, screenPos.y), delta, false);
                 }
 
                 processed = true;

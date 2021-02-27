@@ -335,14 +335,14 @@ namespace prv
 
 //--
 
-Parser::Parser(string_view txt)
+Parser::Parser(std::string_view txt)
 {
     m_start = txt.data();
     m_end = m_start + txt.length();
     m_cur = m_start;
 }
 
-bool Parser::testKeyword(string_view keyword) const
+bool Parser::testKeyword(std::string_view keyword) const
 {
     auto cur = m_cur;
     while (cur < m_end && *cur <= ' ')
@@ -382,7 +382,7 @@ bool Parser::parseWhitespaces()
     return m_cur < m_end;
 }
 
-bool Parser::parseTillTheEndOfTheLine(string_view* outIdent /*= nullptr*/)
+bool Parser::parseTillTheEndOfTheLine(std::string_view* outIdent /*= nullptr*/)
 {
     const char* firstNonEmptyChar = nullptr;
     const char* lastNonEmptyChar = nullptr;
@@ -404,15 +404,15 @@ bool Parser::parseTillTheEndOfTheLine(string_view* outIdent /*= nullptr*/)
     if (outIdent)
     {
         if (lastNonEmptyChar != nullptr && m_cur < m_end)
-            *outIdent = string_view(firstNonEmptyChar, (lastNonEmptyChar + 1) - firstNonEmptyChar);
+            *outIdent = std::string_view(firstNonEmptyChar, (lastNonEmptyChar + 1) - firstNonEmptyChar);
         else
-            *outIdent = string_view();
+            *outIdent = std::string_view();
     }
 
     return m_cur < m_end;
 }
 
-bool Parser::parseIdentifier(string_view& outIdent)
+bool Parser::parseIdentifier(std::string_view& outIdent)
 {
     if (!parseWhitespaces())
         return false;
@@ -425,11 +425,11 @@ bool Parser::parseIdentifier(string_view& outIdent)
         m_cur += 1;
 
     assert(m_cur > identStart);
-    outIdent = string_view(identStart, m_cur - identStart);
+    outIdent = std::string_view(identStart, m_cur - identStart);
     return true;
 }
 
-bool Parser::parseString(string_view& outValue, const char* additionalDelims/* = ""*/)
+bool Parser::parseString(std::string_view& outValue, const char* additionalDelims/* = ""*/)
 {
     if (!parseWhitespaces())
         return false;
@@ -452,7 +452,7 @@ bool Parser::parseString(string_view& outValue, const char* additionalDelims/* =
             return false;
         }
 
-        outValue = string_view(stringStart, m_cur - stringStart);
+        outValue = std::string_view(stringStart, m_cur - stringStart);
         m_cur += 1;
 
         return true;
@@ -462,12 +462,12 @@ bool Parser::parseString(string_view& outValue, const char* additionalDelims/* =
         while (m_cur < m_end && prv::IsStringChar(*m_cur, additionalDelims))
             m_cur += 1;
 
-        outValue = string_view(startPos, m_cur - startPos);
+        outValue = std::string_view(startPos, m_cur - startPos);
         return true;
     }
 }
 
-bool Parser::parseLine(string_view& outValue, const char* additionalDelims/* = ""*/, bool eatLeadingWhitespaces/*= true*/)
+bool Parser::parseLine(std::string_view& outValue, const char* additionalDelims/* = ""*/, bool eatLeadingWhitespaces/*= true*/)
 {
     while (m_cur < m_end)
     {
@@ -491,7 +491,7 @@ bool Parser::parseLine(string_view& outValue, const char* additionalDelims/* = "
     {
         if (*m_cur == '\n')
         {
-            outValue = string_view(startPos, m_cur - startPos);
+            outValue = std::string_view(startPos, m_cur - startPos);
             m_line += 1;
             m_cur++;
             return true;
@@ -499,7 +499,7 @@ bool Parser::parseLine(string_view& outValue, const char* additionalDelims/* = "
 
         if (strchr(additionalDelims, *m_cur))
         {
-            outValue = string_view(startPos, m_cur - startPos);
+            outValue = std::string_view(startPos, m_cur - startPos);
             m_cur++;
             return true;
         }
@@ -510,11 +510,11 @@ bool Parser::parseLine(string_view& outValue, const char* additionalDelims/* = "
     if (startPos == m_cur)
         return false;
 
-    outValue = string_view(startPos, m_cur - startPos);
+    outValue = std::string_view(startPos, m_cur - startPos);
     return true;
 }
 
-bool Parser::parseKeyword(string_view keyword)
+bool Parser::parseKeyword(std::string_view keyword)
 {
     if (!parseWhitespaces())
         return false;
@@ -785,27 +785,27 @@ bool Parser::parseUint64(uint64_t& outValue)
 
 //--
 
-const string& Commandline::get(string_view name) const
+const std::string& Commandline::get(std::string_view name) const
 {
     for (const auto& entry : args)
         if (entry.key == name)
             return entry.value;
 
-    static string theEmptyString;
+    static std::string theEmptyString;
     return theEmptyString;
 }
 
-const vector<string>& Commandline::getAll(string_view name) const
+const std::vector<std::string>& Commandline::getAll(std::string_view name) const
 {
     for (const auto& entry : args)
         if (entry.key == name)
             return entry.values;
 
-    static vector<string> theEmptyStringArray;
+    static std::vector<std::string> theEmptyStringArray;
     return theEmptyStringArray;
 }
 
-bool Commandline::has(string_view name) const
+bool Commandline::has(std::string_view name) const
 {
     for (const auto& entry : args)
         if (entry.key == name)
@@ -814,7 +814,7 @@ bool Commandline::has(string_view name) const
     return false;
 }
 
-bool Commandline::parse(string_view text)
+bool Commandline::parse(std::string_view text)
 {
     Parser parser(text);
 
@@ -828,14 +828,14 @@ bool Commandline::parse(string_view text)
         }
 
         // get the command
-        string_view commandName;
+        std::string_view commandName;
         if (!parser.parseIdentifier(commandName))
         {
-            cout << "Commandline parsing error: expecting command name. Application may not work as expected.\n";
+            std::cout << "Commandline parsing error: expecting command name. Application may not work as expected.\n";
             return false;
         }
 
-        commands.push_back(string(commandName));
+        commands.push_back(std::string(commandName));
     }
 
     while (parser.parseWhitespaces())
@@ -844,20 +844,20 @@ bool Commandline::parse(string_view text)
             break;
         parseInitialChar = true;
 
-        string_view paramName;
+        std::string_view paramName;
         if (!parser.parseIdentifier(paramName))
         {
-            cout << "Commandline parsing error: expecting param name after '-'. Application may not work as expected.\n";
+            std::cout << "Commandline parsing error: expecting param name after '-'. Application may not work as expected.\n";
             return false;
         }
 
-        string_view paramValue;
+        std::string_view paramValue;
         if (parser.parseKeyword("="))
         {
             // Read value
             if (!parser.parseString(paramValue))
             {
-                cout << "Commandline parsing error: expecting param value after '=' for param '" << paramName << "'. Application may not work as expected.\n";
+                std::cout << "Commandline parsing error: expecting param value after '=' for param '" << paramName << "'. Application may not work as expected.\n";
                 return false;
             }
         }
@@ -869,7 +869,7 @@ bool Commandline::parse(string_view text)
             {
                 if (!paramValue.empty())
                 {
-                    param.values.push_back(string(paramValue));
+                    param.values.push_back(std::string(paramValue));
                     param.value = paramValue;
                 }
 
@@ -885,7 +885,7 @@ bool Commandline::parse(string_view text)
 
             if (!paramValue.empty())
             {
-                arg.values.push_back(string(paramValue));
+                arg.values.push_back(std::string(paramValue));
                 arg.value = paramValue;
             }
 
@@ -898,7 +898,7 @@ bool Commandline::parse(string_view text)
 
 //--
 
-bool LoadFileToString(const filesystem::path& path, string& outText)
+bool LoadFileToString(const fs::path& path, std::string& outText)
 {
     try
     {
@@ -908,37 +908,37 @@ bool LoadFileToString(const filesystem::path& path, string& outText)
         outText = buffer.str();
         return true;
     }
-    catch (exception& e)
+    catch (std::exception& e)
     {
-        cout << "Error reading file " << path << ": " << e.what() << "\n";
+        std::cout << "Error reading file " << path << ": " << e.what() << "\n";
         return false;
     }
 }
 
-bool SaveFileFromString(const filesystem::path& path, string_view txt, bool force /*= false*/, uint32_t* outCounter, filesystem::file_time_type customTime /*= filesystem::file_time_type()*/)
+bool SaveFileFromString(const fs::path& path, std::string_view txt, bool force /*= false*/, uint32_t* outCounter, fs::file_time_type customTime /*= fs::file_time_type()*/)
 {
-    string newContent(txt);
+    std::string newContent(txt);
 
     if (!force)
     {
-        string currentContent;
+        std::string currentContent;
         if (LoadFileToString(path, currentContent))
         {
             if (currentContent == txt)
             {
-                if (customTime != filesystem::file_time_type())
-                    filesystem::last_write_time(path, customTime);
+                if (customTime != fs::file_time_type())
+                    fs::last_write_time(path, customTime);
 
                 return true;
             }
         }
 
-        cout << "File " << path << " has changed and has to be saved\n";
+        std::cout << "File " << path << " has changed and has to be saved\n";
     }
 
     {
-        error_code ec;
-        filesystem::create_directories(path.parent_path(), ec);
+        std::error_code ec;
+        fs::create_directories(path.parent_path(), ec);
     }
 
     try
@@ -946,9 +946,9 @@ bool SaveFileFromString(const filesystem::path& path, string_view txt, bool forc
         std::ofstream file(path);
         file << txt;
     }
-    catch (exception& e)
+    catch (std::exception& e)
     {
-        cout << "Error writing file " << path << ": " << e.what() << "\n";
+        std::cout << "Error writing file " << path << ": " << e.what() << "\n";
         return false;
     }
 
@@ -960,16 +960,16 @@ bool SaveFileFromString(const filesystem::path& path, string_view txt, bool forc
 
 //--
 
-void SplitString(string_view txt, string_view delim, vector<string_view>& outParts)
+void SplitString(std::string_view txt, std::string_view delim, std::vector<std::string_view>& outParts)
 {
     size_t prev = 0, pos = 0;
     do
     {
         pos = txt.find(delim, prev);
-        if (pos == string::npos) 
+        if (pos == std::string::npos) 
             pos = txt.length();
 
-        string_view token = txt.substr(prev, pos - prev);
+        std::string_view token = txt.substr(prev, pos - prev);
         if (!token.empty()) 
             outParts.push_back(token);
 
@@ -978,21 +978,21 @@ void SplitString(string_view txt, string_view delim, vector<string_view>& outPar
     while (pos < txt.length() && prev < txt.length());
 }
 
-bool BeginsWith(string_view txt, string_view end)
+bool BeginsWith(std::string_view txt, std::string_view end)
 {
     if (txt.length() >= end.length())
         return (0 == txt.compare(0, end.length(), end));
     return false;
 }
 
-bool EndsWith(string_view txt, string_view end)
+bool EndsWith(std::string_view txt, std::string_view end)
 {
     if (txt.length() >= end.length())
         return (0 == txt.compare(txt.length() - end.length(), end.length(), end));
     return false;
 }
 
-string_view PartBefore(string_view txt, string_view end)
+std::string_view PartBefore(std::string_view txt, std::string_view end)
 {
     auto pos = txt.find(end);
     if (pos != -1)
@@ -1000,7 +1000,7 @@ string_view PartBefore(string_view txt, string_view end)
     return "";
 }
 
-string_view PartAfter(string_view txt, string_view end)
+std::string_view PartAfter(std::string_view txt, std::string_view end)
 {
     auto pos = txt.find(end);
     if (pos != -1)
@@ -1008,32 +1008,32 @@ string_view PartAfter(string_view txt, string_view end)
     return "";
 }
 
-string MakeGenericPath(string_view txt)
+std::string MakeGenericPath(std::string_view txt)
 {
-    auto ret = string(txt);
+    auto ret = std::string(txt);
     std::replace(ret.begin(), ret.end(), '\\', '/');
     return ret;
 }
 
-string MakeGenericPathEx(const filesystem::path& path)
+std::string MakeGenericPathEx(const fs::path& path)
 {
     return MakeGenericPath(path.u8string());
 }
 
-string ToUpper(string_view txt)
+std::string ToUpper(std::string_view txt)
 {
-    string ret(txt);
+    std::string ret(txt);
     transform(ret.begin(), ret.end(), ret.begin(), ::toupper);    
     return ret;
 }
 
-void writeln(stringstream& s, string_view txt)
+void writeln(std::stringstream& s, std::string_view txt)
 {
     s << txt;
     s << "\n";
 }
 
-void writelnf(stringstream& s, const char* txt, ...)
+void writelnf(std::stringstream& s, const char* txt, ...)
 {
     char buffer[8192];
     va_list args;
@@ -1045,7 +1045,7 @@ void writelnf(stringstream& s, const char* txt, ...)
     s << "\n";
 }
 
-string GuidFromText(string_view txt)
+std::string GuidFromText(std::string_view txt)
 {
     union {        
         struct {
@@ -1058,10 +1058,10 @@ string GuidFromText(string_view txt)
         uint32_t data[4];
     } guid;
 
-    guid.data[0] = (uint32_t)std::hash<string_view>()(txt);
-    guid.data[1] = (uint32_t)std::hash<string>()("part1_" + string(txt));
-    guid.data[2] = (uint32_t)std::hash<string>()("part2_" + string(txt));
-    guid.data[3] = (uint32_t)std::hash<string>()("part3_" + string(txt));
+    guid.data[0] = (uint32_t)std::hash<std::string_view>()(txt);
+    guid.data[1] = (uint32_t)std::hash<std::string>()("part1_" + std::string(txt));
+    guid.data[2] = (uint32_t)std::hash<std::string>()("part2_" + std::string(txt));
+    guid.data[3] = (uint32_t)std::hash<std::string>()("part3_" + std::string(txt));
 
     // 2150E333-8FDC-42A3-9474-1A3956D46DE8
 
@@ -1076,8 +1076,53 @@ string GuidFromText(string_view txt)
 
 //--
 
+#define MATCH(_txt, _val) if (txt == _txt) { outType = _val; return true; }
 
-string_view NameConfigurationType(ConfigurationType type)
+template< typename T >
+bool ParseEnumValue(std::string_view txt, T& outType)
+{
+    for (int i = 0; i < (int)(T::MAX); ++i)
+    {
+        const auto valueName = NameEnumOption((T)i);
+        if (!valueName.empty() && valueName == txt)
+        {
+            outType = (T)i;
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool ParseConfigurationType(std::string_view txt, ConfigurationType& outType)
+{
+    return ParseEnumValue(txt, outType);
+}
+
+bool ParseBuildType(std::string_view txt, BuildType& outType)
+{
+    return ParseEnumValue(txt, outType);
+}
+
+bool ParseLibraryType(std::string_view txt, LibraryType& outType)
+{
+    return ParseEnumValue(txt, outType);
+}
+
+bool ParsePlatformType(std::string_view txt, PlatformType& outType)
+{
+    return ParseEnumValue(txt, outType);
+}
+
+bool ParseGeneratorType(std::string_view txt, GeneratorType& outType)
+{
+    return ParseEnumValue(txt, outType);
+}
+
+
+//--
+
+std::string_view NameEnumOption(ConfigurationType type)
 {
     switch (type)
     {
@@ -1089,17 +1134,27 @@ string_view NameConfigurationType(ConfigurationType type)
     return "";
 }
 
-string_view NameBuildType(BuildType type)
+std::string_view NameEnumOption(BuildType type)
 {
     switch (type)
     {
     case BuildType::Development: return "dev";
-    case BuildType::Standalone: return "standalone";
+    case BuildType::Shipment: return "ship";
     }
     return "";
 }
 
-string_view NamePlatformType(PlatformType type)
+std::string_view NameEnumOption(LibraryType type)
+{
+    switch (type)
+    {
+    case LibraryType::Shared: return "shared";
+    case LibraryType::Static: return "static";
+    }
+    return "";
+}
+
+std::string_view NameEnumOption(PlatformType type)
 {
     switch (type)
     {
@@ -1110,7 +1165,7 @@ string_view NamePlatformType(PlatformType type)
     return "";
 }
 
-string_view NameGeneratorType(GeneratorType type)
+std::string_view NameEnumOption(GeneratorType type)
 {
     switch (type)
     {
@@ -1122,51 +1177,51 @@ string_view NameGeneratorType(GeneratorType type)
 
 //--
 
-bool IsFileSourceNewer(const filesystem::path& source, const filesystem::path& target)
+bool IsFileSourceNewer(const fs::path& source, const fs::path& target)
 {
     try
     {
-        if (!filesystem::is_regular_file(source))
+        if (!fs::is_regular_file(source))
             return false;
 
-        if (!filesystem::is_regular_file(target))
+        if (!fs::is_regular_file(target))
             return true;
 
-        auto sourceTimestamp = filesystem::last_write_time(source);
-        auto targetTimestamp = filesystem::last_write_time(target);
+        auto sourceTimestamp = fs::last_write_time(source);
+        auto targetTimestamp = fs::last_write_time(target);
         return sourceTimestamp > targetTimestamp;
     }
     catch (std::exception & e)
     {
-        cout << "Failed to check file write time: " << e.what() << "\n";
+        std::cout << "Failed to check file write time: " << e.what() << "\n";
         return false;
     }    
 }
 
-bool CopyNewerFile(const filesystem::path& source, const filesystem::path& target)
+bool CopyNewerFile(const fs::path& source, const fs::path& target)
 {
     try
     {
-        if (!filesystem::is_regular_file(source))
+        if (!fs::is_regular_file(source))
             return false;
 
-        if (filesystem::is_regular_file(target))
+        if (fs::is_regular_file(target))
         {
-            auto sourceTimestamp = filesystem::last_write_time(source);
-            auto targetTimestamp = filesystem::last_write_time(target);
+            auto sourceTimestamp = fs::last_write_time(source);
+            auto targetTimestamp = fs::last_write_time(target);
             if (targetTimestamp >= sourceTimestamp)
                 return true;
         }
 
-        cout << "Copying " << target << "\n";
-        filesystem::remove(target);
-        filesystem::copy(source, target);
+        std::cout << "Copying " << target << "\n";
+        fs::remove(target);
+        fs::copy(source, target);
 
         return true;
     }
     catch (std::exception & e)
     {
-        cout << "Failed to copy file: " << e.what() << "\n";
+        std::cout << "Failed to copy file: " << e.what() << "\n";
         return false;
     }
 }

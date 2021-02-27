@@ -115,7 +115,7 @@ public:
         for (auto index : m_mips.indexRange())
         {
             const auto& mip = m_mips[index];
-
+            
             auto& atom = outAtoms.emplaceBack();
             atom.buffer = m_data;
             atom.mip = index % m_numMipsPerSlice;
@@ -138,7 +138,8 @@ private:
 
 void StaticTexture::createDeviceResources()
 {
-    DEBUG_CHECK_EX(m_info.slices * m_info.mips == m_mips.size(), "Slice/Mip count mismatch");
+    DEBUG_CHECK_RETURN_EX(m_info.slices * m_info.mips == m_mips.size(), "Slice/Mip count mismatch");
+    DEBUG_CHECK_RETURN_EX(m_persistentPayload.data(), "No persistent data");
 
     if (auto service = GetService<gpu::DeviceService>())
     {

@@ -679,16 +679,16 @@ void GeometryBuilder::arc(float cx, float cy, float r, float a0, float a1, Windi
     if (dir == Winding::CW)
     {
         if (fabs(da) >= TWOPI)
-            da = TWOPI;
+            da = (float)TWOPI;
         else
-            while (da < 0.0f) da += TWOPI;
+            while (da < 0.0f) da += (float)TWOPI;
     }
     else
     {
         if (fabs(da) >= TWOPI)
-            da = -TWOPI;
+            da = -(float)TWOPI;
         else
-            while (da > 0.0f) da -= TWOPI;
+            while (da > 0.0f) da -= (float)TWOPI;
     }
 
 
@@ -1135,7 +1135,7 @@ namespace helper
 
             auto a0 = atan2(-dl0.y, -dl0.x);
             auto a1 = atan2(-dl1.y, -dl1.x);
-            if (a1 > a0) a1 -= TWOPI;
+            if (a1 > a0) a1 -= (float)TWOPI;
 
             vertexWriter.add(l0.x, l0.y, lu, 1.0f, flags);
             vertexWriter.add(p1.pos.x - dl0.x *rw, p1.pos.y - dl0.y * rw, ru, 1.0f, flags);
@@ -1162,7 +1162,7 @@ namespace helper
 
             auto a0 = atan2(dl0.y, dl0.x);
             auto a1 = atan2(dl1.y, dl1.x);
-            if (a1 < a0) a1 += TWOPI;
+            if (a1 < a0) a1 += (float)TWOPI;
 
             vertexWriter.add(p1.pos.x + dl0.x*rw, p1.pos.y + dl0.y * rw, lu, 1.0f, flags);
             vertexWriter.add(r0.x, r0.y, ru, 1.0f, flags);
@@ -1366,7 +1366,7 @@ void GeometryBuilder::stroke()
     helper::OutputVertexWriter vertexWriter(m_outVertices, numVertices);
 
     // compute required curve divisions
-    auto numCapVerts = helper::CalcCurveDivs(halfStrokeWidth, PI, m_tessTollerance);
+    auto numCapVerts = helper::CalcCurveDivs(halfStrokeWidth, (float)PI, m_tessTollerance);
 
     // convert the generated path data into renderable path data
     for (auto& path : m_pathCache->paths)

@@ -56,6 +56,8 @@ IBaseWindowedSwapchain::~IBaseWindowedSwapchain()
 {
 	if (m_windowManager)
 	{
+		TRACE_WARNING("Swapchain deleted!");
+
 		m_windowManager->closeWindow(m_windowHandle);
 		m_windowManager = nullptr;
 		m_windowHandle = 0;

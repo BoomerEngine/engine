@@ -27,35 +27,42 @@
 
 #endif
 
-#define DECLARE_MODULE_WITH_REFLECTION_IMPL(_projectName)                                                       \
-    extern void UserInitModule_##_projectName(boomer::modules::ModuleInitialization& init);                       \
-    extern void* GCurrentModuleHandle;                                                                          \
-    void InitModule_##_projectName()                                                                            \
-    {                                                                                                           \
-        TRACE_INFO("Loading module {} (with reflection)", #_projectName );                                                   \
+#ifdef BUILD_WITH_REFLECTION
+
+#define DECLARE_MODULE_IMPL(_projectName) \
+    extern void UserInitModule_##_projectName(boomer::modules::ModuleInitialization& init); \
+    extern void InitializeReflection_##_projectName(); \
+    extern void InitializeTests_##_projectName(); \
+    extern void* GCurrentModuleHandle; \
+    void InitModule_##_projectName() \
+    { \
+        TRACE_INFO("Loading module {} (with reflection)", #_projectName ); \
         boomer::modules::ModuleInitialization init([]() { InitializeReflection_##_projectName(); InitializeTests_##_projectName(); }); \
-        boomer::modules::RegisterModule(#_projectName, __DATE__, __TIME__, _MSC_FULL_VER, GCurrentModuleHandle);  \
-        UserInitModule_##_projectName(init);                                                                    \
-    }                                                                                                           \
-    MODULE_DLL_INIT(_projectName);                                                                              \
+        boomer::modules::RegisterModule(#_projectName, __DATE__, __TIME__, _MSC_FULL_VER, GCurrentModuleHandle); \
+        UserInitModule_##_projectName(init); \
+    } \
+    MODULE_DLL_INIT(_projectName); \
     void UserInitModule_##_projectName(boomer::modules::ModuleInitialization& init)
 
-#define DECLARE_MODULE_IMPL(_projectName)                                                                       \
-    extern void UserInitModule_##_projectName(boomer::modules::ModuleInitialization& init);                       \
-    extern void* GCurrentModuleHandle;                                                                          \
-    void InitModule_##_projectName()                                                                            \
-    {                                                                                                           \
-        TRACE_INFO("Loading module {}", #_projectName );                                                 \
-        boomer::modules::ModuleInitialization init([]() { });                                                     \
-        boomer::modules::RegisterModule(#_projectName, __DATE__, __TIME__, _MSC_FULL_VER, GCurrentModuleHandle);  \
-        UserInitModule_##_projectName(init);                                                                    \
-    }                                                                                                           \
-    MODULE_DLL_INIT(_projectName);                                                                              \
+#else
+
+#define DECLARE_MODULE_IMPL(_projectName) \
+    extern void UserInitModule_##_projectName(boomer::modules::ModuleInitialization& init); \
+    extern void* GCurrentModuleHandle; \
+    void InitModule_##_projectName() \
+    { \
+        TRACE_INFO("Loading module {}", #_projectName ); \
+        boomer::modules::ModuleInitialization init([]() { }); \
+        boomer::modules::RegisterModule(#_projectName, __DATE__, __TIME__, _MSC_FULL_VER, GCurrentModuleHandle); \
+        UserInitModule_##_projectName(init); \
+    } \
+    MODULE_DLL_INIT(_projectName); \
     void UserInitModule_##_projectName(boomer::modules::ModuleInitialization& init)
 
+#endif
 
-#define DECLARE_MODULE(_projectName)                            \
-        DECLARE_MODULE_IMPL(_projectName)
+#define DECLARE_MODULE(_projectName) \
+    DECLARE_MODULE_IMPL(_projectName)
 
 BEGIN_BOOMER_NAMESPACE_EX(modules)
 

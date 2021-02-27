@@ -255,3 +255,5 @@
 
 #define BEGIN_BOOMER_NAMESPACE_EX(name) namespace boomer { namespace name {
 #define END_BOOMER_NAMESPACE_EX(name) } }
+
+#define DECLARE_TEST_FILE(x) void InitTests_##x() {};

@@ -182,7 +182,7 @@ void ResourceEditor::createActions()
         actions().bindShortcut("Editor.Copy"_id, "Ctrl+C");
         actions().bindShortcut("Editor.Cut"_id, "Ctrl+X");
         actions().bindShortcut("Editor.Paste"_id, "Ctrl+V");
-        actions().bindShortcut("Editor.Delete"_id, "Del");
+        actions().bindShortcut("Editor.Delete"_id, "Delete");
         actions().bindShortcut("Editor.Duplicate"_id, "Ctrl+D");
     }
 }

@@ -84,10 +84,14 @@ Container#FakePreviewPanel
 
 FileThumbnailBorder
 {
-	max-height: 68em;
-	max-width: 68em;
-	min-height: 68em;
-	min-width: 68em;
+	//max-height: 68em;
+	//max-width: 68em;
+	//min-height: 68em;
+	//min-width: 68em;
+	max-height: 84em;
+	max-width: 84em;
+	min-height: 84em;
+	min-width: 84em;
     margin: 5em 5em 5em 5em;
 	padding: 5em 5em 5em 5em;
     shadow: box(100%, 100%, 4em, 5em, #50505000, #50505080);

@@ -31,7 +31,8 @@ BEGIN_BOOMER_NAMESPACE_EX(canvas)
 
 IAtlas::IAtlas()
 {
-	GetService<CanvasService>()->registerAtlas(this, m_index);
+	if (!IsDefaultObjectCreation())
+		GetService<CanvasService>()->registerAtlas(this, m_index);
 }
 
 IAtlas::~IAtlas()

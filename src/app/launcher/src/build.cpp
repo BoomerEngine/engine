@@ -5,8 +5,6 @@
 ***/
 
 #include "build.h"
-#include "reflection.inl"
-#include "static_init.inl"
 
 #include "launcherApplication.h"
 

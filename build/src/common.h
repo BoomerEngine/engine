@@ -26,10 +26,11 @@ enum class ToolType : uint8_t {
 };
 
 enum class PlatformType : uint8_t {
-    Any,
     Windows,
     UWP,
     Linux,
+
+    MAX,
 };
 
 enum class ConfigurationType : uint8_t {
@@ -37,18 +38,31 @@ enum class ConfigurationType : uint8_t {
     Checked,
     Release,
     Final, // release + even more code removed
+
+    MAX,
 };
 
 enum class BuildType : uint8_t {
-    Development, // dlls + devonly projects, does not work with final    
-    Standalone, // standalone executables (all statically linked)
+    Development, // includes development projects - editor, asset import, etc
+    Shipment, // only final shipable executable (just game)
+
+    MAX,
+};
+
+enum class LibraryType : uint8_t {
+    Shared, // dlls
+    Static, // static libs
+
+    MAX,
 };
 
 enum class GeneratorType : uint8_t {
     VisualStudio,
     CMake,
+
+    MAX,
 };
 
-using namespace std;
+namespace fs = std::filesystem;
 
 
