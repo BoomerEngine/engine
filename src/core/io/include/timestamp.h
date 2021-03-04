@@ -10,7 +10,7 @@
 
 #include "core/containers/include/stringBuf.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(io)
+BEGIN_BOOMER_NAMESPACE()
 
 /// TimeStamp for file
 class CORE_IO_API TimeStamp
@@ -95,4 +95,4 @@ private:
     uint64_t  m_timecode;
 };
 
-END_BOOMER_NAMESPACE_EX(io)
+END_BOOMER_NAMESPACE()

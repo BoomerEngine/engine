@@ -33,7 +33,7 @@ namespace text
 
     //--
 
-    ParameterFile::ParameterFile(mem::LinearAllocator& mem)
+    ParameterFile::ParameterFile(LinearAllocator& mem)
         : m_mem(mem)
         , m_nodes(nullptr)
     {}

@@ -14,7 +14,6 @@
 #include "core/system/include/thread.h"
 #include "core/system/include/semaphoreCounter.h"
 #include "core/fibers/include/fiberSystem.h"
-#include "core/fibers/include/fiberSyncPoint.h"
 
 #include "gpu/device/include/output.h"
 #include "gpu/device/include/device.h"
@@ -144,8 +143,8 @@ protected:
 
 	//--
 
-	fibers::SyncPoint m_cleanupSync;
-	fibers::WaitCounter m_frameSync;
+	FiberSemaphore m_cleanupSync;
+	FiberSemaphore m_frameSync;
 
 	//--
 

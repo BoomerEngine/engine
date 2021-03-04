@@ -153,7 +153,7 @@ public:
         auto context = m_context.lock();
         if (!m_context || context) // context object we want to call the function on must be valid
         {
-            if (m_strictOrdering || !Fibers::GetInstance().isMainFiber())
+            if (m_strictOrdering || !IsMainFiber())
             {
                 rtti::DataHolder holder(dataType, data);
                 auto sourceRef = RefPtr<IObject>(AddRef(source));

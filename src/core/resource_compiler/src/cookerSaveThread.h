@@ -33,7 +33,7 @@ public:
 private:
     struct SaveJob : public NoCopy
     {
-        RTTI_DECLARE_POOL(POOL_COOKING)
+        RTTI_DECLARE_POOL(POOL_IO)
 
     public:
         ResourcePtr unsavedResource;

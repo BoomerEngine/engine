@@ -415,7 +415,7 @@ void BuildChunk::pack(const MeshVertexQuantizationHelper& quantization, IProgres
     // pack data
     {
         auto jobCount = m_sourceChunks.size() * 2;
-        auto jobCounter = Fibers::GetInstance().createCounter("ChunkPackerWait", jobCount);
+        auto jobCounter = CreateFence("ChunkPackerWait", jobCount);
         for (const auto* sourceInfo : m_sourceChunks)
         {
             auto* vertexWritePtr = OffsetPtr(tempVertices.data(), sourceInfo->firstVertexIndex * vertexSize);
@@ -433,25 +433,25 @@ void BuildChunk::pack(const MeshVertexQuantizationHelper& quantization, IProgres
 
             if (progress.checkCancelation())
             {
-                Fibers::GetInstance().signalCounter(jobCounter, jobCount); // signal unsignalled amount
+                SignalFence(jobCounter, jobCount); // signal unsignalled amount
                 break;
             }
 
             RunChildFiber("PackVertexData") << [jobCounter, &quantization, sourceStreams, vertexWritePtr, this, sourceInfo](FIBER_FUNC)
             {
                 PackVertexData(quantization, sourceStreams.typedData(), sourceStreams.size(), vertexWritePtr, m_format, sourceInfo->numVertices);
-                Fibers::GetInstance().signalCounter(jobCounter);
+                SignalFence(jobCounter);
             };
 
             RunChildFiber("PackIndexData") << [jobCounter, sourceInfo, indexWritePtr](FIBER_FUNC)
             {
                 PackIndexData<uint32_t>((const uint32_t*)sourceInfo->indexData.data(), (uint32_t*)indexWritePtr, sourceInfo->numIndices, sourceInfo->firstVertexIndex);
-                Fibers::GetInstance().signalCounter(jobCounter);
+                SignalFence(jobCounter);
             };
 
             jobCount -= 2;
         }
-        Fibers::GetInstance().waitForCounterAndRelease(jobCounter);
+        WaitForFence(jobCounter);
     }
 
     // conditional exit

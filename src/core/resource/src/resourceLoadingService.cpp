@@ -126,7 +126,7 @@ void LoadingService::loadResourceAsync(const ResourcePath& key, const std::funct
                 // wait until the job finishes
                 RunChildFiber("WaitForAsyncResourceLoad") << [validLoadingJob, funcLoaded](FIBER_FUNC)
                 {
-                    Fibers::GetInstance().waitForCounterAndRelease(validLoadingJob->m_signal);
+                    WaitForFence(validLoadingJob->m_signal);
                     funcLoaded(validLoadingJob->m_loadedResource);
                 };
 
@@ -137,7 +137,7 @@ void LoadingService::loadResourceAsync(const ResourcePath& key, const std::funct
 
     // start new async loading job
     auto newAsyncLoadingJob = RefNew<AsyncLoadingJob>();
-    newAsyncLoadingJob->m_signal = Fibers::GetInstance().createCounter("AsyncResourceLoadSignal");
+    newAsyncLoadingJob->m_signal = CreateFence("AsyncResourceLoadSignal");
     m_asyncLoadingJobsMap[key] = newAsyncLoadingJob;
 
     // notify resource was queued
@@ -150,7 +150,7 @@ void LoadingService::loadResourceAsync(const ResourcePath& key, const std::funct
         funcLoaded(loadedResource);
 
         newAsyncLoadingJob->m_loadedResource = loadedResource;
-        Fibers::GetInstance().signalCounter(newAsyncLoadingJob->m_signal);
+        SignalFence(newAsyncLoadingJob->m_signal);
     };
 }
 

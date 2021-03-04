@@ -462,7 +462,7 @@ static void ConvertTokens(ParsingCodeContext& ctx, const CodeLibrary& lib, const
 //----------
 
 CodeNode* Analyzecode(
-    mem::LinearAllocator& mem,
+    LinearAllocator& mem,
     parser::IErrorReporter& errHandler,
     const Array<parser::Token*>& tokens,
     const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram)
@@ -519,7 +519,7 @@ CodeNode* Analyzecode(
 
 //----------
 
-Element* Analyzefile(mem::LinearAllocator& mem, parser::IErrorReporter& errHandler, parser::TokenList& tokens)
+Element* Analyzefile(LinearAllocator& mem, parser::IErrorReporter& errHandler, parser::TokenList& tokens)
 {
     // create context
     ParsingNode result;

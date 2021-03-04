@@ -11,7 +11,7 @@
 #include "rttiProperty.h"
 #include "streamOpcodes.h"
 #include "streamOpcodeBinarizer.h"
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(stream)
 
@@ -28,7 +28,7 @@ OpcodeMappedReferences::OpcodeMappedReferences()
 
 //--
 
-OpcodeFileWriter::OpcodeFileWriter(io::IWriteFileHandle* outputFile)
+OpcodeFileWriter::OpcodeFileWriter(IWriteFileHandle* outputFile)
     : m_outputFile(outputFile)
 {}
 

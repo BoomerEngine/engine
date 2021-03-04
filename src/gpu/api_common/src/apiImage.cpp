@@ -45,12 +45,12 @@ IBaseImage::IBaseImage(IBaseThread* owner, const ImageCreationInfo& setup, const
 		m_poolTag = POOL_API_STATIC_TEXTURES;
 
 	m_poolMemorySize = setup.calcMemoryUsage();
-	mem::PoolStats::GetInstance().notifyAllocation(m_poolTag, m_poolMemorySize);
+	PoolNotifyAllocation(m_poolTag, m_poolMemorySize);
 }
 
 IBaseImage::~IBaseImage()
 {
-	mem::PoolStats::GetInstance().notifyFree(m_poolTag, m_poolMemorySize);
+	PoolNotifyFree(m_poolTag, m_poolMemorySize);
 }
 
 //--

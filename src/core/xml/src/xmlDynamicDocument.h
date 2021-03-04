@@ -109,7 +109,7 @@ private:
         }
     };
 
-    mem::LinearAllocator m_pool;
+    LinearAllocator m_pool;
     HashMap<uint64_t, StringView> m_stringMap;
 
     StaticStructurePool<Node> m_nodes;

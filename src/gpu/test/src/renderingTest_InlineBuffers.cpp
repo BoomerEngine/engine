@@ -103,7 +103,7 @@ void RenderingTest_InlineBuffers::render(CommandWriter& cmd, float time, const R
     Array<uint16_t> tempIndices;
     GenerateTempGeometry(-0.9f, -0.9f, 1.8f, 1.8f, time, tempVertices, tempIndices);
 
-	//auto counter = Fibers::GetInstance().createCounter("BufferUpload", 2);
+	//auto counter = CreateFence("BufferUpload", 2);
 
     BufferObjectPtr vertexBuffer;
     {
@@ -125,7 +125,7 @@ void RenderingTest_InlineBuffers::render(CommandWriter& cmd, float time, const R
         indexBuffer = device()->createBuffer(data, source);
     }
 
-//			Fibers::GetInstance().waitForCounterAndRelease(counter);
+//			WaitForFence(counter);
 
     FrameBuffer fb;
     fb.color[0].view(backBufferView).clear(Vector4(0.0f, 0.0f, 0.2f, 1.0f));

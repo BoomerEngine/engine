@@ -9,14 +9,14 @@
 #pragma once
 
 #include "core/app/include/localService.h"
-#include "core/io/include/ioDirectoryWatcher.h"
+#include "core/io/include/directoryWatcher.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
 //---
 
 /// depot data service
-class CORE_RESOURCE_API DepotService : public app::ILocalService, public io::IDirectoryWatcherListener
+class CORE_RESOURCE_API DepotService : public app::ILocalService, public IDirectoryWatcherListener
 {
     RTTI_DECLARE_VIRTUAL_CLASS(DepotService, app::ILocalService);
 
@@ -34,7 +34,7 @@ public:
     //--
 
     /// get the file information
-    bool queryFileTimestamp(StringView depotPath, io::TimeStamp& outTimestamp) const;
+    bool queryFileTimestamp(StringView depotPath, TimeStamp& outTimestamp) const;
 
     /// if the file is loaded from a physical file query it's path
     /// NOTE: is present only for files physically on disk, not in archives or over the network
@@ -46,15 +46,15 @@ public:
 
     /// create a reader for the file's content
     /// NOTE: creating a reader may take some time
-    io::ReadFileHandlePtr createFileReader(StringView depotPath) const;
+    ReadFileHandlePtr createFileReader(StringView depotPath) const;
 
     /// create a writer for the file's content
     /// NOTE: fails if the file system was not writable
-    io::WriteFileHandlePtr createFileWriter(StringView depotPath) const;
+    WriteFileHandlePtr createFileWriter(StringView depotPath) const;
 
     /// create an ASYNC reader for the file's content
     /// NOTE: creating a reader may take some time
-    io::AsyncFileHandlePtr createFileAsyncReader(StringView depotPath) const;
+    AsyncFileHandlePtr createFileAsyncReader(StringView depotPath) const;
 
     //--
 
@@ -94,10 +94,10 @@ public:
     //--
 
     // load file content to buffer
-    bool loadFileToBuffer(StringView depotPath, Buffer& outContent, io::TimeStamp* timestamp = nullptr) const;
+    bool loadFileToBuffer(StringView depotPath, Buffer& outContent, TimeStamp* timestamp = nullptr) const;
 
     // load file content to string
-    bool loadFileToString(StringView depotPath, StringBuf& outContent, io::TimeStamp* timestamp = nullptr) const;
+    bool loadFileToString(StringView depotPath, StringBuf& outContent, TimeStamp* timestamp = nullptr) const;
 
     //--
 
@@ -105,8 +105,8 @@ private:
     StringBuf m_engineDepotPath;
     StringBuf m_projectDepotPath;
 
-    RefPtr<io::IDirectoryWatcher> m_engineObserver;
-    RefPtr<io::IDirectoryWatcher> m_projectObserver;
+    RefPtr<IDirectoryWatcher> m_engineObserver;
+    RefPtr<IDirectoryWatcher> m_projectObserver;
 
     //--
 
@@ -114,7 +114,7 @@ private:
     virtual void onShutdownService() override final;
     virtual void onSyncUpdate() override final;
 
-    virtual void handleEvent(const io::DirectoryWatcherEvent& evt) override;
+    virtual void handleEvent(const DirectoryWatcherEvent& evt) override;
 };
 
 //---

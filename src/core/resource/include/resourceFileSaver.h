@@ -35,7 +35,7 @@ struct CORE_RESOURCE_API FileSavingContext
 //--
 
 // save objects to file
-CAN_YIELD extern CORE_RESOURCE_API bool SaveFile(io::IWriteFileHandle* file, const FileSavingContext& context, IProgressTracker* progress = nullptr);
+CAN_YIELD extern CORE_RESOURCE_API bool SaveFile(IWriteFileHandle* file, const FileSavingContext& context, IProgressTracker* progress = nullptr);
 
 //--
 

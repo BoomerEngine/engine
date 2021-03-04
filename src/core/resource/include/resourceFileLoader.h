@@ -64,16 +64,16 @@ struct CORE_RESOURCE_API FileLoadingDependency
 //--
 
 // load objects from file, will do few async reads, does not have to load the whole file
-CAN_YIELD extern CORE_RESOURCE_API bool LoadFile(io::IAsyncFileHandle* file, FileLoadingContext& context);
+CAN_YIELD extern CORE_RESOURCE_API bool LoadFile(IAsyncFileHandle* file, FileLoadingContext& context);
 
 // helper function to load objects from memory
-CAN_YIELD extern CORE_RESOURCE_API bool LoadFileDependencies(io::IAsyncFileHandle* file, const FileLoadingContext& context, Array<FileLoadingDependency>& outDependencies);
+CAN_YIELD extern CORE_RESOURCE_API bool LoadFileDependencies(IAsyncFileHandle* file, const FileLoadingContext& context, Array<FileLoadingDependency>& outDependencies);
 
 // load just the file tables
-CAN_YIELD extern CORE_RESOURCE_API bool LoadFileTables(io::IAsyncFileHandle* file, Buffer& tablesData);
+CAN_YIELD extern CORE_RESOURCE_API bool LoadFileTables(IAsyncFileHandle* file, Buffer& tablesData);
 
 // load file's metadata
-CAN_YIELD extern CORE_RESOURCE_API MetadataPtr LoadFileMetadata(io::IAsyncFileHandle* file, const FileLoadingContext& context);
+CAN_YIELD extern CORE_RESOURCE_API MetadataPtr LoadFileMetadata(IAsyncFileHandle* file, const FileLoadingContext& context);
 
 //--
 

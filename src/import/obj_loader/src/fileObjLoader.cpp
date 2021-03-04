@@ -9,8 +9,8 @@
 #include "build.h"
 #include "fileObj.h"
 
-#include "core/io/include/ioSystem.h"
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/io.h"
+#include "core/io/include/fileHandle.h"
 #include "core/containers/include/stringBuilder.h"
 #include "core/containers/include/stringParser.h"
 #include "core/containers/include/hashSet.h"
@@ -335,7 +335,7 @@ namespace parser
             group.parsedFaces.size(), group.parsedFaceIndices.size());
     }
 
-    void ProcessParsingJob(StringView contextName, WorkGroupQueue& queue, const fibers::WaitCounter& counter)
+    void ProcessParsingJob(StringView contextName, WorkGroupQueue& queue, const FiberSemaphore& counter)
     {
         if (auto work = queue.popJob())
         {
@@ -348,7 +348,7 @@ namespace parser
         else
         {
             TRACE_INFO("No more work groups to process");
-            Fibers::GetInstance().signalCounter(counter);
+            SignalFence(counter);
         }
     }
 
@@ -567,15 +567,15 @@ namespace parser
             // determine number of threads to start on
             auto maxJobs = std::max<uint32_t>(1, std::min<uint32_t>(cvMaxWavefrontParsingThreads.get(), exportedWorkStates.size()));
             if (cvMaxWavefrontParsingThreads.get() <= 0)
-                maxJobs = std::max<int>(1, Fibers::GetInstance().workerThreadCount() + cvMaxWavefrontParsingThreads.get());
+                maxJobs = std::max<int>(1, WorkerThreadCount() + cvMaxWavefrontParsingThreads.get());
 
             // start processing jobs
-            auto finishCounter = Fibers::GetInstance().createCounter("WavefrontParser", maxJobs);
+            auto finishCounter = CreateFence("WavefrontParser", maxJobs);
             for (uint32_t i = 0; i < maxJobs; ++i)
                 ProcessParsingJob(contextName, exportedWorkStates, finishCounter);
 
             // wait for processing to finish
-            Fibers::GetInstance().waitForCounterAndRelease(finishCounter);
+            WaitForFence(finishCounter);
             TRACE_INFO("Parsed {} work groups in {} ({} threads)", exportedWorkStates.size(), timer, maxJobs);
         }
         else

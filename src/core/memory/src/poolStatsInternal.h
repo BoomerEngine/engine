@@ -11,7 +11,7 @@
 
 #include "core/system/include/atomic.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -100,4 +100,4 @@ extern PoolStatsInternal TheInternalPoolStats;
 
 } // prv
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()

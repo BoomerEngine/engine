@@ -18,7 +18,7 @@
 #include <Windows.h>
 #endif
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -320,4 +320,4 @@ PageAllocator& DefaultPageAllocator(PoolTag pool /*= POOL_TEMP*/)
 
 ///---
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()

@@ -532,7 +532,7 @@ const FunctionVar* FunctionScope::findVar(StringID name) const
 
 //---
 
-FunctionCode::FunctionCode(mem::LinearAllocator& mem, StubLibrary& lib, const StubFunction* function)
+FunctionCode::FunctionCode(LinearAllocator& mem, StubLibrary& lib, const StubFunction* function)
     : m_mem(mem)
     , m_lib(lib)
     , m_function(function)

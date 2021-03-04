@@ -37,7 +37,7 @@ struct FoldedFunctionKey
 class FunctionFolder : public NoCopy
 {
 public:
-    FunctionFolder(mem::LinearAllocator& mem, CodeLibrary& code);
+    FunctionFolder(LinearAllocator& mem, CodeLibrary& code);
     ~FunctionFolder();
 
     /// Fold function code in context of given program instance
@@ -50,7 +50,7 @@ public:
         parser::IErrorReporter& err);
 
 private:
-    mem::LinearAllocator& m_mem;
+    LinearAllocator& m_mem;
     CodeLibrary& m_code;
 
     HashMap<FoldedFunctionKey, Function*> m_foldedFunctionsMap;

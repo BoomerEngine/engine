@@ -20,7 +20,7 @@
     #pragma optimize("",off)
 #endif
 
-BEGIN_BOOMER_NAMESPACE_EX(fibers)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -141,4 +141,4 @@ namespace prv
     #pragma optimize("",on)
 #endif
 
-END_BOOMER_NAMESPACE_EX(fibers)
+END_BOOMER_NAMESPACE()

@@ -78,7 +78,7 @@ uint32_t FoldedFunctionKey::CalcHash(const FoldedFunctionKey& key)
 
 ///---
 
-FunctionFolder::FunctionFolder(mem::LinearAllocator& mem, CodeLibrary& code)
+FunctionFolder::FunctionFolder(LinearAllocator& mem, CodeLibrary& code)
     : m_mem(mem)
     , m_code(code)
 {}

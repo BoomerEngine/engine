@@ -10,7 +10,7 @@
 #include "poolStats.h"
 #include "poolStatsInternal.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -80,4 +80,4 @@ namespace prv
 
 } // prv
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()

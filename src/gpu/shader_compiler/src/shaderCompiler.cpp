@@ -22,7 +22,7 @@
 #include "core/containers/include/stringBuilder.h"
 #include "core/resource/include/resource.h"
 #include "core/parser/include/textFilePreprocessor.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 
 #include "gpu/device/include/shaderData.h"
 #include "core/parser/include/public.h"
@@ -85,12 +85,12 @@ RTTI_END_TYPE();
 ShaderCompiler::ShaderCompiler()
 {
     // determine where are the source files
-	const auto engineRootDirectory = io::SystemPath(io::PathCategory::EngineDir);
+	const auto engineRootDirectory = SystemPath(PathCategory::EngineDir);
 	m_path = StringBuf(TempString("{}data/shaders/", engineRootDirectory));
 	TRACE_INFO("Engine s directory: '{}'", m_path);
 }
 
-void StoreDependency(Array<ShaderDependency>* outDependencies, StringView path, io::TimeStamp timestamp)
+void StoreDependency(Array<ShaderDependency>* outDependencies, StringView path, TimeStamp timestamp)
 {
 	if (outDependencies)
 	{
@@ -123,8 +123,8 @@ bool ShaderCompiler::loadSourceCode(StringView path, Array<ShaderDependency>* ou
 		*outFullPath = fullPath;
 
 	// get current timestamp of the file, will tell if we can use cached content
-	io::TimeStamp timestamp;
-	if (!io::FileTimeStamp(fullPath, timestamp))
+	TimeStamp timestamp;
+	if (!FileTimeStamp(fullPath, timestamp))
 	{
 		TRACE_ERROR("Missing shader file '{}'", path);
 		DEBUG_CHECK_EX(false, TempString("Missing shader file '{}'", path));
@@ -147,7 +147,7 @@ bool ShaderCompiler::loadSourceCode(StringView path, Array<ShaderDependency>* ou
 	}
 
 	// load the content to string
-	auto content = io::LoadFileToBuffer(fullPath);
+	auto content = LoadFileToBuffer(fullPath);
 	if (!content)
 	{
         TRACE_ERROR("Unable to load shader file '{}'", path);
@@ -189,15 +189,15 @@ ShaderDataPtr ShaderCompiler::compileCode(StringView code, HashMap<StringID, Str
 	static std::atomic<uint32_t> localTempFileCounter = 0;
 
 	const auto tempFileIndex = localTempFileCounter++;
-	const auto tempDir = io::SystemPath(io::PathCategory::LocalTempDir);
+	const auto tempDir = SystemPath(PathCategory::LocalTempDir);
 	const auto tempFilePath = StringBuf(TempString("{}.dynamics/shader_{}.txt", tempDir, tempFileIndex));
 
-	io::SaveFileFromString(tempFilePath, code);
+	SaveFileFromString(tempFilePath, code);
 
 	auto ret = compileInternal("", code, defines, outDependencies);
 
 	if (ret)
-		io::DeleteFile(tempFilePath);
+		DeleteFile(tempFilePath);
 
 	return ret;
 }
@@ -210,7 +210,7 @@ ShaderDataPtr ShaderCompiler::compileInternal(StringView filePath, StringView co
 {
 	auto lock = CreateLock(GGlobalcompilationMutex);
 
-    mem::LinearAllocator mem(POOL_SHADER_COMPILATION);
+    LinearAllocator mem(POOL_SHADER_COMPILATION);
     ScopeTimer timer;
 
 	// create handlers

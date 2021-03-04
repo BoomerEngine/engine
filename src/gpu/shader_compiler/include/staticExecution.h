@@ -110,13 +110,13 @@ private:
 class ExecutionStack
 {
 public:
-    ExecutionStack(mem::LinearAllocator& mem, CodeLibrary& code, parser::IErrorReporter& err, const Function* function, const ProgramInstance* thisVars);
+    ExecutionStack(LinearAllocator& mem, CodeLibrary& code, parser::IErrorReporter& err, const Function* function, const ProgramInstance* thisVars);
     ~ExecutionStack();
 
     //---
 
     /// get memory allocator
-    INLINE mem::LinearAllocator& allocator() const { return m_mem; }
+    INLINE LinearAllocator& allocator() const { return m_mem; }
 
     /// code library
     INLINE CodeLibrary& code() const { return m_code; }
@@ -152,7 +152,7 @@ public:
     ExecutionResult returnCode(const parser::Location& loc, ExecutionResult error);
 
 private:
-    mem::LinearAllocator& m_mem;
+    LinearAllocator& m_mem;
     parser::IErrorReporter& m_err;
     CodeLibrary& m_code;
 
@@ -186,8 +186,8 @@ private:
 
         //--
 
-        bool paramReference(mem::LinearAllocator& mem, const DataParameter* param, ExecutionValue& outValue);
-        void storeConstantValue(mem::LinearAllocator& mem, const DataParameter* param, const ExecutionValue& value);
+        bool paramReference(LinearAllocator& mem, const DataParameter* param, ExecutionValue& outValue);
+        void storeConstantValue(LinearAllocator& mem, const DataParameter* param, const ExecutionValue& value);
     };
 
     ParamMap m_functionParams;

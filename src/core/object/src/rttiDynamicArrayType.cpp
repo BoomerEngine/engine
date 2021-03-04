@@ -162,7 +162,7 @@ namespace prv
             m_helper->destroy(arr, innerType());
             m_helper->resize(arr, innerType(), length);
             memcpy(arr->data(), data, length);
-            mem::FreeBlock(data);
+            FreeBlock(data);
         }
         else if (innerType()->name() == "uint8_t"_id || innerType()->name() == "uint8_t"_id)
         {
@@ -174,7 +174,7 @@ namespace prv
             m_helper->destroy(arr, innerType());
             m_helper->resize(arr, innerType(), length);
             memcpy(arr->data(), data, length);
-            mem::FreeBlock(data);
+            FreeBlock(data);
         }
         else
         {

@@ -41,7 +41,7 @@ namespace prv
         if (stream.isError())
             return false;
 
-        if (!mem::Decompress(mem::CompressionType::LZ4HC, compressedBuffer.data(), compressedBuffer.size(), buffer.data(), buffer.size()))
+        if (!Decompress(CompressionType::LZ4HC, compressedBuffer.data(), compressedBuffer.size(), buffer.data(), buffer.size()))
         {
             DEBUG_CHECK(!"Decompression failed for some reason");
             return false;

@@ -22,7 +22,7 @@ WindowNull::WindowNull()
 
 WindowNull::~WindowNull()
 {
-	DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be accessed on main thread");
+	DEBUG_CHECK_EX(IsMainThread(), "Windows can only be accessed on main thread");
 }
 
 bool WindowNull::prepareWindowForRendering(uint16_t& outWidth, uint16_t& outHeight)
@@ -45,12 +45,12 @@ void WindowNull::disconnectWindow()
 
 void WindowNull::update()
 {
-	DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be accessed on main thread");
+	DEBUG_CHECK_EX(IsMainThread(), "Windows can only be accessed on main thread");
 }
 
 WindowNull* WindowNull::Create(const OutputInitInfo& creationInfo)
 {
-	ASSERT_EX(Fibers::GetInstance().isMainThread(), "Windows can only be created on main thread");
+	ASSERT_EX(IsMainThread(), "Windows can only be created on main thread");
 
 	auto ret = new WindowNull();
 
@@ -82,7 +82,7 @@ WindowNull* WindowNull::Create(const OutputInitInfo& creationInfo)
 
 void WindowNull::windowMinimize()
 {
-	DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+	DEBUG_CHECK_EX(IsMainThread(), "Windows can only be touched on main thread");
 
 	if (!m_minimized)
 	{
@@ -93,7 +93,7 @@ void WindowNull::windowMinimize()
 
 void WindowNull::windowMaximize()
 {
-	DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+	DEBUG_CHECK_EX(IsMainThread(), "Windows can only be touched on main thread");
 
 	if (!m_maximized)
 	{
@@ -108,7 +108,7 @@ void WindowNull::windowMaximize()
 
 void WindowNull::windowRestore()
 {
-	DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+	DEBUG_CHECK_EX(IsMainThread(), "Windows can only be touched on main thread");
 
 	if (m_maximized || m_minimized)
 	{
@@ -123,7 +123,7 @@ void WindowNull::windowRestore()
 
 void WindowNull::windowActivate()
 {
-	DEBUG_CHECK_RETURN_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+	DEBUG_CHECK_RETURN_EX(IsMainThread(), "Windows can only be touched on main thread");
 
 	if (!m_active)
 	{
@@ -134,7 +134,7 @@ void WindowNull::windowActivate()
 
 void WindowNull::windowEnable(bool enabled)
 {
-	DEBUG_CHECK_RETURN_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+	DEBUG_CHECK_RETURN_EX(IsMainThread(), "Windows can only be touched on main thread");
 
 	if (m_enabled != enabled)
 	{
@@ -145,7 +145,7 @@ void WindowNull::windowEnable(bool enabled)
 
 void WindowNull::windowShow(bool bringToFront)
 {
-	DEBUG_CHECK_RETURN_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+	DEBUG_CHECK_RETURN_EX(IsMainThread(), "Windows can only be touched on main thread");
 
 	if (!m_visible)
 	{
@@ -162,7 +162,7 @@ void WindowNull::windowShow(bool bringToFront)
 
 void WindowNull::windowHide()
 {
-	DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+	DEBUG_CHECK_EX(IsMainThread(), "Windows can only be touched on main thread");
 
 	if (!m_visible)
 	{
@@ -188,7 +188,7 @@ float WindowNull::windowGetPixelScale() const
 
 Point WindowNull::windowGetClientPlacement() const
 {
-	DEBUG_CHECK_RETURN_EX_V(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread", Point(0,0));
+	DEBUG_CHECK_RETURN_EX_V(IsMainThread(), "Windows can only be touched on main thread", Point(0,0));
 
 	if (m_maximized)
 		return Point(0, 0);
@@ -198,14 +198,14 @@ Point WindowNull::windowGetClientPlacement() const
 
 Point WindowNull::windowGetClientSize() const
 {
-	DEBUG_CHECK_RETURN_EX_V(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread", Point(0, 0));
+	DEBUG_CHECK_RETURN_EX_V(IsMainThread(), "Windows can only be touched on main thread", Point(0, 0));
 
 	return Point(m_width, m_height);
 }
 
 Point WindowNull::windowGetWindowPlacement() const
 {
-	DEBUG_CHECK_RETURN_EX_V(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread", Point(0, 0));
+	DEBUG_CHECK_RETURN_EX_V(IsMainThread(), "Windows can only be touched on main thread", Point(0, 0));
 
 	if (m_maximized)
 		return Point(0, 0);
@@ -215,56 +215,56 @@ Point WindowNull::windowGetWindowPlacement() const
 
 Point WindowNull::windowGetWindowSize() const
 {
-	DEBUG_CHECK_RETURN_EX_V(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread", Point(0, 0));
+	DEBUG_CHECK_RETURN_EX_V(IsMainThread(), "Windows can only be touched on main thread", Point(0, 0));
 
 	return Point(m_width, m_height);
 }
 
 bool WindowNull::windowGetWindowDefaultPlacement(Rect& outWindowNormalRect) const
 {
-	DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+	DEBUG_CHECK_EX(IsMainThread(), "Windows can only be touched on main thread");
 	outWindowNormalRect = Rect(0, 0, m_width, m_height);
 	return false;
 }
 
 bool WindowNull::windowHasCloseRequest() const
 {
-	DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+	DEBUG_CHECK_EX(IsMainThread(), "Windows can only be touched on main thread");
 	return m_windowCloseRequest.load();
 }
 
 bool WindowNull::windowIsActive() const
 {
-	DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+	DEBUG_CHECK_EX(IsMainThread(), "Windows can only be touched on main thread");
 	return m_active;
 }
 
 bool WindowNull::windowIsVisible() const
 {
-	DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+	DEBUG_CHECK_EX(IsMainThread(), "Windows can only be touched on main thread");
 	return m_visible;
 }
 
 bool WindowNull::windowIsMaximized() const
 {
-	DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+	DEBUG_CHECK_EX(IsMainThread(), "Windows can only be touched on main thread");
 	return m_maximized;
 }
 
 bool WindowNull::windowIsMinimized() const
 {
-	DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+	DEBUG_CHECK_EX(IsMainThread(), "Windows can only be touched on main thread");
 	return m_minimized;
 }
 
 void WindowNull::windowSetTitle(const StringBuf& title)
 {
-	DEBUG_CHECK_RETURN_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+	DEBUG_CHECK_RETURN_EX(IsMainThread(), "Windows can only be touched on main thread");
 }
 
 void WindowNull::windowAdjustClientPlacement(const Rect& clientRect)
 {
-	DEBUG_CHECK_RETURN_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");
+	DEBUG_CHECK_RETURN_EX(IsMainThread(), "Windows can only be touched on main thread");
 
 	if (!m_maximized)
 	{
@@ -283,7 +283,7 @@ void WindowNull::windowAdjustWindowPlacement(const Rect& windowRect)
         
 void WindowNull::windowSetAlpha(float alpha)
 {
-	DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Windows can only be touched on main thread");			
+	DEBUG_CHECK_EX(IsMainThread(), "Windows can only be touched on main thread");
 }
 
 void WindowNull::windowCancelCloseRequest()
@@ -321,7 +321,7 @@ uint64_t WindowManagerNull::offscreenWindow()
 
 void WindowManagerNull::updateWindows()
 {
-	DEBUG_CHECK_RETURN_EX(Fibers::GetInstance().isMainThread(), "Windows can only be updated from main thread");
+	DEBUG_CHECK_RETURN_EX(IsMainThread(), "Windows can only be updated from main thread");
 
 	for (auto* window : m_windows)
 		window->update();
@@ -329,7 +329,7 @@ void WindowManagerNull::updateWindows()
 
 uint64_t WindowManagerNull::createWindow(const OutputInitInfo& initInfo)
 {
-	DEBUG_CHECK_RETURN_EX_V(Fibers::GetInstance().isMainThread(), "Windows can only be created from main thread", 0);
+	DEBUG_CHECK_RETURN_EX_V(IsMainThread(), "Windows can only be created from main thread", 0);
 
 	auto wnd = WindowNull::Create(initInfo);
 	if (wnd)
@@ -344,7 +344,7 @@ uint64_t WindowManagerNull::createWindow(const OutputInitInfo& initInfo)
 
 void WindowManagerNull::closeWindow(uint64_t handle)
 {
-	DEBUG_CHECK_RETURN_EX(Fibers::GetInstance().isMainThread(), "Windows can only be closed from main thread");
+	DEBUG_CHECK_RETURN_EX(IsMainThread(), "Windows can only be closed from main thread");
 
 	auto lock = CreateLock(m_windowsLock);
 

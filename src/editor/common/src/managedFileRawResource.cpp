@@ -11,7 +11,7 @@
 #include "managedFileFormat.h"
 #include "managedItem.h"
 #include "managedDepot.h"
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

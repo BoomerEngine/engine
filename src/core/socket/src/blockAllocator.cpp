@@ -30,7 +30,7 @@ Block* BlockAllocator::alloc(uint32_t size)
     // create memory block
     // TODO: reuse!
     auto totalMemSize = sizeof(Block) + size;
-    auto ret = mem::GlobalPool<POOL_NET, Block>::Alloc(totalMemSize, 1);
+    auto ret = GlobalPool<POOL_NET, Block>::Alloc(totalMemSize, 1);
     ret->m_ptr = (uint8_t*)ret + sizeof(Block);
     ret->m_totalSize = totalMemSize;
     ret->m_currentSize = size;
@@ -50,7 +50,7 @@ void BlockAllocator::releaseBlock(Block* block)
     ASSERT(m_numBlocks.load() > 0);
     m_numBytes -= block->m_totalSize;
     m_numBlocks--;
-    mem::GlobalPool<POOL_NET, Block>::Free(block);
+    GlobalPool<POOL_NET, Block>::Free(block);
 }
 
 Block* BlockAllocator::build(std::initializer_list<BlockPart> blocks)

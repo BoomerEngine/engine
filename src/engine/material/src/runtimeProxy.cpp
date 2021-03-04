@@ -24,10 +24,10 @@ BEGIN_BOOMER_NAMESPACE()
 
 MaterialDataDescriptor::~MaterialDataDescriptor()
 {
-	mem::GlobalPool<POOL_MATERIAL_DATA, uint8_t>::Free(constantData);
+	GlobalPool<POOL_MATERIAL_DATA, uint8_t>::Free(constantData);
 	constantData = nullptr;
 
-	mem::GlobalPool<POOL_MATERIAL_DATA, uint8_t>::Free(descriptorData);
+	GlobalPool<POOL_MATERIAL_DATA, uint8_t>::Free(descriptorData);
 	descriptorData = nullptr;
 }
 
@@ -38,11 +38,11 @@ MaterialDataDescriptor* MaterialDataDescriptor::Create(const MaterialDataLayoutD
 	ret->descriptorName = layout.descriptorName;
 
 	ret->constantDataSize = layout.constantDataSize;
-	ret->constantData = mem::GlobalPool<POOL_MATERIAL_DATA, uint8_t>::AllocN(layout.constantDataSize, 16);
+	ret->constantData = GlobalPool<POOL_MATERIAL_DATA, uint8_t>::AllocN(layout.constantDataSize, 16);
     memzero(ret->constantData, ret->constantDataSize);
 
 	ret->descriptorCount = layout.descriptorSize;
-	ret->descriptorData = mem::GlobalPool<POOL_MATERIAL_DATA, gpu::DescriptorEntry>::AllocN(layout.descriptorSize, 4);
+	ret->descriptorData = GlobalPool<POOL_MATERIAL_DATA, gpu::DescriptorEntry>::AllocN(layout.descriptorSize, 4);
 	memzero(ret->descriptorData, ret->descriptorCount * sizeof(gpu::DescriptorEntry));
 
 	if (layout.constantDataSize > 0)
@@ -119,7 +119,7 @@ MaterialDataDescriptor* MaterialDataDescriptor::Create(const MaterialDataLayoutD
 
 MaterialDataBindless::~MaterialDataBindless()
 {
-	mem::GlobalPool<POOL_MATERIAL_DATA, uint8_t>::Free(constantData);
+	GlobalPool<POOL_MATERIAL_DATA, uint8_t>::Free(constantData);
 	constantData = nullptr;
 }
 
@@ -128,7 +128,7 @@ MaterialDataBindless* MaterialDataBindless::Create(const MaterialDataLayoutBindl
 	auto* ret = new MaterialDataBindless();
 
 	ret->constantDataSize = layout.constantDataSize;
-	ret->constantData = mem::GlobalPool<POOL_MATERIAL_DATA, uint8_t>::Alloc(layout.constantDataSize, 16);
+	ret->constantData = GlobalPool<POOL_MATERIAL_DATA, uint8_t>::Alloc(layout.constantDataSize, 16);
 
 	return ret;
 }

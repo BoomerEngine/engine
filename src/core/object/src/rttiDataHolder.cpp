@@ -33,7 +33,7 @@ void DataHolder::init(Type type, const void* data)
     if (type != nullptr)
     {
         m_type = type;
-        m_data = mem::AllocateBlock(POOL_RTTI_DATA, type->size(), type->alignment(), type.name().c_str());
+        m_data = AllocateBlock(POOL_VARIANT, type->size(), type->alignment(), type.name().c_str());
 
         if (type->traits().requiresConstructor)
         {
@@ -139,7 +139,7 @@ void DataHolder::reset()
         if (m_type->traits().requiresDestructor)
             m_type->destruct(m_data);
 
-        mem::FreeBlock(m_data);
+        FreeBlock(m_data);
         m_data = nullptr;
         m_type = nullptr;
     }

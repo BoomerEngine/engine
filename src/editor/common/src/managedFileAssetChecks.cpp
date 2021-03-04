@@ -124,7 +124,7 @@ void ManagedFileImportStatusCheck::runCheck()
 
 //--
 
-ManagedFileSourceAssetCheck::ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, const io::TimeStamp& lastKnownTimestamp, const res::ImportFileFingerprint& lastKnownCRC)
+ManagedFileSourceAssetCheck::ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, const TimeStamp& lastKnownTimestamp, const res::ImportFileFingerprint& lastKnownCRC)
     : m_sourceAssetPath(sourceAssetPath)
     , m_sourceLastKnownTimestamp(lastKnownTimestamp)
     , m_sourceLastKnownCRC(lastKnownCRC)

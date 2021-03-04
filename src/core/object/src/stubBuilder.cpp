@@ -17,7 +17,7 @@ BEGIN_BOOMER_NAMESPACE()
 
 //----
 
-StubBuilder::StubBuilder(mem::LinearAllocator& mem, const StubFactory& factory)
+StubBuilder::StubBuilder(LinearAllocator& mem, const StubFactory& factory)
 	: m_mem(mem)
 	, m_factory(factory)
 {}

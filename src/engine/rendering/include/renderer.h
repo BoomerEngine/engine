@@ -12,7 +12,6 @@
 
 #include "gpu/device/include/framebuffer.h"
 
-#include "core/fibers/include/fiberWaitList.h"
 #include "core/memory/include/linearAllocator.h"
 #include "core/reflection/include/variantTable.h"
 #include "core/memory/include/pageCollection.h"
@@ -33,13 +32,13 @@ struct FrameViewRecorder
     FrameViewRecorder(FrameViewRecorder* parentView);
 
     void finishRendering(); // waits for all posted fences
-    void postFence(fibers::WaitCounter fence, bool localFence=false);
+    void postFence(FiberSemaphore fence, bool localFence=false);
 
 private:
     FrameViewRecorder* m_parentView = nullptr;
 
     SpinLock m_fenceListLock;
-    Array<fibers::WaitCounter> m_fences;
+    Array<FiberSemaphore> m_fences;
 };
 
 ///---
@@ -70,7 +69,7 @@ public:
 
     //--
 
-    INLINE mem::LinearAllocator& allocator() { return m_allocator; }
+    INLINE LinearAllocator& allocator() { return m_allocator; }
 
     INLINE const FrameParams& frame() const { return m_frame; }
 
@@ -103,7 +102,7 @@ private:
 
     const Scene* m_scene = nullptr;
 
-    mem::LinearAllocator m_allocator;
+    LinearAllocator m_allocator;
 
     const FrameParams& m_frame;
 	const FrameCompositionTarget& m_target;

@@ -28,7 +28,7 @@
 #include "engine/ui/include/uiDataInspector.h"
 #include "core/resource_compiler/include/importInterface.h"
 #include "core/resource_compiler/include/importFileService.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 #include "core/resource/include/resourceMetadata.h"
 #include "core/resource_compiler/include/importFileList.h"
 #include "engine/ui/include/uiSearchBar.h"

@@ -109,7 +109,7 @@ void ScriptedClass::destroyScriptedObject(void* object) const
     auto obj  = (ScriptedObject*) object;
     if (obj->m_scriptPropertiesData != nullptr)
     {
-        mem::FreeBlock(obj->m_scriptPropertiesData);
+        FreeBlock(obj->m_scriptPropertiesData);
         obj->m_scriptPropertiesData = nullptr;
     }
 }
@@ -131,7 +131,7 @@ void ScriptedClass::construct(void *object) const
     if (m_scriptedDataSize > 0)
     {
         // allocate block for the script properties in the scripted pool
-        auto data = mem::AllocateBlock(POOL_SCRIPTED_OBJECT, m_scriptedDataSize, m_scriptedDatAlignment, name().c_str());
+        auto data = AllocateBlock(POOL_SCRIPTED_OBJECT, m_scriptedDataSize, m_scriptedDatAlignment, name().c_str());
         memzero(data, m_scriptedDataSize);
         obj->m_scriptPropertiesData = data;
     }
@@ -262,7 +262,7 @@ ScriptedStruct::ScriptedStruct(StringID name)
 
 const void* ScriptedStruct::createDefaultObject() const
 {
-    auto ret = mem::AllocateBlock(POOL_SCRIPTED_DEFAULT_OBJECT, size(), alignment(), name().c_str());
+    auto ret = AllocateBlock(POOL_SCRIPTED_DEFAULT_OBJECT, size(), alignment(), name().c_str());
     memzero(ret, size());
 
     if (m_functionCtor)

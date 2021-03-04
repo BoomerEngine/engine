@@ -241,7 +241,7 @@ ExecutionStack::ParamMap::~ParamMap()
     return DataValueRef(m_param->dataType, firstComponent, valueComponentCount);
 }*/
 
-bool ExecutionStack::ParamMap::paramReference(mem::LinearAllocator& mem, const DataParameter* param, ExecutionValue& outValue)
+bool ExecutionStack::ParamMap::paramReference(LinearAllocator& mem, const DataParameter* param, ExecutionValue& outValue)
 {
     // local ?
     if (param->scope == DataParameterScope::ScopeLocal)
@@ -272,7 +272,7 @@ bool ExecutionStack::ParamMap::paramReference(mem::LinearAllocator& mem, const D
     return false;
 }
 
-void ExecutionStack::ParamMap::storeConstantValue(mem::LinearAllocator& mem, const DataParameter* param, const ExecutionValue& value)
+void ExecutionStack::ParamMap::storeConstantValue(LinearAllocator& mem, const DataParameter* param, const ExecutionValue& value)
 {
     Param* ret = nullptr;
     if (!m_localMap.find(param, ret))
@@ -288,7 +288,7 @@ void ExecutionStack::ParamMap::storeConstantValue(mem::LinearAllocator& mem, con
 
 //---
 
-ExecutionStack::ExecutionStack(mem::LinearAllocator& mem, CodeLibrary& code, parser::IErrorReporter& err, const Function* function, const ProgramInstance* thisVars)
+ExecutionStack::ExecutionStack(LinearAllocator& mem, CodeLibrary& code, parser::IErrorReporter& err, const Function* function, const ProgramInstance* thisVars)
     : m_mem(mem)
     , m_code(code)
     , m_err(err)

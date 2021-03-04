@@ -25,7 +25,7 @@ INLINE PagedBufferTyped<T>::PagedBufferTyped(PoolTag poolID /*= POOL_TEMP*/)
 {}
 
 template< typename T >
-INLINE PagedBufferTyped<T>::PagedBufferTyped(mem::PageAllocator& pageAllocator)
+INLINE PagedBufferTyped<T>::PagedBufferTyped(PageAllocator& pageAllocator)
 	: PagedBuffer(alignof(T), pageAllocator)
 {}
 

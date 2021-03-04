@@ -370,17 +370,17 @@ namespace text
     class ParameterFile : public NoCopy
     {
     public:
-        ParameterFile(mem::LinearAllocator& mem);
+        ParameterFile(LinearAllocator& mem);
         ~ParameterFile();
 
         /// get file allocator
-        INLINE mem::LinearAllocator& mem() { return m_mem; }
+        INLINE LinearAllocator& mem() { return m_mem; }
 
         /// get the top level nodes of the file
         ParameterNodeIterator nodes() const;
 
     private:
-        mem::LinearAllocator& m_mem;
+        LinearAllocator& m_mem;
         const ParameterNode* m_nodes;
 
         friend class ParameterFileParser;

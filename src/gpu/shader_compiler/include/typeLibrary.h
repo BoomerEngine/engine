@@ -245,7 +245,7 @@ private:
 class GPU_SHADER_COMPILER_API TypeLibrary : public NoCopy
 {
 public:
-    TypeLibrary(mem::LinearAllocator& allocator);
+    TypeLibrary(LinearAllocator& allocator);
     ~TypeLibrary();
 
     //--
@@ -361,7 +361,7 @@ private:
     TResourceTypeMap m_resourceTypesMap;
     Array<ResourceType*> m_resourceTypes;
 
-	mem::LinearAllocator& m_allocator;
+	LinearAllocator& m_allocator;
 
     //--
 

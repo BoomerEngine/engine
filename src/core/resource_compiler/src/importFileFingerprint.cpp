@@ -10,8 +10,8 @@
 #include "importFileFingerprint.h"
 #include "core/object/include/streamOpcodeReader.h"
 #include "core/object/include/streamOpcodeWriter.h"
-#include "core/io/include/ioFileHandle.h"
-#include "core/io/include/ioAsyncFileHandle.h"
+#include "core/io/include/fileHandle.h"
+#include "core/io/include/asyncFileHandle.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(res)
 
@@ -81,7 +81,7 @@ public:
 
     AutoYielder()
     {
-        shouldYeild = !Fibers::GetInstance().isMainFiber();
+        shouldYeild = !IsMainFiber();
         yieldInterval = std::clamp<double>(cvFingerprintFiberAutoYieldInterval.get() / 1000.0, 0.0001, 1.000);
         nextYield = NativeTimePoint::Now() + yieldInterval;
     }
@@ -92,7 +92,7 @@ public:
         {
             if (nextYield.reached())
             {
-                Fibers::GetInstance().yield();
+                YieldFiber();
                 nextYield = NativeTimePoint::Now() + yieldInterval;
             }
         }
@@ -137,7 +137,7 @@ FingerpintCalculationStatus CalculateMemoryFingerprint(const void* data, uint64_
     return FingerpintCalculationStatus::OK;
 }
 
-FingerpintCalculationStatus CalculateFileFingerprint(io::IReadFileHandle* file, IProgressTracker* progress, ImportFileFingerprint& outFingerpint)
+FingerpintCalculationStatus CalculateFileFingerprint(IReadFileHandle* file, IProgressTracker* progress, ImportFileFingerprint& outFingerpint)
 {
     ASSERT_EX(file != nullptr, "No file");
 
@@ -188,7 +188,7 @@ FingerpintCalculationStatus CalculateFileFingerprint(io::IReadFileHandle* file, 
     return FingerpintCalculationStatus::OK;
 }
 
-CAN_YIELD extern CORE_RESOURCE_COMPILER_API FingerpintCalculationStatus CalculateFileFingerprint(io::IAsyncFileHandle* file, bool childFiber, IProgressTracker* progress, ImportFileFingerprint& outFingerpint)
+CAN_YIELD extern CORE_RESOURCE_COMPILER_API FingerpintCalculationStatus CalculateFileFingerprint(IAsyncFileHandle* file, bool childFiber, IProgressTracker* progress, ImportFileFingerprint& outFingerpint)
 {
     ASSERT_EX(file != nullptr, "No file");
 
@@ -200,7 +200,7 @@ CAN_YIELD extern CORE_RESOURCE_COMPILER_API FingerpintCalculationStatus Calculat
         Buffer readBuffer;
         Buffer calcBuffer;
         FingerPrintCalculator calc;
-        fibers::WaitCounter doneCounter;
+        FiberSemaphore doneCounter;
         FingerpintCalculationStatus status;
     } state;
 
@@ -215,12 +215,12 @@ CAN_YIELD extern CORE_RESOURCE_COMPILER_API FingerpintCalculationStatus Calculat
     if (!state.readBuffer || !state.calcBuffer)
         return FingerpintCalculationStatus::ErrorOutOfMemory;
 
-    state.doneCounter = Fibers::GetInstance().createCounter("FileFingerprint", 1);
+    state.doneCounter = CreateFence("FileFingerprint", 1);
 
     // run fiber with processing
     RunFiber("FileFingerprint").child(childFiber) << [file, &state, progress](FIBER_FUNC)
     {
-        fibers::WaitCounter processingDone;
+        FiberSemaphore processingDone;
 
         while (state.pos < state.size)
         {
@@ -246,30 +246,30 @@ CAN_YIELD extern CORE_RESOURCE_COMPILER_API FingerpintCalculationStatus Calculat
             }
 
             // wait for previous processing to finish
-            Fibers::GetInstance().waitForCounterAndRelease(processingDone);
+            WaitForFence(processingDone);
 
             // swap the buffers and advance state
             std::swap(state.calcBuffer, state.readBuffer);
             state.pos += actualReadSize;
 
             // process the data on another fiber
-            processingDone = Fibers::GetInstance().createCounter("FileFingerprintCalc", 1);
+            processingDone = CreateFence("FileFingerprintCalc", 1);
             RunChildFiber("FileFingerprintCalc") << [&state, actualReadSize, processingDone](FIBER_FUNC)
             {
                 state.calc.append(state.calcBuffer.data(), actualReadSize);
-                Fibers::GetInstance().signalCounter(processingDone);
+                SignalFence(processingDone);
             };
         }
 
         // wait for previous processing to finish
-        Fibers::GetInstance().waitForCounterAndRelease(processingDone);
+        WaitForFence(processingDone);
 
         // while computation is done
-        Fibers::GetInstance().signalCounter(state.doneCounter);
+        SignalFence(state.doneCounter);
     };
 
     // wait for the fiber to finish
-    Fibers::GetInstance().waitForCounterAndRelease(state.doneCounter);
+    WaitForFence(state.doneCounter);
                 
     if (state.status == FingerpintCalculationStatus::OK)
         outFingerpint = ImportFileFingerprint(state.calc.crc());

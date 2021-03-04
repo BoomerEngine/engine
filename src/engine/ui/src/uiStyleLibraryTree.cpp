@@ -226,7 +226,7 @@ namespace prv
 
     //---
 
-    RawLibraryData::RawLibraryData(mem::LinearAllocator& mem)
+    RawLibraryData::RawLibraryData(LinearAllocator& mem)
         : m_mem(mem)
     {}
 

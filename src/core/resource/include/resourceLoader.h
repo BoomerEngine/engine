@@ -72,14 +72,14 @@ protected:
     struct LoadedResource : public IReferencable
     {
         ResourcePath path;
-        io::TimeStamp timestamp;
+        TimeStamp timestamp;
 
         RefWeakPtr<IResource> loadedResource;
     };
 
     struct LoadingJob : public IReferencable
     {
-        fibers::WaitCounter signal;
+        FiberSemaphore signal;
 
         ResourcePath path;
         ResourceHandle loadedResource;
@@ -95,8 +95,8 @@ protected:
 
     //--
 
-    ResourcePtr loadResourceOnce(const ResourcePath& path, io::TimeStamp& outTimestamp) CAN_YIELD;
-    bool validateResource(const ResourcePath& key, const io::TimeStamp& existingTimestamp);
+    ResourcePtr loadResourceOnce(const ResourcePath& path, TimeStamp& outTimestamp) CAN_YIELD;
+    bool validateResource(const ResourcePath& key, const TimeStamp& existingTimestamp);
 
     //--
 

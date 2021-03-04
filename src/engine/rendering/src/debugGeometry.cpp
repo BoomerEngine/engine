@@ -14,8 +14,8 @@ BEGIN_BOOMER_NAMESPACE_EX(rendering)
 
 //--
 
-static mem::PageAllocator GDebugGeometryPayloadAllocator(POOL_DEBUG_GEOMETRY, 256 << 20, 8, 64);
-static mem::PageAllocator GDebugGeometryStructureAllocator(POOL_DEBUG_GEOMETRY, 16 << 10, 64, 64);
+static PageAllocator GDebugGeometryPayloadAllocator(POOL_DEBUG_GEOMETRY, 256 << 20, 8, 64);
+static PageAllocator GDebugGeometryStructureAllocator(POOL_DEBUG_GEOMETRY, 16 << 10, 64, 64);
 
 //--
 

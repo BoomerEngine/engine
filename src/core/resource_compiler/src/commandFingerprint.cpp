@@ -14,7 +14,7 @@
 
 #include "core/app/include/command.h"
 #include "core/app/include/commandline.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(res)
 
@@ -41,7 +41,7 @@ bool CommandFingerprint::run(IProgressTracker* progress, const app::CommandLine&
     if (const auto absolutePath = commandline.singleValue("absolutePath"))
     {
         // open source file
-        if (auto file = io::OpenForAsyncReading(absolutePath))
+        if (auto file = OpenForAsyncReading(absolutePath))
         {
             ScopeTimer timer;
             ImportFileFingerprint fingerprint;

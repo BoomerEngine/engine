@@ -9,7 +9,6 @@
 #include "build.h"
 #include "core/test/include/gtest/gtest.h"
 #include "core/fibers/include/fiberSystem.h"
-#include "core/fibers/include/fiberWaitList.h"
 #include "core/system/include/thread.h"
 #include "core/system/include/timing.h"
 
@@ -181,28 +180,31 @@ struct BlockingTcpWrapper
 
     void async_accept(BlockingTcpWrapper& outSocket, double timeout = 2.0)
     {
-        auto fence = Fibers::GetInstance().createCounter("Acceept");
-        fences.pushFence(fence);
+        auto fence = CreateFence("Acceept");
+        fences.pushBack(fence);
 
         RunFiber("ServerAccept") << [this, &outSocket, fence](FIBER_FUNC)
         {
             block_accept(outSocket);
-            Fibers::GetInstance().signalCounter(fence);
+            SignalFence(fence);
         };
     }
 
     void sync()
     {
-        fences.sync();
+        WaitForMultipleFences(fences.typedData(), fences.size());
+        fences.reset();
     }
 
     ~BlockingTcpWrapper()
     {
         sock.close();
-        fences.sync();
+
+        WaitForMultipleFences(fences.typedData(), fences.size());
+        fences.reset();
     }
 
-    fibers::WaitList fences;
+    Array<FiberSemaphore> fences;
 
     static uint16_t m_portBase;
 };

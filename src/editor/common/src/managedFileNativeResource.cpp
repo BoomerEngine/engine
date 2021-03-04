@@ -15,7 +15,7 @@
 #include "core/resource/include/resourceFileLoader.h"
 #include "core/resource/include/resourceMetadata.h"
 #include "core/resource/include/resourceFileSaver.h"
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 #include "core/resource_compiler/include/importFileService.h"
 #include "core/resource/include/resourceLoadingService.h"
 

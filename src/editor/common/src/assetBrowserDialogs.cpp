@@ -23,7 +23,7 @@
 #include "engine/ui/include/uiSearchBar.h"
 #include "engine/ui/include/uiButton.h"
 #include "engine/ui/include/uiColumnHeaderBar.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 #include "engine/ui/include/uiEditBox.h"
 #include "engine/ui/include/uiCheckBox.h"
 #include "engine/ui/include/uiProgressBar.h"
@@ -270,7 +270,7 @@ void DeleteDepotItems(ui::IElement* owner, const Array<ManagedItem*>& items)
                         {
                             fileList->comment(item, "  [img:error] File is opened in editor");
                         }
-                        else if (!io::DeleteFile(file->absolutePath()))
+                        else if (!DeleteFile(file->absolutePath()))
                         {
                             fileList->comment(item, "  [img:error] Failed to delete physical file");
                         }
@@ -285,7 +285,7 @@ void DeleteDepotItems(ui::IElement* owner, const Array<ManagedItem*>& items)
                         {
                             fileList->comment(item, "  [img:error] Directory is bookmarked");
                         }
-                        else if (!io::DeleteDir(dir->absolutePath()))
+                        else if (!DeleteDir(dir->absolutePath()))
                         {
                             fileList->comment(item, "  [img:error] Failed to delete physical directory");
                         }

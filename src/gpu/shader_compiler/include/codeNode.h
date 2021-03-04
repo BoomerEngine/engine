@@ -266,7 +266,7 @@ public:
     void print(IFormatStream& builder, uint32_t level, uint32_t childIndex) const;
 
     // clone node
-    CodeNode* clone(mem::LinearAllocator& mem) const;
+    CodeNode* clone(LinearAllocator& mem) const;
 
     //--
 

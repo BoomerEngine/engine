@@ -18,7 +18,7 @@ class StubFactory;
 class CORE_OBJECT_API StubBuilder : public NoCopy
 {
 public:
-	StubBuilder(mem::LinearAllocator& mem, const StubFactory& factory);
+	StubBuilder(LinearAllocator& mem, const StubFactory& factory);
 	~StubBuilder();
 
 	// remove all created stubs
@@ -60,7 +60,7 @@ public:
 	}
 
 protected:
-	mem::LinearAllocator& m_mem;
+	LinearAllocator& m_mem;
 	const StubFactory& m_factory;
 
 	Array<IStub*> m_stubsToDestroy;

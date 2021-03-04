@@ -33,9 +33,9 @@ ResourceLoader::~ResourceLoader()
 
 //--
 
-bool ResourceLoader::validateResource(const ResourcePath& key, const io::TimeStamp& existingTimestamp)
+bool ResourceLoader::validateResource(const ResourcePath& key, const TimeStamp& existingTimestamp)
 {
-    io::TimeStamp currentFileTime;
+    TimeStamp currentFileTime;
     if (GetService<DepotService>()->queryFileTimestamp(key.view(), currentFileTime))
     {
         if (existingTimestamp < currentFileTime) // what we have loaded is older
@@ -80,7 +80,7 @@ ResourceHandle ResourceLoader::loadResource(const ResourcePath& path)
                 scopeLock.release();
 
                 // wait for the job to finish
-                Fibers::GetInstance().waitForCounterAndRelease(loadingJob->signal);
+                WaitForFence(loadingJob->signal);
 
                 // return the resource pointer produced by the job
                 return loadingJob->loadedResource;
@@ -91,7 +91,7 @@ ResourceHandle ResourceLoader::loadResource(const ResourcePath& path)
     // there's no loading job, create one, this will gate all other threads to wait for us to finish
     auto loadingJob = RefNew<LoadingJob>();
     loadingJob->path = path;
-    loadingJob->signal = Fibers::GetInstance().createCounter("LoadingJob", 1);
+    loadingJob->signal = CreateFence("LoadingJob", 1);
     m_loadingJobs[path] = loadingJob;
 
     // unlock the system so other threads can start other loading jobs or join waiting on the one we just created
@@ -101,7 +101,7 @@ ResourceHandle ResourceLoader::loadResource(const ResourcePath& path)
     notifyResourceLoading(path);
 
     // ask the raw loader to load the content of the resource
-    io::TimeStamp loadTimestamp;
+    TimeStamp loadTimestamp;
     if (auto resource = loadResourceOnce(path, loadTimestamp))
     {
         ASSERT(resource->path() == path);
@@ -137,7 +137,7 @@ ResourceHandle ResourceLoader::loadResource(const ResourcePath& path)
     }
 
     // finish with result
-    Fibers::GetInstance().signalCounter(loadingJob->signal);
+    SignalFence(loadingJob->signal);
     return loadingJob->loadedResource;
 }
 
@@ -177,7 +177,7 @@ bool ResourceLoader::acquireLoadedResource(const ResourcePath& path, ResourcePtr
 
 //--
 
-ResourceHandle ResourceLoader::loadResourceOnce(const ResourcePath& path, io::TimeStamp& outTimestamp)
+ResourceHandle ResourceLoader::loadResourceOnce(const ResourcePath& path, TimeStamp& outTimestamp)
 {
     if (!GetService<DepotService>()->queryFileTimestamp(path.view(), outTimestamp))
         return nullptr;
@@ -245,7 +245,7 @@ bool ResourceLoader::popNextReload(PendingReload& outReload)
 
 void ResourceLoader::processReloadEvents()
 {
-    DEBUG_CHECK_RETURN_EX(Fibers::GetInstance().isMainThread(), "Reloading can only happen on main thread");
+    DEBUG_CHECK_RETURN_EX(IsMainThread(), "Reloading can only happen on main thread");
 
     PendingReload reload;
     while (popNextReload(reload))

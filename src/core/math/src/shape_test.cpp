@@ -1992,8 +1992,8 @@ TEST(Voxelize, Sphere)
 
     shape.insert(grid, sphere);
 
-    //shape.debugSave(grid, io::AbsolutePath::Build(L"/home/rexdex/voxelizedSphere.obj"));
-	//shape.debugSave(grid, io::AbsolutePath::Build(L"Z:\\voxelizedSphere.obj"));
+    //shape.debugSave(grid, AbsolutePath::Build(L"/home/rexdex/voxelizedSphere.obj"));
+	//shape.debugSave(grid, AbsolutePath::Build(L"Z:\\voxelizedSphere.obj"));
 
     Vector3 center;
     float volume;
@@ -2026,7 +2026,7 @@ TEST(Voxelize, Teapot)
 
     shape.insert(grid, convex);
 
-   // shape.debugSave(grid, io::AbsolutePath::Build(L"/home/rexdex/voxelizedTeapot.obj"));
+   // shape.debugSave(grid, AbsolutePath::Build(L"/home/rexdex/voxelizedTeapot.obj"));
 
     Vector3 center;
     float volume;

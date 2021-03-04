@@ -9,7 +9,7 @@
 #include "build.h"
 #include "font.h"
 #include "fontLibrary.h"
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 #include "core/resource/include/depotService.h"
 
 BEGIN_BOOMER_NAMESPACE()
@@ -21,7 +21,7 @@ FontPtr LoadFontFromMemory(Buffer ptr)
     return RefNew<font::Font>(ptr);
 }
 
-FontPtr LoadFontFromFile(io::IReadFileHandle* file)
+FontPtr LoadFontFromFile(IReadFileHandle* file)
 {
     if (file)
     {
@@ -50,7 +50,7 @@ FontPtr LoadFontFromFile(io::IReadFileHandle* file)
 
 FontPtr LoadFontFromAbsolutePath(StringView absolutePath)
 {
-    if (const auto file = io::OpenForReading(absolutePath))
+    if (const auto file = OpenForReading(absolutePath))
         return LoadFontFromFile(file);
     return nullptr;
 }

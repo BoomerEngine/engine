@@ -41,7 +41,7 @@ public:
     //--
 
     // change the imported source settings
-    void changeImportMetadata(StringView by, StringView at, io::TimeStamp time);
+    void changeImportMetadata(StringView by, StringView at, TimeStamp time);
 
     // set the default "imported" settings - computer name, host, and time
     void setupDefaultImportMetadata();
@@ -52,7 +52,7 @@ protected:
 
     StringBuf m_sourceImportedBy;
     StringBuf m_sourceImportedAt;
-    io::TimeStamp m_sourceImportedOn;
+    TimeStamp m_sourceImportedOn;
 };
 
 ///---
@@ -77,7 +77,7 @@ struct CORE_RESOURCE_API ImportDependency
 
 public:
     StringBuf importPath; // full absolute path (saved as UTF-8) to source import path
-    io::TimeStamp timestamp; // timestamp of the file at the time of last import, used to filter out crc checks
+    TimeStamp timestamp; // timestamp of the file at the time of last import, used to filter out crc checks
     uint64_t crc = 0; // CRC of the source import file
 };
 

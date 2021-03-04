@@ -12,7 +12,7 @@
 #include "core/system/include/thread.h"
 #include "core/system/include/scopeLock.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(fibers)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -30,7 +30,7 @@ namespace prv
         m_counters = new WaitCounterData[maxCounter];
         m_freeCounterIds.reserve(maxCounter);
         for (int i=(int)maxCounter-1; i>=0; --i)
-            m_freeCounterIds.pushBack((WaitCounterID)i);
+            m_freeCounterIds.pushBack((FiberSemaphoreID)i);
     }
 
     ThreadBasedScheduler::~ThreadBasedScheduler()
@@ -67,7 +67,7 @@ namespace prv
         // TODO!
     }
 
-    WaitCounter ThreadBasedScheduler::createCounter(const char* userName, uint32_t count /*= 1*/)
+    FiberSemaphore ThreadBasedScheduler::createCounter(const char* userName, uint32_t count /*= 1*/)
     {
         // get the free id
         m_freeCountersLock.acquire();
@@ -92,15 +92,15 @@ namespace prv
 
         // return wrapper
         TRACE_SPAM("Created counter {}, initial value {}", seqId, count);
-        return WaitCounter(id, seqId);
+        return FiberSemaphore(id, seqId);
     }
 
-    void ThreadBasedScheduler::scheduleSync(const Job &job)
+    void ThreadBasedScheduler::scheduleSync(const FiberJob &job)
     {
         // TODO
     }
 
-    void ThreadBasedScheduler::scheduleFiber(const Job& job, uint32_t numInvokations /*= 1*/, bool child)
+    void ThreadBasedScheduler::scheduleFiber(const FiberJob& job, uint32_t numInvokations /*= 1*/, bool child)
     {
         ASSERT(job.func);
         ASSERT(numInvokations);
@@ -174,7 +174,7 @@ namespace prv
         return 4;
     }
 
-    JobID ThreadBasedScheduler::currentJobID() const
+    FiberJobID ThreadBasedScheduler::currentJobID() const
     {
         return CurrentJob ? CurrentJob->m_jobId : 0;
     }
@@ -184,7 +184,7 @@ namespace prv
         Yield();
     }
 
-    bool ThreadBasedScheduler::checkCounter(const WaitCounter& counter)
+    bool ThreadBasedScheduler::checkCounter(const FiberSemaphore& counter)
     {
         // invalid counter
         if (counter.empty())
@@ -200,12 +200,12 @@ namespace prv
         // TODO
     }
 
-    void ThreadBasedScheduler::waitForMultipleCountersAndRelease(const WaitCounter* counters, uint32_t count)
+    void ThreadBasedScheduler::waitForMultipleCountersAndRelease(const FiberSemaphore* counters, uint32_t count)
     {
         // TODO
     }
 
-    void ThreadBasedScheduler::waitForCounterAndRelease(const WaitCounter& counter)
+    void ThreadBasedScheduler::waitForCounterAndRelease(const FiberSemaphore& counter)
     {
         // invalid counter
         if (counter.empty())
@@ -240,7 +240,7 @@ namespace prv
         }
     }
 
-    void ThreadBasedScheduler::signalCounter(const WaitCounter& counter, uint32_t count /*= 1*/)
+    void ThreadBasedScheduler::signalCounter(const FiberSemaphore& counter, uint32_t count /*= 1*/)
     {
         ASSERT_EX(!counter.empty(), "Trying to signal invalid counter");
 
@@ -273,7 +273,7 @@ namespace prv
     ThreadBasedScheduler::JobPayload::JobPayload()
         : m_invocationIndex(0)
         , m_jobId(0)
-        , m_name("Job")
+        , m_name("FiberJob")
     {}
 
     ThreadBasedScheduler::JobThread::JobThread(ThreadBasedScheduler* owner, uint32_t id)
@@ -383,7 +383,7 @@ namespace prv
 
     //---
 
-    void ThreadBasedScheduler::returnCounterToPool(WaitCounterID id)
+    void ThreadBasedScheduler::returnCounterToPool(FiberSemaphoreID id)
     {
         auto& entry = m_counters[id];
         ASSERT_EX(entry.m_refCount.load() == 0, "Counter is still in use");
@@ -402,4 +402,4 @@ namespace prv
 
 } // prv
 
-END_BOOMER_NAMESPACE_EX(fibers)
+END_BOOMER_NAMESPACE()

@@ -18,7 +18,6 @@ BEGIN_BOOMER_NAMESPACE_EX(rendering)
 
 ///---
 
-struct SceneStats;
 struct FrameStats;
 class FrameResources;
 class FrameHelper;

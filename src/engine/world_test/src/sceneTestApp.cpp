@@ -375,11 +375,10 @@ void SceneTestProject::prepareSceneCommandBuffers(gpu::CommandWriter& cmd, const
         m_currentTest->render(frame);
 
     m_lastCamera = frame.camera.camera;
-    m_lastFrameStats.reset();
-    m_lastSceneStats.reset();
+    m_lastFrameStats = rendering::FrameStats();
 
     // generate command buffers
-    if (auto sceneRenderingCommands = GetService<rendering::FrameRenderingService>()->renderFrame(frame, target, &m_lastFrameStats, &m_lastSceneStats))
+    if (auto sceneRenderingCommands = GetService<rendering::FrameRenderingService>()->render(frame, target, nullptr, m_lastFrameStats))
         cmd.opAttachChildCommandBuffer(sceneRenderingCommands);
 }
 
@@ -453,7 +452,7 @@ void SceneTestProject::renderCanvas(canvas::Canvas& canvas)
 
         if (cvShowSceneStats.get() && ImGui::Begin("Frame stats", &cvShowSceneStats.get()))
         {
-            rendering::RenderStatsGui(m_lastFrameStats, m_lastSceneStats);
+            rendering::RenderStatsGui(m_lastFrameStats);
             ImGui::End();
         }
 

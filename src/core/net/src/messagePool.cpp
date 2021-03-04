@@ -57,7 +57,7 @@ MessagePtr Message::AllocateFromPool(Type messageType)
     auto dataAlignment  = std::max<uint32_t>(alignof(Message), messageClass->alignment());
     auto dataOffset = Align<uint32_t>(sizeof(Message), messageClass->alignment());
     auto dataSize = dataOffset + messageClass->size();
-    auto data = mem::GlobalPool<POOL_NET_MESSAGE>::Alloc(dataSize, dataAlignment);
+    auto data = GlobalPool<POOL_NET_MESSAGE>::Alloc(dataSize, dataAlignment);
     if (!data)
         return nullptr; // OOM that we can handle somehow, also prevents from sending messages of VERY large classes
 

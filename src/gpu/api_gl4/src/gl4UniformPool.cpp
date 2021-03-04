@@ -65,7 +65,7 @@ UniformBuffer UniformBufferPool::allocateBuffer()
 	UniformBuffer ret = m_freeEntries.top();
 	m_freeEntries.pop();
 
-	mem::PoolStats::GetInstance().notifyAllocation(POOL_API_DYNAMIC_CONSTANT_BUFFER, m_bufferSize);
+	PoolNotifyAllocation(POOL_API_DYNAMIC_CONSTANT_BUFFER, m_bufferSize);
 
 	return ret;
 }
@@ -75,7 +75,7 @@ void UniformBufferPool::returnToPool(UniformBuffer buffer)
 	DEBUG_CHECK_RETURN_EX(m_owningThreadID == GetCurrentThreadID(), "Calling from wrong thread");
 	DEBUG_CHECK_RETURN_EX(m_allOwnedBuffers.contains(buffer.glBuffer), "Freeing buffer that does not belong to the pool");
 
-	mem::PoolStats::GetInstance().notifyFree(POOL_API_DYNAMIC_CONSTANT_BUFFER, m_bufferSize);
+	PoolNotifyFree(POOL_API_DYNAMIC_CONSTANT_BUFFER, m_bufferSize);
 
 	m_freeEntries.push(buffer);
 }

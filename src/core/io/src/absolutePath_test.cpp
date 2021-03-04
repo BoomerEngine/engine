@@ -10,8 +10,6 @@
 
 #include "core/test/include/gtest/gtest.h"
 
-#include "pathBuilder.h"
-
 BEGIN_BOOMER_NAMESPACE()
 
 DECLARE_TEST_FILE(PathTests);
@@ -19,9 +17,10 @@ DECLARE_TEST_FILE(PathTests);
 
 //---
 
+#if 0
 TEST(PathBuilder, SimplePathLinux)
 {
-    io::PathBuilder builder("/test/crap/file.txt.xml");
+    PathBuilder builder("/test/crap/file.txt.xml");
 
     EXPECT_EQ(std::string(builder.drive().c_str()), "");
 
@@ -43,11 +42,12 @@ TEST(PathBuilder, SimplePathLinux)
 
 TEST(PathBuilder, NormalizedPathLinux)
 {
-    io::PathBuilder builder("/test/crap/.././..//file.txt.xml");
+    PathBuilder builder("/test/crap/.././..//file.txt.xml");
 
     EXPECT_STREQ(builder.drive().c_str(), "");
     ASSERT_EQ(0, builder.numDirectories());
     EXPECT_STREQ(builder.fileName().c_str(), "file");
 }
+#endif
 
 END_BOOMER_NAMESPACE()

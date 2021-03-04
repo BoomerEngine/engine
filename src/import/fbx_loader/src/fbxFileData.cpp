@@ -9,7 +9,7 @@
 #include "build.h"
 #include "fbxFileData.h"
 
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 #include "core/app/include/localServiceContainer.h"
 #include "core/containers/include/inplaceArray.h"
 #include "core/resource/include/resource.h"

@@ -56,7 +56,7 @@ public:
     bool resolvePath(const replication::DataMappedID& id, const char* separator, IFormatStream& f) const;
 
 private:
-    mem::LinearAllocator m_mem; // to hold string memory
+    LinearAllocator m_mem; // to hold string memory
 
     HashMap<StringView, replication::DataMappedID> m_stringMap;
     HashMap<replication::DataMappedID, StringView> m_stringRevMap;

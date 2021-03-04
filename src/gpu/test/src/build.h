@@ -6,5 +6,5 @@
 
 #pragma once
 
-#include "gpu_test_api_glue.inl"
+#include "gpu_test_glue.inl"
 

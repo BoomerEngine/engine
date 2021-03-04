@@ -11,7 +11,7 @@
 #include "core/test/include/gtest/gtest.h"
 #include "core/object/include/object.h"
 #include "core/reflection/include/reflectionMacros.h"
-#include "core/io/include/ioFileHandleMemory.h"
+#include "core/io/include/fileHandleMemory.h"
 #include "core/object/include/streamOpcodes.h"
 #include "core/object/include/streamOpcodeWriter.h"
 #include "core/object/include/rttiProperty.h"

@@ -9,7 +9,7 @@
 
 #include "core/test/include/gtest/gtest.h"
 #include "core/fibers/include/fiberSystem.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 #include "core/app/include/commandline.h"
 
 void* GCurrentModuleHandle = nullptr;
@@ -87,7 +87,7 @@ int main(int argc, char **argv)
 {
     InitializeStaticDependencies();
 
-    boomer::Fibers::GetInstance().initialize(boomer::app::CommandLine());
+    boomer::InitializeFibers(boomer::app::CommandLine());
     boomer::profiler::Block::InitializeDisabled();
 	boomer::socket::Initialize();
 

@@ -161,11 +161,11 @@ private:
         bool poolIDValid = false;
         int parent = -1;
         Array<short> children;
-        mem::PoolStatsData localStats;
-        mem::PoolStatsData mergedStats;
+        PoolStatsData localStats;
+        PoolStatsData mergedStats;
 
-        mem::PoolStatsData curFrameStats;
-        mem::PoolStatsData lastFrameStats;
+        PoolStatsData curFrameStats;
+        PoolStatsData lastFrameStats;
     };
 
     void emitPoolInfo(bool average, int mode, const PoolInfo* infos, short id)
@@ -270,7 +270,7 @@ private:
         return id;
     }
 
-    static void MergeChildStats(mem::PoolStatsData& merge, const  mem::PoolStatsData& child)
+    static void MergeChildStats(PoolStatsData& merge, const  PoolStatsData& child)
     {
         merge.m_totalAllocations += child.m_totalAllocations;
         merge.m_maxAllocations += child.m_maxAllocations;
@@ -286,7 +286,7 @@ private:
         merge.m_lastFrameFreesSize += child.m_lastFrameFreesSize;
     }
 
-    static void MergeFrameStats(mem::PoolStatsData& merge, const  mem::PoolStatsData& child)
+    static void MergeFrameStats(PoolStatsData& merge, const  PoolStatsData& child)
     {
         merge.m_totalAllocations = std::max(merge.m_totalAllocations, child.m_totalAllocations);
         merge.m_maxAllocations = std::max(merge.m_maxAllocations, child.m_maxAllocations);
@@ -308,7 +308,7 @@ private:
         {
             auto &entry = m_entries[i];
             entry.lastFrameStats = entry.curFrameStats;
-            entry.curFrameStats = mem::PoolStatsData();
+            entry.curFrameStats = PoolStatsData();
         }
     }
 
@@ -317,9 +317,9 @@ private:
         for (int i=m_entries.lastValidIndex(); i >=0; --i)
         {
             auto& entry = m_entries[i];
-            entry.localStats = mem::PoolStatsData();
+            entry.localStats = PoolStatsData();
             if (entry.poolIDValid)
-                    mem::PoolStats::GetInstance().stats(entry.poolID, entry.localStats);
+                PoolStats(entry.poolID, entry.localStats);
 
             entry.mergedStats = entry.localStats;
             for (auto& childID : entry.children)

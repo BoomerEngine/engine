@@ -23,7 +23,7 @@
 #include "engine/ui/include/uiMenuBar.h"
 #include "engine/ui/include/uiElement.h"
 #include "engine/ui/include/uiRenderer.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -254,7 +254,7 @@ void BuildDepotContextMenu(ui::IElement* owner, ui::MenuButtonContainer& menu, c
                 auto absolutePath = file->absolutePath();
                 if (!absolutePath.empty())
                 {
-                    menu.createCallback("Show in files...", "[img:zoom]") = [absolutePath]() { io::ShowFileExplorer(absolutePath); };
+                    menu.createCallback("Show in files...", "[img:zoom]") = [absolutePath]() { ShowFileExplorer(absolutePath); };
                     menu.createSeparator();
                 }
             }

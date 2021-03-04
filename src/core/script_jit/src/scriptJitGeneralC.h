@@ -25,7 +25,7 @@ public:
     virtual bool compile(const IJITNativeTypeInsight& typeInsight, const CompiledProjectPtr& data, StringView outputModulePath, const Settings& settings) override;
 
 protected:
-    mem::LinearAllocator m_mem;
+    LinearAllocator m_mem;
 
     bool m_emitExceptions;
     bool m_emitLines;

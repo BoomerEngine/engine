@@ -38,38 +38,6 @@ void FrameViewStats::merge(const FrameViewStats& stats)
 
 #if 0
 
-SceneViewStats::SceneViewStats()
-{}
-
-void SceneViewStats::merge(const SceneViewStats& view)
-{
-    auto lock = CreateLock(mergeLock);
-
-    numViews += view.numViews;
-    cullingTime += view.cullingTime;
-    fragmentsTime += view.fragmentsTime;
-
-    /*culling.merge(view.culling);
-
-    for (uint32_t i = 0; i < ARRAY_COUNT(buckets); ++i)
-        buckets[i].merge(view.buckets[i]);*/
-}
-
-SceneStats::SceneStats()
-{}
-
-void SceneStats::reset()
-{
-    memset(this, 0, sizeof(SceneStats));
-}
-
-void SceneStats::merge(const SceneStats& other)
-{
-    numScenes += other.numScenes;
-    /*for (uint32_t i = 0; i < ARRAY_COUNT(views); ++i)
-        views[i].merge(other.views[i]);*/
-}
-        
 //--
 
 FrameViewStats::FrameViewStats()
@@ -246,11 +214,8 @@ void RenderStatsGui(const FrameViewStats& frameView, const SceneViewStats& scene
     }
 }*/
 
-void RenderStatsGui(const FrameStats& frameStats, const SceneStats& mergedSceneStats)
+void RenderStatsGui(const FrameStats& frameStats)
 {
-    //MergedStats<FrameViewStats> mergedFrameViews(frameStats.views);
-    //MergedStats<SceneViewStats> mergedSceneViews(mergedSceneStats.views);
-
     ImGui::Checkbox("PerViews", &GGuiSettings.breakDownPerViewType);
     ImGui::SameLine();
     ImGui::Checkbox("PerBucket", &GGuiSettings.breakDownPerBucketType);
@@ -270,15 +235,6 @@ void RenderStatsGui(const FrameStats& frameStats, const SceneStats& mergedSceneS
             //RenderStatsGui(mergedFrameViews, mergedSceneViews);
             ImGui::TreePop();
         }
-
-        /*for (uint32_t i = 0; i < NUM_VIEW_TYPES; i++)
-        {
-            if (ImGui::TreeNode(ViewTypeName(i)))
-            {
-                RenderStatsGui(frameStats.views[i], mergedSceneStats.views[i]);
-                ImGui::TreePop();
-            }
-        }*/
     }
     else
     {

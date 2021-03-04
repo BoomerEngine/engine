@@ -62,7 +62,7 @@ private:
 class FunctionParsingContext : public NoCopy
 {
 public:
-    FunctionParsingContext(mem::LinearAllocator& mem, FunctionParser& fileParser, const StubFunction* function, FunctionCode& outCode);
+    FunctionParsingContext(LinearAllocator& mem, FunctionParser& fileParser, const StubFunction* function, FunctionCode& outCode);
 
     //--
 
@@ -109,7 +109,7 @@ private:
     FunctionParser& m_parser;
     const StubFunction* m_function;
     FunctionCode& m_code;
-    mem::LinearAllocator& m_mem;
+    LinearAllocator& m_mem;
 
     Array<FunctionNode*> m_contextStack;
 };

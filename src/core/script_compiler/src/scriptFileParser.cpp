@@ -197,7 +197,7 @@ IErrorHandler::~IErrorHandler()
 
 ///---
 
-FileParser::FileParser(mem::LinearAllocator& mem, IErrorHandler& err, StubLibrary& library)
+FileParser::FileParser(LinearAllocator& mem, IErrorHandler& err, StubLibrary& library)
     : m_mem(mem)
     , m_err(err)
     , m_library(library)

@@ -9,8 +9,8 @@
 #include "build.h"
 #include "managedThumbnails.h"
 #include "core/image/include/image.h"
-#include "core/io/include/ioSystem.h"
-#include "core/io/include/ioDirectoryWatcher.h"
+#include "core/io/include/io.h"
+#include "core/io/include/directoryWatcher.h"
 #include "core/containers/include/stringParser.h"
 #include "core/process/include/process.h"
 #include "core/resource/include/resourceThumbnail.h"
@@ -32,7 +32,7 @@ ManagedThumbnailHelper::ManagedThumbnailHelper()
 
 ManagedThumbnailHelper::~ManagedThumbnailHelper()
 {
-    fibers::WaitCounter loadingFence;
+    FiberSemaphore loadingFence;
     {
         auto lock = CreateLock(m_loadingQueueLock);
         m_loadingQueue.clearPtr();
@@ -40,7 +40,7 @@ ManagedThumbnailHelper::~ManagedThumbnailHelper()
         loadingFence = std::move(m_loadingJobFence);
     }
 
-    Fibers::GetInstance().waitForCounterAndRelease(loadingFence);
+    WaitForFence(loadingFence);
 }
 
 void ManagedThumbnailHelper::loadThumbnail(ManagedFile* file)
@@ -83,7 +83,7 @@ ManagedFile* ManagedThumbnailHelper::popFileLoadingQueueOrSignalFence()
         return file;
 
     DEBUG_CHECK_EX(!m_loadingJobFence.empty(), "Ups, we were not loading");
-    Fibers::GetInstance().signalCounter(m_loadingJobFence); // no more loading, jobs done
+    SignalFence(m_loadingJobFence); // no more loading, jobs done
     return nullptr;
 }
 
@@ -123,7 +123,7 @@ void ManagedThumbnailHelper::processPendingUpdates()
         {
             if (auto* file = popFileLoadingQueue_NoLock())
             {
-                m_loadingJobFence = Fibers::GetInstance().createCounter("ThumbnailLoadingFence", 1);
+                m_loadingJobFence = CreateFence("ThumbnailLoadingFence", 1);
 
                 RunFiber("ThumbnailLoading") << [this, file](FIBER_FUNC)
                 {

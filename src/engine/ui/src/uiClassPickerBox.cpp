@@ -31,7 +31,7 @@ struct ClassInfo
 
 struct ClassListing
 {
-    mem::StructurePool<ClassInfo> pool;
+    StructurePool<ClassInfo> pool;
     HashMap<ClassType, ClassInfo*> classMap;
     ClassInfo* rootClassInfo = nullptr;
 

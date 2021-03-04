@@ -391,7 +391,7 @@ protected:
     TimerEntry* m_timerListTail = nullptr;
     TimerEntry* m_timerIterationNext = nullptr;
     HashMap<Timer*, TimerEntry*> m_attachedTimers;
-    mem::StructurePool<TimerEntry> m_timerEntryPool;
+    StructurePool<TimerEntry> m_timerEntryPool;
 
     void processTimers();
 

@@ -20,7 +20,7 @@
     #pragma optimize("",off)
 #endif
 
-BEGIN_BOOMER_NAMESPACE_EX(fibers)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -47,7 +47,7 @@ namespace prv
         m_freeWaitLists = nullptr;
         for (uint32_t i = 0; i < maxWaitLists; ++i)
         {
-            m_waitLists[i].localId = (WaitCounterID)i;
+            m_waitLists[i].localId = (FiberSemaphoreID)i;
             m_waitLists[i].listNext = m_freeWaitLists;
             m_freeWaitLists = &m_waitLists[i];
         }
@@ -90,7 +90,7 @@ namespace prv
         return entry;
     }
 
-    WaitCounter BaseScheduler::WaitCounterPool::allocWaitCounter(const char* userName, uint32_t initialCount)
+    FiberSemaphore BaseScheduler::WaitCounterPool::allocWaitCounter(const char* userName, uint32_t initialCount)
     {
         auto lock = CreateLock(m_lock);
 
@@ -107,10 +107,10 @@ namespace prv
         counter->userName = userName;
 
         // return handle
-        return WaitCounter(counter->localId, counter->seqId);
+        return FiberSemaphore(counter->localId, counter->seqId);
     }
 
-    void BaseScheduler::WaitCounterPool::releaseWaitCounter(const WaitCounter& counter)
+    void BaseScheduler::WaitCounterPool::releaseWaitCounter(const FiberSemaphore& counter)
     {
         auto lock = CreateLock(m_lock);
 
@@ -170,7 +170,7 @@ namespace prv
         }
     }
 
-    bool BaseScheduler::WaitCounterPool::checkWaitCounter(const WaitCounter& counter)
+    bool BaseScheduler::WaitCounterPool::checkWaitCounter(const FiberSemaphore& counter)
     {
         auto lock = CreateLock(m_lock);
 
@@ -186,7 +186,7 @@ namespace prv
         return false;
     }
 
-    bool BaseScheduler::WaitCounterPool::addJobToWaitingList(const WaitCounter& counter, PendingJob* job)
+    bool BaseScheduler::WaitCounterPool::addJobToWaitingList(const FiberSemaphore& counter, PendingJob* job)
     {
         // job entering this function must be in the waiting state
         ASSERT(job->state.load() == PendingJobState::Waiting);
@@ -219,7 +219,7 @@ namespace prv
         return true;
     }
 
-    void BaseScheduler::WaitCounterPool::waitForCounterThreadEvent(const WaitCounter& counter)
+    void BaseScheduler::WaitCounterPool::waitForCounterThreadEvent(const FiberSemaphore& counter)
     {
         // we cannot wait on the zero counter
         if (counter.empty())
@@ -260,7 +260,7 @@ namespace prv
             fprintf(stderr, "-> JOB %u (%s) ", waitList->jobId, waitList->job.name);
     }
 
-    void BaseScheduler::WaitCounterPool::printCounterInfo(const WaitCounter& counter)
+    void BaseScheduler::WaitCounterPool::printCounterInfo(const FiberSemaphore& counter)
     {
         auto lock = CreateLock(m_lock);
 
@@ -287,19 +287,19 @@ namespace prv
         printCounterInfo(entry);
     }
 
-    WaitCounter BaseScheduler::WaitCounterPool::findCounter(uint32_t id)
+    FiberSemaphore BaseScheduler::WaitCounterPool::findCounter(uint32_t id)
     {
         if (id >= m_maxCounterId)
-            return WaitCounter();
+            return FiberSemaphore();
 
         auto& entry = m_waitLists[id];
         if (entry.currentCount.load() == 0)
-            return WaitCounter();
+            return FiberSemaphore();
 
-        return WaitCounter(entry.localId, entry.seqId);
+        return FiberSemaphore(entry.localId, entry.seqId);
     }
 
-    BaseScheduler::PendingJob* BaseScheduler::WaitCounterPool::signalWaitCounter(const WaitCounter& counter, uint32_t count)
+    BaseScheduler::PendingJob* BaseScheduler::WaitCounterPool::signalWaitCounter(const FiberSemaphore& counter, uint32_t count)
     {
         auto lock = CreateLock(m_lock);
 
@@ -338,7 +338,7 @@ namespace prv
 
 } // prv
 
-END_BOOMER_NAMESPACE_EX(fibers)
+END_BOOMER_NAMESPACE()
 
 #ifdef PLATFORM_GCC
     #pragma GCC pop_options

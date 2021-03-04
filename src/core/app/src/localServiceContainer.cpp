@@ -98,17 +98,17 @@ void LocalServiceContainer::update()
     PC_SCOPE_LVL1(UpdateLocalServices);
 
     // make sure sync jobs are done
-    Fibers::GetInstance().runSyncJobs();
+    RunSyncJobs();
 
     // reset per frame memory stats
-    mem::PoolStats::GetInstance().resetFrameStatistics();
+    PoolResetFrameStatistics();
 
     // update the sync part of all the service
     for (auto service : m_tickList)
         service->onSyncUpdate();
 
     // make sure sync jobs are done
-    Fibers::GetInstance().runSyncJobs();
+    RunSyncJobs();
 }
 
 namespace helper

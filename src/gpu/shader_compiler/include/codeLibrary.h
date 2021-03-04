@@ -45,7 +45,7 @@ struct ResolvedDescriptorEntry
 class GPU_SHADER_COMPILER_API CodeLibrary : public NoCopy
 {
 public:
-    CodeLibrary(mem::LinearAllocator& allocator, TypeLibrary& typeLibrary);
+    CodeLibrary(LinearAllocator& allocator, TypeLibrary& typeLibrary);
     ~CodeLibrary();
 
     //--
@@ -82,7 +82,7 @@ public:
     INLINE const TypeLibrary& typeLibrary() const { return *m_typeLibrary; }
 
     // get memory allocator for all parsing operations
-    INLINE mem::LinearAllocator& allocator() const { return m_allocator; }
+    INLINE LinearAllocator& allocator() const { return m_allocator; }
 
     // get all compiled programs
     typedef Array<const Program*> TProgramList;
@@ -106,7 +106,7 @@ public:
 
 private:
     // memory allocator for the parsing operations
-    mem::LinearAllocator& m_allocator;
+    LinearAllocator& m_allocator;
 
     // type library where are composite and enum types are registered
     TypeLibrary* m_typeLibrary;

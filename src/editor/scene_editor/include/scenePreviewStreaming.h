@@ -55,7 +55,7 @@ public:
 private:
     World* m_world;
 
-    mem::StructurePool<SceneNodeVisualization> m_proxyPool;
+    StructurePool<SceneNodeVisualization> m_proxyPool;
 
     Array<SceneNodeVisualization*> m_proxies;
     Array<uint32_t> m_freeProxyIndices;

@@ -2251,7 +2251,7 @@ StringBuf AssembleDumpFileName(const StringView contextName, const StringView co
 
 StringBuf AssembleDumpFilePath(const StringView contextName, const StringView contextOptions, const StringView type)
 {
-	const auto& tempDir = io::SystemPath(io::PathCategory::LocalTempDir);
+	const auto& tempDir = SystemPath(PathCategory::LocalTempDir);
 
 	StringBuilder txt;
 	txt << tempDir;

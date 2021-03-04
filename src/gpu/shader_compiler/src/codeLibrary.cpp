@@ -15,7 +15,7 @@
 #include "typeLibrary.h"
 #include "codeLibrary.h"
 
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 #include "core/memory/include/linearAllocator.h"
 #include "core/containers/include/sortedArray.h"
 #include "core/containers/include/stringBuilder.h"
@@ -25,7 +25,7 @@ BEGIN_BOOMER_NAMESPACE_EX(gpu::compiler)
 
 //--
 
-CodeLibrary::CodeLibrary(mem::LinearAllocator& allocator, TypeLibrary& typeLibrary)
+CodeLibrary::CodeLibrary(LinearAllocator& allocator, TypeLibrary& typeLibrary)
     : m_allocator(allocator)
     , m_typeLibrary(&typeLibrary)
 {

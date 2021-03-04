@@ -652,7 +652,7 @@ public:
         auto maxJobs = std::max<uint32_t>(1, std::min<uint32_t>(cvMaxTextureCompressionThreads.get(), maxBlocks));
 
         if (cvMaxTextureCompressionThreads.get() <= 0)
-            maxJobs = std::max<int>(1, Fibers::GetInstance().workerThreadCount() + cvMaxTextureCompressionThreads.get());
+            maxJobs = std::max<int>(1, WorkerThreadCount() + cvMaxTextureCompressionThreads.get());
 
         if (targetFormat == ImageFormat::BC7_SRGB || targetFormat == ImageFormat::BC7_UNORM)
         {
@@ -661,7 +661,7 @@ public:
             init_ramps();
         }
 
-        m_finishCounter = Fibers::GetInstance().createCounter("ImageCompression", maxJobs);
+        m_finishCounter = CreateFence("ImageCompression", maxJobs);
         for (uint32_t i = 0; i < maxJobs; ++i)
             startJobLoop();
     }
@@ -673,7 +673,7 @@ public:
 
     void wait()
     {
-        Fibers::GetInstance().waitForCounterAndRelease(m_finishCounter);
+        WaitForFence(m_finishCounter);
     }
 
 protected:
@@ -719,7 +719,7 @@ protected:
         else
         {
             TRACE_INFO("No more blocks to process");
-            Fibers::GetInstance().signalCounter(m_finishCounter);
+            SignalFence(m_finishCounter);
         }
     }
 
@@ -731,10 +731,10 @@ protected:
             while (popMegaBlock(x, y))
             {
                 processMegaBlock(x, y);
-                Fibers::GetInstance().yield();
+                YieldFiber();
             }
 
-            Fibers::GetInstance().signalCounter(m_finishCounter);
+            SignalFence(m_finishCounter);
         };
     }
 
@@ -840,7 +840,7 @@ private:
     uint32_t m_mipIndex = 0;
     uint32_t m_totalMips = 0;
 
-    fibers::WaitCounter m_finishCounter;
+    FiberSemaphore m_finishCounter;
 };
      
 //--

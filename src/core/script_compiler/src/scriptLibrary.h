@@ -23,7 +23,7 @@ class TypeCastMatrix;
 class StubLibrary : public NoCopy
 {
 public:
-    StubLibrary(mem::LinearAllocator& mem, StringView primaryModuleName);
+    StubLibrary(LinearAllocator& mem, StringView primaryModuleName);
     ~StubLibrary();
 
     //--
@@ -153,7 +153,7 @@ public:
     void pruneUnusedImports();
 
 private:
-    mem::LinearAllocator& m_mem;
+    LinearAllocator& m_mem;
 
     //--
 

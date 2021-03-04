@@ -105,7 +105,7 @@ struct JITImportedFunction
 class CORE_SCRIPT_JIT_API JITTypeLib : public NoCopy
 {
 public:
-    JITTypeLib(mem::LinearAllocator& mem, const IJITNativeTypeInsight& nativeTypes);
+    JITTypeLib(LinearAllocator& mem, const IJITNativeTypeInsight& nativeTypes);
     ~JITTypeLib();
 
     /// do we have errors ?
@@ -148,7 +148,7 @@ public:
     void printImports(IFormatStream& f) const;
 
 private:
-    mem::LinearAllocator& m_mem;
+    LinearAllocator& m_mem;
     const IJITNativeTypeInsight& m_nativeTypes;
 
     Array<const JITType*> m_allTypes;

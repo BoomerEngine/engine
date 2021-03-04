@@ -762,12 +762,12 @@ namespace ole
 
             PoolArray(int size) : size(size), next(NULL)
             {
-                array = boomer::mem::GlobalPool<POOL_CONVEX_HULL_BUILDING, T>::AllocN(size);
+                array = boomer::GlobalPool<POOL_CONVEX_HULL_BUILDING, T>::AllocN(size);
             }
 
             ~PoolArray()
             {
-                boomer::mem::GlobalPool<POOL_CONVEX_HULL_BUILDING, T>::Free(array);
+                boomer::GlobalPool<POOL_CONVEX_HULL_BUILDING, T>::Free(array);
             }
 
             T* init()
@@ -802,7 +802,7 @@ namespace ole
                     PoolArray<T>* p = arrays;
                     arrays = p->next;
                     p->~PoolArray<T>();
-                    boomer::mem::GlobalPool<POOL_CONVEX_HULL_BUILDING>::Free(p);
+                    boomer::GlobalPool<POOL_CONVEX_HULL_BUILDING>::Free(p);
                 }
             }
 
@@ -829,7 +829,7 @@ namespace ole
                     }
                     else
                     {
-                        p = new ( boomer::mem::GlobalPool<POOL_CONVEX_HULL_BUILDING, PoolArray<T>>::AllocN(1) ) PoolArray<T>(arraySize);
+                        p = new ( boomer::GlobalPool<POOL_CONVEX_HULL_BUILDING, PoolArray<T>>::AllocN(1) ) PoolArray<T>(arraySize);
                         p->next = arrays;
                         arrays = p;
                     }
@@ -3422,12 +3422,12 @@ namespace ole2
 
             PoolArray(int size): size(size), next(NULL)
             {
-                array = boomer::mem::GlobalPool<POOL_CONVEX_HULL_BUILDING, T>::AllocN(size);
+                array = boomer::GlobalPool<POOL_CONVEX_HULL_BUILDING, T>::AllocN(size);
             }
 
             ~PoolArray()
             {
-                boomer::mem::GlobalPool<POOL_CONVEX_HULL_BUILDING, T>::Free(array);
+                boomer::GlobalPool<POOL_CONVEX_HULL_BUILDING, T>::Free(array);
             }
 
             T* init()
@@ -3461,7 +3461,7 @@ namespace ole2
                     PoolArray<T>* p = arrays;
                     arrays = p->next;
                     p->~PoolArray<T>();
-                    mem::GlobalPool<POOL_CONVEX_HULL_BUILDING>::Free(p);
+                    GlobalPool<POOL_CONVEX_HULL_BUILDING>::Free(p);
                 }
             }
 
@@ -3488,7 +3488,7 @@ namespace ole2
                     }
                     else
                     {
-                        p = new ( boomer::mem::GlobalPool<POOL_CONVEX_HULL_BUILDING, PoolArray<T>>::AllocN(1) ) PoolArray<T>(arraySize);
+                        p = new ( boomer::GlobalPool<POOL_CONVEX_HULL_BUILDING, PoolArray<T>>::AllocN(1) ) PoolArray<T>(arraySize);
                         p->next = arrays;
                         arrays = p;
                     }

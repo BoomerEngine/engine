@@ -26,7 +26,7 @@ ManagedBuffer::ManagedBuffer(const BufferCreationInfo& info)
     auto device = GetService<DeviceService>()->device();
     m_bufferObject = device->createBuffer(creationInfo);
 
-    m_backingStorage = mem::GlobalPool<POOL_API_BACKING_STORAGE, uint8_t>::Alloc(info.size, 16);//, info.label.empty() ? "ManagedBuffer" : info.label.c_str());
+    m_backingStorage = GlobalPool<POOL_API_BACKING_STORAGE, uint8_t>::Alloc(info.size, 16);//, info.label.empty() ? "ManagedBuffer" : info.label.c_str());
     m_backingStorageEnd = m_backingStorage + info.size;
 
     m_structureGranularity = info.stride;
@@ -34,7 +34,7 @@ ManagedBuffer::ManagedBuffer(const BufferCreationInfo& info)
 
 ManagedBuffer::~ManagedBuffer()
 {
-    mem::GlobalPool<POOL_API_BACKING_STORAGE, uint8_t>::Free(m_backingStorage);
+    GlobalPool<POOL_API_BACKING_STORAGE, uint8_t>::Free(m_backingStorage);
     m_backingStorage = nullptr;
     m_backingStorageEnd = nullptr;
 

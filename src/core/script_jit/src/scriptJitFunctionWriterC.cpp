@@ -39,7 +39,7 @@ const StubOpcode* JITOpcodeStream::read()
 
 //--
 
-JITFunctionWriterC::JITFunctionWriterC(mem::LinearAllocator& mem, JITTypeLib& types, JITConstCache& consts, const StubFunction* func, bool hasDirectParamAccess, bool emitExceptions, bool emitLines)
+JITFunctionWriterC::JITFunctionWriterC(LinearAllocator& mem, JITTypeLib& types, JITConstCache& consts, const StubFunction* func, bool hasDirectParamAccess, bool emitExceptions, bool emitLines)
     : m_mem(mem)
     , m_types(types)
     , m_consts(consts)

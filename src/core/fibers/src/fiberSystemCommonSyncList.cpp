@@ -20,7 +20,7 @@
     #pragma optimize("",off)
 #endif
 
-BEGIN_BOOMER_NAMESPACE_EX(fibers)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -33,7 +33,7 @@ namespace prv
         , m_count(0)
     {}
 
-    void BaseScheduler::SyncList::push(const Job& jobPayload)
+    void BaseScheduler::SyncList::push(const FiberJob& jobPayload)
     {
         auto lock = CreateLock(m_lock);
 
@@ -110,7 +110,7 @@ namespace prv
 
 } // prv
 
-END_BOOMER_NAMESPACE_EX(fibers)
+END_BOOMER_NAMESPACE()
 
 #ifdef PLATFORM_GCC
     #pragma GCC pop_options

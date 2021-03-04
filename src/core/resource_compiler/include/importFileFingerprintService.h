@@ -56,10 +56,10 @@ private:
     struct CacheJob : public IReferencable
     {
         StringBuf path;
-        io::TimeStamp timestamp;
+        TimeStamp timestamp;
         ImportFileFingerprint fingerprint;
         FingerpintCalculationStatus status = FingerpintCalculationStatus::OK;
-        fibers::WaitCounter signal;
+        FiberSemaphore signal;
     };
 
     // synchronization for blobs being loaded/saved

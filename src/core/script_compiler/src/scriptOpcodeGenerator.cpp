@@ -71,7 +71,7 @@ void OpcodeList::extract(Array<const StubOpcode *> &outOpcodes) const
 
 //--
 
-OpcodeGenerator::OpcodeGenerator(mem::LinearAllocator &storageMem)
+OpcodeGenerator::OpcodeGenerator(LinearAllocator &storageMem)
     : m_mem(storageMem)
     , m_emitBreakpoints(true)
 {

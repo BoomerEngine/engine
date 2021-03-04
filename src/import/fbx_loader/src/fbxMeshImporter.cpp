@@ -15,7 +15,7 @@
 #include "engine/mesh/include/mesh.h"
 #include "engine/material/include/materialInstance.h"
 
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 #include "core/app/include/localServiceContainer.h"
 #include "core/resource/include/resource.h"
 #include "core/containers/include/inplaceArray.h"

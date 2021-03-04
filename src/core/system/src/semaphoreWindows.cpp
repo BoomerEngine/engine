@@ -14,7 +14,7 @@ BEGIN_BOOMER_NAMESPACE()
 
 Semaphore::Semaphore(uint32_t initialCount, uint32_t maxCount)
 {
-    m_handle = CreateSemaphore(NULL, initialCount, maxCount, NULL);
+    m_handle = CreateSemaphoreA(NULL, initialCount, maxCount, NULL);
 }
 
 Semaphore::~Semaphore()

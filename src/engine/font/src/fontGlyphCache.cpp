@@ -185,9 +185,9 @@ Glyph* GlyphCache::buildGlyph(const FontStyleParams& styleParams, FT_Face faceDa
         // apply effects on the glyph
         if (styleParams.blur > 1.0f)
         {
-            //image::Image::Save(io::AbsolutePath::Build(UTF16StringVector(L"Q:\\glyph_src.png")), *ptr);
+            //image::Image::Save(AbsolutePath::Build(UTF16StringVector(L"Q:\\glyph_src.png")), *ptr);
             helper::BlurImage(*ptr, styleParams.blur);
-            //image::Image::Save(io::AbsolutePath::Build(UTF16StringVector(L"Q:\\glyph_dest.png")), *ptr);
+            //image::Image::Save(AbsolutePath::Build(UTF16StringVector(L"Q:\\glyph_dest.png")), *ptr);
         }
 
         // compute glyph metrics

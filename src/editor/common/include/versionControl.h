@@ -187,7 +187,7 @@ public:
 struct EDITOR_COMMON_API HistoryEntry
 {
     // when?
-    io::TimeStamp m_time;
+    TimeStamp m_time;
 
     // who?
     StringBuf m_user;

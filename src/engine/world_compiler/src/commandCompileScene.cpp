@@ -19,7 +19,7 @@
 #include "engine/world/include/rawScene.h"
 #include "engine/world/include/compiledScene.h"
 #include "core/resource/include/resourceFileSaver.h"
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 #include "core/resource/include/depotService.h"
 
 BEGIN_BOOMER_NAMESPACE()

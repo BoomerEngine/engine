@@ -133,7 +133,7 @@ private:
 	ImageFormat m_format;
     uint32_t m_numMipsPerSlice;
 
-	fibers::WaitCounter m_fence;
+	FiberSemaphore m_fence;
 };
 
 void StaticTexture::createDeviceResources()

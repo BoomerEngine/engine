@@ -39,7 +39,7 @@ ILoadingReporter& ILoadingReporter::GetDefault()
 
 DocumentPtr LoadDocument(ILoadingReporter& ctx, StringView absoluteFilePath)
 {
-    auto buffer  = io::LoadFileToBuffer(absoluteFilePath);
+    auto buffer  = LoadFileToBuffer(absoluteFilePath);
     return LoadDocument(ctx, buffer);
 }
 
@@ -88,13 +88,13 @@ bool SaveDocument(const IDocument& ptr, StringView absoluteFilePath, bool binary
     if (binaryFormat)
     {
         auto data  = ptr.saveAsBinary(ptr.root());
-        return io::SaveFileFromBuffer(absoluteFilePath, data);
+        return SaveFileFromBuffer(absoluteFilePath, data);
     }
     else
     {
         StringBuilder txt;
         ptr.saveAsText(txt, ptr.root());
-        return io::SaveFileFromString(absoluteFilePath, txt.toString());
+        return SaveFileFromString(absoluteFilePath, txt.toString());
     }
 }
 

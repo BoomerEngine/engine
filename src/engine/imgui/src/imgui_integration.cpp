@@ -351,12 +351,12 @@ namespace ImGui
 
 	void* ImGuiAlloc(size_t size)
 	{
-		return boomer::mem::GlobalPool<POOL_IMGUI>::Alloc(size, 4);
+		return boomer::GlobalPool<POOL_IMGUI>::Alloc(size, 4);
 	}
 
 	void ImGuiFree(void* ptr)
 	{
-		return boomer::mem::GlobalPool<POOL_IMGUI>::Free(ptr);
+		return boomer::GlobalPool<POOL_IMGUI>::Free(ptr);
 	}
 
 	//--

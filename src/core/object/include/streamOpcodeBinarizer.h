@@ -35,7 +35,7 @@ struct CORE_OBJECT_API OpcodeMappedReferences : public NoCopy
 class CORE_OBJECT_API OpcodeFileWriter : public NoCopy
 {
 public:
-    OpcodeFileWriter(io::IWriteFileHandle* outputFile);
+    OpcodeFileWriter(IWriteFileHandle* outputFile);
     ~OpcodeFileWriter();
 
     //--
@@ -54,7 +54,7 @@ public:
 private:
     static const uint32_t BUFFER_SIZE = 4096;
 
-    io::IWriteFileHandle* m_outputFile;
+    IWriteFileHandle* m_outputFile;
 
     uint8_t m_cacheBuffer[BUFFER_SIZE];
     uint32_t m_cacheBufferSize = 0;

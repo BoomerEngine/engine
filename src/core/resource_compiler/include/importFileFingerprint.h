@@ -82,10 +82,10 @@ extern CORE_RESOURCE_COMPILER_API FingerpintCalculationStatus CalculateMemoryFin
 
 /// calculate file content fingerprint by reading data from async file, returns false if canceled or error occurs
 /// NOTE: this implementation will interleave reading and calculations using fibers 
-CAN_YIELD extern CORE_RESOURCE_COMPILER_API FingerpintCalculationStatus CalculateFileFingerprint(io::IAsyncFileHandle* file, bool childFiber, IProgressTracker* progress, ImportFileFingerprint& outFingerpint);
+CAN_YIELD extern CORE_RESOURCE_COMPILER_API FingerpintCalculationStatus CalculateFileFingerprint(IAsyncFileHandle* file, bool childFiber, IProgressTracker* progress, ImportFileFingerprint& outFingerpint);
 
 /// calculate file content fingerprint by reading data from async file, returns false if canceled or error occurs
-extern CORE_RESOURCE_COMPILER_API FingerpintCalculationStatus CalculateFileFingerprint(io::IReadFileHandle* file, IProgressTracker* progress, ImportFileFingerprint& outFingerpint);
+extern CORE_RESOURCE_COMPILER_API FingerpintCalculationStatus CalculateFileFingerprint(IReadFileHandle* file, IProgressTracker* progress, ImportFileFingerprint& outFingerpint);
 
 ///--
 

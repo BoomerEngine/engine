@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "core/io/include/ioDirectoryWatcher.h"
+#include "core/io/include/directoryWatcher.h"
 #include "core/system/include/spinLock.h"
 #include "core/system/include/mutex.h"
 #include "core/resource/include/resourceLoader.h"
@@ -56,7 +56,7 @@ private:
     bool m_loadingQueueChanged = false;
     uint32_t m_loadingQueueFrameIndex = 0;
     SpinLock m_loadingQueueLock;
-    fibers::WaitCounter m_loadingJobFence; // if valid means we are loading something
+    FiberSemaphore m_loadingJobFence; // if valid means we are loading something
 
     // stateless, load a thumbnail for given file
     void loadThumbnailData(ManagedFile* file);

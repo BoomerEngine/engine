@@ -10,44 +10,58 @@
 #include "poolStats.h"
 #include "poolStatsInternal.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 ///--
 
-PoolStats::PoolStats()
+const char* PoolName(PoolTag tag)
 {
+    switch (tag)
+    {
+#define BOOMER_DECLARE_POOL(name, group, size) case name: return #name + 5;
+#include "poolNames.inl"
+    }
+
+    return "UNKNOWN";
 }
 
-void PoolStats::notifyAllocation(PoolTag id, size_t size)
+const char* PoolGroupName(PoolTag tag)
+{
+    switch (tag)
+    {
+#define BOOMER_DECLARE_POOL(name, group, size) case name: return group;
+#include "poolNames.inl"
+    }
+
+    return "UNKNOWN";
+}
+
+void PoolStats(PoolTag tag, PoolStatsData& outData)
+{
+    prv::TheInternalPoolStats.stats(tag, outData);
+
+}
+
+void PoolStatsAll(PoolStatsData* outStats, uint32_t& numEntries)
+{
+    prv::TheInternalPoolStats.allStats(numEntries, outStats, numEntries);
+}
+
+void PoolNotifyAllocation(PoolTag id, size_t size)
 {
     prv::TheInternalPoolStats.notifyAllocation(id, size);
 }
 
-void PoolStats::notifyFree(PoolTag id, size_t size)
+void PoolNotifyFree(PoolTag id, size_t size)
 {
     prv::TheInternalPoolStats.notifyFree(id, size);
 }
 
-void PoolStats::resetGlobalStatistics()
-{
-    prv::TheInternalPoolStats.resetGlobalStatistics();
-}
-
-void PoolStats::resetFrameStatistics()
+void PoolResetFrameStatistics()
 {
     prv::TheInternalPoolStats.resetFrameStatistics();
 }
 
-void PoolStats::stats(PoolTag id, PoolStatsData& outStats) const
-{
-    prv::TheInternalPoolStats.stats(id, outStats);
-}
-
-void PoolStats::allStats(uint32_t count, PoolStatsData* outStats, uint32_t& outNumPools) const
-{
-    prv::TheInternalPoolStats.allStats(count, outStats, outNumPools);
-}
-
 //---
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()

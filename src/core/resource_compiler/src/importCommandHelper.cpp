@@ -70,7 +70,7 @@ public:
 
     virtual bool depotFileExists(StringView depotPath) const override final
     {
-        io::TimeStamp timestamp;
+        TimeStamp timestamp;
         return m_depot->queryFileTimestamp(depotPath, timestamp);
     }
 

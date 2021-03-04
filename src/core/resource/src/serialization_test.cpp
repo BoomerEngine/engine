@@ -11,7 +11,7 @@
 #include "core/test/include/gtest/gtest.h"
 #include "core/object/include/object.h"
 #include "core/reflection/include/reflectionMacros.h"
-#include "core/io/include/ioFileHandleMemory.h"
+#include "core/io/include/fileHandleMemory.h"
 #include "core/object/include/streamOpcodes.h"
 #include "core/object/include/streamOpcodeWriter.h"
 #include "core/object/include/rttiProperty.h"
@@ -72,7 +72,7 @@ void HelperSave(const ObjectPtr& obj, Buffer& outData)
     context.rootObject.pushBack(obj);
     context.protectedStream = false;
 
-    auto writer = RefNew<io::MemoryWriterFileHandle>();
+    auto writer = RefNew<MemoryWriterFileHandle>();
 
     ASSERT_TRUE(res::SaveFile(writer, context)) << "Serialization failed";
 
@@ -87,7 +87,7 @@ void HelperSave(const Array<ObjectPtr>& roots, Buffer& outData, bool protectedSt
     context.rootObject = roots;
     context.protectedStream = protectedStream;
 
-    auto writer = RefNew<io::MemoryWriterFileHandle>();
+    auto writer = RefNew<MemoryWriterFileHandle>();
 
     ASSERT_TRUE(res::SaveFile(writer, context)) << "Serialization failed";
 
@@ -100,7 +100,7 @@ void HelperLoad(const Buffer& data, ObjectPtr& outRet)
 {
     res::FileLoadingContext context;
 
-    auto reader = RefNew<io::MemoryAsyncReaderFileHandle>(data);
+    auto reader = RefNew<MemoryAsyncReaderFileHandle>(data);
 
     ASSERT_TRUE(res::LoadFile(reader, context)) << "Deserialization failed";
 
@@ -113,7 +113,7 @@ void HelperLoad(const Buffer& data, Array<ObjectPtr>& outRoots)
 {
     res::FileLoadingContext context;
 
-    auto reader = RefNew<io::MemoryAsyncReaderFileHandle>(data);
+    auto reader = RefNew<MemoryAsyncReaderFileHandle>(data);
 
     ASSERT_TRUE(res::LoadFile(reader, context)) << "Deserialization failed";
 
@@ -474,7 +474,7 @@ TEST(Serialization, SaveLoadMassiveMostlyObjectsUnprotected)
         ScopeTimer timer;
         HelperSave(roots, data, false);
         TRACE_WARNING("Save protected took {}, content {}", timer, MemSize(data.size()));
-        //auto compressedData = mem::Compress(mem::CompressionType::LZ4HC, data);
+        //auto compressedData = Compress(CompressionType::LZ4HC, data);
         //TRACE_INFO("Compression {} -> {}", MemSize(data.size()), MemSize(compressedData.size()));
     }
 

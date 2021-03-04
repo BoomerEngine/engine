@@ -25,12 +25,12 @@ class EngineAllocatorCallback : public physx::PxAllocatorCallback
 public:
     virtual void* allocate(size_t size, const char*, const char*, int) override
     {
-        return mem::GlobalPool<POOL_PHYSICS_RUNTIME>::Alloc(size, 16);
+        return GlobalPool<POOL_PHYSICS_RUNTIME>::Alloc(size, 16);
     }
 
     virtual void deallocate(void* ptr)
     {
-        mem::GlobalPool<POOL_PHYSICS_RUNTIME>::Free(ptr);
+        GlobalPool<POOL_PHYSICS_RUNTIME>::Free(ptr);
     }
 };
 

@@ -52,7 +52,7 @@ void ObjectCache::clearFramebuffers()
 		if (fb->glFrameBuffer)
 		{
 			GL_PROTECT(glDeleteFramebuffers(1, &fb->glFrameBuffer));
-			mem::PoolStats::GetInstance().notifyFree(POOL_API_FRAMEBUFFERS, 1);
+			PoolNotifyFree(POOL_API_FRAMEBUFFERS, 1);
 		}
 	}
 
@@ -103,7 +103,7 @@ GLuint ObjectCache::buildFramebuffer(const FrameBufferTargets& targets)
 	m_framebufferMap[targets] = ret;
 
 	TRACE_SPAM("Created frame buffer {}", frameBuffer);
-	mem::PoolStats::GetInstance().notifyAllocation(POOL_API_FRAMEBUFFERS, 1);
+	PoolNotifyAllocation(POOL_API_FRAMEBUFFERS, 1);
 
 	// bind used images to the FB
 	for (auto target : targets.images)
@@ -206,7 +206,7 @@ void ObjectCache::notifyImageDeleted(GLuint glImage)
 			if (fb->glFrameBuffer)
 			{
 				GL_PROTECT(glDeleteFramebuffers(1, &fb->glFrameBuffer));
-				mem::PoolStats::GetInstance().notifyFree(POOL_API_FRAMEBUFFERS, 1);
+				PoolNotifyFree(POOL_API_FRAMEBUFFERS, 1);
 			}
 
 			fb->glFrameBuffer = 0;

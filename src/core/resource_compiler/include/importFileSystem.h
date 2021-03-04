@@ -24,7 +24,7 @@ public:
     virtual bool fileExists(StringView fileSystemPath) const = 0;
 
     // load content of a file, returns the fingerprint of loaded data as well (since it's in the memory any way)
-    virtual Buffer loadFileContent(StringView fileSystemPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint) const = 0;
+    virtual Buffer loadFileContent(StringView fileSystemPath, TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint) const = 0;
 
     /// get child directories at given path
     virtual bool enumDirectoriesAtPath(StringView fileSystemPath, const std::function<bool(StringView)>& enumFunc) const = 0;
@@ -39,7 +39,7 @@ public:
     virtual bool resolveContextPath(StringView fileSystemPath, StringBuf& outContextPath) const = 0;
 
     // check status of a file
-    virtual CAN_YIELD SourceAssetStatus checkFileStatus(StringView fileSystemPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress) const = 0;
+    virtual CAN_YIELD SourceAssetStatus checkFileStatus(StringView fileSystemPath, const TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress) const = 0;
 
     //--
 

@@ -79,7 +79,7 @@ extern CORE_IMAGE_API image::ImagePtr LoadImageFromMemory(const void* memory, ui
 extern CORE_IMAGE_API image::ImagePtr LoadImageFromMemory(Buffer ptr);
 
 // load image from file
-extern CORE_IMAGE_API image::ImagePtr LoadImageFromFile(io::IReadFileHandle* file);
+extern CORE_IMAGE_API image::ImagePtr LoadImageFromFile(IReadFileHandle* file);
 
 // load image from absolute file
 extern CORE_IMAGE_API image::ImagePtr LoadImageFromAbsolutePath(StringView absolutePath);

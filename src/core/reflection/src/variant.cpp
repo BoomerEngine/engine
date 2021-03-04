@@ -118,7 +118,7 @@ void Variant::init(Type type, const void* contentToCopyFrom)
     m_allocated = MustAllocateVariantMemory(type);
     if (m_allocated)
     {
-        targetPtr = mem::AllocateBlock(POOL_VARIANT, type->size(), type->alignment(), type->name().c_str());
+        targetPtr = AllocateBlock(POOL_VARIANT, type->size(), type->alignment(), type->name().c_str());
         m_data.ptr = targetPtr;
     }
     else
@@ -198,7 +198,7 @@ void Variant::reset()
         {
             if (m_type->traits().requiresDestructor)
                 m_type->destruct(m_data.ptr);
-            mem::FreeBlock(m_data.ptr);
+            FreeBlock(m_data.ptr);
         }
         else
         {

@@ -20,7 +20,7 @@ class CORE_CONTAINERS_API PagedBuffer : public NoCopy
 {
 public:
     PagedBuffer(uint32_t alignment, PoolTag poolID = POOL_TEMP); // use shared page allocator
-    PagedBuffer(uint32_t alignment, mem::PageAllocator& pageAllocator); // use given page allocator
+    PagedBuffer(uint32_t alignment, PageAllocator& pageAllocator); // use given page allocator
     PagedBuffer(uint32_t alignment, PoolTag poolID, uint32_t pageSize); // use dedicated (owned) page allocator with given size of page
     ~PagedBuffer();
 
@@ -121,7 +121,7 @@ protected:
 
     //--
 
-    mem::PageAllocator* m_allocator = nullptr;
+    PageAllocator* m_allocator = nullptr;
     bool m_ownsAllocator = false;
 
     //--
@@ -137,7 +137,7 @@ class PagedBufferTyped : public PagedBuffer
 {
 public:
     INLINE PagedBufferTyped(PoolTag poolID = POOL_TEMP); // use shared page allocator
-    INLINE PagedBufferTyped(mem::PageAllocator& pageAllocator); // use given page allocator
+    INLINE PagedBufferTyped(PageAllocator& pageAllocator); // use given page allocator
     INLINE PagedBufferTyped(PoolTag poolID, uint32_t pageSize); // use dedicated (owned) page allocator with given size of page
     INLINE ~PagedBufferTyped();
 

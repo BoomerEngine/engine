@@ -92,7 +92,7 @@ TEST_F(RequestTest, TestMultipleFromFibers)
     auto connection = service().connect("http://ifconfig.me");
     ASSERT_TRUE(connection);
 
-    auto wait = Fibers::GetInstance().createCounter("CURLTest", 200);
+    auto wait = CreateFence("CURLTest", 200);
 
     for (uint32_t i = 0; i < 200; ++i)
     {
@@ -107,13 +107,13 @@ TEST_F(RequestTest, TestMultipleFromFibers)
             auto data = StringView((const char*)res.data.data(), res.data.size());
             TRACE_INFO("Returned IP: '{}'", data);
 
-            Fibers::GetInstance().signalCounter(wait);
+            SignalFence(wait);
         };
 
         Sleep(10);
     }
 
-    Fibers::GetInstance().waitForCounterAndRelease(wait);
+    WaitForFence(wait);
 }
 #endif
 //---

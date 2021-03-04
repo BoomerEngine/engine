@@ -224,7 +224,7 @@ protected:
         void changeSelectionStateProtected(bool state);
     };
 
-    mem::StructurePool<VirtualElementProxy> m_elementProxiesPool;
+    StructurePool<VirtualElementProxy> m_elementProxiesPool;
     Array<VirtualElementProxy*> m_elementProxies;
     HashSet<VirtualElementProxy*> m_elementFreshSet;
     HashMap<VirtualAreaElement*, VirtualElementProxy*> m_elementProxyMap;

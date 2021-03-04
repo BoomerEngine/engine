@@ -20,7 +20,7 @@ namespace prv
 
     void WriteBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* rawData, const void* defaultData)
     {
-        const auto& data = *(const io::TimeStamp*)rawData;
+        const auto& data = *(const TimeStamp*)rawData;
         stream.writeTypedData<uint64_t>(data.value());
     }
 
@@ -29,13 +29,13 @@ namespace prv
         uint64_t value = 0;
         stream.readTypedData(value);
 
-        auto& data = *(io::TimeStamp*)rawData;
-        data = io::TimeStamp(value);
+        auto& data = *(TimeStamp*)rawData;
+        data = TimeStamp(value);
     }
 
     void WriteXML(rtti::TypeSerializationContext& typeContext, xml::Node& node, const void* rawData, const void* defaultData)
     {
-        const auto& data = *(const io::TimeStamp*)rawData;
+        const auto& data = *(const TimeStamp*)rawData;
         const auto value = data.value();
         node.writeValue(TempString("{}", value));
     }
@@ -46,8 +46,8 @@ namespace prv
                 
         if (node.value().match(value) == MatchResult::OK)
         {
-            auto& data = *(io::TimeStamp*)rawData;
-            data = io::TimeStamp(value);
+            auto& data = *(TimeStamp*)rawData;
+            data = TimeStamp(value);
         }
     }
 

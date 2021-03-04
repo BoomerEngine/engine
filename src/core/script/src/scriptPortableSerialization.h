@@ -96,7 +96,7 @@ private:
 class StubDataReader : public IStubReader
 {
 public:
-    StubDataReader(const void* data, uint32_t dataSize, mem::LinearAllocator& unpackedMem);
+    StubDataReader(const void* data, uint32_t dataSize, LinearAllocator& unpackedMem);
 
     virtual bool readBool() override final;
     virtual char readInt8() override final;
@@ -122,7 +122,7 @@ public:
     const StubModule* exportedModule() const;
 
 private:
-    mem::LinearAllocator& m_mem;
+    LinearAllocator& m_mem;
     bool m_hasErrors;
 
     const uint8_t* m_readPtr;

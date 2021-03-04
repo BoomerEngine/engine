@@ -32,16 +32,16 @@ public:
     bool fileExists(StringView assetImportPath) const;
 
     /// load raw data for an asset, usually not cached
-    Buffer loadSourceFileContent(StringView assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint);
+    Buffer loadSourceFileContent(StringView assetImportPath, TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint);
 
     /// load source asset
-    SourceAssetPtr loadSourceAsset(StringView assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint);
+    SourceAssetPtr loadSourceAsset(StringView assetImportPath, TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint);
 
     /// load/create base resource configuration
     ResourceConfigurationPtr compileBaseResourceConfiguration(StringView assetImportPath, SpecificClassType<ResourceConfiguration> configurationClass);
 
     // check status of a file
-    CAN_YIELD SourceAssetStatus checkFileStatus(StringView assetImportPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress);
+    CAN_YIELD SourceAssetStatus checkFileStatus(StringView assetImportPath, const TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress);
             
     ///---
 
@@ -57,7 +57,7 @@ private:
     public:
         StringBuf assetImportPath;
         SourceAssetPtr asset;
-        io::TimeStamp timestamp;
+        TimeStamp timestamp;
         ImportFileFingerprint fingerprint;
         uint32_t lruTick = 0;
         uint64_t memorySize = 0;

@@ -18,7 +18,7 @@ BEGIN_BOOMER_NAMESPACE_EX(script)
 class CORE_SCRIPT_JIT_API JITConstCache : public NoCopy
 {
 public:
-    JITConstCache(mem::LinearAllocator& mem, JITTypeLib& typeLib);
+    JITConstCache(LinearAllocator& mem, JITTypeLib& typeLib);
     ~JITConstCache();
 
     /// print constant initialization vars
@@ -39,7 +39,7 @@ public:
     StringView mapTypeConst(const char* typeConst);
 
 private:
-    mem::LinearAllocator& m_mem;
+    LinearAllocator& m_mem;
     JITTypeLib& m_typeLib;
 
     const JITType* m_stringType = nullptr;

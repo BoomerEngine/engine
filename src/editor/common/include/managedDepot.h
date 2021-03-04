@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "core/io/include/ioDirectoryWatcher.h"
+#include "core/io/include/directoryWatcher.h"
 #include "core/system/include/spinLock.h"
 #include "core/system/include/mutex.h"
 #include "core/resource/include/resourceLoader.h"

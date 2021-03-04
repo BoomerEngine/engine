@@ -28,7 +28,7 @@ ParsingNode& ParsingNode::link(const ParsingNode& child)
 
 //----
 
-ParsingFileContext::ParsingFileContext(mem::LinearAllocator& mem, parser::IErrorReporter& errHandler, ParsingNode& result)
+ParsingFileContext::ParsingFileContext(LinearAllocator& mem, parser::IErrorReporter& errHandler, ParsingNode& result)
     : m_mem(mem)
     , m_errHandler(errHandler)
     , m_result(result)
@@ -168,7 +168,7 @@ int ParserCodeTokenStream::readToken(CodeParsingNode& outNode)
 
 //----
 
-ParsingCodeContext::ParsingCodeContext(mem::LinearAllocator& mem, parser::IErrorReporter& errHandler, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram)
+ParsingCodeContext::ParsingCodeContext(LinearAllocator& mem, parser::IErrorReporter& errHandler, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram)
     : m_mem(mem)
     , m_errHandler(errHandler)
     , m_lib(lib)

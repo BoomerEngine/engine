@@ -9,7 +9,7 @@
 #include "build.h"
 #include "resourceFileTables.h"
 #include "resourceFileTablesBuilder.h"
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 #include "core/object/include/rttiProperty.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(res)
@@ -369,7 +369,7 @@ void FileTablesBuilder::initFromTables(const FileTables& tables, const TImportRe
 //--
 
 template< typename T >
-bool WriteChunk(io::IWriteFileHandle* file, uint64_t baseOffset, const Array<T>& entries, FileTables::Chunk& outChunk)
+bool WriteChunk(IWriteFileHandle* file, uint64_t baseOffset, const Array<T>& entries, FileTables::Chunk& outChunk)
 {
     outChunk.count = entries.size();
     outChunk.size = entries.dataSize();
@@ -379,7 +379,7 @@ bool WriteChunk(io::IWriteFileHandle* file, uint64_t baseOffset, const Array<T>&
     return file->writeSync(entries.data(), entries.dataSize()) == entries.dataSize();
 }
 
-bool FileTablesBuilder::write(io::IWriteFileHandle* file, uint32_t headerFlags, uint64_t objectEndPos, uint64_t bufferEndPos, const void* prevHeader) const
+bool FileTablesBuilder::write(IWriteFileHandle* file, uint32_t headerFlags, uint64_t objectEndPos, uint64_t bufferEndPos, const void* prevHeader) const
 {
     const uint64_t baseOffset = file->pos();
 

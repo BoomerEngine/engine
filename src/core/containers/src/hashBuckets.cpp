@@ -24,7 +24,7 @@ void HashBuckets::Reset(HashBuckets* data)
 
 void HashBuckets::Clear(HashBuckets*& data)
 {
-    mem::GlobalPool<POOL_HASH_BUCKETS>::Free(data);
+    GlobalPool<POOL_HASH_BUCKETS>::Free(data);
     data = nullptr;
 }
 

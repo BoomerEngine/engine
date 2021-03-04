@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 /// Pool statistics
 struct PoolStatsData
@@ -27,38 +27,33 @@ struct PoolStatsData
     uint64_t m_lastFrameFreesSize = 0; // size of memory freed since last frame
 };
 
-/// Memory pool statistics tracker
-/// NOTE: this is the "get" interface
-class CORE_MEMORY_API PoolStats : public ISingleton
-{
-    DECLARE_SINGLETON(PoolStats);
+//--
 
-public:
-    PoolStats();
+// Get readable name of the memory pool
+extern CORE_MEMORY_API const char* PoolName(PoolTag tag);
 
-    /// inform about allocation in the pool
-    /// NOTE: this is slow frontend interface for big external allocation only
-    void notifyAllocation(PoolTag id, size_t size);
+// Get readable name of the memory pool's group (Core, Engine, etc)
+extern CORE_MEMORY_API const char*  PoolGroupName(PoolTag tag);
 
-    /// inform about deallocation in the pool
-    /// NOTE: this is slow frontend interface for big external allocation only
-    void notifyFree(PoolTag id, size_t size);
+// Get stat's for given memory pool
+extern CORE_MEMORY_API void PoolStats(PoolTag tag, PoolStatsData& outData);
 
-    /// reset global statistics (max allocations & max size)
-    void resetGlobalStatistics();
+// Get all stats
+extern CORE_MEMORY_API void PoolStatsAll(PoolStatsData* outStats, uint32_t& numEntries);
 
-    /// reset frame statistics (local frees&allocs)
-    void resetFrameStatistics();
+//--
 
-    ///--
+/// inform about allocation in the pool
+/// NOTE: this is slow frontend interface for big external allocation only
+extern CORE_MEMORY_API void PoolNotifyAllocation(PoolTag id, size_t size);
 
-    /// get stats for given pool
-    void stats(PoolTag id, PoolStatsData& outStats) const;
+/// inform about deallocation in the pool
+/// NOTE: this is slow frontend interface for big external allocation only
+extern CORE_MEMORY_API void PoolNotifyFree(PoolTag id, size_t size);
 
-    /// get stats for all pools
-    void allStats(uint32_t count, PoolStatsData* outStats, uint32_t& outNumPools) const;
+/// reset global statistics (max allocations & max size)
+extern CORE_MEMORY_API void PoolResetFrameStatistics();
 
-    ///--
-};
+//--
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()

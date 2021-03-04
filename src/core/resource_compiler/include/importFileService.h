@@ -41,7 +41,7 @@ public:
     bool resolveContextPath(StringView assetImportPath, StringBuf& outContextPath) const;
 
     // load content of a file, returns the CRC of the data as well
-    Buffer loadFileContent(StringView assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outCRC) const;
+    Buffer loadFileContent(StringView assetImportPath, TimeStamp& outTimestamp, ImportFileFingerprint& outCRC) const;
 
     /// get child directories at given path
     bool enumDirectoriesAtPath(StringView assetImportPath, const std::function<bool(StringView)>& enumFunc) const;
@@ -56,7 +56,7 @@ public:
 
     /// validate source file 
     /// NOTE: this may take long time, run on fiber
-    CAN_YIELD SourceAssetStatus checkFileStatus(StringView assetImportPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownCRC, IProgressTracker* progress = nullptr) const;
+    CAN_YIELD SourceAssetStatus checkFileStatus(StringView assetImportPath, const TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownCRC, IProgressTracker* progress = nullptr) const;
 
     //--
 

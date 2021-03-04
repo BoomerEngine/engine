@@ -25,14 +25,14 @@ InstanceBuffer::~InstanceBuffer()
     m_layout->destroyBuffer(m_data);
     m_layout.reset();
 
-    mem::FreeBlock(m_data);
+    FreeBlock(m_data);
     m_data = nullptr;
     m_size = 0;
 }
 
 InstanceBufferPtr InstanceBuffer::copy() const
 {
-    void* ptr = mem::AllocateBlock(m_poolID, m_size, m_layout->alignment(), "InstanceBuffer");
+    void* ptr = AllocateBlock(m_poolID, m_size, m_layout->alignment(), "InstanceBuffer");
     m_layout->copyBufer(ptr, m_data);
     return RefNew<InstanceBuffer>(m_layout, ptr, m_size, m_poolID);
 }

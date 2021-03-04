@@ -13,7 +13,7 @@
 #include "resourcePath.h"
 #include "resource.h"
 
-#include "core/io/include/ioAsyncFileHandle.h"
+#include "core/io/include/asyncFileHandle.h"
 #include "core/object/include/streamOpcodeReader.h"
 #include "core/object/include/object.h"
 
@@ -121,7 +121,7 @@ void ResolveImports(const FileTables& tables, const FileLoadingContext& context,
     // load the imports
     if (context.resourceLoader)
     {
-        auto allLoadedSignal = Fibers::GetInstance().createCounter("WaitForImports", resourcesToLoad.size());
+        auto allLoadedSignal = CreateFence("WaitForImports", resourcesToLoad.size());
 
         for (auto index : resourcesToLoad)
         {
@@ -134,11 +134,11 @@ void ResolveImports(const FileTables& tables, const FileLoadingContext& context,
                 if (!entry.loaded)
                     TRACE_WARNING("Loader: Missing reference to file '{}'", path);
 
-                Fibers::GetInstance().signalCounter(allLoadedSignal);
+                SignalFence(allLoadedSignal);
             };
         }
 
-        Fibers::GetInstance().waitForCounterAndRelease(allLoadedSignal);
+        WaitForFence(allLoadedSignal);
     }
 }
 
@@ -221,7 +221,7 @@ void ResolveReferences(const FileTables& tables, FileLoadingContext& context, st
 static const uint64_t DefaultLoadBufferSize = 8U << 20;
 static const uint64_t BlockSize = 4096;
 
-uint64_t DetermineLoadBufferSize(io::IAsyncFileHandle* file, const FileTables& tables, FileLoadingContext& context, const stream::OpcodeResolvedReferences& resolvedReferences)
+uint64_t DetermineLoadBufferSize(IAsyncFileHandle* file, const FileTables& tables, FileLoadingContext& context, const stream::OpcodeResolvedReferences& resolvedReferences)
 {
     // whole file is smaller than the load buffer
     // NOTE: use this ONLY if we indeed want to load the whole file
@@ -251,7 +251,7 @@ uint64_t DetermineLoadBufferSize(io::IAsyncFileHandle* file, const FileTables& t
     return std::max<uint32_t>(maxObjectSize, DefaultLoadBufferSize);
 }
 
-bool LoadFileObjects(io::IAsyncFileHandle* file, const FileTables& tables, FileLoadingContext& context)
+bool LoadFileObjects(IAsyncFileHandle* file, const FileTables& tables, FileLoadingContext& context)
 {
     // do we have "safe layout" in the file ?
     const bool protectedFileLayout = 0 != (tables.header()->flags & FileTables::FileFlag_ProtectedLayout);
@@ -358,7 +358,7 @@ bool LoadFileObjects(io::IAsyncFileHandle* file, const FileTables& tables, FileL
     return true;
 }
 
-bool LoadFileTables(io::IAsyncFileHandle* file, Buffer& tablesData)
+bool LoadFileTables(IAsyncFileHandle* file, Buffer& tablesData)
 {
     // no file
     if (!file)
@@ -414,7 +414,7 @@ bool LoadFileTables(io::IAsyncFileHandle* file, Buffer& tablesData)
     return true;
 }
 
-bool LoadFile(io::IAsyncFileHandle* file, FileLoadingContext& context)
+bool LoadFile(IAsyncFileHandle* file, FileLoadingContext& context)
 {
     // load file tables
     Buffer tablesData;
@@ -434,7 +434,7 @@ bool LoadFile(io::IAsyncFileHandle* file, FileLoadingContext& context)
 FileLoadingDependency::FileLoadingDependency()
 {}
 
-bool LoadFileDependencies(io::IAsyncFileHandle* file, const FileLoadingContext& context, Array<FileLoadingDependency>& outDependencies)
+bool LoadFileDependencies(IAsyncFileHandle* file, const FileLoadingContext& context, Array<FileLoadingDependency>& outDependencies)
 {
     // load file tables
     Buffer tablesData;
@@ -465,7 +465,7 @@ bool LoadFileDependencies(io::IAsyncFileHandle* file, const FileLoadingContext& 
 
 //--
 
-MetadataPtr LoadFileMetadata(io::IAsyncFileHandle* file, const FileLoadingContext& context)
+MetadataPtr LoadFileMetadata(IAsyncFileHandle* file, const FileLoadingContext& context)
 {
     FileLoadingContext loadingContext;
     loadingContext.loadSpecificClass = Metadata::GetStaticClass();

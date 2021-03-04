@@ -158,7 +158,7 @@ public:
 
         auto& str = *(StringBuf*)data;
         str = StringBuf(StringView(textData, textData + textDataLength));
-        mem::FreeBlock(textData);
+        FreeBlock(textData);
 
         return  true;
     }
@@ -240,7 +240,7 @@ public:
 
         auto& str = *(StringID*)data;
         str = StringID(StringView(textData, textData + textDataLength));
-        mem::FreeBlock(textData);
+        FreeBlock(textData);
 
         return true;
     }

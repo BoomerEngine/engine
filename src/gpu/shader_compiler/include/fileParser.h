@@ -105,10 +105,10 @@ extern GPU_SHADER_COMPILER_API const parser::ILanguageDefinition& GetlanguageDef
 
 /// analyze structure of the shader file
 /// NOTE: all memory is allocated from the linear allocator
-extern GPU_SHADER_COMPILER_API Element* Analyzefile(mem::LinearAllocator& mem, parser::IErrorReporter& errHandler, parser::TokenList& tokens);
+extern GPU_SHADER_COMPILER_API Element* Analyzefile(LinearAllocator& mem, parser::IErrorReporter& errHandler, parser::TokenList& tokens);
 
 /// analyze structure of the shader function
-extern GPU_SHADER_COMPILER_API CodeNode* Analyzecode(mem::LinearAllocator& mem, parser::IErrorReporter& errHandler, const Array<parser::Token*>& tokens, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram);
+extern GPU_SHADER_COMPILER_API CodeNode* Analyzecode(LinearAllocator& mem, parser::IErrorReporter& errHandler, const Array<parser::Token*>& tokens, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram);
 
 ///----
 

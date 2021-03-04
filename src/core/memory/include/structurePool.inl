@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -35,4 +35,4 @@ INLINE void StructurePool<T>::free(T* ptr)
 
 //---
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()

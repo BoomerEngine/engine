@@ -41,7 +41,7 @@ namespace prv
         // create queue semaphores
         m_listCond = new HANDLE[numInternalQueues];
         for (uint32_t i=0; i<numInternalQueues; ++i)
-            m_listCond[i] = CreateSemaphore(NULL, 0, INT_MAX, NULL);
+            m_listCond[i] = CreateSemaphoreA(NULL, 0, INT_MAX, NULL);
     }
 
     WinMultiQueue::~WinMultiQueue()

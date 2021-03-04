@@ -262,7 +262,7 @@ void StubDataWriter::writeContainers()
 
 //--
 
-StubDataReader::StubDataReader(const void* data, uint32_t dataSize, mem::LinearAllocator& unpackedMem)
+StubDataReader::StubDataReader(const void* data, uint32_t dataSize, LinearAllocator& unpackedMem)
     : m_mem(unpackedMem)
     , m_hasErrors(false)
 {

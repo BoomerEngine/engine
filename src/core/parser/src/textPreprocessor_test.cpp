@@ -27,7 +27,7 @@ TEST(Preprocessor, SimpleTokensPassthrough)
 {
     const char* code = "ident class 1.05f ## - \"string\" 'name'";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), parser::IErrorReporter::GetDefault(), parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
@@ -99,7 +99,7 @@ TEST(Preprocessor, PragmaEaten)
 {
     const char* code = "line\n#pragma test\nline";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), parser::IErrorReporter::GetDefault(), parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
@@ -127,7 +127,7 @@ TEST(Preprocessor, SimpleReplacement)
 {
     const char* code = "X";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), parser::IErrorReporter::GetDefault(), parser::ICommentEater::StandardComments(), GetTestLanguage());
     test.defineSymbol("X", "test");
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -147,7 +147,7 @@ TEST(Preprocessor, ReplacementFromDefine)
 {
     const char* code = "#define X test\nX";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), parser::IErrorReporter::GetDefault(), parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
@@ -186,7 +186,7 @@ TEST(Preprocessor, DefinieRedefinitionWarns)
 {
     const char* code = "#define X test\n#define X dupa\nX";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -207,7 +207,7 @@ TEST(Preprocessor, UndefOfUnknownMacroWarns)
 {
     const char* code = "#undef Y";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -218,7 +218,7 @@ TEST(Preprocessor, UndefOfGlobalMacro)
 {
     const char* code = "X\n#undef X\nX";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     test.defineSymbol("X", "test");
@@ -247,7 +247,7 @@ TEST(Preprocessor, NoArgPassing)
 {
     const char* code = "#define X() test\nX()";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -267,7 +267,7 @@ TEST(Preprocessor, EmptyArgPassing)
 {
     const char* code = "#define X(a) a\nX()";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -279,7 +279,7 @@ TEST(Preprocessor, SingleArgPassing)
 {
     const char* code = "#define X(a) a\nX(test)\n";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -299,7 +299,7 @@ TEST(Preprocessor, SignleArgGluedTokensBoth)
 {
     const char* code = "#define X(a) a2a\nX(test)\n";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -319,7 +319,7 @@ TEST(Preprocessor, SignleArgGluedTokensLeft)
 {
     const char* code = "#define X(a) a2 a\nX(test)\n";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -347,7 +347,7 @@ TEST(Preprocessor, SignleArgGluedTokensRight)
 {
     const char* code = "#define X(a) a 2a\nX(test)\n";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -384,7 +384,7 @@ TEST(Preprocessor, SingleArgPassingTokenSpecifiedTwice)
 {
     const char* code = "#define X(a) a 2 a\nX(test)\n";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -421,7 +421,7 @@ TEST(Preprocessor, SingleArgPassingMultipleTokenArguments)
 {
     const char* code = "#define X(a) a\nX(that is test)\n";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -458,7 +458,7 @@ TEST(Preprocessor, MultiArgPassing)
 {
     const char* code = "#define X(a,b) a b\nX(x,y)\n";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -486,7 +486,7 @@ TEST(Preprocessor, MultiEmptyArgs)
 {
     const char* code = "#define X(a,b) a b\nX(,)\n";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -498,7 +498,7 @@ TEST(Preprocessor, MultiArgNoFirstArg)
 {
     const char* code = "#define X(a,b) a b\nX(x,)\n";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -518,7 +518,7 @@ TEST(Preprocessor, MultiArgNoSecondArg)
 {
     const char* code = "#define X(a,b) a b\nX(,y)\n";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -538,7 +538,7 @@ TEST(Preprocessor, WrappedArgs)
 {
     const char* code = "#define X(a) a\nX((x,y))\n";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -590,7 +590,7 @@ TEST(Preprocessor, StringifySimple)
 {
     const char* code = "#define X(a) #a\nX(test)\n";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -610,7 +610,7 @@ TEST(Preprocessor, StringifyComplex)
 {
     const char* code = "#define X(a) #a\nX(test+dupa)\n";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -630,7 +630,7 @@ TEST(Preprocessor, StringifyVeryComplex)
 {
     const char* code = "#define X(a) #a\nX(!world -> HasFlag(    Flags::Dupa ))\n";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -650,7 +650,7 @@ TEST(Preprocessor, MergeTwoTokens)
 {
     const char* code = "#define X(a,b) a##b\nX(x,y)";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -670,7 +670,7 @@ TEST(Preprocessor, MergeMutlipleTokens)
 {
     const char* code = "#define X(a,b,c,d) a##b##c##d\nX(x,y,z,w)";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -690,7 +690,7 @@ TEST(Preprocessor, NestedMacro)
 {
     const char* code = "#define Y(y) 2##y\n#define X(a) Y(a)+Y(a)\nX(3)";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -733,7 +733,7 @@ TEST(Preprocessor, UltimateTest1)
         "#define CALL(fn) fn(HE,LLO)\n"\
         "CAT(HE,LLO)";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -759,7 +759,7 @@ TEST(Preprocessor, UltimateTest2)
         "#define CALL(fn) fn(HE,LLO)\n"\
         "XCAT(HE,LLO)";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -785,7 +785,7 @@ TEST(Preprocessor, UltimateTest3)
         "#define CALL(fn) fn(HE,LLO)\n"\
         "CALL(CAT)";
 
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
@@ -819,7 +819,7 @@ TEST(Preprocessor, IncludeForwardPath)
     const char* code = "#include \"other\"\n";
 
     TestIncluder1 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     EXPECT_TRUE(test.processContent(code, "TestFile"));
@@ -847,7 +847,7 @@ TEST(Preprocessor, IncludeCanFail)
     const char* code = "#include \"other\"\n";
 
     TestIncluder2 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     EXPECT_FALSE(test.processContent(code, "TestFile"));
@@ -878,7 +878,7 @@ TEST(Preprocessor, IncludeCanEmitContent)
     const char* code = "#include \"other\"\n";
 
     TestIncluder3 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     EXPECT_TRUE(test.processContent(code, "TestFile"));
@@ -897,7 +897,7 @@ TEST(Preprocessor, IncludeHasProperContext)
     const char* code = "#include \"other\"\n";
 
     TestIncluder3 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     EXPECT_TRUE(test.processContent(code, "TestFile"));
@@ -917,7 +917,7 @@ TEST(Preprocessor, IncludeTwice)
     const char* code = "#include \"other\"\n#include \"other\"";
 
     TestIncluder3 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     EXPECT_TRUE(test.processContent(code, "TestFile"));
@@ -962,7 +962,7 @@ TEST(Preprocessor, IncludeRecursiveProtected)
     const char* code = "#include \"other\"";
 
     TestIncluder4 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     EXPECT_FALSE(test.processContent(code, "TestFile"));
@@ -990,7 +990,7 @@ TEST(Preprocessor, IncludeRecursivePragmaOnce)
     const char* code = "#include \"other\"";
 
     TestIncluder5 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     
@@ -1012,7 +1012,7 @@ TEST(Preprocessor, IfDefExpectsEndif)
     const char* code = "#ifdef X\n";
 
     TestIncluder5 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
 
@@ -1025,7 +1025,7 @@ TEST(Preprocessor, IfDefExpectsSymbolName)
     const char* code = "#ifdef\n";
 
     TestIncluder5 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
 
@@ -1038,7 +1038,7 @@ TEST(Preprocessor, StrayEndifError)
     const char* code = "#endif\n";
 
     TestIncluder5 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
 
@@ -1051,7 +1051,7 @@ TEST(Preprocessor, StrayElseError)
     const char* code = "#else\n";
 
     TestIncluder5 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
 
@@ -1064,7 +1064,7 @@ TEST(Preprocessor, IfDefSimpleFilter_FilterAway)
     const char* code = "#ifdef X\ntest\n#endif";
 
     TestIncluder5 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
 
@@ -1077,7 +1077,7 @@ TEST(Preprocessor, IfDefSimpleFilter_FilterInWithGlobalDef)
     const char* code = "#ifdef X\ntest\n#endif";
 
     TestIncluder5 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     test.defineSymbol("X", "");
@@ -1098,7 +1098,7 @@ TEST(Preprocessor, IfDefSimpleFilter_FilterWithLocalDef)
     const char* code = "#define X 2\n#ifdef X\ntest\n#endif";
 
     TestIncluder5 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
 
@@ -1118,7 +1118,7 @@ TEST(Preprocessor, IfDefElseNotTaken)
     const char* code = "#ifdef X\nyes\n#else\nno\n#endif";
 
     TestIncluder5 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     test.defineSymbol("X", "");
@@ -1139,7 +1139,7 @@ TEST(Preprocessor, IfDefElseTaken)
     const char* code = "#ifdef X\nyes\n#else\nno\n#endif";
 
     TestIncluder5 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     //test.defineSymbol("X", "");
@@ -1160,7 +1160,7 @@ TEST(Preprocessor, IfDefDoubleElseInvalid)
     const char* code = "#ifdef X\nyes\n#else\nno\n#else\ncrap\n#endif";
 
     TestIncluder5 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     //test.defineSymbol("X", "");
@@ -1174,7 +1174,7 @@ TEST(Preprocessor, IfDefUndef)
     const char* code = "#define X\n#ifdef X\nfirst\n#endif\n#undef X\n#ifdef X\nsecond\n#endif";
 
     TestIncluder5 includer;
-    mem::LinearAllocator allocator(POOL_TEMP);
+    LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
     parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
     //test.defineSymbol("X", "");

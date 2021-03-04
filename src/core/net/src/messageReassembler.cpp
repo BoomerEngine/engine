@@ -31,14 +31,14 @@ MessageReassembler::MessageReassembler(IMessageReassemblerInspector* inspector, 
     // create initial storage
     m_storageCapacity = std::max<uint32_t>(MIN_CAPACITY, initialStorageSize);
     m_storagePos = 0;
-    m_storagePtr = mem::GlobalPool<POOL_NET_REASSEMBLER, uint8_t>::AllocN(m_storageCapacity);
+    m_storagePtr = GlobalPool<POOL_NET_REASSEMBLER, uint8_t>::AllocN(m_storageCapacity);
 }
 
 MessageReassembler::~MessageReassembler()
 {
     if (m_storagePtr)
     {
-        mem::GlobalPool<POOL_NET_REASSEMBLER>::Free(m_storagePtr);
+        GlobalPool<POOL_NET_REASSEMBLER>::Free(m_storagePtr);
         m_storagePtr = nullptr;
     }
 }
@@ -52,7 +52,7 @@ void MessageReassembler::fatalError(StringView reason)
 
         if (m_storagePtr)
         {
-            mem::GlobalPool<POOL_NET_REASSEMBLER>::Free(m_storagePtr);
+            GlobalPool<POOL_NET_REASSEMBLER>::Free(m_storagePtr);
             m_storagePtr = nullptr;
         }
     }
@@ -89,12 +89,12 @@ bool MessageReassembler::pushData(const void* data, uint32_t dataSize)
             newCapacity *= 2;
 
         // allocate new buffer, may fail (we can handle really large data here)
-        auto newBuffer  = mem::GlobalPool<POOL_NET_REASSEMBLER, uint8_t>::Resize(m_storagePtr, newCapacity);
+        auto newBuffer  = GlobalPool<POOL_NET_REASSEMBLER, uint8_t>::Resize(m_storagePtr, newCapacity);
         if (!newBuffer)
         {
             fatalError(TempString("Out of memory while trying to resize storage to {}", MemSize(newCapacity)));
 
-            mem::GlobalPool<POOL_NET_REASSEMBLER>::Free(m_storagePtr);
+            GlobalPool<POOL_NET_REASSEMBLER>::Free(m_storagePtr);
             m_storagePtr = nullptr;
 
             m_corrupted = true;

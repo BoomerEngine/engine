@@ -14,24 +14,21 @@
 
 #if defined(PLATFORM_WINDOWS)
     #include "fiberSystemWinApi.h"
-    typedef boomer::fibers::prv::WinApiScheduler FiberSchedulerClass;
+    typedef boomer::prv::WinApiScheduler FiberSchedulerClass;
 #elif defined(PLATFORM_POSIX)
     #include "fiberSystemPOSIX.h"
-    typedef boomer::fibers::prv::PosixScheduler FiberSchedulerClass;
+    typedef boomer::prv::PosixScheduler FiberSchedulerClass;
 #else
-    typedef boomer::fibers::prv::ThreadBasedScheduler FiberSchedulerClass;
+    typedef boomer::prv::ThreadBasedScheduler FiberSchedulerClass;
 #endif
 
-BEGIN_BOOMER_NAMESPACE_EX(fibers)
+BEGIN_BOOMER_NAMESPACE()
 
-Scheduler::Scheduler()
-    : m_scheduler(nullptr)
-{
-}
+extern prv::IFiberScheduler* GFibers = nullptr;
 
-bool Scheduler::initialize(const IBaseCommandLine& commandline)
+bool InitializeFibers(const IBaseCommandLine& commandline)
 {
-    ASSERT_EX(m_scheduler == nullptr, "Fiber scheduler already initialized");
+    DEBUG_CHECK_RETURN_EX_V(!GFibers, "Fibers already initialized", false);
 
     // initialize the background job system
     if (!BackgroundScheduler::GetInstance().initialize(commandline))
@@ -44,133 +41,132 @@ bool Scheduler::initialize(const IBaseCommandLine& commandline)
     auto fiberMode = commandline.singleValueAnsiStr("fiberMode");
 
     // use the platform specified scheduler
-    if (0 == strcmp(fiberMode,"threads"))
-        m_scheduler = new prv::ThreadBasedScheduler;
+    if (0 == strcmp(fiberMode, "threads"))
+        GFibers = new prv::ThreadBasedScheduler;
     else
-        m_scheduler = new FiberSchedulerClass;
+        GFibers = new FiberSchedulerClass;
 
     // initialize the scheduler
-    if (!m_scheduler->initialize(commandline))
+    if (!GFibers->initialize(commandline))
     {
         TRACE_ERROR("Low-level scheduler failed to initialize");
-        delete m_scheduler;
-        m_scheduler = nullptr;
+        delete GFibers;
+        GFibers = nullptr;
         return false;
     }
-
-    // TODO: integrate with PC
 
     // low-level initialization was ok
     return true;
 }
 
-void Scheduler::deinit()
+void ShutdownFibers()
 {
     // stop all background jobs
     BackgroundScheduler::GetInstance().flush();
 
     // stop all fibers
-    if (m_scheduler)
+    if (GFibers)
     {
-        delete m_scheduler;
-        m_scheduler = nullptr;
+        delete GFibers;
+        GFibers = nullptr;
     }
 }
 
-void Scheduler::flush()
+void FlushFibers()
 {
-    PC_SCOPE_LVL1(SchedulerFlush);
-    if (m_scheduler)
-        m_scheduler->flush();
+    DEBUG_CHECK_RETURN_EX(GFibers, "Fibers not initialized");
+    GFibers->flush();
 }
 
-JobID Scheduler::currentJobID()
+FiberJobID CurrentJobID()
 {
-    return m_scheduler ? m_scheduler->currentJobID() : 0;
+    DEBUG_CHECK_RETURN_EX_V(GFibers, "Fibers not initialized", 0);
+    return GFibers->currentJobID();
 }
 
-WaitCounter Scheduler::createCounter(const char* name, uint32_t count /*= 1*/)
+FiberSemaphore CreateFence(const char* name, uint32_t count /*= 1*/)
 {
-    if (count == 0)
-        return WaitCounter();
-
-    ASSERT(m_scheduler != nullptr);
-    return m_scheduler->createCounter(name, count);
+    DEBUG_CHECK_RETURN_EX_V(GFibers, "Fibers not initialized", FiberSemaphore());
+    DEBUG_CHECK_RETURN_EX_V(count, "Invalid count", FiberSemaphore());
+    return GFibers->createCounter(name, count);
 }
 
-bool Scheduler::checkCounter(const WaitCounter& counter)
+bool CheckSemaphore(const FiberSemaphore& counter)
 {
     if (counter.empty())
         return true;
 
-    ASSERT(m_scheduler != nullptr);
-    return m_scheduler->checkCounter(counter);
+    DEBUG_CHECK_RETURN_EX_V(GFibers, "Fibers not initialized", false);
+    return GFibers->checkCounter(counter);
 }
 
-void Scheduler::scheduleFiber(const Job& job, bool child, uint32_t numInvokations /*= 1*/)
+void ScheduleFiber(const FiberJob& job, bool child, uint32_t numInvokations /*= 1*/)
 {
-    if (numInvokations > 0)
-    {
-        ASSERT(m_scheduler != nullptr);
-        m_scheduler->scheduleFiber(job, numInvokations, child);
-    }
+    DEBUG_CHECK_RETURN_EX(GFibers, "Fibers not initialized");
+    DEBUG_CHECK_RETURN_EX(job.func, "Invalid job definition");
+    DEBUG_CHECK_RETURN_EX(numInvokations, "Invalid invocation count");
+    GFibers->scheduleFiber(job, numInvokations, child);
 }
 
-void Scheduler::scheduleSync(const Job& job)
+void ScheduleSync(const FiberJob& job)
 {
-    m_scheduler->scheduleSync(job);
+    DEBUG_CHECK_RETURN_EX(GFibers, "Fibers not initialized");
+    DEBUG_CHECK_RETURN_EX(job.func, "Invalid job definition");
+    GFibers->scheduleSync(job);
 }
 
-void Scheduler::runSyncJobs()
+void RunSyncJobs()
 {
-    m_scheduler->runSyncJobs();
+    DEBUG_CHECK_RETURN_EX(GFibers, "Fibers not initialized");
+    GFibers->runSyncJobs();
 }
 
-void Scheduler::signalCounter(const WaitCounter& counter, uint32_t count /*= 1*/)
+void SignalFence(const FiberSemaphore& counter, uint32_t count /*= 1*/)
 {
+    DEBUG_CHECK_RETURN_EX(GFibers, "Fibers not initialized");
+    DEBUG_CHECK_RETURN_EX(!counter.empty(), "Invalid semaphore to signal");
+    DEBUG_CHECK_RETURN_EX(count, "Invalid event count");
+    return GFibers->signalCounter(counter);
+}
+
+void YieldFiber()
+{
+    DEBUG_CHECK_RETURN_EX(GFibers, "Fibers not initialized");
+    GFibers->yieldCurrentJob();
+}
+
+void YieldThread()
+{
+
+}
+
+void WaitForFence(const FiberSemaphore& counter)
+{
+    DEBUG_CHECK_RETURN_EX(GFibers, "Fibers not initialized");
+
     if (!counter.empty())
-    {
-        ASSERT(m_scheduler != nullptr);
-        return m_scheduler->signalCounter(counter);
-    }
+        GFibers->waitForCounterAndRelease(counter);
 }
 
-void Scheduler::yield()
+void WaitForMultipleFences(const FiberSemaphore* counters, uint32_t count)
 {
-    if (m_scheduler)
-        m_scheduler->yieldCurrentJob();
+    DEBUG_CHECK_RETURN_EX(GFibers, "Fibers not initialized");
+    GFibers->waitForMultipleCountersAndRelease(counters, count);
 }
 
-void Scheduler::waitForCounterAndRelease(WaitCounter& counter)
+bool IsMainThread()
 {
-    if (!counter.empty())
-    {
-        ASSERT(m_scheduler != nullptr);
-        m_scheduler->waitForCounterAndRelease(counter);
-    }
-
-    counter = WaitCounter();
+    return GFibers ? GFibers->isMainThread() : true;
 }
 
-void Scheduler::waitForMultipleCountersAndRelease(const WaitCounter* counters, uint32_t count)
+bool IsMainFiber()
 {
-    ASSERT(m_scheduler != nullptr);
-    m_scheduler->waitForMultipleCountersAndRelease(counters, count);
+    return GFibers ? GFibers->isMainFiber() : true;
 }
 
-bool Scheduler::isMainThread()
+uint32_t WorkerThreadCount()
 {
-    return m_scheduler ? m_scheduler->isMainThread() : true;
-}
-
-bool Scheduler::isMainFiber()
-{
-    return m_scheduler ? m_scheduler->isMainFiber() : true;
-}
-
-uint32_t Scheduler::workerThreadCount()
-{
-    return m_scheduler ? m_scheduler->workerThreadCount() : 1;
+    return GFibers ? GFibers->workerThreadCount() : 1;
 }
 
 //---
@@ -200,44 +196,40 @@ FiberBuilder::~FiberBuilder()
     {
         if (m_sync)
         {
-            Job job;
+            FiberJob job;
             job.func = std::move(m_func);
             job.name = m_name;
             job.localSink = m_propagateLogSink ? logging::Log::GetCurrentLocalSink() : nullptr;
 
-            Scheduler::GetInstance().scheduleSync(job);
+            GFibers->scheduleSync(job);
         }
         else
         {
-            Job job;
+            FiberJob job;
             job.func = std::move(m_func);
             job.name = m_name;
             job.localSink = m_propagateLogSink ? logging::Log::GetCurrentLocalSink() : nullptr;
 
-            Scheduler::GetInstance().scheduleFiber(job, m_child, m_numInvocations);
+            GFibers->scheduleFiber(job, m_child, m_numInvocations);
         }
     }
 }
 
-END_BOOMER_NAMESPACE_EX(fibers)
+//--
 
-//----
-
-BEGIN_BOOMER_NAMESPACE()
-
-fibers::FiberBuilder RunFiber(const char* name /*= "InlineFiber"*/)
+FiberBuilder RunFiber(const char* name /*= "InlineFiber"*/)
 {
-    return fibers::FiberBuilder(name, 1, false, false);
+    return FiberBuilder(name, 1, false, false);
 }
 
-fibers::FiberBuilder RunChildFiber(const char* name /*="ChildFiber"*/)
+FiberBuilder RunChildFiber(const char* name /*="ChildFiber"*/)
 {
-    return fibers::FiberBuilder(name, 1, true, false);
+    return FiberBuilder(name, 1, true, false);
 }
 
-fibers::FiberBuilder RunSync(const char* name /*= "InlineFiber"*/)
+FiberBuilder RunSync(const char* name /*= "InlineFiber"*/)
 {
-    return fibers::FiberBuilder(name, 1, false, true);
+    return FiberBuilder(name, 1, false, true);
 }
 
 //----
@@ -252,15 +244,15 @@ void RunFiberLoop(const char* name, uint32_t count, int maxConcurency, const std
         }
         else
         {
-            auto jobDone = Fibers::GetInstance().createCounter(name, count);
+            auto jobDone = GFibers->createCounter(name, count);
 
             RunChildFiber(name).invocations(count) << [jobDone, &func](FIBER_FUNC)
             {
                 func(index);
-                Fibers::GetInstance().signalCounter(jobDone);
+                GFibers->signalCounter(jobDone);
             };
 
-            Fibers::GetInstance().waitForCounterAndRelease(jobDone);
+            GFibers->waitForCounterAndRelease(jobDone);
         }
     }
 }

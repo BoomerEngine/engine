@@ -549,7 +549,7 @@ static uint32_t CountCharsTillLineStart(const char* pos, const char* docStart)
     return start - pos;
 }
 
-Token* TextParser::parseToken(mem::LinearAllocator& mem, const ILanguageDefinition& language)
+Token* TextParser::parseToken(LinearAllocator& mem, const ILanguageDefinition& language)
 {
     auto curLineIndex = m_lineIndex;
 

@@ -60,7 +60,7 @@ private:
 class ManagedFileSourceAssetCheck : public IReferencable, public IProgressTracker
 {
 public:
-    ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, const io::TimeStamp& lastKnownTimestamp, const res::ImportFileFingerprint& lastKnownCRC);
+    ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, const TimeStamp& lastKnownTimestamp, const res::ImportFileFingerprint& lastKnownCRC);
     ~ManagedFileSourceAssetCheck();
 
     /// file being checked
@@ -79,7 +79,7 @@ public:
 
 private:
     StringBuf m_sourceAssetPath;
-    io::TimeStamp m_sourceLastKnownTimestamp;
+    TimeStamp m_sourceLastKnownTimestamp;
     res::ImportFileFingerprint m_sourceLastKnownCRC;
 
     SpinLock m_lock;

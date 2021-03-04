@@ -18,7 +18,7 @@ BEGIN_BOOMER_NAMESPACE_EX(script)
 
 //--
 
-StubLibrary::StubLibrary(mem::LinearAllocator& mem, StringView primaryModuleName)
+StubLibrary::StubLibrary(LinearAllocator& mem, StringView primaryModuleName)
     : m_mem(mem)
     , m_primaryModuleName(primaryModuleName)
 {

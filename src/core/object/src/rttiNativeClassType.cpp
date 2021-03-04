@@ -52,7 +52,7 @@ void NativeClass::destroyDefaultObject() const
 
 const void* NativeClass::createDefaultObject() const
 {
-    void* mem = mem::AllocateBlock(POOL_DEFAULT_OBJECTS, size(), alignment(), name().c_str());
+    void* mem = AllocateBlock(POOL_DEFAULT_OBJECTS, size(), alignment(), name().c_str());
     memzero(mem, size());
 
     EnterDefaultObjectCreation();

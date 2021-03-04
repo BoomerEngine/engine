@@ -10,8 +10,8 @@
 #include "importFileFingerprint.h"
 #include "importFileFingerprintService.h"
 #include "importFileFingerprintCache.h"
-#include "core/io/include/ioAsyncFileHandle.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/asyncFileHandle.h"
+#include "core/io/include/io.h"
 #include "core/resource/include/resourceFileLoader.h"
 #include "core/resource/include/resourceFileSaver.h"
 
@@ -21,7 +21,7 @@ BEGIN_BOOMER_NAMESPACE_EX(res)
 
 static RefPtr<ImportFingerprintCache> LoadCache(StringView path)
 {
-    if (auto file = io::OpenForAsyncReading(path))
+    if (auto file = OpenForAsyncReading(path))
     {
         FileLoadingContext context;
                 
@@ -41,7 +41,7 @@ static RefPtr<ImportFingerprintCache> LoadCache(StringView path)
 
 static bool SaveCache(StringView path, const RefPtr<ImportFingerprintCache>& cache)
 {
-    if (auto file = io::OpenForWriting(path))
+    if (auto file = OpenForWriting(path))
     {
         FileSavingContext context;
         context.rootObject.pushBack(cache);
@@ -70,7 +70,7 @@ ImportFileFingerprintService::~ImportFileFingerprintService()
 app::ServiceInitializationResult ImportFileFingerprintService::onInitializeService(const app::CommandLine& cmdLine)
 {
     // determine the fingerprint cache file
-    m_cacheFilePath = TempString("{}fingerprint.cache", io::SystemPath(io::PathCategory::UserConfigDir));
+    m_cacheFilePath = TempString("{}fingerprint.cache", SystemPath(PathCategory::UserConfigDir));
     TRACE_INFO("Fingerprint: Cache located at '{}'", m_cacheFilePath);
 
     // load/cache the cache
@@ -112,8 +112,8 @@ void ImportFileFingerprintService::saveCacheIfDirty()
 CAN_YIELD FingerpintCalculationStatus ImportFileFingerprintService::calculateFingerprint(StringView absolutePath, bool background, IProgressTracker* progress, ImportFileFingerprint& outFingerprint)
 {
     // first, check the file timestamp, maybe we have the data in cache
-    io::TimeStamp timestamp;
-    if (!io::FileTimeStamp(absolutePath, timestamp))
+    TimeStamp timestamp;
+    if (!FileTimeStamp(absolutePath, timestamp))
         return FingerpintCalculationStatus::ErrorNoFile;
 
     // locate in cache
@@ -138,7 +138,7 @@ CAN_YIELD FingerpintCalculationStatus ImportFileFingerprintService::calculateFin
 
             // wait for the signal from the thread that created the job
             TRACE_INFO("CRC cache contention on '{}', waiting for previous job '{}'", absolutePath, validCacheJob->path);
-            Fibers::GetInstance().waitForCounterAndRelease(validCacheJob->signal);
+            WaitForFence(validCacheJob->signal);
 
             // we have failed
             if (validCacheJob->status == FingerpintCalculationStatus::OK)
@@ -151,14 +151,14 @@ CAN_YIELD FingerpintCalculationStatus ImportFileFingerprintService::calculateFin
     auto validCacheJob = RefNew<CacheJob>();
     validCacheJob->path = StringBuf(absolutePath);
     validCacheJob->timestamp = timestamp;
-    validCacheJob->signal = Fibers::GetInstance().createCounter("ImportFileFingerprintServiceCalcJob");
+    validCacheJob->signal = CreateFence("ImportFileFingerprintServiceCalcJob");
     m_activeJobMap[validCacheJob->path] = validCacheJob;
 
     // release lock so other threads may join waiting
     lock.release();
 
     // open the file and calculate the fingerprint
-    if (auto file = io::OpenForAsyncReading(absolutePath))
+    if (auto file = OpenForAsyncReading(absolutePath))
     {
         validCacheJob->status = CalculateFileFingerprint(file, !background, progress, validCacheJob->fingerprint);
     }
@@ -176,7 +176,7 @@ CAN_YIELD FingerpintCalculationStatus ImportFileFingerprintService::calculateFin
     }
 
     // signal dependencies
-    Fibers::GetInstance().signalCounter(validCacheJob->signal);
+    SignalFence(validCacheJob->signal);
 
     // copy result
     if (validCacheJob->status == FingerpintCalculationStatus::OK)

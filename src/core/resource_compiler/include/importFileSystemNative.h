@@ -22,12 +22,12 @@ public:
     // ISourceAssetFileSystem
     virtual void update() override;
     virtual bool fileExists(StringView fileSystemPath) const override;
-    virtual Buffer loadFileContent(StringView fileSystemPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint) const override;
+    virtual Buffer loadFileContent(StringView fileSystemPath, TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint) const override;
     virtual bool enumDirectoriesAtPath(StringView fileSystemPath, const std::function<bool(StringView)>& enumFunc) const override;
     virtual bool enumFilesAtPath(StringView fileSystemPath, const std::function<bool(StringView)>& enumFunc) const override;
     virtual bool translateAbsolutePath(StringView absolutePath, StringBuf& outFileSystemPath) const override;
     virtual bool resolveContextPath(StringView fileSystemPath, StringBuf& outContextPath) const override;
-    virtual CAN_YIELD SourceAssetStatus checkFileStatus(StringView fileSystemPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress) const override;
+    virtual CAN_YIELD SourceAssetStatus checkFileStatus(StringView fileSystemPath, const TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress) const override;
 
 private:
     bool convertToAbsolutePath(StringView fileSystemPath, StringBuf& outAbsolutePath) const;

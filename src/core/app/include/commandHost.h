@@ -46,7 +46,7 @@ private:
     app::CommandPtr m_command;
 
     // signal that is flagged once command finishes
-    fibers::WaitCounter m_finishedSignal;
+    FiberSemaphore m_finishedSignal;
     std::atomic_bool m_finishedFlag = false;
 
     // local cancellation flag

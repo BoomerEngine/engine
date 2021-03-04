@@ -207,7 +207,7 @@ private:
 		}
 	};
 
-	mem::StructurePool<Block> m_blockPool; // linked list of all blocks in the pool, very slow to visit directly
+	StructurePool<Block> m_blockPool; // linked list of all blocks in the pool, very slow to visit directly
 	Block* m_blockList = nullptr; // list of all blocks ordered by the offset
 
 	uint64_t m_totalSize = 0; // total size of memory we manage

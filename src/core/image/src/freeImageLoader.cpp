@@ -12,7 +12,7 @@
 #include "core/image/include/image.h"
 #include "core/image/include/imageVIew.h"
 #include "core/resource/include/resource.h"
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 
 #ifdef BUILD_AS_LIBS
     #define FREEIMAGE_LIB
@@ -28,7 +28,7 @@ namespace loader
 {
     static unsigned DLL_CALLCONV ReadProc(void *buffer, unsigned size, unsigned count, fi_handle handle)
     {
-        auto reader = (io::IReadFileHandle*) handle;
+        auto reader = (IReadFileHandle*) handle;
 
         auto totalRead = size * count;
         auto left = reader->size() - reader->pos();
@@ -45,7 +45,7 @@ namespace loader
 
     static int DLL_CALLCONV SeekProc(fi_handle handle, long offset, int origin)
     {
-        auto reader = (io::IReadFileHandle*) handle;
+        auto reader = (IReadFileHandle*) handle;
         if (origin == SEEK_END)
         {
             reader->pos(range_cast<uint64_t>((int64_t) reader->size() + (int64_t) offset));
@@ -63,7 +63,7 @@ namespace loader
 
     static long DLL_CALLCONV TellProc(fi_handle handle)
     {
-        auto reader = (io::IReadFileHandle*) handle;
+        auto reader = (IReadFileHandle*) handle;
         return range_cast<uint32_t>(reader->pos());
     }
 } // loader
@@ -152,13 +152,13 @@ namespace saver
 
     static unsigned STDCALL WriteProc(void *buffer, unsigned size, unsigned count, fi_handle handle)
     {
-        auto writer = (io::IWriteFileHandle*) handle;
+        auto writer = (IWriteFileHandle*) handle;
         return (uint32_t)writer->writeSync(buffer, size * count);
     }
 
     static int STDCALL SeekProc(fi_handle handle, long offset, int origin)
     {
-        auto writer = (io::IWriteFileHandle*) handle;
+        auto writer = (IWriteFileHandle*) handle;
         if (origin == SEEK_END)
         {
             writer->pos(range_cast<uint64_t>((int64_t) writer->size() + (int64_t) offset));
@@ -176,7 +176,7 @@ namespace saver
 
     static long STDCALL TellProc(fi_handle handle)
     {
-        auto writer = (io::IWriteFileHandle*) handle;
+        auto writer = (IWriteFileHandle*) handle;
         return range_cast<uint32_t>(writer->pos());
     }
 } // saver
@@ -223,7 +223,7 @@ static FREE_IMAGE_FORMAT GetFormat(const char* typeHint)
     return FIF_UNKNOWN;
 }
 
-static FREE_IMAGE_FORMAT GetFormat(io::IReadFileHandle& file, const char* typeHint)
+static FREE_IMAGE_FORMAT GetFormat(IReadFileHandle& file, const char* typeHint)
 {
     // try to get format with the type hint
     auto format = GetFormat(typeHint);
@@ -560,7 +560,7 @@ public:
     SaverFreeImage()
     {}
 
-    virtual bool save(io::IFileHandle& file, const Image& img, const char* typeHint)override final
+    virtual bool save(IFileHandle& file, const Image& img, const char* typeHint)override final
     {
         // match format
         auto format = GetFormat(typeHint);

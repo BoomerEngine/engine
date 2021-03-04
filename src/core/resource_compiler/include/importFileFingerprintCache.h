@@ -54,10 +54,10 @@ public:
     void clear();
 
     /// find entry for given path and timestamp
-    bool findEntry(StringView path, io::TimeStamp timestamp, ImportFileFingerprint& outFingerprint);
+    bool findEntry(StringView path, TimeStamp timestamp, ImportFileFingerprint& outFingerprint);
 
     /// store entry for given path and timestamp
-    void storeEntry(StringView path, io::TimeStamp timestamp, const ImportFileFingerprint& fingerprint);
+    void storeEntry(StringView path, TimeStamp timestamp, const ImportFileFingerprint& fingerprint);
 
 private:
     HashMap<StringBuf, uint32_t> m_entriesMap;

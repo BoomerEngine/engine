@@ -541,7 +541,7 @@ StaticRenderStates::StaticRenderStates(StringID name, const GraphicsRenderStates
 
 //---
 
-TypeLibrary::TypeLibrary(mem::LinearAllocator& allocator)
+TypeLibrary::TypeLibrary(LinearAllocator& allocator)
     : m_allocator(allocator)
 {
     createDefaultTypes();
@@ -752,7 +752,7 @@ namespace helper
     };
 
     // create a type with N repeated components (up to 4)
-    static CompositeType* CreateVectorType(mem::LinearAllocator& mem, const char* core, DataType memberType, uint32_t numComponents, CompositeTypeHint typeHint)
+    static CompositeType* CreateVectorType(LinearAllocator& mem, const char* core, DataType memberType, uint32_t numComponents, CompositeTypeHint typeHint)
     {
         StringBuf name = TempString("{}{}", core, numComponents);
 

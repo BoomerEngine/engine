@@ -21,7 +21,7 @@ class StubLibraryTypeCache;
 class FileParser : public NoCopy
 {
 public:
-    FileParser(mem::LinearAllocator& mem, IErrorHandler& err, StubLibrary& library);
+    FileParser(LinearAllocator& mem, IErrorHandler& err, StubLibrary& library);
     ~FileParser();
 
     //--
@@ -38,7 +38,7 @@ public:
     bool processCode(const StubFile* fileStub, const Buffer& code);
 
 private:
-    mem::LinearAllocator& m_mem;
+    LinearAllocator& m_mem;
     IErrorHandler& m_err;
     StubLibrary& m_library;
 };

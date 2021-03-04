@@ -32,7 +32,7 @@ namespace test
 
 TEST(StructurePool, Empty)
 {
-    mem::StructurePool<test::SmallData> pool;
+    StructurePool<test::SmallData> pool;
 	EXPECT_EQ(0, pool.size());
 	//EXPECT_EQ(0, pool.capacity());
 	//EXPECT_TRUE(pool.empty());
@@ -40,7 +40,7 @@ TEST(StructurePool, Empty)
 
 TEST(StructurePool, AllocatesSingle)
 {
-    mem::StructurePool<test::SmallData> pool;
+    StructurePool<test::SmallData> pool;
 
 	auto elem  = pool.create();
 	EXPECT_EQ(1, pool.size());
@@ -51,7 +51,7 @@ TEST(StructurePool, AllocatesSingle)
 
 TEST(StructurePool, AllocatesDifferent)
 {
-    mem::StructurePool<test::SmallData> pool;
+    StructurePool<test::SmallData> pool;
 
     auto elem = pool.create();
     auto elem2 = pool.create();
@@ -63,7 +63,7 @@ TEST(StructurePool, AllocatesDifferent)
 
 TEST(StructurePool, AllocatesMultiple)
 {
-    mem::StructurePool<test::SmallData> pool;
+    StructurePool<test::SmallData> pool;
 
 	auto elem  = pool.create();
 	EXPECT_EQ(1, pool.size());
@@ -78,7 +78,7 @@ TEST(StructurePool, AllocatesMultiple)
 
 TEST(StructurePool, AlignedElement)
 {
-	mem::StructurePool<test::AlignedElement> pool;
+	StructurePool<test::AlignedElement> pool;
 
 	auto elem  = pool.create();
 	EXPECT_EQ(0, ((uint64_t)elem) & 255);

@@ -9,7 +9,7 @@
 
 #include "core/system/include/commandline.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(fibers)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -35,26 +35,26 @@ namespace prv
         virtual void runSyncJobs() = 0;
 
         // schedule fiber job
-        virtual void scheduleFiber(const Job &job, uint32_t numInvokations, bool child) = 0;
+        virtual void scheduleFiber(const FiberJob &job, uint32_t numInvokations, bool child) = 0;
 
         // schedule sync job
-        virtual void scheduleSync(const Job &job) = 0;
+        virtual void scheduleSync(const FiberJob &job) = 0;
 
         // create synchronization counter with given initial count
         // NOTE: creating synchronization counter with count=0 is illegal
-        virtual WaitCounter createCounter(const char* userName, uint32_t count = 1) = 0;
+        virtual FiberSemaphore createCounter(const char* userName, uint32_t count = 1) = 0;
 
         // check state of the counter
-        virtual bool checkCounter(const WaitCounter& counter) = 0;
+        virtual bool checkCounter(const FiberSemaphore& counter) = 0;
 
         // signal previously created synchronization counter, will unblock any waiting jobs
-        virtual void signalCounter(const WaitCounter &counter, uint32_t count = 1) = 0;
+        virtual void signalCounter(const FiberSemaphore &counter, uint32_t count = 1) = 0;
 
         // wait for counter to reach zero
-        virtual void waitForCounterAndRelease(const WaitCounter &counter) = 0;
+        virtual void waitForCounterAndRelease(const FiberSemaphore &counter) = 0;
 
         // wait for multiple counters
-        virtual void waitForMultipleCountersAndRelease(const WaitCounter* counters, uint32_t count) = 0;
+        virtual void waitForMultipleCountersAndRelease(const FiberSemaphore* counters, uint32_t count) = 0;
 
         // yield current job (put's it at the back of the queue)
         virtual void yieldCurrentJob() = 0;
@@ -70,9 +70,9 @@ namespace prv
         virtual uint32_t workerThreadCount() const = 0;
 
         // get numerical ID of the current job being executed, 0 for main fiber
-        virtual JobID currentJobID() const = 0;
+        virtual FiberJobID currentJobID() const = 0;
     };
 
 } // prv
 
-END_BOOMER_NAMESPACE_EX(fibers)
+END_BOOMER_NAMESPACE()

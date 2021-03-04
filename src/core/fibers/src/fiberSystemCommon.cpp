@@ -13,9 +13,6 @@
 #include "fiberSystemCommon.h"
 #include "core/containers/include/inplaceArray.h"
 
-void DumpFibers();
-void UnlockCounterManual(uint32_t id);
-
 #ifdef PLATFORM_GCC
     #pragma GCC push_options
     #pragma GCC optimize ("O0")
@@ -23,7 +20,7 @@ void UnlockCounterManual(uint32_t id);
     #pragma optimize("",off)
 #endif
 
-BEGIN_BOOMER_NAMESPACE_EX(fibers)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -126,10 +123,10 @@ namespace prv
             yieldCurrentJob();
     }
 
-    WaitCounter BaseScheduler::createCounter(const char* userName, uint32_t count /*= 1*/)
+    FiberSemaphore BaseScheduler::createCounter(const char* userName, uint32_t count /*= 1*/)
     {
         if (!count)
-            return WaitCounter();
+            return FiberSemaphore();
 
         return m_waitConterPool.allocWaitCounter(userName, count);
     }
@@ -147,7 +144,7 @@ namespace prv
         }
     }
 
-    void BaseScheduler::scheduleInternal(const Job& job, uint32_t numInvokations, bool child)
+    void BaseScheduler::scheduleInternal(const FiberJob& job, uint32_t numInvokations, bool child)
     {
         uint64_t fiberSequenceNumber = child ? currentJobSequenceId() : ++m_fiberSequenceNumber;
         if (fiberSequenceNumber == 0)
@@ -172,12 +169,12 @@ namespace prv
         }
     }
 
-    void BaseScheduler::scheduleFiber(const Job& job, uint32_t numInvokations /*= 1*/, bool child /*= false*/)
+    void BaseScheduler::scheduleFiber(const FiberJob& job, uint32_t numInvokations /*= 1*/, bool child /*= false*/)
     {
         scheduleInternal(job, numInvokations, child);
     }
 
-    void BaseScheduler::scheduleSync(const Job &job)
+    void BaseScheduler::scheduleSync(const FiberJob &job)
     {
         m_syncList.push(job);
     }
@@ -269,7 +266,7 @@ namespace prv
         return 0;
     }
 
-    JobID BaseScheduler::currentJobID() const
+    FiberJobID BaseScheduler::currentJobID() const
     {
         if (auto currentThread  = currentThreadState())
             if (auto currentFiber  = currentThread->attachedFiber.load())
@@ -279,15 +276,15 @@ namespace prv
         return 0;
     }
 
-    bool BaseScheduler::checkCounter(const WaitCounter& counter)
+    bool BaseScheduler::checkCounter(const FiberSemaphore& counter)
     {
         return m_waitConterPool.checkWaitCounter(counter);
     }
 
-    void BaseScheduler::waitForMultipleCountersAndRelease(const WaitCounter* counters, uint32_t numCounters)
+    void BaseScheduler::waitForMultipleCountersAndRelease(const FiberSemaphore* counters, uint32_t numCounters)
     {
         // collect counters that were not yet signaled
-        InplaceArray<WaitCounter, 15> tempCounters;
+        InplaceArray<FiberSemaphore, 15> tempCounters;
         tempCounters.reserve(numCounters);
         for (uint32_t i = 0; i < numCounters; ++i)
         {
@@ -306,7 +303,7 @@ namespace prv
             // TODO: better implementation!
 
             // create waiting job
-            Job job;
+            FiberJob job;
             auto finalCounter = createCounter("MergedCounter", 1);
             job.func = [this, &tempCounters, finalCounter](FIBER_FUNC)
             {
@@ -321,7 +318,7 @@ namespace prv
         }
     }
 
-    void BaseScheduler::waitForCounterAndRelease(const WaitCounter& counter)
+    void BaseScheduler::waitForCounterAndRelease(const FiberSemaphore& counter)
     {
         // nothing to wait on
         if (counter.empty())
@@ -385,7 +382,7 @@ namespace prv
         Task::AttachTask(taskBlocks);
     }
 
-    void BaseScheduler::signalCounter(const WaitCounter& counter, uint32_t count /*= 1*/)
+    void BaseScheduler::signalCounter(const FiberSemaphore& counter, uint32_t count /*= 1*/)
     {
         // get the wait list to release
         auto jobToReschedule  = m_waitConterPool.signalWaitCounter(counter, count);
@@ -489,7 +486,7 @@ namespace prv
             }
 
             auto stackSize = stackCur - ptr;
-            TRACE_INFO("Job '{}', stack {}", rawJob->name, stackSize);
+            TRACE_INFO("FiberJob '{}', stack {}", rawJob->name, stackSize);
         }
 #endif
     }
@@ -610,7 +607,7 @@ namespace prv
             if (auto jobToSchedule  = currentThread->jobToReschedule.exchange(nullptr))
             {
                 auto counter = jobToSchedule->waitForCounter;
-                jobToSchedule->waitForCounter = WaitCounter();
+                jobToSchedule->waitForCounter = FiberSemaphore();
 
                 // if we have to wait for a specific counter before we can restart the job
                 // than try to insert into the wait queue, if this fails it means that the job has already finished and we should come back
@@ -840,18 +837,18 @@ namespace prv
 
 } // prv
 
-END_BOOMER_NAMESPACE_EX(fibers)
+END_BOOMER_NAMESPACE()
 
 void DumpFibers()
 {
-     if (boomer::fibers::prv::GBaseScheduler)
-         boomer::fibers::prv::GBaseScheduler->dump();
+     if (boomer::prv::GBaseScheduler)
+         boomer::prv::GBaseScheduler->dump();
 }
 
 void UnlockCounterManual(uint32_t id)
 {
-    if (boomer::fibers::prv::GBaseScheduler)
-        boomer::fibers::prv::GBaseScheduler->manualCounterUnlock(id);
+    if (boomer::prv::GBaseScheduler)
+        boomer::prv::GBaseScheduler->manualCounterUnlock(id);
 }
 
 #ifdef PLATFORM_GCC

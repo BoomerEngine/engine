@@ -37,7 +37,7 @@ public:
 private:
 	const StubFactory& m_factory;
 
-	void* m_unpackedMem = nullptr; // unpacked buffer, contains stub definitions + strings + inlined data
+	Buffer m_unpackedMem = nullptr; // unpacked buffer, contains stub definitions + strings + inlined data
 	void* m_stubMem = nullptr; // memory with stub objects
 
 	uint32_t m_minVersion = 1;

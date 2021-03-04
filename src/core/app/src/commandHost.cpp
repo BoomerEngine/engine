@@ -95,7 +95,7 @@ CommandHost::~CommandHost()
         TRACE_WARNING("Command: Command '{}' is still running, we will have to wait for it to finish", *m_command);
         //m_command->requestCancel();
 
-        Fibers::GetInstance().waitForCounterAndRelease(m_finishedSignal);
+        WaitForFence(m_finishedSignal);
 
         m_command.reset();
 
@@ -132,7 +132,7 @@ bool CommandHost::start(const CommandLine& commandline)
 
     // create the signal to run
     m_finishedFlag = false;
-    m_finishedSignal = Fibers::GetInstance().createCounter("CommandFinished");
+    m_finishedSignal = CreateFence("CommandFinished");
 
     // prepare to start
     m_command = command;
@@ -142,7 +142,7 @@ bool CommandHost::start(const CommandLine& commandline)
     {
         command->run(this, commandline);
         m_finishedFlag = true;
-        Fibers::GetInstance().signalCounter(m_finishedSignal);
+        SignalFence(m_finishedSignal);
     };
 
     // we are ok, command has started

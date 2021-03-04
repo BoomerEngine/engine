@@ -8,8 +8,7 @@
 #include "scriptJitTypeLib.h"
 #include "scriptJitTCC.h"
 
-#include "core/io/include/ioSystem.h"
-#include "core/io/include/pathBuilder.h"
+#include "core/io/include/io.h"
 #include "core/process/include/process.h"
 #include "core/system/include/thread.h"
 
@@ -25,10 +24,8 @@ JITTCC::JITTCC()
 
 StringBuf JITTCC::FindTCCCompiler()
 {
-    const auto& basePath = io::SystemPath(io::PathCategory::ExecutableFile);
-    io::PathBuilder builder(basePath);
-    builder.fileName("tcc");
-    return builder.toString();
+    const auto& basePath = SystemPath(PathCategory::ExecutableDir);
+    return TempString("{}tcc.exe", basePath);
 }
 
 StringBuf JITTCC::FindGCCCompiler()
@@ -96,9 +93,9 @@ bool JITTCC::compile(const IJITNativeTypeInsight& typeInsight, const CompiledPro
     processSetup.m_arguments.pushBack(tempFile);
 
     // delete output
-    if (io::FileExists(outputModulePath))
+    if (FileExists(outputModulePath))
     {
-        if (!io::DeleteFile(outputModulePath))
+        if (!DeleteFile(outputModulePath))
         {
             TRACE_ERROR("JIT: Output '{}' already exists and can't be deleted (probably in use)", outputModulePath);
             return false;
@@ -133,7 +130,7 @@ bool JITTCC::compile(const IJITNativeTypeInsight& typeInsight, const CompiledPro
     }
 
     // output generated ?
-    if (!io::FileExists(outputModulePath))
+    if (!FileExists(outputModulePath))
     {
         TRACE_ERROR("JIT: No output found after compiled finished");
         return false;

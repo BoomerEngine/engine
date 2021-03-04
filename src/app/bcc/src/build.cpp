@@ -5,7 +5,6 @@
 ***/
 
 #include "build.h"
-#include "static_init.inl"
 
 #include "core/app/include/application.h"
 #include "bccApplication.h"

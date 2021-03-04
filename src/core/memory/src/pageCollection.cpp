@@ -12,7 +12,7 @@
 
 #include "core/system/include/scopeLock.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -81,7 +81,7 @@ void PageCollection::reset()
         if (alloc->freeFunc)
             alloc->freeFunc(alloc->ptr, alloc->size, alloc->freeFuncUserData);
 
-        mem::FreeBlock(alloc->ptr);
+        FreeBlock(alloc->ptr);
 
         m_outstandingAllocList = prev;
     }
@@ -181,4 +181,4 @@ void* PageCollection::allocateOustandingBlock(uint64_t size, uint32_t alignment,
 
 //---
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()

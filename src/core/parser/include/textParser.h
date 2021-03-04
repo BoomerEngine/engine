@@ -132,7 +132,7 @@ public:
 
     // parse a general token using a language definition, will capture strings and numbers as well
     // NOTE: resulting token will be allocated from memory pool
-    Token* parseToken(mem::LinearAllocator& mem, const ILanguageDefinition& language);
+    Token* parseToken(LinearAllocator& mem, const ILanguageDefinition& language);
 
     // parse a general token using a language definition, will capture strings and numbers as well
     Token parseToken(const ILanguageDefinition& language);

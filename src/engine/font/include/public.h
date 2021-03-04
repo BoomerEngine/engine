@@ -43,7 +43,7 @@ typedef res::Ref<font::Font> FontRef;
 extern ENGINE_FONT_API FontPtr LoadFontFromMemory(Buffer ptr);
 
 // load font from file
-extern ENGINE_FONT_API FontPtr LoadFontFromFile(io::IReadFileHandle* file);
+extern ENGINE_FONT_API FontPtr LoadFontFromFile(IReadFileHandle* file);
 
 // load font from absolute file
 extern ENGINE_FONT_API FontPtr LoadFontFromAbsolutePath(StringView absolutePath);

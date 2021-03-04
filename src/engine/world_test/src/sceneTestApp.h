@@ -61,7 +61,6 @@ protected:
     Camera m_lastCamera;
 
     rendering::FrameStats m_lastFrameStats;
-    rendering::SceneStats m_lastSceneStats;
 
     gpu::ImageObjectPtr m_flippedColorTarget;
     gpu::RenderTargetViewPtr m_flippedColorTargetRTV;

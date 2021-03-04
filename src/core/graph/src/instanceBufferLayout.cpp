@@ -67,7 +67,7 @@ void InstanceBufferLayout::copyBufer(void* destBufferMemory, const void* srcBuff
 
 InstanceBufferPtr InstanceBufferLayout::createInstance(PoolTag poolID)
 {
-    void* ptr = mem::AllocateBlock(poolID, size(), alignment(), "InstanceBuffer");
+    void* ptr = AllocateBlock(poolID, size(), alignment(), "InstanceBuffer");
     initializeBuffer(ptr);
     return RefNew<InstanceBuffer>(AddRef(this), ptr, size(), poolID);
 }

@@ -140,7 +140,7 @@ void MultiConnection::send(StringView url, const http::RequestArgs& params, cons
 
 //---
 
-//static mem::PageAllocator RequestPageAllocator(POOL_REQUEST_DATA);
+//static PageAllocator RequestPageAllocator(POOL_REQUEST_DATA);
 
 Request::Request(CURL* handle, const StringBuf& url, const StringBuf& fields, uint32_t timeout, RefWeakPtr<MultiConnection> owner, http::Method method, const http::TRequestResponseFunc& callback)
     : m_url(url)

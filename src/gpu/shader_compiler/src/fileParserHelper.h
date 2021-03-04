@@ -112,7 +112,7 @@ private:
 class ParsingFileContext : public NoCopy
 {
 public:
-    ParsingFileContext(mem::LinearAllocator& mem, parser::IErrorReporter& errHandler, ParsingNode& result);
+    ParsingFileContext(LinearAllocator& mem, parser::IErrorReporter& errHandler, ParsingNode& result);
     ~ParsingFileContext();
 
     /// allocate some memory
@@ -140,7 +140,7 @@ public:
     void reportError(const parser::Location& loc, StringView err);
 
 private:
-    mem::LinearAllocator& m_mem;
+    LinearAllocator& m_mem;
     parser::IErrorReporter& m_errHandler;
     ParsingNode& m_result;
 };
@@ -192,7 +192,7 @@ private:
 class ParsingCodeContext : public NoCopy
 {
 public:
-    ParsingCodeContext(mem::LinearAllocator& mem, parser::IErrorReporter& errHandler, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram);
+    ParsingCodeContext(LinearAllocator& mem, parser::IErrorReporter& errHandler, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram);
     ~ParsingCodeContext();
 
     /// allocate some memory
@@ -250,7 +250,7 @@ public:
 	///--
 
 private:
-    mem::LinearAllocator& m_mem;
+    LinearAllocator& m_mem;
     parser::IErrorReporter& m_errHandler;
 	CodeNode* m_result = nullptr;
 

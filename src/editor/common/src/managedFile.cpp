@@ -17,7 +17,7 @@
 #include "core/resource/include/resource.h"
 #include "core/resource/include/resource.h"
 #include "core/containers/include/stringBuilder.h"
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 #include "core/resource/include/resourceThumbnail.h"
 #include "core/image/include/imageView.h"
 #include "core/image/include/image.h"

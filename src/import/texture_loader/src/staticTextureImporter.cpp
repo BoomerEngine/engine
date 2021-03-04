@@ -10,7 +10,7 @@
 #include "imageCompression.h"
 #include "staticTextureImporter.h"
 
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 #include "core/image/include/image.h"
 #include "core/image/include/imageUtils.h"
 #include "core/app/include/localServiceContainer.h"

@@ -212,7 +212,7 @@ res::ResourceHandle BitmapFontCooker::cook(res::IResourceCookerInterface& cooker
     //for (uint32_t i = 0; i < images.size(); ++i)
     //{
     //  auto name = StringBuf(TempString("Z:\\font_atlas{}.png", i));
-    //                auto path = io::AbsolutePath::Build(name.uni_str());
+    //                auto path = AbsolutePath::Build(name.uni_str());
     //image::Image::Save(path, *images[i]);
     //}
 

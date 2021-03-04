@@ -81,7 +81,7 @@ struct ProxyMemoryAllocator
 
     T* allocate()
     {
-        memPtr = (uint8_t*)mem::GlobalPool<POOL_RENDERING_RUNTIME>::Alloc(size, alignof(T));
+        memPtr = (uint8_t*)GlobalPool<POOL_RENDERING_RUNTIME>::Alloc(size, alignof(T));
         memzero(memPtr, size);
         memEndPtr = memPtr + size;
 

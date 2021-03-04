@@ -31,7 +31,7 @@ namespace helper
         DECLARE_SINGLETON(CommandBuferPageAllocator);
 
     public:
-        INLINE mem::PageAllocator& allocator() { return m_allocator; }
+        INLINE PageAllocator& allocator() { return m_allocator; }
 
         CommandBuferPageAllocator()
         {
@@ -42,7 +42,7 @@ namespace helper
         }
 
     private:
-        mem::PageAllocator m_allocator;
+        PageAllocator m_allocator;
 
         virtual void deinit() override
         {
@@ -54,7 +54,7 @@ namespace helper
 //--
 
 #if 0
-CommandBuffer::CommandBuffer(mem::PageCollection* pages, StringView name, uint8_t* firstPagePtr, uint8_t* firstPageEndPtr)
+CommandBuffer::CommandBuffer(PageCollection* pages, StringView name, uint8_t* firstPagePtr, uint8_t* firstPageEndPtr)
     : m_pages(pages)
     , m_currentWritePtr(firstPagePtr)
     , m_currentWriteEndPtr(firstPageEndPtr)
@@ -78,7 +78,7 @@ CommandBuffer::CommandBuffer()
 {
     // create page allocator
     auto& pageAllocator = helper::CommandBuferPageAllocator::GetInstance().allocator();
-    m_pages = mem::PageCollection::CreateFromAllocator(pageAllocator);
+    m_pages = PageCollection::CreateFromAllocator(pageAllocator);
 
     // allocate first page
     m_currentWritePtr = (uint8_t*) m_pages->allocatePage();
@@ -123,7 +123,7 @@ void CommandBuffer::release()
     m_pages->reset(); // this releases memory for this command buffer as well
 
     this->~CommandBuffer();
-    mem::FreeBlock(this);
+    FreeBlock(this);
 }
 
 bool CommandBuffer::enumChildren(const std::function<bool(CommandBuffer * buffer)>& enumFunc)
@@ -158,7 +158,7 @@ CommandBuffer* CommandBuffer::Alloc()
 {
     return new CommandBuffer;
 
-    /*if (auto* pages = mem::PageCollection::CreateFromAllocator(pageAllocator))
+    /*if (auto* pages = PageCollection::CreateFromAllocator(pageAllocator))
     {
         if (pages->pageSize() >= 4096)
         {

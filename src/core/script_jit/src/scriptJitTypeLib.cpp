@@ -14,7 +14,7 @@ BEGIN_BOOMER_NAMESPACE_EX(script)
 
 //--
 
-JITTypeLib::JITTypeLib(mem::LinearAllocator& mem, const IJITNativeTypeInsight& nativeTypes)
+JITTypeLib::JITTypeLib(LinearAllocator& mem, const IJITNativeTypeInsight& nativeTypes)
     : m_nativeTypes(nativeTypes)
     , m_hasErrors(false)
     , m_mem(mem)

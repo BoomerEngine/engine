@@ -19,7 +19,7 @@
 
 //#define VALIDATE_EVERY_ALLOCATION
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 // #define VALIDATE_EVERY_A
 
@@ -381,4 +381,4 @@ void DebugAllocator::printLeaks()
     }
 }
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()

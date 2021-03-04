@@ -131,7 +131,7 @@ void RenderingTest_InlineParameters::render(CommandWriter& cmd, float time, cons
 	else
 	{
 		auto numFibers = 1 << subTestIndex();
-		auto counter = Fibers::GetInstance().createCounter("RecordFiber", numFibers);
+		auto counter = CreateFence("RecordFiber", numFibers);
 
 		// spawn jobs
 		for (uint32_t i = 0; i < numFibers; ++i)
@@ -145,12 +145,12 @@ void RenderingTest_InlineParameters::render(CommandWriter& cmd, float time, cons
 			{
 				CommandWriter childWriter(childCommandBuffer);
 				recordRowRange(childWriter, firstRow, lastRow);
-				Fibers::GetInstance().signalCounter(counter);
+				SignalFence(counter);
 			};
 		}
 
 		// wait for all recording jobs to finish
-		Fibers::GetInstance().waitForCounterAndRelease(counter);
+		WaitForFence(counter);
 	}           
 
     cmd.opEndPass();

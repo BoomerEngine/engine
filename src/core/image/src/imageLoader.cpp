@@ -10,7 +10,7 @@
 #include "image.h"
 #include "imageView.h"
 
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 #include "core/resource/include/depotService.h"
 
 #include "freeImageLoader.h"
@@ -35,7 +35,7 @@ image::ImagePtr LoadImageFromMemory(Buffer ptr)
     return nullptr;
 }
 
-image::ImagePtr LoadImageFromFile(io::IReadFileHandle* file)
+image::ImagePtr LoadImageFromFile(IReadFileHandle* file)
 {
     if (file)
     {
@@ -64,7 +64,7 @@ image::ImagePtr LoadImageFromFile(io::IReadFileHandle* file)
 
 image::ImagePtr LoadImageFromAbsolutePath(StringView absolutePath)
 {
-    if (const auto file = io::OpenForReading(absolutePath))
+    if (const auto file = OpenForReading(absolutePath))
         return LoadImageFromFile(file);
     return nullptr;
 }

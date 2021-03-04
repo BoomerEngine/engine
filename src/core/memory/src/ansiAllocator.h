@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 /// ANSI pass-through allocator
 class AnsiAllocator
@@ -32,4 +32,4 @@ public:
     static void validateHeap(void* freedPtr);
 };
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()

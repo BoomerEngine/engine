@@ -161,7 +161,7 @@ private:
         bool hasNewTransform = false;
     };
 
-    mem::StructurePool<TransformUpdateRequest> m_transformRequetsPool;
+    StructurePool<TransformUpdateRequest> m_transformRequetsPool;
     HashMap<Entity*, TransformUpdateRequest*> m_transformRequestsMap;
     HashMap<Entity*, TransformUpdateRequest*> m_transformRequestsMap2;
 

@@ -25,7 +25,7 @@ BEGIN_BOOMER_NAMESPACE_EX(parser)
 class CORE_PARSER_API TextFilePreprocessor : public NoCopy
 {
 public:
-    TextFilePreprocessor(mem::LinearAllocator& mem, IIncludeHandler& includeHandler, IErrorReporter& errorHandler, ICommentEater& commentEater, const ILanguageDefinition& parentLanguage);
+    TextFilePreprocessor(LinearAllocator& mem, IIncludeHandler& includeHandler, IErrorReporter& errorHandler, ICommentEater& commentEater, const ILanguageDefinition& parentLanguage);
     ~TextFilePreprocessor();
 
     //--
@@ -42,7 +42,7 @@ public:
     bool processContent(StringView content, StringView contextPath);
 
 protected:
-    mem::LinearAllocator& m_allocator;
+    LinearAllocator& m_allocator;
 
     IIncludeHandler& m_includeHandler;
     IErrorReporter& m_errorHandler;

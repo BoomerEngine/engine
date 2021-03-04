@@ -259,7 +259,7 @@ struct FunctionNode
 class FunctionCode
 {
 public:
-    FunctionCode(mem::LinearAllocator& mem, StubLibrary& lib, const StubFunction* function);
+    FunctionCode(LinearAllocator& mem, StubLibrary& lib, const StubFunction* function);
     ~FunctionCode();
 
     // set root fuction node
@@ -272,7 +272,7 @@ public:
     void printTree();
 
 private:
-    mem::LinearAllocator& m_mem;
+    LinearAllocator& m_mem;
     StubLibrary& m_lib;
     const StubFunction* m_function;
     const StubClass* m_class;

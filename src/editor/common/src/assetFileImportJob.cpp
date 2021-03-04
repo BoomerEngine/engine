@@ -12,7 +12,7 @@
 #include "assetFileImportJob.h"
 #include "assetFileImportDetailsDialog.h"
 
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 #include "core/xml/include/xmlUtils.h"
 #include "core/app/include/commandline.h"
 #include "core/net/include/messageConnection.h"

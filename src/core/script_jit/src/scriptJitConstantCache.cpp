@@ -12,7 +12,7 @@ BEGIN_BOOMER_NAMESPACE_EX(script)
 
 //--
 
-JITConstCache::JITConstCache(mem::LinearAllocator& mem, JITTypeLib& typeLib)
+JITConstCache::JITConstCache(LinearAllocator& mem, JITTypeLib& typeLib)
     : m_mem(mem)
     , m_typeLib(typeLib)
 {}

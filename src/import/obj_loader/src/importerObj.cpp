@@ -18,8 +18,8 @@
 #include "engine/material/include/materialInstance.h"
 #include "engine/mesh/include/mesh.h"
 
-#include "core/io/include/ioFileHandle.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/fileHandle.h"
+#include "core/io/include/io.h"
 #include "core/app/include/localServiceContainer.h"
 #include "core/resource/include/resource.h"
 #include "core/resource/include/resourceLoader.h"
@@ -714,7 +714,7 @@ static void ProcessSingleChunk(MeshTopologyType top, const SourceAssetOBJ& data,
     }
 
     // copy out the attributes for each chunk
-    auto jobCounter = Fibers::GetInstance().createCounter("ChunkExportStream", sourceJobsInfo.size());
+    auto jobCounter = CreateFence("ChunkExportStream", sourceJobsInfo.size());
     RunChildFiber("ChunkExportStream").invocations(sourceJobsInfo.size()) << [jobCounter, flipUV, flipFaces, top, &assetToEngine, &data, streams, positions, uvs, colors, normals, &sourceJobsInfo, &builder](FIBER_FUNC)
     {
         const auto& jobInfo = sourceJobsInfo[index];
@@ -801,10 +801,10 @@ static void ProcessSingleChunk(MeshTopologyType top, const SourceAssetOBJ& data,
             }
         }
 
-        Fibers::GetInstance().signalCounter(jobCounter);
+        SignalFence(jobCounter);
     };
 
-    Fibers::GetInstance().waitForCounterAndRelease(jobCounter);
+    WaitForFence(jobCounter);
 
     // extract chunk data
     builder.extract(outChunk);
@@ -1096,8 +1096,8 @@ content::PhysicsDataPtr OBJMeshImporter::buildPhysicsData(const res::CookingPara
         previousVertices = currentVertices;
     }
 
-    auto path = io::AbsolutePath::Build(L"/home/rexdex/skydome.obj");
-    io::SaveFileFromString(path, str.toString());
+    auto path = AbsolutePath::Build(L"/home/rexdex/skydome.obj");
+    SaveFileFromString(path, str.toString());
 }*/
 
 END_BOOMER_NAMESPACE_EX(assets)

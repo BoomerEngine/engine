@@ -23,7 +23,7 @@ IndexPool::~IndexPool()
 
 void IndexPool::clear()
 {
-    mem::GlobalPool<POOL_INDEX_POOL, uint64_t>::Free(m_elementBitMap);
+    GlobalPool<POOL_CANVAS, uint64_t>::Free(m_elementBitMap);
     m_elementBitMap = nullptr;
     m_elementBitMapEnd = nullptr;
     m_freeBucketIndex = 0;
@@ -36,7 +36,7 @@ void IndexPool::resize(uint32_t capacity)
     auto alignedCapacity = Align<uint32_t>(capacity, 64);
     if (alignedCapacity > m_maxAllocated)
     {
-        m_elementBitMap = mem::GlobalPool<POOL_INDEX_POOL, uint64_t>::Resize(m_elementBitMap, alignedCapacity / 8, 8);
+        m_elementBitMap = GlobalPool<POOL_CONTAINERS, uint64_t>::Resize(m_elementBitMap, alignedCapacity / 8, 8);
         memset(m_elementBitMap + (m_maxAllocated / 8), 0, (alignedCapacity - m_maxAllocated) / 8);
         m_elementBitMapEnd = m_elementBitMap + (alignedCapacity / 8);
 

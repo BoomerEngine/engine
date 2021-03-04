@@ -38,10 +38,10 @@ FrameViewRecorder::FrameViewRecorder(FrameViewRecorder* parentView)
 void FrameViewRecorder::finishRendering()
 {
     auto lock = CreateLock(m_fenceListLock);
-    Fibers::GetInstance().waitForMultipleCountersAndRelease(m_fences.typedData(), m_fences.size());
+    WaitForMultipleFences(m_fences.typedData(), m_fences.size());
 }
 
-void FrameViewRecorder::postFence(fibers::WaitCounter fence, bool localFence)
+void FrameViewRecorder::postFence(FiberSemaphore fence, bool localFence)
 {
     if (!m_parentView || localFence)
     {

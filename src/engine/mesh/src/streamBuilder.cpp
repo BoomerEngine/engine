@@ -57,7 +57,7 @@ void MeshRawStreamBuilder::clear()
     {
         auto mask = MeshStreamMaskFromType((MeshStreamType)i);
         if (m_ownedStreams & mask)
-            mem::GlobalPool<POOL_MESH_BUILDER>::Free(m_verticesRaw[i]);
+            GlobalPool<POOL_MESH_BUILDER>::Free(m_verticesRaw[i]);
     }
 
     memset(m_verticesRaw, 0, sizeof(m_verticesRaw));
@@ -84,13 +84,13 @@ void MeshRawStreamBuilder::reserveVertices(uint32_t maxVertices, MeshStreamMask 
                 auto dataSize = maxVertices * stride;
                 if (m_verticesRaw[i] && 0 == (m_ownedStreams & mask))
                 {
-                    auto newData = mem::GlobalPool<POOL_MESH_BUILDER>::Alloc(dataSize, 16);
+                    auto newData = GlobalPool<POOL_MESH_BUILDER>::Alloc(dataSize, 16);
                     memcpy(newData, m_verticesRaw[i], numVeritces * stride);
                     m_verticesRaw[i] = newData;
                 }
                 else
                 {
-                    m_verticesRaw[i] = mem::GlobalPool<POOL_MESH_BUILDER>::Resize(m_verticesRaw[i], dataSize, 16);
+                    m_verticesRaw[i] = GlobalPool<POOL_MESH_BUILDER>::Resize(m_verticesRaw[i], dataSize, 16);
                 }
 
                 // mask stream
@@ -137,7 +137,7 @@ void MeshRawStreamBuilder::makeVertexStreamResident(MeshStreamType type)
             auto stride = GetMeshStreamStride(type);
             auto dataSize = m_maxVeritces * stride;
 
-            auto newData = mem::GlobalPool<POOL_MESH_BUILDER>::Alloc(dataSize, 16);
+            auto newData = GlobalPool<POOL_MESH_BUILDER>::Alloc(dataSize, 16);
             memcpy(newData, m_verticesRaw[(uint32_t)type], numVeritces * stride);
             m_verticesRaw[(uint32_t)type] = newData;
 

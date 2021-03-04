@@ -20,7 +20,7 @@
 #include "versionControl.h"
 #include "resourceEditor.h"
 
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 #include "core/app/include/commandline.h"
 #include "core/resource/include/resourceLoadingService.h"
 #include "engine/ui/include/uiRenderer.h"
@@ -110,7 +110,7 @@ bool Editor::initialize(ui::Renderer* renderer, const app::CommandLine& cmdLine)
     ManagedFileFormatRegistry::GetInstance().cacheFormats();
 
     // load config data (does not apply the config)
-    m_configPath = TempString("{}editor.config.xml", io::SystemPath(io::PathCategory::UserConfigDir));
+    m_configPath = TempString("{}editor.config.xml", SystemPath(PathCategory::UserConfigDir));
     m_configStorage->loadFromFile(m_configPath);
         
     // load open/save settings
@@ -615,7 +615,7 @@ void Editor::saveOpenSaveSettings(const ui::ConfigBlock& config) const
 
 }
 
-io::OpenSavePersistentData& Editor::openSavePersistentData(StringView category)
+OpenSavePersistentData& Editor::openSavePersistentData(StringView category)
 {
     if (!category)
         category = "Generic";
@@ -623,8 +623,8 @@ io::OpenSavePersistentData& Editor::openSavePersistentData(StringView category)
     if (const auto* data = m_openSavePersistentData.find(category))
         return **data;
 
-    auto entry = new io::OpenSavePersistentData;
-    entry->directory = io::SystemPath(io::PathCategory::UserDocumentsDir);
+    auto entry = new OpenSavePersistentData;
+    entry->directory = SystemPath(PathCategory::UserDocumentsDir);
 
     m_openSavePersistentData[StringBuf(category)] = entry;
     return *entry;
@@ -642,7 +642,7 @@ bool Editor::saveToXML(ui::IElement* owner, StringView category, const std::func
     auto& dialogSettings = openSavePersistentData(category);
 
     // add XML format
-    InplaceArray<io::FileFormat, 1> formatList;
+    InplaceArray<FileFormat, 1> formatList;
     formatList.emplaceBack("xml", "Extensible Markup Language file");
 
     // current file name
@@ -655,7 +655,7 @@ bool Editor::saveToXML(ui::IElement* owner, StringView category, const std::func
     // ask for file path
     StringBuf selectedPath;
     const auto nativeHandle = windowNativeHandle(owner);
-    if (!io::ShowFileSaveDialog(nativeHandle, currentFileName, formatList, selectedPath, dialogSettings))
+    if (!ShowFileSaveDialog(nativeHandle, currentFileName, formatList, selectedPath, dialogSettings))
         return false;
 
     // extract file name
@@ -708,13 +708,13 @@ ObjectPtr Editor::loadFromXML(ui::IElement* owner, StringView category, Specific
     auto& dialogSettings = openSavePersistentData(category);
 
     // add XML format
-    InplaceArray<io::FileFormat, 1> formatList;
+    InplaceArray<FileFormat, 1> formatList;
     formatList.emplaceBack("xml", "Extensible Markup Language file");
 
     // ask for file path
     Array<StringBuf> selectedPaths;
     const auto nativeHandle = windowNativeHandle(owner);
-    if (!io::ShowFileOpenDialog(nativeHandle, false, formatList, selectedPaths, dialogSettings))
+    if (!ShowFileOpenDialog(nativeHandle, false, formatList, selectedPaths, dialogSettings))
         return false;
 
     // load the document from the file

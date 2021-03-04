@@ -8,12 +8,12 @@
 
 #include "build.h"
 
-#include "ioFileHandle.h"
-#include "ioSystem.h"
+#include "fileHandle.h"
+#include "io.h"
 
 #include "core/memory/include/buffer.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(io)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -113,4 +113,4 @@ bool SaveFileFromBuffer(StringView absoluteFilePath, const Buffer& buffer)
 
 //--
 
-END_BOOMER_NAMESPACE_EX(io)
+END_BOOMER_NAMESPACE()

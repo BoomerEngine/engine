@@ -80,7 +80,7 @@ private:
     struct ImportDependencies
     {
         StringBuf assetPath;
-        io::TimeStamp timestamp;
+        TimeStamp timestamp;
         ImportFileFingerprint fingerprint;
     };
 
@@ -88,7 +88,7 @@ private:
     Array<ImportDependencies> m_importDependencies;
     HashSet<StringBuf> m_importDependenciesSet;
 
-    void reportImportDependency(StringView assetImportPath, const io::TimeStamp& timestamp, const ImportFileFingerprint& fingerprint);
+    void reportImportDependency(StringView assetImportPath, const TimeStamp& timestamp, const ImportFileFingerprint& fingerprint);
 };
 
 //--

@@ -11,7 +11,7 @@
 #include "core/system/include/spinLock.h"
 #include "core/system/include/mutex.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 /// Simple debug allocator with simple overrun/underrun checks and stats
 class DebugAllocator
@@ -145,4 +145,4 @@ public:
     void unlinkHeapBlock(DebugHeader* block);
 };
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()

@@ -159,7 +159,7 @@ void TriMesh::build(TriMeshBuildTriangle* triangles, uint32_t numTriangles)
     helper::QuantizationParams quantizer(bounds);
 
     // copy nodes
-    if (auto nodeData = Buffer::Create(POOL_TRIMESH, sizeof(TriMeshNode) * nodes.size()))
+    if (auto nodeData = Buffer::Create(POOL_MATH, sizeof(TriMeshNode) * nodes.size()))
     {
         auto writeNode  = (TriMeshNode *) nodeData.data();
         Box localBox;
@@ -168,7 +168,7 @@ void TriMesh::build(TriMeshBuildTriangle* triangles, uint32_t numTriangles)
     }
 
     // copy triangles, use local quantization within the nodes
-    if (auto triangleData = Buffer::Create(POOL_TRIMESH, sizeof(TriMeshTriangle) * numTriangles))
+    if (auto triangleData = Buffer::Create(POOL_MATH, sizeof(TriMeshTriangle) * numTriangles))
     {
         auto writeTri  = (TriMeshTriangle *) triangleData.data();
         helper::CopyNodeTriangles(nodes.typedData(), triangles, nodes.size(), writeTri);

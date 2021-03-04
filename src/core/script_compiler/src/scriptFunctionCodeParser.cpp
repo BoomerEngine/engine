@@ -20,7 +20,7 @@ BEGIN_BOOMER_NAMESPACE_EX(script)
 
 ///---
 
-FunctionParser::FunctionParser(mem::LinearAllocator& mem, IErrorHandler& err, StubLibrary& stubs)
+FunctionParser::FunctionParser(LinearAllocator& mem, IErrorHandler& err, StubLibrary& stubs)
     : m_mem(mem)
     , m_err(err)
     , m_stubs(stubs)

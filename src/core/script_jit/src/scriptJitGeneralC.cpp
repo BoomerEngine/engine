@@ -11,7 +11,7 @@
 #include "scriptJitFunctionWriterC.h"
 
 #include "core/script/include/scriptCompiledProject.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 #include "core/io/include/timestamp.h"
 #include "core/system/include/timing.h"
 
@@ -157,13 +157,13 @@ bool JITGeneralC::generateCode()
 
 static StringBuf GetTempFilePath()
 {
-    const auto& tempDir = io::SystemPath(io::PathCategory::LocalTempDir);
+    const auto& tempDir = SystemPath(PathCategory::LocalTempDir);
     return TempString("{}jit/it_temp_{}.c", tempDir, NativeTimePoint::Now().rawValue()) ;
 }
 
 static StringBuf GetPrologCodeFile()
 {
-    const auto& exeDir = io::SystemPath(io::PathCategory::ExecutableDir);
+    const auto& exeDir = SystemPath(PathCategory::ExecutableDir);
     return TempString("{}jit.h", exeDir);
 }
 
@@ -298,7 +298,7 @@ StringBuf JITGeneralC::writeTempSourceFile()  const
 
     // load generic prolog
     StringBuf prolog;
-    io::LoadFileToString(GetPrologCodeFile(), prolog);
+    LoadFileToString(GetPrologCodeFile(), prolog);
     f << prolog;
 
     // declare all struct types
@@ -326,7 +326,7 @@ StringBuf JITGeneralC::writeTempSourceFile()  const
 
     // save the file
     auto tempFilePath = GetTempFilePath();
-    if (io::SaveFileFromString(tempFilePath, f.toString()))
+    if (SaveFileFromString(tempFilePath, f.toString()))
         return tempFilePath;
     else
         return StringBuf::EMPTY();

@@ -10,7 +10,7 @@
 
 #include "core/app/include/application.h"
 #include "core/system/include/task.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -61,7 +61,7 @@ public:
     ///--
 
     // get the semi persistent data for the open/save file dialog - mainly the active directory, selected file filter, etc
-    io::OpenSavePersistentData& openSavePersistentData(StringView category);
+    OpenSavePersistentData& openSavePersistentData(StringView category);
 
     ///---
 
@@ -184,7 +184,7 @@ private:
 
     //--
 
-    HashMap<StringBuf, io::OpenSavePersistentData*> m_openSavePersistentData;
+    HashMap<StringBuf, OpenSavePersistentData*> m_openSavePersistentData;
 
     //--
 

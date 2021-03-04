@@ -79,11 +79,11 @@ TEST_F(FibersFixture, HelloWorld)
 {
     ExpectOutput("HelloWorld!");
 
-    fibers::Job job;
+    FiberJob job;
     job.targetFunction = [this](uint64_t) { Output("HelloWorld!"); };
 
-    auto counter = Fibers::GetInstance().scheduleFiber(job);
-    Fibers::GetInstance().waitForCounterAndRelease(counter);
+    auto counter = ScheduleFiber(job);
+    WaitForFence(counter);
 }
 
 TEST_F(FibersFixture, MultipleJobInvocations4)
@@ -91,7 +91,7 @@ TEST_F(FibersFixture, MultipleJobInvocations4)
 	SpinLock interationsLock;
     HashSet<uint64_t> interations;
 
-    fibers::Job job;
+    FiberJob job;
     job.targetFunction = [this, &interations, &interationsLock](uint64_t i)
     {
 		interationsLock.acquire();
@@ -100,7 +100,7 @@ TEST_F(FibersFixture, MultipleJobInvocations4)
     };
 
     auto counter = Fibers::GetInstance().scheduleAuto(job, 4);
-    Fibers::GetInstance().waitForCounterAndRelease(counter);
+    WaitForFence(counter);
 
 	EXPECT_EQ(4, interations.size());
 }
@@ -110,7 +110,7 @@ TEST_F(FibersFixture, MultipleJobInvocations1024)
 	SpinLock interationsLock;
 	HashSet<uint64_t> interations;
 
-	fibers::Job job;
+	FiberJob job;
 	job.targetFunction = [this, &interations, &interationsLock](uint64_t i)
 	{
 		interationsLock.acquire();
@@ -119,7 +119,7 @@ TEST_F(FibersFixture, MultipleJobInvocations1024)
 	};
 
 	auto counter = Fibers::GetInstance().scheduleAuto(job, 1024);
-	Fibers::GetInstance().waitForCounterAndRelease(counter);
+	WaitForFence(counter);
 
 	EXPECT_EQ(1024, interations.size());
 }

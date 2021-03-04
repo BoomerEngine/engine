@@ -9,13 +9,13 @@
 #include "build.h"
 #include "resourceFileTables.h"
 #include "resourceFileSaver.h"
-#include "core/io/include/ioAsyncFileHandle.h"
+#include "core/io/include/asyncFileHandle.h"
 #include "core/object/include/object.h"
 #include "core/object/include/streamOpcodes.h"
 #include "core/object/include/streamOpcodeWriter.h"
 #include "core/object/include/streamOpcodeBinarizer.h"
 #include "core/containers/include/queue.h"
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 #include "resourceFileTablesBuilder.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(res)
@@ -306,7 +306,7 @@ void BuildFileTables(const Array<FileSerializedObject*>& objects, FileTablesBuil
     }
 }
 
-bool WriteObjects(const FileSavingContext& context, const FileSerializedObjectCollection& objects, const stream::OpcodeMappedReferences& mappedReferences, FileTablesBuilder& tables, uint64_t baseOffset, io::IWriteFileHandle* file, IProgressTracker* progress)
+bool WriteObjects(const FileSavingContext& context, const FileSerializedObjectCollection& objects, const stream::OpcodeMappedReferences& mappedReferences, FileTablesBuilder& tables, uint64_t baseOffset, IWriteFileHandle* file, IProgressTracker* progress)
 {
     const auto numObjects = objects.orderedObjects().size();
     for (uint32_t i = 0; i < numObjects; ++i)
@@ -350,7 +350,7 @@ uint32_t HeaderFlags(const FileSavingContext& context)
     return flags;
 }
 
-bool SaveFile(io::IWriteFileHandle* file, const FileSavingContext& context, IProgressTracker* progress)
+bool SaveFile(IWriteFileHandle* file, const FileSavingContext& context, IProgressTracker* progress)
 {
     ScopeTimer timer;
 

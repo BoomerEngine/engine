@@ -136,7 +136,7 @@ void CodeNode::moveChildren(Array<const CodeNode*>&& children)
 			m_children.pushBack(child);
 }
 
-CodeNode* CodeNode::clone(mem::LinearAllocator& mem) const
+CodeNode* CodeNode::clone(LinearAllocator& mem) const
 {
     // create the copy of the node
     auto copy  = mem.create<CodeNode>();

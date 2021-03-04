@@ -48,7 +48,7 @@ public:
 
 private:
     Buffer  m_packedData; // packed data
-    mem::LinearAllocator m_unpackMemory; // memory for all of the unpacked data
+    LinearAllocator m_unpackMemory; // memory for all of the unpacked data
 
     Array<const Stub*> m_stubs; // all stubs in the
     const StubModule* m_exportModule; // exported module (contains all data actually defined in the script package)

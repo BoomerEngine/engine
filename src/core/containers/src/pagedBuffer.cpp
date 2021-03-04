@@ -16,13 +16,13 @@ BEGIN_BOOMER_NAMESPACE()
 ///--
 
 PagedBuffer::PagedBuffer(uint32_t alignment, PoolTag poolID /*= POOL_TEMP*/)
-    : m_allocator(&mem::PageAllocator::GetDefaultAllocator(poolID))
+    : m_allocator(&PageAllocator::GetDefaultAllocator(poolID))
     , m_alignment(alignment)
 {
     m_pageSize = m_allocator->pageSize();
 }
 
-PagedBuffer::PagedBuffer(uint32_t alignment, mem::PageAllocator& pageAllocator)
+PagedBuffer::PagedBuffer(uint32_t alignment, PageAllocator& pageAllocator)
     : m_allocator(&pageAllocator)
     , m_alignment(alignment)
 {
@@ -32,7 +32,7 @@ PagedBuffer::PagedBuffer(uint32_t alignment, mem::PageAllocator& pageAllocator)
 PagedBuffer::PagedBuffer(uint32_t alignment, PoolTag poolID, uint32_t pageSize)
     : m_alignment(alignment)
 {
-    m_allocator = new mem::PageAllocator();
+    m_allocator = new PageAllocator();
     m_allocator->initialize(poolID, pageSize);
     m_pageSize = m_allocator->pageSize();
     m_ownsAllocator = true;

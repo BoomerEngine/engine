@@ -10,7 +10,7 @@
 
 #include "core/system/include/spinLock.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 typedef void (*TPageCollectionCleanupFunc)(void* userData);
 typedef void (*TOutstandingMemoryCleanupFunc)(void* ptr, uint64_t size, void* userData);
@@ -101,4 +101,4 @@ private:
     void* m_selfBlock = nullptr;
 };
 
-END_BOOMER_NAMESPACE_EX(memory)
+END_BOOMER_NAMESPACE()

@@ -8,7 +8,7 @@
 
 #include "build.h"
 #include "depotService.h"
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 #include "core/app/include/commandline.h"
 
 BEGIN_BOOMER_NAMESPACE()
@@ -59,40 +59,40 @@ bool DepotService::queryFileDepotPath(StringView absolutePath, StringBuf& outDep
     return false;
 }
 
-bool DepotService::queryFileTimestamp(StringView depotPath, io::TimeStamp& outTimestamp) const
+bool DepotService::queryFileTimestamp(StringView depotPath, TimeStamp& outTimestamp) const
 {
     StringBuf absolutePath;
     if (!queryFileAbsolutePath(depotPath, absolutePath))
         return false;
 
-    return io::FileTimeStamp(absolutePath, outTimestamp);
+    return FileTimeStamp(absolutePath, outTimestamp);
 }
 
-io::ReadFileHandlePtr DepotService::createFileReader(StringView depotPath) const
+ReadFileHandlePtr DepotService::createFileReader(StringView depotPath) const
 {
     StringBuf absolutePath;
     if (!queryFileAbsolutePath(depotPath, absolutePath))
         return nullptr;
 
-    return io::OpenForReading(absolutePath);
+    return OpenForReading(absolutePath);
 }
 
-io::WriteFileHandlePtr DepotService::createFileWriter(StringView depotPath) const
+WriteFileHandlePtr DepotService::createFileWriter(StringView depotPath) const
 {
     StringBuf absolutePath;
     if (!queryFileAbsolutePath(depotPath, absolutePath))
         return nullptr;
 
-    return io::OpenForWriting(absolutePath);
+    return OpenForWriting(absolutePath);
 }
 
-io::AsyncFileHandlePtr DepotService::createFileAsyncReader(StringView depotPath) const
+AsyncFileHandlePtr DepotService::createFileAsyncReader(StringView depotPath) const
 {
     StringBuf absolutePath;
     if (!queryFileAbsolutePath(depotPath, absolutePath))
         return nullptr;
 
-    return io::OpenForAsyncReading(absolutePath);
+    return OpenForAsyncReading(absolutePath);
 }
 
 bool DepotService::enumDirectoriesAtPath(StringView rawDirectoryPath, const std::function<bool(const DirectoryInfo& info) >& enumFunc) const
@@ -124,7 +124,7 @@ bool DepotService::enumDirectoriesAtPath(StringView rawDirectoryPath, const std:
         StringBuf absolutePath;
         if (queryFileAbsolutePath(rawDirectoryPath, absolutePath))
         {
-            return io::FindSubDirs(absolutePath, [&enumFunc](StringView name)
+            return FindSubDirs(absolutePath, [&enumFunc](StringView name)
                 {
                     DirectoryInfo info;
                     info.fileSystemRoot = true;
@@ -146,7 +146,7 @@ bool DepotService::enumFilesAtPath(StringView rawDirectoryPath, const std::funct
         StringBuf absolutePath;
         if (queryFileAbsolutePath(rawDirectoryPath, absolutePath))
         {
-            return io::FindLocalFiles(absolutePath, "*.*", [&enumFunc](StringView name)
+            return FindLocalFiles(absolutePath, "*.*", [&enumFunc](StringView name)
                 {
                     FileInfo info;
                     info.name = name;
@@ -282,21 +282,21 @@ bool DepotService::findFile(StringView depotPath, StringView fileName, uint32_t 
 
 app::ServiceInitializationResult DepotService::onInitializeService(const app::CommandLine& cmdLine)
 {
-    const auto engineDir = io::SystemPath(io::PathCategory::EngineDir);
+    const auto engineDir = SystemPath(PathCategory::EngineDir);
     m_engineDepotPath = TempString("{}data/depot/", engineDir);
     TRACE_INFO("Engine depot directory: '{}'", m_engineDepotPath);
 
     const auto& projectDir = cmdLine.singleValue("projectDir");
     if (!projectDir.empty())
     {
-        if (io::FileExists(TempString("{}project.xml", projectDir)))
+        if (FileExists(TempString("{}project.xml", projectDir)))
         {
             m_projectDepotPath = TempString("{}data/depot/", projectDir);
             TRACE_INFO("Project depot directory: '{}'", m_projectDepotPath);
         }
     }
 
-    m_engineObserver = io::CreateDirectoryWatcher(m_engineDepotPath);
+    m_engineObserver = CreateDirectoryWatcher(m_engineDepotPath);
     m_engineObserver->attachListener(this);
 
     return app::ServiceInitializationResult::Finished;
@@ -314,7 +314,7 @@ void DepotService::onSyncUpdate()
 
 //--
 
-void DepotService::handleEvent(const io::DirectoryWatcherEvent& evt)
+void DepotService::handleEvent(const DirectoryWatcherEvent& evt)
 {
     StringBuf depotPath;
     if (queryFileDepotPath(evt.path, depotPath))
@@ -322,32 +322,32 @@ void DepotService::handleEvent(const io::DirectoryWatcherEvent& evt)
         switch (evt.type)
         {
 
-        case io::DirectoryWatcherEventType::FileAdded:
+        case DirectoryWatcherEventType::FileAdded:
             TRACE_INFO("Depot file was reported as added", depotPath);
             DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_FILE_ADDED, depotPath);
             break;
 
-        case io::DirectoryWatcherEventType::FileRemoved:
+        case DirectoryWatcherEventType::FileRemoved:
             TRACE_INFO("Depot file was reported as removed", depotPath);
             DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_FILE_REMOVED, depotPath);
             break;
 
-        case io::DirectoryWatcherEventType::DirectoryAdded:
+        case DirectoryWatcherEventType::DirectoryAdded:
             TRACE_INFO("Depot directory '{}' was reported as added", depotPath);
             DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_DIRECTORY_ADDED, depotPath);
             break;
 
-        case io::DirectoryWatcherEventType::DirectoryRemoved:
+        case DirectoryWatcherEventType::DirectoryRemoved:
             TRACE_INFO("Depot directory '{}' was reported as removed", depotPath);
             DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_DIRECTORY_REMOVED, depotPath);
             break;
 
-        case io::DirectoryWatcherEventType::FileContentChanged:
+        case DirectoryWatcherEventType::FileContentChanged:
             TRACE_INFO("Depot file '{}' was reported as changed", depotPath);
             DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_FILE_CHANGED, depotPath);
             break;
 
-        case io::DirectoryWatcherEventType::FileMetadataChanged:
+        case DirectoryWatcherEventType::FileMetadataChanged:
             break;
         }
     }
@@ -355,7 +355,7 @@ void DepotService::handleEvent(const io::DirectoryWatcherEvent& evt)
 
 //--
 
-bool DepotService::loadFileToBuffer(StringView depotPath, Buffer& outContent, io::TimeStamp* timestamp) const
+bool DepotService::loadFileToBuffer(StringView depotPath, Buffer& outContent, TimeStamp* timestamp) const
 {
     if (auto file = createFileReader(depotPath))
     {
@@ -373,7 +373,7 @@ bool DepotService::loadFileToBuffer(StringView depotPath, Buffer& outContent, io
     return false;
 }
 
-bool DepotService::loadFileToString(StringView depotPath, StringBuf& outContent, io::TimeStamp* timestamp) const
+bool DepotService::loadFileToString(StringView depotPath, StringBuf& outContent, TimeStamp* timestamp) const
 {
     if (auto file = createFileReader(depotPath))
     {

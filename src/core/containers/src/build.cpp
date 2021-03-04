@@ -96,7 +96,7 @@ void* DecodeBase64(const char* startTxt, const char* endTxt, uint32_t& outDataSi
 
     auto length = endTxt - startTxt;
     auto size = (length * 6) / 8;
-    auto ret = mem::AllocateBlock(poolID, size, 1, "DecodeBase64");
+    auto ret = AllocateBlock(poolID, size, 1, "DecodeBase64");
     auto writePtr  = (uint8_t*)ret;
 
     uint32_t i = 0;
@@ -137,7 +137,7 @@ char* DecodeCString(const char* startTxt, const char* endTxt, uint32_t& outDataS
     if (endTxt == startTxt)
     {
         outDataSize = 0;
-        return mem::GlobalPool<POOL_STRINGS, char>::Alloc(1);
+        return GlobalPool<POOL_STRINGS, char>::Alloc(1);
     }
 
     uint32_t length = 0;
@@ -166,7 +166,7 @@ char* DecodeCString(const char* startTxt, const char* endTxt, uint32_t& outDataS
             return nullptr;
     }
 
-    auto ret = (char*) mem::AllocateBlock(POOL_STRINGS, length, 1, "DecodeCString");
+    auto ret = (char*) AllocateBlock(POOL_STRINGS, length, 1, "DecodeCString");
     auto writePtr  = ret;
     {
         auto readPtr  = startTxt;

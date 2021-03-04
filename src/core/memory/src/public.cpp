@@ -16,7 +16,7 @@
 #endif
 #include "poolStats.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 //-----------------------------------------------------------------------------
 
@@ -130,7 +130,7 @@ void* AllocSystemMemory(size_t size, bool largePages)
 #error "Implement this"
 #endif
 
-    PoolStats::GetInstance().notifyAllocation(POOL_SYSTEM_MEMORY, size);
+    PoolNotifyAllocation(POOL_SYSTEM_MEMORY, size);
 
     return ret;
 }
@@ -147,9 +147,9 @@ void FreeSystemMemory(void* page, size_t size)
 #error "Implement this"
 #endif
 
-    PoolStats::GetInstance().notifyFree(POOL_SYSTEM_MEMORY, size);
+    PoolNotifyFree(POOL_SYSTEM_MEMORY, size);
 }
 
 //-----------------------------------------------------------------------------
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()

@@ -1111,7 +1111,7 @@ class EncodedSelectionDataSink : public gpu::IDownloadDataSink
 public:
     EncodedSelectionDataSink()
     {
-        //m_fence = Fibers::GetInstance().createCounter("WaitForSelectionData", 1);
+        //m_fence = CreateFence("WaitForSelectionData", 1);
     }
 
     virtual void processRetreivedData(const void* dataPtr, uint32_t dataSize, const gpu::ResourceCopyRange& info) override final
@@ -1136,12 +1136,12 @@ public:
             }
         }
 
-        //Fibers::GetInstance().signalCounter(m_fence, 1);
+        //SignalFence(m_fence, 1);
     }
 
     RefPtr<RenderingPanelSelectionQuery> waitAndFetch(const Camera& camera)
     {
-        //Fibers::GetInstance().waitForCounterAndRelease(m_fence);
+        //WaitForFence(m_fence);
         return RefNew<RenderingPanelSelectionQuery>(m_selectionRect, std::move(m_selectables), camera);
     }
 
@@ -1149,7 +1149,7 @@ private:
     Array<EncodedSelectable> m_selectables;
     Rect m_selectionRect;
 
-    //fibers::WaitCounter m_fence;
+    //FiberSemaphore m_fence;
 };
 
 //--
@@ -1219,7 +1219,7 @@ public:
     DepthBufferDataSink(const Rect& screenRect)
         : m_screenRect(screenRect)
     {
-        //m_fence = Fibers::GetInstance().createCounter("WaitForDepthData", 1);
+        //m_fence = CreateFence("WaitForDepthData", 1);
 
         const auto numPixels = m_screenRect.width() * m_screenRect.height();
         m_depth.resizeWith(numPixels, 1.0f); // far plane
@@ -1233,12 +1233,12 @@ public:
         if (numPixels == m_depth.size())
             memcpy(m_depth.data(), dataPtr, dataSize);
 
-        //Fibers::GetInstance().signalCounter(m_fence, 1);
+        //SignalFence(m_fence, 1);
     }
 
     RefPtr<RenderingPanelDepthBufferQuery> waitAndFetch(const Camera& camera, uint32_t width, uint32_t height, bool flipped)
     {
-        //Fibers::GetInstance().waitForCounterAndRelease(m_fence);
+        //WaitForFence(m_fence);
         return RefNew<RenderingPanelDepthBufferQuery>(width, height, camera, m_screenRect, std::move(m_depth), flipped);
     }
 
@@ -1246,7 +1246,7 @@ private:
     Array<float> m_depth;
     Rect m_screenRect;
 
-    fibers::WaitCounter m_fence;
+    FiberSemaphore m_fence;
 };
 
 

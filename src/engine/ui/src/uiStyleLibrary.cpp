@@ -12,7 +12,6 @@
 #include "uiStyleValue.h"
 #include "uiWindow.h"
 
-#include "core/io/include/pathBuilder.h"
 #include "core/containers/include/stringBuilder.h"
 #include "core/system/include/scopeLock.h"
 #include "engine/font/include/fontGlyphCache.h"

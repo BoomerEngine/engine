@@ -27,12 +27,12 @@ namespace prv
 
     static voidpf ZlibAlloc(voidpf, uInt items, uInt size)
     {
-        return  mem::GlobalPool<POOL_ZLIB>::Alloc(size * items, 1);
+        return  GlobalPool<POOL_ZLIB>::Alloc(size * items, 1);
     }
 
     static void ZlibFree(voidpf, voidpf address)
     {
-        mem::GlobalPool<POOL_ZLIB>::Free(address);
+        GlobalPool<POOL_ZLIB>::Free(address);
     }
 } // prv
 
@@ -59,7 +59,7 @@ if (initRet == Z_OK)
 auto neededSize  = deflateBound(&zstr, uncompressedSize);
 
 // allocate the output buffer of at least equal size as the input
-ret = mem::AllocateBlock(pool, neededSize, 16, "CompressZLib");
+ret = AllocateBlock(pool, neededSize, 16, "CompressZLib");
 DEBUG_CHECK_EX(ret, "Out of memory when allocating buffer for data compression");
 if (ret)
 {
@@ -75,7 +75,7 @@ if (result == Z_STREAM_END)
 }
 else
 {
-    mem::FreeBlock(ret);
+    FreeBlock(ret);
     ret = nullptr;
 }
 }
@@ -128,7 +128,7 @@ void* CompressLZ4(const void* uncompressedDataPtr, uint64_t uncompressedSize, ui
     auto neededSize  = LZ4_compressBound(uncompressedSize);
 
     // Allocate a buffer for writing compressed data to
-    void* ret = mem::AllocateBlock(pool, neededSize, 16, "CompressLZ4");
+    void* ret = AllocateBlock(pool, neededSize, 16, "CompressLZ4");
     DEBUG_CHECK_EX(ret, "Out of memory when allocating buffer for data compression");
     if (ret)
     {
@@ -141,7 +141,7 @@ void* CompressLZ4(const void* uncompressedDataPtr, uint64_t uncompressedSize, ui
         }
         else
         {
-            mem::FreeBlock(ret);
+            FreeBlock(ret);
             ret = nullptr;
         }
     }
@@ -168,15 +168,15 @@ void* CompressLZ4HC(const void* uncompressedDataPtr, uint64_t uncompressedSize, 
     auto neededSize  = LZ4_compressBound(uncompressedSize);
 
     // Allocate a buffer for writing compressed data to
-    void* ret = mem::AllocateBlock(pool, neededSize, 16, "CompressLZ4HC");
+    void* ret = AllocateBlock(pool, neededSize, 16, "CompressLZ4HC");
     DEBUG_CHECK_EX(ret, "Out of memory when allocating buffer for data compression");
     if (ret)
     {
-        void* lzState = mem::GlobalPool<POOL_LZ4>::Alloc(LZ4_sizeofStateHC(), 16);
+        void* lzState = GlobalPool<POOL_LZ4>::Alloc(LZ4_sizeofStateHC(), 16);
 
         // compress the data
         auto compressedSize = LZ4_compress_HC_extStateHC(lzState, (const char*)uncompressedDataPtr, (char*)ret, (int)uncompressedSize, neededSize, LZ4HC_CLEVEL_OPT_MIN);
-        mem::GlobalPool<POOL_LZ4>::Free(lzState);
+        GlobalPool<POOL_LZ4>::Free(lzState);
 
         DEBUG_CHECK_EX(compressedSize != 0, "Internal error in LZ4 compression");
         if (compressedSize != 0)
@@ -185,7 +185,7 @@ void* CompressLZ4HC(const void* uncompressedDataPtr, uint64_t uncompressedSize, 
         }
         else
         {
-            mem::FreeBlock(ret);
+            FreeBlock(ret);
             ret = nullptr;
         }
     }
@@ -195,11 +195,11 @@ void* CompressLZ4HC(const void* uncompressedDataPtr, uint64_t uncompressedSize, 
 
 bool CompressLZ4HC(const void* uncompressedDataPtr, uint64_t uncompressedSize, void* compressedDataPtr, uint64_t compressedDataMaxSize, uint64_t& outCompressedRealSize)
 {
-    void* lzState = mem::GlobalPool<POOL_LZ4>::Alloc(LZ4_sizeofStateHC(), 16);
+    void* lzState = GlobalPool<POOL_LZ4>::Alloc(LZ4_sizeofStateHC(), 16);
 
     // compress the data
     auto compressedSize  = LZ4_compress_HC_extStateHC(lzState, (const char*)uncompressedDataPtr, (char*)compressedDataPtr, (int)uncompressedSize, compressedDataMaxSize, LZ4HC_CLEVEL_OPT_MIN);
-    mem::GlobalPool<POOL_LZ4>::Free(lzState);
+    GlobalPool<POOL_LZ4>::Free(lzState);
 
     if (compressedSize != 0)
     {

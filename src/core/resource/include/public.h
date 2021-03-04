@@ -58,7 +58,7 @@ typedef RefWeakPtr< IResource > ResourceWeakPtr;
 template< typename T >
 class Ref;
 
-typedef fibers::WaitCounter ResourceLoadingFence;
+typedef FiberSemaphore ResourceLoadingFence;
 typedef std::function< void(const ResourceHandle& res) > ResourceLoadedCallback;
 
 typedef uint64_t ResourceClassHash; // works as FormatCC

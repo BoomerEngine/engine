@@ -11,7 +11,7 @@
 #include "importFileService.h"
 #include "core/resource/include/resourceMetadata.h"
 
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 #include "importFileSystemNative.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(res)
@@ -77,7 +77,7 @@ bool ImportFileService::resolveContextPath(StringView assetImportPath, StringBuf
     return Buffer();
 }
 
-Buffer ImportFileService::loadFileContent(StringView assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint) const
+Buffer ImportFileService::loadFileContent(StringView assetImportPath, TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint) const
 {
     StringView fileSystemPath;
     if (const auto* fs = resolveFileSystem(assetImportPath, fileSystemPath))
@@ -114,7 +114,7 @@ bool ImportFileService::enumRoots(const std::function<bool(StringView)>& enumFun
 
 //--
 
-SourceAssetStatus ImportFileService::checkFileStatus(StringView assetImportPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownCRC, IProgressTracker* progress) const
+SourceAssetStatus ImportFileService::checkFileStatus(StringView assetImportPath, const TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownCRC, IProgressTracker* progress) const
 {
     StringView fileSystemPath;
     if (const auto* fs = resolveFileSystem(assetImportPath, fileSystemPath))

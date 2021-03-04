@@ -25,7 +25,7 @@ namespace prv
         if (length == INDEX_MAX)
             length = strlen(txt);
 
-        auto data = mem::GlobalPool<POOL_STRINGS, StringDataHolder>::Alloc(sizeof(StringDataHolder) + length, 1);
+        auto data = GlobalPool<POOL_STRINGS, StringDataHolder>::Alloc(sizeof(StringDataHolder) + length, 1);
         data->m_refs = 1;
         data->m_length = length;
         memcpy(data->m_txt, txt, length);
@@ -43,7 +43,7 @@ namespace prv
 
         auto length  = utf8::CalcSizeRequired(txt, uniLength);
 
-        auto data = mem::GlobalPool<POOL_STRINGS, StringDataHolder>::Alloc(sizeof(StringDataHolder) + length, 1);
+        auto data = GlobalPool<POOL_STRINGS, StringDataHolder>::Alloc(sizeof(StringDataHolder) + length, 1);
         data->m_refs = 1;
         data->m_length = length;
         utf8::FromUniChar(data->m_txt, length + 1, txt, uniLength);
@@ -56,7 +56,7 @@ namespace prv
         if (!length)
             return nullptr;
 
-        auto data = mem::GlobalPool<POOL_STRINGS, StringDataHolder>::Alloc(sizeof(StringDataHolder) + length, 1);
+        auto data = GlobalPool<POOL_STRINGS, StringDataHolder>::Alloc(sizeof(StringDataHolder) + length, 1);
         data->m_refs = 1;
         data->m_length = length;
         memset(data->m_txt, 0, length + 1);
@@ -72,7 +72,7 @@ namespace prv
 
     void StringDataHolder::ReleaseToPool(void* mem, uint32_t length)
     {
-        mem::GlobalPool<POOL_STRINGS, StringDataHolder>::Free(mem);
+        GlobalPool<POOL_STRINGS, StringDataHolder>::Free(mem);
     }
 
     //---

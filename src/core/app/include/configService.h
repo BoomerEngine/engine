@@ -10,7 +10,7 @@
 
 #include "localService.h"
 
-#include "core/io/include/ioDirectoryWatcher.h"
+#include "core/io/include/directoryWatcher.h"
 #include "core/system/include/timing.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(config)
@@ -18,7 +18,7 @@ BEGIN_BOOMER_NAMESPACE_EX(config)
 //----
 
 // config service - manages loading/saving configuration
-class CORE_APP_API ConfigService : public app::ILocalService, public io::IDirectoryWatcherListener
+class CORE_APP_API ConfigService : public app::ILocalService, public IDirectoryWatcherListener
 {
     RTTI_DECLARE_VIRTUAL_CLASS(ConfigService, app::ILocalService);
 
@@ -45,8 +45,8 @@ protected:
 
     StringBuf m_userConfigFile;
 
-    io::DirectoryWatcherPtr m_engineConfigWatcher;
-    io::DirectoryWatcherPtr m_projectConfigWatcher;
+    DirectoryWatcherPtr m_engineConfigWatcher;
+    DirectoryWatcherPtr m_projectConfigWatcher;
 
     UniquePtr<config::Storage> m_baseConfig;
     bool m_hasValidBase;
@@ -62,7 +62,7 @@ protected:
     bool loadDirConfig(StringView path, config::Storage& outStorage) const;
     bool loadFileConfig(StringView path, config::Storage& outStorage) const;
 
-    virtual void handleEvent(const io::DirectoryWatcherEvent& evt) override final;
+    virtual void handleEvent(const DirectoryWatcherEvent& evt) override final;
 };
 
 //----

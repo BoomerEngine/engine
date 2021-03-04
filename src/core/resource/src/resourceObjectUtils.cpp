@@ -12,7 +12,7 @@
 #include "resourceLoadingService.h"
 
 #include "core/object/include/object.h"
-#include "core/io/include/ioFileHandleMemory.h"
+#include "core/io/include/fileHandleMemory.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -25,7 +25,7 @@ Buffer SaveObjectToBuffer(const IObject* object)
     context.rootObject.pushBack(AddRef(object));
     context.protectedStream = false;
 
-    auto writer = RefNew<io::MemoryWriterFileHandle>();
+    auto writer = RefNew<MemoryWriterFileHandle>();
 
     if (SaveFile(writer, context))
         return writer->extract();
@@ -40,7 +40,7 @@ ObjectPtr LoadObjectFromBuffer(const void* data, uint64_t size, res::ResourceLoa
     res::FileLoadingContext context;
     context.resourceLoader = loader;
 
-    auto reader = RefNew<io::MemoryAsyncReaderFileHandle>(data, size);
+    auto reader = RefNew<MemoryAsyncReaderFileHandle>(data, size);
 
     if (LoadFile(reader, context))
         return context.root<IObject>();
@@ -57,10 +57,10 @@ ObjectPtr CloneObjectUntyped(const IObject* object, const IObject* newParent /*=
     if (!loader)
         loader = GetService<res::LoadingService>()->loader();
 
-    auto writer = RefNew<io::MemoryWriterFileHandle>();
+    auto writer = RefNew<MemoryWriterFileHandle>();
     if (SaveFile(writer, saveContext))
     {
-        auto reader = RefNew<io::MemoryAsyncReaderFileHandle>(writer->extract());
+        auto reader = RefNew<MemoryAsyncReaderFileHandle>(writer->extract());
 
         res::FileLoadingContext loadContext;
         loadContext.resourceLoader = loader;

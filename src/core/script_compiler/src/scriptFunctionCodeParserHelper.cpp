@@ -148,7 +148,7 @@ int FunctionParsingTokenStream::readToken(FunctionParsingNode& outNode)
 
 //--
 
-FunctionParsingContext::FunctionParsingContext(mem::LinearAllocator& mem, FunctionParser& fileParser, const StubFunction* function, FunctionCode& outCode)
+FunctionParsingContext::FunctionParsingContext(LinearAllocator& mem, FunctionParser& fileParser, const StubFunction* function, FunctionCode& outCode)
     : m_parser(fileParser)
     , m_function(function)
     , m_code(outCode)

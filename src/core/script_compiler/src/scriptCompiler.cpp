@@ -104,7 +104,7 @@ public:
         }
 
         // create the stub library
-        mem::LinearAllocator mem(POOL_SCRIPT_COMPILER);
+        LinearAllocator mem(POOL_SCRIPT_COMPILER);
         StubLibrary stubs(mem, moduleName);
         LogErrorHandler errHandler;
 

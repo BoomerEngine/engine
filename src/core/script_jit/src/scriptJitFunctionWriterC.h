@@ -57,14 +57,14 @@ private:
 class CORE_SCRIPT_JIT_API JITFunctionWriterC : public NoCopy
 {
 public:
-    JITFunctionWriterC(mem::LinearAllocator& mem, JITTypeLib& types, JITConstCache& consts, const StubFunction* func, bool hasDirectParamAccess, bool emitExceptions, bool emitLines);
+    JITFunctionWriterC(LinearAllocator& mem, JITTypeLib& types, JITConstCache& consts, const StubFunction* func, bool hasDirectParamAccess, bool emitExceptions, bool emitLines);
     ~JITFunctionWriterC();
 
     // emit function opcodes, returns generated code or empty strings on errors
     bool emitOpcodes(StringBuf& outCode);
 
 private:
-    mem::LinearAllocator& m_mem;
+    LinearAllocator& m_mem;
     JITTypeLib& m_types;
     JITConstCache& m_consts;
     const StubFunction* m_func;

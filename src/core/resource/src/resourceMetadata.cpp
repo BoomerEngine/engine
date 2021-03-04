@@ -27,7 +27,7 @@ RTTI_END_TYPE();
 ResourceConfiguration::~ResourceConfiguration()
 {}
 
-void ResourceConfiguration::changeImportMetadata(StringView by, StringView at, io::TimeStamp time)
+void ResourceConfiguration::changeImportMetadata(StringView by, StringView at, TimeStamp time)
 {
     if (m_sourceImportedBy != by)
     {
@@ -50,7 +50,7 @@ void ResourceConfiguration::changeImportMetadata(StringView by, StringView at, i
 
 void ResourceConfiguration::setupDefaultImportMetadata()
 {
-    changeImportMetadata(GetUserName(), GetHostName(), io::TimeStamp::GetNow());
+    changeImportMetadata(GetUserName(), GetHostName(), TimeStamp::GetNow());
 }
 
 void ResourceConfiguration::computeConfigurationKey(CRC64& crc) const

@@ -13,7 +13,7 @@
     #include <malloc.h>
 #endif
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -87,4 +87,4 @@ void* AnsiAllocator::reallocate(PoolTag id, void* mem, size_t newSize, size_t al
 
 //--
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()

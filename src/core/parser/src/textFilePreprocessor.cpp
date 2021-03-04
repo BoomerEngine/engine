@@ -44,7 +44,7 @@ static UniquePtr<ILanguageDefinition> BuildPreprocessorLanguageDefinition()
 
 //---
 
-TextFilePreprocessor::TextFilePreprocessor(mem::LinearAllocator& allocator, IIncludeHandler& includeHandler, IErrorReporter& errorHandler, ICommentEater& commentEater, const ILanguageDefinition& parentLanguage)
+TextFilePreprocessor::TextFilePreprocessor(LinearAllocator& allocator, IIncludeHandler& includeHandler, IErrorReporter& errorHandler, ICommentEater& commentEater, const ILanguageDefinition& parentLanguage)
     : m_includeHandler(includeHandler)
     , m_errorHandler(errorHandler)
     , m_commentEater(commentEater)

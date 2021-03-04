@@ -12,7 +12,7 @@
 #include "localServiceContainer.h"
 
 #include "core/app/include/commandline.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 #include "core/io/include/timestamp.h"
 #include "core/system/include/thread.h"
 #include "core/system/include/debug.h"
@@ -41,7 +41,7 @@ bool CommonPlatform::handleStart(const app::CommandLine& systemCmdline, app::IAp
     TRACE_INFO("Compiled at {}, {}", __DATE__, __TIME__);
 
     // get time of day
-    auto currentTime = io::TimeStamp::GetNow();
+    auto currentTime = TimeStamp::GetNow();
     TRACE_INFO("Started at {}", currentTime.toDisplayString());
 
     // system information
@@ -60,13 +60,13 @@ bool CommonPlatform::handleStart(const app::CommandLine& systemCmdline, app::IAp
     {
         // prepare the special file name
         // we want the commandline.txt file to be related to the app
-        auto executablePath = io::SystemPath(io::PathCategory::ExecutableFile);
+        auto executablePath = SystemPath(PathCategory::ExecutableFile);
         auto commandlinePath = StringBuf(TempString("{}.commandline.txt", executablePath));
         TRACE_WARNING("Command line not specified, loading stuff from '{}'", commandlinePath);
 
         // open the file using most basic function
         StringBuf text;
-        if (io::LoadFileToString(commandlinePath, text))
+        if (LoadFileToString(commandlinePath, text))
         { 
             if (!defaultCommandLine.parse(text.c_str(), false))
             {
@@ -80,7 +80,7 @@ bool CommonPlatform::handleStart(const app::CommandLine& systemCmdline, app::IAp
     }
 
     // initialize fibers
-    if (!Fibers::GetInstance().initialize(*cmdLine))
+    if (!InitializeFibers(*cmdLine))
         return false;
 
 	// initialize network
@@ -165,7 +165,7 @@ void CommonPlatform::handleCleanup()
     DumpLiveRefCountedObjects();
 
     // dump list of all unreleased memory blocks (leaks)
-    mem::DumpMemoryLeaks();
+    DumpMemoryLeaks();
 }
 
 END_BOOMER_NAMESPACE_EX(platform)

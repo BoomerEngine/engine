@@ -23,7 +23,7 @@ ObjectRegistry::ObjectRegistry(IBaseThread* owner)
     : m_owner(owner)
 {
     m_numObjects = std::max<uint32_t>(1024, cvMaxObjects.get());
-    m_objects = mem::GlobalPool<POOL_API_OBJECTS, Entry>::AllocN(m_numObjects);
+    m_objects = GlobalPool<POOL_API_OBJECTS, Entry>::AllocN(m_numObjects);
     memzero(m_objects, sizeof(Entry) * m_numObjects);
     TRACE_INFO("Creating object registring with {} slots", m_numObjects);
 

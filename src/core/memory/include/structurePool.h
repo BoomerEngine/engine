@@ -10,7 +10,7 @@
 
 #include "core/system/include/algorithms.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -100,7 +100,7 @@ public:
 
 //---
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()
 
 #include "structurePool.inl"
 

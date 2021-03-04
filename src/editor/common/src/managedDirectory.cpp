@@ -13,11 +13,11 @@
 #include "managedDepot.h"
 
 #include "core/containers/include/inplaceArray.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 #include "core/system/include/thread.h"
 #include "core/image/include/image.h"
 #include "managedFileFormat.h"
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 #include "core/resource/include/resourceFileSaver.h"
 #include "managedFileNativeResource.h"
 #include "managedFileRawResource.h"
@@ -209,7 +209,7 @@ ManagedDirectory* ManagedDirectory::createDirectory(StringView name)
         {
             curDir->deleted(false);
 
-            io::CreatePath(TempString("{}{}/", absolutePath(), name));
+            CreatePath(TempString("{}{}/", absolutePath(), name));
 
             curDir->populate(); // just in case it was not really deleted
         }
@@ -232,7 +232,7 @@ ManagedDirectory* ManagedDirectory::createDirectory(StringView name)
     }
 
     // create the physical path in file system
-    if (!io::CreatePath(TempString("{}{}/", absolutePath(), name)))
+    if (!CreatePath(TempString("{}{}/", absolutePath(), name)))
     {
         TRACE_ERROR("Failed to create directory '{}' in '{}': failed to create physical directory on disk", name, depotPath());
         return nullptr;
@@ -330,7 +330,7 @@ ManagedFile* ManagedDirectory::createFile(StringView fileName, const res::Resour
     }
 
     // file already exists, do not overwrite
-    if (io::FileExists(TempString("{}{}", absolutePath(), fileName)))
+    if (FileExists(TempString("{}{}", absolutePath(), fileName)))
     {
         TRACE_ERROR("Unable to create '{}' in '{}': file already exists on disk", fileName, depotPath());
         return file(fileName, true);
@@ -429,7 +429,7 @@ ManagedFile* ManagedDirectory::createFile(StringView fileName, Buffer initialCon
     }
 
     // file already exists, do not overwrite
-    if (io::FileExists(TempString("{}{}", absolutePath(), fileName)))
+    if (FileExists(TempString("{}{}", absolutePath(), fileName)))
     {
         TRACE_ERROR("Unable to create '{}' in '{}': file already exists on disk", fileName, depotPath());
         return file(fileName, true);

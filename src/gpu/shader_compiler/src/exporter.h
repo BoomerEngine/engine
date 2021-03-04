@@ -31,7 +31,7 @@ struct AssembledShader
 };
 
 extern bool Assemblestubs(
-    mem::LinearAllocator& mem,
+    LinearAllocator& mem,
     CodeLibrary& lib, // TODO: const!
     AssembledShader& outAssembledShader,
     StringView contextPath, // copied into program data, debug source file location, can be empty

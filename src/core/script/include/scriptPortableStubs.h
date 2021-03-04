@@ -143,7 +143,7 @@ struct CORE_SCRIPT_API Stub : public NoCopy
 
     //--
 
-    static Stub* Create(mem::LinearAllocator& mem, StubType type);
+    static Stub* Create(LinearAllocator& mem, StubType type);
 
     //--
 

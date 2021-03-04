@@ -17,7 +17,7 @@
 #include "engine/material/include/runtimeService.h"
 #include "engine/material/include/runtimeTechnique.h"
 
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 #include "core/parser/include/textToken.h"
 
 #include "gpu/shader_compiler/include/shaderCompiler.h"

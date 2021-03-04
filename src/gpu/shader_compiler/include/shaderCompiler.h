@@ -34,7 +34,7 @@ private:
 
     struct CachedFileContent
     {
-        io::TimeStamp timestamp;
+        TimeStamp timestamp;
         Buffer content;
     };
 

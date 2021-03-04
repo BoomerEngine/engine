@@ -34,14 +34,14 @@ RequestResult Connection::wait(StringView url, const RequestArgs& params, Method
 {
     RequestResult res;
 
-    auto wait = Fibers::GetInstance().createCounter("HTTPOutgoingRequest");
+    auto wait = CreateFence("HTTPOutgoingRequest");
     send(url, params, [wait, &res](const RequestResult& result)
         {
             res = result;
-            Fibers::GetInstance().signalCounter(wait);
+            SignalFence(wait);
         }, method, timeOut);
 
-    Fibers::GetInstance().waitForCounterAndRelease(wait);
+    WaitForFence(wait);
     return res;
 }
 

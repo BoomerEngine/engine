@@ -22,7 +22,7 @@
 #include "editor/common/include/managedItem.h"
 #include "editor/common/include/managedDirectory.h"
 #include "editor/common/include/editorService.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 #include "engine/ui/include/uiToolBar.h"
 
 #undef DeleteFile
@@ -272,9 +272,9 @@ bool SceneWorldEditor::save()
 
     // remove files that are no longer needed
     for (auto* file : filesToDelete)
-        io::DeleteFile(file->absolutePath());
+        DeleteFile(file->absolutePath());
     for (auto* dir : dirsToDelete)
-        io::DeleteDir(dir->absolutePath());
+        DeleteDir(dir->absolutePath());
 
     // mark as layers as saved
     m_content->root()->resetModifiedStatus(true);

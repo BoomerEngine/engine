@@ -192,7 +192,7 @@ void OpcodeStream::freePages()
     for (auto& page : m_pages)
     {
         const auto pageSize = page.cur - page.base;
-        mem::FreeSystemMemory(page.base, pageSize);
+        FreeSystemMemory(page.base, pageSize);
     }
 
     m_pages.clear();
@@ -227,7 +227,7 @@ bool OpcodeStream::allocNewPage(uint64_t requiredSize)
     // open a new one
     const auto pageSize = std::max<uint64_t>(requiredSize, minPageSize);
     const auto largePages = pageSize > (2U << 20);
-    void* memory = mem::AllocSystemMemory(pageSize, largePages);
+    void* memory = AllocSystemMemory(pageSize, largePages);
     if (nullptr == memory)
     {
         TRACE_ERROR("OutOfMemory when allocting additional page for serialization stream, page size {}, currently allocated {} in {} pages",

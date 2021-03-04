@@ -1019,7 +1019,7 @@ StyleLibraryPtr LoadStyleLibrary(StringView depotFilePath)
     LocalErrorReporter err;
     LocalIncludeHandler inc(depotFilePath.baseDirectory());
 
-    mem::LinearAllocator mem(POOL_UI_STYLES);
+    LinearAllocator mem(POOL_UI_STYLES);
     prv::RawLibraryData rawData(mem);
     prv::ParsingContext pc(err, inc, rawData);
 

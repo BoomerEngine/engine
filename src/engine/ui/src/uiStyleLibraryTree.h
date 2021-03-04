@@ -207,7 +207,7 @@ namespace prv
     class RawLibraryData
     {
     public:
-        RawLibraryData(mem::LinearAllocator& mem);
+        RawLibraryData(LinearAllocator& mem);
 
         // get all defined rule sets
         typedef Array<const RawRuleSet*> TRuleSets;
@@ -218,7 +218,7 @@ namespace prv
         INLINE const TVariables& variables() const { return m_variables; }
 
         // allocator
-        INLINE mem::LinearAllocator& allocator() const { return m_mem; }
+        INLINE LinearAllocator& allocator() const { return m_mem; }
 
         //--
 
@@ -261,7 +261,7 @@ namespace prv
         void print(IFormatStream& f) const;
 
     private:
-        mem::LinearAllocator& m_mem;
+        LinearAllocator& m_mem;
 
         TRuleSets m_ruleSets;
         TVariables m_variables;

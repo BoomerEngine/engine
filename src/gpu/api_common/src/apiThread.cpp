@@ -27,7 +27,6 @@ IBaseThread::IBaseThread(IBaseDevice* drv, WindowManager* windows)
     : m_jobQueueSemaphore(0, 65536)
     , m_requestExit(0)
     , m_windows(windows)
-    , m_cleanupSync("InternalGLSync")
     , m_device(drv)
 {
 	memzero(&m_syncInfo, sizeof(m_syncInfo));
@@ -180,7 +179,7 @@ DeviceSyncInfo IBaseThread::syncInfo() const
 
 void IBaseThread::sync(bool flush)
 {
-	DEBUG_CHECK_RETURN_EX(Fibers::GetInstance().isMainThread(), "Expected main thread");
+	DEBUG_CHECK_RETURN_EX(IsMainThread(), "Expected main thread");
 
 	ScopeTimer timer;
 	PC_SCOPE_LVL0(FrameSync);
@@ -190,7 +189,7 @@ void IBaseThread::sync(bool flush)
 
 	// wait if previous cleanup job has not yet finished
 	if (!m_frameSync.empty())
-		Fibers::GetInstance().waitForCounterAndRelease(m_frameSync);
+		WaitForFence(m_frameSync);
 	//m_cleanupSync.acquire();
 
 	// start new CPU frame
@@ -198,7 +197,7 @@ void IBaseThread::sync(bool flush)
 	m_syncQueues.cpuQueue->signalNotifications(newFrameIndex);
 
 	// create new signal
-	auto newFrameSignal = Fibers::GetInstance().createCounter("FrameSync", 1);
+	auto newFrameSignal = CreateFence("FrameSync", 1);
 
 	// push a cleanup job to release objects from frames that were completed
 	pushJob([this, newFrameIndex, newFrameSignal, flush]()
@@ -215,13 +214,13 @@ void IBaseThread::sync(bool flush)
 
 			checkFences_Thread();				
 
-			Fibers::GetInstance().signalCounter(newFrameSignal);
+			SignalFence(newFrameSignal);
 			//m_cleanupSync.release();
 		});
 
 	// wait for flush or not :)
 	if (flush)
-		Fibers::GetInstance().waitForCounterAndRelease(newFrameSignal);
+		WaitForFence(newFrameSignal);
 	else
 		m_frameSync = newFrameSignal;
 			
@@ -306,17 +305,17 @@ void IBaseThread::run(const std::function<void()>& func)
 {
     PC_SCOPE_LVL1(RunOnRenderThread);
 
-    auto signal = Fibers::GetInstance().createCounter("RenderThreadInjectedJob", 1);
+    auto signal = CreateFence("RenderThreadInjectedJob", 1);
 
     auto job = [this, signal, func]()
     {
         func();
-        Fibers::GetInstance().signalCounter(signal);
+        SignalFence(signal);
     };
 
     pushJob(job);
 
-    Fibers::GetInstance().waitForCounterAndRelease(signal);
+    WaitForFence(signal);
 }
 
 //--

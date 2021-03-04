@@ -46,12 +46,12 @@ IBaseBuffer::IBaseBuffer(IBaseThread* owner, const BufferCreationInfo& setup, co
 	, m_setup(setup)
 {
 	m_poolTag = DetermineBestMemoryPool(setup);
-	mem::PoolStats::GetInstance().notifyAllocation(m_poolTag, m_setup.size);
+	PoolNotifyAllocation(m_poolTag, m_setup.size);
 }
 
 IBaseBuffer::~IBaseBuffer()
 {
-	mem::PoolStats::GetInstance().notifyFree(m_poolTag, m_setup.size);
+	PoolNotifyFree(m_poolTag, m_setup.size);
 }
 
 //--

@@ -82,7 +82,7 @@ void BufferStorage::freeData()
     if (m_externalPayload && m_freeFunc)
         m_freeFunc(m_pool, m_externalPayload, m_size);
 
-    mem::FreeBlock(this);
+    FreeBlock(this);
 }
 
 BufferStorage* BufferStorage::CreateInternal(PoolTag pool, uint64_t size, uint32_t alignment)
@@ -93,7 +93,7 @@ BufferStorage* BufferStorage::CreateInternal(PoolTag pool, uint64_t size, uint32
     if (alignment > alignof(BufferStorage))
         totalSize += (alignment - alignof(BufferStorage));
 
-    auto* mem = (uint8_t*)mem::AllocateBlock(pool, totalSize, alignment, "BufferStorage");
+    auto* mem = (uint8_t*)AllocateBlock(pool, totalSize, alignment, "BufferStorage");
     auto* payloadPtr = AlignPtr(mem + sizeof(BufferStorage), alignment);
     auto offset = payloadPtr - mem;
     DEBUG_CHECK_EX(offset <= 65535, "Offset to payload is to big");
@@ -108,7 +108,7 @@ BufferStorage* BufferStorage::CreateInternal(PoolTag pool, uint64_t size, uint32
 
 static void DefaultMemoryFreeFunc(PoolTag pool, void* memory, uint64_t size)
 {
-    mem::FreeBlock(memory);
+    FreeBlock(memory);
 }
 
 BufferStorage* BufferStorage::CreateExternal(PoolTag pool, uint64_t size, TBufferFreeFunc freeFunc, void *externalPayload)
@@ -118,7 +118,7 @@ BufferStorage* BufferStorage::CreateExternal(PoolTag pool, uint64_t size, TBuffe
 
     DEBUG_CHECK_EX(freeFunc && externalPayload, "Invalid setup for external buffer");
 
-    auto* ret = new ( mem::GlobalPool<POOL_EXTERNAL_BUFFER_TAG, BufferStorage>::AllocN(1) ) BufferStorage();
+    auto* ret = new ( GlobalPool<POOL_EXTERNAL_BUFFER_TAG, BufferStorage>::AllocN(1) ) BufferStorage();
     ret->m_pool = pool;
     ret->m_refCount = 1;
     ret->m_offsetToPayload = 0;
@@ -215,13 +215,13 @@ void Buffer::adjustSize(uint32_t newBufferSize)
 
 static void SystemMemoryFreeFunc(PoolTag pool, void* memory, uint64_t size)
 {
-    mem::FreeSystemMemory(memory, size);
+    FreeSystemMemory(memory, size);
 }
 
 BufferStorage* Buffer::CreateSystemMemoryStorage(PoolTag pool, uint64_t size)
 {
     bool useLargePages = (size >= BUFFER_SYSTEM_MEMORY_LARGE_PAGES_SIZE);
-    void* systemMemory = mem::AllocSystemMemory(size, useLargePages);
+    void* systemMemory = AllocSystemMemory(size, useLargePages);
     if (!systemMemory)
     {
         TRACE_ERROR("Failed to allocate {} of system memory", MemSize(size));

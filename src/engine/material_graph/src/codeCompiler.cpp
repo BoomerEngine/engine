@@ -570,7 +570,7 @@ void MaterialMeshGeometryCompiler::assembleFinalShaderCode(StringBuilder& outStr
         path << m_ps.context();
         path.append(".txt");
 
-        io::SaveFileFromString(path.view(), outStr.view());
+        SaveFileFromString(path.view(), outStr.view());
     }
 }
 

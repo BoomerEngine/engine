@@ -57,7 +57,7 @@ protected:
     struct AsyncLoadingJob : public IReferencable
     {
         ResourcePtr m_loadedResource;
-        fibers::WaitCounter m_signal;
+        FiberSemaphore m_signal;
     };
 
     HashMap<ResourcePath, RefWeakPtr<AsyncLoadingJob>> m_asyncLoadingJobsMap;

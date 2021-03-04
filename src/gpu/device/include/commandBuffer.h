@@ -88,7 +88,7 @@ private:
 
     //--
 
-    mem::PageCollection* m_pages;
+    PageCollection* m_pages;
 
     //--
 

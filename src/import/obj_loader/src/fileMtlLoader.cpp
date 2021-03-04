@@ -9,8 +9,8 @@
 #include "build.h"
 #include "fileMtl.h"
 
-#include "core/io/include/ioSystem.h"
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/io.h"
+#include "core/io/include/fileHandle.h"
 #include "core/containers/include/stringParser.h"
 #include "core/containers/include/hashSet.h"
 #include "core/containers/include/stringBuilder.h"

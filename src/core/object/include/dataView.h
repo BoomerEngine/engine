@@ -120,7 +120,7 @@ protected:
 
     struct Path : public NoCopy
     {
-        RTTI_DECLARE_POOL(POOL_DATA_VIEW)
+        RTTI_DECLARE_POOL(POOL_RTTI)
 
     public:
         Path* parent = nullptr;

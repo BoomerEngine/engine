@@ -13,8 +13,8 @@
 #include "core/resource/include/resourcePath.h"
 #include "core/resource/include/resourceLoadingService.h"
 #include "core/resource/include/resourceMetadata.h"
-#include "core/io/include/ioSystem.h"
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/io.h"
+#include "core/io/include/fileHandle.h"
 #include "core/containers/include/stringBuilder.h"
 #include "core/resource/include/resourceTags.h"
 
@@ -227,7 +227,7 @@ void CommandCook::processSingleSeedFile(const ResourcePath& seedFileKey)
 
         // evaluate dirty state of the file, especially if we can skip cooking it :)
         // first, target file must exist to have any chance of skipping the cook :)
-        if (io::FileExists(cookedFilePath))
+        if (FileExists(cookedFilePath))
         {
             // load the source dependencies of the file (metadata)
             auto metadata = loadFileMetadata(cookedFilePath);
@@ -290,7 +290,7 @@ bool CommandCook::checkDependenciesUpToDate(const Metadata& deps) const
     // check file dependencies
     for (const auto& dep : deps.sourceDependencies)
     {
-        io::TimeStamp timestamp;
+        TimeStamp timestamp;
         GetService<DepotService>()->queryFileTimestamp(dep.sourcePath, timestamp);
 
         if (dep.timestamp == timestamp.value())
@@ -305,7 +305,7 @@ bool CommandCook::checkDependenciesUpToDate(const Metadata& deps) const
 
 MetadataPtr CommandCook::loadFileMetadata(StringView cookedOutputPath) const
 {
-    if (auto fileReader = io::OpenForAsyncReading(cookedOutputPath))
+    if (auto fileReader = OpenForAsyncReading(cookedOutputPath))
     {
         res::FileLoadingContext context;
         return res::LoadFileMetadata(fileReader, context);
@@ -365,7 +365,7 @@ void CommandCook::queueDependencies(const IResource& object, Array<PendingCookin
 
 void CommandCook::queueDependencies(StringView cookedFilePath, Array<PendingCookingEntry>& outCookingQueue)
 {
-    if (auto fileReader = io::OpenForAsyncReading(cookedFilePath))
+    if (auto fileReader = OpenForAsyncReading(cookedFilePath))
     {
         InplaceArray<FileLoadingDependency, 100> dependencies;
         FileLoadingContext loadingContext;

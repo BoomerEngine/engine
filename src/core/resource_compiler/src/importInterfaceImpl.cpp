@@ -55,7 +55,7 @@ const ResourceConfiguration* LocalImporterInterface::queryConfigrationTypeless()
 
 Buffer LocalImporterInterface::loadSourceFileContent(StringView assetImportPath) const
 {
-    io::TimeStamp timestamp;
+    TimeStamp timestamp;
     ImportFileFingerprint fingerprint;
     if (auto ret = m_assetRepository->loadSourceFileContent(assetImportPath, timestamp, fingerprint))
     {
@@ -68,7 +68,7 @@ Buffer LocalImporterInterface::loadSourceFileContent(StringView assetImportPath)
 
 SourceAssetPtr LocalImporterInterface::loadSourceAsset(StringView assetImportPath) const
 {
-    io::TimeStamp timestamp;
+    TimeStamp timestamp;
     ImportFileFingerprint fingerprint;
     if (auto ret = m_assetRepository->loadSourceAsset(assetImportPath, timestamp, fingerprint))
     {
@@ -79,7 +79,7 @@ SourceAssetPtr LocalImporterInterface::loadSourceAsset(StringView assetImportPat
     return nullptr;
 }
 
-void LocalImporterInterface::reportImportDependency(StringView assetImportPath, const io::TimeStamp& timestamp, const ImportFileFingerprint& fingerprint)
+void LocalImporterInterface::reportImportDependency(StringView assetImportPath, const TimeStamp& timestamp, const ImportFileFingerprint& fingerprint)
 {
     auto lock = CreateLock(m_importDependenciesLock);
 

@@ -22,7 +22,7 @@
 #include "managedDirectoryPlaceholder.h"
 
 #include "core/resource/include/resourceFactory.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 #include "core/app/include/localServiceContainer.h"
 #include "core/image/include/image.h"
 #include "engine/ui/include/uiListView.h"
@@ -638,7 +638,7 @@ void AssetBrowserTabFiles::cancelDirPlaceholder(ManagedDirectoryPlaceholderPtr p
     m_directoryPlaceholders.remove(ptr);
 }
 
-static io::OpenSavePersistentData GImportFiles;
+static OpenSavePersistentData GImportFiles;
 
 bool ImportNewFiles(ui::IElement* owner, const ManagedFileFormat* format, ManagedDirectory* parentDir)
 {
@@ -658,17 +658,17 @@ bool ImportNewFiles(ui::IElement* owner, const ManagedFileFormat* format, Manage
 
     {
         // export to file formats
-        InplaceArray<io::FileFormat, 20> importFormats;
+        InplaceArray<FileFormat, 20> importFormats;
         for (const auto& ext : extensions)
         {
-            io::FileFormat format(StringBuf(ext), TempString("Format {}", ext));
+            FileFormat format(StringBuf(ext), TempString("Format {}", ext));
             importFormats.emplaceBack(format);
         }
 
         // ask for files
         auto nativeHandle = GetEditor()->windowNativeHandle(owner);
         Array<StringBuf> importPaths;
-        if (!io::ShowFileOpenDialog(nativeHandle, true, importFormats, importPaths, GImportFiles))
+        if (!ShowFileOpenDialog(nativeHandle, true, importFormats, importPaths, GImportFiles))
             return false;
 
         // convert the absolute paths to the source paths

@@ -54,22 +54,22 @@ DeviceCompletionCallbackPtr IDeviceCompletionCallback::CreateFunctionCallback(co
 class FenceCompletionCallback : public IDeviceCompletionCallback
 {
 public:
-	FenceCompletionCallback(const fibers::WaitCounter& fence, uint32_t count)
+	FenceCompletionCallback(const FiberSemaphore& fence, uint32_t count)
 		: m_fence(fence)
 		, m_count(count)
 	{}
 
 	void signalCompletion() override final
 	{
-		Fibers::GetInstance().signalCounter(m_fence, m_count);
+		SignalFence(m_fence, m_count);
 	}
 
 private:
-	fibers::WaitCounter m_fence;
+	FiberSemaphore m_fence;
 	uint32_t m_count = 0;
 };
 
-DeviceCompletionCallbackPtr IDeviceCompletionCallback::CreateFenceCallback(const fibers::WaitCounter& fence, uint32_t count)
+DeviceCompletionCallbackPtr IDeviceCompletionCallback::CreateFenceCallback(const FiberSemaphore& fence, uint32_t count)
 {
 	return RefNew<FenceCompletionCallback>(fence, count);
 }

@@ -10,14 +10,14 @@
 
 #include "fiberSystem.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(fibers)
+BEGIN_BOOMER_NAMESPACE()
 
 class SyncPoint;
 class WaitList;
 class WorkQueue;
 class CommandQueue;
 
-END_BOOMER_NAMESPACE_EX(fibers)
+END_BOOMER_NAMESPACE()
 
 
 BEGIN_BOOMER_NAMESPACE()

@@ -23,7 +23,7 @@ struct GPU_DEVICE_API ShaderDependency
     ShaderDependency();
 
     StringBuf path;
-    io::TimeStamp timestamp;
+    TimeStamp timestamp;
 };
 
 //----

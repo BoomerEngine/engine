@@ -11,7 +11,7 @@
 #include "core/system/include/mutex.h"
 #include "core/system/include/spinLock.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 /// Specialized allocator of large memory pages
 /// All pages are exactly the same size and are allocated from internal page storage and can be recycled very fast
@@ -105,4 +105,4 @@ private:
     uint32_t m_maxFreePagesToRetain = 0;
 };
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()

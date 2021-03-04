@@ -27,7 +27,7 @@ BEGIN_BOOMER_NAMESPACE_EX(rtti)
 TemplateProperty::TemplateProperty(Type type_)
     : type(type_)
 {
-    defaultValue = mem::GlobalPool<POOL_DEFAULT_OBJECTS>().Alloc(type->size(), type->alignment());
+    defaultValue = GlobalPool<POOL_DEFAULT_OBJECTS>().Alloc(type->size(), type->alignment());
     memzero(defaultValue, type->size());
 
     type->construct(defaultValue);
@@ -39,7 +39,7 @@ TemplateProperty::~TemplateProperty()
     {
         //type->destruct(defaultValue);
 
-        mem::GlobalPool<POOL_DEFAULT_OBJECTS>().Free(defaultValue);
+        GlobalPool<POOL_DEFAULT_OBJECTS>().Free(defaultValue);
         defaultValue = nullptr;
     }
 }
@@ -959,12 +959,12 @@ bool IClassType::patchResourceReferences(void* data, res::IResource* currentReso
 
 void* IClassType::allocateClassMemory(uint32_t size, uint32_t alignment) const
 {
-    return mem::AllocateBlock(m_memoryPool, size, alignment, m_name.c_str());
+    return AllocateBlock(m_memoryPool, size, alignment, m_name.c_str());
 }
 
 void IClassType::freeClassMemory(void* ptr) const
 {
-    mem::FreeBlock(ptr);
+    FreeBlock(ptr);
 }
 
 //--

@@ -94,7 +94,7 @@ static void CollectRenderStates(const Program* p, GraphicsRenderStatesSetup& out
 class StubExtractionHelper : public NoCopy
 {
 public:
-	StubExtractionHelper(mem::LinearAllocator& mem, const CodeLibrary& lib)
+	StubExtractionHelper(LinearAllocator& mem, const CodeLibrary& lib)
 		: m_builder(mem, shader::Stub::Factory())
 		, m_mem(mem)
 		, m_lib(lib)
@@ -284,7 +284,7 @@ public:
 
 private:
 	StubBuilder m_builder;
-	mem::LinearAllocator& m_mem;
+	LinearAllocator& m_mem;
 	const CodeLibrary& m_lib;
 
 	struct GlobalContext
@@ -1777,12 +1777,12 @@ static void DumpShader(const shader::StubProgram* program, const AssembledShader
 	}
 
 	const auto targetPath = shader::AssembleDumpFilePath(contextPath, contextOptions, "stubs");
-	io::SaveFileFromString(targetPath, txt.view());
+	SaveFileFromString(targetPath, txt.view());
 
 	TRACE_INFO("Saved shader dump to '{}'", targetPath);
 }
 
-extern bool Assemblestubs(mem::LinearAllocator& mem, CodeLibrary& lib, AssembledShader& outAssembledShader, StringView contextPath, StringView contextOptions, parser::IErrorReporter& err)
+extern bool Assemblestubs(LinearAllocator& mem, CodeLibrary& lib, AssembledShader& outAssembledShader, StringView contextPath, StringView contextOptions, parser::IErrorReporter& err)
 {
 	// extract s
 	bunderSetup bundle;

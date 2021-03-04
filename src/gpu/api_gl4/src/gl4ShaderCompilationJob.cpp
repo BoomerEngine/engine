@@ -141,7 +141,7 @@ GLuint CompileStage(const shader::StubProgram* program, const shader::StubStage*
 	if (cvDumpGLSL.get())
 	{
 		dumpPath = shader::AssembleDumpFilePath(program->depotPath, program->options, TranslateStageName(stage->stage));
-		io::SaveFileFromString(dumpPath, code.view());
+		SaveFileFromString(dumpPath, code.view());
 		TRACE_INFO("Saved GLSL dump file '{}'", dumpPath);
 	}
 

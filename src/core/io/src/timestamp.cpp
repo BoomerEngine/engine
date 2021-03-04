@@ -15,7 +15,7 @@
     #include <time.h>
 #endif
 
-BEGIN_BOOMER_NAMESPACE_EX(io)
+BEGIN_BOOMER_NAMESPACE()
 
 void TimeStamp::print(IFormatStream& f) const
 {
@@ -118,4 +118,4 @@ TimeStamp TimeStamp::GetFromFileTime(uint64_t seconds, uint64_t nanoSeconds)
     return TimeStamp(val);
 }
 
-END_BOOMER_NAMESPACE_EX(io)
+END_BOOMER_NAMESPACE()

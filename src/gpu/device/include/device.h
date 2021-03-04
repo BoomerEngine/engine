@@ -177,7 +177,7 @@ public:
 	static DeviceCompletionCallbackPtr CreateFunctionCallback(const std::function<void(void)>& func);
 
 	// create completion callback that calls a fence
-	static DeviceCompletionCallbackPtr CreateFenceCallback(const fibers::WaitCounter& fence, uint32_t count = 1);
+	static DeviceCompletionCallbackPtr CreateFenceCallback(const FiberSemaphore& fence, uint32_t count = 1);
 };
 	
 //--

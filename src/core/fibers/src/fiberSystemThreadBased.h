@@ -16,7 +16,7 @@
 #include "core/system/include/thread.h"
 #include "core/containers/include/hashMap.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(fibers)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -35,25 +35,25 @@ namespace prv
         virtual bool initialize(const IBaseCommandLine &commandline) override final;
         virtual void flush() override final;
         virtual void runSyncJobs();
-        virtual void scheduleSync(const Job &job) override final;
-        virtual void scheduleFiber(const Job &job, uint32_t numInvokations, bool child) override final;
-        virtual WaitCounter createCounter(const char* userName, uint32_t count = 1) override final;
-        virtual bool checkCounter(const WaitCounter& counter) override final;
-        virtual void signalCounter(const WaitCounter &counter, uint32_t count = 1) override final;
-        virtual void waitForCounterAndRelease(const WaitCounter &counter) override final;
-        virtual void waitForMultipleCountersAndRelease(const WaitCounter* counters, uint32_t count) override final;
+        virtual void scheduleSync(const FiberJob &job) override final;
+        virtual void scheduleFiber(const FiberJob &job, uint32_t numInvokations, bool child) override final;
+        virtual FiberSemaphore createCounter(const char* userName, uint32_t count = 1) override final;
+        virtual bool checkCounter(const FiberSemaphore& counter) override final;
+        virtual void signalCounter(const FiberSemaphore &counter, uint32_t count = 1) override final;
+        virtual void waitForCounterAndRelease(const FiberSemaphore &counter) override final;
+        virtual void waitForMultipleCountersAndRelease(const FiberSemaphore* counters, uint32_t count) override final;
         virtual void yieldCurrentJob() override final;
         virtual bool isMainThread() const override final;
         virtual bool isMainFiber() const override final;
         virtual uint32_t workerThreadCount() const override final;
-        virtual JobID currentJobID() const override final;
+        virtual FiberJobID currentJobID() const override final;
 
     private:
         //--
 
         struct WaitCounterData
         {
-            std::atomic<WaitCounterSeqID> m_seqId;
+            std::atomic<FiberSemaphoreSeqID> m_seqId;
             std::atomic<int> m_refCount;
             std::atomic<int> m_count;
             Event m_event;
@@ -74,7 +74,7 @@ namespace prv
             TJobFunc m_funcToRun;
             uint32_t m_invocationIndex;
             const char* m_name;
-            JobID m_jobId;
+            FiberJobID m_jobId;
 
             JobPayload();
         };
@@ -104,7 +104,7 @@ namespace prv
         //---
 
         // return counter to pool
-        void returnCounterToPool(WaitCounterID id);
+        void returnCounterToPool(FiberSemaphoreID id);
 
         //---
 
@@ -136,7 +136,7 @@ namespace prv
 
         std::atomic<uint32_t> m_nextCounterSeqId;
 
-        Array<WaitCounterID> m_freeCounterIds;
+        Array<FiberSemaphoreID> m_freeCounterIds;
         Mutex m_freeCountersLock;
 
         WaitCounterData* m_counters;
@@ -156,4 +156,4 @@ namespace prv
 
 } // prv
 
-END_BOOMER_NAMESPACE_EX(fibers)
+END_BOOMER_NAMESPACE()

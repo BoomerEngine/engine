@@ -58,7 +58,7 @@ private:
 //----
 
 /// stream with some small initial temporary buffer that can be extended (although in a costly way) when needed
-/// NOTE: this class is so basic (before we even declare mem:: namespace) that it will use classic malloc/free
+/// NOTE: this class is so basic (before we even declare  namespace) that it will use classic malloc/free
 template< uint32_t MAX_SIZE=256 >
 struct BaseTempString : public BufferStream
 {

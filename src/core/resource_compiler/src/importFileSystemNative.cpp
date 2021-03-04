@@ -9,7 +9,7 @@
 #include "build.h"
 #include "importFileSystem.h"
 #include "importFileSystemNative.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 #include "core/io/include/timestamp.h"
 #include "importFileFingerprintService.h"
 #include "importFileFingerprint.h"
@@ -46,17 +46,17 @@ bool SourceAssetFileSystem_LocalComputer::fileExists(StringView fileSystemPath) 
     if (!convertToAbsolutePath(fileSystemPath, path))
         return false;
 
-    return io::FileExists(path);
+    return FileExists(path);
 }
 
-SourceAssetStatus SourceAssetFileSystem_LocalComputer::checkFileStatus(StringView fileSystemPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress) const
+SourceAssetStatus SourceAssetFileSystem_LocalComputer::checkFileStatus(StringView fileSystemPath, const TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress) const
 {
     StringBuf path;
     if (!convertToAbsolutePath(fileSystemPath, path))
         return SourceAssetStatus::Missing;
 
-    io::TimeStamp timestamp;
-    if (!io::FileTimeStamp(path, timestamp))
+    TimeStamp timestamp;
+    if (!FileTimeStamp(path, timestamp))
         return SourceAssetStatus::Missing;
 
     // if timestamp is given then check and use it to save CRC check
@@ -83,17 +83,17 @@ SourceAssetStatus SourceAssetFileSystem_LocalComputer::checkFileStatus(StringVie
         return SourceAssetStatus::ContentChanged;
 }
 
-Buffer SourceAssetFileSystem_LocalComputer::loadFileContent(StringView fileSystemPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint) const
+Buffer SourceAssetFileSystem_LocalComputer::loadFileContent(StringView fileSystemPath, TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint) const
 {
     StringBuf path;
     if (!convertToAbsolutePath(fileSystemPath, path))
         return Buffer();
 
-    io::TimeStamp timestamp;
-    if (!io::FileTimeStamp(path, timestamp))
+    TimeStamp timestamp;
+    if (!FileTimeStamp(path, timestamp))
         return Buffer();
 
-    const auto ret = io::LoadFileToBuffer(path);
+    const auto ret = LoadFileToBuffer(path);
     if (ret)
     {
         CalculateMemoryFingerprint(ret.data(), ret.size(), nullptr, outFingerprint);
@@ -109,7 +109,7 @@ bool SourceAssetFileSystem_LocalComputer::enumDirectoriesAtPath(StringView fileS
     if (!convertToAbsolutePath(fileSystemPath, path))
         return false;
 
-    return io::FindSubDirs(path, [enumFunc](StringView view)
+    return FindSubDirs(path, [enumFunc](StringView view)
         {
             if (!view.beginsWith("."))
             {
@@ -127,7 +127,7 @@ bool SourceAssetFileSystem_LocalComputer::enumFilesAtPath(StringView fileSystemP
     if (!convertToAbsolutePath(fileSystemPath, path))
         return false;
 
-    return io::FindLocalFiles(path, "*.*", [enumFunc](StringView view)
+    return FindLocalFiles(path, "*.*", [enumFunc](StringView view)
         {
             if (!view.beginsWith("."))
             {
@@ -221,8 +221,8 @@ bool SourceAssetFileSystem_LocalComputer::convertToAbsolutePath(StringView fileS
         auto* ch = pathString.c_str();
         while (*ch)
         {
-            if (*ch == io::WRONG_SYSTEM_PATH_SEPARATOR)
-                *ch = io::SYSTEM_PATH_SEPARATOR;
+            if (*ch == WRONG_SYSTEM_PATH_SEPARATOR)
+                *ch = SYSTEM_PATH_SEPARATOR;
             ++ch;
         }
     }

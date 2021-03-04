@@ -30,7 +30,7 @@ namespace prv
 	StringIDDataStorage::~StringIDDataStorage()
 	{
 		auto* ptr = StringID::st_StringTable.exchange(nullptr);
-		mem::FreeBlock((void*)ptr);
+		FreeBlock((void*)ptr);
 	}
 
 	StringIDIndex StringIDDataStorage::place(StringView buf)
@@ -57,7 +57,7 @@ namespace prv
 
 		// resize buffer - do not reuse previous one - copy data first and than swap the pointer
 		auto* currentData = StringID::st_StringTable.load();
-		auto* newTable = (char*)mem::AllocateBlock(POOL_STRING_ID, newSize, 1, "StringIDStrings");
+		auto* newTable = (char*)AllocateBlock(POOL_STRING_ID, newSize, 1, "StringIDStrings");
 		memcpy(newTable, currentData, m_stringTableWriteOffset);
 		StringID::st_StringTable.exchange(newTable); // atomically reconnect to new storage
 	}
@@ -129,7 +129,7 @@ namespace prv
 
 		// allocate new bucket table
 		const auto* oldBuckets = m_buckets;
-		m_buckets = (uint32_t*)mem::AllocateBlock(POOL_STRING_ID, sizeof(uint32_t) * m_numBuckets, 4, "StringIDBuckets");
+		m_buckets = (uint32_t*)AllocateBlock(POOL_STRING_ID, sizeof(uint32_t) * m_numBuckets, 4, "StringIDBuckets");
 		memzero(m_buckets, sizeof(uint32_t) * m_numBuckets);
 
 		// using old bucket table initialize the new one
@@ -145,7 +145,7 @@ namespace prv
 		}
 
 		// now the original bucket table is not needed
-		mem::FreeBlock((void*)oldBuckets);
+		FreeBlock((void*)oldBuckets);
 	}
 
 	///--

@@ -10,7 +10,7 @@
 #include "structurePool.h"
 #include "core/containers/include/bitUtils.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -258,4 +258,4 @@ void StructurePoolBase::free(void* ptr)
 
 //---
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()

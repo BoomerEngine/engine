@@ -8,9 +8,9 @@
 
 #include "build.h"
 #include "cookerSaveThread.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 #include "core/resource/include/resourceFileSaver.h"
-#include "core/io/include/ioFileHandle.h"
+#include "core/io/include/fileHandle.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(res)
 
@@ -107,7 +107,7 @@ bool CookerSaveThread::scheduleSave(const ResourcePtr& data, StringView path)
 bool CookerSaveThread::saveSingleFile(const ResourcePtr& data, StringView path)
 {
     // create staged writer for the file
-    if (auto file = io::OpenForWriting(path, io::FileWriteMode::StagedWrite))
+    if (auto file = OpenForWriting(path, FileWriteMode::StagedWrite))
     {
         FileSavingContext context;
         context.rootObject.pushBack(data);

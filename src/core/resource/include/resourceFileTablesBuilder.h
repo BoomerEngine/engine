@@ -25,7 +25,7 @@ public:
     //--
 
     // write to physical file
-    bool write(io::IWriteFileHandle* file, uint32_t headerFlags, uint64_t objectEndPos, uint64_t bufferEndPos, const void* prevHeader = nullptr) const;
+    bool write(IWriteFileHandle* file, uint32_t headerFlags, uint64_t objectEndPos, uint64_t bufferEndPos, const void* prevHeader = nullptr) const;
 
     //--
 

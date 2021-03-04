@@ -26,11 +26,11 @@ void BaseArrayBuffer::resize(Count newCapcity, uint64_t currentMemorySize, uint6
     }
     else if (m_flagOwned)
     {
-        m_ptr = mem::ResizeBlock(POOL_CONTAINERS, m_ptr, newMemorySize, memoryAlignment, typeName);
+        m_ptr = ResizeBlock(POOL_CONTAINERS, m_ptr, newMemorySize, memoryAlignment, typeName);
     }
     else
     {
-        auto* newPtr = mem::ResizeBlock(POOL_CONTAINERS, nullptr, newMemorySize, memoryAlignment, typeName);
+        auto* newPtr = ResizeBlock(POOL_CONTAINERS, nullptr, newMemorySize, memoryAlignment, typeName);
         memcpy(newPtr, m_ptr, std::min<uint64_t>(currentMemorySize, newMemorySize));
         m_ptr = newPtr;
     }
@@ -42,7 +42,7 @@ void BaseArrayBuffer::resize(Count newCapcity, uint64_t currentMemorySize, uint6
 void BaseArrayBuffer::release()
 {
     if (m_flagOwned)
-        mem::FreeBlock(m_ptr);
+        FreeBlock(m_ptr);
 
     m_flagOwned = true;
     m_capacity = 0;

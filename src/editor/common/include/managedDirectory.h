@@ -12,7 +12,7 @@
 #include "managedFile.h"
 
 #include "core/system/include/spinLock.h"
-#include "core/io/include/ioDirectoryWatcher.h"
+#include "core/io/include/directoryWatcher.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

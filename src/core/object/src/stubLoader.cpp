@@ -315,11 +315,10 @@ void StubLoader::clear()
 			if (classInfo->cleanupFunc)
 				classInfo->cleanupFunc(stub);
 
-	mem::FreeBlock(m_stubMem);
+	FreeBlock(m_stubMem);
 	m_stubMem = nullptr;
 
-	mem::FreeBlock(m_unpackedMem);
-	m_unpackedMem = nullptr;
+	m_unpackedMem = Buffer();
 }
 
 struct StubLoaderCleanupHelper : public NoCopy
@@ -345,7 +344,7 @@ public:
 				}
 			}
 
-			mem::FreeBlock(m_memory);
+			FreeBlock(m_memory);
 		}
 	}
 
@@ -386,10 +385,10 @@ const IStub* StubLoader::unpack(const void* packedData, uint32_t packedDataSize)
 	const auto crc = CRC32().append((uint8_t*)packedData + headerSize, packedDataSize - headerSize).crc();
 	DEBUG_CHECK_RETURN_EX_V(header->compressedCRC == crc, "Shader blob has invalid CRC than in the header. Data is possible corrupted. Loading would be unsafe.", nullptr);
 
-	mem::AutoFreePtr unpackedMem(mem::AllocateBlock(m_tag, header->uncompressedSize, 4));
+	auto unpackedMem = Buffer::Create(m_tag, header->uncompressedSize, 4);
 	DEBUG_CHECK_RETURN_EX_V(unpackedMem, "Failed to allocate buffer for decompress shader data.", nullptr);
 
-	DEBUG_CHECK_RETURN_EX_V(Decompress(CompressionType::LZ4HC, header + 1, packedDataSize - headerSize, unpackedMem.ptr(), header->uncompressedSize), "Decompression failed", nullptr);
+	DEBUG_CHECK_RETURN_EX_V(Decompress(CompressionType::LZ4HC, header + 1, packedDataSize - headerSize, unpackedMem.data(), header->uncompressedSize), "Decompression failed", nullptr);
 	TRACE_SPAM("Unpacked stub blob {} -> {}", MemSize(packedDataSize), MemSize(header->uncompressedSize));
 
 	DEBUG_CHECK_RETURN_EX_V(header->numNames >= 1, "Invalid header counts", nullptr);
@@ -411,7 +410,7 @@ const IStub* StubLoader::unpack(const void* packedData, uint32_t packedDataSize)
 	tables.stubTypes.resizeWith(header->numStubs, 0);
 	TRACE_SPAM("Found {} strings, {} names and {} stubs in the blob", header->numStrings, header->numNames, header->numStubs);
 
-	const uint8_t* dataPtr = (const uint8_t*)unpackedMem.ptr();
+	const uint8_t* dataPtr = (const uint8_t*)unpackedMem.data();
 	const uint8_t* dataPtrEnd = dataPtr + header->uncompressedSize;
 
 	// load strings
@@ -466,7 +465,7 @@ const IStub* StubLoader::unpack(const void* packedData, uint32_t packedDataSize)
 	TRACE_SPAM("Found {} memory needed for stubs, {} needed alignment ({} additional data)", MemSize(totalNeededMemory), totalNeededAlignment, header->additionalDataSize);
 
 	// allocate the memory blob
-	auto* objectMemoryBlock = (uint8_t*)mem::AllocateBlock(m_tag, totalNeededMemory + header->additionalDataSize, totalNeededAlignment);
+	auto* objectMemoryBlock = (uint8_t*)AllocateBlock(m_tag, totalNeededMemory + header->additionalDataSize, totalNeededAlignment);
 	uint8_t* objectMemoryPtr = objectMemoryBlock;
 	uint8_t* objectMemoryEndPtr = objectMemoryPtr + totalNeededMemory;
 	uint8_t* additionalMemoryPtr = objectMemoryEndPtr;
@@ -538,7 +537,7 @@ const IStub* StubLoader::unpack(const void* packedData, uint32_t packedDataSize)
 	}
 
 	// move data to final buffers
-	m_unpackedMem = unpackedMem.detach();
+	m_unpackedMem = unpackedMem;
 	m_stubMem = objectMemoryBlock;
 	cleanupHelper.disable();
 

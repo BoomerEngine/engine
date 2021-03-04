@@ -14,8 +14,8 @@
 #include "core/config/include/entry.h"
 #include "core/containers/include/inplaceArray.h"
 #include "core/app/include/commandline.h"
-#include "core/io/include/ioDirectoryWatcher.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/directoryWatcher.h"
+#include "core/io/include/io.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(config)
 
@@ -31,25 +31,25 @@ ConfigService::~ConfigService()
 
 app::ServiceInitializationResult ConfigService::onInitializeService( const app::CommandLine& cmdLine)
 {
-    /*m_engineConfigDir = io::SystemPath(io::PathCategory::).addDir("config");
+    /*m_engineConfigDir = SystemPath(PathCategory::).addDir("config");
     TRACE_INFO("Engine config directory: '{}'", m_engineConfigDir);
 
-    m_engineConfigWatcher = io::CreateDirectoryWatcher(m_engineConfigDir);
+    m_engineConfigWatcher = CreateDirectoryWatcher(m_engineConfigDir);
     if (m_engineConfigWatcher)
         m_engineConfigWatcher->attachListener(this);*/
 
-    /*auto& projectDir = io::SystemPath(io::PathCategory::);
+    /*auto& projectDir = SystemPath(PathCategory::);
     if (!projectDir.empty())
     {
         m_projectConfigDir = projectDir.addDir("config");
         TRACE_INFO("Project config directory: '{}'", m_engineConfigDir);
 
-        m_projectConfigWatcher = io::CreateDirectoryWatcher(m_projectConfigDir);
+        m_projectConfigWatcher = CreateDirectoryWatcher(m_projectConfigDir);
         if (m_projectConfigWatcher)
             m_projectConfigWatcher->attachListener(this);
     }*/
 
-    m_userConfigFile = TempString("{}user.ini", io::SystemPath(io::PathCategory::UserConfigDir));
+    m_userConfigFile = TempString("{}user.ini", SystemPath(PathCategory::UserConfigDir));
     TRACE_INFO("User config file: '{}'", m_userConfigFile);
 
     if (!reloadConfig())
@@ -66,10 +66,10 @@ app::ServiceInitializationResult ConfigService::onInitializeService( const app::
 
 bool ConfigService::loadFileConfig(StringView path, config::Storage& outStorage) const
 {
-    if (io::FileExists(path))
+    if (FileExists(path))
     {
         StringBuf txt;
-        if (!io::LoadFileToString(path, txt))
+        if (!LoadFileToString(path, txt))
         {
             TRACE_ERROR("Failed to open config file '{}'", path);
             return false;
@@ -94,7 +94,7 @@ bool ConfigService::loadDirConfig(StringView path, config::Storage& outStorage) 
     bool ret = true;
 
     InplaceArray<StringBuf, 20> configPaths;
-    io::FindFiles(path, "*.ini", configPaths, false);
+    FindFiles(path, "*.ini", configPaths, false);
     if (!configPaths.empty())
     {
         TRACE_INFO("Found {} config file(s) at '{}'", configPaths.size(), path);
@@ -141,8 +141,8 @@ void ConfigService::dumpConfig()
     StringBuilder txt;
     ConfigPropertyBase::PrintAll(txt);
 
-    const auto& configPath = io::SystemPath(io::PathCategory::UserConfigDir);
-    io::SaveFileFromString(TempString("{}dump.ini", configPath), txt.toString());
+    const auto& configPath = SystemPath(PathCategory::UserConfigDir);
+    SaveFileFromString(TempString("{}dump.ini", configPath), txt.toString());
 }
 
 bool ConfigService::reloadConfig()
@@ -189,13 +189,13 @@ void ConfigService::saveUserConfig()
     config::Storage::Save(txt, config::RawStorageData(), *m_baseConfig);
 
     // store the user config
-    if (!io::SaveFileFromString(m_userConfigFile, txt.toString()))
+    if (!SaveFileFromString(m_userConfigFile, txt.toString()))
     {
         TRACE_ERROR("Failed to save user config to '{}'", m_userConfigFile);
     }
 }
 
-void ConfigService::handleEvent(const io::DirectoryWatcherEvent& evt)
+void ConfigService::handleEvent(const DirectoryWatcherEvent& evt)
 {
     if (evt.path.endsWith(".ini"))
     {

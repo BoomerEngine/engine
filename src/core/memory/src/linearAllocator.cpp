@@ -11,7 +11,7 @@
 #include "pageCollection.h"
 #include "pageAllocator.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -119,4 +119,4 @@ void* LinearAllocator::alloc(uint64_t size, uint32_t align)
 
 //---
 
-END_BOOMER_NAMESPACE_EX(mem)
+END_BOOMER_NAMESPACE()

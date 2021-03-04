@@ -101,7 +101,7 @@ namespace prv
         UniquePtr<ILanguageDefinition> buildLanguageDefinition() const;
 
     private:
-        mem::LinearAllocator m_mem;
+        LinearAllocator m_mem;
         ParsingNode* m_root;
         Array<ParsingNode*> m_nodes;
         HashMap<int, StringBuf> m_debugKeywordMap;

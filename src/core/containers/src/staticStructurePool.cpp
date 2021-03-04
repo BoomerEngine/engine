@@ -30,12 +30,12 @@ void StaticStructurePoolBase::clear()
 {
     if (m_elements)
     {
-        mem::FreeBlock(m_elements);
+        FreeBlock(m_elements);
         m_elements = nullptr;
         m_maxAllocated = 0;
         m_numAllocated = 0;
 
-        mem::FreeBlock(m_elementBitMap);
+        FreeBlock(m_elementBitMap);
         m_elementBitMap = nullptr;
         m_elementBitMapEnd = nullptr;
         m_freeBucketIndex = 0;
@@ -47,12 +47,12 @@ void StaticStructurePoolBase::resize(uint32_t capacity)
     auto alignedCapacity = Align<uint32_t>(capacity, 64);
     if (alignedCapacity > m_maxAllocated)
     {
-        m_elements = mem::ResizeBlock(m_pool, m_elements, m_elemSize * alignedCapacity, m_elemAlign, "StructurePool");
+        m_elements = ResizeBlock(m_pool, m_elements, m_elemSize * alignedCapacity, m_elemAlign, "StructurePool");
 #ifndef BUILD_RELEASE
         memset((uint8_t*)m_elements + (m_elemSize*m_maxAllocated), 0xCC, m_elemSize * (alignedCapacity - m_maxAllocated));
 #endif
 
-        m_elementBitMap = (uint64_t*)mem::ResizeBlock(m_pool, m_elementBitMap, alignedCapacity / 8, 8, "StructurePool");
+        m_elementBitMap = (uint64_t*)ResizeBlock(m_pool, m_elementBitMap, alignedCapacity / 8, 8, "StructurePool");
         memset(m_elementBitMap + (m_maxAllocated / 8), 0, (alignedCapacity - m_maxAllocated) / 8);
         m_elementBitMapEnd = m_elementBitMap + (alignedCapacity / 64);
 

@@ -74,7 +74,7 @@ private:
 class OpcodeGenerator : public NoCopy
 {
 public:
-    OpcodeGenerator(mem::LinearAllocator& storageMem);
+    OpcodeGenerator(LinearAllocator& storageMem);
 
     // generate opcodes for given node
     // NOTE: this is a recursive function in nature
@@ -87,7 +87,7 @@ public:
     OpcodeList makeOpcode(const StubLocation& location, Opcode op);
 
 private:
-    mem::LinearAllocator& m_mem;
+    LinearAllocator& m_mem;
 
     bool m_emitBreakpoints;
 

@@ -16,7 +16,7 @@
 #include "core/system/include/debug.h"
 #include "core/system/include/orderedQueue.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(fibers)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -32,18 +32,18 @@ namespace prv
         virtual bool initialize(const IBaseCommandLine& cmdLine) override final;
         virtual void runSyncJobs() override final;
         virtual void flush() override final;
-        virtual void scheduleFiber(const Job &job, uint32_t numInvokations, bool child) override final;
-        virtual void scheduleSync(const Job &job);
-        virtual WaitCounter createCounter(const char* userName, uint32_t count = 1) override final;
-        virtual bool checkCounter(const WaitCounter& counter) override final;
-        virtual void signalCounter(const WaitCounter &counter, uint32_t count = 1) override final;
-        virtual void waitForCounterAndRelease(const WaitCounter &counter) override final;
-        virtual void waitForMultipleCountersAndRelease(const WaitCounter* counters, uint32_t count) override final;
+        virtual void scheduleFiber(const FiberJob &job, uint32_t numInvokations, bool child) override final;
+        virtual void scheduleSync(const FiberJob &job);
+        virtual FiberSemaphore createCounter(const char* userName, uint32_t count = 1) override final;
+        virtual bool checkCounter(const FiberSemaphore& counter) override final;
+        virtual void signalCounter(const FiberSemaphore &counter, uint32_t count = 1) override final;
+        virtual void waitForCounterAndRelease(const FiberSemaphore &counter) override final;
+        virtual void waitForMultipleCountersAndRelease(const FiberSemaphore* counters, uint32_t count) override final;
         virtual void yieldCurrentJob() override final;
         virtual bool isMainThread() const override final;
         virtual bool isMainFiber() const override final;
         virtual uint32_t workerThreadCount() const override final;
-        virtual JobID currentJobID() const override final;
+        virtual FiberJobID currentJobID() const override final;
 
         //--
 
@@ -115,7 +115,7 @@ namespace prv
 
         struct PendingJob
         {
-            Job job; // job data
+            FiberJob job; // job data
             FiberState* fiber = nullptr; // assigned fiber (only for rescheduled jobs)
             PendingJob* next = nullptr; // next job on the queue or in the wait list
             logging::ILogSink* logSink = nullptr; // log sink attached to the job
@@ -124,9 +124,9 @@ namespace prv
             uint8_t lastThreadIndex = 0xFF; // last thread we were running on
             bool isMainThreadJob = false; // is this a job from the main thread
             bool isAllocated = false; // is this job allocated
-            WaitCounter waitForCounter;
+            FiberSemaphore waitForCounter;
             const WaitList* waitList = nullptr; // counter for which we are in the wait list
-            JobID jobId = 0; // unique ID of the job
+            FiberJobID jobId = 0; // unique ID of the job
             std::atomic<PendingJobState> state = PendingJobState::Free; // general status of the job
 
 #ifndef BUILD_FINAL
@@ -170,8 +170,8 @@ namespace prv
 
         struct WaitList : public NoCopy
         {
-            WaitCounterID localId = 0;
-            WaitCounterSeqID seqId = 0;
+            FiberSemaphoreID localId = 0;
+            FiberSemaphoreSeqID seqId = 0;
             std::atomic<int> currentCount = 0;
             const char* userName = nullptr;
             PendingJob* jobs = nullptr;
@@ -184,7 +184,7 @@ namespace prv
         {
             struct SyncJob
             {
-                Job job;
+                FiberJob job;
                 SyncJob* next = nullptr;
             };
 
@@ -196,7 +196,7 @@ namespace prv
 
             SyncList();
 
-            void push(const Job& job);
+            void push(const FiberJob& job);
             void run();
         };
 
@@ -210,26 +210,26 @@ namespace prv
             void init(uint32_t maxWaitLists);
 
             // create a waiting counter with given initial count
-            WaitCounter allocWaitCounter(const char* userName, uint32_t initialCount);
+            FiberSemaphore allocWaitCounter(const char* userName, uint32_t initialCount);
 
             // get current counter at given ID
-            WaitCounter findCounter(uint32_t id);
+            FiberSemaphore findCounter(uint32_t id);
 
             // release waiting count
-            void releaseWaitCounter(const WaitCounter& counter);
+            void releaseWaitCounter(const FiberSemaphore& counter);
 
             // check state of the waiting counter
-            bool checkWaitCounter(const WaitCounter& counter);
+            bool checkWaitCounter(const FiberSemaphore& counter);
 
             // register job in the waiting list for given counter
             // returns true if the job should enter waiting state
-            bool addJobToWaitingList(const WaitCounter& counter, PendingJob* job);
+            bool addJobToWaitingList(const FiberSemaphore& counter, PendingJob* job);
 
             // signal give wait counter, returns list of jobs to unlock if the counter was successfully signaled (the count reached zero)
-            PendingJob* signalWaitCounter(const WaitCounter& counter, uint32_t count);
+            PendingJob* signalWaitCounter(const FiberSemaphore& counter, uint32_t count);
 
             // print counter information
-            void printCounterInfo(const WaitCounter& counter);
+            void printCounterInfo(const FiberSemaphore& counter);
 
             // print counter information
             void printCounterInfo(const WaitList& entry);
@@ -241,7 +241,7 @@ namespace prv
             void validate();
 
             // wait (Event) for a counter to finish
-            void waitForCounterThreadEvent(const WaitCounter& counter);
+            void waitForCounterThreadEvent(const FiberSemaphore& counter);
 
         private:
             Mutex m_lock;
@@ -288,7 +288,7 @@ namespace prv
         void schedulePendingJob(PendingJob* job);
 
         // create internal pending job object
-        void scheduleInternal(const Job& job, uint32_t numInvokations, bool child);
+        void scheduleInternal(const FiberJob& job, uint32_t numInvokations, bool child);
 
         // cleanup finished job
         void cleanupPendingJob(PendingJob* job);
@@ -328,4 +328,4 @@ namespace prv
 
 } // prv
 
-END_BOOMER_NAMESPACE_EX(fibers)
+END_BOOMER_NAMESPACE()

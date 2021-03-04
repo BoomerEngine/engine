@@ -14,159 +14,8 @@
 // Some memory pools are predefined
 enum PoolTag
 {
-    POOL_DEFAULT = 0,
-    POOL_ALLOCATOR,
-    POOL_TEMP,
-    POOL_NEW,
-    POOL_PERSISTENT,
-    POOL_OBJECT,
-    POOL_DEFAULT_OBJECTS,
-	POOL_STUBS,
-	POOL_IO,
-    POOL_IO_OUTSTANDING,
-    POOL_CONTAINERS,
-    POOL_HASH_BUCKETS,
-    POOL_SERIALIZATION,
-    POOL_RTTI,
-    POOL_COOKING,
-    POOL_IMPORT,
-    POOL_IMAGE,
-    POOL_STRINGS,
-	POOL_STRING_ID,
-    POOL_PIPES,
-    POOL_THREADS,
-    POOL_PROCESS,
-    POOL_DEPOT,
-    POOL_MANAGED_DEPOT,
-    POOL_EDITOR,
-    POOL_STRING_BUILDER,
-    POOL_INDEX_POOL,
-    POOL_PATH_CACHE,
-    POOL_REF_HOLDER,
-    POOL_REF_OBJECT,
-    POOL_RTTI_DATA,
-    POOL_DATA_VIEW,
-    POOL_DEBUG_GEOMETRY,
-    POOL_XML,
-    POOL_TRIMESH,
-    POOL_IMGUI,
-    POOL_JIT,
-    POOL_FIBERS,
-    POOL_FONTS,
-    POOL_KEYS,
-    POOL_EVENTS,
-    POOL_PROXY,
-    POOL_SHADER_COMPILATION,
-    POOL_STREAMING,
-    POOL_VARIANT,
-    POOL_GAME,
-    POOL_CANVAS,
-    POOL_CONFIG,
-    POOL_WINDOW,
-    POOL_MEM_BUFFER,
-    POOL_EXTERNAL_BUFFER_TAG,
-    POOL_ASYNC_BUFFER,
-    POOL_SYSTEM_MEMORY,
-    POOL_WAVEFRONT,
-    POOL_MESH_BUILDER,
-    POOL_RAW_RESOURCE,
-    POOL_MATERIAL_DATA,
-    POOL_TABLE_DATA,
-    POOL_ZLIB,
-    POOL_LZ4,
-
-    ///--
-
-    POOL_GRAPH,
-    POOL_INSTANCE_BUFFER,
-    POOL_INSTANCE_LAYOUT,
-
-    ///--
-
-    POOL_SCRIPTS,
-    POOL_SCRIPTED_OBJECT,
-    POOL_SCRIPTED_DEFAULT_OBJECT,
-    POOL_SCRIPT_CODE,
-    POOL_SCRIPT_STREAM,
-    POOL_SCRIPT_COMPILER,
-
-    ///--
-
-    POOL_GPU_SHADER_CACHE,
-    POOL_GPU_SHADER_BLOB,
-    POOL_GPU_RUNTIME,
-    POOL_GPU_FRAME,
-    POOL_GPU_COMMANDS,
-    POOL_GPU_COMMAND_BUFFER,
-    POOL_GPU_PARAM_LAYOUT,
-
-    POOL_COMPILED_SHADER_STRUCTURES,
-    POOL_COMPILED_SHADER_DATA,
-
-    POOL_RENDERING_FRAME,
-    POOL_RENDERING_TECHNIQUE,
-    POOL_RENDERING_TECHNIQUE_COMPILER,
-    POOL_RENDERING_RUNTIME,
-	POOL_RENDERING_PROXY,
-
-    ///--
-
-    POOL_NET,
-    POOL_NET_MESSAGE,
-    POOL_NET_MESSAGES,
-    POOL_NET_REASSEMBLER,
-    POOL_NET_REPLICATION,
-    POOL_NET_MODEL,
-    POOL_HTTP_REQUEST,
-    POOL_HTTP_REQUEST_DATA,
-
-    ///--
-
-    POOL_UI_STYLES,
-    POOL_UI_OBJECTS,
-    POOL_UI_ACTIONS,
-    POOL_UI_CANVAS,
-
-    ///--
-
-    POOL_WORLD_OBJECTS,
-    POOL_WORLD_PATH,
-    POOL_WORLD_STREAMING,
-    POOL_WORLD_SYSTEM,
-
-    ///--
-
-    POOL_PHYSICS_COLLISION,
-    POOL_PHYSICS_TEMP,
-    POOL_PHYSICS_SCENE,
-    POOL_PHYSICS_RUNTIME,
-    POOL_CONVEX_HULL,
-    POOL_CONVEX_HULL_BUILDING,
-
-    ///--
-
-    POOL_API_STATIC_TEXTURES,
-	POOL_API_STORAGE_TEXTURES,
-	POOL_API_DYNAMIC_TEXTURES,
-	POOL_API_RENDER_TARGETS,
-
-    POOL_API_VERTEX_BUFFER,
-    POOL_API_INDEX_BUFFER,
-    POOL_API_CONSTANT_BUFFER,
-    POOL_API_STORAGE_BUFFER,
-    POOL_API_INDIRECT_BUFFER,
-    POOL_API_DYNAMIC_CONSTANT_BUFFER,
-
-    POOL_API_BACKING_STORAGE,
-
-    POOL_API_FRAMEBUFFERS,
-    POOL_API_SAMPLERS,
-    POOL_API_SHADERS,
-    POOL_API_PROGRAMS,
-    POOL_API_PIPELINES,
-    POOL_API_OBJECTS,
-    POOL_API_RUNTIME,
-
+#define BOOMER_DECLARE_POOL(name, group, size) name,
+#include "poolNames.inl"
     POOL_MAX,
 };
 
@@ -178,7 +27,7 @@ enum PoolTag
 
 //-----------------------------------------------------------------------------
 
-BEGIN_BOOMER_NAMESPACE_EX(mem)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -207,14 +56,6 @@ extern CORE_MEMORY_API void* ResizeBlock(PoolTag id, void* mem, size_t size, siz
 
 //! Free allocated memory
 extern CORE_MEMORY_API void FreeBlock(void* mem);
-
-//---
-
-//! Start tracking allocations happening on this thread
-extern CORE_MEMORY_API void StartThreadAllocTracking();
-
-//! Finish tracking allocation happening on this thread, report all unfreed allocations
-extern CORE_MEMORY_API void FinishThreadAllocTracking();
 
 //--
 
@@ -260,7 +101,7 @@ struct GlobalPool
 
 #define RTTI_DECLARE_POOL(TAG) \
     public: \
-    using ClassAllocationPool = ::boomer::mem::GlobalPool<TAG>; \
+    using ClassAllocationPool = ::boomer::GlobalPool<TAG>; \
     ALWAYS_INLINE static void* AllocClassMem(std::size_t size, std::size_t align) { return ClassAllocationPool::Alloc(size, align); } \
     ALWAYS_INLINE static void FreeClassMem(void* ptr) { ClassAllocationPool::Free(ptr); } \
     ALWAYS_INLINE void* operator new(std::size_t count) { return AllocClassMem(count, __STDCPP_DEFAULT_NEW_ALIGNMENT__); } \
@@ -290,53 +131,10 @@ extern CORE_MEMORY_API PageAllocator& DefaultPageAllocator(PoolTag pool = POOL_T
 
 //--
 
-struct AutoFreePtr : public NoCopy
-{
-	INLINE AutoFreePtr(void* ptr)
-		: m_ptr(ptr)
-	{}
-
-	INLINE ~AutoFreePtr()
-	{
-		clear();
-	}
-
-	INLINE void* ptr() const
-	{
-		return m_ptr;
-	}
-
-	INLINE operator bool () const
-	{
-		return m_ptr != nullptr;
-	}
-
-	INLINE void clear()
-	{
-		if (m_ptr)
-		{
-			FreeBlock(m_ptr);
-			m_ptr = nullptr;
-		}
-	}
-
-	INLINE void* detach()
-	{
-		auto* ret = m_ptr;
-		m_ptr = nullptr;
-		return ret;
-	}
-
-private:
-	void* m_ptr = nullptr;
-};
+END_BOOMER_NAMESPACE()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(mem)
-
-//--
-
-using ClassAllocationPool = boomer::mem::GlobalPool<POOL_OBJECT>;
+using ClassAllocationPool = boomer::GlobalPool<POOL_OBJECT>;
 
 

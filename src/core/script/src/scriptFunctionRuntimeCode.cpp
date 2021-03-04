@@ -11,7 +11,7 @@
 #include "scriptFunctionStackFrame.h"
 #include "scriptFunctionRuntimeCode.h"
 #include "core/object/include/rttiProperty.h"
-#include "core/io/include/ioFileHandleMemory.h"
+#include "core/io/include/fileHandleMemory.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(script)
 
@@ -144,7 +144,7 @@ private:
 class CodeWriter : public NoCopy
 {
 public:
-    CodeWriter(io::IWriteFileHandle& writerStream, IFunctionCodeStubResolver& stubResovler)
+    CodeWriter(IWriteFileHandle& writerStream, IFunctionCodeStubResolver& stubResovler)
         : m_stream(writerStream)
         , m_currentOpcode(nullptr)
         , m_stubResovler(stubResovler)
@@ -267,7 +267,7 @@ public:
     }
 
 private:
-    io::IWriteFileHandle& m_stream;
+    IWriteFileHandle& m_stream;
     HashMap<const StubOpcode*, uint32_t> m_opcodeOffsets;
     const StubOpcode* m_currentOpcode;
     uint32_t m_opcodeWriteOffset = 0;
@@ -1104,7 +1104,7 @@ FunctionCodeBlock* FunctionCodeBlock::Create(const StubFunction* func, const Stu
     //     ConstFloat -> float
 
     // translate opcodes
-    io::MemoryWriterFileHandle streamWriter;// (32768, POOL_SCRIPTS);
+    MemoryWriterFileHandle streamWriter;// (32768, POOL_SCRIPTS);
     CodeWriter codeWriter(streamWriter, stubResolver);
     LocalVariableMapper varMapper(stubResolver);
     for (auto op  : func->opcodes)

@@ -49,19 +49,19 @@ StreamingGrid::~StreamingGrid()
 {
     if (m_buckets)
     {
-        mem::GlobalPool<POOL_STREAMING, GridBucket>::Free(m_buckets);
+        GlobalPool<POOL_STREAMING, GridBucket>::Free(m_buckets);
         m_buckets = nullptr;
     }
 
     if (m_nodes)
     {
-        mem::GlobalPool<POOL_STREAMING, GridNode>::Free(m_nodes);
+        GlobalPool<POOL_STREAMING, GridNode>::Free(m_nodes);
         m_nodes = nullptr;
     }
 
     if (m_levels)
     {
-        mem::GlobalPool<POOL_STREAMING, GridLevel>::Free(m_levels);
+        GlobalPool<POOL_STREAMING, GridLevel>::Free(m_levels);
         m_levels = nullptr;
     }
 }
@@ -193,7 +193,7 @@ StreamingGridObjectID StreamingGrid::registerObject(uint16_t x, uint16_t y, uint
     {
         TRACE_ERROR("Initial bucket array was to small, resizing the bucket table");
         m_numBuckets *= 2;
-        m_buckets = mem::GlobalPool<POOL_STREAMING, GridBucket>::Resize(m_buckets, sizeof(GridBucket) * m_numBuckets, 64);
+        m_buckets = GlobalPool<POOL_STREAMING, GridBucket>::Resize(m_buckets, sizeof(GridBucket) * m_numBuckets, 64);
     }
 
     // Store in new bucket
@@ -579,7 +579,7 @@ void StreamingGrid::collectForArea(uint16_t minX, uint16_t minY, uint16_t maxX, 
 void StreamingGrid::createBuckets(uint32_t numBuckets)
 {
     m_numBuckets = numBuckets;
-    m_buckets = mem::GlobalPool<POOL_STREAMING, GridBucket>::AllocN(numBuckets);
+    m_buckets = GlobalPool<POOL_STREAMING, GridBucket>::AllocN(numBuckets);
     memzero(m_buckets, numBuckets * sizeof(GridBucket));
 }
 
@@ -595,12 +595,12 @@ void StreamingGrid::createGrid(uint32_t numLevels)
 
     // preallocate memory for nodes
     m_numNodes = numTotalCells;
-    m_nodes = mem::GlobalPool<POOL_STREAMING, GridNode>::AllocN(m_numNodes);
+    m_nodes = GlobalPool<POOL_STREAMING, GridNode>::AllocN(m_numNodes);
     memzero(m_nodes, sizeof(GridNode) * m_numNodes);
 
     // preallocate memory for grid levels
     m_numLevels = numLevels;
-    m_levels = mem::GlobalPool<POOL_STREAMING, GridLevel>::AllocN(m_numLevels);
+    m_levels = GlobalPool<POOL_STREAMING, GridLevel>::AllocN(m_numLevels);
 
     // setup levels
     numTotalCells = 0;

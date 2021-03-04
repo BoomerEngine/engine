@@ -70,7 +70,7 @@ void StubLocation::read(IStubReader& f)
 
 //--
 
-Stub* Stub::Create(mem::LinearAllocator& mem, StubType type)
+Stub* Stub::Create(LinearAllocator& mem, StubType type)
 {
 #define TEST(x) case StubType::x: return mem.create<Stub##x>();
     switch (type)

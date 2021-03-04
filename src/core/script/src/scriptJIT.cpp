@@ -15,7 +15,7 @@
 #include "core/object/include/rttiArrayType.h"
 #include "core/object/include/rttiProperty.h"
 #include "core/io/include/timestamp.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 
 #if defined(PLATFORM_POSIX)
     #include <dlfcn.h>
@@ -416,10 +416,10 @@ static StringBuf GetJITModulePath(StringView path)
 {
     auto coreProjectModuleName = GetCoreScriptModuleName(path.beforeLast("."));
 
-    auto nonce = io::TimeStamp::GetNow().toSafeString();
+    auto nonce = TimeStamp::GetNow().toSafeString();
     auto compiledModuleFileName = StringBuf(TempString("{}_{}.jit", coreProjectModuleName, nonce));
 
-    const auto& tempDir = io::SystemPath(io::PathCategory::LocalTempDir);
+    const auto& tempDir = SystemPath(PathCategory::LocalTempDir);
     return TempString("{}jit/{}", tempDir, compiledModuleFileName);
 }
 

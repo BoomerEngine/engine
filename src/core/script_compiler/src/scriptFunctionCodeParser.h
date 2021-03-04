@@ -22,7 +22,7 @@ class IErrorHandler;
 class FunctionParser : public NoCopy
 {
 public:
-    FunctionParser(mem::LinearAllocator& mem, IErrorHandler& err, StubLibrary& library);
+    FunctionParser(LinearAllocator& mem, IErrorHandler& err, StubLibrary& library);
     ~FunctionParser();
 
     //--
@@ -39,7 +39,7 @@ public:
     bool processCode(const StubFunction* functionStub, FunctionCode& outCode);
 
 private:
-    mem::LinearAllocator& m_mem;
+    LinearAllocator& m_mem;
     IErrorHandler& m_err;
     StubLibrary& m_stubs;
 };

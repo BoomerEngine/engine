@@ -50,12 +50,12 @@ bool SourceAssetRepository::fileExists(StringView assetImportPath) const
     return m_fileService->fileExists(assetImportPath);
 }
 
-Buffer SourceAssetRepository::loadSourceFileContent(StringView assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint)
+Buffer SourceAssetRepository::loadSourceFileContent(StringView assetImportPath, TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint)
 {
     return m_fileService->loadFileContent(assetImportPath, outTimestamp, outFingerprint);
 }
 
-CAN_YIELD SourceAssetStatus SourceAssetRepository::checkFileStatus(StringView assetImportPath, const io::TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress)
+CAN_YIELD SourceAssetStatus SourceAssetRepository::checkFileStatus(StringView assetImportPath, const TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownFingerprint, IProgressTracker* progress)
 {
     return m_fileService->checkFileStatus(assetImportPath, lastKnownTimestamp, lastKnownFingerprint, progress);
 }
@@ -65,7 +65,7 @@ ResourceConfigurationPtr SourceAssetRepository::compileBaseResourceConfiguration
     return m_fileService->compileBaseResourceConfiguration(assetImportPath, configurationClass);
 }
 
-SourceAssetPtr SourceAssetRepository::loadSourceAsset(StringView assetImportPath, io::TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint)
+SourceAssetPtr SourceAssetRepository::loadSourceAsset(StringView assetImportPath, TimeStamp& outTimestamp, ImportFileFingerprint& outFingerprint)
 {
     auto lock = CreateLock(m_lock);
 
@@ -83,7 +83,7 @@ SourceAssetPtr SourceAssetRepository::loadSourceAsset(StringView assetImportPath
     }
 
     // load content to buffer
-    io::TimeStamp assetContentTimestamp;
+    TimeStamp assetContentTimestamp;
     ImportFileFingerprint assetContentFingerprint;
     auto contentData = loadSourceFileContent(assetImportPath, assetContentTimestamp, assetContentFingerprint);
     if (!contentData)

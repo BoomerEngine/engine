@@ -10,7 +10,7 @@
 
 #include "core/containers/include/stringBuf.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(io)
+BEGIN_BOOMER_NAMESPACE()
 
 /// file format information, extension + description
 class FileFormat
@@ -65,4 +65,4 @@ private:
     StringBuf m_desc;
 };
 
-END_BOOMER_NAMESPACE_EX(io)
+END_BOOMER_NAMESPACE()

@@ -11,7 +11,7 @@
 #include "commandline.h"
 #include "core/containers/include/stringParser.h"
 #include "core/containers/include/stringBuilder.h"
-#include "core/io/include/ioSystem.h"
+#include "core/io/include/io.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(app)
 
@@ -504,7 +504,7 @@ CommandLineUnpackedAnsi::CommandLineUnpackedAnsi(const CommandLine& cmdLine)
     uint32_t numArgs = cmdLine.params().size() + cmdLine.commands().size() + 1;
 
     // get path to executable
-    auto executablePath = io::SystemPath(io::PathCategory::ExecutableFile);
+    auto executablePath = SystemPath(PathCategory::ExecutableFile);
     if (!executablePath.empty())
         numArgs += 1;
 

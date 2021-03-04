@@ -12,7 +12,7 @@
 #include "core/containers/include/public.h"
 #include "core/containers/include/hashMap.h"
 #include "core/system/include/scopeLock.h"
-#include "core/io/include/ioFileHandleMemory.h"
+#include "core/io/include/fileHandleMemory.h"
 
 #include "resource.h"
 #include "resourceLoader.h"

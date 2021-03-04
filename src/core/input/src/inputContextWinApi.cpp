@@ -421,8 +421,8 @@ ContextWinApi::ContextWinApi(uint64_t nativeWindow, uint64_t nativeDisplay, bool
 
 void ContextWinApi::resetInput()
 {
-    DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Only allowed on main thread");
-    if (Fibers::GetInstance().isMainThread())
+    DEBUG_CHECK_EX(IsMainThread(), "Only allowed on main thread");
+    if (IsMainThread())
     {
         m_keyboard.reset();
         m_mouse.reset(false);
@@ -431,8 +431,8 @@ void ContextWinApi::resetInput()
 
 void ContextWinApi::processState()
 {
-    DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Only allowed on main thread");
-    if (Fibers::GetInstance().isMainThread())
+    DEBUG_CHECK_EX(IsMainThread(), "Only allowed on main thread");
+    if (IsMainThread())
     {
         m_keyboard.update();
         m_mouse.update();
@@ -468,8 +468,8 @@ void ContextWinApi::releaseCapture()
 
 void ContextWinApi::requestCapture(int captureMode)
 {
-    DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Only allowed on main thread");
-    if (Fibers::GetInstance().isMainThread())
+    DEBUG_CHECK_EX(IsMainThread(), "Only allowed on main thread");
+    if (IsMainThread())
     {
         if (m_activeCaptureMode != captureMode)
         {
@@ -496,8 +496,8 @@ void ContextWinApi::requestCapture(int captureMode)
 
 void ContextWinApi::processMessage(const void* msg)
 {
-    DEBUG_CHECK_EX(Fibers::GetInstance().isMainThread(), "Only allowed on main thread");
-    if (Fibers::GetInstance().isMainThread())
+    DEBUG_CHECK_EX(IsMainThread(), "Only allowed on main thread");
+    if (IsMainThread())
     {
         auto evt = (NativeEventWinApi*)msg;
         evt->returnValue = windowProc(m_hWnd, (UINT)evt->m_message, (WPARAM)evt->m_wParam, (LPARAM)evt->m_lParam, evt->processed);

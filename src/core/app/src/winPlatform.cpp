@@ -11,7 +11,6 @@
 
 #include "launcherPlatformCommon.h"
 #include "core/app/include/commandline.h"
-#include "core/io/include/pathBuilder.h"
 
 #include <Windows.h>
 #include "winPlatform.h"

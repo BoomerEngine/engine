@@ -185,7 +185,7 @@ public:
     ~CommandLineUnpackedAnsi();
 
 private:
-    mem::LinearAllocator m_mem;
+    LinearAllocator m_mem;
 };
 
 //---
