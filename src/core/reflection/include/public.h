@@ -26,10 +26,10 @@ struct PrintableConverter<T, typename std::enable_if<std::is_enum<T>::value>::ty
 {
     static void Print(IFormatStream& s, const T& val)
     {
-        auto type = reflection::GetTypeObject<T>();
-        if (type && type->metaType() == rtti::MetaType::Enum)
+        auto type = GetTypeObject<T>();
+        if (type && type->metaType() == MetaType::Enum)
         {
-            s.append(reflection::GetEnumValueName(val));
+            s.append(GetEnumValueName(val));
         }
         else
         {
@@ -70,7 +70,7 @@ extern CORE_REFLECTION_API bool ParseFromString(StringView txt, Type expectedTyp
 template< typename T >
 INLINE bool ParseFromString(StringView txt, T& outData)
 {
-    return ParseFromString(txt, reflection::GetTypeObject<T>(), &outData);
+    return ParseFromString(txt, GetTypeObject<T>(), &outData);
 }
 
 //--
@@ -94,7 +94,7 @@ extern CORE_REFLECTION_API void PrintToString(IFormatStream& f, const Variant& d
 template< typename T >
 INLINE void PrintToString(IFormatStream& f, const T& data)
 {
-    return PrintToString(f, reflection::GetTypeObject<T>(), &data);
+    return PrintToString(f, GetTypeObject<T>(), &data);
 }
 
 //--
@@ -103,7 +103,7 @@ END_BOOMER_NAMESPACE()
 
 
 // TODO: change names to avoid potential conflicts
-#define TYPE_OF(x) reflection::GetTypeObject<decltype(x)>()
-#define TYPE_NAME_OF(x) reflection::GetTypeName<decltype(x)>()
+#define TYPE_OF(x) GetTypeObject<decltype(x)>()
+#define TYPE_NAME_OF(x) GetTypeName<decltype(x)>()
 
 #include "variant.h"

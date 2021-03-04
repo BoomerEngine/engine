@@ -45,7 +45,7 @@ struct ClassListing
     void build(ClassType rootClass)
     {
         Array<ClassType> allClasses;
-        RTTI::GetInstance().enumClasses(rootClass, allClasses, rtti::TypeSystem::TClassFilter(), true);
+        RTTI::GetInstance().enumClasses(rootClass, allClasses, TypeSystem::TClassFilter(), true);
 
         for (const auto type : allClasses)
         {

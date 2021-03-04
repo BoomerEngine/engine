@@ -34,9 +34,9 @@ public:
 //--
 
 /// metadata for the graph node inner widget classes that specified to which block classes we may try to bind
-class ENGINE_UI_API GraphNodeInnerWidgetBlockClassMetadata : public rtti::IMetadata
+class ENGINE_UI_API GraphNodeInnerWidgetBlockClassMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(GraphNodeInnerWidgetBlockClassMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(GraphNodeInnerWidgetBlockClassMetadata, IMetadata);
 
 public:
     GraphNodeInnerWidgetBlockClassMetadata();

@@ -24,20 +24,20 @@ BEGIN_BOOMER_NAMESPACE()
 
 ClassType Type::toClass() const
 {
-    return isClass() ? ClassType(static_cast<const rtti::IClassType*>(m_type)) : ClassType();
+    return isClass() ? ClassType(static_cast<const IClassType*>(m_type)) : ClassType();
 }
 
 Type Type::innerType() const
 {
     switch (metaType())
     {
-    case rtti::MetaType::Array:
-        return static_cast<const rtti::IArrayType*>(m_type)->innerType();
-    case rtti::MetaType::ClassRef:
-        return static_cast<const rtti::ClassRefType*>(m_type)->baseClass();
-    case rtti::MetaType::WeakHandle:
-    case rtti::MetaType::StrongHandle:
-        return static_cast<const rtti::IHandleType*>(m_type)->pointedClass();
+    case MetaType::Array:
+        return static_cast<const IArrayType*>(m_type)->innerType();
+    case MetaType::ClassRef:
+        return static_cast<const ClassRefType*>(m_type)->baseClass();
+    case MetaType::WeakHandle:
+    case MetaType::StrongHandle:
+        return static_cast<const IHandleType*>(m_type)->pointedClass();
     }
 
     return nullptr;
@@ -47,11 +47,11 @@ ClassType Type::referencedClass() const
 {
     switch (metaType())
     {
-    case rtti::MetaType::ClassRef:
-        return static_cast<const rtti::ClassRefType*>(m_type)->baseClass();
-    case rtti::MetaType::WeakHandle:
-    case rtti::MetaType::StrongHandle:
-        return static_cast<const rtti::IHandleType*>(m_type)->pointedClass();
+    case MetaType::ClassRef:
+        return static_cast<const ClassRefType*>(m_type)->baseClass();
+    case MetaType::WeakHandle:
+    case MetaType::StrongHandle:
+        return static_cast<const IHandleType*>(m_type)->pointedClass();
     }
 
     return nullptr;
@@ -71,9 +71,9 @@ void Type::print(IFormatStream& f) const
 
         switch (m_type->metaType())
         {
-            case rtti::MetaType::Enum: f.append(" (enum)"); break;
-            case rtti::MetaType::Bitfield: f.append(" (bitfield)"); break;
-            case rtti::MetaType::Class: f.append(" (class)"); break;
+            case MetaType::Enum: f.append(" (enum)"); break;
+            case MetaType::Bitfield: f.append(" (bitfield)"); break;
+            case MetaType::Class: f.append(" (class)"); break;
         }        
     }
 }

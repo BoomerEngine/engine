@@ -24,9 +24,9 @@ class TypeLibrary;
 ///---
 
 /// metadata for RTTI with the function name
-class GPU_SHADER_COMPILER_API FunctionNameMetadata : public rtti::IMetadata
+class GPU_SHADER_COMPILER_API FunctionNameMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(FunctionNameMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(FunctionNameMetadata, IMetadata);
 
 public:
     FunctionNameMetadata();

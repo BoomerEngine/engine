@@ -20,11 +20,11 @@
 #include "core/resource/include/resourceTags.h"
 #include "core/object/include/objectGlobalRegistry.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 extern CORE_OBJECT_API bool PatchResourceReferences(Type type, void* data, res::IResource* currentResource, res::IResource* newResource);
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -292,7 +292,7 @@ bool MaterialInstance::writeParameter(StringID name, const void* data, Type type
     if (name == BASE_MATERIAL_NAME)
     {
         MaterialRef materialRef;
-        if (!rtti::ConvertData(data, type, &materialRef, TYPE_OF(materialRef)))
+        if (!ConvertData(data, type, &materialRef, TYPE_OF(materialRef)))
             return false;
 
         baseMaterial(materialRef);
@@ -316,7 +316,7 @@ bool MaterialInstance::writeParameter(StringID name, const void* data, Type type
         if (const auto* param = materialTemplate->findParameter(name))
         {
             Variant value(param->queryDataType()); // create value holder of type compatible with the template
-            if (rtti::ConvertData(data, type, value.data(), value.type()))
+            if (ConvertData(data, type, value.data(), value.type()))
             {
                 writeParameterInternal(name, std::move(value));
                 return true;
@@ -331,12 +331,12 @@ bool MaterialInstance::readParameter(StringID name, void* data, Type type) const
 {
     // allow to read the "baseMaterial" via the same interface, for completeness
     if (name == BASE_MATERIAL_NAME)
-        return rtti::ConvertData(&m_baseMaterial, TYPE_OF(m_baseMaterial), data, type);
+        return ConvertData(&m_baseMaterial, TYPE_OF(m_baseMaterial), data, type);
 
     // find data
     Type paramType;
     if (const auto* paramData = FindParameterDataInternal(this, name, paramType))
-        return rtti::ConvertData(paramData, paramType, data, type);
+        return ConvertData(paramData, paramType, data, type);
         
     return false;
 }
@@ -452,7 +452,7 @@ void MaterialInstance::onPropertyChanged(StringView path)
     else
     {
         StringView propertyName;
-        if (rtti::ParsePropertyName(path, propertyName) && !propertyName.empty())
+        if (ParsePropertyName(path, propertyName) && !propertyName.empty())
         {
             if (const auto* baseTemplate = resolveTemplate())
             {
@@ -500,7 +500,7 @@ bool MaterialInstance::onResourceReloading(res::IResource* currentResource, res:
 
     for (auto& param : m_parameters)
     {
-        if (rtti::PatchResourceReferences(param.value.type(), param.value.data(), currentResource, newResource))
+        if (PatchResourceReferences(param.value.type(), param.value.data(), currentResource, newResource))
         {
             ret = true;
         }
@@ -556,7 +556,7 @@ DataViewResult MaterialInstance::readDataView(StringView viewPath, void* targetD
     StringView originalViewPath = viewPath;
 
     StringView propertyName;
-    if (rtti::ParsePropertyName(viewPath, propertyName))
+    if (ParsePropertyName(viewPath, propertyName))
     {
         // try to read as a parameter name
         Type paramType;
@@ -573,7 +573,7 @@ DataViewResult MaterialInstance::writeDataView(StringView viewPath, const void* 
     const auto originalPath = viewPath;
 
     StringView propertyName;
-    if (rtti::ParsePropertyName(viewPath, propertyName))
+    if (ParsePropertyName(viewPath, propertyName))
     {
         // we can only write/create parameters that exist in the material TEMPLATE
         if (const auto* materialTemplate = resolveTemplate())
@@ -599,13 +599,13 @@ DataViewResult MaterialInstance::writeDataView(StringView viewPath, const void* 
     return TBaseClass::writeDataView(originalPath, sourceData, sourceType);
 }
 
-DataViewResult MaterialInstance::describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const
+DataViewResult MaterialInstance::describeDataView(StringView viewPath, DataViewInfo& outInfo) const
 {
     StringView originalViewPath = viewPath;
 
     if (viewPath.empty())
     {
-        if (outInfo.requestFlags.test(rtti::DataViewRequestFlagBit::MemberList))
+        if (outInfo.requestFlags.test(DataViewRequestFlagBit::MemberList))
         {
             if (const auto* materialTemplate = resolveTemplate())
             {
@@ -633,18 +633,18 @@ DataViewResult MaterialInstance::describeDataView(StringView viewPath, rtti::Dat
     else
     {
         StringView propertyName;
-        if (rtti::ParsePropertyName(viewPath, propertyName))
+        if (ParsePropertyName(viewPath, propertyName))
         {
             if (const auto* materialTemplate = resolveTemplate())
             {
-                if (outInfo.requestFlags.test(rtti::DataViewRequestFlagBit::CheckIfResetable))
+                if (outInfo.requestFlags.test(DataViewRequestFlagBit::CheckIfResetable))
                 {
                     if (checkParameterOverride(StringID(propertyName)))
-                        outInfo.flags |= rtti::DataViewInfoFlagBit::ResetableToBaseValue;
+                        outInfo.flags |= DataViewInfoFlagBit::ResetableToBaseValue;
 
                     // HACK: there's no default "baseMaterial" on non-imported instances
                     if (propertyName == BASE_MATERIAL_NAME.view() && !m_imported)
-                        outInfo.flags -= rtti::DataViewInfoFlagBit::ResetableToBaseValue;
+                        outInfo.flags -= DataViewInfoFlagBit::ResetableToBaseValue;
                 }
 
                 if (const auto* param = materialTemplate->findParameter(StringID::Find(propertyName)))
@@ -674,7 +674,7 @@ public:
             return DataViewResultCode::ErrorNullObject;
 
         StringView propertyName;
-        if (rtti::ParsePropertyName(viewPath, propertyName))
+        if (ParsePropertyName(viewPath, propertyName))
         {
             const auto paramName = StringID::Find(propertyName); // avoid allocating BS names
 
@@ -692,7 +692,7 @@ public:
             return DataViewResultCode::ErrorNullObject;
 
         StringView propertyName;
-        if (rtti::ParsePropertyName(viewPath, propertyName))
+        if (ParsePropertyName(viewPath, propertyName))
         {
             if (viewPath.empty())
             {
@@ -711,7 +711,7 @@ public:
             return false;
 
         StringView propertyName;
-        if (rtti::ParsePropertyName(viewPath, propertyName))
+        if (ParsePropertyName(viewPath, propertyName))
             if (viewPath.empty())
                 return !m_material->checkParameterOverride(StringID::Find(propertyName));
 

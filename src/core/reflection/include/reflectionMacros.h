@@ -112,17 +112,17 @@ private:\
 // A class implemented in the C++, basic wrapper
 // NOTE: you need to bind specific functions to get proper behavior
 #define RTTI_BEGIN_TYPE_NATIVE_CLASS(_type)\
-    static rtti::NativeClass* theClass##_type = nullptr;\
+    static NativeClass* theClass##_type = nullptr;\
     SpecificClassType<_type> _type::GetStaticClass() { return *(SpecificClassType<_type>*) &theClass##_type; }\
     void CreateType_##_type(const char* name) {\
         DEBUG_CHECK(!theClass##_type);\
-        theClass##_type = new rtti::NativeClass(name, sizeof(_type), alignof(_type), typeid(_type).hash_code(), _type::StaticClassAllocationPool::TAG);\
+        theClass##_type = new NativeClass(name, sizeof(_type), alignof(_type), typeid(_type).hash_code(), _type::StaticClassAllocationPool::TAG);\
         RTTI::GetInstance().registerType(theClass##_type);\
     }\
     void InitType_##_type() {\
         typedef _type TType;\
-        theClass##_type->baseClass(reflection::ClassID<typename _type::TBaseClass>());\
-        reflection::ClassBuilder builder(theClass##_type);\
+        theClass##_type->baseClass(ClassID<typename _type::TBaseClass>());\
+        ClassBuilder builder(theClass##_type);\
         _type* zeroObj = (_type*)0;
 
 
@@ -144,38 +144,38 @@ private:\
 
 // Define a normal C++ enumeration, exposed options must be added manually via RTTI_ENUM_OPTION
 #define RTTI_BEGIN_TYPE_ENUM(_type)\
-    static rtti::EnumType* theEnum##_type = nullptr;\
+    static EnumType* theEnum##_type = nullptr;\
     void CreateType_##_type(const char* name) {\
-        theEnum##_type = new rtti::EnumType(StringID(name), (uint32_t)sizeof(_type), typeid(_type).hash_code());\
+        theEnum##_type = new EnumType(StringID(name), (uint32_t)sizeof(_type), typeid(_type).hash_code());\
         RTTI::GetInstance().registerType(theEnum##_type);\
     }\
     void InitType_##_type() {\
         typedef _type TType;\
-        reflection::EnumBuilder builder(theEnum##_type);
+        EnumBuilder builder(theEnum##_type);
 
 // Define a normal C++ enumeration, exposed options must be added manually via RTTI_BITFIELD_OPTION
 #define RTTI_BEGIN_TYPE_BITFIELD(_type)\
-    static rtti::BitfieldType* theBitfield##_type = nullptr;\
+    static BitfieldType* theBitfield##_type = nullptr;\
     void CreateType_##_type(const char* name) {\
-        theBitfield##_type  = new rtti::BitfieldType(StringID(name), (uint32_t)sizeof(_type), typeid(_type).hash_code());\
+        theBitfield##_type  = new BitfieldType(StringID(name), (uint32_t)sizeof(_type), typeid(_type).hash_code());\
         RTTI::GetInstance().registerType(theBitfield##_type);\
     }\
     void InitType_##_type() {\
        typedef _type TType;\
-       reflection::BitFieldBuilder builder(theBitfield##_type, _type::FLAGS_TYPE);
+       BitFieldBuilder builder(theBitfield##_type, _type::FLAGS_TYPE);
 
 // Define a custom type of which all parts are provided by user via the "RTTI_BIND" functions
 // NOTE: this allows to integrate saving/loading, printing, parsing and property inspection for ANY type
 // NOTE: there's no "DECLARE" macro needed so type declaration itself does not have to change (ie. we can add RTTI on top of types we don't fully own, like std::string, QWidget, etc)
 #define RTTI_BEGIN_CUSTOM_TYPE(_type)\
-    static rtti::CustomType* theCustomType##_type = nullptr;\
+    static CustomType* theCustomType##_type = nullptr;\
     void CreateType_##_type(const char* name) {\
-       theCustomType##_type = new rtti::CustomType(name, sizeof(_type), alignof(_type), typeid(_type).hash_code());\
+       theCustomType##_type = new CustomType(name, sizeof(_type), alignof(_type), typeid(_type).hash_code());\
        RTTI::GetInstance().registerType(theCustomType##_type);\
      }\
      void InitType_##_type() {\
        typedef _type TType;\
-       reflection::CustomTypeBuilder builder(theCustomType##_type);
+       CustomTypeBuilder builder(theCustomType##_type);
 
 ///------------------------------
 /// NATIVE TYPES BUILDING BLOCKS
@@ -280,7 +280,7 @@ private:\
 
 /// add a completely fake property to the class and assume it's at given offset
 #define RTTI_PROPERTY_VIRTUAL(_name, _type, _offset)\
-    builder.addProperty(_name, reflection::GetTypeObject<_type>(), _offset)
+    builder.addProperty(_name, GetTypeObject<_type>(), _offset)
 
 // Define a type's object function (requires pointer to "this" to work)
 #define RTTI_FUNCTION(_name, _func)\
@@ -308,8 +308,8 @@ private:\
 // Many systems can use it but this is mostly for integration with scripting languages
 #define RTTI_GLOBAL_FUNCTION(_func, _name)\
     void RegisterGlobalFunc_##_func() {\
-        reflection::FunctionBuilder funcBuilder(_name);\
-        reflection::FunctionBuilderStatic globalFuncBuilder(funcBuilder);\
+        FunctionBuilder funcBuilder(_name);\
+        FunctionBuilderStatic globalFuncBuilder(funcBuilder);\
         globalFuncBuilder.setupProxy(&_func, MakeFunctionPtr(_func));\
         funcBuilder.submit(nullptr);\
     }

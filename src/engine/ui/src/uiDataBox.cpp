@@ -157,7 +157,7 @@ public:
         m_templates.clearPtr();
     }
 
-    DataBoxPtr create(const rtti::DataViewInfo& info) const
+    DataBoxPtr create(const DataViewInfo& info) const
     {
         for (const auto* ptr : m_templates)
             if (auto ret = ptr->tryCreate(info))
@@ -170,7 +170,7 @@ public:
     Array<IDataBoxFactory*> m_templates;
 };
 
-DataBoxPtr IDataBox::CreateForType(const rtti::DataViewInfo& info)
+DataBoxPtr IDataBox::CreateForType(const DataViewInfo& info)
 {
     return DataBoxRegistry::GetInstance().create(info);
 }

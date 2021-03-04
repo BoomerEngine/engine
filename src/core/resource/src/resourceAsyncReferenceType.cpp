@@ -43,8 +43,8 @@ ResourceAsyncRefType::ResourceAsyncRefType(SpecificClassType<IResource> classTyp
     : IResourceReferenceType(FormatAsyncRefTypeName(classType->name()))
     , m_resourceClass(classType)
 {
-    m_traits.metaType = rtti::MetaType::AsyncResourceRef;
-    m_traits.convClass = rtti::TypeConversionClass::TypeAsyncRef;
+    m_traits.metaType = MetaType::AsyncResourceRef;
+    m_traits.convClass = TypeConversionClass::TypeAsyncRef;
     m_traits.alignment = alignof(res::BaseAsyncReference);
     m_traits.size = sizeof(res::BaseAsyncReference);
     m_traits.initializedFromZeroMem = true;
@@ -102,13 +102,13 @@ void ResourceAsyncRefType::destruct(void* object) const
     ((res::BaseAsyncReference*)object)->~BaseAsyncReference();
 }
 
-void ResourceAsyncRefType::writeBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
+void ResourceAsyncRefType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
 {
     auto& ptr = *(res::BaseAsyncReference*) data;
     file.writeResourceReference(ptr.path().view(), m_resourceClass, true);
 }
 
-void ResourceAsyncRefType::readBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
+void ResourceAsyncRefType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
 {
     res::ResourcePath loadedKey;
 
@@ -123,14 +123,14 @@ void ResourceAsyncRefType::readBinary(rtti::TypeSerializationContext& typeContex
     *(res::BaseAsyncReference*)data = loadedKey;
 }
 
-void ResourceAsyncRefType::writeXML(rtti::TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const
+void ResourceAsyncRefType::writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const
 {
     auto& ptr = *(const res::BaseAsyncReference*) data;
     if (!ptr.empty())
         node.writeAttribute("path", ptr.path().view());
 }
 
-void ResourceAsyncRefType::readXML(rtti::TypeSerializationContext& typeContext, const xml::Node& node, void* data) const
+void ResourceAsyncRefType::readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const
 {
     auto& ptr = *(res::BaseAsyncReference*) data;
 
@@ -141,7 +141,7 @@ void ResourceAsyncRefType::readXML(rtti::TypeSerializationContext& typeContext, 
         ptr = res::BaseAsyncReference(path);
 }
 
-Type ResourceAsyncRefType::ParseType(StringParser& typeNameString, rtti::TypeSystem& typeSystem)
+Type ResourceAsyncRefType::ParseType(StringParser& typeNameString, TypeSystem& typeSystem)
 {
     StringID innerTypeName;
     if (!typeNameString.parseTypeName(innerTypeName))
@@ -177,7 +177,7 @@ const ResourceAsyncRefType* CreateAsyncRefType(SpecificClassType<IResource> reso
 
     const auto typeName = FormatAsyncRefTypeName(resourceClass->name());
     const auto type = RTTI::GetInstance().findType(typeName);
-    ASSERT(type && type->metaType() == rtti::MetaType::AsyncResourceRef);
+    ASSERT(type && type->metaType() == MetaType::AsyncResourceRef);
 
     return static_cast<const ResourceAsyncRefType*>(type.ptr());
 }

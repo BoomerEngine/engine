@@ -10,7 +10,7 @@
 #include "rttiClassType.h"
 #include "rttiNativeClassType.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -104,4 +104,4 @@ void NativeClass::copy(void* dest, const void* src) const
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

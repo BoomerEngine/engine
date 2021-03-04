@@ -31,14 +31,14 @@ public:
     INLINE void* context() const { return m_context; }
 
     // get resolved function
-    INLINE const rtti::Function* function() const { return m_function; }
+    INLINE const Function* function() const { return m_function; }
 
     // valid call ?
     INLINE operator bool() const { return m_function != nullptr; }
 
     //--
 
-    INLINE void callRaw(rtti::FunctionCallingParams& params) const
+    INLINE void callRaw(FunctionCallingParams& params) const
     {
         if (m_function)
             m_function->run(nullptr, m_context, params);
@@ -46,7 +46,7 @@ public:
 
 protected:
     void* m_context;
-    const rtti::Function* m_function;
+    const Function* m_function;
 };
 
 //----
@@ -76,14 +76,14 @@ public:
 
     INLINE void call() const
     {
-        rtti::FunctionCallingParams params;
+        FunctionCallingParams params;
         callRaw(params);
     }
 
     template< typename T0 >
     INLINE void call(const T0& p0) const
     {
-        rtti::FunctionCallingParams params;
+        FunctionCallingParams params;
         params.m_argumentsPtr[0] = (void*)&p0;
         callRaw(params);
     }
@@ -91,7 +91,7 @@ public:
     template< typename T0, typename T1  >
     INLINE void call(const T0& p0, const T1& p1) const
     {
-        rtti::FunctionCallingParams params;
+        FunctionCallingParams params;
         params.m_argumentsPtr[0] = (void*)&p0;
         params.m_argumentsPtr[1] = (void*)&p1;
         callRaw(params);
@@ -100,7 +100,7 @@ public:
     template< typename T0, typename T1, typename T2 >
     INLINE void call(const T0& p0, const T1& p1, const T2& p2) const
     {
-        rtti::FunctionCallingParams params;
+        FunctionCallingParams params;
         params.m_argumentsPtr[0] = (void*)&p0;
         params.m_argumentsPtr[1] = (void*)&p1;
         params.m_argumentsPtr[2] = (void*)&p2;
@@ -110,7 +110,7 @@ public:
     template< typename T0, typename T1, typename T2, typename T3 >
     INLINE void call(const T0& p0, const T1& p1, const T2& p2, const T3& p3) const
     {
-        rtti::FunctionCallingParams params;
+        FunctionCallingParams params;
         params.m_argumentsPtr[0] = (void*)&p0;
         params.m_argumentsPtr[1] = (void*)&p1;
         params.m_argumentsPtr[2] = (void*)&p2;
@@ -149,7 +149,7 @@ public:
     {
         auto ret = Ret();
 
-        rtti::FunctionCallingParams params;
+        FunctionCallingParams params;
         params.m_returnPtr = &ret;
         callRaw(params);
 
@@ -161,7 +161,7 @@ public:
     {
         auto ret = Ret();
 
-        rtti::FunctionCallingParams params;
+        FunctionCallingParams params;
         params.m_argumentsPtr[0] = (void*)&p0;
         params.m_returnPtr = &ret;
         callRaw(params);
@@ -174,7 +174,7 @@ public:
     {
         auto ret = Ret();
 
-        rtti::FunctionCallingParams params;
+        FunctionCallingParams params;
         params.m_argumentsPtr[0] = (void*)&p0;
         params.m_argumentsPtr[1] = (void*)&p1;
         params.m_returnPtr = &ret;
@@ -188,7 +188,7 @@ public:
     {
         auto ret = Ret();
 
-        rtti::FunctionCallingParams params;
+        FunctionCallingParams params;
         params.m_argumentsPtr[0] = (void*)&p0;
         params.m_argumentsPtr[1] = (void*)&p1;
         params.m_argumentsPtr[2] = (void*)&p2;
@@ -203,7 +203,7 @@ public:
     {
         auto ret = Ret();
 
-        rtti::FunctionCallingParams params;
+        FunctionCallingParams params;
         params.m_argumentsPtr[0] = (void*)&p0;
         params.m_argumentsPtr[1] = (void*)&p1;
         params.m_argumentsPtr[2] = (void*)&p2;

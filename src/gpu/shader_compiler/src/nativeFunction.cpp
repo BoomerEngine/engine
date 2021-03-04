@@ -71,7 +71,7 @@ private:
     void buildCache()
     {
         Array< ClassType > functionClasses;
-        rtti::TypeSystem::GetInstance().enumClasses(INativeFunction::GetStaticClass(), functionClasses);
+        TypeSystem::GetInstance().enumClasses(INativeFunction::GetStaticClass(), functionClasses);
 
         for (auto classPtr  : functionClasses)
         {

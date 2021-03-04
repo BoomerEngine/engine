@@ -21,7 +21,7 @@
     protected: _class() {};
 
 // Event function
-#define OBJECT_EVENT_FUNC StringID eventID, const IObject* object, StringView eventPath, const rtti::DataHolder& eventData
+#define OBJECT_EVENT_FUNC StringID eventID, const IObject* object, StringView eventPath, const DataHolder& eventData
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -33,12 +33,12 @@ class CORE_OBJECT_API ITemplatePropertyBuilder : public NoCopy
 public:
     virtual ~ITemplatePropertyBuilder();
 
-    virtual void prop(StringID category, StringID name, Type type, const void* defaultValue, const rtti::PropertyEditorData& editorData) = 0;
+    virtual void prop(StringID category, StringID name, Type type, const void* defaultValue, const PropertyEditorData& editorData) = 0;
 
     template< typename T >
-    inline void prop(StringID category, StringID name, const T& defaultValue = T(), const rtti::PropertyEditorData& editorData = PropertyEditorData())
+    inline void prop(StringID category, StringID name, const T& defaultValue = T(), const PropertyEditorData& editorData = PropertyEditorData())
     {
-        prop(category, name, reflection::GetTypeObject<T>(), &defaultValue, editorData);
+        prop(category, name, GetTypeObject<T>(), &defaultValue, editorData);
     }
 };
 
@@ -55,14 +55,14 @@ public:
     template< typename T >
     inline bool compileValue(StringID name, T& ptr) const
     {
-        return compileValue(name, reflection::GetTypeObject<T>(), &ptr);
+        return compileValue(name, GetTypeObject<T>(), &ptr);
     }
 
     template< typename T >
     inline T compileValueOrDefault(StringID name, T defaultValue = T()) const
     {
         T ret;
-        if (compileValue(name, reflection::GetTypeObject<T>(), &ret))
+        if (compileValue(name, GetTypeObject<T>(), &ret))
             return ret;
         return defaultValue;
     }
@@ -151,7 +151,7 @@ public:
     //---
 
     /// Get metadata for view - describe what we will find here: flags, list of members, size of array, etc
-    virtual DataViewResult describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const;
+    virtual DataViewResult describeDataView(StringView viewPath, DataViewInfo& outInfo) const;
 
     /// Read data from memory
     virtual DataViewResult readDataView(StringView viewPath, void* targetData, Type targetType) const;
@@ -185,10 +185,10 @@ public:
     //---
 
     // Check if property should be saved during serialization, usually properties that are the same as in base are filtered out
-    virtual bool onPropertyShouldSave(const rtti::Property* prop) const;
+    virtual bool onPropertyShouldSave(const Property* prop) const;
 
     // Notifies that property value was found in file - we can skip loading it for some reason
-    virtual bool onPropertyShouldLoad(const rtti::Property* prop);
+    virtual bool onPropertyShouldLoad(const Property* prop);
 
     //---
 
@@ -220,7 +220,7 @@ public:
     //---
 
     // initialize class (since we have no automatic reflection in this project)
-    static void RegisterType(rtti::TypeSystem& typeSystem);
+    static void RegisterType(TypeSystem& typeSystem);
 
     //---
 
@@ -247,7 +247,7 @@ public:
     template< typename T >
     INLINE void postEvent(StringID eventID, const T & data)
     {
-        postEvent(eventID, &data, reflection::GetTypeObject<T>());
+        postEvent(eventID, &data, GetTypeObject<T>());
     }
 
     //--

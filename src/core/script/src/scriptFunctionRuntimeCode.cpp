@@ -1133,7 +1133,7 @@ FunctionCodeBlock* FunctionCodeBlock::Create(const StubFunction* func, const Stu
 
 //---
 
-void FunctionCodeBlock::run(const rtti::IFunctionStackFrame* parent, void* context, const rtti::FunctionCallingParams& params) const
+void FunctionCodeBlock::run(const IFunctionStackFrame* parent, void* context, const FunctionCallingParams& params) const
 {
     // allocate storage for function local variables
     void *localStorage = nullptr;

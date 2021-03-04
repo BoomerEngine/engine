@@ -114,7 +114,7 @@ void IDataView::dispatchPropertyChanged(StringView eventPath)
 
         parentEvent = true;
     }
-    while (rtti::ExtractParentPath(eventPath, childPath));
+    while (ExtractParentPath(eventPath, childPath));
 
     if (0 == --m_callbackDepth)
     {
@@ -180,12 +180,12 @@ IDataView::Path* IDataView::createPathEntry(StringView path)
     {
         uint32_t arrayIndex = 0;
         StringView propName;
-        if (rtti::ParsePropertyName(curPathString, propName))
+        if (ParsePropertyName(curPathString, propName))
         {
             auto fullPathString = StringView(path.data(), curPathString.data());
             curPath = createPathEntryInternal(curPath, fullPathString);
         }
-        else if (rtti::ParseArrayIndex(curPathString, arrayIndex))
+        else if (ParseArrayIndex(curPathString, arrayIndex))
         {
             auto fullPathString = StringView(path.data(), curPathString.data());
             curPath = createPathEntryInternal(curPath, fullPathString);

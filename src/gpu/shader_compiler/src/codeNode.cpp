@@ -159,7 +159,7 @@ void CodeNode::print(IFormatStream& builder, uint32_t level, uint32_t childIndex
 {
     builder.appendPadding(' ', level*2);
 
-    auto opCodeNode  = reflection::GetEnumValueName(m_op);
+    auto opCodeNode  = GetEnumValueName(m_op);
     builder.appendf("[{}]: {} ", childIndex, opCodeNode);
 
     if (m_dataType.valid())

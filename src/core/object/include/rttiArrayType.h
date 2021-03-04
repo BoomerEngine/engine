@@ -10,7 +10,7 @@
 
 #include "rttiType.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 /// Meta type of the array type
 enum class ArrayMetaType
@@ -81,4 +81,4 @@ private:
     Type m_innerType;
 };
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

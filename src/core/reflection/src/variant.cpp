@@ -217,7 +217,7 @@ bool Variant::set(const void* srcData, Type srcType)
 #ifdef BUILD_DEBUG
     validate();
 #endif
-    return rtti::ConvertData(srcData, srcType, data(), type());
+    return ConvertData(srcData, srcType, data(), type());
 }
 
 bool Variant::get(void* destData, Type destType) const
@@ -225,7 +225,7 @@ bool Variant::get(void* destData, Type destType) const
 #ifdef BUILD_DEBUG
     validate();
 #endif
-    return rtti::ConvertData(data(), type(), destData, destType);
+    return ConvertData(data(), type(), destData, destType);
 }
 
 bool Variant::setFromString(StringView txt)
@@ -284,7 +284,7 @@ const Variant& Variant::EMPTY()
 
 namespace prv
 {
-    static void VariantWriteBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
+    static void VariantWriteBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
     {
         const auto& v = *(const Variant*)data;
 
@@ -303,7 +303,7 @@ namespace prv
         }
     }
 
-    static void VariantReadBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
+    static void VariantReadBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
     {
         auto& v = *(Variant*)data;
 
@@ -350,13 +350,13 @@ RTTI_END_TYPE();
 namespace prv
 {
 
-    static void WriteBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
+    static void WriteBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
     {
         auto v = *(const Type*)data;
         stream.writeType(v);
     }
 
-    static void ReadBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
+    static void ReadBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
     {
         StringID typeName;
         *(Type*)data = stream.readType(typeName);
@@ -377,13 +377,13 @@ RTTI_END_TYPE();
 namespace prv2
 {
 
-    static void WriteBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
+    static void WriteBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
     {
         auto v = *(const Type*)data;
         stream.writeType(v);
     }
 
-    static void ReadBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
+    static void ReadBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
     {
         StringID typeName;
         *(ClassType*)data = stream.readType(typeName).toClass();

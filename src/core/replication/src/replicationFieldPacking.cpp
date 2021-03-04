@@ -367,7 +367,7 @@ uint32_t CountFloatsInStruct(ClassType type)
         if (prop->offset() != expectedOffset)
             return 0;
 
-        if (prop->type() != reflection::GetTypeObject<float>())
+        if (prop->type() != GetTypeObject<float>())
             return 0;
 
         numFloats += 1;
@@ -379,10 +379,10 @@ uint32_t CountFloatsInStruct(ClassType type)
 
 uint32_t CountFloatsInType(Type type)
 {
-    if (type == reflection::GetTypeObject<float>())
+    if (type == GetTypeObject<float>())
         return 1;
 
-    if (type->metaType() == rtti::MetaType::Class)
+    if (type->metaType() == MetaType::Class)
         return CountFloatsInStruct(type.toClass());
 
     return 0;
@@ -404,27 +404,27 @@ bool FieldPacking::checkTypeCompatibility(Type type, bool isPartOfArray /*= fals
     {
         case PackingMode::Default:
             if (type->size() > 8) return false;
-            if (type == reflection::GetTypeObject<StringBuf>()) return false;
-            if (type == reflection::GetTypeObject<StringID>()) return false;
-            if (type->metaType() == rtti::MetaType::Simple) return true;
-            if (type->metaType() == rtti::MetaType::Enum) return true;
+            if (type == GetTypeObject<StringBuf>()) return false;
+            if (type == GetTypeObject<StringID>()) return false;
+            if (type->metaType() == MetaType::Simple) return true;
+            if (type->metaType() == MetaType::Enum) return true;
             return false;
 
         case PackingMode::Bit:
-            return type == reflection::GetTypeObject<bool>();
+            return type == GetTypeObject<bool>();
 
         case PackingMode::Unsigned:
-            if (type == reflection::GetTypeObject<uint8_t>() && m_quantization.m_bitCount.m_bitCount <= 8) return true;
-            if (type == reflection::GetTypeObject<uint16_t>() && m_quantization.m_bitCount.m_bitCount <= 16) return true;
-            if (type == reflection::GetTypeObject<uint32_t>() && m_quantization.m_bitCount.m_bitCount <= 32) return true;
-            if (type == reflection::GetTypeObject<uint64_t>() && m_quantization.m_bitCount.m_bitCount <= 64) return true;
+            if (type == GetTypeObject<uint8_t>() && m_quantization.m_bitCount.m_bitCount <= 8) return true;
+            if (type == GetTypeObject<uint16_t>() && m_quantization.m_bitCount.m_bitCount <= 16) return true;
+            if (type == GetTypeObject<uint32_t>() && m_quantization.m_bitCount.m_bitCount <= 32) return true;
+            if (type == GetTypeObject<uint64_t>() && m_quantization.m_bitCount.m_bitCount <= 64) return true;
             return false;
 
         case PackingMode::Signed:
-            if (type == reflection::GetTypeObject<char>() && m_quantization.m_bitCount.m_bitCount <= 8) return true;
-            if (type == reflection::GetTypeObject<short>() && m_quantization.m_bitCount.m_bitCount <= 16) return true;
-            if (type == reflection::GetTypeObject<int>() && m_quantization.m_bitCount.m_bitCount <= 32) return true;
-            if (type == reflection::GetTypeObject<int64_t>() && m_quantization.m_bitCount.m_bitCount <= 64) return true;
+            if (type == GetTypeObject<char>() && m_quantization.m_bitCount.m_bitCount <= 8) return true;
+            if (type == GetTypeObject<short>() && m_quantization.m_bitCount.m_bitCount <= 16) return true;
+            if (type == GetTypeObject<int>() && m_quantization.m_bitCount.m_bitCount <= 32) return true;
+            if (type == GetTypeObject<int64_t>() && m_quantization.m_bitCount.m_bitCount <= 64) return true;
             return false;
 
         case PackingMode::RangeFloat:

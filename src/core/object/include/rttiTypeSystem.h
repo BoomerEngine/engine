@@ -16,7 +16,7 @@
 
 #include <functional>
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -63,7 +63,7 @@ public:
     void registerAlternativeTypeName(Type type, StringID alternativeName);
 
     /// Register class property
-    void registerProperty(const rtti::Property* prop);
+    void registerProperty(const Property* prop);
 
     /// Register global function
     void registerGlobalFunction(const Function* function);
@@ -184,11 +184,11 @@ extern CORE_OBJECT_API bool ConvertData(const void* srcData, Type srcType, void*
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()
 
 BEGIN_BOOMER_NAMESPACE()
 
 /// this is one of the major singletons, it deserves a global access
-using RTTI = rtti::TypeSystem;
+using RTTI = TypeSystem;
 
 END_BOOMER_NAMESPACE()

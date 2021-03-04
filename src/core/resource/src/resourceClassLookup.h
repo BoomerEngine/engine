@@ -37,7 +37,7 @@ namespace prv
         void buildClassMap();
 
         typedef HashMap< ResourceClassHash, SpecificClassType<IResource> > TResourceClassesByHash;
-        TResourceClassesByHash m_classesByHash; // only classes that have unique extension->rtti::ClassType mapping
+        TResourceClassesByHash m_classesByHash; // only classes that have unique extension->ClassType mapping
 
         typedef HashMap< uint64_t, SpecificClassType<IResource> > TResourceClassesByExtension;
         TResourceClassesByExtension m_classesByExtension;

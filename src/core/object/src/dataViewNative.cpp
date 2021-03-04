@@ -43,13 +43,13 @@ DataViewNative::~DataViewNative()
 {
 }
 
-DataViewResult DataViewNative::describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const
+DataViewResult DataViewNative::describeDataView(StringView viewPath, DataViewInfo& outInfo) const
 {
     if (m_object)
     {
         const auto result = m_object->describeDataView(viewPath, outInfo);
         if (m_readOnly && result.valid())
-            outInfo.flags |= rtti::DataViewInfoFlagBit::ReadOnly;
+            outInfo.flags |= DataViewInfoFlagBit::ReadOnly;
         return result;
     }
         
@@ -101,7 +101,7 @@ DataViewResult DataViewNative::resetToDefaultValue(StringView viewPath, void* ta
 struct ActionWriteProperty : public IAction
 {
 public:
-    ActionWriteProperty(const DataViewNative* view, StringView viewPath, rtti::DataHolder&& oldValue, rtti::DataHolder&& newValue, bool oldValueIdDefault=false, bool newValueIsDefault=false)
+    ActionWriteProperty(const DataViewNative* view, StringView viewPath, DataHolder&& oldValue, DataHolder&& newValue, bool oldValueIdDefault=false, bool newValueIsDefault=false)
         : m_newValue(std::move(newValue))
         , m_oldValue(std::move(oldValue))
         , m_newValueIsDefaultValue(newValueIsDefault)
@@ -155,8 +155,8 @@ public:
     }
 
 private:
-    rtti::DataHolder m_newValue;
-    rtti::DataHolder m_oldValue;
+    DataHolder m_newValue;
+    DataHolder m_oldValue;
 
     bool m_newValueIsDefaultValue = false;
     bool m_oldValueIsDefaultValue = false;
@@ -177,18 +177,18 @@ DataViewActionResult DataViewNative::actionValueWrite(StringView viewPath, const
         return DataViewResultCode::ErrorReadOnly;
 
     // describe the data view to know is the value is not read only
-    rtti::DataViewInfo info;
-    info.requestFlags |= rtti::DataViewRequestFlagBit::CheckIfResetable;
+    DataViewInfo info;
+    info.requestFlags |= DataViewRequestFlagBit::CheckIfResetable;
     if (auto err = HasError(describeDataView(viewPath, info)))
         return err;
 
     // oh well
-    if (info.flags.test(rtti::DataViewInfoFlagBit::ReadOnly))
+    if (info.flags.test(DataViewInfoFlagBit::ReadOnly))
         return DataViewResultCode::ErrorReadOnly;
 
     // read the current value first - that's the value we will restore to in case of undo
     // NOTE: any failure here usually means that we can't write to this value either
-    rtti::DataHolder currentValue(sourceType);
+    DataHolder currentValue(sourceType);
     if (auto ret = HasError(readDataViewSimple(viewPath, currentValue)))
         return ret;
 
@@ -196,7 +196,7 @@ DataViewActionResult DataViewNative::actionValueWrite(StringView viewPath, const
     const auto currentValueIsDefaultValue = checkIfCurrentlyADefaultValue(viewPath);
 
     // create final write action
-    rtti::DataHolder newValue(sourceType, sourceData);
+    DataHolder newValue(sourceType, sourceData);
     return RefNew<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(newValue), currentValueIsDefaultValue, false);
 }
 
@@ -209,27 +209,27 @@ DataViewActionResult DataViewNative::actionValueReset(StringView viewPath) const
         return DataViewResultCode::ErrorReadOnly;
 
     // describe the data view to know the type and if it even can be reset
-    rtti::DataViewInfo info;
-    info.requestFlags |= rtti::DataViewRequestFlagBit::CheckIfResetable;
+    DataViewInfo info;
+    info.requestFlags |= DataViewRequestFlagBit::CheckIfResetable;
     if (auto err = HasError(describeDataView(viewPath, info)))
         return err;
 
     // oh well
-    if (info.flags.test(rtti::DataViewInfoFlagBit::ReadOnly))
+    if (info.flags.test(DataViewInfoFlagBit::ReadOnly))
         return DataViewResultCode::ErrorReadOnly;
 
     // well, the property is not resettable, there's no point (also this is protection of sorts as some properties like "name" or "ID") should not be resetable because the "default value" is usually invalid (empty)
-    if (!info.flags.test(rtti::DataViewInfoFlagBit::ResetableToBaseValue))
+    if (!info.flags.test(DataViewInfoFlagBit::ResetableToBaseValue))
         return DataViewResultCode::ErrorIllegalOperation;
 
     // read the default value from the CLASS, this will only work for simple 
-    rtti::DataHolder defaultValue(info.dataType);
+    DataHolder defaultValue(info.dataType);
     if (auto err = HasError(readDefaultDataView(viewPath, defaultValue.data(), defaultValue.type())))
         return err;
 
     // read the current value first - that's the value we will restore to in case of undo
     // NOTE: any failure here usually means that we can't write to this value either
-    rtti::DataHolder currentValue(info.dataType);
+    DataHolder currentValue(info.dataType);
     if (auto err = HasError(readDataViewSimple(viewPath, currentValue)))
         return err;
 
@@ -245,25 +245,25 @@ DataViewActionResult DataViewNative::actionArrayClear(StringView viewPath) const
         return DataViewResultCode::ErrorReadOnly;
 
     // describe the data view to know the type and if it even can be reset
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     if (auto ret = HasError(describeDataView(viewPath, info)))
         return ret;
 
     // oh well
-    if (info.flags.test(rtti::DataViewInfoFlagBit::ReadOnly))
+    if (info.flags.test(DataViewInfoFlagBit::ReadOnly))
         return DataViewResultCode::ErrorReadOnly;
 
     // we need an array
-    if (!info.flags.test(rtti::DataViewInfoFlagBit::LikeArray))
+    if (!info.flags.test(DataViewInfoFlagBit::LikeArray))
         return DataViewResultCode::ErrorIllegalOperation;
 
     // read current array content
-    rtti::DataHolder currentValue(info.dataType);
+    DataHolder currentValue(info.dataType);
     if (auto ret = HasError(readDataViewSimple(viewPath, currentValue)))
         return ret;
 
     // write empty data (empty array)
-    rtti::DataHolder newValue(info.dataType);
+    DataHolder newValue(info.dataType);
     return RefNew<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(newValue));
 }
 
@@ -287,34 +287,34 @@ DataViewActionResult DataViewNative::actionArrayNewElement(StringView viewPath) 
 DataViewActionResult DataViewNative::actionObjectClear(StringView viewPath) const
 {
     // describe the data view to know the type and if it even can be reset
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     if (auto ret = HasError(describeDataView(viewPath, info)))
         return ret;
 
     // oh well
-    if (info.flags.test(rtti::DataViewInfoFlagBit::ReadOnly))
+    if (info.flags.test(DataViewInfoFlagBit::ReadOnly))
         return DataViewResultCode::ErrorReadOnly;
 
     // we need an object type
-    if (!info.flags.test(rtti::DataViewInfoFlagBit::Object))
+    if (!info.flags.test(DataViewInfoFlagBit::Object))
         return DataViewResultCode::ErrorIllegalOperation;
 
     // we MUST be inlined
-    if (!info.flags.test(rtti::DataViewInfoFlagBit::Inlined))
+    if (!info.flags.test(DataViewInfoFlagBit::Inlined))
         return DataViewResultCode::ErrorIllegalOperation;
 
     // type must be a handle
-    if (!info.dataType || info.dataType->metaType() != rtti::MetaType::StrongHandle)
+    if (!info.dataType || info.dataType->metaType() != MetaType::StrongHandle)
         return DataViewResultCode::ErrorIllegalOperation;
 
     // read current array content
-    rtti::DataHolder currentValue(info.dataType);
+    DataHolder currentValue(info.dataType);
     if (auto ret = HasError(readDataViewSimple(viewPath, currentValue)))
         return ret;
 
     // read the current object pointer
     ObjectPtr objectPtr;
-    static const auto* handleType = static_cast<const rtti::IHandleType*>(info.dataType.ptr());
+    static const auto* handleType = static_cast<const IHandleType*>(info.dataType.ptr());
     handleType->readPointedObject(currentValue.data(), objectPtr);
 
     // if object exists it will be unparented
@@ -324,27 +324,27 @@ DataViewActionResult DataViewNative::actionObjectClear(StringView viewPath) cons
     }
 
     // write empty data (empty pointer)
-    rtti::DataHolder newValue(info.dataType);
+    DataHolder newValue(info.dataType);
     return RefNew<ActionWriteProperty>(this, viewPath, std::move(currentValue), std::move(newValue));
 }
 
 DataViewActionResult DataViewNative::actionObjectNew(StringView viewPath, ClassType objectClass) const
 {
     // describe the data view to know the type and if it even can be reset
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     if (auto ret = HasError(describeDataView(viewPath, info)))
         return ret;
 
     // oh well
-    if (info.flags.test(rtti::DataViewInfoFlagBit::ReadOnly))
+    if (info.flags.test(DataViewInfoFlagBit::ReadOnly))
         return DataViewResultCode::ErrorReadOnly;
 
     // we need an object type
-    if (!info.flags.test(rtti::DataViewInfoFlagBit::Object))
+    if (!info.flags.test(DataViewInfoFlagBit::Object))
         return DataViewResultCode::ErrorIllegalOperation;
 
     // we MUST be inlined
-    if (!info.flags.test(rtti::DataViewInfoFlagBit::Inlined))
+    if (!info.flags.test(DataViewInfoFlagBit::Inlined))
         return DataViewResultCode::ErrorIllegalOperation;
 
     // can't create object of abstract class
@@ -352,16 +352,16 @@ DataViewActionResult DataViewNative::actionObjectNew(StringView viewPath, ClassT
         return DataViewResultCode::ErrorIllegalOperation;;
 
     // type must be a handle
-    if (!info.dataType || info.dataType->metaType() != rtti::MetaType::StrongHandle)
+    if (!info.dataType || info.dataType->metaType() != MetaType::StrongHandle)
         return DataViewResultCode::ErrorIllegalOperation;
 
     // read the current object pointer and check if class is compatible
-    static const auto* handleType = static_cast<const rtti::IHandleType*>(info.dataType.ptr());
+    static const auto* handleType = static_cast<const IHandleType*>(info.dataType.ptr());
     if (!objectClass->is(handleType->pointedClass()))
         return DataViewResultCode::ErrorIllegalOperation;
 
     // read current array content
-    rtti::DataHolder currentValue(info.dataType);
+    DataHolder currentValue(info.dataType);
     if (auto ret = HasError(readDataViewSimple(viewPath, currentValue)))
         return ret;
 
@@ -374,7 +374,7 @@ DataViewActionResult DataViewNative::actionObjectNew(StringView viewPath, ClassT
     objectPtr->parent(m_object);
 
     // store as a new pointer
-    rtti::DataHolder newValue(info.dataType);
+    DataHolder newValue(info.dataType);
     handleType->writePointedObject(newValue.data(), objectPtr);
 
     // switch to new pointer

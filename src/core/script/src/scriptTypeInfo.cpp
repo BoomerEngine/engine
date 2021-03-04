@@ -39,22 +39,22 @@ bool TypeInfo::scripted() const
 
 bool TypeInfo::isSimple() const
 {
-    return nativeType ? (nativeType->metaType() == rtti::MetaType::Simple) : false;
+    return nativeType ? (nativeType->metaType() == MetaType::Simple) : false;
 }
 
 bool TypeInfo::isClass() const
 {
-    return nativeType ? (nativeType->metaType() == rtti::MetaType::Class) : false;
+    return nativeType ? (nativeType->metaType() == MetaType::Class) : false;
 }
 
 bool TypeInfo::isEnum() const
 {
-    return nativeType ? (nativeType->metaType() == rtti::MetaType::Enum) : false;
+    return nativeType ? (nativeType->metaType() == MetaType::Enum) : false;
 }
 
 bool TypeInfo::isPointer() const
 {
-    if (nativeType && (nativeType->metaType() == rtti::MetaType::WeakHandle || nativeType->metaType() == rtti::MetaType::StrongHandle))
+    if (nativeType && (nativeType->metaType() == MetaType::WeakHandle || nativeType->metaType() == MetaType::StrongHandle))
         return true;
 
     return false;
@@ -62,7 +62,7 @@ bool TypeInfo::isPointer() const
 
 bool TypeInfo::isStrongPointer() const
 {
-    if (nativeType && nativeType->metaType() == rtti::MetaType::StrongHandle)
+    if (nativeType && nativeType->metaType() == MetaType::StrongHandle)
         return true;
 
     return false;
@@ -70,7 +70,7 @@ bool TypeInfo::isStrongPointer() const
 
 bool TypeInfo::isWeakPointer() const
 {
-    if (nativeType && nativeType->metaType() == rtti::MetaType::WeakHandle)
+    if (nativeType && nativeType->metaType() == MetaType::WeakHandle)
         return true;
 
     return false;
@@ -78,7 +78,7 @@ bool TypeInfo::isWeakPointer() const
 
 bool TypeInfo::isArray() const
 {
-    if (nativeType && nativeType->metaType() == rtti::MetaType::Array)
+    if (nativeType && nativeType->metaType() == MetaType::Array)
         return true;
 
     return false;
@@ -86,10 +86,10 @@ bool TypeInfo::isArray() const
 
 bool TypeInfo::isDynamicArray() const
 {
-    if (nativeType && nativeType->metaType() == rtti::MetaType::Array)
+    if (nativeType && nativeType->metaType() == MetaType::Array)
     {
-        auto arrayType  = static_cast<const rtti::IArrayType*>(nativeType.ptr());
-        return arrayType->arrayMetaType() == rtti::ArrayMetaType::Dynamic;
+        auto arrayType  = static_cast<const IArrayType*>(nativeType.ptr());
+        return arrayType->arrayMetaType() == ArrayMetaType::Dynamic;
     }
 
     return false;
@@ -97,10 +97,10 @@ bool TypeInfo::isDynamicArray() const
 
 bool TypeInfo::isStaticArray() const
 {
-    if (nativeType && nativeType->metaType() == rtti::MetaType::Array)
+    if (nativeType && nativeType->metaType() == MetaType::Array)
     {
-        auto arrayType  = static_cast<const rtti::IArrayType*>(nativeType.ptr());
-        return arrayType->arrayMetaType() == rtti::ArrayMetaType::Native;
+        auto arrayType  = static_cast<const IArrayType*>(nativeType.ptr());
+        return arrayType->arrayMetaType() == ArrayMetaType::Native;
     }
 
     return false;
@@ -108,7 +108,7 @@ bool TypeInfo::isStaticArray() const
 
 ClassTypeInfo TypeInfo::asClass() const
 {
-    if (nativeType && nativeType->metaType() == rtti::MetaType::Class)
+    if (nativeType && nativeType->metaType() == MetaType::Class)
         return ClassTypeInfo(nativeType.toClass());
 
     return ClassTypeInfo();
@@ -116,16 +116,16 @@ ClassTypeInfo TypeInfo::asClass() const
 
 ArrayTypeInfo TypeInfo::asArray() const
 {
-    if (nativeType && nativeType->metaType() == rtti::MetaType::Array)
-        return ArrayTypeInfo(static_cast<const rtti::IArrayType*>(nativeType.ptr()));
+    if (nativeType && nativeType->metaType() == MetaType::Array)
+        return ArrayTypeInfo(static_cast<const IArrayType*>(nativeType.ptr()));
 
     return ArrayTypeInfo();
 }
 
 EnumTypeInfo TypeInfo::asEnum() const
 {
-    if (nativeType && nativeType->metaType() == rtti::MetaType::Enum)
-        return EnumTypeInfo(static_cast<const rtti::EnumType*>(nativeType.ptr()));
+    if (nativeType && nativeType->metaType() == MetaType::Enum)
+        return EnumTypeInfo(static_cast<const EnumType*>(nativeType.ptr()));
 
     return EnumTypeInfo();
 }
@@ -312,7 +312,7 @@ RTTI_END_TYPE();
 
 //---
 
-PropertyInfo::PropertyInfo(const rtti::Property* prop)
+PropertyInfo::PropertyInfo(const Property* prop)
     : nativeProperty(prop)
 {}
 
@@ -379,7 +379,7 @@ RTTI_END_TYPE();
 
 //---
 
-ArrayTypeInfo::ArrayTypeInfo(const rtti::IArrayType* type)
+ArrayTypeInfo::ArrayTypeInfo(const IArrayType* type)
     : nativeType(type)
 {}
 
@@ -410,13 +410,13 @@ StringID ArrayTypeInfo::name() const
 bool ArrayTypeInfo::isStaticSize() const
 {
     if (nativeType)
-        return nativeType->arrayMetaType() == rtti::ArrayMetaType::Native;
+        return nativeType->arrayMetaType() == ArrayMetaType::Native;
     return false;
 }
 
 int ArrayTypeInfo::staticSize() const
 {
-    if (nativeType && nativeType->arrayMetaType() == rtti::ArrayMetaType::Native)
+    if (nativeType && nativeType->arrayMetaType() == ArrayMetaType::Native)
         return nativeType->arrayCapacity(nullptr);
     return 0;
 }
@@ -433,7 +433,7 @@ RTTI_END_TYPE();
 
 //---
 
-EnumTypeInfo::EnumTypeInfo(const rtti::EnumType* type)
+EnumTypeInfo::EnumTypeInfo(const EnumType* type)
     : nativeType(type)
 {}
 
@@ -552,7 +552,7 @@ RTTI_END_TYPE();
 
 //---
 
-FunctionInfo::FunctionInfo(const rtti::Function* func)
+FunctionInfo::FunctionInfo(const Function* func)
     : nativeFunction(func)
 {}
 

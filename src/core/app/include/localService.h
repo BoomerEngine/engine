@@ -32,9 +32,9 @@ enum class ServiceInitializationResult
 //--
 
 // Service metadata to specify what is the service's dependency
-class CORE_APP_API DependsOnServiceMetadata : public rtti::IMetadata
+class CORE_APP_API DependsOnServiceMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(DependsOnServiceMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(DependsOnServiceMetadata, IMetadata);
 
 public:
     DependsOnServiceMetadata();
@@ -60,9 +60,9 @@ private:
 //--
 
 // Service metadata to specify what other service must tick before we can tick
-class CORE_APP_API TickBeforeMetadata : public rtti::IMetadata
+class CORE_APP_API TickBeforeMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(TickBeforeMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(TickBeforeMetadata, IMetadata);
 
 public:
     TickBeforeMetadata();
@@ -88,9 +88,9 @@ private:
 //--
 
 // Service metadata to specify what other service must tick after we can tick
-class CORE_APP_API TickAfterMetadata : public rtti::IMetadata
+class CORE_APP_API TickAfterMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(TickAfterMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(TickAfterMetadata, IMetadata);
 
 public:
     TickAfterMetadata();

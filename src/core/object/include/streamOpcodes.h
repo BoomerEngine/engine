@@ -87,7 +87,7 @@ STREAM_OPCODE_DATA(ArrayEnd)
 
 STREAM_OPCODE_DATA(Property)
 {
-    const rtti::Property* prop = nullptr;
+    const Property* prop = nullptr;
 };
 
 STREAM_OPCODE_DATA(SkipHeader)

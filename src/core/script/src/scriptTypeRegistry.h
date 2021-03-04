@@ -34,10 +34,10 @@ public:
     void prepareForReload();
 
     /// create a global function, may return existing object
-    rtti::Function* createFunction(StringID name, ClassType parentClass);
+    Function* createFunction(StringID name, ClassType parentClass);
 
     /// create an enum type
-    rtti::EnumType* createEnum(StringID name, uint32_t enumTypeSize);
+    EnumType* createEnum(StringID name, uint32_t enumTypeSize);
 
     /// create a class
     ScriptedClass* createClass(StringID name, ClassType nativeClass);
@@ -46,11 +46,11 @@ public:
     ScriptedStruct* createStruct(StringID name);
 
 private:
-    Array<rtti::Function*> m_allFunctions;
-    HashMap<StringBuf, rtti::Function*> m_functionMap;
+    Array<Function*> m_allFunctions;
+    HashMap<StringBuf, Function*> m_functionMap;
 
-    Array<rtti::EnumType*> m_allEnums;
-    HashMap<StringID, rtti::EnumType*> m_enumMap;
+    Array<EnumType*> m_allEnums;
+    HashMap<StringID, EnumType*> m_enumMap;
 
     Array<ScriptedClass*> m_allClasses;
     HashMap<StringID, ScriptedClass*> m_classMap;

@@ -44,8 +44,8 @@ ResourceRefType::ResourceRefType(SpecificClassType<IResource> classType)
     : IResourceReferenceType(FormatRefTypeName(classType->name()))
     , m_resourceClass(classType)
 {
-    m_traits.metaType = rtti::MetaType::ResourceRef;
-    m_traits.convClass = rtti::TypeConversionClass::TypeSyncRef;
+    m_traits.metaType = MetaType::ResourceRef;
+    m_traits.convClass = TypeConversionClass::TypeSyncRef;
     m_traits.alignment = alignof(res::BaseReference);
     m_traits.size = sizeof(res::BaseReference);
     m_traits.initializedFromZeroMem = true;
@@ -123,7 +123,7 @@ void ResourceRefType::destruct(void* object) const
 namespace helper
 {
 
-    static ObjectPtr GetLoadedObjectPtrForSaving(const res::BaseReference& ptr, const rtti::TypeSerializationContext& typeContext)
+    static ObjectPtr GetLoadedObjectPtrForSaving(const res::BaseReference& ptr, const TypeSerializationContext& typeContext)
     {
         return ptr.load();
     }
@@ -136,7 +136,7 @@ enum ResourceRefBinaryFlag
     Inlined = 2,
 };
 
-void ResourceRefType::writeBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
+void ResourceRefType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
 {
     auto& ptr = *(const res::BaseReference*) data;
 
@@ -157,7 +157,7 @@ void ResourceRefType::writeBinary(rtti::TypeSerializationContext& typeContext, s
     file.writeResourceReference(ptr.path().view(), m_resourceClass, false);
 }
 
-void ResourceRefType::readBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
+void ResourceRefType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
 {
     res::BaseReference loadedRef;
 
@@ -187,7 +187,7 @@ void ResourceRefType::readBinary(rtti::TypeSerializationContext& typeContext, st
        
 //--
 
-void ResourceRefType::writeXML(rtti::TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const
+void ResourceRefType::writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const
 {
     auto& ptr = *(const res::BaseReference*) data;
 
@@ -208,7 +208,7 @@ void ResourceRefType::writeXML(rtti::TypeSerializationContext& typeContext, xml:
     }
 }
 
-void ResourceRefType::readXML(rtti::TypeSerializationContext& typeContext, const xml::Node& node, void* data) const
+void ResourceRefType::readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const
 {
     res::BaseReference loadedRef;
 
@@ -234,7 +234,7 @@ void ResourceRefType::readXML(rtti::TypeSerializationContext& typeContext, const
 
 //--
 
-Type ResourceRefType::ParseType(StringParser& typeNameString, rtti::TypeSystem& typeSystem)
+Type ResourceRefType::ParseType(StringParser& typeNameString, TypeSystem& typeSystem)
 {
     StringID innerTypeName;
     if (!typeNameString.parseTypeName(innerTypeName))

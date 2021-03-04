@@ -221,9 +221,9 @@ private:
 //---
 
 // meta data with the block shape
-class CORE_GRAPH_API BlockShapeMetadata : public rtti::IMetadata
+class CORE_GRAPH_API BlockShapeMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(BlockShapeMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(BlockShapeMetadata, IMetadata);
 
 public:
     INLINE void shape(BlockShape shape) { value = shape; }
@@ -246,9 +246,9 @@ public:
 //---
 
 // meta data with the block name and group to be displayed in the block list
-class CORE_GRAPH_API BlockInfoMetadata : public rtti::IMetadata
+class CORE_GRAPH_API BlockInfoMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(BlockInfoMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(BlockInfoMetadata, IMetadata);
 
 public:
     INLINE BlockInfoMetadata& title(const char* caption) { titleString = caption; return *this; }
@@ -263,9 +263,9 @@ public:
 //---
 
 // meta data with the block title color
-class CORE_GRAPH_API BlockTitleColorMetadata : public rtti::IMetadata
+class CORE_GRAPH_API BlockTitleColorMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(BlockTitleColorMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(BlockTitleColorMetadata, IMetadata);
 
 public:
     INLINE void color(Color color) { value = color; }
@@ -277,9 +277,9 @@ public:
 //---
 
 // meta data with the block title color
-class CORE_GRAPH_API BlockStyleNameMetadata : public rtti::IMetadata
+class CORE_GRAPH_API BlockStyleNameMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(BlockStyleNameMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(BlockStyleNameMetadata, IMetadata);
 
 public:
     INLINE void style(StringView txt) { name = txt; }
@@ -290,9 +290,9 @@ public:
 //---
 
 // meta data with the block border color
-class CORE_GRAPH_API BlockBorderColorMetadata : public rtti::IMetadata
+class CORE_GRAPH_API BlockBorderColorMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(BlockBorderColorMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(BlockBorderColorMetadata, IMetadata);
 
 public:
     INLINE void color(Color color) { value = color; }
@@ -304,9 +304,9 @@ public:
 //---
 
 // meta data with additional description for block (if not loaded from help files)
-class CORE_GRAPH_API BlockHelpMetadata : public rtti::IMetadata
+class CORE_GRAPH_API BlockHelpMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(BlockHelpMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(BlockHelpMetadata, IMetadata);
 
 public:
     INLINE BlockHelpMetadata& help(const char* text) { helpString = text; return *this; }

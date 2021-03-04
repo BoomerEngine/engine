@@ -159,7 +159,7 @@ void ConfigFileStorageDataInterface::Value::save(xml::IDocument& doc, xml::NodeI
 {
     doc.nodeAttribute(nodeId, "type", value.type()->name().view());
 
-    rtti::TypeSerializationContext context;
+    TypeSerializationContext context;
     xml::Node xmlNode(&doc, nodeId);
     value.type()->writeXML(context, xmlNode, value.data(), nullptr);
 }
@@ -181,7 +181,7 @@ bool ConfigFileStorageDataInterface::Value::load(const xml::IDocument& doc, xml:
     if (value.empty())
         return false;
 
-    rtti::TypeSerializationContext context;
+    TypeSerializationContext context;
     xml::Node xmlNode(&doc, nodeId);
     value.type()->readXML(context, xmlNode, value.data());
 

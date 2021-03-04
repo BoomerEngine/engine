@@ -11,13 +11,13 @@
 #include "rttiFunctionPointer.h"
 #include "rttiTypeRef.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(reflection)
+BEGIN_BOOMER_NAMESPACE()
 
 class FunctionBuilder;
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -169,7 +169,7 @@ public:
     //--
 
     /// setup as native function
-    void setupNative(const FunctionParamType& retType, const Array<FunctionParamType>& argTypes, const rtti::FunctionPointer& functionPointer, TFunctionWrapperPtr functionWrapper, bool isConst, bool isStatic);
+    void setupNative(const FunctionParamType& retType, const Array<FunctionParamType>& argTypes, const FunctionPointer& functionPointer, TFunctionWrapperPtr functionWrapper, bool isConst, bool isStatic);
 
     /// setup as scripted function
     void setupScripted(const FunctionParamType& retType, const Array<FunctionParamType>& argTypes, IFunctionCodeBlock* scriptedCode, bool isConst, bool isStatic);
@@ -212,6 +212,6 @@ private:
     void calculateDataBlockSize();
 };
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()
 
 //--

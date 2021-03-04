@@ -801,7 +801,7 @@ bool Loader::MatchPropertyType(Type refType, const Stub* resolvedStub)
 
     if (auto resolvedClass  = resolvedStub->asClass())
     {
-        if (refType->metaType() != rtti::MetaType::Class)
+        if (refType->metaType() != MetaType::Class)
             return false;
 
         if (refType->name() == resolvedStub->fullName())
@@ -812,7 +812,7 @@ bool Loader::MatchPropertyType(Type refType, const Stub* resolvedStub)
     }
     else if (auto resolvedEnum  = resolvedStub->asEnum())
     {
-        if (refType->metaType() != rtti::MetaType::Enum)
+        if (refType->metaType() != MetaType::Enum)
             return false;
 
         return (refType->name() == resolvedEnum->engineImportName);
@@ -844,46 +844,46 @@ bool Loader::MatchPropertyType(Type refType, const StubTypeDecl* decl)
     }
     else if (decl->metaType == StubTypeType::ClassType)
     {
-        if (refType->metaType() != rtti::MetaType::ClassRef)
+        if (refType->metaType() != MetaType::ClassRef)
             return false;
 
-        auto classRefType  = static_cast<const rtti::ClassRefType*>(refType.ptr());
+        auto classRefType  = static_cast<const ClassRefType*>(refType.ptr());
         return MatchPropertyType(classRefType->baseClass(), decl->referencedType);
     }
     else if (decl->metaType == StubTypeType::PtrType)
     {
-        if (refType->metaType() != rtti::MetaType::StrongHandle)
+        if (refType->metaType() != MetaType::StrongHandle)
             return false;
 
-        auto ptrType  = static_cast<const rtti::IHandleType*>(refType.ptr());
+        auto ptrType  = static_cast<const IHandleType*>(refType.ptr());
         return MatchPropertyType(ptrType->pointedClass(), decl->referencedType);
     }
     else if (decl->metaType == StubTypeType::WeakPtrType)
     {
-        if (refType->metaType() != rtti::MetaType::WeakHandle)
+        if (refType->metaType() != MetaType::WeakHandle)
             return false;
 
-        auto ptrType  = static_cast<const rtti::IHandleType*>(refType.ptr());
+        auto ptrType  = static_cast<const IHandleType*>(refType.ptr());
         return MatchPropertyType(ptrType->pointedClass(), decl->referencedType);
     }
     else if (decl->metaType == StubTypeType::DynamicArrayType)
     {
-        if (refType->metaType() != rtti::MetaType::Array)
+        if (refType->metaType() != MetaType::Array)
             return false;
 
-        auto ptrType  = static_cast<const rtti::IArrayType*>(refType.ptr());
-        if (ptrType->arrayMetaType() != rtti::ArrayMetaType::Dynamic)
+        auto ptrType  = static_cast<const IArrayType*>(refType.ptr());
+        if (ptrType->arrayMetaType() != ArrayMetaType::Dynamic)
             return false;
 
         return MatchPropertyType(ptrType->innerType(), decl->innerType);
     }
     else if (decl->metaType == StubTypeType::StaticArrayType)
     {
-        if (refType->metaType() != rtti::MetaType::Array)
+        if (refType->metaType() != MetaType::Array)
             return false;
 
-        auto ptrType  = static_cast<const rtti::IArrayType*>(refType.ptr());
-        if (ptrType->arrayMetaType() != rtti::ArrayMetaType::Native)
+        auto ptrType  = static_cast<const IArrayType*>(refType.ptr());
+        if (ptrType->arrayMetaType() != ArrayMetaType::Native)
             return false;
 
         if (ptrType->arrayCapacity(nullptr) != decl->arraySize)
@@ -895,7 +895,7 @@ bool Loader::MatchPropertyType(Type refType, const StubTypeDecl* decl)
     return false;
 }
 
-bool Loader::MatchFunctionSignature(const StubFunction* stubFunc, const rtti::Function* engineFunc)
+bool Loader::MatchFunctionSignature(const StubFunction* stubFunc, const Function* engineFunc)
 {
     // check return type
     if (stubFunc->returnTypeDecl == nullptr && engineFunc->returnType().m_type != nullptr)
@@ -938,13 +938,13 @@ bool Loader::MatchFunctionSignature(const StubFunction* stubFunc, const rtti::Fu
 
         if (stubParam->flags.test(StubFlag::Out))
         {
-            if (!engineParam.m_flags.test(rtti::FunctionParamFlag::Ref))
+            if (!engineParam.m_flags.test(FunctionParamFlag::Ref))
             {
                 TRACE_ERROR("{}: error: Output parameter '{}' in imported function '{}' is not actually declared as output in the engine", stubFunc->location, stubParam->name, stubFunc->name);
                 return false;
             }
 
-            if (engineParam.m_flags.test(rtti::FunctionParamFlag::Const))
+            if (engineParam.m_flags.test(FunctionParamFlag::Const))
             {
                 TRACE_ERROR("{}: error: Output parameter '{}' in imported function '{}' is declared as contant in the engine", stubFunc->location, stubParam->name, stubFunc->name);
                 return false;
@@ -952,14 +952,14 @@ bool Loader::MatchFunctionSignature(const StubFunction* stubFunc, const rtti::Fu
         }
         else if (stubParam->flags.test(StubFlag::Ref))
         {
-            if (!engineParam.m_flags.test(rtti::FunctionParamFlag::Ref))
+            if (!engineParam.m_flags.test(FunctionParamFlag::Ref))
             {
                 TRACE_WARNING("{}: error: Parameter '{}' in engine function '{}' is not passed by reference in C++ and will be copied on call", stubFunc->location, stubParam->name, stubFunc->name);
             }
         }
         else if (!stubParam->flags.test(StubFlag::Ref) && !stubParam->flags.test(StubFlag::Out))
         {
-            if (engineParam.m_flags.test(rtti::FunctionParamFlag::Ref))
+            if (engineParam.m_flags.test(FunctionParamFlag::Ref))
             {
                 TRACE_WARNING("{}: error: Parameter '{}' in imported function '{}' should be passed by value in C++ but is passed by reference", stubFunc->location, stubParam->name, stubFunc->name);
             }
@@ -1055,7 +1055,7 @@ Type Loader::createType(const StubTypeDecl* typeDecl)
         case StubTypeType::ClassType:
         {
             auto innerType  = createType(typeDecl->referencedType);
-            auto typeName = rtti::FormatClassRefTypeName(innerType->name());
+            auto typeName = FormatClassRefTypeName(innerType->name());
             auto rttiType = RTTI::GetInstance().findType(typeName);
             ASSERT(rttiType);
             return rttiType;
@@ -1064,7 +1064,7 @@ Type Loader::createType(const StubTypeDecl* typeDecl)
         case StubTypeType::PtrType:
         {
             auto innerType  = createType(typeDecl->referencedType);
-            auto typeName = rtti::FormatStrongHandleTypeName(innerType->name());
+            auto typeName = FormatStrongHandleTypeName(innerType->name());
             rttiType = RTTI::GetInstance().findType(typeName);
             break;
         }
@@ -1072,7 +1072,7 @@ Type Loader::createType(const StubTypeDecl* typeDecl)
         case StubTypeType::WeakPtrType:
         {
             auto innerType  = createType(typeDecl->referencedType);
-            auto typeName = rtti::FormatWeakHandleTypeName(innerType->name());
+            auto typeName = FormatWeakHandleTypeName(innerType->name());
             rttiType = RTTI::GetInstance().findType(typeName);
             break;
         }
@@ -1080,7 +1080,7 @@ Type Loader::createType(const StubTypeDecl* typeDecl)
         case StubTypeType::DynamicArrayType:
         {
             auto innerType  = createType(typeDecl->innerType);
-            auto typeName = rtti::FormatDynamicArrayTypeName(innerType->name());
+            auto typeName = FormatDynamicArrayTypeName(innerType->name());
             rttiType = RTTI::GetInstance().findType(typeName);
             break;
         }
@@ -1088,7 +1088,7 @@ Type Loader::createType(const StubTypeDecl* typeDecl)
         case StubTypeType::StaticArrayType:
         {
             auto innerType  = createType(typeDecl->innerType);
-            auto typeName = rtti::FormatNativeArrayTypeName(innerType->name(), typeDecl->arraySize);
+            auto typeName = FormatNativeArrayTypeName(innerType->name(), typeDecl->arraySize);
             rttiType = RTTI::GetInstance().findType(typeName);
             break;
         }
@@ -1233,7 +1233,7 @@ void Loader::createExports()
             ASSERT(baseClassSymbol->m_resolved.m_class != nullptr);
 
             auto rttiBaseClass = baseClassSymbol->m_resolved.m_class;
-            const_cast<rtti::IClassType *>(symbol->m_resolved.m_class)->baseClass(rttiBaseClass);
+            const_cast<IClassType *>(symbol->m_resolved.m_class)->baseClass(rttiBaseClass);
         }
     }
 
@@ -1253,17 +1253,17 @@ void Loader::createExports()
 
         auto propStub = symbol->m_exportStub->asProperty();
 
-        rtti::PropertySetup propSetup;
+        PropertySetup propSetup;
         propSetup.m_type = resolveType(propStub->typeDecl);
         propSetup.m_name = propStub->name;
-        propSetup.m_flags = rtti::PropertyFlagBit::Scripted;
+        propSetup.m_flags = PropertyFlagBit::Scripted;
 
         if (propStub->flags.test(StubFlag::Editable))
-            propSetup.m_flags |= rtti::PropertyFlagBit::Editable;
+            propSetup.m_flags |= PropertyFlagBit::Editable;
         if (propStub->flags.test(StubFlag::Inlined))
-            propSetup.m_flags |= rtti::PropertyFlagBit::Inlined;
+            propSetup.m_flags |= PropertyFlagBit::Inlined;
         if (propStub->flags.test(StubFlag::Const))
-            propSetup.m_flags |= rtti::PropertyFlagBit::ReadOnly;
+            propSetup.m_flags |= PropertyFlagBit::ReadOnly;
 
         // TODO: import detailed settings from script
 
@@ -1272,15 +1272,15 @@ void Loader::createExports()
         if (propStub->owner->flags.test(StubFlag::Struct))
         {
             auto scriptedProp = new ScriptedProperty(rttiClass, propSetup);
-            const_cast<rtti::IClassType *>(rttiClass.ptr())->addProperty(scriptedProp);
+            const_cast<IClassType *>(rttiClass.ptr())->addProperty(scriptedProp);
             symbol->m_resolved.m_property = scriptedProp;
         }
         else
         {
-            propSetup.m_flags |= rtti::PropertyFlagBit::ExternalBuffer;
+            propSetup.m_flags |= PropertyFlagBit::ExternalBuffer;
 
             auto scriptedProp = new ScriptedClassProperty(rttiClass, propSetup);
-            const_cast<rtti::IClassType *>(rttiClass.ptr())->addProperty(scriptedProp);
+            const_cast<IClassType *>(rttiClass.ptr())->addProperty(scriptedProp);
             symbol->m_resolved.m_property = scriptedProp;
         }
 
@@ -1356,26 +1356,26 @@ void Loader::createExports()
         }
 
         // get the return param
-        rtti::FunctionParamType retParam;
+        FunctionParamType retParam;
         if (funcStub->returnTypeDecl != nullptr)
             retParam.m_type = resolveType(funcStub->returnTypeDecl);
 
         // extarct argument types
-        Array<rtti::FunctionParamType> argTypes;
+        Array<FunctionParamType> argTypes;
         for (auto arg  : funcStub->args)
         {
             auto& argType = argTypes.emplaceBack();
             argType.m_type = resolveType(arg->typeDecl);
 
             if (arg->flags.test(StubFlag::Ref))
-                argType.m_flags |= rtti::FunctionParamFlag::ConstRef;
+                argType.m_flags |= FunctionParamFlag::ConstRef;
             else if (arg->flags.test(StubFlag::Out))
-                argType.m_flags |= rtti::FunctionParamFlag::Ref;
+                argType.m_flags |= FunctionParamFlag::Ref;
         }
 
         // initialize the function
         auto isStatic = (funcStub->owner->asClass() == nullptr) || funcStub->flags.test(StubFlag::Static);
-        const_cast<rtti::Function*>(symbol->m_resolved.m_function)->setupScripted(retParam, argTypes, codeBlock, false, isStatic);
+        const_cast<Function*>(symbol->m_resolved.m_function)->setupScripted(retParam, argTypes, codeBlock, false, isStatic);
     }
 
     // bind class functions (ctor/dtor)
@@ -1411,7 +1411,7 @@ ClassType Loader::resolveClass(const StubClass* stub)
     return symbol->m_resolved.m_class;
 }
 
-const rtti::EnumType* Loader::resolveEnum(const StubEnum* stub)
+const EnumType* Loader::resolveEnum(const StubEnum* stub)
 {
     Symbol* symbol = nullptr;
     m_symbolStubMap.find(stub, symbol);
@@ -1421,7 +1421,7 @@ const rtti::EnumType* Loader::resolveEnum(const StubEnum* stub)
     return symbol->m_resolved.m_enum;
 }
 
-const rtti::Property* Loader::resolveProperty(const StubProperty* prop)
+const Property* Loader::resolveProperty(const StubProperty* prop)
 {
     Symbol* symbol = nullptr;
     m_symbolStubMap.find(prop, symbol);
@@ -1431,7 +1431,7 @@ const rtti::Property* Loader::resolveProperty(const StubProperty* prop)
     return symbol->m_resolved.m_property;
 }
 
-const rtti::Function* Loader::resolveFunction(const StubFunction* func)
+const Function* Loader::resolveFunction(const StubFunction* func)
 {
     Symbol* symbol = nullptr;
     m_symbolStubMap.find(func, symbol);

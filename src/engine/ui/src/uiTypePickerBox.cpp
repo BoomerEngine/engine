@@ -46,11 +46,11 @@ StringBuf TypeListModel::content(const Type& typeInfo, int colIndex) const
 
     switch (typeInfo.metaType())
     {
-    case rtti::MetaType::Enum: txt << "[img:vs2012/object_enum] "; break;
-        case rtti::MetaType::Bitfield: txt << "[img:vs2012/object_bitfield] "; break;
-        case rtti::MetaType::Class: txt << "[img:vs2012/object_class] "; break;
-        //case rtti::MetaType::ClassRef: txt << "[img:vs2012/object_class_ref] ";
-        case rtti::MetaType::Simple: txt << "[img:vs2012/object_simple_type] "; break;
+    case MetaType::Enum: txt << "[img:vs2012/object_enum] "; break;
+        case MetaType::Bitfield: txt << "[img:vs2012/object_bitfield] "; break;
+        case MetaType::Class: txt << "[img:vs2012/object_class] "; break;
+        //case MetaType::ClassRef: txt << "[img:vs2012/object_class_ref] ";
+        case MetaType::Simple: txt << "[img:vs2012/object_simple_type] "; break;
     }
 
     txt << typeInfo->name();
@@ -58,10 +58,10 @@ StringBuf TypeListModel::content(const Type& typeInfo, int colIndex) const
     txt << "  [i][color:#888]";
     switch (typeInfo.metaType())
     {
-        case rtti::MetaType::Enum: txt << "(Enum)"; break;
-        case rtti::MetaType::Bitfield: txt << "(Bitfield)"; break;
-        case rtti::MetaType::Class: txt << "(Class)"; break;
-        case rtti::MetaType::Simple: txt << "(Simple)"; break;
+        case MetaType::Enum: txt << "(Enum)"; break;
+        case MetaType::Bitfield: txt << "(Bitfield)"; break;
+        case MetaType::Class: txt << "(Class)"; break;
+        case MetaType::Simple: txt << "(Simple)"; break;
     }
 
     return txt.toString();

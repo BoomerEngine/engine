@@ -771,16 +771,16 @@ void BindResourceToObjectTemplate(ObjectIndirectTemplate* ptr, const ManagedFile
     {
         for (const auto& temp : ptr->templateClass()->allTemplateProperties())
         {
-            if (temp.editorData.m_primaryResource && temp.type.metaType() == rtti::MetaType::AsyncResourceRef)
+            if (temp.editorData.m_primaryResource && temp.type.metaType() == MetaType::AsyncResourceRef)
             {
-                const auto* asyncRefType = static_cast<const rtti::IResourceReferenceType*>(temp.type.ptr());
+                const auto* asyncRefType = static_cast<const IResourceReferenceType*>(temp.type.ptr());
                 const auto asyncRefResourceClass = asyncRefType->referenceResourceClass().cast<res::IResource>();
 
                 if (file->fileFormat().loadableAsType(asyncRefResourceClass))
                 {
                     const auto key = res::ResourcePath(file->depotPath());
 
-                    rtti::DataHolder value(asyncRefType);
+                    DataHolder value(asyncRefType);
                     *((res::BaseAsyncReference*)value.data()) = key;
 
                     ptr->writeProperty(temp.name, value.data(), value.type());

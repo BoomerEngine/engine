@@ -14,7 +14,7 @@
 #include "rttiDataView.h"
 #include "core/xml/include/xmlWrappers.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 IArrayType::IArrayType(StringID name, Type innerType)
     : IType(name)
@@ -233,7 +233,7 @@ DataViewResult IArrayType::readDataView(StringView viewPath, const void* viewDat
         if (propName == "__size")
         { 
             const auto value = arraySize(viewData);
-            if (!rtti::ConvertData(&value, uintType, targetData, targetType))
+            if (!ConvertData(&value, uintType, targetData, targetType))
                 return DataViewResultCode::ErrorTypeConversion;
             return DataViewResultCode::OK;
         }
@@ -241,7 +241,7 @@ DataViewResult IArrayType::readDataView(StringView viewPath, const void* viewDat
         else if (propName == "__capacity")
         {
             const auto value = arrayCapacity(viewData);
-            if (!rtti::ConvertData(&value, uintType, targetData, targetType))
+            if (!ConvertData(&value, uintType, targetData, targetType))
                 return DataViewResultCode::ErrorTypeConversion;
             return DataViewResultCode::OK;
         }
@@ -272,7 +272,7 @@ DataViewResult IArrayType::writeDataView(StringView viewPath, void* viewData, co
         if (propName == "__size")
         {
             uint32_t newSize = 0;
-            if (!rtti::ConvertData(sourceData, sourceType, &newSize, uintType))
+            if (!ConvertData(sourceData, sourceType, &newSize, uintType))
                 return DataViewResultCode::ErrorTypeConversion;
             return DataViewResultCode::ErrorIllegalAccess; // TODO!
         }
@@ -280,7 +280,7 @@ DataViewResult IArrayType::writeDataView(StringView viewPath, void* viewData, co
         else if (propName == "__capacity")
         {
             uint32_t newCapacity = 0;
-            if (!rtti::ConvertData(sourceData, sourceType, &newCapacity, uintType))
+            if (!ConvertData(sourceData, sourceType, &newCapacity, uintType))
                 return DataViewResultCode::ErrorTypeConversion;
 
             return DataViewResultCode::ErrorIllegalAccess; // TODO!
@@ -290,4 +290,4 @@ DataViewResult IArrayType::writeDataView(StringView viewPath, void* viewData, co
     return IType::writeDataView(viewPath, viewData, sourceData, sourceType);
 }
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

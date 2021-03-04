@@ -11,7 +11,7 @@
 
 #include "core/object/include/rttiFunction.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(reflection)
+BEGIN_BOOMER_NAMESPACE()
 
 FunctionBuilder::FunctionBuilder(const char* name)
     : m_name(name)
@@ -25,12 +25,12 @@ FunctionBuilder::~FunctionBuilder()
 {
 }
 
-void FunctionBuilder::submit(rtti::IClassType* targetClass)
+void FunctionBuilder::submit(IClassType* targetClass)
 {
     ASSERT(m_functionPtr);
     ASSERT(m_functionWrapperPtr != nullptr);
 
-    auto func = new rtti::Function(targetClass, StringID(m_name.c_str()));
+    auto func = new Function(targetClass, StringID(m_name.c_str()));
     func->setupNative(m_returnType, m_paramTypes, m_functionPtr, m_functionWrapperPtr, m_isConst, m_isStatic);
 
     if (targetClass == nullptr)
@@ -39,4 +39,4 @@ void FunctionBuilder::submit(rtti::IClassType* targetClass)
         targetClass->addFunction(func);
 }
 
-END_BOOMER_NAMESPACE_EX(reflection)
+END_BOOMER_NAMESPACE()

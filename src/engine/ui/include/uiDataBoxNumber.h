@@ -52,7 +52,7 @@ protected:
     void dragCancel();
     void dragUpdate(int64_t numSteps);
 
-    rtti::DataHolder m_preDragValue;
+    DataHolder m_preDragValue;
     int64_t m_dragStepCounter;
 };
 

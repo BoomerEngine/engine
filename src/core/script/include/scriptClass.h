@@ -17,10 +17,10 @@ BEGIN_BOOMER_NAMESPACE_EX(script)
 //----
 
 // scripted property
-class CORE_SCRIPT_API ScriptedProperty : public rtti::Property
+class CORE_SCRIPT_API ScriptedProperty : public Property
 {
 public:
-    ScriptedProperty(Type parent, const rtti::PropertySetup& setup);
+    ScriptedProperty(Type parent, const PropertySetup& setup);
     virtual ~ScriptedProperty();
 
     // bind offset to scripted property
@@ -33,7 +33,7 @@ public:
 class CORE_SCRIPT_API ScriptedClassProperty : public ScriptedProperty
 {
 public:
-    ScriptedClassProperty(Type parent, const rtti::PropertySetup& setup);
+    ScriptedClassProperty(Type parent, const PropertySetup& setup);
     virtual ~ScriptedClassProperty();
 
     /// get property data given the pointer to the object
@@ -44,12 +44,12 @@ public:
 //----
 
 // scripted class type that derives from native type
-class CORE_SCRIPT_API ScriptedClass : public rtti::IClassType
+class CORE_SCRIPT_API ScriptedClass : public IClassType
 {
 public:
     ScriptedClass(StringID name, ClassType nativeClass);
 
-    /// rtti::IClassType
+    /// IClassType
     virtual const void* createDefaultObject() const  override final;
     virtual const void* defaultObject() const override final;
     virtual void destroyDefaultObject() const override final;
@@ -82,19 +82,19 @@ private:
 
     mutable void* m_defaultObject;
 
-    const rtti::Function* m_functionCtor;
-    const rtti::Function* m_functionDtor;
+    const Function* m_functionCtor;
+    const Function* m_functionDtor;
 };
 
 //----
 
 // scripted struct
-class CORE_SCRIPT_API ScriptedStruct : public rtti::IClassType
+class CORE_SCRIPT_API ScriptedStruct : public IClassType
 {
 public:
     ScriptedStruct(StringID name);
 
-    /// rtti::IClassType
+    /// IClassType
     virtual const void* createDefaultObject() const  override final;
     virtual const void* defaultObject() const override final;
     virtual void destroyDefaultObject() const override final;
@@ -116,15 +116,15 @@ public:
 public:
     mutable void* m_defaultObject;
 
-    const rtti::Function* m_functionCtor;
-    const rtti::Function* m_functionDtor;
+    const Function* m_functionCtor;
+    const Function* m_functionDtor;
 
     struct PropEntry
     {
         uint32_t offset = 0;
         Type type = nullptr;
 
-        INLINE PropEntry(const rtti::Property* prop)
+        INLINE PropEntry(const Property* prop)
             : offset(prop->offset()), type(prop->type())
         {}
     };

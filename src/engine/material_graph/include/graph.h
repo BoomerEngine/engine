@@ -78,7 +78,7 @@ private:
     // IObject - extension of object property model to allow direct writing to graph parameters via the graph object itself
     //virtual bool readDataView(const IDataView* rootView, StringView rootViewPath, StringView viewPath, void* targetData, Type targetType) const override;
     //virtual bool writeDataView(const IDataView* rootView, StringView rootViewPath, StringView viewPath, const void* sourceData, Type sourceType) override;
-    //virtual bool describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const override;
+    //virtual bool describeDataView(StringView viewPath, DataViewInfo& outInfo) const override;
 };
 
 ///---

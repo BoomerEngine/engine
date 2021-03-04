@@ -15,7 +15,7 @@
 #include "core/object/include/rttiType.h"
 #include "core/object/include/rttiClassRef.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(reflection)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace resolve
 {
@@ -38,7 +38,7 @@ namespace resolve
     {
         static StringID GetTypeName()
         {
-            static auto cachedTypeName = rtti::FormatStrongHandleTypeName(TypeName<T>::GetTypeName());
+            static auto cachedTypeName = FormatStrongHandleTypeName(TypeName<T>::GetTypeName());
             return cachedTypeName;
         }
     };
@@ -49,7 +49,7 @@ namespace resolve
     {
         static StringID GetTypeName()
         {
-            static auto cachedTypeName = rtti::FormatWeakHandleTypeName(TypeName<T>::GetTypeName());
+            static auto cachedTypeName = FormatWeakHandleTypeName(TypeName<T>::GetTypeName());
             return cachedTypeName;
         }
     };
@@ -60,7 +60,7 @@ namespace resolve
     {
         static StringID GetTypeName()
         {
-            static auto cachedTypeName = rtti::FormatDynamicArrayTypeName(TypeName<T>::GetTypeName());
+            static auto cachedTypeName = FormatDynamicArrayTypeName(TypeName<T>::GetTypeName());
             return cachedTypeName;
         }
     };
@@ -71,7 +71,7 @@ namespace resolve
 	{
 		static StringID GetTypeName()
 		{
-			static auto cachedTypeName = rtti::FormatDynamicArrayTypeName(TypeName<T>::GetTypeName());
+			static auto cachedTypeName = FormatDynamicArrayTypeName(TypeName<T>::GetTypeName());
 			return cachedTypeName;
 		}
 	};
@@ -82,7 +82,7 @@ namespace resolve
     {
         static StringID GetTypeName()
         {
-            static auto cachedTypeName = rtti::FormatNativeArrayTypeName(TypeName<T>::GetTypeName(), MAX_SIZE);
+            static auto cachedTypeName = FormatNativeArrayTypeName(TypeName<T>::GetTypeName(), MAX_SIZE);
             return cachedTypeName;
         }
     };
@@ -93,7 +93,7 @@ namespace resolve
     {
         static StringID GetTypeName()
         {
-            static auto cachedTypeName = rtti::FormatClassRefTypeName(TypeName<T>::GetTypeName());
+            static auto cachedTypeName = FormatClassRefTypeName(TypeName<T>::GetTypeName());
             return cachedTypeName;
         }
     };
@@ -127,25 +127,25 @@ INLINE const char* GetEnumValueName(T enumValue)
     auto enumType = GetTypeObject<T>();
     if (!enumType)
         return "InvalidType";
-    else if (enumType->metaType() != rtti::MetaType::Enum)
+    else if (enumType->metaType() != MetaType::Enum)
         return "NotAnEnum";
     else
-        return rtti::GetEnumValueName(static_cast<const rtti::EnumType*>(enumType.ptr()), (int64_t)enumValue);
+        return GetEnumValueName(static_cast<const EnumType*>(enumType.ptr()), (int64_t)enumValue);
 }
 
 template< typename T >
 INLINE bool GetEnumNameValue(StringID name, T& outEnumValue)
 {
     auto enumType  = GetTypeObject<T>();
-    if (!enumType || enumType->metaType() != rtti::MetaType::Enum)
+    if (!enumType || enumType->metaType() != MetaType::Enum)
         return false;
 
     int64_t value = 0;
-    if (!rtti::GetEnumNameValue(static_cast<const rtti::EnumType*>(enumType.ptr()), name, value))
+    if (!GetEnumNameValue(static_cast<const EnumType*>(enumType.ptr()), name, value))
         return false;
 
     outEnumValue = (T)value;
     return true;
 }
 
-END_BOOMER_NAMESPACE_EX(reflection)
+END_BOOMER_NAMESPACE()

@@ -14,7 +14,7 @@
 
 BEGIN_BOOMER_NAMESPACE()
 
-/// a any-type value holder similar to rtti::DataHolder but supports reflection and has a special case for small data
+/// a any-type value holder similar to DataHolder but supports reflection and has a special case for small data
 /// NOTE: variant itself can be serialized (thus allowing for complex map<name, variant> structures like object templates) but be sure not to have variant with variant...
 TYPE_ALIGN(4, class) CORE_REFLECTION_API Variant
 {
@@ -53,7 +53,7 @@ public:
 
     // check if we are of given type
     template< typename T >
-    INLINE bool is() const { return m_type == reflection::GetTypeObject<T>(); }
+    INLINE bool is() const { return m_type == GetTypeObject<T>(); }
 
     //--
 
@@ -92,14 +92,14 @@ public:
     template< typename T >
     INLINE bool set(const T& srcValue)
     {
-        return set(&srcValue, reflection::GetTypeObject<T>());
+        return set(&srcValue, GetTypeObject<T>());
     }
 
     // write current value inside variant into the given storage, requires types to be convertible
     template< typename T >
     INLINE bool get(T& destValue) const
     {
-        return get(&destValue, reflection::GetTypeObject<T>());
+        return get(&destValue, GetTypeObject<T>());
     }
 
     //--
@@ -168,7 +168,7 @@ private:
 template< typename T>
 INLINE Variant CreateVariant(const T& data)
 {
-    return Variant(reflection::GetTypeObject<T>(), &data);
+    return Variant(GetTypeObject<T>(), &data);
 }
 
 //--

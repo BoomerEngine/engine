@@ -214,13 +214,13 @@ DataInspectorObjectCategoryGroup::DataInspectorObjectCategoryGroup(DataInspector
     changeExpandable(true);
 }
 
-extern Array<StringID> GatherPropertyNames(bool sortNames, const rtti::DataViewInfo& info, StringID category);
+extern Array<StringID> GatherPropertyNames(bool sortNames, const DataViewInfo& info, StringID category);
 extern StringBuf MakeStructureElementPath(StringView path, StringView name);
 
 void DataInspectorObjectCategoryGroup::createChildren(Array<RefPtr<DataInspectorNavigationItem>>& outCreatedChildren)
 {
-    rtti::DataViewInfo info;
-    info.requestFlags |= rtti::DataViewRequestFlagBit::MemberList;
+    DataViewInfo info;
+    info.requestFlags |= DataViewRequestFlagBit::MemberList;
     info.categoryFilter = m_category;
 
     if (inspector()->data()->describeDataView(path(), info).valid())
@@ -230,11 +230,11 @@ void DataInspectorObjectCategoryGroup::createChildren(Array<RefPtr<DataInspector
         {
             const auto childPath = MakeStructureElementPath(path(), name.view());
 
-            rtti::DataViewInfo childInfo;
-            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::PropertyEditorData;
-            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::TypeMetadata;
-            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::MemberList;
-            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::CheckIfResetable;
+            DataViewInfo childInfo;
+            childInfo.requestFlags |= DataViewRequestFlagBit::PropertyEditorData;
+            childInfo.requestFlags |= DataViewRequestFlagBit::TypeMetadata;
+            childInfo.requestFlags |= DataViewRequestFlagBit::MemberList;
+            childInfo.requestFlags |= DataViewRequestFlagBit::CheckIfResetable;
 
             if (inspector()->data()->describeDataView(childPath, childInfo).valid())
             {

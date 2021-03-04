@@ -18,7 +18,7 @@
 #include "dataView.h"
 #include "core/xml/include/xmlWrappers.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -397,4 +397,4 @@ Type StrongHandleType::ParseType(StringParser& typeNameString, TypeSystem& typeS
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

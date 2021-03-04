@@ -86,7 +86,7 @@ void WriteIndex(OpcodeFileWriter& writer, uint64_t index)
     writer.writeToFile(tempBuffer, size);
 }
 
-uint32_t ResolvePropertyIndex(const OpcodeMappedReferences& mappedReferences, const rtti::Property* prop)
+uint32_t ResolvePropertyIndex(const OpcodeMappedReferences& mappedReferences, const Property* prop)
 {
     uint32_t index = 0;
     if (!mappedReferences.mappedProperties.find(prop, index))

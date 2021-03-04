@@ -70,7 +70,7 @@ bool MeshMaterialParameters::updateDisplayString()
                 if (m_data->checkParameterOverride(param->name()))
                 {
                     const auto metaType = param->queryDataType().metaType();
-                    if (metaType == rtti::MetaType::ResourceRef || metaType == rtti::MetaType::AsyncResourceRef)
+                    if (metaType == MetaType::ResourceRef || metaType == MetaType::AsyncResourceRef)
                         hasTextureOverrides = true;
                     else
                         hasParamOverrides = true;

@@ -700,7 +700,7 @@ JITCodeChunkC JITFunctionWriterC::processOpcode(StringView contextStr, const Stu
 
         case Opcode::ClassConst:
         {
-            auto t  = m_types.resolveEngineType(reflection::GetTypeName<SpecificClassType<IObject>>());
+            auto t  = m_types.resolveEngineType(GetTypeName<SpecificClassType<IObject>>());
             auto engineType  = m_types.resolveType(op->stub);
             auto constType = m_consts.mapTypeConst(engineType->name.c_str());
             return makeChunk(op, t, constType);
@@ -1033,7 +1033,7 @@ JITCodeChunkC JITFunctionWriterC::processOpcode(StringView contextStr, const Stu
 
         case Opcode::ThisObject:
         {
-            auto type = m_types.resolveEngineType(reflection::GetTypeName<ObjectPtr>());
+            auto type = m_types.resolveEngineType(GetTypeName<ObjectPtr>());
             auto temp = makeTempVar(op, type);
             m_code.appendf("EI->_fnStrongFromPtr(EI->self, {}, &{});\n", contextStr, temp);
             return temp;
@@ -1042,7 +1042,7 @@ JITCodeChunkC JITFunctionWriterC::processOpcode(StringView contextStr, const Stu
         case Opcode::New:
         {
             auto cls = makeValue(processOpcode(contextStr, stream.read(), stream));
-            auto type = m_types.resolveEngineType(reflection::GetTypeName<ObjectPtr>());
+            auto type = m_types.resolveEngineType(GetTypeName<ObjectPtr>());
             auto ret = makeTempVar(op, type);
             m_code.appendf("EI->_fnNew(EI->self, stackFrame, &{}, &{});\n", cls, ret);
             return ret;
@@ -1095,7 +1095,7 @@ JITCodeChunkC JITFunctionWriterC::processOpcode(StringView contextStr, const Stu
 
         case Opcode::WeakToStrong:
         {
-            auto type = m_types.resolveEngineType(reflection::GetTypeName<ObjectPtr>());
+            auto type = m_types.resolveEngineType(GetTypeName<ObjectPtr>());
             auto ret = makeTempVar(op, type);
 
             auto a = makePointer(processOpcode(contextStr, stream.read(), stream));
@@ -1111,7 +1111,7 @@ JITCodeChunkC JITFunctionWriterC::processOpcode(StringView contextStr, const Stu
 
         case Opcode::StrongToWeak:
         {
-            auto type = m_types.resolveEngineType(reflection::GetTypeName<ObjectWeakPtr>());
+            auto type = m_types.resolveEngineType(GetTypeName<ObjectWeakPtr>());
             auto ret = makeTempVar(op, type);
 
             auto a = makePointer(processOpcode(contextStr, stream.read(), stream));

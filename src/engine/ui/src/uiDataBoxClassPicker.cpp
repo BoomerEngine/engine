@@ -223,13 +223,13 @@ class DataBoxClassFactory : public IDataBoxFactory
     RTTI_DECLARE_VIRTUAL_CLASS(DataBoxClassFactory, IDataBoxFactory);
 
 public:
-    virtual DataBoxPtr tryCreate(const rtti::DataViewInfo& info) const override
+    virtual DataBoxPtr tryCreate(const DataViewInfo& info) const override
     {
-        if (info.dataType == reflection::GetTypeObject<ClassType>())
+        if (info.dataType == GetTypeObject<ClassType>())
         {
             return RefNew<DataBoxClassPicker>();
         }
-        else if (info.dataType.metaType() == rtti::MetaType::ClassRef)
+        else if (info.dataType.metaType() == MetaType::ClassRef)
         {
             const auto rootClass = info.dataType.innerType().toClass();
             return RefNew<DataBoxSpecificClassPicker>(rootClass, info.dataType);

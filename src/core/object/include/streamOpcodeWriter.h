@@ -53,7 +53,7 @@ struct CORE_OBJECT_API OpcodeWriterReferences : public NoCopy
     HashSet<StringID> stringIds;
     HashSet<Type> types;
     HashSet<ObjectPtr> objects;
-    HashSet<const rtti::Property*> properties;
+    HashSet<const Property*> properties;
     HashSet<OpcodeWriterResourceReference> syncResources;
     HashSet<OpcodeWriterResourceReference> asyncResources;
 };
@@ -89,7 +89,7 @@ public:
 
     INLINE void writeStringID(StringID id);
     INLINE void writeType(Type t);
-    INLINE void writeProperty(const rtti::Property* rttiProperty);
+    INLINE void writeProperty(const Property* rttiProperty);
     INLINE void writePointer(const IObject* object);
 
     void writeResourceReference(StringView path, ClassType resourceClass, bool async);
@@ -212,7 +212,7 @@ INLINE void OpcodeWriter::writeType(Type t)
         op->type = t;
 }
 
-INLINE void OpcodeWriter::writeProperty(const rtti::Property* rttiProperty)
+INLINE void OpcodeWriter::writeProperty(const Property* rttiProperty)
 {
     ASSERT_EX(!m_stack.empty(), "Property must be inside a compound");
     ASSERT_EX(m_stack.back() == StreamOpcode::Compound, "Property must be directly inside a compound");

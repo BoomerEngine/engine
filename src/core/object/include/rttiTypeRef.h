@@ -24,7 +24,7 @@ class CORE_OBJECT_API Type
 {
 public:
     INLINE Type() : m_type(nullptr) {}
-    INLINE Type(const rtti::IType* typeRef) : m_type(typeRef) {}
+    INLINE Type(const IType* typeRef) : m_type(typeRef) {}
     INLINE Type(std::nullptr_t) : m_type(nullptr) {}
 
     INLINE Type(const Type& other) = default;
@@ -34,7 +34,7 @@ public:
     INLINE ~Type() = default;
 
     // assign from type
-    INLINE Type& operator=(const rtti::IType* other)
+    INLINE Type& operator=(const IType* other)
     {
         m_type = other;
         return *this;
@@ -53,8 +53,8 @@ public:
     // simple comparisons
     INLINE bool operator==(const Type& other) const { return m_type == other.m_type; }
     INLINE bool operator!=(const Type& other) const { return m_type != other.m_type; }
-    INLINE bool operator==(const rtti::IType* other) const { return m_type == other; }
-    INLINE bool operator!=(const rtti::IType* other) const { return m_type != other; }
+    INLINE bool operator==(const IType* other) const { return m_type == other; }
+    INLINE bool operator!=(const IType* other) const { return m_type != other; }
 
 
     //! is this an empty type reference ?
@@ -64,14 +64,14 @@ public:
     INLINE operator bool() const { return m_type != nullptr; }
 
     // get referenced type
-    INLINE const rtti::IType* ptr() const { return m_type; }
+    INLINE const IType* ptr() const { return m_type; }
 
     // get referenced type directly
-    INLINE const rtti::IType* operator->() const { return m_type; }
+    INLINE const IType* operator->() const { return m_type; }
 
     // get the "meta type" of this type - describes what kind of type this type is
     // NOTE: for empty types this returns "void"
-    INLINE rtti::MetaType metaType() const { return m_type ? m_type->metaType() : rtti::MetaType::Void; }
+    INLINE MetaType metaType() const { return m_type ? m_type->metaType() : MetaType::Void; }
 
     // get name of the type, returns empty name of empty type ref
     INLINE StringID name() const { return m_type ? m_type->name() : StringID(); }
@@ -79,31 +79,31 @@ public:
     //----
 
     // is this a class type ? (toClass will work)
-    INLINE bool isClass() const { return metaType() == rtti::MetaType::Class; }
+    INLINE bool isClass() const { return metaType() == MetaType::Class; }
 
     // is this an array type ?
-    INLINE bool isArray() const { return metaType() == rtti::MetaType::Array; }
+    INLINE bool isArray() const { return metaType() == MetaType::Array; }
 
     // is this an enum type ?
-    INLINE bool isEnum() const { return metaType() == rtti::MetaType::Enum; }
+    INLINE bool isEnum() const { return metaType() == MetaType::Enum; }
 
     // is this an bitfield type ?
-    INLINE bool isBitfield() const { return metaType() == rtti::MetaType::Bitfield; }
+    INLINE bool isBitfield() const { return metaType() == MetaType::Bitfield; }
 
     // is this a simple data type?
-    INLINE bool isSimple() const { return metaType() == rtti::MetaType::Simple; }
+    INLINE bool isSimple() const { return metaType() == MetaType::Simple; }
 
     // is this a handle type ?
-    INLINE bool isHandle() const { return metaType() == rtti::MetaType::StrongHandle || metaType() == rtti::MetaType::WeakHandle; }
+    INLINE bool isHandle() const { return metaType() == MetaType::StrongHandle || metaType() == MetaType::WeakHandle; }
 
     // is this a strong (shared) handle ?
-    INLINE bool isStrongHandle() const { return metaType() == rtti::MetaType::StrongHandle; }
+    INLINE bool isStrongHandle() const { return metaType() == MetaType::StrongHandle; }
 
     // is this a weak handle ?
-    INLINE bool isWeakHandle() const { return metaType() == rtti::MetaType::WeakHandle; }
+    INLINE bool isWeakHandle() const { return metaType() == MetaType::WeakHandle; }
 
     // is this a resource reference type ?
-    INLINE bool isResourceRef() const { return metaType() == rtti::MetaType::ResourceRef; }
+    INLINE bool isResourceRef() const { return metaType() == MetaType::ResourceRef; }
 
     //----
 
@@ -142,7 +142,7 @@ public:
     //--
         
 private:
-    const rtti::IType* m_type = nullptr;
+    const IType* m_type = nullptr;
 };
 
 //--
@@ -155,24 +155,24 @@ INLINE SpecificClassType<T> Type::toSpecificClass() const
 
 INLINE Type& Type::operator=(const ClassType& other)
 {
-    m_type = (const rtti::IType*)other.ptr();
+    m_type = (const IType*)other.ptr();
     return *this;
 }
 
 INLINE Type::Type(const ClassType& other)
-    : m_type((const rtti::IType*)other.ptr())
+    : m_type((const IType*)other.ptr())
 {}
 
 template< typename T >
 INLINE Type& Type::operator=(const SpecificClassType<T>& other)
 {
-    m_type = (const rtti::IType*)other.ptr();
+    m_type = (const IType*)other.ptr();
     return *this;
 }
 
 template< typename T >
 INLINE Type::Type(const SpecificClassType<T>& other)
-    : m_type((const rtti::IType*)other.ptr())
+    : m_type((const IType*)other.ptr())
 {}
 
 //--

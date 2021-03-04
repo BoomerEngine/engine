@@ -106,7 +106,7 @@ struct GlobalEventFunctionBinderHelper<void(D)>
         return [func](GLOBAL_EVENT_FUNC)
         {
 #ifdef HAS_CORE_REFLECTION
-            DEBUG_CHECK_EX(dataType == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), dataType));
+            DEBUG_CHECK_EX(dataType == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), dataType));
 #endif
             func(*(const D*)data);
             return true;
@@ -123,7 +123,7 @@ struct GlobalEventFunctionBinderHelper<void(*)(D)>
         return [func](GLOBAL_EVENT_FUNC)
         {
 #ifdef HAS_CORE_REFLECTION
-            DEBUG_CHECK_EX(dataType == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), dataType));
+            DEBUG_CHECK_EX(dataType == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), dataType));
 #endif
             func(*(const D*)data);
             return true;
@@ -140,7 +140,7 @@ struct GlobalEventFunctionBinderHelper<void(Class::*)(D) const>
         return [func](GLOBAL_EVENT_FUNC)
         {
 #ifdef HAS_CORE_REFLECTION
-            DEBUG_CHECK_EX(dataType == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), dataType));
+            DEBUG_CHECK_EX(dataType == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), dataType));
 #endif
             func(*(const D*)data);
             return true;
@@ -160,7 +160,7 @@ struct GlobalEventFunctionBinderHelper<void(T*, D)>
     {
         return [func](GLOBAL_EVENT_FUNC)
         {
-            DEBUG_CHECK_EX(dataType == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), dataType));
+            DEBUG_CHECK_EX(dataType == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), dataType));
             func(rtti_cast<T>(source), *(const D*)data);
             return true;
         };
@@ -176,7 +176,7 @@ struct GlobalEventFunctionBinderHelper<void(*)(T*, D)>
         return [func](GLOBAL_EVENT_FUNC)
         {
 #ifdef HAS_CORE_REFLECTION
-            DEBUG_CHECK_EX(dataType == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), dataType));
+            DEBUG_CHECK_EX(dataType == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), dataType));
 #endif
             func(rtti_cast<T>(source), *(const D*)data);
             return true;
@@ -193,7 +193,7 @@ struct GlobalEventFunctionBinderHelper<void(Class::*)(T*, D) const>
         return [func](GLOBAL_EVENT_FUNC)
         {
 #ifdef HAS_CORE_REFLECTION
-            DEBUG_CHECK_EX(dataType == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), dataType));
+            DEBUG_CHECK_EX(dataType == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), dataType));
 #endif
             func(rtti_cast<T>(source), *(const D*)data);
             return true;

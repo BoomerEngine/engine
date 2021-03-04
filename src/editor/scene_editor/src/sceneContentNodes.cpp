@@ -1502,9 +1502,9 @@ void SceneContentNode::EnumEntityClassesForResource(ClassType resourceClass, Arr
     {
         for (const auto& templateProp : compClass->allTemplateProperties())
         {
-            if (templateProp.type->metaType() == rtti::MetaType::AsyncResourceRef && templateProp.editorData.m_primaryResource)
+            if (templateProp.type->metaType() == MetaType::AsyncResourceRef && templateProp.editorData.m_primaryResource)
             {
-                const auto* asyncRefType = static_cast<const rtti::IResourceReferenceType*>(templateProp.type.ptr());
+                const auto* asyncRefType = static_cast<const IResourceReferenceType*>(templateProp.type.ptr());
                 if (asyncRefType->referenceResourceClass().is(resourceClass))
                 {
                     outEntityClasses.pushBack(compClass);

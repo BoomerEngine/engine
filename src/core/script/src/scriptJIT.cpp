@@ -68,13 +68,13 @@ public:
 
     struct ExportedFunction
     {
-        const rtti::Function* m_func = nullptr;
-        rtti::TFunctionJittedWrapperPtr m_ptr = nullptr;
+        const Function* m_func = nullptr;
+        TFunctionJittedWrapperPtr m_ptr = nullptr;
         uint64_t m_codeHash = 0;
     };
 
     Array<Type> m_typeTable;
-    Array<const rtti::Function*> m_functionImportTable;
+    Array<const Function*> m_functionImportTable;
     Array<ExportedFunction> m_functionExportTable;
     uint32_t m_numErrors;
 
@@ -211,11 +211,11 @@ private:
         }
     }
 
-    static void ReportExportFunction(void* self, const char* className, const char* funcName,  uint64_t codeHash, rtti::TFunctionJittedWrapperPtr funcPtr)
+    static void ReportExportFunction(void* self, const char* className, const char* funcName,  uint64_t codeHash, TFunctionJittedWrapperPtr funcPtr)
     {
         auto binder  = (JITProjectBinder*)self;
 
-        const rtti::Function* func = nullptr;
+        const Function* func = nullptr;
         if (className)
         {
             auto classType  = RTTI::GetInstance().findClass(StringID(className));
@@ -354,7 +354,7 @@ bool JITProject::bind()
     // bind JIT code to function
     uint32_t numFailedFunctions = 0;
     for (auto& info : binder.m_functionExportTable)
-        if (!const_cast<rtti::Function*>(info.m_func)->bindJITFunction(info.m_codeHash, info.m_ptr))
+        if (!const_cast<Function*>(info.m_func)->bindJITFunction(info.m_codeHash, info.m_ptr))
             numFailedFunctions += 1;
 
     // report binding problems with functions
@@ -465,7 +465,7 @@ void JITProject::InterfaceLog(void* self, const char* txt)
     fprintf(stderr, "ScriptJIT: %s\n", txt);
 }
 
-void JITProject::InterfaceThrowException(void* self, const rtti::IFunctionStackFrame* frame, const char* file, int line, const char* txt)
+void JITProject::InterfaceThrowException(void* self, const IFunctionStackFrame* frame, const char* file, int line, const char* txt)
 {
     fprintf(stderr, "ScriptJIT: %s(%d): error: %s\n", file, line, txt);
 }
@@ -498,14 +498,14 @@ int JITProject::InterfaceTypeCompare(void* self, int typeId, void* a, void* b)
     return type->compare(a, b);
 }
 
-void JITProject::InterfaceCall(void* self,  void* context, int funcId, int mode, const rtti::IFunctionStackFrame* parentFrame, rtti::FunctionCallingParams* params)
+void JITProject::InterfaceCall(void* self,  void* context, int funcId, int mode, const IFunctionStackFrame* parentFrame, FunctionCallingParams* params)
 {
     auto project  = (JITProject*) self;
     auto func  = project->m_functionTable[funcId];
     func->run(parentFrame, context, *params);
 }
 
-void JITProject::InterfaceNew(void* self, const rtti::IFunctionStackFrame* parentFrame, const ClassType* classPtr, ObjectPtr* strongPtr)
+void JITProject::InterfaceNew(void* self, const IFunctionStackFrame* parentFrame, const ClassType* classPtr, ObjectPtr* strongPtr)
 {
     if (!classPtr || classPtr->empty())
     {
@@ -549,27 +549,27 @@ StringID JITProject::InterfaceEnumToName(void* self, int typeId, int64_t enumVal
         return StringID::EMPTY();
 
     auto type  = project->m_typeTable[typeId];
-    if (!type || type->metaType() != rtti::MetaType::Enum)
+    if (!type || type->metaType() != MetaType::Enum)
         return StringID::EMPTY();
 
-    auto enumType  = static_cast<const rtti::EnumType*>(type.ptr());
+    auto enumType  = static_cast<const EnumType*>(type.ptr());
 
     StringID ret;
     enumType->findName(enumValue, ret);
     return ret;
 }
 
-int64_t JITProject::InterfaceNameToEnum(void* self, const rtti::IFunctionStackFrame* parentFrame, int typeId, StringID enumName)
+int64_t JITProject::InterfaceNameToEnum(void* self, const IFunctionStackFrame* parentFrame, int typeId, StringID enumName)
 {
     auto project  = (JITProject*) self;
     if (typeId < 0 || typeId >= project->m_typeTable.lastValidIndex())
         return StringID::EMPTY();
 
     auto type  = project->m_typeTable[typeId];
-    if (!type || type->metaType() != rtti::MetaType::Enum)
+    if (!type || type->metaType() != MetaType::Enum)
         return StringID::EMPTY();
 
-    auto enumType  = static_cast<const rtti::EnumType*>(type.ptr());
+    auto enumType  = static_cast<const EnumType*>(type.ptr());
 
     int64_t value = 0;
     if (!enumType->findValue(enumName, value))
@@ -647,7 +647,7 @@ namespace helper
                     ret.requiresDestructor = type->traits().requiresDestructor;
                     ret.zeroInitializationConstructor = type->traits().initializedFromZeroMem;
 
-                    if (type->metaType() == rtti::MetaType::Class)
+                    if (type->metaType() == MetaType::Class)
                     {
                         auto classType = type.toClass();
                         ret.baseClassName = classType->baseClass() ? classType->baseClass()->name() : StringID();
@@ -661,17 +661,17 @@ namespace helper
                             memberInfo.runtimeOffset = memberPtr->offset();
                         }
                     }
-                    else if (type->metaType() == rtti::MetaType::Array)
+                    else if (type->metaType() == MetaType::Array)
                     {
-                        auto arrayType = static_cast<const rtti::IArrayType*>(type.ptr());
+                        auto arrayType = static_cast<const IArrayType*>(type.ptr());
                         ret.innerTypeName = arrayType->innerType()->name();
 
-                        if (arrayType->arrayMetaType() == rtti::ArrayMetaType::Native)
+                        if (arrayType->arrayMetaType() == ArrayMetaType::Native)
                             ret.staticArraySize = arrayType->arrayCapacity(nullptr);
                     }
-                    else if (type->metaType() == rtti::MetaType::Enum)
+                    else if (type->metaType() == MetaType::Enum)
                     {
-                        auto enumType  = static_cast<const rtti::EnumType*>(type.ptr());
+                        auto enumType  = static_cast<const EnumType*>(type.ptr());
 
                         auto numOptions = enumType->options().size();
                         ret.options.reserve(numOptions);

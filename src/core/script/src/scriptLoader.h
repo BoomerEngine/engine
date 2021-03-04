@@ -68,10 +68,10 @@ private:
 
         union
         {
-            const rtti::Function *m_function = nullptr;
-            const rtti::IClassType* m_class;
-            const rtti::EnumType *m_enum;
-            const rtti::Property *m_property;
+            const Function *m_function = nullptr;
+            const IClassType* m_class;
+            const EnumType *m_enum;
+            const Property *m_property;
         } m_resolved;
     };
 
@@ -130,7 +130,7 @@ private:
     static bool MatchPropertyType(Type refType, const Stub* resolvedStub);
     static bool MatchPropertyType(Type refType, const StubTypeRef* decl);
     static bool MatchPropertyType(Type refType, const StubTypeDecl* decl);
-    static bool MatchFunctionSignature(const StubFunction* stubFunc, const rtti::Function* engineFunc);
+    static bool MatchFunctionSignature(const StubFunction* stubFunc, const Function* engineFunc);
 
     static ClassType FindNativeClassBase(const StubClass* scriptedClass);
 
@@ -138,9 +138,9 @@ private:
 
     virtual Type resolveType(const StubTypeDecl* stub) override final;
     virtual ClassType resolveClass(const StubClass* stub) override final;
-    virtual const rtti::EnumType* resolveEnum(const StubEnum* stub) override final;
-    virtual const rtti::Property* resolveProperty(const StubProperty* prop) override final;
-    virtual const rtti::Function* resolveFunction(const StubFunction* func) override final;
+    virtual const EnumType* resolveEnum(const StubEnum* stub) override final;
+    virtual const Property* resolveProperty(const StubProperty* prop) override final;
+    virtual const Function* resolveFunction(const StubFunction* func) override final;
 };
 
 

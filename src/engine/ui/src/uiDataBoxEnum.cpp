@@ -53,8 +53,8 @@ public:
         const auto ret = readValue(currentValue);
         if (ret.code == DataViewResultCode::OK || ret.code == DataViewResultCode::ErrorManyValues)
         {
-            rtti::DataViewInfo info;
-            info.requestFlags |= rtti::DataViewRequestFlagBit::OptionsList;
+            DataViewInfo info;
+            info.requestFlags |= DataViewRequestFlagBit::OptionsList;
             const auto ret = data()->describeDataView(path(), info);
 
             if (ret.code == DataViewResultCode::OK)
@@ -130,9 +130,9 @@ class DataBoxEnumFactory : public IDataBoxFactory
     RTTI_DECLARE_VIRTUAL_CLASS(DataBoxEnumFactory, IDataBoxFactory);
 
 public:
-    virtual DataBoxPtr tryCreate(const rtti::DataViewInfo& info) const override
+    virtual DataBoxPtr tryCreate(const DataViewInfo& info) const override
     {
-        if (info.flags.test(rtti::DataViewInfoFlagBit::Constrainded))
+        if (info.flags.test(DataViewInfoFlagBit::Constrainded))
             return RefNew<DataBoxEnum>();
 
         return nullptr;

@@ -11,7 +11,7 @@
 #include "core/containers/include/stringBuf.h"
 #include "core/object/include/rttiProperty.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(reflection)
+BEGIN_BOOMER_NAMESPACE()
 
 // helper class that can add stuff to the class type
 class CORE_REFLECTION_API PropertyBuilder : public NoCopy
@@ -22,7 +22,7 @@ public:
     PropertyBuilder(Type propType, const char* name, const char* category, uint32_t offset);
     ~PropertyBuilder();
 
-    void submit(rtti::IClassType* targetClass);
+    void submit(IClassType* targetClass);
 
     INLINE PropertyBuilder& name(const char* name)
     {
@@ -91,7 +91,7 @@ public:
     INLINE PropertyBuilder& metadata(Args && ... args)
     {
         auto obj = new T(std::forward< Args >(args)...);
-        m_metadata.pushBack(static_cast<rtti::IMetadata*>(obj));
+        m_metadata.pushBack(static_cast<IMetadata*>(obj));
         return *this;
     }
 
@@ -166,9 +166,9 @@ private:
     bool m_overriddable = false;
     bool m_noReset = false;
 
-    rtti::PropertyEditorData m_editorData;
+    PropertyEditorData m_editorData;
 
-    Array<rtti::IMetadata*> m_metadata;
+    Array<IMetadata*> m_metadata;
 };
 
-END_BOOMER_NAMESPACE_EX(reflection)
+END_BOOMER_NAMESPACE()

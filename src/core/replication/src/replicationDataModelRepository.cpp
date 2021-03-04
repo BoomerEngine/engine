@@ -27,7 +27,7 @@ const DataModel* DataModelRepository::buildModelForType(Type type)
 {
     // we can only build replication model for structures/classes
     // TODO: CONSIDER having a single type replication as well
-    if (!type || type->metaType() != rtti::MetaType::Class)
+    if (!type || type->metaType() != MetaType::Class)
         return nullptr;
 
     auto lock = CreateLock(m_lock);
@@ -51,7 +51,7 @@ const DataModel* DataModelRepository::buildModelForType(Type type)
     return model;
 }
 
-const DataModel* DataModelRepository::buildModelForFunction(const rtti::Function* func)
+const DataModel* DataModelRepository::buildModelForFunction(const Function* func)
 {
     auto lock = CreateLock(m_lock);
 

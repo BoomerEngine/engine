@@ -18,13 +18,13 @@ BEGIN_BOOMER_NAMESPACE_EX(io)
 namespace prv
 {
 
-    void WriteBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* rawData, const void* defaultData)
+    void WriteBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* rawData, const void* defaultData)
     {
         const auto& data = *(const TimeStamp*)rawData;
         stream.writeTypedData<uint64_t>(data.value());
     }
 
-    void ReadBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* rawData)
+    void ReadBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* rawData)
     {
         uint64_t value = 0;
         stream.readTypedData(value);
@@ -33,14 +33,14 @@ namespace prv
         data = TimeStamp(value);
     }
 
-    void WriteXML(rtti::TypeSerializationContext& typeContext, xml::Node& node, const void* rawData, const void* defaultData)
+    void WriteXML(TypeSerializationContext& typeContext, xml::Node& node, const void* rawData, const void* defaultData)
     {
         const auto& data = *(const TimeStamp*)rawData;
         const auto value = data.value();
         node.writeValue(TempString("{}", value));
     }
 
-    void ReadXML(rtti::TypeSerializationContext& typeContext, const xml::Node& node, void* rawData)
+    void ReadXML(TypeSerializationContext& typeContext, const xml::Node& node, void* rawData)
     {
         uint64_t value = 0;
                 

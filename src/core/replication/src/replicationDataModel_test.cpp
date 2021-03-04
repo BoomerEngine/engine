@@ -1568,7 +1568,7 @@ TEST(DataModelTransmit, TypeRefClass)
     TransferTest transfer(knowledge);
 
     TestReplicatedStruct_TypeRef s, out;
-    s.type = reflection::GetTypeObject< Array<ObjectPtr> >();
+    s.type = GetTypeObject< Array<ObjectPtr> >();
 
     transfer.transfer(s, out);
 

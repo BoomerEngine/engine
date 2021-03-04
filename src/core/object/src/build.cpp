@@ -15,6 +15,6 @@
 
 DECLARE_MODULE(PROJECT_NAME)
 {
-    boomer::rtti::IMetadata::GetStaticClass();
+    boomer::IMetadata::GetStaticClass();
     boomer::IObject::GetStaticClass();
 }

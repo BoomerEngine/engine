@@ -66,7 +66,7 @@ void IObjectDirectTemplate::rebase(const IObjectDirectTemplate* base, bool copyV
                         else
                         {
                             // capture current value
-                            rtti::DataHolder oldValue(prop->type(), propValue);
+                            DataHolder oldValue(prop->type(), propValue);
                             if (CopyPropertyValue(base, baseProp, this, prop))
                             {
                                 // make sure object's are notified only if the value did change
@@ -210,7 +210,7 @@ void IObjectDirectTemplate::onPropertyChanged(StringView path)
     if (0 == m_localSuppressOverridenPropertyCapture)
     {
         StringView propertyName;
-        if (rtti::ParsePropertyName(path, propertyName))
+        if (ParsePropertyName(path, propertyName))
         {
             if (auto propertyStringID = StringID::Find(propertyName))
                 markPropertyOverride(propertyStringID);                    
@@ -218,7 +218,7 @@ void IObjectDirectTemplate::onPropertyChanged(StringView path)
     }
 }
 
-bool IObjectDirectTemplate::onPropertyShouldLoad(const rtti::Property* prop)
+bool IObjectDirectTemplate::onPropertyShouldLoad(const Property* prop)
 {
     if (prop->overridable())
     {
@@ -229,7 +229,7 @@ bool IObjectDirectTemplate::onPropertyShouldLoad(const rtti::Property* prop)
     return IObject::onPropertyShouldLoad(prop);
 }
 
-bool IObjectDirectTemplate::onPropertyShouldSave(const rtti::Property* prop) const
+bool IObjectDirectTemplate::onPropertyShouldSave(const Property* prop) const
 {
     if (prop->overridable())
         return m_overridenProperties.contains(prop->name());
@@ -239,7 +239,7 @@ bool IObjectDirectTemplate::onPropertyShouldSave(const rtti::Property* prop) con
 
 //---
 
-DataViewResult IObjectDirectTemplate::describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const
+DataViewResult IObjectDirectTemplate::describeDataView(StringView viewPath, DataViewInfo& outInfo) const
 {
     if (auto ret = HasError(IObject::describeDataView(viewPath, outInfo)))
         return ret;
@@ -247,7 +247,7 @@ DataViewResult IObjectDirectTemplate::describeDataView(StringView viewPath, rtti
     if (viewPath.empty())
     {
         // remove the non-overridable member
-        if (outInfo.requestFlags.test(rtti::DataViewRequestFlagBit::MemberList))
+        if (outInfo.requestFlags.test(DataViewRequestFlagBit::MemberList))
         {
             if (m_base)
             {
@@ -281,18 +281,18 @@ DataViewResult IObjectDirectTemplate::describeDataView(StringView viewPath, rtti
     }
 
     StringView propertyName;
-    if (rtti::ParsePropertyName(viewPath, propertyName))
+    if (ParsePropertyName(viewPath, propertyName))
     {
-        if (outInfo.requestFlags.test(rtti::DataViewRequestFlagBit::CheckIfResetable))
+        if (outInfo.requestFlags.test(DataViewRequestFlagBit::CheckIfResetable))
         {
             if (const auto* prop = cls()->findProperty(StringID::Find(propertyName)))
             {
                 if (prop->overridable())
                 {
                     if (m_overridenProperties.contains(prop->name()) && prop->resetable())
-                        outInfo.flags |= rtti::DataViewInfoFlagBit::ResetableToBaseValue;
+                        outInfo.flags |= DataViewInfoFlagBit::ResetableToBaseValue;
                     else
-                        outInfo.flags -= rtti::DataViewInfoFlagBit::ResetableToBaseValue;
+                        outInfo.flags -= DataViewInfoFlagBit::ResetableToBaseValue;
                 }
             }
         }
@@ -338,7 +338,7 @@ public:
             return DataViewResultCode::ErrorNullObject;
 
         StringView propertyNameStr;
-        if (rtti::ParsePropertyName(viewPath, propertyNameStr))
+        if (ParsePropertyName(viewPath, propertyNameStr))
         {
             if (viewPath.empty())
             {
@@ -361,7 +361,7 @@ public:
             return false;
 
         StringView propertyNameStr;
-        if (rtti::ParsePropertyName(viewPath, propertyNameStr))
+        if (ParsePropertyName(viewPath, propertyNameStr))
         {
             if (viewPath.empty())
             {

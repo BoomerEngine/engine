@@ -70,16 +70,16 @@ public:
 
     // read value
     template< typename T >
-    INLINE DataViewResult readValue(T& data) { return readValue(&data, reflection::GetTypeObject<T>()); }
+    INLINE DataViewResult readValue(T& data) { return readValue(&data, GetTypeObject<T>()); }
 
     // write new value, will create undo action if action history is provided
     template< typename T >
-    INLINE DataViewResult writeValue(const T& data) { return writeValue(&data, reflection::GetTypeObject<T>()); }
+    INLINE DataViewResult writeValue(const T& data) { return writeValue(&data, GetTypeObject<T>()); }
 
     ///----
 
     /// create data box to edit/visualize given type
-    static DataBoxPtr CreateForType(const rtti::DataViewInfo& info);
+    static DataBoxPtr CreateForType(const DataViewInfo& info);
 
 private:
     DataViewPtr m_data;
@@ -108,7 +108,7 @@ public:
     virtual ~IDataBoxFactory();
 
     /// create a data box
-    virtual DataBoxPtr tryCreate(const rtti::DataViewInfo& info) const = 0;
+    virtual DataBoxPtr tryCreate(const DataViewInfo& info) const = 0;
 };
 
 ///---

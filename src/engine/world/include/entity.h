@@ -177,7 +177,7 @@ public:
     template< typename T >
     INLINE T* system()
     {
-        static auto userIndex = reflection::ClassID<T>()->userIndex();
+        static auto userIndex = ClassID<T>()->userIndex();
         return (T*)systemPtr(userIndex);
     }
 

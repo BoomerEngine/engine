@@ -12,7 +12,7 @@
 
 #include "core/containers/include/stringBuilder.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 ///--
 
@@ -187,4 +187,4 @@ DataHolder DataHolder::Parse(StringView txt, Type type)
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

@@ -36,7 +36,7 @@ RTTI_BEGIN_TYPE_NATIVE_CLASS(DataProperty);
     RTTI_METADATA(ElementClassNameMetadata).name("DataProperty");
 RTTI_END_TYPE();
 
-DataProperty::DataProperty(DataInspector* inspector, DataInspectorNavigationItem* parent, uint8_t indent, const StringBuf& path, const StringBuf& caption, const rtti::DataViewInfo& info, bool parentReadOnly, int arrayIndex)
+DataProperty::DataProperty(DataInspector* inspector, DataInspectorNavigationItem* parent, uint8_t indent, const StringBuf& path, const StringBuf& caption, const DataViewInfo& info, bool parentReadOnly, int arrayIndex)
     : DataInspectorNavigationItem(inspector, parent, path, caption)
     , m_arrayIndex(arrayIndex)
     , m_indent(indent)
@@ -60,7 +60,7 @@ DataProperty::~DataProperty()
 
 void DataProperty::toggleResetButton()
 {
-    const auto resetable = m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::ResetableToBaseValue);
+    const auto resetable = m_viewInfo.flags.test(DataViewInfoFlagBit::ResetableToBaseValue);
     if (m_viewDataResetableStyle != resetable)
     {
         m_viewDataResetableStyle = resetable;
@@ -78,24 +78,24 @@ void DataProperty::toggleResetButton()
 
 bool DataProperty::isReadOnly() const
 {
-    return m_parentReadOnly || m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::ReadOnly) || inspector()->readOnly();
+    return m_parentReadOnly || m_viewInfo.flags.test(DataViewInfoFlagBit::ReadOnly) || inspector()->readOnly();
 }
 
 bool DataProperty::isDynamicArray() const
 {
-    return m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::DynamicArray) && m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::LikeArray);
+    return m_viewInfo.flags.test(DataViewInfoFlagBit::DynamicArray) && m_viewInfo.flags.test(DataViewInfoFlagBit::LikeArray);
 }
 
 bool DataProperty::isArray() const
 {
-    return m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::LikeArray);
+    return m_viewInfo.flags.test(DataViewInfoFlagBit::LikeArray);
 }
 
 /*bool DataProperty::initViewInfo()
 {
-    m_viewInfo = rtti::DataViewInfo();
-    m_viewInfo.requestFlags |= rtti::DataViewRequestFlagBit::PropertyMetadata;
-    m_viewInfo.requestFlags |= rtti::DataViewRequestFlagBit::TypeMetadata;
+    m_viewInfo = DataViewInfo();
+    m_viewInfo.requestFlags |= DataViewRequestFlagBit::PropertyMetadata;
+    m_viewInfo.requestFlags |= DataViewRequestFlagBit::TypeMetadata;
 
     const auto ret = inspector()->data()->describeDataView(path(), m_viewInfo);
     return ret.valid();
@@ -148,7 +148,7 @@ void DataProperty::initInterface(const StringBuf& caption)
 
     //-- Buttons
 
-    if (m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::LikeArray) && m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::DynamicArray))
+    if (m_viewInfo.flags.test(DataViewInfoFlagBit::LikeArray) && m_viewInfo.flags.test(DataViewInfoFlagBit::DynamicArray))
     {
         {
             auto but = m_valueLine->createChildWithType<Button>("DataPropertyButton"_id);
@@ -164,7 +164,7 @@ void DataProperty::initInterface(const StringBuf& caption)
             but->bind(EVENT_CLICKED) = [this]() { arrayAddNew(); };
         }
     }
-    else if (m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::LikeValue) && m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::Inlined))
+    else if (m_viewInfo.flags.test(DataViewInfoFlagBit::LikeValue) && m_viewInfo.flags.test(DataViewInfoFlagBit::Inlined))
     {
         {
             auto but = m_valueLine->createChildWithType<Button>("DataPropertyButton"_id);
@@ -220,12 +220,12 @@ void DataProperty::updateExpandable()
 {
     bool expandable = false;
 
-    if (m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::LikeArray))
+    if (m_viewInfo.flags.test(DataViewInfoFlagBit::LikeArray))
     {
         if (m_viewInfo.arraySize > 0)
             expandable = true;
     }
-    else if (m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::LikeStruct))
+    else if (m_viewInfo.flags.test(DataViewInfoFlagBit::LikeStruct))
     {
         expandable = true;
     }
@@ -242,7 +242,7 @@ void DataProperty::updateValueText()
 {
     if (m_valueText)
     {
-        if (m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::LikeArray))
+        if (m_viewInfo.flags.test(DataViewInfoFlagBit::LikeArray))
         {
             if (m_viewInfo.arraySize == 0)
                 m_valueText->text(TempString("Empty"));
@@ -251,7 +251,7 @@ void DataProperty::updateValueText()
             else
                 m_valueText->text(TempString("{} elements", m_viewInfo.arraySize));
         }
-        else if (m_viewInfo.dataType.metaType() == rtti::MetaType::StrongHandle)
+        else if (m_viewInfo.dataType.metaType() == MetaType::StrongHandle)
         {
             ObjectPtr ptr;
             const auto ret = inspector()->data()->readDataView(path(), &ptr, m_viewInfo.dataType);
@@ -280,7 +280,7 @@ void DataProperty::updateValueText()
         else
         {
             StringBuf displayText;
-            static const auto displayTextType = reflection::GetTypeObject<StringBuf>();
+            static const auto displayTextType = GetTypeObject<StringBuf>();
             const auto ret = inspector()->data()->readDataView(TempString("{}.__text", path()), &displayText, displayTextType);
                 
             if (ret.valid())
@@ -315,7 +315,7 @@ void DataProperty::inlineObjectClear()
 
 void DataProperty::inlineObjectNew()
 {
-    if (!m_classPicker && m_viewInfo.dataType.metaType() == rtti::MetaType::StrongHandle && m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::Inlined))
+    if (!m_classPicker && m_viewInfo.dataType.metaType() == MetaType::StrongHandle && m_viewInfo.flags.test(DataViewInfoFlagBit::Inlined))
     {
         const auto baseClass = m_viewInfo.dataType.innerType().toClass();
 
@@ -426,19 +426,19 @@ StringBuf MakeStructureElementPath(StringView path, StringView name)
 
 void DataProperty::createChildren(Array<RefPtr<DataInspectorNavigationItem>>& outCreatedChildren)
 {
-    const auto localReadOnly = m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::ReadOnly);
+    const auto localReadOnly = m_viewInfo.flags.test(DataViewInfoFlagBit::ReadOnly);
 
-    if (m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::LikeArray))
+    if (m_viewInfo.flags.test(DataViewInfoFlagBit::LikeArray))
     {
         for (uint32_t i = 0; i < m_viewInfo.arraySize; ++i)
         {
             const auto childPath = MakeArrayElementPath(path(), i);
 
-            rtti::DataViewInfo childInfo;
-            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::PropertyEditorData;
-            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::TypeMetadata;
-            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::MemberList;
-            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::CheckIfResetable;
+            DataViewInfo childInfo;
+            childInfo.requestFlags |= DataViewRequestFlagBit::PropertyEditorData;
+            childInfo.requestFlags |= DataViewRequestFlagBit::TypeMetadata;
+            childInfo.requestFlags |= DataViewRequestFlagBit::MemberList;
+            childInfo.requestFlags |= DataViewRequestFlagBit::CheckIfResetable;
 
             if (inspector()->describeDataView(childPath, childInfo).valid())
             {
@@ -448,7 +448,7 @@ void DataProperty::createChildren(Array<RefPtr<DataInspectorNavigationItem>>& ou
             }
         }
     }
-    else if (m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::LikeStruct))
+    else if (m_viewInfo.flags.test(DataViewInfoFlagBit::LikeStruct))
     {
         InplaceArray<StringID, 100> names;
         for (const auto& info : m_viewInfo.members)
@@ -461,11 +461,11 @@ void DataProperty::createChildren(Array<RefPtr<DataInspectorNavigationItem>>& ou
         {
             const auto childPath = MakeStructureElementPath(path(), childName.view());
 
-            rtti::DataViewInfo childInfo;
-            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::PropertyEditorData;
-            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::TypeMetadata;
-            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::MemberList;
-            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::CheckIfResetable;
+            DataViewInfo childInfo;
+            childInfo.requestFlags |= DataViewRequestFlagBit::PropertyEditorData;
+            childInfo.requestFlags |= DataViewRequestFlagBit::TypeMetadata;
+            childInfo.requestFlags |= DataViewRequestFlagBit::MemberList;
+            childInfo.requestFlags |= DataViewRequestFlagBit::CheckIfResetable;
 
             if (inspector()->describeDataView(childPath, childInfo).valid())
             {
@@ -498,7 +498,7 @@ void DataProperty::handlePropertyChanged(StringView fullPath, bool parentNotific
         updateValueText();
         updateExpandable();
 
-        if (m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::LikeArray) || m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::Inlined))
+        if (m_viewInfo.flags.test(DataViewInfoFlagBit::LikeArray) || m_viewInfo.flags.test(DataViewInfoFlagBit::Inlined))
         {
             bool flag = expanded();
 
@@ -522,23 +522,23 @@ void DataProperty::compareWithBase()
 {
     bool resetable = false;
 
-    rtti::DataViewInfo viewInfo;
-    viewInfo.requestFlags |= rtti::DataViewRequestFlagBit::CheckIfResetable;
+    DataViewInfo viewInfo;
+    viewInfo.requestFlags |= DataViewRequestFlagBit::CheckIfResetable;
 
     if (inspector()->data()->describeDataView(path(), viewInfo).valid())
-        resetable = viewInfo.flags.test(rtti::DataViewInfoFlagBit::ResetableToBaseValue);
+        resetable = viewInfo.flags.test(DataViewInfoFlagBit::ResetableToBaseValue);
 
     if (resetable)
-        m_viewInfo.flags |= rtti::DataViewInfoFlagBit::ResetableToBaseValue;
+        m_viewInfo.flags |= DataViewInfoFlagBit::ResetableToBaseValue;
     else
-        m_viewInfo.flags -= rtti::DataViewInfoFlagBit::ResetableToBaseValue;
+        m_viewInfo.flags -= DataViewInfoFlagBit::ResetableToBaseValue;
 
     toggleResetButton();
 }
 
 void DataProperty::resetToBaseValue()
 {
-    if (m_viewInfo.flags.test(rtti::DataViewInfoFlagBit::ResetableToBaseValue))
+    if (m_viewInfo.flags.test(DataViewInfoFlagBit::ResetableToBaseValue))
     {
         dispatchAction(inspector()->data()->actionValueReset(path()));
     }

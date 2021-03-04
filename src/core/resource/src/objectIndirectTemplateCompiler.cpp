@@ -130,9 +130,9 @@ bool ObjectIndirectTemplateCompiler::compileValue(StringID name, Type expectedTy
         return true;
 
     // if we failed check if we wanted resource ref instead of actual ref
-    if (expectedType->metaType() == rtti::MetaType::ResourceRef)
+    if (expectedType->metaType() == MetaType::ResourceRef)
     {
-        const auto* refType = static_cast<const rtti::IResourceReferenceType*>(expectedType.ptr());
+        const auto* refType = static_cast<const IResourceReferenceType*>(expectedType.ptr());
         const auto resourceClass = refType->referenceResourceClass().cast<res::IResource>();
         if (resourceClass)
         {
@@ -186,7 +186,7 @@ bool ObjectIndirectTemplateCompiler::compileValueRaw(StringID name, Type expecte
         {
             if (prop.name == name)
             {
-                if (rtti::ConvertData(prop.defaultValue, prop.type, ptr, expectedType))
+                if (ConvertData(prop.defaultValue, prop.type, ptr, expectedType))
                     return true;
             }
         }

@@ -277,8 +277,8 @@ void Container::readPersistentConnections(stream::OpcodeReader& reader)
 {
     m_persistentConnections.reset();
 
-    rtti::TypeSerializationContext context;
-    const auto dataType = reflection::GetTypeObject<Array<PersistentConnection>>();
+    TypeSerializationContext context;
+    const auto dataType = GetTypeObject<Array<PersistentConnection>>();
     dataType->readBinary(context, reader, &m_persistentConnections);
 }
 
@@ -305,8 +305,8 @@ void Container::writePersistentConnections(stream::OpcodeWriter& writer) const
 
     // save data
     {
-        rtti::TypeSerializationContext context;
-        const auto dataType = reflection::GetTypeObject<Array<PersistentConnection>>();
+        TypeSerializationContext context;
+        const auto dataType = GetTypeObject<Array<PersistentConnection>>();
         dataType->writeBinary(context, writer, &persistentConnections, nullptr);
     }
 }

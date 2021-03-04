@@ -77,15 +77,15 @@ public:
 
     virtual Type resolveType(const StubTypeDecl* stub) = 0;
     virtual ClassType resolveClass(const StubClass* stub) = 0;
-    virtual const rtti::EnumType* resolveEnum(const StubEnum* stub) = 0;
-    virtual const rtti::Property* resolveProperty(const StubProperty* prop) = 0;
-    virtual const rtti::Function* resolveFunction(const StubFunction* func) = 0;
+    virtual const EnumType* resolveEnum(const StubEnum* stub) = 0;
+    virtual const Property* resolveProperty(const StubProperty* prop) = 0;
+    virtual const Function* resolveFunction(const StubFunction* func) = 0;
 };
 
 //---
 
 /// unpacked script code for function
-class CORE_SCRIPT_API FunctionCodeBlock : public rtti::IFunctionCodeBlock
+class CORE_SCRIPT_API FunctionCodeBlock : public IFunctionCodeBlock
 {
 public:
     FunctionCodeBlock();
@@ -139,7 +139,7 @@ public:
     //--
 
     // run this code, creates internal stack frame
-    virtual void run(const rtti::IFunctionStackFrame* parent, void* context, const rtti::FunctionCallingParams& params) const override final;
+    virtual void run(const IFunctionStackFrame* parent, void* context, const FunctionCallingParams& params) const override final;
 
     //--
 

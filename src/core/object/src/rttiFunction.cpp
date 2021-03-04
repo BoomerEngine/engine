@@ -12,7 +12,7 @@
 
 #include "core/containers/include/stringBuilder.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -308,4 +308,4 @@ void Function::run(const IFunctionStackFrame* parentFrame, void* context, const 
     }
 }
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

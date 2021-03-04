@@ -244,11 +244,11 @@ void Entity::queryTemplateProperties(ITemplatePropertyBuilder& outTemplateProper
 {
     TBaseClass::queryTemplateProperties(outTemplateProperties);
 
-    outTemplateProperties.prop("Streaming"_id, "streamingGroupChildren"_id, true, rtti::PropertyEditorData().comment("Stream all child entities together as a group (better for logic and visuals, bad for heavy prefabs)"));
-    outTemplateProperties.prop("Streaming"_id, "streamingBreakFromGroup"_id, false, rtti::PropertyEditorData().comment("Force this entity to stream individually from it's parent (parent still has to be streamed first, there's no override for this)"));
-    outTemplateProperties.prop("Streaming"_id, "streamingDistanceOverride"_id, 0.0f, rtti::PropertyEditorData().comment("Override distance for the streaming range"));
+    outTemplateProperties.prop("Streaming"_id, "streamingGroupChildren"_id, true, PropertyEditorData().comment("Stream all child entities together as a group (better for logic and visuals, bad for heavy prefabs)"));
+    outTemplateProperties.prop("Streaming"_id, "streamingBreakFromGroup"_id, false, PropertyEditorData().comment("Force this entity to stream individually from it's parent (parent still has to be streamed first, there's no override for this)"));
+    outTemplateProperties.prop("Streaming"_id, "streamingDistanceOverride"_id, 0.0f, PropertyEditorData().comment("Override distance for the streaming range"));
 
-    outTemplateProperties.prop("Transform"_id, "attachToParentEntity"_id, false, rtti::PropertyEditorData().comment("In game follow parent entity"));
+    outTemplateProperties.prop("Transform"_id, "attachToParentEntity"_id, false, PropertyEditorData().comment("In game follow parent entity"));
 }
 
 bool Entity::initializeFromTemplateProperties(const ITemplatePropertyValueContainer& templateProperties)

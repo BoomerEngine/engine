@@ -112,7 +112,7 @@ bool CommonPlatform::handleStart(const app::CommandLine& systemCmdline, app::IAp
     }
 #endif
     // initialize RTTI caches
-    rtti::TypeSystem::GetInstance().updateCaches();
+    TypeSystem::GetInstance().updateCaches();
 
     // if we have the app run it
     if (application)

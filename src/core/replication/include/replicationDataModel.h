@@ -139,7 +139,7 @@ public:
     void buildFromType(ClassType structType, DataModelRepository& repository);
 
     // initialize from a function
-    void buildFromFunction(const rtti::Function* functionType, DataModelRepository& repository);
+    void buildFromFunction(const Function* functionType, DataModelRepository& repository);
 
     //--
 
@@ -147,7 +147,7 @@ public:
     void encodeFromNativeData(const void* data, IDataModelMapper& mapper, BitWriter& w) const;
 
     // encode from a function call
-    void encodeFromFunctionCall(const rtti::FunctionCallingParams& params, IDataModelMapper& mapper, BitWriter& w) const;
+    void encodeFromFunctionCall(const FunctionCallingParams& params, IDataModelMapper& mapper, BitWriter& w) const;
 
     //--
 
@@ -159,7 +159,7 @@ public:
     /// decode data with this model using native data layout
     /// NOTE: memory for parameters MUST BE PREALLOCATED!
     /// NOTE: this function may return false if there are errors in the bit stream, the goal is TO NEVER CRASH
-    bool decodeToFunctionCall(rtti::FunctionCallingParams& params, IDataModelResolver& resolve, BitReader& r) const;
+    bool decodeToFunctionCall(FunctionCallingParams& params, IDataModelResolver& resolve, BitReader& r) const;
 
     //--
 

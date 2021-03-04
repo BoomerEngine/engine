@@ -44,7 +44,7 @@ namespace Opcodes
 
     DECLARE_OPCODE(ClassConst)
     {
-        auto classPtr = ReadPointer<const rtti::IClassType*>(stack);
+        auto classPtr = ReadPointer<const IClassType*>(stack);
         RETURN(ClassType, classPtr);
     }
 
@@ -81,7 +81,7 @@ namespace Opcodes
     DECLARE_OPCODE(Constructor)
     {
         // get the type of the struct to construct
-        Type type = ReadPointer<const rtti::IType*>(stack);
+        Type type = ReadPointer<const IType*>(stack);
 
         // get number of arguments
         auto argCount = Read<uint8_t>(stack);
@@ -113,10 +113,10 @@ namespace Opcodes
         }
     }
 
-    INLINE static void CallFunction(const rtti::Function* functionToCall, StackFrame* stack, void* resultPtr)
+    INLINE static void CallFunction(const Function* functionToCall, StackFrame* stack, void* resultPtr)
     {
         // prepare calling arguments
-        rtti::FunctionCallingParams callingParams;
+        FunctionCallingParams callingParams;
         callingParams.m_returnPtr = resultPtr;
 
         // function encoding
@@ -204,19 +204,19 @@ namespace Opcodes
 
     DECLARE_OPCODE(FinalFunc)
     {
-        auto functionToCall  = ReadPointer<const rtti::Function*>(stack);
+        auto functionToCall  = ReadPointer<const Function*>(stack);
         CallFunction(functionToCall, stack, resultPtr);
     }
 
     DECLARE_OPCODE(VirtualFunc)
     {
-        auto functionToCall  = ReadPointer<const rtti::Function*>(stack);
+        auto functionToCall  = ReadPointer<const Function*>(stack);
         CallFunction(functionToCall, stack, resultPtr);
     }
 
     DECLARE_OPCODE(StaticFunc)
     {
-        auto functionToCall  = ReadPointer<const rtti::Function*>(stack);
+        auto functionToCall  = ReadPointer<const Function*>(stack);
         CallFunction(functionToCall, stack, resultPtr);
     }
 
@@ -227,7 +227,7 @@ namespace Opcodes
 
     DECLARE_OPCODE(LoadAny)
     {
-        Type type = ReadPointer<const rtti::IType*>(stack);
+        Type type = ReadPointer<const IType*>(stack);
         void* refPtr = EvalRef(stack);
         type->copy(resultPtr, refPtr);
     }
@@ -247,10 +247,10 @@ namespace Opcodes
     DECLARE_OPCODE(StructMember)
     {
         // get the type of the struct to construct
-        Type type = ReadPointer<const rtti::IType*>(stack);
+        Type type = ReadPointer<const IType*>(stack);
 
         // get property to copy out
-        auto prop = ReadPointer<const rtti::Property*>(stack);
+        auto prop = ReadPointer<const Property*>(stack);
 
         if (resultPtr)
         {
@@ -284,7 +284,7 @@ namespace Opcodes
         auto codePtr  = stack->codePtr() + offset;
 
         // get the type of return property
-        Type type = ReadPointer<const rtti::IType*>(stack);
+        Type type = ReadPointer<const IType*>(stack);
 
         // evaluate the context
         RefPtr<IObject> ptr;
@@ -315,7 +315,7 @@ namespace Opcodes
         auto codePtr  = stack->codePtr() + offset;
 
         // get the type of return property
-        Type type = ReadPointer<const rtti::IType*>(stack);
+        Type type = ReadPointer<const IType*>(stack);
 
         // evaluate the context REFERENCE
         void* ptr = EvalRef(stack);
@@ -331,7 +331,7 @@ namespace Opcodes
     DECLARE_OPCODE(ContextFromValue)
     {
         // get the type of the struct to construct
-        Type type = ReadPointer<const rtti::IType*>(stack);
+        Type type = ReadPointer<const IType*>(stack);
 
         // allocate temporary storage for the struct
         void *storage = ALLOCA_ALIGNED_TYPE(type);
@@ -358,7 +358,7 @@ namespace Opcodes
         auto codePtr  = stack->codePtr() + offset;
 
         // get the type of return property
-        Type type = ReadPointer<const rtti::IType*>(stack);
+        Type type = ReadPointer<const IType*>(stack);
 
         // evaluate the context
         ObjectPtr* ptr;
@@ -384,7 +384,7 @@ namespace Opcodes
 
     DECLARE_OPCODE(New)
     {
-        ClassType targetClass = ReadPointer<const rtti::IClassType*>(stack);
+        ClassType targetClass = ReadPointer<const IClassType*>(stack);
 
         ClassType runtimeClass;
         StepGeneric(stack, &runtimeClass);
@@ -426,7 +426,7 @@ namespace Opcodes
 
     DECLARE_OPCODE(EnumToName)
     {
-        auto enumType  = ReadPointer<const rtti::EnumType*>(stack);
+        auto enumType  = ReadPointer<const EnumType*>(stack);
         auto value = EvalInt64(stack);
 
         StringID name;
@@ -447,7 +447,7 @@ namespace Opcodes
 
     DECLARE_OPCODE(NameToEnum)
     {
-        auto enumType  = ReadPointer<const rtti::EnumType*>(stack);
+        auto enumType  = ReadPointer<const EnumType*>(stack);
 
         StringID name;
         StepGeneric(stack, &name);
@@ -458,7 +458,7 @@ namespace Opcodes
 
     DECLARE_OPCODE(DynamicCast)
     {
-        ClassType targetClass  = ReadPointer<const rtti::IClassType*>(stack);
+        ClassType targetClass  = ReadPointer<const IClassType*>(stack);
 
         StepGeneric(stack, resultPtr);
 
@@ -473,7 +473,7 @@ namespace Opcodes
 
     DECLARE_OPCODE(DynamicWeakCast)
     {
-        ClassType targetClass = ReadPointer<const rtti::IClassType*>(stack);
+        ClassType targetClass = ReadPointer<const IClassType*>(stack);
 
         StepGeneric(stack, resultPtr);
 
@@ -489,7 +489,7 @@ namespace Opcodes
 
     DECLARE_OPCODE(MetaCast)
     {
-        ClassType targetClass = ReadPointer<const rtti::IClassType*>(stack);
+        ClassType targetClass = ReadPointer<const IClassType*>(stack);
 
         StepGeneric(stack, resultPtr);
 
@@ -582,7 +582,7 @@ namespace Opcodes
 
     DECLARE_OPCODE(EnumToString)
     {
-        auto enumType  = ReadPointer<const rtti::EnumType*>(stack);
+        auto enumType  = ReadPointer<const EnumType*>(stack);
         auto value = EvalInt64(stack);
 
         StringID name;
@@ -1150,7 +1150,7 @@ namespace Opcodes
 
     DECLARE_OPCODE(TestEqual)
     {
-        Type typePtr  = ReadPointer<const rtti::IType*>(stack);
+        Type typePtr  = ReadPointer<const IType*>(stack);
         auto flags = Read<uint8_t>(stack);
 
         // evaluate first arg
@@ -1194,7 +1194,7 @@ namespace Opcodes
 
     DECLARE_OPCODE(TestNotEqual)
     {
-        Type typePtr = ReadPointer<const rtti::IType*>(stack);
+        Type typePtr = ReadPointer<const IType*>(stack);
         auto flags = Read<uint8_t>(stack);
 
         // evaluate first arg
@@ -2530,7 +2530,7 @@ namespace Opcodes
     DECLARE_OPCODE(LocalCtor)
     {
         auto offset = Read<uint16_t>(stack);
-        Type type = ReadPointer<const rtti::IType*>(stack);
+        Type type = ReadPointer<const IType*>(stack);
         type->construct(stack->locals() + offset);
         //TRACE_INFO("Local ctor '{}' at offset {}", type->name(), offset);
     }
@@ -2538,7 +2538,7 @@ namespace Opcodes
     DECLARE_OPCODE(LocalDtor)
     {
         auto offset = Read<uint16_t>(stack);
-        Type type = ReadPointer<const rtti::IType*>(stack);
+        Type type = ReadPointer<const IType*>(stack);
         //TRACE_INFO("Local Dtor '{}' at offset {}", type->name(), offset);
         type->destruct(stack->locals() + offset);
     }
@@ -2546,7 +2546,7 @@ namespace Opcodes
     DECLARE_OPCODE(ContextCtor)
     {
         auto offset = Read<uint16_t>(stack);
-        Type type = ReadPointer<const rtti::IType*>(stack);
+        Type type = ReadPointer<const IType*>(stack);
         type->construct((char*)stack->activeContext() + offset);
         //TRACE_INFO("Context ctor '{}' at offset {}", type->name(), offset);
     }
@@ -2554,7 +2554,7 @@ namespace Opcodes
     DECLARE_OPCODE(ContextDtor)
     {
         auto offset = Read<uint16_t>(stack);
-        Type type = ReadPointer<const rtti::IType*>(stack);
+        Type type = ReadPointer<const IType*>(stack);
         //TRACE_INFO("Context Dtor '{}' at offset {}", type->name(), offset);
         type->destruct((char*)stack->activeContext() + offset);
     }
@@ -2562,7 +2562,7 @@ namespace Opcodes
     DECLARE_OPCODE(ContextExternalCtor)
     {
         auto offset = Read<uint16_t>(stack);
-        Type type = ReadPointer<const rtti::IType*>(stack);
+        Type type = ReadPointer<const IType*>(stack);
         auto obj  = (ScriptedObject*)stack->activeContext();
         type->construct((char*)obj->scriptedData() + offset);
        // TRACE_INFO("Context external ctor '{}' at offset {}", type->name(), offset);
@@ -2571,7 +2571,7 @@ namespace Opcodes
     DECLARE_OPCODE(ContextExternalDtor)
     {
         auto offset = Read<uint16_t>(stack);
-        Type type = ReadPointer<const rtti::IType*>(stack);;
+        Type type = ReadPointer<const IType*>(stack);;
         //TRACE_INFO("Context external Dtor '{}' at offset {}", type->name(), offset);
         auto obj  = (ScriptedObject*)stack->activeContext();
         type->destruct((char*)obj->scriptedData() + offset);
@@ -2984,7 +2984,7 @@ namespace Opcodes
 
     DECLARE_OPCODE(ReturnAny)
     {
-        Type type = ReadPointer<const rtti::IType*>(stack);
+        Type type = ReadPointer<const IType*>(stack);
         void* refPtr = EvalRef(stack);
         type->copy(stack->params()->m_returnPtr, refPtr);
     }

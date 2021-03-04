@@ -12,13 +12,13 @@
 
 #include "core/object/include/rttiEnumType.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(reflection)
+BEGIN_BOOMER_NAMESPACE()
 
 // helper class that can add stuff to the enum type
 class CORE_REFLECTION_API EnumBuilder
 {
 public:
-    EnumBuilder(rtti::EnumType* enumPtr);
+    EnumBuilder(EnumType* enumPtr);
     ~EnumBuilder();
 
     // apply changes to target class
@@ -48,9 +48,9 @@ private:
     typedef Array<Option> TOptions;
     TOptions m_options;
 
-    rtti::EnumType* m_enumType;
+    EnumType* m_enumType;
 
     Array<StringID> m_oldNames;
 };
 
-END_BOOMER_NAMESPACE_EX(reflection)
+END_BOOMER_NAMESPACE()

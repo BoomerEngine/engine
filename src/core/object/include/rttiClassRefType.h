@@ -11,7 +11,7 @@
 #include "rttiType.h"
 #include "rttiClassRef.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 /// Type definition for a ClassRef, note: a custom base class is allowed
 class CORE_OBJECT_API ClassRefType : public IType
@@ -60,4 +60,4 @@ private:
     ClassType m_baseClass;
 };
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

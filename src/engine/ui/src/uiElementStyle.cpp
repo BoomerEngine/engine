@@ -22,11 +22,11 @@ StyleStack::StyleStack(DataStash& stash)
 
 static void CalcParamCRC(Type type, const void* data, CRC64& crc)
 {
-    static const auto fontFamily = reflection::GetTypeObject<style::FontFamily>();
-    static const auto imageReference = reflection::GetTypeObject<style::ImageReference>();
-    static const auto renderStyle = reflection::GetTypeObject<style::RenderStyle>();
-    static const auto stringBuf = reflection::GetTypeObject<StringBuf>();
-    static const auto stringId = reflection::GetTypeObject<StringID>();
+    static const auto fontFamily = GetTypeObject<style::FontFamily>();
+    static const auto imageReference = GetTypeObject<style::ImageReference>();
+    static const auto renderStyle = GetTypeObject<style::RenderStyle>();
+    static const auto stringBuf = GetTypeObject<StringBuf>();
+    static const auto stringId = GetTypeObject<StringID>();
        
     if (type == fontFamily)
     {

@@ -26,8 +26,8 @@ BEGIN_BOOMER_NAMESPACE();
 template< typename T >
 void HelperWriteType(stream::OpcodeWriter& writer, const T& data)
 {
-    rtti::TypeSerializationContext type;
-    reflection::GetTypeObject<T>()->writeBinary(type, writer, &data, nullptr);
+    TypeSerializationContext type;
+    GetTypeObject<T>()->writeBinary(type, writer, &data, nullptr);
 }
 
 TEST(StreamOpcodes, DataRaw)
@@ -185,7 +185,7 @@ TEST(StreamOpcodes, DataType)
     stream::OpcodeWriterReferences references;
     stream::OpcodeWriter writer(stream, references);
 
-    const auto intType = reflection::GetTypeObject<int>();
+    const auto intType = GetTypeObject<int>();
     HelperWriteType<Type>(writer, intType);
 
     ASSERT_EQ(1, stream.totalOpcodeCount());
@@ -207,7 +207,7 @@ TEST(StreamOpcodes, DataTypeMappedOnce)
     stream::OpcodeWriterReferences references;
     stream::OpcodeWriter writer(stream, references);
 
-    const auto intType = reflection::GetTypeObject<int>();
+    const auto intType = GetTypeObject<int>();
     HelperWriteType<Type>(writer, intType);
     HelperWriteType<Type>(writer, intType);
 
@@ -238,8 +238,8 @@ TEST(StreamOpcodes, DataDifferentTypes)
     stream::OpcodeWriterReferences references;
     stream::OpcodeWriter writer(stream, references);
 
-    const auto intType = reflection::GetTypeObject<int>();
-    const auto floatType = reflection::GetTypeObject<float>();
+    const auto intType = GetTypeObject<int>();
+    const auto floatType = GetTypeObject<float>();
     HelperWriteType<Type>(writer, intType);
     HelperWriteType<Type>(writer, floatType);
 
@@ -487,7 +487,7 @@ TEST(StreamOpcodes, CompoundValues)
         ++it;
     }
 
-    const auto floatType = reflection::GetTypeObject<float>();
+    const auto floatType = GetTypeObject<float>();
 
     for (int i=1; i<=3; ++i)
     {

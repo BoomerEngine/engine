@@ -31,7 +31,7 @@ public:
     bool removeTemplateProperty(StringID name);
 
     /// IDataView
-    virtual DataViewResult describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const override final;
+    virtual DataViewResult describeDataView(StringView viewPath, DataViewInfo& outInfo) const override final;
     virtual DataViewResult readDataView(StringView viewPath, void* targetData, Type targetType) const override final;
     virtual DataViewResult writeDataView(StringView viewPath, const void* sourceData, Type sourceType) const override final;
 
@@ -50,11 +50,11 @@ private:
     InplaceArray<ObjectIndirectTemplatePtr, 8> m_baseTemplatesRev;
     InplaceArray<ObjectIndirectTemplatePtr, 8> m_allTemplatesRev;
 
-    HashMap<StringView, const rtti::TemplateProperty*> m_templateProperties;
-    HashMap<StringID, const rtti::TemplateProperty*> m_templatePropertiesByID;
+    HashMap<StringView, const TemplateProperty*> m_templateProperties;
+    HashMap<StringID, const TemplateProperty*> m_templatePropertiesByID;
 
-    const rtti::TemplateProperty* findTemplateProperty(StringView name) const;
-    const rtti::TemplateProperty* findTemplateProperty(StringID name) const;
+    const TemplateProperty* findTemplateProperty(StringView name) const;
+    const TemplateProperty* findTemplateProperty(StringID name) const;
 
     const void* findDataForProperty(StringID name, Type expectedType) const;
     const void* findBaseDataForProperty(StringID name, Type expectedType) const;

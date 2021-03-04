@@ -11,7 +11,7 @@
 #include "resourceReference.h"
 #include "resourceAsyncReference.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(reflection)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace resolve
 {
@@ -40,4 +40,4 @@ namespace resolve
 
 } // resolve
 
-END_BOOMER_NAMESPACE_EX(reflection)
+END_BOOMER_NAMESPACE()

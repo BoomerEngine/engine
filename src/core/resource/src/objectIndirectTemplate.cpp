@@ -98,7 +98,7 @@ bool ObjectIndirectTemplate::writeProperty(StringID name, const void* data, cons
 {
     if (m_templateClass)
     {
-        const rtti::TemplateProperty* templateProp = nullptr;
+        const TemplateProperty* templateProp = nullptr;
         for (const auto& prop : m_templateClass->allTemplateProperties())
         {
             if (prop.name == name)
@@ -130,7 +130,7 @@ bool ObjectIndirectTemplate::writeProperty(StringID name, const void* data, cons
                 localProp = &entry;
             }
 
-            if (!rtti::ConvertData(data, type, localProp->data.data(), localProp->data.type()))
+            if (!ConvertData(data, type, localProp->data.data(), localProp->data.type()))
                 return false;
 
             onPropertyChanged(name.view());
@@ -162,7 +162,7 @@ bool ObjectIndirectTemplate::addProperty(const ObjectIndirectTemplateProperty& p
     return true;
 }
 
-bool ObjectIndirectTemplate::createProperty(const rtti::TemplateProperty* source)
+bool ObjectIndirectTemplate::createProperty(const TemplateProperty* source)
 {
     DEBUG_CHECK_RETURN_EX_V(source, "Invalid source property", nullptr);
 

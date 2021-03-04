@@ -11,7 +11,7 @@
 #include "rttiClassType.h"
 #include "rttiCustomType.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
         
@@ -81,4 +81,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

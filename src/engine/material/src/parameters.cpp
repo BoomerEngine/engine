@@ -30,7 +30,7 @@ MaterialDataLayoutParameterType MaterialTemplateParameter_StaticBool::queryType(
 
 Type MaterialTemplateParameter_StaticBool::queryDataType() const
 {
-    return reflection::GetTypeObject<bool>();
+    return GetTypeObject<bool>();
 }
 
 const void* MaterialTemplateParameter_StaticBool::queryDefaultValue() const
@@ -59,7 +59,7 @@ MaterialDataLayoutParameterType MaterialTemplateParameter_Scalar::queryType() co
 
 Type MaterialTemplateParameter_Scalar::queryDataType() const
 {
-    return reflection::GetTypeObject<float>();
+    return GetTypeObject<float>();
 }
 
 const void* MaterialTemplateParameter_Scalar::queryDefaultValue() const
@@ -88,7 +88,7 @@ MaterialDataLayoutParameterType MaterialTemplateParameter_Vector2::queryType() c
 
 Type MaterialTemplateParameter_Vector2::queryDataType() const
 {
-    return reflection::GetTypeObject<Vector2>();
+    return GetTypeObject<Vector2>();
 }
 
 const void* MaterialTemplateParameter_Vector2::queryDefaultValue() const
@@ -117,7 +117,7 @@ MaterialDataLayoutParameterType MaterialTemplateParameter_Vector3::queryType() c
 
 Type MaterialTemplateParameter_Vector3::queryDataType() const
 {
-    return reflection::GetTypeObject<Vector3>();
+    return GetTypeObject<Vector3>();
 }
 
 const void* MaterialTemplateParameter_Vector3::queryDefaultValue() const
@@ -146,7 +146,7 @@ MaterialDataLayoutParameterType MaterialTemplateParameter_Vector4::queryType() c
 
 Type MaterialTemplateParameter_Vector4::queryDataType() const
 {
-    return reflection::GetTypeObject<Vector4>();
+    return GetTypeObject<Vector4>();
 }
 
 const void* MaterialTemplateParameter_Vector4::queryDefaultValue() const
@@ -173,7 +173,7 @@ MaterialDataLayoutParameterType MaterialTemplateParameter_Color::queryType() con
 
 Type MaterialTemplateParameter_Color::queryDataType() const
 {
-    return reflection::GetTypeObject<Color>();
+    return GetTypeObject<Color>();
 }
 
 const void* MaterialTemplateParameter_Color::queryDefaultValue() const
@@ -200,7 +200,7 @@ MaterialDataLayoutParameterType MaterialTemplateParameter_Texture2D::queryType()
 
 Type MaterialTemplateParameter_Texture2D::queryDataType() const
 {
-    return reflection::GetTypeObject<TextureRef>();
+    return GetTypeObject<TextureRef>();
 }
 
 const void* MaterialTemplateParameter_Texture2D::queryDefaultValue() const

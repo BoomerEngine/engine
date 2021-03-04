@@ -20,7 +20,7 @@
 #include "streamOpcodeReader.h"
 #include "core/xml/include/xmlWrappers.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -969,4 +969,4 @@ void IClassType::freeClassMemory(void* ptr) const
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

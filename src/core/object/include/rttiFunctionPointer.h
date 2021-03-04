@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -220,11 +220,11 @@ typedef void (*TFunctionWrapperPtr)(void* contextPtr, const FunctionPointer& fun
 //---
 
 // JITed function wrapper pointer
-typedef void (*TFunctionJittedWrapperPtr)(void* context, const IFunctionStackFrame* stackFrame, const rtti::FunctionCallingParams* params);
+typedef void (*TFunctionJittedWrapperPtr)(void* context, const IFunctionStackFrame* stackFrame, const FunctionCallingParams* params);
 
 //---
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()
 
-#define MakeMethodPtr(c,m) rtti::MakeMethodHelper<sizeof(void (c::*)())>::Convert((void (c::*)())(&c::m))
-#define MakeFunctionPtr(f) rtti::MakeFunctionHelper(f)
+#define MakeMethodPtr(c,m) MakeMethodHelper<sizeof(void (c::*)())>::Convert((void (c::*)())(&c::m))
+#define MakeFunctionPtr(f) MakeFunctionHelper(f)

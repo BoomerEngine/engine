@@ -182,7 +182,7 @@ const ImageFormatInfo& GetImageFormatInfo(ImageFormat format)
 		return GImageFormatInfos[0];
 
 #ifdef BUILD_DEBUG
-	auto name = reflection::GetEnumValueName<ImageFormat>(format);
+	auto name = GetEnumValueName<ImageFormat>(format);
 	auto formatName = GImageFormatInfos[index].name;
 	DEBUG_CHECK(0 == strcmp(name, formatName));
 #endif

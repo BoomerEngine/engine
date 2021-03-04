@@ -492,7 +492,7 @@ if (key == #flag##_id) { \
 #define CONFIGURE_ENUM(enumType, val, flag) \
 if (key == #flag##_id) { \
 	enumType ret; \
-	if (!reflection::GetEnumNameValue(StringID::Find(value), ret)) { \
+	if (!GetEnumNameValue(StringID::Find(value), ret)) { \
 		err.appendf("Unknown option '{}' for {}", value, #enumType); \
 		return false; \
 	} \

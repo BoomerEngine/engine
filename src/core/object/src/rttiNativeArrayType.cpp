@@ -14,7 +14,7 @@
 #include "core/containers/include/stringBuilder.h"
 #include "core/containers/include/stringParser.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -297,4 +297,4 @@ extern StringID FormatNativeArrayTypeName(StringID innerTypeName, uint32_t maxSi
     return StringID(builder.c_str());
 }
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

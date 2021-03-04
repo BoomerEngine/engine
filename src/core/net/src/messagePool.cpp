@@ -48,7 +48,7 @@ bool Message::dispatch(IObject* object, IObject* context) const
 MessagePtr Message::AllocateFromPool(Type messageType)
 {
     // we only support classes for now
-    if (!messageType || messageType->metaType() != rtti::MetaType::Class)
+    if (!messageType || messageType->metaType() != MetaType::Class)
         return nullptr;
 
     auto messageClass = messageType.toClass();

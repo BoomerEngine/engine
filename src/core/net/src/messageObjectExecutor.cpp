@@ -32,7 +32,7 @@ namespace prv
 
         public:
             ClassType m_classes;
-            HashMap<ClassType, const rtti::Function*> m_messageFunctions;
+            HashMap<ClassType, const Function*> m_messageFunctions;
         };
 
         struct ContextObjectEntry
@@ -52,7 +52,7 @@ namespace prv
 
         const ClassEntry* typeInfoForClass(ClassType contextObjectClass, ClassType classType);
 
-        void buildSupportedMessageClassesList(ClassType contextObjectClass, ClassType objectClass, HashMap<ClassType, const rtti::Function*>& outFunctions) const;
+        void buildSupportedMessageClassesList(ClassType contextObjectClass, ClassType objectClass, HashMap<ClassType, const Function*>& outFunctions) const;
 
         bool checkMessageSupport(ClassType contextObjectType, ClassType objectType, Type messageType);
 
@@ -70,10 +70,10 @@ namespace prv
 
     bool MessageObjectExecutorTypeRegistry::checkMessageSupport(ClassType contextObjectType, ClassType objectType, Type messageType)
     {
-        if (!objectType || objectType->metaType() != rtti::MetaType::Class)
+        if (!objectType || objectType->metaType() != MetaType::Class)
             return false;
 
-        if (!messageType || messageType->metaType() != rtti::MetaType::Class)
+        if (!messageType || messageType->metaType() != MetaType::Class)
             return false;
 
         auto classInfo = typeInfoForClass(contextObjectType, objectType);
@@ -83,7 +83,7 @@ namespace prv
         return classInfo->m_messageFunctions.contains(messageType.toClass());
     }
 
-    void MessageObjectExecutorTypeRegistry::buildSupportedMessageClassesList(ClassType contextObjectClass, ClassType objectClass, HashMap<ClassType, const rtti::Function*>& outFunctions) const
+    void MessageObjectExecutorTypeRegistry::buildSupportedMessageClassesList(ClassType contextObjectClass, ClassType objectClass, HashMap<ClassType, const Function*>& outFunctions) const
     {
         HashSet<StringID> checkedFunctionNames;
 
@@ -105,11 +105,11 @@ namespace prv
 
             // first param should be a const ref to a structure
             auto& dataParam = func->params()[0];
-            if (!dataParam.m_flags.test(rtti::FunctionParamFlag::ConstRef))
+            if (!dataParam.m_flags.test(FunctionParamFlag::ConstRef))
                 continue;
 
             // it should also be a struct
-            if (dataParam.m_type->metaType() != rtti::MetaType::Class)
+            if (dataParam.m_type->metaType() != MetaType::Class)
                 continue;
 
             // OK, if it's a struct it can be a message function
@@ -122,15 +122,15 @@ namespace prv
             {
                 // second param can be a const ref to shared pointer of the context type
                 auto& contextParam = func->params()[1];
-                if (!contextParam.m_flags.test(rtti::FunctionParamFlag::ConstRef))
+                if (!contextParam.m_flags.test(FunctionParamFlag::ConstRef))
                     continue;
 
                 // first param should be a handle
-                if (contextParam.m_type->metaType() != rtti::MetaType::StrongHandle && contextParam.m_type->metaType() != rtti::MetaType::WeakHandle)
+                if (contextParam.m_type->metaType() != MetaType::StrongHandle && contextParam.m_type->metaType() != MetaType::WeakHandle)
                     continue;
 
                 // it should match the type we want to pass as a context
-                auto handleType = static_cast<const rtti::IHandleType*>(contextParam.m_type.ptr());
+                auto handleType = static_cast<const IHandleType*>(contextParam.m_type.ptr());
                 if (!contextObjectClass->is(handleType->pointedClass()))
                     continue;
             }
@@ -182,10 +182,10 @@ bool DispatchObjectMessage(IObject* object, Type messageType, const void* messag
     const auto contextObjectType = contextObject ? contextObject->cls() : nullptr;
     if (const auto* classInfo = prv::MessageObjectExecutorTypeRegistry::GetInstance().typeInfoForClass(contextObjectType, objectType))
     {
-        const rtti::Function* callFunction = nullptr;
+        const Function* callFunction = nullptr;
         if (classInfo->m_messageFunctions.find(messageType.toClass(), callFunction))
         {
-            rtti::FunctionCallingParams params;
+            FunctionCallingParams params;
 
             if (contextObjectType && callFunction->numParams() == 2)
             {

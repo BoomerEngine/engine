@@ -37,9 +37,9 @@ public:
 //--
 
 // metadata with name of the command 
-class CORE_APP_API CommandNameMetadata : public rtti::IMetadata
+class CORE_APP_API CommandNameMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CommandNameMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(CommandNameMetadata, IMetadata);
 
 public:
     CommandNameMetadata();

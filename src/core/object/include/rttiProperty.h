@@ -16,7 +16,7 @@ BEGIN_BOOMER_NAMESPACE_EX(res)
 class ResourceLoader;
 END_BOOMER_NAMESPACE_EX(res)
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 class IType;
 
@@ -155,4 +155,4 @@ protected:
     uint64_t m_hash;
 };
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

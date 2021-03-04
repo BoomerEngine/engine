@@ -16,7 +16,7 @@
 
 #include "core/containers/include/stringBuilder.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 ///---
 
@@ -71,7 +71,7 @@ DataViewResult IType::readDataView(StringView viewPath, const void* viewData, vo
 {
     if (viewPath.empty())
     {
-        if (!rtti::ConvertData(viewData, this, targetData, targetType))
+        if (!ConvertData(viewData, this, targetData, targetType))
             return DataViewResultCode::ErrorTypeConversion;
         return DataViewResultCode::OK;
     }
@@ -94,7 +94,7 @@ DataViewResult IType::readDataView(StringView viewPath, const void* viewData, vo
 
             static const auto textType = RTTI::GetInstance().findType("StringBuf"_id);
 
-            if (!rtti::ConvertData(&text, textType, targetData, targetType))
+            if (!ConvertData(&text, textType, targetData, targetType))
                 return DataViewResultCode::ErrorTypeConversion;
 
             return DataViewResultCode::OK;
@@ -111,7 +111,7 @@ DataViewResult IType::writeDataView(StringView viewPath, void* viewData, const v
 {
     if (viewPath.empty())
     {
-        if (!rtti::ConvertData(sourceData, sourceType, viewData, this))
+        if (!ConvertData(sourceData, sourceType, viewData, this))
             return DataViewResultCode::ErrorTypeConversion;
         return DataViewResultCode::OK;
     }
@@ -153,4 +153,4 @@ void TypeSerializationContext::print(IFormatStream& f) const
 
 ///---
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

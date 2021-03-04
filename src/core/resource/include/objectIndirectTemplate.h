@@ -72,7 +72,7 @@ public:
     bool removeProperty(StringID name);
 
     // create template property
-    bool createProperty(const rtti::TemplateProperty* source);
+    bool createProperty(const TemplateProperty* source);
 
     //--
 
@@ -86,7 +86,7 @@ public:
     template< typename T >
     INLINE bool writeProperty(StringID name, const T& data)
     {
-        return writeProperty(name, &data, reflection::GetTypeObject<T>());
+        return writeProperty(name, &data, GetTypeObject<T>());
     }
 
     //--

@@ -12,7 +12,7 @@
 #include "streamOpcodeWriter.h"
 #include "streamOpcodeReader.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -149,4 +149,4 @@ DataViewResult CustomType::writeDataView(StringView viewPath, void* viewData, co
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

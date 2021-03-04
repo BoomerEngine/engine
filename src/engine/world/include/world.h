@@ -80,7 +80,7 @@ public:
     template< typename T >
     INLINE T* system() const
     {
-        static auto userIndex = reflection::ClassID<T>()->userIndex();
+        static auto userIndex = ClassID<T>()->userIndex();
         ASSERT_EX(userIndex != -1, "Trying to access unregistered scene system");
         auto system  = (T*) m_systemMap[userIndex];
         ASSERT_EX(!system || system->cls()->is(T::GetStaticClass()), "Invalid system registered");

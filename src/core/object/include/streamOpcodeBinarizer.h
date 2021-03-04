@@ -25,7 +25,7 @@ struct CORE_OBJECT_API OpcodeMappedReferences : public NoCopy
     HashMap<StringID, uint32_t> mappedNames;
     HashMap<Type, uint32_t> mappedTypes;
     HashMap<const IObject*, uint32_t> mappedPointers;
-    HashMap<const rtti::Property*, uint32_t> mappedProperties;
+    HashMap<const Property*, uint32_t> mappedProperties;
     HashMap<OpcodeWriterResourceReference, uint32_t> mappedResources;
 };
 

@@ -126,7 +126,7 @@ StringView JITConstCache::mapTypeConst(const char* nameConst)
     auto hash  = StringView(nameConst).calcCRC64();
 
     if (!m_nameType)
-        m_typeType = m_typeLib.resolveEngineType(reflection::GetTypeName<SpecificClassType<IObject>>());
+        m_typeType = m_typeLib.resolveEngineType(GetTypeName<SpecificClassType<IObject>>());
 
     uint32_t index = 0;
     if (m_typeConstantMap.find(hash, index))

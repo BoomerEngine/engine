@@ -100,9 +100,9 @@ public:
 //--
 
 /// list the PRIMARY configuration classes that are for importing asset via given importer class
-class CORE_RESOURCE_COMPILER_API ResourceImporterConfigurationClassMetadata : public rtti::IMetadata
+class CORE_RESOURCE_COMPILER_API ResourceImporterConfigurationClassMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ResourceImporterConfigurationClassMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceImporterConfigurationClassMetadata, IMetadata);
 
 public:
     ResourceImporterConfigurationClassMetadata();

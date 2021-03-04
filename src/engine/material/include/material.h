@@ -50,7 +50,7 @@ public:
     {
         static_assert(!std::is_pointer<T>::value, "Pointer type is unexpected here");
         static_assert(!std::is_same<T, Variant>::value, "Variant should not be used here, use the real value or use the readParameter");
-        return readParameter(name, &data, reflection::GetTypeObject<T>());
+        return readParameter(name, &data, GetTypeObject<T>());
     }
 
     //----

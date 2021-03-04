@@ -12,7 +12,7 @@
 #include "core/containers/include/array.h"
 #include "core/containers/include/stringID.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 /// Collection of named values
 class CORE_OBJECT_API EnumType : public IType
@@ -70,7 +70,7 @@ public:
 
     //---
 
-    // rtti::IType interface
+    // IType interface
     virtual void construct(void *mem) const override final {};
     virtual void destruct(void *mem) const override final {};
 
@@ -101,4 +101,4 @@ private:
     void writeInt64(void* data, int64_t value) const;
 };
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

@@ -18,8 +18,8 @@ BEGIN_BOOMER_NAMESPACE_EX(script)
 
 //---
 
-ScriptedProperty::ScriptedProperty(Type parent, const rtti::PropertySetup& setup)
-    : rtti::Property(parent.ptr(), setup)
+ScriptedProperty::ScriptedProperty(Type parent, const PropertySetup& setup)
+    : Property(parent.ptr(), setup)
 {
     ASSERT(scripted());
 }
@@ -34,7 +34,7 @@ void ScriptedProperty::bindScriptedPropertyOffset(uint32_t offset)
 
 //---
 
-ScriptedClassProperty::ScriptedClassProperty(Type parent, const rtti::PropertySetup& setup)
+ScriptedClassProperty::ScriptedClassProperty(Type parent, const PropertySetup& setup)
     : ScriptedProperty(parent, setup)
 {
     ASSERT(scripted());
@@ -59,7 +59,7 @@ void* ScriptedClassProperty::offsetPtr(void* data) const
 //---
 
 ScriptedClass::ScriptedClass(StringID name, ClassType nativeClass)
-    : rtti::IClassType(name, nativeClass->size(), nativeClass->alignment(), POOL_SCRIPTED_OBJECT)
+    : IClassType(name, nativeClass->size(), nativeClass->alignment(), POOL_SCRIPTED_OBJECT)
     , m_nativeClass(nativeClass)
     , m_scriptedDataSize(0)
     , m_scriptedDatAlignment(1)
@@ -101,7 +101,7 @@ void ScriptedClass::destroyScriptedObject(void* object) const
     // call destructor
     if (m_functionDtor)
     {
-        rtti::FunctionCallingParams params;
+        FunctionCallingParams params;
         m_functionDtor->run(nullptr, object, params);
     }
 
@@ -140,7 +140,7 @@ void ScriptedClass::construct(void *object) const
     //TRACE_INFO("Script: Created scripted class '{}'", name());
     if (m_functionCtor)
     {
-        rtti::FunctionCallingParams params;
+        FunctionCallingParams params;
         m_functionCtor->run(nullptr, obj, params);
     }
 }
@@ -223,7 +223,7 @@ bool ScriptedClass::updateScriptedDataSize()
 
         auto offset = Align(newSize, propAlignment);
 
-        auto scriptedProp  = static_cast<ScriptedProperty*>(const_cast<rtti::Property*>(prop));
+        auto scriptedProp  = static_cast<ScriptedProperty*>(const_cast<Property*>(prop));
         scriptedProp->bindScriptedPropertyOffset(offset);
 
         newAlignment = std::max(newAlignment, propAlignment);
@@ -252,7 +252,7 @@ void ScriptedClass::bindFunctions()
 //---
 
 ScriptedStruct::ScriptedStruct(StringID name)
-    : rtti::IClassType(name, 0, 1, POOL_SCRIPTED_OBJECT)
+    : IClassType(name, 0, 1, POOL_SCRIPTED_OBJECT)
     , m_defaultObject(nullptr)
     , m_functionCtor(nullptr)
     , m_functionDtor(nullptr)
@@ -267,7 +267,7 @@ const void* ScriptedStruct::createDefaultObject() const
 
     if (m_functionCtor)
     {
-        rtti::FunctionCallingParams params;
+        FunctionCallingParams params;
         m_functionCtor->run(nullptr, ret, params);
     }
 
@@ -296,7 +296,7 @@ void ScriptedStruct::construct(void *object) const
 {
     if (m_functionCtor)
     {
-        rtti::FunctionCallingParams params;
+        FunctionCallingParams params;
         m_functionCtor->run(nullptr, object, params);
     }
 }
@@ -305,7 +305,7 @@ void ScriptedStruct::destruct(void *object) const
 {
     if (m_functionDtor)
     {
-        rtti::FunctionCallingParams params;
+        FunctionCallingParams params;
         m_functionDtor->run(nullptr, object, params);
     }
 }
@@ -361,7 +361,7 @@ bool ScriptedStruct::updateDataSize()
 
         auto offset = Align(newSize, propAlignment);
 
-        auto scriptedProp  = static_cast<ScriptedProperty*>(const_cast<rtti::Property*>(prop));
+        auto scriptedProp  = static_cast<ScriptedProperty*>(const_cast<Property*>(prop));
         scriptedProp->bindScriptedPropertyOffset(offset);
 
         newAlign = std::max(newAlign, propAlignment);

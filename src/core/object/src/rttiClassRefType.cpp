@@ -15,7 +15,7 @@
 #include "streamOpcodeReader.h"
 #include "core/xml/include/xmlWrappers.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -199,4 +199,4 @@ extern StringID FormatClassRefTypeName(StringID className)
 
 //---
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

@@ -12,10 +12,10 @@ BEGIN_BOOMER_NAMESPACE_EX(script)
 //---
 
 /// execution context of script function
-class CORE_SCRIPT_API StackFrame : public rtti::IFunctionStackFrame
+class CORE_SCRIPT_API StackFrame : public IFunctionStackFrame
 {
 public:
-    StackFrame(const StackFrame* parent, void* context, const FunctionCodeBlock* code, const rtti::FunctionCallingParams* params, void* localStorage);
+    StackFrame(const StackFrame* parent, void* context, const FunctionCodeBlock* code, const FunctionCallingParams* params, void* localStorage);
     ~StackFrame();
 
     //--
@@ -43,11 +43,11 @@ public:
     INLINE uint8_t* locals() const { return m_locals; }
 
     // get function input arguments we are running with
-    INLINE const rtti::FunctionCallingParams* params() const { return m_params; }
+    INLINE const FunctionCallingParams* params() const { return m_params; }
 
     //--
 
-    /// rtti::IFunctionStackFrame
+    /// IFunctionStackFrame
     virtual StringID functionName() const override final;
     virtual StringID className() const override final;
     virtual StringBuf sourceFile() const override final;
@@ -69,7 +69,7 @@ private:
     // -- cache line
 
     void* m_activeContextObject; // context object for execution, used in function calling and context var access
-    const rtti::FunctionCallingParams* m_params; // function call parameters
+    const FunctionCallingParams* m_params; // function call parameters
 
     // cold set
     const StackFrame* m_parent; // parent stack frame

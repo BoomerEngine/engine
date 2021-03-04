@@ -188,20 +188,20 @@ TEST(FieldPacking, CompatibilityBool)
 {
     FieldPacking f;
     f.m_mode = PackingMode::Bit;
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<bool>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<uint8_t>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<char>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<float>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<bool>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<uint8_t>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<char>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<float>()));
 }
 
 TEST(FieldPacking, CompatibilityFloat)
 {
     FieldPacking f;
     f.m_mode = PackingMode::RangeFloat;
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<float>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<uint8_t>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<char>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<bool>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<float>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<uint8_t>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<char>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<bool>()));
 }
 
 TEST(FieldPacking, CompatibilitySignedTypes)
@@ -209,17 +209,17 @@ TEST(FieldPacking, CompatibilitySignedTypes)
     FieldPacking f;
     f.m_mode = PackingMode::Signed;
     f.m_quantization = Quantization(3);
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<char>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<short>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<int>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<int64_t>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<uint8_t>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<uint16_t>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<uint32_t>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<uint64_t>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<bool>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<float>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<double>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<char>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<short>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<int>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<int64_t>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<uint8_t>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<uint16_t>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<uint32_t>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<uint64_t>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<bool>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<float>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<double>()));
 }
 
 TEST(FieldPacking, CompatibilityUnsignedTypes)
@@ -227,17 +227,17 @@ TEST(FieldPacking, CompatibilityUnsignedTypes)
     FieldPacking f;
     f.m_mode = PackingMode::Unsigned;
     f.m_quantization = Quantization(3);
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<char>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<short>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<int>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<int64_t>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<uint8_t>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<uint16_t>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<uint32_t>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<uint64_t>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<bool>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<float>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<double>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<char>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<short>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<int>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<int64_t>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<uint8_t>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<uint16_t>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<uint32_t>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<uint64_t>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<bool>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<float>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<double>()));
 }
 
 TEST(FieldPacking, CompatibilitySignedTypeSizeCheck)
@@ -246,16 +246,16 @@ TEST(FieldPacking, CompatibilitySignedTypeSizeCheck)
     f.m_mode = PackingMode::Signed;
 
     f.m_quantization = Quantization(10);
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<char>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<short>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<int>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<int64_t>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<char>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<short>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<int>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<int64_t>()));
 
     f.m_quantization = Quantization(20);
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<char>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<short>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<int>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<int64_t>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<char>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<short>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<int>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<int64_t>()));
 }
 
 TEST(FieldPacking, CompatibilityUnsignedTypeSizeCheck)
@@ -264,16 +264,16 @@ TEST(FieldPacking, CompatibilityUnsignedTypeSizeCheck)
     f.m_mode = PackingMode::Unsigned;
 
     f.m_quantization = Quantization(10);
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<uint8_t>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<uint16_t>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<uint32_t>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<uint64_t>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<uint8_t>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<uint16_t>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<uint32_t>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<uint64_t>()));
 
     f.m_quantization = Quantization(20);
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<uint8_t>()));
-    ASSERT_FALSE(f.checkTypeCompatibility(reflection::GetTypeObject<uint16_t>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<uint32_t>()));
-    ASSERT_TRUE(f.checkTypeCompatibility(reflection::GetTypeObject<uint64_t>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<uint8_t>()));
+    ASSERT_FALSE(f.checkTypeCompatibility(GetTypeObject<uint16_t>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<uint32_t>()));
+    ASSERT_TRUE(f.checkTypeCompatibility(GetTypeObject<uint64_t>()));
 }
 
 //--

@@ -45,7 +45,7 @@ RTTI_END_TYPE();
 template< typename SrcType, typename DestType>
 static bool Convert(const SrcType& a, const DestType& b)
 {
-    return rtti::ConvertData(&a, reflection::GetTypeObject<SrcType>(), &b, reflection::GetTypeObject<DestType>());
+    return ConvertData(&a, GetTypeObject<SrcType>(), &b, GetTypeObject<DestType>());
 }
 
 template< typename SrcType, typename DestType>
@@ -53,10 +53,10 @@ static void TestConvert(const SrcType& val, const DestType& expected, bool resul
 {
     DestType dest = DestType();
 
-    ASSERT_EQ(result, rtti::ConvertData(&val, reflection::GetTypeObject<SrcType>(), &dest, reflection::GetTypeObject<DestType>()))
-        << "Conversion should succeed for: " << reflection::GetTypeName<SrcType>().c_str() << " ->  " << reflection::GetTypeName<DestType>().c_str() << ", src = " << testing::PrintToString(val);
+    ASSERT_EQ(result, ConvertData(&val, GetTypeObject<SrcType>(), &dest, GetTypeObject<DestType>()))
+        << "Conversion should succeed for: " << GetTypeName<SrcType>().c_str() << " ->  " << GetTypeName<DestType>().c_str() << ", src = " << testing::PrintToString(val);
 
-    ASSERT_EQ(expected, dest) << "Conversion value is different for: " << reflection::GetTypeName<SrcType>().c_str() << " ->  " << reflection::GetTypeName<DestType>().c_str() << "src = " << testing::PrintToString(val);
+    ASSERT_EQ(expected, dest) << "Conversion value is different for: " << GetTypeName<SrcType>().c_str() << " ->  " << GetTypeName<DestType>().c_str() << "src = " << testing::PrintToString(val);
 
 }
 
@@ -65,8 +65,8 @@ static void TestNotConvert(const SrcType& val)
 {
     DestType dest = DestType();
 
-    ASSERT_FALSE(rtti::ConvertData(&val, reflection::GetTypeObject<SrcType>(), &dest, reflection::GetTypeObject<DestType>()))
-        << "Conversion should fail for: " << reflection::GetTypeName<SrcType>().c_str() << " ->  " << reflection::GetTypeName<DestType>().c_str() << ", src = " << testing::PrintToString(val);
+    ASSERT_FALSE(ConvertData(&val, GetTypeObject<SrcType>(), &dest, GetTypeObject<DestType>()))
+        << "Conversion should fail for: " << GetTypeName<SrcType>().c_str() << " ->  " << GetTypeName<DestType>().c_str() << ", src = " << testing::PrintToString(val);
 }
 
 TEST(TypeConversion, Int8ToBool)
@@ -690,48 +690,48 @@ TEST(TypeConversion, HandleUnrelatedClasses)
 
 TEST(TypeConversion, BaseClassRefCast)
 {
-    SpecificClassType<BaseClassA> handleA(reflection::ClassID<DevClassB>());
+    SpecificClassType<BaseClassA> handleA(ClassID<DevClassB>());
     SpecificClassType<DevClassB> handleB = rtti_cast<DevClassB>(handleA);
     EXPECT_EQ(handleA.ptr(), handleB.ptr());
 }
 
 TEST(TypeConversion, BaseClassRefFailedCast)
 {
-    SpecificClassType<BaseClassA> handleA(reflection::ClassID<DevClassC>());
+    SpecificClassType<BaseClassA> handleA(ClassID<DevClassC>());
     SpecificClassType<DevClassB> handleB = rtti_cast<DevClassB>(handleA);
     EXPECT_EQ(nullptr, handleB.ptr());
 }
 
 TEST(TypeConversion, BaseClassUpCast)
 {
-    SpecificClassType<DevClassB> handleA(reflection::ClassID<DevClassB>());
+    SpecificClassType<DevClassB> handleA(ClassID<DevClassB>());
     SpecificClassType<BaseClassA> handleB = rtti_cast<BaseClassA>(handleA);
     EXPECT_EQ(handleA.ptr(), handleB.ptr());
 }
 
 TEST(TypeConversion, BaseClassRefCastRTTI)
 {
-    SpecificClassType<BaseClassA> handleA(reflection::ClassID<DevClassB>());
+    SpecificClassType<BaseClassA> handleA(ClassID<DevClassB>());
     SpecificClassType<DevClassB> handleB = rtti_cast<DevClassB>(handleA);
     TestConvert(handleA, handleB);
 }
 
 TEST(TypeConversion, BaseClassRefNotRelatedCastRTTI)
 {
-    SpecificClassType<DevClassC> handleA(reflection::ClassID<DevClassC>());
+    SpecificClassType<DevClassC> handleA(ClassID<DevClassC>());
     TestNotConvert< SpecificClassType<DevClassC>, SpecificClassType<DevClassB> >(handleA);
 }
 
 TEST(TypeConversion, BaseClassRefNotCompataibleCastRTTI)
 {
-    SpecificClassType<BaseClassA> handleA(reflection::ClassID<BaseClassA>());
+    SpecificClassType<BaseClassA> handleA(ClassID<BaseClassA>());
     SpecificClassType<DevClassB> handleB = rtti_cast<DevClassB>(handleA); // null
     TestConvert(handleA, handleB, false);
 }
 
 TEST(TypeConversion, BaseClassUpCastRTTI)
 {
-    SpecificClassType<DevClassB> handleA(reflection::ClassID<DevClassB>());
+    SpecificClassType<DevClassB> handleA(ClassID<DevClassB>());
     SpecificClassType<BaseClassA> handleB = rtti_cast<BaseClassA>(handleA);
     TestConvert(handleA, handleB);
 }

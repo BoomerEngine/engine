@@ -16,9 +16,9 @@ BEGIN_BOOMER_NAMESPACE_EX(res)
 
 // rtti meta data with information about supported resource class that can be created byh this factory
 // NOTE: one factory, one class
-class CORE_RESOURCE_API FactoryClassMetadata : public rtti::IMetadata
+class CORE_RESOURCE_API FactoryClassMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(FactoryClassMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(FactoryClassMetadata, IMetadata);
 
 public:
     FactoryClassMetadata();

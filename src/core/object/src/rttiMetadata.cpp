@@ -12,16 +12,16 @@
 #include "rttiTypeSystem.h"
 #include "rttiNativeClassType.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
 IMetadata::~IMetadata()
 {}
 
-void IMetadata::RegisterType(rtti::TypeSystem& typeSystem)
+void IMetadata::RegisterType(TypeSystem& typeSystem)
 {
-    Type classType = new rtti::NativeClass("rtti::IMetadata", sizeof(IMetadata), alignof(IMetadata), typeid(IMetadata).hash_code(), IMetadata::ClassAllocationPool::TAG);
+    Type classType = new NativeClass("IMetadata", sizeof(IMetadata), alignof(IMetadata), typeid(IMetadata).hash_code(), IMetadata::ClassAllocationPool::TAG);
     //auto baseClassType = typeSystem.findClass("IObject"_id);
     //classType->baseClass(baseClassType);
     typeSystem.registerType(classType);
@@ -34,7 +34,7 @@ ClassType IMetadata::cls() const
 
 SpecificClassType<IMetadata> IMetadata::GetStaticClass()
 {
-    static ClassType objectType = RTTI::GetInstance().findClass("rtti::IMetadata"_id);
+    static ClassType objectType = RTTI::GetInstance().findClass("IMetadata"_id);
     return SpecificClassType<IMetadata>(*objectType.ptr());
 }
 
@@ -53,18 +53,18 @@ ClassType ShortTypeNameMetadata::nativeClass() const
     return GetStaticClass();
 }
 
-void ShortTypeNameMetadata::RegisterType(rtti::TypeSystem& typeSystem)
+void ShortTypeNameMetadata::RegisterType(TypeSystem& typeSystem)
 {
-    auto classType = new rtti::NativeClass("rtti::ShortTypeNameMetadata", sizeof(ShortTypeNameMetadata), alignof(ShortTypeNameMetadata), typeid(ShortTypeNameMetadata).hash_code(), ShortTypeNameMetadata::ClassAllocationPool::TAG);
+    auto classType = new NativeClass("ShortTypeNameMetadata", sizeof(ShortTypeNameMetadata), alignof(ShortTypeNameMetadata), typeid(ShortTypeNameMetadata).hash_code(), ShortTypeNameMetadata::ClassAllocationPool::TAG);
     classType->bindCtorDtor<ShortTypeNameMetadata>();
-    auto baseClassType = typeSystem.findClass("rtti::IMetadata"_id);
+    auto baseClassType = typeSystem.findClass("IMetadata"_id);
     classType->baseClass(baseClassType.ptr());
     typeSystem.registerType(Type(classType));
 }
 
 SpecificClassType<ShortTypeNameMetadata> ShortTypeNameMetadata::GetStaticClass()
 {
-    static ClassType objectType = RTTI::GetInstance().findClass("rtti::ShortTypeNameMetadata"_id);
+    static ClassType objectType = RTTI::GetInstance().findClass("ShortTypeNameMetadata"_id);
     return SpecificClassType<ShortTypeNameMetadata>(*objectType.ptr());
 }
 
@@ -126,4 +126,4 @@ void MetadataContainer::collectMetadataList(Array<const IMetadata*>& outMetadata
 
 //---
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

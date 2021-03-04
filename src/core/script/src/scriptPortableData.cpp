@@ -22,7 +22,7 @@ RTTI_END_TYPE();
 
 bool FindOpcodeByName(StringID name, Opcode& outOpcode)
 {
-    static auto opcodeEnumType  = static_cast<const rtti::EnumType*>(reflection::GetTypeObject<Opcode>().ptr());
+    static auto opcodeEnumType  = static_cast<const EnumType*>(GetTypeObject<Opcode>().ptr());
     int64_t value = 0;
     if (!opcodeEnumType->findValue(name, value))
         return false;

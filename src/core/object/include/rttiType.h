@@ -19,7 +19,7 @@ BEGIN_BOOMER_NAMESPACE_EX(res)
 class ResourceLoader;
 END_BOOMER_NAMESPACE_EX(res)
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 class Property;
 class IMetadata;
@@ -268,7 +268,7 @@ extern CORE_OBJECT_API StringID FormatNativeArrayTypeName(StringID innerTypeName
 extern CORE_OBJECT_API StringID FormatClassRefTypeName(StringID className);
 
 // helpers
-extern CORE_OBJECT_API const char* GetEnumValueName(const rtti::EnumType* enumType, int64_t enumValue);
-extern CORE_OBJECT_API bool GetEnumNameValue(const rtti::EnumType* enumType, StringID name, int64_t& outEnumValue);
+extern CORE_OBJECT_API const char* GetEnumValueName(const EnumType* enumType, int64_t enumValue);
+extern CORE_OBJECT_API bool GetEnumNameValue(const EnumType* enumType, StringID name, int64_t& outEnumValue);
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

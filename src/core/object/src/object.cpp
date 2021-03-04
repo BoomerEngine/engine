@@ -169,7 +169,7 @@ void IObject::print(IFormatStream& f) const
 
 void IObject::onReadBinary(stream::OpcodeReader& reader)
 {
-    rtti::TypeSerializationContext typeContext;
+    TypeSerializationContext typeContext;
     typeContext.directObjectContext = this;
     typeContext.parentObjectContext = this;
     cls()->readBinary(typeContext, reader, this);
@@ -177,7 +177,7 @@ void IObject::onReadBinary(stream::OpcodeReader& reader)
 
 void IObject::onWriteBinary(stream::OpcodeWriter& writer) const
 {
-    rtti::TypeSerializationContext typeContext;
+    TypeSerializationContext typeContext;
     typeContext.directObjectContext = (IObject*)this;
     typeContext.parentObjectContext = (IObject*)this;
     cls()->writeBinary(typeContext, writer, this, cls()->defaultObject());
@@ -187,7 +187,7 @@ void IObject::onWriteBinary(stream::OpcodeWriter& writer) const
 
 void IObject::writeXML(xml::Node& node) const
 {
-    rtti::TypeSerializationContext typeContext;
+    TypeSerializationContext typeContext;
     typeContext.directObjectContext = (IObject*)this;
     typeContext.parentObjectContext = (IObject*)this;
     cls()->writeXML(typeContext, node, this, cls()->defaultObject());
@@ -195,7 +195,7 @@ void IObject::writeXML(xml::Node& node) const
 
 void IObject::readXML(const xml::Node& node)
 {
-    rtti::TypeSerializationContext typeContext;
+    TypeSerializationContext typeContext;
     typeContext.directObjectContext = this;
     typeContext.parentObjectContext = this;
     cls()->readXML(typeContext, node, this);
@@ -203,10 +203,10 @@ void IObject::readXML(const xml::Node& node)
 
 //--
 
-bool IObject::onPropertyShouldSave(const rtti::Property* prop) const
+bool IObject::onPropertyShouldSave(const Property* prop) const
 {
     // skip transient properties
-    if (prop->flags().test(rtti::PropertyFlagBit::Transient))
+    if (prop->flags().test(PropertyFlagBit::Transient))
         return false;
 
     // compare the property value with default, do not save if the same
@@ -221,7 +221,7 @@ bool IObject::onPropertyShouldSave(const rtti::Property* prop) const
     return true;
 }
 
-bool IObject::onPropertyShouldLoad(const rtti::Property* prop)
+bool IObject::onPropertyShouldLoad(const Property* prop)
 {
     return true;
 }
@@ -260,14 +260,14 @@ ClassType IObject::cls() const
 
 //--
 
-DataViewResult IObject::describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const
+DataViewResult IObject::describeDataView(StringView viewPath, DataViewInfo& outInfo) const
 {
     if (viewPath.empty())
     {
-        outInfo.flags |= rtti::DataViewInfoFlagBit::Object;
-        outInfo.flags |= rtti::DataViewInfoFlagBit::LikeStruct;
+        outInfo.flags |= DataViewInfoFlagBit::Object;
+        outInfo.flags |= DataViewInfoFlagBit::LikeStruct;
 
-        if (outInfo.requestFlags.test(rtti::DataViewRequestFlagBit::ObjectInfo))
+        if (outInfo.requestFlags.test(DataViewRequestFlagBit::ObjectInfo))
         {
             outInfo.objectClass = cls().ptr(); // get DYNAMIC class
             outInfo.objectPtr = this;
@@ -375,25 +375,20 @@ void IObject::postEvent(StringID eventID, const void* data, Type dataType)
 
 //--
 
-void IObject::RegisterType(rtti::TypeSystem& typeSystem)
+void IObject::RegisterType(TypeSystem& typeSystem)
 {
-    Type ret = new rtti::NativeClass("IObject", sizeof(IObject), alignof(IObject), typeid(IObject).hash_code(), ClassAllocationPool::TAG);
+    Type ret = new NativeClass("IObject", sizeof(IObject), alignof(IObject), typeid(IObject).hash_code(), ClassAllocationPool::TAG);
     typeSystem.registerType(ret);
 }
 
 //--
 
-namespace rtti
+void RegisterObjectTypes(TypeSystem &typeSystem)
 {
-
-    void RegisterObjectTypes(rtti::TypeSystem &typeSystem)
-    {
-        IObject::RegisterType(typeSystem);
-        rtti::IMetadata::RegisterType(typeSystem);
-        rtti::ShortTypeNameMetadata::RegisterType(typeSystem);
-    }
-
-} // rtti
+    IObject::RegisterType(typeSystem);
+    IMetadata::RegisterType(typeSystem);
+    ShortTypeNameMetadata::RegisterType(typeSystem);
+}
 
 //--
 
@@ -442,7 +437,7 @@ ObjectPtr LoadObjectFromXML(const xml::Node& node, SpecificClassType<IObject> ex
     return nullptr;
 }
 
-bool CopyPropertyValue(const IObject* srcObject, const rtti::Property* srcProperty, IObject* targetObject, const rtti::Property* targetProperty)
+bool CopyPropertyValue(const IObject* srcObject, const Property* srcProperty, IObject* targetObject, const Property* targetProperty)
 {
     const auto srcType = srcProperty->type();
     const auto targetType = targetProperty->type();
@@ -452,7 +447,7 @@ bool CopyPropertyValue(const IObject* srcObject, const rtti::Property* srcProper
 
     // TODO: support for inlined objects! and more complex types
 
-    if (!rtti::ConvertData(srcData, srcType, targetData, targetType))
+    if (!ConvertData(srcData, srcType, targetData, targetType))
         return false;
 
     return true;

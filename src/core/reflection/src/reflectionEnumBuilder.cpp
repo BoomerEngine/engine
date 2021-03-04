@@ -11,9 +11,9 @@
 
 #include "core/object/include/rttiEnumType.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(reflection)
+BEGIN_BOOMER_NAMESPACE()
 
-EnumBuilder::EnumBuilder(rtti::EnumType* enumPtr)
+EnumBuilder::EnumBuilder(EnumType* enumPtr)
     : m_enumType(enumPtr)
 {}
 
@@ -57,4 +57,4 @@ void EnumBuilder::addOption(const char* rawName, int64_t value, const char* hint
     }
 }
 
-END_BOOMER_NAMESPACE_EX(reflection)
+END_BOOMER_NAMESPACE()

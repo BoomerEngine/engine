@@ -1151,7 +1151,7 @@ StubOpcodeValue::StubOpcodeValue()
 
 void StubOpcode::print(IFormatStream& f) const
 {
-    f.append(reflection::GetEnumValueName(op));
+    f.append(GetEnumValueName(op));
 
     switch (op)
     {

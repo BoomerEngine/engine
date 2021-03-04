@@ -52,7 +52,7 @@ TEST(VariantTest, EmptyVariantDoesDebugPrintEmpty)
 TEST(VariantTest, CreateInt8)
 {
     Variant a = CreateVariant<char>(42);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<char>());
+    ASSERT_TRUE(a.type() == GetTypeObject<char>());
 
     auto ptr  = *(const char*)a.data();
     ASSERT_EQ(ptr, 42);
@@ -61,7 +61,7 @@ TEST(VariantTest, CreateInt8)
 TEST(VariantTest, CreateInt16)
 {
     Variant a = CreateVariant<short>(42);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<short>());
+    ASSERT_TRUE(a.type() == GetTypeObject<short>());
 
     auto ptr = *(const short*)a.data();
     ASSERT_EQ(ptr, 42);
@@ -71,7 +71,7 @@ TEST(VariantTest, CreateInt16)
 TEST(VariantTest, CreateInt32)
 {
     Variant a = CreateVariant<int>(42);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<int>());
+    ASSERT_TRUE(a.type() == GetTypeObject<int>());
 
     auto ptr = *(const int*)a.data();
     ASSERT_EQ(ptr, 42);
@@ -80,7 +80,7 @@ TEST(VariantTest, CreateInt32)
 TEST(VariantTest, CreateInt64)
 {
     Variant a = CreateVariant<int64_t>(42);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<int64_t>());
+    ASSERT_TRUE(a.type() == GetTypeObject<int64_t>());
 
     auto ptr = *(const int64_t*)a.data();
     ASSERT_EQ(ptr, 42);
@@ -89,7 +89,7 @@ TEST(VariantTest, CreateInt64)
 TEST(VariantTest, CreateUint8)
 {
     Variant a = CreateVariant<uint8_t>(42);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<uint8_t>());
+    ASSERT_TRUE(a.type() == GetTypeObject<uint8_t>());
 
     auto ptr = *(const uint8_t*)a.data();
     ASSERT_EQ(ptr, 42);
@@ -98,7 +98,7 @@ TEST(VariantTest, CreateUint8)
 TEST(VariantTest, CreateUint16)
 {
     Variant a = CreateVariant<uint16_t>(42);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<uint16_t>());
+    ASSERT_TRUE(a.type() == GetTypeObject<uint16_t>());
 
     auto ptr = *(const uint16_t*)a.data();
     ASSERT_EQ(ptr, 42);
@@ -108,7 +108,7 @@ TEST(VariantTest, CreateUint16)
 TEST(VariantTest, CreateUint32)
 {
     Variant a = CreateVariant<uint32_t>(42);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<uint32_t>());
+    ASSERT_TRUE(a.type() == GetTypeObject<uint32_t>());
 
     auto ptr = *(const uint32_t*)a.data();
     ASSERT_EQ(ptr, 42);
@@ -117,7 +117,7 @@ TEST(VariantTest, CreateUint32)
 TEST(VariantTest, CreateUint64)
 {
     Variant a = CreateVariant<uint64_t>(42);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<uint64_t>());
+    ASSERT_TRUE(a.type() == GetTypeObject<uint64_t>());
 
     auto ptr = *(const uint64_t*)a.data();
     ASSERT_EQ(ptr, 42);
@@ -126,7 +126,7 @@ TEST(VariantTest, CreateUint64)
 TEST(VariantTest, CreateBool)
 {
     Variant a = CreateVariant<bool>(true);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<bool>());
+    ASSERT_TRUE(a.type() == GetTypeObject<bool>());
 
     auto ptr = *(const bool*)a.data();
     ASSERT_EQ(ptr, true);
@@ -135,7 +135,7 @@ TEST(VariantTest, CreateBool)
 TEST(VariantTest, CreateFloat)
 {
     Variant a = CreateVariant<float>(3.141592f);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<float>());
+    ASSERT_TRUE(a.type() == GetTypeObject<float>());
 
     auto ptr = *(const float*)a.data();
     ASSERT_FLOAT_EQ(3.141592f, ptr);
@@ -144,7 +144,7 @@ TEST(VariantTest, CreateFloat)
 TEST(VariantTest, CreateDouble)
 {
     Variant a = CreateVariant<double>(3.141592f);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<double>());
+    ASSERT_TRUE(a.type() == GetTypeObject<double>());
 
     auto ptr = *(const double*)a.data();
     ASSERT_FLOAT_EQ(3.141592f, ptr);
@@ -153,7 +153,7 @@ TEST(VariantTest, CreateDouble)
 TEST(VariantTest, CreateString)
 {
     Variant a = CreateVariant<StringBuf>("Ala ma kota");
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<StringBuf>());
+    ASSERT_TRUE(a.type() == GetTypeObject<StringBuf>());
 
     const auto& str = *(const StringBuf*)a.data();
     ASSERT_STREQ("Ala ma kota", str.c_str());
@@ -162,7 +162,7 @@ TEST(VariantTest, CreateString)
 TEST(VariantTest, CreateStringID)
 {
     Variant a = CreateVariant<StringID>("TestIdent"_id);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<StringID>());
+    ASSERT_TRUE(a.type() == GetTypeObject<StringID>());
 
     const auto& str = *(const StringID*)a.data();
     ASSERT_STREQ("TestIdent", str.c_str());
@@ -171,7 +171,7 @@ TEST(VariantTest, CreateStringID)
 /*TEST(VariantTest, CreateVector3)
 {
     Variant a = CreateVariant<Vector3>(Vector3(1, 2, 3));
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<Vector3>());
+    ASSERT_TRUE(a.type() == GetTypeObject<Vector3>());
 
     const auto& str = *(const Vector3*)a.data();
     EXPECT_FLOAT_EQ(1.0f, str.x);
@@ -188,7 +188,7 @@ TEST(VariantTest, CreateDynamicArray)
     table.pushBack(4);
 
     Variant a = CreateVariant(table);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<Array<int>>());
+    ASSERT_TRUE(a.type() == GetTypeObject<Array<int>>());
 
     const auto& str = *(const Array<int>*)a.data();
     ASSERT_EQ(4, str.size());
@@ -221,10 +221,10 @@ TEST(VariantTest, CreateNestedVariants)
     Variant inner = CreateVariant<int>(42);
     Variant outer = CreateVariant(inner);
         
-    ASSERT_TRUE(outer.type() == reflection::GetTypeObject<Variant>());
+    ASSERT_TRUE(outer.type() == GetTypeObject<Variant>());
 
     const auto& str = *(const Variant*)outer.data();
-    ASSERT_TRUE(str.type() == reflection::GetTypeObject<int>());
+    ASSERT_TRUE(str.type() == GetTypeObject<int>());
 
     const auto& str2 = *(const int*)str.data();
 
@@ -253,14 +253,14 @@ TEST(VariantTest, CreateVariantSharedPtr)
 {
     auto ptr = RefNew<VariantTestClass>();
     Variant a = CreateVariant(ptr);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<RefPtr<VariantTestClass>>());
+    ASSERT_TRUE(a.type() == GetTypeObject<RefPtr<VariantTestClass>>());
 }
 
 TEST(VariantTest, SharedPtrVariantPointsToTheSameObject)
 {
     auto ptr = RefNew<VariantTestClass>();
     Variant a = CreateVariant(ptr);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<RefPtr<VariantTestClass>>());
+    ASSERT_TRUE(a.type() == GetTypeObject<RefPtr<VariantTestClass>>());
 
     const auto& str = *(const RefPtr<VariantTestClass>*)a.data();
     ASSERT_EQ(str.get(), ptr.get());
@@ -274,7 +274,7 @@ TEST(VariantTest, SharedPtrVariantKeepsObjectAlive)
     ptr->destroyFlag = &destroyFlag;
 
     Variant a = CreateVariant(ptr);
-    ASSERT_TRUE(a.type() == reflection::GetTypeObject<RefPtr<VariantTestClass>>());
+    ASSERT_TRUE(a.type() == GetTypeObject<RefPtr<VariantTestClass>>());
     ASSERT_FALSE(destroyFlag);
 
     ptr.reset();
@@ -290,7 +290,7 @@ TEST(VariantTest, SharedPtrVariantKeepsObjectAlive)
 TEST(Variant, CreateStruct)
 {
     Matrix init;
-    Variant a = rtti::CreateVariant<Matrix>(init);
+    Variant a = CreateVariant<Matrix>(init);
     ASSERT_FALSE(a.empty());
 
     std::string str = a;

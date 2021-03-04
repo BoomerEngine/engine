@@ -32,7 +32,7 @@ struct CORE_OBJECT_API OpcodeResolvedReferences : public NoCopy
     Array<Type> types;
     Array<StringID> typeNames;
 
-    Array<const rtti::Property*> properties;
+    Array<const Property*> properties;
     Array<StringID> propertyNames;
 
     Array<ObjectPtr> objects;
@@ -102,7 +102,7 @@ public:
     INLINE Type readType(StringID& outTypeName);
 
     /// read property reference
-    INLINE const rtti::Property* readProperty(StringID& outPropertyName);
+    INLINE const Property* readProperty(StringID& outPropertyName);
 
     /// read pointer to other object
     INLINE IObject* readPointer();
@@ -240,7 +240,7 @@ INLINE Type OpcodeReader::readType(StringID& outTypeName)
     return m_refs.types[index];
 }
 
-INLINE const rtti::Property* OpcodeReader::readProperty(StringID& outPropertyName)
+INLINE const Property* OpcodeReader::readProperty(StringID& outPropertyName)
 {
     checkOp(StreamOpcode::Property);
     const auto index = readCompressedNumber();

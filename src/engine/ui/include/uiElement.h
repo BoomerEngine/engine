@@ -27,9 +27,9 @@ DECLARE_UI_EVENT(EVENT_CONTEXT_MENU, Position)
 class StyleStack;
     
 // Short name of the element class, needed for styling (so we dont use the "Button" but "button" in the CSS)
-class ENGINE_UI_API ElementClassNameMetadata : public rtti::IMetadata
+class ENGINE_UI_API ElementClassNameMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ElementClassNameMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(ElementClassNameMetadata, IMetadata);
 
 public:
     ElementClassNameMetadata();
@@ -50,9 +50,9 @@ private:
 
 // Binding name for element reference
 // Used when instancing from UI template to bind references to child elements in parent elements
-class ENGINE_UI_API ElementBindingNameMetadata : public rtti::IMetadata
+class ENGINE_UI_API ElementBindingNameMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ElementBindingNameMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(ElementBindingNameMetadata, IMetadata);
 
 public:
     ElementBindingNameMetadata();
@@ -556,7 +556,7 @@ public:
         {
             if (const auto* val = m_customLocalStyles->findVariant(name))
             {
-                DEBUG_CHECK(val->type() == reflection::GetTypeObject<T>());
+                DEBUG_CHECK(val->type() == GetTypeObject<T>());
                 return *(const T*)val->data();
             }
         }
@@ -565,7 +565,7 @@ public:
         {
             if (const auto* val = m_cachedStyle.params->values.findVariant(name))
             {
-                DEBUG_CHECK(val->type() == reflection::GetTypeObject<T>());
+                DEBUG_CHECK(val->type() == GetTypeObject<T>());
                 return *(const T*)val->data();
             }
         }
@@ -583,7 +583,7 @@ public:
         {
             if (const auto* val = m_customLocalStyles->findVariant(name))
             {
-                DEBUG_CHECK(val->type() == reflection::GetTypeObject<T>());
+                DEBUG_CHECK(val->type() == GetTypeObject<T>());
                 return *(const T*)val->data();
             }
         }
@@ -592,7 +592,7 @@ public:
         {
             if (const auto* val = m_cachedStyle.params->values.findVariant(name))
             {
-                DEBUG_CHECK(val->type() == reflection::GetTypeObject<T>());
+                DEBUG_CHECK(val->type() == GetTypeObject<T>());
                 return *(const T*)val->data();
             }
         }
@@ -610,7 +610,7 @@ public:
         {
             if (const auto* val = m_customLocalStyles->findVariant(name))
             {
-                DEBUG_CHECK(val->type() == reflection::GetTypeObject<T>());
+                DEBUG_CHECK(val->type() == GetTypeObject<T>());
                 outVal = *(const T*)val->data();
                 return true;
             }
@@ -620,7 +620,7 @@ public:
         {
             if (const auto* val = m_cachedStyle.params->values.findVariant(name))
             {
-                DEBUG_CHECK(val->type() == reflection::GetTypeObject<T>());
+                DEBUG_CHECK(val->type() == GetTypeObject<T>());
                 outVal = *(const T*)val->data();
                 return true;
             }
@@ -637,7 +637,7 @@ public:
         {
             if (const auto* val = m_customLocalStyles->findVariant(name))
             {
-                DEBUG_CHECK(val->type() == reflection::GetTypeObject<T>());
+                DEBUG_CHECK(val->type() == GetTypeObject<T>());
                 return (const T*)val->data();
             }
         }
@@ -646,7 +646,7 @@ public:
         {
             if (const auto* val = m_cachedStyle.params->values.findVariant(name))
             {
-                DEBUG_CHECK(val->type() == reflection::GetTypeObject<T>());
+                DEBUG_CHECK(val->type() == GetTypeObject<T>());
                 return (const T*)val->data();
             }
         }

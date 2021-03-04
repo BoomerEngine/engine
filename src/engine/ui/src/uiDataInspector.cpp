@@ -112,7 +112,7 @@ void DataInspector::destroyItems()
     m_items.clear();
 }
 
-static Array<StringID> GatherCategoryNames(bool sortNames, const rtti::DataViewInfo& info)
+static Array<StringID> GatherCategoryNames(bool sortNames, const DataViewInfo& info)
 {
     HashSet<StringID> categoryNames;
     for (const auto& propInfo : info.members)
@@ -126,7 +126,7 @@ static Array<StringID> GatherCategoryNames(bool sortNames, const rtti::DataViewI
     return names;
 }
 
-Array<StringID> GatherPropertyNames(bool sortNames, const rtti::DataViewInfo& info, StringID category)
+Array<StringID> GatherPropertyNames(bool sortNames, const DataViewInfo& info, StringID category)
 {
     HashSet<StringID> propertyNames;
     for (const auto& propInfo : info.members)
@@ -151,13 +151,13 @@ void DataInspector::createItems()
     if (m_data)
     {
         // describe the root element
-        rtti::DataViewInfo info;
+        DataViewInfo info;
         if (m_data->describeDataView(m_rootPath, info).valid())
         {
-            if (info.flags.test(rtti::DataViewInfoFlagBit::LikeStruct))
+            if (info.flags.test(DataViewInfoFlagBit::LikeStruct))
             {
                 // enumerate properties
-                info.requestFlags |= rtti::DataViewRequestFlagBit::MemberList;
+                info.requestFlags |= DataViewRequestFlagBit::MemberList;
                 if (m_data->describeDataView(m_rootPath, info).valid())
                 {
                     if (m_settings.showCategories)
@@ -179,11 +179,11 @@ void DataInspector::createItems()
                         {
                             auto childPath = StringBuf(name.c_str());
 
-                            rtti::DataViewInfo childInfo;
-                            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::PropertyEditorData;
-                            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::TypeMetadata;
-                            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::MemberList;
-                            childInfo.requestFlags |= rtti::DataViewRequestFlagBit::CheckIfResetable;
+                            DataViewInfo childInfo;
+                            childInfo.requestFlags |= DataViewRequestFlagBit::PropertyEditorData;
+                            childInfo.requestFlags |= DataViewRequestFlagBit::TypeMetadata;
+                            childInfo.requestFlags |= DataViewRequestFlagBit::MemberList;
+                            childInfo.requestFlags |= DataViewRequestFlagBit::CheckIfResetable;
 
                             if (data()->describeDataView(childPath, childInfo).valid())
                             {

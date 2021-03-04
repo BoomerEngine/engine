@@ -16,7 +16,7 @@
 #include "core/containers/include/stringBuilder.h"
 #include "core/containers/include/stringParser.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 extern bool SkipString(const char*& ptr, const char* endPtr);
 
@@ -356,4 +356,4 @@ extern StringID FormatDynamicArrayTypeName(StringID innerTypeName)
     return StringID(builder.c_str());
 }
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

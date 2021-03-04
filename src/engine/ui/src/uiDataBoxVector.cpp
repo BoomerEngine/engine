@@ -184,19 +184,19 @@ class DataBoxVectorFactory : public IDataBoxFactory
     RTTI_DECLARE_VIRTUAL_CLASS(DataBoxVectorFactory, IDataBoxFactory);
 
 public:
-    virtual DataBoxPtr tryCreate(const rtti::DataViewInfo& info) const override
+    virtual DataBoxPtr tryCreate(const DataViewInfo& info) const override
     {
-        const auto verticalLayout = info.flags.test(rtti::DataViewInfoFlagBit::VerticalEditor);
+        const auto verticalLayout = info.flags.test(DataViewInfoFlagBit::VerticalEditor);
 
-        if (info.dataType == reflection::GetTypeObject<Vector2>()
-            || info.dataType == reflection::GetTypeObject<Vector3>()
-            || info.dataType == reflection::GetTypeObject<Vector4>())
+        if (info.dataType == GetTypeObject<Vector2>()
+            || info.dataType == GetTypeObject<Vector3>()
+            || info.dataType == GetTypeObject<Vector4>())
         {
             int numComps = 2;
 
-            if (info.dataType == reflection::GetTypeObject<Vector3>())
+            if (info.dataType == GetTypeObject<Vector3>())
                 numComps = 3;
-            else if (info.dataType == reflection::GetTypeObject<Vector4>())
+            else if (info.dataType == GetTypeObject<Vector4>())
                 numComps = 4;
 
             /*bool rangeEnabled = false;
@@ -231,9 +231,9 @@ public:
             }*/
 
             const auto& ed = info.editorData;
-            return RefNew<DataBoxVector>(reflection::GetTypeObject<float>(), numComps, ed.m_digits, ed.rangeEnabled(), ed.m_rangeMin, ed.m_rangeMax, ed.m_widgetDrag, ed.m_widgetDragWrap, ed.m_units, VECTOR_COMPS, verticalLayout);
+            return RefNew<DataBoxVector>(GetTypeObject<float>(), numComps, ed.m_digits, ed.rangeEnabled(), ed.m_rangeMin, ed.m_rangeMax, ed.m_widgetDrag, ed.m_widgetDragWrap, ed.m_units, VECTOR_COMPS, verticalLayout);
         }
-        else if (info.dataType == reflection::GetTypeObject<Point>())
+        else if (info.dataType == GetTypeObject<Point>())
         {
             /*bool rangeEnabled = false;
             bool dragEnabled = false;
@@ -262,9 +262,9 @@ public:
             }*/
 
             const auto& ed = info.editorData;
-            return RefNew<DataBoxVector>(reflection::GetTypeObject<int>(), 2, 0, ed.rangeEnabled(), ed.m_rangeMin, ed.m_rangeMax, ed.m_widgetDrag, ed.m_widgetDragWrap, ed.m_units, VECTOR_COMPS, verticalLayout);
+            return RefNew<DataBoxVector>(GetTypeObject<int>(), 2, 0, ed.rangeEnabled(), ed.m_rangeMin, ed.m_rangeMax, ed.m_widgetDrag, ed.m_widgetDragWrap, ed.m_units, VECTOR_COMPS, verticalLayout);
         }
-        else if (info.dataType == reflection::GetTypeObject<Angles>())
+        else if (info.dataType == GetTypeObject<Angles>())
         {
             /*bool rangeEnabled = true;
             double rangeMin = -360.0f;
@@ -298,7 +298,7 @@ public:
             }*/
 
             const auto& ed = info.editorData;
-            return RefNew<DataBoxVector>(reflection::GetTypeObject<float>(), 3, ed.m_digits, ed.rangeEnabled(), ed.m_rangeMin, ed.m_rangeMax, ed.m_widgetDrag, ed.m_widgetDragWrap, ed.m_units, ANGLE_COMPS, verticalLayout);
+            return RefNew<DataBoxVector>(GetTypeObject<float>(), 3, ed.m_digits, ed.rangeEnabled(), ed.m_rangeMin, ed.m_rangeMax, ed.m_widgetDrag, ed.m_widgetDragWrap, ed.m_units, ANGLE_COMPS, verticalLayout);
         }
 
         return nullptr;

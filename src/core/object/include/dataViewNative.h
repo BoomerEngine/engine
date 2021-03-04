@@ -30,7 +30,7 @@ public:
     INLINE const ObjectPtr& object() const { return m_object; }
 
     // IDataView
-    virtual DataViewResult describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const override;
+    virtual DataViewResult describeDataView(StringView viewPath, DataViewInfo& outInfo) const override;
     virtual DataViewResult readDataView(StringView viewPath, void* targetData, Type targetType) const override;
     virtual DataViewResult writeDataView(StringView viewPath, const void* sourceData, Type sourceType) const override;
 

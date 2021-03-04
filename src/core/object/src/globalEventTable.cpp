@@ -155,7 +155,7 @@ public:
         {
             if (m_strictOrdering || !IsMainFiber())
             {
-                rtti::DataHolder holder(dataType, data);
+                DataHolder holder(dataType, data);
                 auto sourceRef = RefPtr<IObject>(AddRef(source));
                 auto contextRef = m_context;
                 auto eventName = name();

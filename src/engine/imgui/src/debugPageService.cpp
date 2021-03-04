@@ -117,7 +117,7 @@ void DebugPageService::createMenu()
     {
         // look for the "IsVisible" property in the "DebugPage.XXX.YYY" group
         const auto groupName = prop->group().view();
-        if (prop->name() == "IsVisible" && groupName.beginsWith("DebugPage.") && prop->type() == reflection::GetTypeObject<bool>())
+        if (prop->name() == "IsVisible" && groupName.beginsWith("DebugPage.") && prop->type() == GetTypeObject<bool>())
         {
             InplaceArray<StringView, 4> nameParts;
             groupName.afterFirst("DebugPage.").slice(".", false, nameParts);

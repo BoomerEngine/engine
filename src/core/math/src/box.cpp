@@ -109,8 +109,8 @@ public:
     virtual ~IReflectionInitProxy();
 
     virtual const char* typeName() const = 0;
-    virtual void createType(rtti::IType*& outType) const = 0;
-    virtual void initType(rtti::IType* type) const = 0;
+    virtual void createType(IType*& outType) const = 0;
+    virtual void initType(IType* type) const = 0;
 
     static void PopList(Array<IReflectionInitProxy*>& outNew);
 
@@ -193,8 +193,8 @@ public:
         TRACE_INFO("Dupa registered!");
     }
     virtual const char* typeName() const { return "Dupa"; }
-    virtual void createType(rtti::IType*& outType) const { outType = new rtti::EnumType("crap"_id, 1, 1, false); }
-    virtual void initType(rtti::IType* type) const { }
+    virtual void createType(IType*& outType) const { outType = new EnumType("crap"_id, 1, 1, false); }
+    virtual void initType(IType* type) const { }
 };
 
 ReflectionAutomaticRegister<TestRegister> GTestRegister;

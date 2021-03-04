@@ -84,16 +84,16 @@ void ObjectIndirectTemplateDataView::updateClass()
     }
 }
 
-const rtti::TemplateProperty* ObjectIndirectTemplateDataView::findTemplateProperty(StringView name) const
+const TemplateProperty* ObjectIndirectTemplateDataView::findTemplateProperty(StringView name) const
 {
-    const rtti::TemplateProperty* ret = nullptr;
+    const TemplateProperty* ret = nullptr;
     m_templateProperties.find(name, ret);
     return ret;
 }
 
-const rtti::TemplateProperty* ObjectIndirectTemplateDataView::findTemplateProperty(StringID name) const
+const TemplateProperty* ObjectIndirectTemplateDataView::findTemplateProperty(StringID name) const
 {
-    const rtti::TemplateProperty* ret = nullptr;
+    const TemplateProperty* ret = nullptr;
     m_templatePropertiesByID.find(name, ret);
     return ret;
 }
@@ -132,7 +132,7 @@ const void* ObjectIndirectTemplateDataView::findDataForProperty(StringID name, T
     }
 
     StringView propertyName;
-    if (rtti::ParsePropertyName(viewPath, propertyName))
+    if (ParsePropertyName(viewPath, propertyName))
     {
         if (const auto* prop = findTemplateProperty(propertyName))
         {
@@ -148,11 +148,11 @@ const void* ObjectIndirectTemplateDataView::findDataForProperty(StringID name, T
                 if (!basePropData)
                     return false;
 
-                rtti::DataHolder localValueHolder(prop->type);
+                DataHolder localValueHolder(prop->type);
                 if (!localProp->data.type()->readDataView(viewPath, localProp->data.data(), localValueHolder.data(), localValueHolder.type()).valid())
                     return false;
 
-                rtti::DataHolder baseValueHolder(prop->type);
+                DataHolder baseValueHolder(prop->type);
                 if (!prop->type->readDataView(viewPath, prop->defaultValue, baseValueHolder.data(), baseValueHolder.type()).valid())
                     return false;
 
@@ -168,7 +168,7 @@ const void* ObjectIndirectTemplateDataView::findDataForProperty(StringID name, T
 DataViewResult ObjectIndirectTemplateDataView::resetPropertyValue(StringView viewPath)
 {
     StringView propertyName;
-    if (rtti::ParsePropertyName(viewPath, propertyName))
+    if (ParsePropertyName(viewPath, propertyName))
     {
         if (const auto* prop = findTemplateProperty(propertyName))
         {
@@ -217,7 +217,7 @@ bool ObjectIndirectTemplateDataView::removeTemplateProperty(StringID name)
     return false;
 }
 
-DataViewResult ObjectIndirectTemplateDataView::describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const
+DataViewResult ObjectIndirectTemplateDataView::describeDataView(StringView viewPath, DataViewInfo& outInfo) const
 {
     if (viewPath.empty())
     {
@@ -225,9 +225,9 @@ DataViewResult ObjectIndirectTemplateDataView::describeDataView(StringView viewP
 
         if (m_class)
         {
-            outInfo.flags |= rtti::DataViewInfoFlagBit::LikeStruct;
+            outInfo.flags |= DataViewInfoFlagBit::LikeStruct;
 
-            if (outInfo.requestFlags.test(rtti::DataViewRequestFlagBit::MemberList))
+            if (outInfo.requestFlags.test(DataViewRequestFlagBit::MemberList))
             {
                 for (const auto& prop : m_class->allTemplateProperties())
                 {
@@ -247,7 +247,7 @@ DataViewResult ObjectIndirectTemplateDataView::describeDataView(StringView viewP
     else
     {
         StringView propertyName;
-        if (rtti::ParsePropertyName(viewPath, propertyName))
+        if (ParsePropertyName(viewPath, propertyName))
         {
             if (const auto* prop = findTemplateProperty(propertyName))
             {
@@ -259,18 +259,18 @@ DataViewResult ObjectIndirectTemplateDataView::describeDataView(StringView viewP
                     outInfo.dataType = prop->type;
 
                     if (!m_editableTemplate)
-                        outInfo.flags |= rtti::DataViewInfoFlagBit::ReadOnly; // we don't have any editable object, all properties are read only
+                        outInfo.flags |= DataViewInfoFlagBit::ReadOnly; // we don't have any editable object, all properties are read only
 
-                    if (outInfo.requestFlags.test(rtti::DataViewRequestFlagBit::CheckIfResetable))
+                    if (outInfo.requestFlags.test(DataViewRequestFlagBit::CheckIfResetable))
                         if (m_editableTemplate->findProperty(prop->name))
-                            outInfo.flags |= rtti::DataViewInfoFlagBit::ResetableToBaseValue;
+                            outInfo.flags |= DataViewInfoFlagBit::ResetableToBaseValue;
                                 
-                    if (outInfo.requestFlags.test(rtti::DataViewRequestFlagBit::PropertyEditorData))
+                    if (outInfo.requestFlags.test(DataViewRequestFlagBit::PropertyEditorData))
                         outInfo.editorData = prop->editorData;
                 }
                 else
                 {
-                    if (outInfo.requestFlags.test(rtti::DataViewRequestFlagBit::CheckIfResetable))
+                    if (outInfo.requestFlags.test(DataViewRequestFlagBit::CheckIfResetable))
                     {
                         // TODO
                     }
@@ -289,7 +289,7 @@ DataViewResult ObjectIndirectTemplateDataView::describeDataView(StringView viewP
 DataViewResult ObjectIndirectTemplateDataView::readDataView(StringView viewPath, void* targetData, Type targetType) const
 {
     StringView propertyName;
-    if (rtti::ParsePropertyName(viewPath, propertyName))
+    if (ParsePropertyName(viewPath, propertyName))
     {
         if (const auto* templateProp = findTemplateProperty(propertyName))
         {
@@ -317,7 +317,7 @@ DataViewResult ObjectIndirectTemplateDataView::writeDataView(StringView viewPath
     const auto orgViewPath = viewPath;
 
     StringView propertyName;
-    if (rtti::ParsePropertyName(viewPath, propertyName))
+    if (ParsePropertyName(viewPath, propertyName))
     {
         if (const auto* templateProp = findTemplateProperty(propertyName))
         {
@@ -357,7 +357,7 @@ DataViewResult ObjectIndirectTemplateDataView::writeDataView(StringView viewPath
 struct ActionWriteTemplateProperty : public IAction
 {
 public:
-    ActionWriteTemplateProperty(const ObjectIndirectTemplateDataView* view, StringView viewPath, rtti::DataHolder&& oldValue, rtti::DataHolder&& newValue)
+    ActionWriteTemplateProperty(const ObjectIndirectTemplateDataView* view, StringView viewPath, DataHolder&& oldValue, DataHolder&& newValue)
         : m_newValue(std::move(newValue))
         , m_oldValue(std::move(oldValue))
         , m_view(AddRef(view))
@@ -390,8 +390,8 @@ public:
     }
 
 private:
-    rtti::DataHolder m_newValue;
-    rtti::DataHolder m_oldValue;
+    DataHolder m_newValue;
+    DataHolder m_oldValue;
 
     RefPtr<ObjectIndirectTemplateDataView> m_view;
     StringBuf m_path;
@@ -400,7 +400,7 @@ private:
 struct ActionCreateTemplateProperty : public IAction
 {
 public:
-    ActionCreateTemplateProperty(const ObjectIndirectTemplateDataView* view, StringID propertyName, StringView viewPath, rtti::DataHolder&& newValue)
+    ActionCreateTemplateProperty(const ObjectIndirectTemplateDataView* view, StringID propertyName, StringView viewPath, DataHolder&& newValue)
         : m_newValue(std::move(newValue))
         , m_propertyName(propertyName)
         , m_view(AddRef(view))
@@ -433,7 +433,7 @@ public:
     }
 
 private:
-    rtti::DataHolder m_newValue;
+    DataHolder m_newValue;
 
     RefPtr<ObjectIndirectTemplateDataView> m_view;
     StringID m_propertyName;
@@ -445,7 +445,7 @@ DataViewActionResult ObjectIndirectTemplateDataView::actionValueWrite(StringView
     auto originalViewPath = viewPath;
 
     StringView propertyName;
-    if (rtti::ParsePropertyName(viewPath, propertyName))
+    if (ParsePropertyName(viewPath, propertyName))
     {
         if (const auto* templateProp = findTemplateProperty(propertyName))
         {
@@ -455,17 +455,17 @@ DataViewActionResult ObjectIndirectTemplateDataView::actionValueWrite(StringView
             // write/create whole properties
             if (auto* prop = m_editableTemplate->findProperty(templateProp->name))
             {
-                rtti::DataViewInfo templatePropInfo;
+                DataViewInfo templatePropInfo;
                 auto ret = templateProp->type->describeDataView(viewPath, templateProp->defaultValue, templatePropInfo);
                 if (!ret.valid() || !templatePropInfo.dataType)
                     return ret;
 
-                rtti::DataHolder currentValue(templatePropInfo.dataType);
+                DataHolder currentValue(templatePropInfo.dataType);
                 ret = templateProp->type->readDataView(viewPath, prop->data.data(), currentValue.data(), currentValue.type());
                 if (!ret.valid())
                     return ret;
 
-                rtti::DataHolder newValue(sourceType, sourceData);
+                DataHolder newValue(sourceType, sourceData);
                 return RefNew<ActionWriteTemplateProperty>(this, originalViewPath, std::move(currentValue), std::move(newValue));
             }
             else
@@ -474,7 +474,7 @@ DataViewActionResult ObjectIndirectTemplateDataView::actionValueWrite(StringView
                 if (!defaultValue)
                     return DataViewResultCode::ErrorIllegalAccess;
 
-                rtti::DataHolder newValue(templateProp->type, defaultValue);
+                DataHolder newValue(templateProp->type, defaultValue);
                 auto ret = templateProp->type->writeDataView(viewPath, newValue.data(), sourceData, sourceType);
                 if (!ret.valid())
                     return ret;
@@ -492,7 +492,7 @@ DataViewActionResult ObjectIndirectTemplateDataView::actionValueWrite(StringView
 struct ActionResetTemplateProperty : public IAction
 {
 public:
-    ActionResetTemplateProperty(const ObjectIndirectTemplateDataView* view, StringID propertyName, rtti::DataHolder&& oldValue)
+    ActionResetTemplateProperty(const ObjectIndirectTemplateDataView* view, StringID propertyName, DataHolder&& oldValue)
         : m_oldValue(std::move(oldValue))
         , m_view(AddRef(view))
         , m_propertyName(propertyName)
@@ -524,7 +524,7 @@ public:
     }
 
 private:
-    rtti::DataHolder m_oldValue;
+    DataHolder m_oldValue;
 
     RefPtr<ObjectIndirectTemplateDataView> m_view;
     StringID m_propertyName;
@@ -535,7 +535,7 @@ DataViewActionResult ObjectIndirectTemplateDataView::actionValueReset(StringView
     auto originalViewPath = viewPath;
 
     StringView propertyName;
-    if (rtti::ParsePropertyName(viewPath, propertyName))
+    if (ParsePropertyName(viewPath, propertyName))
     {
         if (const auto* templateProp = findTemplateProperty(propertyName))
         {
@@ -548,7 +548,7 @@ DataViewActionResult ObjectIndirectTemplateDataView::actionValueReset(StringView
 
             if (viewPath.empty())
             {
-                rtti::DataHolder currentValue(prop->data.type(), prop->data.data());
+                DataHolder currentValue(prop->data.type(), prop->data.data());
                 return RefNew<ActionResetTemplateProperty>(this, propertyName, std::move(currentValue));
             }
             else
@@ -557,17 +557,17 @@ DataViewActionResult ObjectIndirectTemplateDataView::actionValueReset(StringView
                 if (!defaultData)
                     return DataViewResultCode::ErrorIllegalAccess;
 
-                rtti::DataViewInfo defaultPropInfo;
+                DataViewInfo defaultPropInfo;
                 auto ret = templateProp->type->describeDataView(viewPath, defaultData, defaultPropInfo);
                 if (!ret.valid() || !defaultPropInfo.dataType)
                     return ret;
 
-                rtti::DataHolder defaultValue(defaultPropInfo.dataType);
+                DataHolder defaultValue(defaultPropInfo.dataType);
                 ret = templateProp->type->readDataView(viewPath, defaultData, defaultValue.data(), defaultValue.type());
                 if (!ret.valid())
                     return ret;
 
-                rtti::DataHolder currentValue(defaultPropInfo.dataType);
+                DataHolder currentValue(defaultPropInfo.dataType);
                 ret = templateProp->type->readDataView(viewPath, prop->data.data(), currentValue.data(), currentValue.type());
                 if (!ret.valid())
                     return ret;

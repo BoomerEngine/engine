@@ -12,13 +12,13 @@
 
 #include "core/object/include/rttiBitfieldType.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(reflection)
+BEGIN_BOOMER_NAMESPACE()
 
 // helper class that can add stuff to the bitfield type
 class CORE_REFLECTION_API BitFieldBuilder
 {
 public:
-    BitFieldBuilder(rtti::BitfieldType* enumPtr, uint32_t flagsType);
+    BitFieldBuilder(BitfieldType* enumPtr, uint32_t flagsType);
     ~BitFieldBuilder();
 
     // apply changes to target class
@@ -50,9 +50,9 @@ private:
 
     uint32_t m_flagsType;
 
-    rtti::BitfieldType* m_bitFieldType;
+    BitfieldType* m_bitFieldType;
 
     Array<StringID> m_oldNames;
 };
 
-END_BOOMER_NAMESPACE_EX(reflection)
+END_BOOMER_NAMESPACE()

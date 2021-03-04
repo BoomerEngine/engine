@@ -39,12 +39,12 @@ void Library::ParentValueTable(Array<Variant>& values, IObject* parent)
 {
     for (auto& value : values)
     {
-        if (value.type() == reflection::GetTypeObject<FontPtr>())
+        if (value.type() == GetTypeObject<FontPtr>())
         {
             auto& val = *(FontPtr*)value.data();
             val->parent(parent);
         }
-        else if (value.type() == reflection::GetTypeObject<RenderStyle>())
+        else if (value.type() == GetTypeObject<RenderStyle>())
         {
             auto& val = *(RenderStyle*)value.data();
             if (val.image)

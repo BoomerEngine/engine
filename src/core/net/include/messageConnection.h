@@ -55,7 +55,7 @@ public:
     template< typename T >
     INLINE void send(T& messageData)
     {
-        sendPtr(&messageData, reflection::GetTypeObject<T>());
+        sendPtr(&messageData, GetTypeObject<T>());
     }
 
     ///---

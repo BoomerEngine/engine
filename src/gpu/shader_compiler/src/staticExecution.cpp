@@ -1379,7 +1379,7 @@ ExecutionResult ExecuteProgramCode(ExecutionStack& stack, const CodeNode* code, 
         }
     }
 
-    stack.errorReporter().reportError(code->location(), TempString("Unsupported opcode {}", reflection::GetEnumValueName(op)));
+    stack.errorReporter().reportError(code->location(), TempString("Unsupported opcode {}", GetEnumValueName(op)));
     return stack.returnCode(code->location(), ExecutionResult::Error);
 }
 

@@ -54,7 +54,7 @@ INLINE void StepGeneric(StackFrame* stack, void* resultPtr) noexcept
 {
     auto op  = ReadOpcode(stack);
     //if (stack->parent() == nullptr)
-    //    fprintf(stderr, "opcode %s at %s(%d), %i left\n", reflection::GetEnumValueName(op), stack->functionName().c_str(), stack->sourceLine(), stack->codeEndPtr() - stack->codePtr());
+    //    fprintf(stderr, "opcode %s at %s(%d), %i left\n", GetEnumValueName(op), stack->functionName().c_str(), stack->sourceLine(), stack->codeEndPtr() - stack->codePtr());
     (*GOpcodes[(uint16_t)op])(stack, resultPtr);
 }
 
@@ -190,7 +190,7 @@ void InitOpcodeTable()
 
 //---
 
-StackFrame::StackFrame(const StackFrame* parent, void* context, const FunctionCodeBlock* code, const rtti::FunctionCallingParams* params, void* localStorage)
+StackFrame::StackFrame(const StackFrame* parent, void* context, const FunctionCodeBlock* code, const FunctionCallingParams* params, void* localStorage)
     : m_parent(parent)
     , m_contextObject(context)
     , m_activeContextObject(context)

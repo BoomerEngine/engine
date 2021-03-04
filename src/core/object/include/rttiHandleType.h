@@ -10,7 +10,7 @@
 
 #include "rttiType.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 /// Base type in the RTTI system
 class CORE_OBJECT_API IHandleType : public IType
@@ -104,4 +104,4 @@ public:
 
 };
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

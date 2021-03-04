@@ -63,7 +63,7 @@ public:
     //---
 
     /// Get metadata for view - describe what we will find here: flags, list of members, size of array, etc
-    virtual DataViewResult describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const = 0;
+    virtual DataViewResult describeDataView(StringView viewPath, DataViewInfo& outInfo) const = 0;
 
     /// Read data from memory
     virtual DataViewResult readDataView(StringView viewPath, void* targetData, Type targetType) const = 0;
@@ -74,10 +74,10 @@ public:
     //--
 
     /// Read data from memory - easier version using DataHolder (NOTE: it must be initialized :P)
-    INLINE DataViewResult readDataViewSimple(StringView viewPath, rtti::DataHolder& outData) const { return readDataView(viewPath, outData.data(), outData.type()); }
+    INLINE DataViewResult readDataViewSimple(StringView viewPath, DataHolder& outData) const { return readDataView(viewPath, outData.data(), outData.type()); }
 
     /// Write data to memory
-    INLINE DataViewResult writeDataViewSimple(StringView viewPath, const rtti::DataHolder& newData) const { return writeDataView(viewPath, newData.data(), newData.type()); }
+    INLINE DataViewResult writeDataViewSimple(StringView viewPath, const DataHolder& newData) const { return writeDataView(viewPath, newData.data(), newData.type()); }
 
     //--
 

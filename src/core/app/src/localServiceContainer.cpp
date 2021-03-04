@@ -39,7 +39,7 @@ void LocalServiceContainer::attachService(const RefPtr<ILocalService>& service)
         ASSERT(serviceClass->userIndex() == -1);
 
         auto serviceId = m_serviceMap.size();
-        const_cast<rtti::IClassType*>(serviceClass.ptr())->assignUserIndex((short)serviceId); // TEMP HACK
+        const_cast<IClassType*>(serviceClass.ptr())->assignUserIndex((short)serviceId); // TEMP HACK
         m_serviceMap.pushBack(service.get());
 
         serviceClass = serviceClass->baseClass();
@@ -165,7 +165,7 @@ namespace helper
     {
         // enumerate service classes
         Array<ClassType> serviceClasses;
-        rtti::TypeSystem::GetInstance().enumClasses(ILocalService::GetStaticClass(), serviceClasses);
+        TypeSystem::GetInstance().enumClasses(ILocalService::GetStaticClass(), serviceClasses);
         TRACE_INFO("Found {} services linked with executable", serviceClasses.size());
 
         // create entries

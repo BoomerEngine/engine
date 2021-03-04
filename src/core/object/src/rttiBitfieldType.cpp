@@ -18,7 +18,7 @@
 #include "core/containers/include/inplaceArray.h"
 #include "core/xml/include/xmlWrappers.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 BitfieldType::BitfieldType(StringID name, uint32_t size, uint64_t nativeHash)
     : IType(name)
@@ -383,4 +383,4 @@ void BitfieldType::releaseTypeReferences()
     m_flagBitIndices.clear();
 }
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

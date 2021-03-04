@@ -19,11 +19,6 @@ class BufferStorage;
 
 //--
 
-namespace rtti
-{
-    class CustomType;
-} // rtti
-
 /// a buffer of memory with custom free function
 class CORE_MEMORY_API Buffer : public NoCopy
 {

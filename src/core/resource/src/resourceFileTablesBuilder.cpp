@@ -222,7 +222,7 @@ uint16_t FileTablesBuilder::mapProperty(StringID classType, StringID propName)
     return mapProperty(prop);
 }
 
-uint16_t FileTablesBuilder::mapProperty(const rtti::Property* prop)
+uint16_t FileTablesBuilder::mapProperty(const Property* prop)
 {
     if (!prop)
         return 0;

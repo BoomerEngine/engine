@@ -128,7 +128,7 @@ struct FunctionTypeInfo
     INLINE bool isType() const
     {
         if (type && type->metaType == StubTypeType::Engine)
-            return type->name == reflection::GetTypeName<T>();
+            return type->name == GetTypeName<T>();
 
         return false;
     }

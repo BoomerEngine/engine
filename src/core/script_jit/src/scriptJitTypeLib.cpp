@@ -483,9 +483,9 @@ const JITType* JITTypeLib::createFromNativeType(StringID engineTypeName)
     ret->runtimeSize = typeInfo.runtimeSize;
     ret->runtimeAlign = typeInfo.runtimeAlign;
 
-    if (typeInfo.metaType == rtti::MetaType::Class)
+    if (typeInfo.metaType == MetaType::Class)
         ret->metaType = JITMetaType::Class;
-    else if (typeInfo.metaType == rtti::MetaType::Enum)
+    else if (typeInfo.metaType == MetaType::Enum)
         ret->metaType = JITMetaType::Enum;
     else
         ret->metaType = JITMetaType::Engine;
@@ -510,7 +510,7 @@ const JITType* JITTypeLib::createFromNativeType(StringID engineTypeName)
     {
         ret->jitName = ret->name.view(); // use direct type name
     }
-    else if (typeInfo.metaType == rtti::MetaType::Enum || typeInfo.metaType == rtti::MetaType::Bitfield)
+    else if (typeInfo.metaType == MetaType::Enum || typeInfo.metaType == MetaType::Bitfield)
     {
         if (typeInfo.runtimeSize == 1)
             ret->jitName = "uint8_t";
@@ -521,7 +521,7 @@ const JITType* JITTypeLib::createFromNativeType(StringID engineTypeName)
         else if (typeInfo.runtimeSize == 4)
             ret->jitName = "uint64_t";
 
-        if (typeInfo.metaType == rtti::MetaType::Enum)
+        if (typeInfo.metaType == MetaType::Enum)
         {
             ret->enumOptions.reserve(typeInfo.options.size());
 
@@ -529,19 +529,19 @@ const JITType* JITTypeLib::createFromNativeType(StringID engineTypeName)
                 ret->enumOptions[option.name] = option.value;
         }
     }
-    else if (typeInfo.metaType == rtti::MetaType::StrongHandle)
+    else if (typeInfo.metaType == MetaType::StrongHandle)
     {
         ret->jitName = "struct StrongPtrWrapper";
     }
-    else if (typeInfo.metaType == rtti::MetaType::StrongHandle)
+    else if (typeInfo.metaType == MetaType::StrongHandle)
     {
         ret->jitName = "struct WeakPtrWrapper";
     }
-    else if (typeInfo.metaType == rtti::MetaType::ClassRef)
+    else if (typeInfo.metaType == MetaType::ClassRef)
     {
         ret->jitName = "struct ClassPtrWrapper";
     }
-    else if (typeInfo.metaType == rtti::MetaType::Class || typeInfo.metaType == rtti::MetaType::Simple)
+    else if (typeInfo.metaType == MetaType::Class || typeInfo.metaType == MetaType::Simple)
     {
         InplaceArray<StringView, 10> parts;
         engineTypeName.view().slice(":", false, parts);
@@ -838,7 +838,7 @@ const JITType* JITTypeLib::resolveType(const StubTypeDecl* typeStub)
         ret->runtimeSize = sizeof(ClassType);
         ret->runtimeAlign = __alignof(ClassType);
         ret->innerType = resolveType(typeStub->referencedType->resolvedStub); // class
-        ret->name = rtti::FormatClassRefTypeName(ret->innerType->name);
+        ret->name = FormatClassRefTypeName(ret->innerType->name);
         ret->jitName = "struct ClassPtrWrapper";
         ret->requiresConstructor = true;
         ret->requiresDestructor = false;
@@ -855,7 +855,7 @@ const JITType* JITTypeLib::resolveType(const StubTypeDecl* typeStub)
         ret->runtimeSize = sizeof(ObjectPtr);
         ret->runtimeAlign = __alignof(ObjectPtr);
         ret->innerType = resolveType(typeStub->referencedType->resolvedStub); // class
-        ret->name = rtti::FormatStrongHandleTypeName(ret->innerType->name);
+        ret->name = FormatStrongHandleTypeName(ret->innerType->name);
         ret->jitName = "struct StrongPtrWrapper";
         ret->requiresConstructor = true;
         ret->requiresDestructor = true;
@@ -872,7 +872,7 @@ const JITType* JITTypeLib::resolveType(const StubTypeDecl* typeStub)
         ret->runtimeSize = sizeof(ObjectWeakPtr);
         ret->runtimeAlign = __alignof(ObjectWeakPtr);
         ret->innerType = resolveType(typeStub->referencedType->resolvedStub); // class
-        ret->name = rtti::FormatWeakHandleTypeName(ret->innerType->name);
+        ret->name = FormatWeakHandleTypeName(ret->innerType->name);
         ret->jitName = "struct WeakPtrWrapper";
         ret->requiresConstructor = true;
         ret->requiresDestructor = true;

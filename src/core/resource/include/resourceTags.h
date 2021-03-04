@@ -15,9 +15,9 @@ BEGIN_BOOMER_NAMESPACE_EX(res)
 //-----
 
 /// version of the resource class internal serialization, if this does not match the resource we recook the resource
-class CORE_RESOURCE_API ResourceDataVersionMetadata : public rtti::IMetadata
+class CORE_RESOURCE_API ResourceDataVersionMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ResourceDataVersionMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceDataVersionMetadata, IMetadata);
 
 public:
     ResourceDataVersionMetadata();
@@ -39,9 +39,9 @@ private:
 //-----
 
 // Resource extension (class metadata)
-class CORE_RESOURCE_API ResourceExtensionMetadata : public rtti::IMetadata
+class CORE_RESOURCE_API ResourceExtensionMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ResourceExtensionMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceExtensionMetadata, IMetadata);
 
 public:
     ResourceExtensionMetadata();
@@ -61,9 +61,9 @@ private:
 //------
 
 // Resource description (class metadata)
-class CORE_RESOURCE_API ResourceDescriptionMetadata : public rtti::IMetadata
+class CORE_RESOURCE_API ResourceDescriptionMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ResourceDescriptionMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceDescriptionMetadata, IMetadata);
 
 public:
     ResourceDescriptionMetadata();
@@ -83,9 +83,9 @@ private:
 //------
 
 // Resource editor color
-class CORE_RESOURCE_API ResourceTagColorMetadata : public rtti::IMetadata
+class CORE_RESOURCE_API ResourceTagColorMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ResourceTagColorMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceTagColorMetadata, IMetadata);
 
 public:
     ResourceTagColorMetadata();
@@ -111,9 +111,9 @@ private:
 //--
 
 /// metadata for raw resource to specify the target (imported) class
-class CORE_RESOURCE_API ResourceCookedClassMetadata : public rtti::IMetadata
+class CORE_RESOURCE_API ResourceCookedClassMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ResourceCookedClassMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceCookedClassMetadata, IMetadata);
 
 public:
     ResourceCookedClassMetadata();
@@ -138,9 +138,9 @@ private:
 //---
 
 /// metadata for input format supported for cooking (obj, jpg, etc)
-class CORE_RESOURCE_API ResourceSourceFormatMetadata : public rtti::IMetadata
+class CORE_RESOURCE_API ResourceSourceFormatMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ResourceSourceFormatMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceSourceFormatMetadata, IMetadata);
 
 public:
     ResourceSourceFormatMetadata();
@@ -175,9 +175,9 @@ private:
 //---
 
 /// version of the cooker class, if this does not match the resource we recook the resource
-class CORE_RESOURCE_API ResourceCookerVersionMetadata : public rtti::IMetadata
+class CORE_RESOURCE_API ResourceCookerVersionMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ResourceCookerVersionMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceCookerVersionMetadata, IMetadata);
 
 public:
     ResourceCookerVersionMetadata();

@@ -343,7 +343,7 @@ struct CORE_SCRIPT_API StubTypeDecl : public Stub
     INLINE bool isType() const
     {
         if (metaType == StubTypeType::Engine)
-            return name == reflection::GetTypeName<T>();
+            return name == GetTypeName<T>();
 
         return false;
     }

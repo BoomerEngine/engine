@@ -142,7 +142,7 @@ protected:
     {
         static Type theResolvedType = nullptr;
         if (!theResolvedType)
-            theResolvedType = reflection::GetTypeObject<T>();
+            theResolvedType = GetTypeObject<T>();
         return theResolvedType;
     }
 };

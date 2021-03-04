@@ -15,14 +15,9 @@
 #include "core/containers/include/stringID.h"
 #include "core/containers/include/hashMap.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(reflection)
+BEGIN_BOOMER_NAMESPACE()
 
 class ClassBuilder;
-
-END_BOOMER_NAMESPACE_EX(reflection)
-
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
-
 class Property;
 class Function;
 class Interface;
@@ -228,7 +223,7 @@ protected:
     bool m_resourceRelatedPropertiesUpdated = false;
     Array<Property*> m_resourceRelatedProperties;
 
-    friend reflection::ClassBuilder;
+    friend ClassBuilder;
 
     //--
 
@@ -239,7 +234,7 @@ protected:
     virtual void releaseTypeReferences() override;
 };
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()
 
 BEGIN_BOOMER_NAMESPACE()
 

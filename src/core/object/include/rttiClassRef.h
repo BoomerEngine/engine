@@ -20,7 +20,7 @@ class CORE_OBJECT_API ClassType
 {
 public:
     INLINE ClassType() : m_classType(nullptr) {}
-    INLINE ClassType(const rtti::IClassType* type) : m_classType(type) {}
+    INLINE ClassType(const IClassType* type) : m_classType(type) {}
     INLINE ClassType(std::nullptr_t) : m_classType(nullptr) {}
 
     INLINE ClassType(const ClassType& other) = default;
@@ -40,8 +40,8 @@ public:
     // simple comparisons
     INLINE bool operator==(const ClassType& other) const { return m_classType == other.m_classType; }
     INLINE bool operator!=(const ClassType& other) const { return m_classType != other.m_classType; }
-    INLINE bool operator==(const rtti::IType* other) const { return (const rtti::IType*)m_classType == other; }
-    INLINE bool operator!=(const rtti::IType* other) const { return (const rtti::IType*)m_classType != other; }
+    INLINE bool operator==(const IType* other) const { return (const IType*)m_classType == other; }
+    INLINE bool operator!=(const IType* other) const { return (const IType*)m_classType != other; }
 
     template< typename T >
     INLINE bool operator==(const SpecificClassType<T>& other) const;
@@ -59,10 +59,10 @@ public:
     INLINE operator bool() const { return m_classType != nullptr; }
 
     // get referenced type
-    INLINE const rtti::IClassType* ptr() const { return m_classType; }
+    INLINE const IClassType* ptr() const { return m_classType; }
 
     // get referenced type directly
-    INLINE const rtti::IClassType* operator->() const { return m_classType; }
+    INLINE const IClassType* operator->() const { return m_classType; }
 
     //--
 
@@ -108,7 +108,7 @@ public:
     INLINE static uint32_t CalcHash(ClassType key) { return std::hash<const void*>{}(key.m_classType); }
 
 protected:
-    const rtti::IClassType* m_classType;
+    const IClassType* m_classType;
 };
 
 //----
@@ -120,8 +120,8 @@ class SpecificClassType
 {
 public:
     INLINE SpecificClassType() = default;
-    INLINE SpecificClassType(const rtti::IClassType* type);
-    INLINE SpecificClassType(const rtti::IClassType& type); // does not test
+    INLINE SpecificClassType(const IClassType* type);
+    INLINE SpecificClassType(const IClassType& type); // does not test
     //INLINE SpecificClassType(const ClassType& type) { ValidateClassType(type, BaseClass::GetStaticClass()); m_classType = type.ptr(); };
     INLINE SpecificClassType(std::nullptr_t) {};
 
@@ -142,8 +142,8 @@ public:
     // simple comparisons
     INLINE bool operator==(const ClassType& other) const { return ptr() == other.ptr(); }
     INLINE bool operator!=(const ClassType& other) const { return ptr() != other.ptr(); }
-    INLINE bool operator==(const rtti::IType* other) const { return ptr() == other; }
-    INLINE bool operator!=(const rtti::IType* other) const { return ptr() != other; }
+    INLINE bool operator==(const IType* other) const { return ptr() == other; }
+    INLINE bool operator!=(const IType* other) const { return ptr() != other; }
 
     template< typename U >
     INLINE bool operator==(const SpecificClassType<U>& other) const { return ptr() == other.ptr(); }
@@ -160,10 +160,10 @@ public:
     INLINE operator bool() const { return !m_classType.empty(); }
 
     // get referenced type
-    INLINE const rtti::IClassType* ptr() const { return m_classType.ptr(); }
+    INLINE const IClassType* ptr() const { return m_classType.ptr(); }
 
     // get referenced type directly
-    INLINE const rtti::IClassType* operator->() const { return m_classType.ptr(); }
+    INLINE const IClassType* operator->() const { return m_classType.ptr(); }
 
     // get hash of the type reference
     INLINE uint64_t hash() const { return m_classType.hash(); }
@@ -231,7 +231,7 @@ INLINE ClassType::ClassType(const SpecificClassType<T>& other)
 {}
 
 template< typename BaseClass >
-INLINE SpecificClassType<BaseClass>::SpecificClassType(const rtti::IClassType* type)
+INLINE SpecificClassType<BaseClass>::SpecificClassType(const IClassType* type)
 {
     DEBUG_CHECK_EX(!type || type->is<BaseClass>(), "Trying to initialize a specific class from incompatible class type");
     if (type->is<BaseClass>()) // to prevent weird bugs it's better not to assign
@@ -239,7 +239,7 @@ INLINE SpecificClassType<BaseClass>::SpecificClassType(const rtti::IClassType* t
 }
 
 template< typename BaseClass >
-INLINE SpecificClassType<BaseClass>::SpecificClassType(const rtti::IClassType& type)
+INLINE SpecificClassType<BaseClass>::SpecificClassType(const IClassType& type)
     : m_classType(&type)
 {
 }

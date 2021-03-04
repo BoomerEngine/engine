@@ -13,9 +13,9 @@ BEGIN_BOOMER_NAMESPACE_EX(replication)
 ///----
 
 /// mark property as replicated
-class CORE_REPLICATION_API SetupMetadata : public rtti::IMetadata
+class CORE_REPLICATION_API SetupMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(SetupMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(SetupMetadata, IMetadata);
 
 public:
     SetupMetadata();

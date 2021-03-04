@@ -24,7 +24,7 @@
 #include "core/system/include/scopeLock.h"
 #include "core/containers/include/stringParser.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 extern void RegisterFundamentalTypes(TypeSystem& typeSystem);
 extern void RegisterObjectTypes(TypeSystem& typeSystem);
@@ -230,7 +230,7 @@ const Property* TypeSystem::findProperty(uint64_t propertyHash)
 {
     ScopeLock<> lock(m_propertiesLock);
 
-    const rtti::Property* prop = nullptr;
+    const Property* prop = nullptr;
     if (m_properties.find(propertyHash, prop))
         return prop;
 
@@ -350,7 +350,7 @@ void TypeSystem::registerType(Type type)
     }
 }
 
-void TypeSystem::registerProperty(const rtti::Property* prop)
+void TypeSystem::registerProperty(const Property* prop)
 {
     ScopeLock<> lock(m_propertiesLock);
 
@@ -421,4 +421,4 @@ Type TypeSystem::createDynamicType_NoLock(const char* typeName)
     return nullptr;
 }
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

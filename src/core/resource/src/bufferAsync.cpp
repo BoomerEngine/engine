@@ -91,7 +91,7 @@ Buffer AsyncBuffer::load(const PoolTag poolID /*= POOL_ASYNC_BUFFER*/) const
 namespace prv
 {
 
-    void WriteAsyncBuffer(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
+    void WriteAsyncBuffer(TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
     {
         auto& asyncBuffer = *(AsyncBuffer*)data;
 
@@ -135,7 +135,7 @@ namespace prv
         return true;*/
     }
 
-    void ReadAsyncBuffer(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
+    void ReadAsyncBuffer(TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
     {
         auto& asyncBuffer = *(AsyncBuffer*)data;
         /*

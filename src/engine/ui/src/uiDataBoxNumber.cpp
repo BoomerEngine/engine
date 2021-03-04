@@ -23,50 +23,50 @@ RTTI_END_TYPE();
 
 static bool IsFloatingPointType(Type type)
 {
-    return (type == reflection::GetTypeObject<float>() || type == reflection::GetTypeObject<double>());
+    return (type == GetTypeObject<float>() || type == GetTypeObject<double>());
 }
 
-static StringBuf ValueToString(const rtti::DataHolder& data, int numDigits)
+static StringBuf ValueToString(const DataHolder& data, int numDigits)
 {
     StringBuilder txt;
 
-    if (data.type() == reflection::GetTypeObject<float>())
+    if (data.type() == GetTypeObject<float>())
     {
         txt.appendPreciseNumber(*(const float*)data.data(), numDigits);
     }
-    else if (data.type() == reflection::GetTypeObject<double>())
+    else if (data.type() == GetTypeObject<double>())
     {
         txt.appendPreciseNumber(*(const double*)data.data(), numDigits);
     }
-    else if (data.type() == reflection::GetTypeObject<char>())
+    else if (data.type() == GetTypeObject<char>())
     {
         txt.appendNumber(*(const char*)data.data());
     }
-    else if (data.type() == reflection::GetTypeObject<short>())
+    else if (data.type() == GetTypeObject<short>())
     {
         txt.appendNumber(*(const short*)data.data());
     }
-    else if (data.type() == reflection::GetTypeObject<int>())
+    else if (data.type() == GetTypeObject<int>())
     {
         txt.appendNumber(*(const int*)data.data());
     }
-    else if (data.type() == reflection::GetTypeObject<int64_t>())
+    else if (data.type() == GetTypeObject<int64_t>())
     {
         txt.appendNumber(*(const int64_t*)data.data());
     }
-    else if (data.type() == reflection::GetTypeObject<uint8_t>())
+    else if (data.type() == GetTypeObject<uint8_t>())
     {
         txt.appendNumber(*(const uint8_t*)data.data());
     }
-    else if (data.type() == reflection::GetTypeObject<uint16_t>())
+    else if (data.type() == GetTypeObject<uint16_t>())
     {
         txt.appendNumber(*(const uint16_t*)data.data());
     }
-    else if (data.type() == reflection::GetTypeObject<uint32_t>())
+    else if (data.type() == GetTypeObject<uint32_t>())
     {
         txt.appendNumber(*(const uint32_t*)data.data());
     }
-    else if (data.type() == reflection::GetTypeObject<uint64_t>())
+    else if (data.type() == GetTypeObject<uint64_t>())
     {
         txt.appendNumber(*(const uint64_t*)data.data());
     }
@@ -88,53 +88,53 @@ static bool ValueToInRange(T data, double rangeMin, double rangeMax)
     return true;
 }
 
-static bool ValueToInRange(const rtti::DataHolder& data, double rangeMin, double rangeMax)
+static bool ValueToInRange(const DataHolder& data, double rangeMin, double rangeMax)
 {
-    if (data.type() == reflection::GetTypeObject<float>())
+    if (data.type() == GetTypeObject<float>())
         return ValueToInRange(*(const float*)data.data(), rangeMin, rangeMax);
-    else if (data.type() == reflection::GetTypeObject<double>())
+    else if (data.type() == GetTypeObject<double>())
         return ValueToInRange(*(const double*)data.data(), rangeMin, rangeMax);
-    else if (data.type() == reflection::GetTypeObject<char>())
+    else if (data.type() == GetTypeObject<char>())
         return ValueToInRange(*(const char*)data.data(), rangeMin, rangeMax);
-    else if (data.type() == reflection::GetTypeObject<short>())
+    else if (data.type() == GetTypeObject<short>())
         return ValueToInRange(*(const short*)data.data(), rangeMin, rangeMax);
-    else if (data.type() == reflection::GetTypeObject<int>())
+    else if (data.type() == GetTypeObject<int>())
         return ValueToInRange(*(const int*)data.data(), rangeMin, rangeMax);
-    else if (data.type() == reflection::GetTypeObject<int64_t>())
+    else if (data.type() == GetTypeObject<int64_t>())
         return ValueToInRange(*(const int64_t*)data.data(), rangeMin, rangeMax);
-    else if (data.type() == reflection::GetTypeObject<uint8_t>())
+    else if (data.type() == GetTypeObject<uint8_t>())
         return ValueToInRange(*(const uint8_t*)data.data(), rangeMin, rangeMax);
-    else if (data.type() == reflection::GetTypeObject<uint16_t>())
+    else if (data.type() == GetTypeObject<uint16_t>())
         return ValueToInRange(*(const uint16_t*)data.data(), rangeMin, rangeMax);
-    else if (data.type() == reflection::GetTypeObject<uint32_t>())
+    else if (data.type() == GetTypeObject<uint32_t>())
         return ValueToInRange(*(const uint32_t*)data.data(), rangeMin, rangeMax);
-    else if (data.type() == reflection::GetTypeObject<uint64_t>())
+    else if (data.type() == GetTypeObject<uint64_t>())
         return ValueToInRange(*(const uint64_t*)data.data(), rangeMin, rangeMax);
 
     return true;
 }
 
-static bool ValueFromString(StringView txt, rtti::DataHolder& data)
+static bool ValueFromString(StringView txt, DataHolder& data)
 {
-    if (data.type() == reflection::GetTypeObject<float>())
+    if (data.type() == GetTypeObject<float>())
         return MatchResult::OK == txt.match(*(float*)data.data());
-    else if (data.type() == reflection::GetTypeObject<double>())
+    else if (data.type() == GetTypeObject<double>())
         return MatchResult::OK == txt.match(*(double*)data.data());
-    else if (data.type() == reflection::GetTypeObject<char>())
+    else if (data.type() == GetTypeObject<char>())
         return MatchResult::OK == txt.match(*(char*)data.data());
-    else if (data.type() == reflection::GetTypeObject<short>())
+    else if (data.type() == GetTypeObject<short>())
         return MatchResult::OK == txt.match(*(short*)data.data());
-    else if (data.type() == reflection::GetTypeObject<int>())
+    else if (data.type() == GetTypeObject<int>())
         return MatchResult::OK == txt.match(*(int*)data.data());
-    else if (data.type() == reflection::GetTypeObject<int64_t>())
+    else if (data.type() == GetTypeObject<int64_t>())
         return MatchResult::OK == txt.match(*(int64_t*)data.data());
-    else if (data.type() == reflection::GetTypeObject<uint8_t>())
+    else if (data.type() == GetTypeObject<uint8_t>())
         return MatchResult::OK == txt.match(*(uint8_t*)data.data());
-    else if (data.type() == reflection::GetTypeObject<uint16_t>())
+    else if (data.type() == GetTypeObject<uint16_t>())
         return MatchResult::OK == txt.match(*(uint16_t*)data.data());
-    else if (data.type() == reflection::GetTypeObject<uint32_t>())
+    else if (data.type() == GetTypeObject<uint32_t>())
         return MatchResult::OK == txt.match(*(uint32_t*)data.data());
-    else if (data.type() == reflection::GetTypeObject<uint64_t>())
+    else if (data.type() == GetTypeObject<uint64_t>())
         return MatchResult::OK == txt.match(*(uint64_t*)data.data());
 
     return false;
@@ -201,27 +201,27 @@ static void CalcDragValueT(T base, int64_t steps, int numDigits, bool rangeEnabl
     }
 }
 
-static void CalcDragValue(const rtti::DataHolder& base, int64_t steps, int numDigits, bool rangeEnabled, double rangeMin, double rangeMax, bool wrap, rtti::DataHolder& result)
+static void CalcDragValue(const DataHolder& base, int64_t steps, int numDigits, bool rangeEnabled, double rangeMin, double rangeMax, bool wrap, DataHolder& result)
 {
-    if (base.type() == reflection::GetTypeObject<float>())
+    if (base.type() == GetTypeObject<float>())
         CalcDragValueT(*(const float*)base.data(), steps, numDigits, rangeEnabled, rangeMin, rangeMax, wrap, *(float*)result.data());
-    else if (base.type() == reflection::GetTypeObject<double>())
+    else if (base.type() == GetTypeObject<double>())
         CalcDragValueT(*(const double*)base.data(), steps, numDigits, rangeEnabled, rangeMin, rangeMax, wrap, *(double*)result.data());
-    else if (base.type() == reflection::GetTypeObject<char>())
+    else if (base.type() == GetTypeObject<char>())
         CalcDragValueT(*(const char*)base.data(), steps, numDigits, rangeEnabled, rangeMin, rangeMax, wrap, *(char*)result.data());
-    else if (base.type() == reflection::GetTypeObject<short>())
+    else if (base.type() == GetTypeObject<short>())
         CalcDragValueT(*(const short*)base.data(), steps, numDigits, rangeEnabled, rangeMin, rangeMax, wrap, *(short*)result.data());
-    else if (base.type() == reflection::GetTypeObject<int>())
+    else if (base.type() == GetTypeObject<int>())
         CalcDragValueT(*(const int*)base.data(), steps, numDigits, rangeEnabled, rangeMin, rangeMax, wrap, *(int*)result.data());
-    else if (base.type() == reflection::GetTypeObject<int64_t>())
+    else if (base.type() == GetTypeObject<int64_t>())
         CalcDragValueT(*(const int64_t*)base.data(), steps, numDigits, rangeEnabled, rangeMin, rangeMax, wrap, *(int64_t*)result.data());
-    else if (base.type() == reflection::GetTypeObject<uint8_t>())
+    else if (base.type() == GetTypeObject<uint8_t>())
         CalcDragValueT(*(const uint8_t*)base.data(), steps, numDigits, rangeEnabled, rangeMin, rangeMax, wrap, *(uint8_t*)result.data());
-    else if (base.type() == reflection::GetTypeObject<uint16_t>())
+    else if (base.type() == GetTypeObject<uint16_t>())
         CalcDragValueT(*(const uint16_t*)base.data(), steps, numDigits, rangeEnabled, rangeMin, rangeMax, wrap, *(uint16_t*)result.data());
-    else if (base.type() == reflection::GetTypeObject<uint32_t>())
+    else if (base.type() == GetTypeObject<uint32_t>())
         CalcDragValueT(*(const uint32_t*)base.data(), steps, numDigits, rangeEnabled, rangeMin, rangeMax, wrap, *(uint32_t*)result.data());
-    else if (base.type() == reflection::GetTypeObject<uint64_t>())
+    else if (base.type() == GetTypeObject<uint64_t>())
         CalcDragValueT(*(const uint64_t*)base.data(), steps, numDigits, rangeEnabled, rangeMin, rangeMax, wrap, *(uint64_t*)result.data());
 }
 
@@ -264,7 +264,7 @@ void DataBoxNumberText::dragStart()
 
     if (!readOnly())
     {
-        rtti::DataHolder data(m_type);
+        DataHolder data(m_type);
         const auto ret = readValue(data.data(), data.type());
         if (ret.code == DataViewResultCode::OK)
             m_preDragValue = std::move(data);
@@ -295,7 +295,7 @@ void DataBoxNumberText::dragUpdate(int64_t numSteps)
     {
         m_dragStepCounter += numSteps;
 
-        rtti::DataHolder value(m_type);
+        DataHolder value(m_type);
         CalcDragValue(m_preDragValue, m_dragStepCounter, m_numFractionalDigits, m_rangeEnabled, m_rangeMin, m_rangeMax, m_dragWrap, value);
 
         writeValue(value.data(), value.type());
@@ -311,7 +311,7 @@ void DataBoxNumberText::handleValueChange()
     if (m_dragBox)
         m_dragBox->visibility(!readOnly());
 
-    rtti::DataHolder holder(m_type);
+    DataHolder holder(m_type);
 
     const auto ret = readValue(holder.data(), m_type);
     if (ret.code == DataViewResultCode::OK)
@@ -352,7 +352,7 @@ void DataBoxNumberText::write()
     if (txt.empty())
         txt = "0";
 
-    rtti::DataHolder holder(m_type);
+    DataHolder holder(m_type);
     if (!ValueFromString(txt, holder))
         return;
 
@@ -396,8 +396,8 @@ void DataBoxNumberTrackBar::write()
 {
     const auto val = m_bar->value();
 
-    rtti::DataHolder holder(m_type);
-    if (rtti::ConvertData(&val, reflection::GetTypeObject<double>(), holder.data(), holder.type()))
+    DataHolder holder(m_type);
+    if (ConvertData(&val, GetTypeObject<double>(), holder.data(), holder.type()))
     {
         writeValue(holder.data(), m_type);
     }
@@ -415,12 +415,12 @@ void DataBoxNumberTrackBar::cancelEdit()
 
 void DataBoxNumberTrackBar::handleValueChange()
 {
-    rtti::DataHolder holder(m_type);
+    DataHolder holder(m_type);
     const auto ret = readValue(holder.data(), m_type);
     if (ret.code == DataViewResultCode::OK)
     {
         double val = 0.0;
-        if (rtti::ConvertData(holder.data(), holder.type(), &val, reflection::GetTypeObject<double>()))
+        if (ConvertData(holder.data(), holder.type(), &val, GetTypeObject<double>()))
         {
             m_bar->value(val, false);
         }
@@ -443,18 +443,18 @@ class DataBoxNumberFactory : public IDataBoxFactory
     RTTI_DECLARE_VIRTUAL_CLASS(DataBoxNumberFactory, IDataBoxFactory);
 
 public:
-    virtual DataBoxPtr tryCreate(const rtti::DataViewInfo& info) const override
+    virtual DataBoxPtr tryCreate(const DataViewInfo& info) const override
     {
-        if (info.dataType == reflection::GetTypeObject<float>() ||
-            info.dataType == reflection::GetTypeObject<double>() ||
-            info.dataType == reflection::GetTypeObject<char>() ||
-            info.dataType == reflection::GetTypeObject<short>() ||
-            info.dataType == reflection::GetTypeObject<int>() ||
-            info.dataType == reflection::GetTypeObject<int64_t>() ||
-            info.dataType == reflection::GetTypeObject<uint8_t>() ||
-            info.dataType == reflection::GetTypeObject<uint16_t>() ||
-            info.dataType == reflection::GetTypeObject<uint32_t>() ||
-            info.dataType == reflection::GetTypeObject<uint64_t>())
+        if (info.dataType == GetTypeObject<float>() ||
+            info.dataType == GetTypeObject<double>() ||
+            info.dataType == GetTypeObject<char>() ||
+            info.dataType == GetTypeObject<short>() ||
+            info.dataType == GetTypeObject<int>() ||
+            info.dataType == GetTypeObject<int64_t>() ||
+            info.dataType == GetTypeObject<uint8_t>() ||
+            info.dataType == GetTypeObject<uint16_t>() ||
+            info.dataType == GetTypeObject<uint32_t>() ||
+            info.dataType == GetTypeObject<uint64_t>())
         {
             /*bool rangeEnabled = false;
             bool dragEnabled = false;

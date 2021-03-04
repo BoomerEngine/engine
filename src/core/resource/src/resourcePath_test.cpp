@@ -194,7 +194,7 @@ TEST(DataAccessRead, SimpleValue)
 {
     uint32_t value = 42;
     Variant outValue;
-    auto ret = ReadNativeData(&value, reflection::GetTypeObject<uint32_t>(), AccessPath(), outValue);
+    auto ret = ReadNativeData(&value, GetTypeObject<uint32_t>(), AccessPath(), outValue);
     ASSERT_TRUE(ret);
 
     uint32_t readValue = 0;
@@ -207,7 +207,7 @@ TEST(DataAccessRead, SimpleValueHasNoNamedComponents)
 {
     uint32_t value = 42;
     Variant outValue;
-    auto ret = ReadNativeData(&value, reflection::GetTypeObject<uint32_t>(), AccessPath()["dupa"], outValue);
+    auto ret = ReadNativeData(&value, GetTypeObject<uint32_t>(), AccessPath()["dupa"], outValue);
     ASSERT_FALSE(ret);
 }
 
@@ -215,7 +215,7 @@ TEST(DataAccessRead, SimpleValueHasNoIndexComponents)
 {
     uint32_t value = 42;
     Variant outValue;
-    auto ret = ReadNativeData(&value, reflection::GetTypeObject<uint32_t>(), AccessPath()[1], outValue);
+    auto ret = ReadNativeData(&value, GetTypeObject<uint32_t>(), AccessPath()[1], outValue);
     ASSERT_FALSE(ret);
 }
 
@@ -223,7 +223,7 @@ TEST(DataAccessRead, StructValue)
 {
     Vector3 value(1,2,3);
     Variant outValue;
-    auto ret = ReadNativeData(&value, reflection::GetTypeObject<Vector3>(), AccessPath(), outValue);
+    auto ret = ReadNativeData(&value, GetTypeObject<Vector3>(), AccessPath(), outValue);
     ASSERT_TRUE(ret);
 
     Vector3 readValue;
@@ -236,7 +236,7 @@ TEST(DataAccessRead, StructValueComponents)
 {
     Vector3 value(1,2,3);
     Variant outValue;
-    auto ret = ReadNativeData(&value, reflection::GetTypeObject<Vector3>(), AccessPath()["y"], outValue);
+    auto ret = ReadNativeData(&value, GetTypeObject<Vector3>(), AccessPath()["y"], outValue);
     ASSERT_TRUE(ret);
 
     float readValue;
@@ -249,7 +249,7 @@ TEST(DataAccessRead, StructValueAcessingInvalidComponentsFails)
 {
     uint32_t value = 42;
     Variant outValue;
-    auto ret = ReadNativeData(&value, reflection::GetTypeObject<uint32_t>(), AccessPath()["crap"], outValue);
+    auto ret = ReadNativeData(&value, GetTypeObject<uint32_t>(), AccessPath()["crap"], outValue);
     ASSERT_FALSE(ret);
 }
 
@@ -261,7 +261,7 @@ TEST(DataAccessRead, ArrayValue)
     value.pushBack(15);
 
     Variant outValue;
-    auto ret = ReadNativeData(&value, reflection::GetTypeObject<Array<uint32_t>>(), AccessPath(), outValue);
+    auto ret = ReadNativeData(&value, GetTypeObject<Array<uint32_t>>(), AccessPath(), outValue);
     ASSERT_TRUE(ret);
 
     Array<uint32_t> readValue;
@@ -278,7 +278,7 @@ TEST(DataAccessRead, ArrayValueElement)
     value.pushBack(15);
 
     Variant outValue;
-    auto ret = ReadNativeData(&value, reflection::GetTypeObject<Array<uint32_t>>(), AccessPath()[1], outValue);
+    auto ret = ReadNativeData(&value, GetTypeObject<Array<uint32_t>>(), AccessPath()[1], outValue);
     ASSERT_TRUE(ret);
 
     uint32_t readValue;
@@ -296,7 +296,7 @@ TEST(DataAccessRead, ArrayValueElementOutOfRangeFails)
     value.pushBack(15);
 
     Variant outValue;
-    auto ret = ReadNativeData(&value, reflection::GetTypeObject<Array<uint32_t>>(), AccessPath()[10], outValue);
+    auto ret = ReadNativeData(&value, GetTypeObject<Array<uint32_t>>(), AccessPath()[10], outValue);
     ASSERT_FALSE(ret);
 }
 
@@ -308,7 +308,7 @@ TEST(DataAccessRead, ArraySizeReportedDynArray)
     value.pushBack(15);
 
     Variant outValue;
-    auto ret = ReadNativeData(&value, reflection::GetTypeObject<decltype(value)>(), AccessPath()["size"], outValue);
+    auto ret = ReadNativeData(&value, GetTypeObject<decltype(value)>(), AccessPath()["size"], outValue);
     ASSERT_TRUE(ret);
 
     uint32_t readValue;
@@ -325,7 +325,7 @@ TEST(DataAccessRead, ArraySizeReportedStaticArray)
     value.pushBack(15);
 
     Variant outValue;
-    auto ret = ReadNativeData(&value, reflection::GetTypeObject<decltype(value)>(), AccessPath()["size"], outValue);
+    auto ret = ReadNativeData(&value, GetTypeObject<decltype(value)>(), AccessPath()["size"], outValue);
     ASSERT_TRUE(ret);
 
     uint32_t readValue;
@@ -342,7 +342,7 @@ TEST(DataAccessRead, ArraySizeReportedNativeArray)
     value[2] = 15;
 
     Variant outValue;
-    auto ret = ReadNativeData(&value, reflection::GetTypeObject<decltype(value)>(), AccessPath()["size"], outValue);
+    auto ret = ReadNativeData(&value, GetTypeObject<decltype(value)>(), AccessPath()["size"], outValue);
     ASSERT_TRUE(ret);
 
     uint32_t readValue;
@@ -359,7 +359,7 @@ TEST(DataAccessRead, ArrayCapacityReportedDynArray)
     value.pushBack(15);
 
     Variant outValue;
-    auto ret = ReadNativeData(&value, reflection::GetTypeObject<decltype(value)>(), AccessPath()["capacity"], outValue);
+    auto ret = ReadNativeData(&value, GetTypeObject<decltype(value)>(), AccessPath()["capacity"], outValue);
     ASSERT_TRUE(ret);
 
     uint32_t readValue;
@@ -376,7 +376,7 @@ TEST(DataAccessRead, ArrayCapacityReportedStaticArray)
     value.pushBack(15);
 
     Variant outValue;
-    auto ret = ReadNativeData(&value, reflection::GetTypeObject<decltype(value)>(), AccessPath()["capacity"], outValue);
+    auto ret = ReadNativeData(&value, GetTypeObject<decltype(value)>(), AccessPath()["capacity"], outValue);
     ASSERT_TRUE(ret);
 
     uint32_t readValue;
@@ -393,7 +393,7 @@ TEST(DataAccessRead, ArrayCapacityReportedNativeArray)
     value[2] = 15;
 
     Variant outValue;
-    auto ret = ReadNativeData(&value, reflection::GetTypeObject<decltype(value)>(), AccessPath()["capacity"], outValue);
+    auto ret = ReadNativeData(&value, GetTypeObject<decltype(value)>(), AccessPath()["capacity"], outValue);
     ASSERT_TRUE(ret);
 
     uint32_t readValue;
@@ -407,7 +407,7 @@ TEST(DataAccessRead, ComplexStructureRead)
     Box box(Vector3(1,2,3), Vector3(4,5,6));
 
     Variant outValue;
-    auto ret = ReadNativeData(&box, reflection::GetTypeObject<decltype(box)>(), AccessPath()["min"]["x"], outValue);
+    auto ret = ReadNativeData(&box, GetTypeObject<decltype(box)>(), AccessPath()["min"]["x"], outValue);
     ASSERT_TRUE(ret);
     ASSERT_EQ(1.0f, outValue.get<float>());
     ASSERT_EQ(1, outValue.get<int>());
@@ -418,8 +418,8 @@ TEST(DataAccessRead, ComplexStructureRead)
 TEST(DataAccessWrite, SimpleValue)
 {
     uint32_t value = 0;
-    auto valueToWrite = rtti::CreateVariant<uint32_t>(500);
-    auto ret = WriteNativeData(&value, reflection::GetTypeObject<decltype(value)>(), AccessPath(), valueToWrite);
+    auto valueToWrite = CreateVariant<uint32_t>(500);
+    auto ret = WriteNativeData(&value, GetTypeObject<decltype(value)>(), AccessPath(), valueToWrite);
     ASSERT_TRUE(ret);
     ASSERT_EQ(value, 500);
 }
@@ -427,8 +427,8 @@ TEST(DataAccessWrite, SimpleValue)
 TEST(DataAccessWrite, StructValue)
 {
     Vector3 value(0,0,0);
-    auto valueToWrite = rtti::CreateVariant(Vector3(1,2,3));
-    auto ret = WriteNativeData(&value, reflection::GetTypeObject<decltype(value)>(), AccessPath(), valueToWrite);
+    auto valueToWrite = CreateVariant(Vector3(1,2,3));
+    auto ret = WriteNativeData(&value, GetTypeObject<decltype(value)>(), AccessPath(), valueToWrite);
     ASSERT_TRUE(ret);
     ASSERT_EQ(1.0f, value.x);
     ASSERT_EQ(2.0f, value.y);
@@ -438,8 +438,8 @@ TEST(DataAccessWrite, StructValue)
 TEST(DataAccessWrite, StructValueElement)
 {
     Vector3 value(0,0,0);
-    auto valueToWrite = rtti::CreateVariant<float>(42.0f);
-    auto ret = WriteNativeData(&value, reflection::GetTypeObject<decltype(value)>(), AccessPath()["y"], valueToWrite);
+    auto valueToWrite = CreateVariant<float>(42.0f);
+    auto ret = WriteNativeData(&value, GetTypeObject<decltype(value)>(), AccessPath()["y"], valueToWrite);
     ASSERT_TRUE(ret);
     ASSERT_EQ(0.0f, value.x);
     ASSERT_EQ(42.0f, value.y);
@@ -449,8 +449,8 @@ TEST(DataAccessWrite, StructValueElement)
 TEST(DataAccessWrite, StructValueElementInvalidElementFails)
 {
     Vector3 value(0,0,0);
-    auto valueToWrite = rtti::CreateVariant<float>(42.0f);
-    auto ret = WriteNativeData(&value, reflection::GetTypeObject<decltype(value)>(), AccessPath()["w"], valueToWrite);
+    auto valueToWrite = CreateVariant<float>(42.0f);
+    auto ret = WriteNativeData(&value, GetTypeObject<decltype(value)>(), AccessPath()["w"], valueToWrite);
     ASSERT_FALSE(ret);
     ASSERT_EQ(0.0f, value.x);
     ASSERT_EQ(0.0f, value.y);
@@ -464,8 +464,8 @@ TEST(DataAccessWrite, ArrayElement)
     value.pushBack(10);
     value.pushBack(15);
 
-    auto valueToWrite = rtti::CreateVariant<uint32_t>(42);
-    auto ret = WriteNativeData(&value, reflection::GetTypeObject<decltype(value)>(), AccessPath()[1], valueToWrite);
+    auto valueToWrite = CreateVariant<uint32_t>(42);
+    auto ret = WriteNativeData(&value, GetTypeObject<decltype(value)>(), AccessPath()[1], valueToWrite);
     ASSERT_TRUE(ret);
     ASSERT_EQ(5, value[0]);
     ASSERT_EQ(42, value[1]);
@@ -480,8 +480,8 @@ TEST(DataAccessWrite, ArrayElementInvalidIndexFails)
     value.pushBack(10);
     value.pushBack(15);
 
-    auto valueToWrite = rtti::CreateVariant<uint32_t>(42);
-    auto ret = WriteNativeData(&value, reflection::GetTypeObject<decltype(value)>(), AccessPath()[5], valueToWrite);
+    auto valueToWrite = CreateVariant<uint32_t>(42);
+    auto ret = WriteNativeData(&value, GetTypeObject<decltype(value)>(), AccessPath()[5], valueToWrite);
     ASSERT_FALSE(ret);
     ASSERT_EQ(5, value[0]);
     ASSERT_EQ(10, value[1]);

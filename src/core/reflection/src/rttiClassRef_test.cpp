@@ -40,7 +40,7 @@ TEST(ClassRef, EmptyClassPrintsNull)
 
 TEST(ClassRef, TypeRecognized)
 {
-    auto typeName  = reflection::GetTypeName< SpecificClassType<IObject> >();
+    auto typeName  = GetTypeName< SpecificClassType<IObject> >();
     EXPECT_FALSE(typeName.empty()); 
     auto typeObject  = RTTI::GetInstance().findType(typeName);
     EXPECT_NE(nullptr, typeObject.ptr());
@@ -48,7 +48,7 @@ TEST(ClassRef, TypeRecognized)
 
 TEST(ClassRef, TypeOnlyAcceptsClasses)
 {
-    auto typeName  = reflection::GetTypeName< SpecificClassType< float > >();
+    auto typeName  = GetTypeName< SpecificClassType< float > >();
     EXPECT_FALSE(typeName.empty());
     auto typeObject  = RTTI::GetInstance().findType(typeName);
     EXPECT_EQ(nullptr, typeObject.ptr());
@@ -57,16 +57,16 @@ TEST(ClassRef, TypeOnlyAcceptsClasses)
 TEST(ClassRef, EmptyClassIsValidBase)
 {
     ClassType base;
-    ClassType x = reflection::ClassID<IObject>();
-    ClassType y = reflection::ClassID<rtti::IMetadata>();
+    ClassType x = ClassID<IObject>();
+    ClassType y = ClassID<IMetadata>();
     EXPECT_TRUE(x.is(base));
     EXPECT_TRUE(y.is(base));
 }
 
 TEST(ClassRef, UnrelatedTypesDontMatch)
 {
-    ClassType x = reflection::ClassID<IObject>();
-    ClassType y = reflection::ClassID<rtti::IMetadata>();
+    ClassType x = ClassID<IObject>();
+    ClassType y = ClassID<IMetadata>();
     EXPECT_FALSE(x.is(y));
     EXPECT_FALSE(y.is(x));
 }

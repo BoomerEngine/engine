@@ -190,7 +190,7 @@ struct EventFunctionBinderHelper<void(T*, D)>
         {
             static_assert(std::is_base_of<IElement, T>::value, "Context object must be UI element");
             static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-            DEBUG_CHECK_EX(data.type() == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), data.type()));
+            DEBUG_CHECK_EX(data.type() == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), data.type()));
             func(rtti_cast<T>(source), *(const D*)data.data());
             return true;
         };
@@ -207,7 +207,7 @@ struct EventFunctionBinderHelper<void(*)(T*, D)>
         {
             static_assert(std::is_pointer<D>::value, "Data can't be a pointer");
             static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-            DEBUG_CHECK_EX(data.type() == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), data.type()));
+            DEBUG_CHECK_EX(data.type() == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), data.type()));
             func(rtti_cast<T>(source), *(const D*)data.data());
             return true;
         };
@@ -224,7 +224,7 @@ struct EventFunctionBinderHelper<void(Class::*)(T*, D) const>
         {
             static_assert(std::is_base_of<IElement, T>::value, "Context object must be UI element");
             static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-            DEBUG_CHECK_EX(data.type() == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), data.type()));
+            DEBUG_CHECK_EX(data.type() == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), data.type()));
             func(rtti_cast<T>(source), *(const D*)data.data());
             return true;
         };
@@ -243,7 +243,7 @@ struct EventFunctionBinderHelper<bool(T*, D)>
         {
             static_assert(std::is_base_of<IElement, T>::value, "Context object must be UI element");
             static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-            DEBUG_CHECK_EX(data.type() == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), data.type()));
+            DEBUG_CHECK_EX(data.type() == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), data.type()));
             return func(rtti_cast<T>(source), *(const D*)data.data());
         };
     }
@@ -259,7 +259,7 @@ struct EventFunctionBinderHelper<bool(*)(T*, D)>
         {
             static_assert(std::is_base_of<IElement, T>::value, "Context object must be UI element");
             static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-            DEBUG_CHECK_EX(data.type() == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), data.type()));
+            DEBUG_CHECK_EX(data.type() == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), data.type()));
             return func(rtti_cast<T>(source), *(const D*)data.data());
         };
     }
@@ -275,7 +275,7 @@ struct EventFunctionBinderHelper<bool(Class::*)(T*, D) const>
         {
             static_assert(std::is_base_of<IElement, T>::value, "Context object must be UI element");
             static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-            DEBUG_CHECK_EX(data.type() == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), data.type()));
+            DEBUG_CHECK_EX(data.type() == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), data.type()));
             return func(rtti_cast<T>(source), *(const D*)data.data());
         };
     }
@@ -292,7 +292,7 @@ struct EventFunctionBinderHelper<void(D)>
         return [func](UI_EVENT_FUNC)
         {
             static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-            DEBUG_CHECK_EX(data.type() == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), data.type()));
+            DEBUG_CHECK_EX(data.type() == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), data.type()));
             func(*(const D*)data.data());
             return true;
         };
@@ -308,7 +308,7 @@ struct EventFunctionBinderHelper<void(*)(D)>
         return [func](UI_EVENT_FUNC)
         {
             static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-            DEBUG_CHECK_EX(data.type() == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), data.type()));
+            DEBUG_CHECK_EX(data.type() == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), data.type()));
             func(*(const D*)data.data());
             return true;
         };
@@ -324,7 +324,7 @@ struct EventFunctionBinderHelper<void(Class::*)(D) const>
         return [func](UI_EVENT_FUNC)
         {
             static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-            DEBUG_CHECK_EX(data.type() == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), data.type()));
+            DEBUG_CHECK_EX(data.type() == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), data.type()));
             func(*(const D*)data.data());
             return true;
         };
@@ -342,7 +342,7 @@ struct EventFunctionBinderHelper<bool(D)>
         return [func](UI_EVENT_FUNC)
         {
             static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-            DEBUG_CHECK_EX(data.type() == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), data.type()));
+            DEBUG_CHECK_EX(data.type() == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), data.type()));
             return func(*(const D*)data.data());
         };
     }
@@ -357,7 +357,7 @@ struct EventFunctionBinderHelper<bool(*)(D)>
         return [func](UI_EVENT_FUNC)
         {
             static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-            DEBUG_CHECK_EX(data.type() == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), data.type()));
+            DEBUG_CHECK_EX(data.type() == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), data.type()));
             return func(*(const D*)data.data());
         };
     }
@@ -372,7 +372,7 @@ struct EventFunctionBinderHelper<bool(Class::*)(D) const>
         return [func](UI_EVENT_FUNC)
         {
             static_assert(!std::is_pointer<D>::value, "Data can't be a pointer");
-            DEBUG_CHECK_EX(data.type() == reflection::GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", reflection::GetTypeName<D>(), data.type()));
+            DEBUG_CHECK_EX(data.type() == GetTypeObject<D>(), TempString("Invalid event data type, expected '{}', got '{}'", GetTypeName<D>(), data.type()));
             return func(*(const D*)data.data());
         };
     }

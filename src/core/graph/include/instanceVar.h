@@ -47,7 +47,7 @@ class InstanceVar : public InstanceVarBase
 {
 public:
     INLINE InstanceVar()
-        : InstanceVarBase(reflection::GetTypeObject<T>())
+        : InstanceVarBase(GetTypeObject<T>())
     {}
 };
 
@@ -80,7 +80,7 @@ class InstanceArray : public InstanceArrayBase
 {
 public:
     INLINE InstanceArray()
-        : InstanceArrayBase(reflection::GetTypeObject<T>())
+        : InstanceArrayBase(GetTypeObject<T>())
     {}
 };
 

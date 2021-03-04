@@ -69,12 +69,12 @@ StringBuf TypeRegistry::BuildFunctionID(StringID name, ClassType parentClass)
     return TempString("{}_{}", parentClass->name(), name);
 }
 
-rtti::Function* TypeRegistry::createFunction(StringID name, ClassType parentClass)
+Function* TypeRegistry::createFunction(StringID name, ClassType parentClass)
 {
     auto id = BuildFunctionID(name, parentClass);
 
     // use existing function if possible
-    rtti::Function* ret = nullptr;
+    Function* ret = nullptr;
     if (m_functionMap.find(id, ret))
     {
         // return only once
@@ -87,11 +87,11 @@ rtti::Function* TypeRegistry::createFunction(StringID name, ClassType parentClas
     }
 
     // create new object
-    ret = new rtti::Function(parentClass.ptr(), name, true);
+    ret = new Function(parentClass.ptr(), name, true);
 
     // register in the parent class
     if (parentClass)
-        const_cast<rtti::IClassType*>(parentClass.ptr())->addFunction(ret);
+        const_cast<IClassType*>(parentClass.ptr())->addFunction(ret);
     else
         RTTI::GetInstance().registerGlobalFunction(ret);
 
@@ -102,10 +102,10 @@ rtti::Function* TypeRegistry::createFunction(StringID name, ClassType parentClas
     return ret;
 }
 
-rtti::EnumType* TypeRegistry::createEnum(StringID name, uint32_t enumTypeSize)
+EnumType* TypeRegistry::createEnum(StringID name, uint32_t enumTypeSize)
 {
     // use existing enum type if possible
-    rtti::EnumType* ret = nullptr;
+    EnumType* ret = nullptr;
     if (m_enumMap.find(name, ret))
     {
         // return only once
@@ -119,7 +119,7 @@ rtti::EnumType* TypeRegistry::createEnum(StringID name, uint32_t enumTypeSize)
 
     // create new object
 	TRACE_INFO("Created scripted enum {}", name);
-    ret = new rtti::EnumType(name, enumTypeSize, 0, true);
+    ret = new EnumType(name, enumTypeSize, 0, true);
     RTTI::GetInstance().registerType(ret);
 
     // add to list of all enums

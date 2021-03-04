@@ -64,7 +64,7 @@ public:
 
     uint16_t mapProperty(StringID classType, StringID propName);
     uint16_t mapProperty(const FileTables::Property& prop);
-    uint16_t mapProperty(const rtti::Property* prop);
+    uint16_t mapProperty(const Property* prop);
 
     uint16_t mapImport(StringID classType, StringView importPath, bool async);
     uint16_t mapImport(const FileTables::Import& importInfo);

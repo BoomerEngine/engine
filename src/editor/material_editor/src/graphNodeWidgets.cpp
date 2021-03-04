@@ -41,10 +41,10 @@ bool MaterialGraphConstantScalarWidget::bindToBlock(graph::Block* block)
     {
         if (auto proxy = block->createDataView())
         {
-            rtti::DataViewInfo info;
+            DataViewInfo info;
             if (proxy->describeDataView("value", info).valid())
             {
-                info.flags |= rtti::DataViewInfoFlagBit::VerticalEditor;
+                info.flags |= DataViewInfoFlagBit::VerticalEditor;
                 if (auto box = ui::IDataBox::CreateForType(info))
                 {
                     box->bindData(proxy, "value"); // TODO: bind undo redo
@@ -84,10 +84,10 @@ bool MaterialGraphConstantColorWidget::bindToBlock(graph::Block* block)
     {
         if (auto proxy = block->createDataView())
         {
-            rtti::DataViewInfo info;
+            DataViewInfo info;
             if (proxy->describeDataView("color", info).valid())
             {
-                info.flags |= rtti::DataViewInfoFlagBit::VerticalEditor;
+                info.flags |= DataViewInfoFlagBit::VerticalEditor;
                 if (auto box = ui::IDataBox::CreateForType(info))
                 {
                     box->bindData(proxy, "color");

@@ -129,9 +129,9 @@ private:
 //---
 
 /// order of test
-class RenderingTestOrderMetadata : public rtti::IMetadata
+class RenderingTestOrderMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(RenderingTestOrderMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(RenderingTestOrderMetadata, IMetadata);
 
 public:
     INLINE RenderingTestOrderMetadata()
@@ -150,9 +150,9 @@ public:
 //---
 
 /// number of sub-tests in the test
-class RenderingTestSubtestCountMetadata : public rtti::IMetadata
+class RenderingTestSubtestCountMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(RenderingTestSubtestCountMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(RenderingTestSubtestCountMetadata, IMetadata);
 
 public:
     INLINE RenderingTestSubtestCountMetadata()

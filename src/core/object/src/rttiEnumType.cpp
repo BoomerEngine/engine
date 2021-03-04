@@ -14,7 +14,7 @@
 #include "streamOpcodeReader.h"
 #include "core/xml/include/xmlWrappers.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 EnumType::EnumType(StringID name, uint32_t size, uint64_t nativeHash, bool scripted)
     : IType(name)
@@ -252,7 +252,7 @@ void EnumType::writeInt64(void* data, int64_t value) const
     }
 }
 
-const char* GetEnumValueName(const rtti::EnumType* enumType, int64_t enumValue)
+const char* GetEnumValueName(const EnumType* enumType, int64_t enumValue)
 {
     if (!enumType)
         return "InvalidType";
@@ -264,7 +264,7 @@ const char* GetEnumValueName(const rtti::EnumType* enumType, int64_t enumValue)
     return valueName.c_str();
 }
 
-bool GetEnumNameValue(const rtti::EnumType* enumType, StringID name, int64_t& outEnumValue)
+bool GetEnumNameValue(const EnumType* enumType, StringID name, int64_t& outEnumValue)
 {
     if (!enumType)
         return false;
@@ -352,4 +352,4 @@ DataViewResult EnumType::writeDataView(StringView viewPath, void* viewData, cons
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

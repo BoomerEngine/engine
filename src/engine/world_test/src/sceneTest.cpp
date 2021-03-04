@@ -302,7 +302,7 @@ ConfigProperty<bool> cvDebugGlobalColorGradingAdjust("DebugPage.SceneDebug.Color
 template <typename T >
 static void DrawEnumOptions(T& mode)
 {
-    if (const auto* enumType = static_cast<const rtti::EnumType*>(reflection::GetTypeObject<T>().ptr()))
+    if (const auto* enumType = static_cast<const EnumType*>(GetTypeObject<T>().ptr()))
     {
         for (const auto& option : enumType->options())
         {

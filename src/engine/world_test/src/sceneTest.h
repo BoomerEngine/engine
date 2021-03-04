@@ -36,9 +36,9 @@ class FlyCameraEntity;
 //---
 
 // order of test
-class SceneTestOrderMetadata : public rtti::IMetadata
+class SceneTestOrderMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(SceneTestOrderMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(SceneTestOrderMetadata, IMetadata);
 
 public:
     INLINE SceneTestOrderMetadata()

@@ -18,7 +18,7 @@ class IResource;
 //--
 
 /// Type for a resource reference
-class CORE_RESOURCE_API ResourceRefType : public rtti::IResourceReferenceType
+class CORE_RESOURCE_API ResourceRefType : public IResourceReferenceType
 {
 public:
     ResourceRefType(SpecificClassType<IResource> classType);
@@ -49,16 +49,16 @@ public:
     virtual bool compare(const void* data1, const void* data2) const override final;
     virtual void copy(void* dest, const void* src) const override final;
 
-    virtual void writeBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final;
-    virtual void readBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final;
+    virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final;
+    virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final;
 
-    virtual void writeXML(rtti::TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const override final;
-    virtual void readXML(rtti::TypeSerializationContext& typeContext, const xml::Node& node, void* data) const override final;
+    virtual void writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const override final;
+    virtual void readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const override final;
 
     //----
 
     static const char* TypePrefix;
-    static Type ParseType(StringParser& typeNameString, rtti::TypeSystem& typeSystem);
+    static Type ParseType(StringParser& typeNameString, TypeSystem& typeSystem);
 
 private:
     SpecificClassType<IResource>  m_resourceClass;

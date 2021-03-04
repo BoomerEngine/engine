@@ -76,7 +76,7 @@ void ResolveProperties(const FileTables& tables, const FileLoadingContext& conte
         auto classType = resolvedReferences.types[ptr->classTypeIndex].toClass();
         auto propertyName = resolvedReferences.stringIds[ptr->nameIndex];
 
-        const rtti::Property* prop = nullptr;
+        const Property* prop = nullptr;
         if (classType)
         {
             prop = classType->findProperty(propertyName);

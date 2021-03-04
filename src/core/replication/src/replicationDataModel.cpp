@@ -100,7 +100,7 @@ bool IDataModelResolver::resolveTypeRef(DataMappedID id, bool isScripted, Type& 
         return false;
 
     // only allowed classes for now
-    if (typeRef->metaType() != rtti::MetaType::Class)
+    if (typeRef->metaType() != MetaType::Class)
         return false;
 
     outType = typeRef;
@@ -134,7 +134,7 @@ DataModel::DataModel(StringID name, DataModelType modelType)
     , m_type(modelType)
 {}
 
-void DataModel::buildFromFunction(const rtti::Function* functionType, DataModelRepository& repository)
+void DataModel::buildFromFunction(const Function* functionType, DataModelRepository& repository)
 {
     // TODO
 }
@@ -161,7 +161,7 @@ void DataModel::buildFromType(ClassType structType, DataModelRepository& reposit
 
         // get the element type
         Type dataType = prop->type();
-        if (prop->type()->metaType() == rtti::MetaType::Array)
+        if (prop->type()->metaType() == MetaType::Array)
         {
             dataType = prop->type().innerType();
             field.m_isArray = true;
@@ -176,39 +176,39 @@ void DataModel::buildFromType(ClassType structType, DataModelRepository& reposit
         }
 
         // max length can only be set for strings
-        if (dataType != reflection::GetTypeObject<StringBuf>() && replicationMetadata->packing().m_maxLength > 0)
+        if (dataType != GetTypeObject<StringBuf>() && replicationMetadata->packing().m_maxLength > 0)
         {
             TRACE_ERROR("Property '{}.{}' has 'maxLength' set even it's not a string", prop->name(), prop->parent()->name());
             continue;
         }
 
         // store rest of the crap
-        if (dataType == reflection::GetTypeObject<StringBuf>())
+        if (dataType == GetTypeObject<StringBuf>())
         {
             field.m_type = DataModelFieldType::StringBuf;
             field.m_packing.m_maxLength = replicationMetadata->packing().m_maxLength;
         }
-        else if (dataType == reflection::GetTypeObject<StringID>())
+        else if (dataType == GetTypeObject<StringID>())
         {
             field.m_type = DataModelFieldType::StringID;
         }
-        else if (dataType->metaType() == rtti::MetaType::ClassRef)
+        else if (dataType->metaType() == MetaType::ClassRef)
         {
             field.m_type = DataModelFieldType::TypeRef;
         }
-        else if (dataType->metaType() == rtti::MetaType::ResourceRef)
+        else if (dataType->metaType() == MetaType::ResourceRef)
         {
             field.m_type = DataModelFieldType::ResourceRef;
         }
-        else if (dataType->metaType() == rtti::MetaType::StrongHandle)
+        else if (dataType->metaType() == MetaType::StrongHandle)
         {
             field.m_type = DataModelFieldType::ObjectPtr;
         }
-        else if (dataType->metaType() == rtti::MetaType::WeakHandle)
+        else if (dataType->metaType() == MetaType::WeakHandle)
         {
             field.m_type = DataModelFieldType::WeakObjectPtr;
         }
-        else if (dataType->metaType() == rtti::MetaType::Class && replicationMetadata->packing().m_mode == PackingMode::Default)
+        else if (dataType->metaType() == MetaType::Class && replicationMetadata->packing().m_mode == PackingMode::Default)
         {
             auto innerClassType  = dataType.toClass();
             field.m_type = DataModelFieldType::Struct;
@@ -232,7 +232,7 @@ void DataModel::buildFromType(ClassType structType, DataModelRepository& reposit
         }
 
         // arrays
-        if (prop->type()->metaType() == rtti::MetaType::Array)
+        if (prop->type()->metaType() == MetaType::Array)
             field.m_packing.m_maxCount = replicationMetadata->packing().m_maxCount;
 
         // add field to model
@@ -253,8 +253,8 @@ void DataModel::encodeArrayFieldData(const DataModelField& field, const void* fi
 
     ASSERT(field.m_isArray);
 
-    auto arrayType  = static_cast<const rtti::IArrayType*>(field.m_nativeType.ptr());
-    ASSERT(arrayType->metaType() == rtti::MetaType::Array);
+    auto arrayType  = static_cast<const IArrayType*>(field.m_nativeType.ptr());
+    ASSERT(arrayType->metaType() == MetaType::Array);
 
     auto count  = arrayType->arraySize(fieldData);
     if (field.m_packing.m_maxCount && count > field.m_packing.m_maxCount) // limit the count to allowed range
@@ -389,8 +389,8 @@ bool DataModel::decodeArrayFieldData(const DataModelField& field, void* fieldDat
 {
     ASSERT(field.m_isArray);
 
-    auto arrayType  = static_cast<const rtti::IArrayType*>(field.m_nativeType.ptr());
-    ASSERT(arrayType->metaType() == rtti::MetaType::Array);
+    auto arrayType  = static_cast<const IArrayType*>(field.m_nativeType.ptr());
+    ASSERT(arrayType->metaType() == MetaType::Array);
 
     auto currentSize  = arrayType->arraySize(fieldData);
 
@@ -598,7 +598,7 @@ void DataModel::encodeFromNativeData(const void* data, IDataModelMapper& mapper,
     }
 }
 
-void DataModel::encodeFromFunctionCall(const rtti::FunctionCallingParams& params, IDataModelMapper& mapper, BitWriter& w) const
+void DataModel::encodeFromFunctionCall(const FunctionCallingParams& params, IDataModelMapper& mapper, BitWriter& w) const
 {
     for (auto& field : m_fields)
     {
@@ -635,7 +635,7 @@ bool DataModel::decodeToNativeData(void* data, IDataModelResolver& resolve, BitR
     return true;
 }
 
-bool DataModel::decodeToFunctionCall(rtti::FunctionCallingParams& params, IDataModelResolver& resolve, BitReader& r) const
+bool DataModel::decodeToFunctionCall(FunctionCallingParams& params, IDataModelResolver& resolve, BitReader& r) const
 {
     for (auto& field : m_fields)
     {

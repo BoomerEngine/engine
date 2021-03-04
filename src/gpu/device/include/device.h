@@ -15,9 +15,9 @@
 BEGIN_BOOMER_NAMESPACE_EX(gpu)
 
 // rendering class identification (GL4, Vulkan, DX12, etc)
-class GPU_DEVICE_API DeviceNameMetadata : public rtti::IMetadata
+class GPU_DEVICE_API DeviceNameMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(DeviceNameMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(DeviceNameMetadata, IMetadata);
 
 public:
     DeviceNameMetadata();

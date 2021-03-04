@@ -81,9 +81,9 @@ private:
 //---
 
 /// world system dependency order, determines initialization and shutdown order
-class ENGINE_WORLD_API DependsOnWorldSystemMetadata : public rtti::IMetadata
+class ENGINE_WORLD_API DependsOnWorldSystemMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(DependsOnWorldSystemMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(DependsOnWorldSystemMetadata, IMetadata);
 
 public:
     DependsOnWorldSystemMetadata();
@@ -109,9 +109,9 @@ private:
 //---
 
 /// world ticking dependency, determines which systems must tick before or after us
-class ENGINE_WORLD_API TickOrderWorldSystemMetadata : public rtti::IMetadata
+class ENGINE_WORLD_API TickOrderWorldSystemMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(TickOrderWorldSystemMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(TickOrderWorldSystemMetadata, IMetadata);
 
 public:
     TickOrderWorldSystemMetadata();

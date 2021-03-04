@@ -25,7 +25,7 @@ public:
     const DataModel* buildModelForType(Type type);
 
     /// ask for a data model for given function (for RPC/messages)
-    const DataModel* buildModelForFunction(const rtti::Function* func);
+    const DataModel* buildModelForFunction(const Function* func);
 
     //--
 

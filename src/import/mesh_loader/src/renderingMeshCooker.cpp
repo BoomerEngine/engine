@@ -292,7 +292,7 @@ static bool PackData(const BuildChunkRegistry& builder, const MeshImportConfig& 
 
         for (const auto& param : sourceMaterial.parameters.parameters())
         {
-            if (param.data.type() == reflection::GetTypeObject<StringBuf>())
+            if (param.data.type() == GetTypeObject<StringBuf>())
             {
                 StringBuf texturePath;
                 if (param.data.get(texturePath))

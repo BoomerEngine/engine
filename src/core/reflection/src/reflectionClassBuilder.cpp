@@ -12,7 +12,7 @@
 #include "core/object/include/rttiClassType.h"
 #include "core/object/include/rttiMetadata.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(reflection)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -23,7 +23,7 @@ TypeTraitBuilder::TypeTraitBuilder()
     , m_traitFastCopyCompare(false)
 {}
 
-void TypeTraitBuilder::apply(rtti::TypeRuntimeTraits& traits)
+void TypeTraitBuilder::apply(TypeRuntimeTraits& traits)
 {
     if (m_traitZeroInit)
         traits.initializedFromZeroMem = true;
@@ -37,7 +37,7 @@ void TypeTraitBuilder::apply(rtti::TypeRuntimeTraits& traits)
 
 //--
 
-ClassBuilder::ClassBuilder(rtti::NativeClass* classPtr)
+ClassBuilder::ClassBuilder(NativeClass* classPtr)
     : m_classPtr(classPtr)
     , m_categoryName("Generic")
 {
@@ -100,14 +100,14 @@ FunctionBuilder& ClassBuilder::addFunction(const char* rawName)
     return *func;
 }
 
-rtti::IMetadata& ClassBuilder::addMetadata(ClassType classType)
+IMetadata& ClassBuilder::addMetadata(ClassType classType)
 {
     return m_classPtr->addMetadata(classType);
 }
 
 //--
 
-CustomTypeBuilder::CustomTypeBuilder(rtti::CustomType* customType)
+CustomTypeBuilder::CustomTypeBuilder(CustomType* customType)
     : m_type(customType)
 {}
 
@@ -121,4 +121,4 @@ void CustomTypeBuilder::submit()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(reflection)
+END_BOOMER_NAMESPACE()

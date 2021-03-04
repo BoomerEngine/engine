@@ -12,7 +12,7 @@
 #include "reflectionPropertyBuilder.h"
 #include "reflectionFunctionBuilder.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(reflection)
+BEGIN_BOOMER_NAMESPACE()
 
 class PropertyBuilder;
 class FunctionBuilder;
@@ -56,7 +56,7 @@ private:
     bool m_traitNoDestructor;
     bool m_traitFastCopyCompare;
 
-    void apply(rtti::TypeRuntimeTraits& traits);
+    void apply(TypeRuntimeTraits& traits);
 
     friend class ClassBuilder;
     friend class CustomTypeBuilder;
@@ -68,7 +68,7 @@ class CORE_REFLECTION_API ClassBuilder : public NoCopy
     RTTI_DECLARE_POOL(POOL_RTTI)
 
 public:
-    ClassBuilder(rtti::NativeClass* classPtr);
+    ClassBuilder(NativeClass* classPtr);
     ~ClassBuilder();
 
     // apply changes to target class
@@ -82,7 +82,7 @@ public:
     PropertyBuilder& addProperty(const char* rawName, Type type, uint32_t dataOffset);
 
     // create metadata
-    rtti::IMetadata& addMetadata(ClassType classType);
+    IMetadata& addMetadata(ClassType classType);
 
     // create function builder
     FunctionBuilder& addFunction(const char* rawName);
@@ -99,7 +99,7 @@ public:
     template< typename T >
     INLINE T& addMetadata()
     {
-        static_assert(std::is_base_of<rtti::IMetadata, T>::value, "Not a metadata class");
+        static_assert(std::is_base_of<IMetadata, T>::value, "Not a metadata class");
         return static_cast<T&>(addMetadata(ClassID<T>()));
     }
 
@@ -119,7 +119,7 @@ public:
         return m_traits;
     }
 
-    INLINE rtti::NativeClass& type()
+    INLINE NativeClass& type()
     {
         return *m_classPtr;
     }
@@ -127,7 +127,7 @@ public:
     void addOldName(const char* oldName);
 
 private:
-    rtti::NativeClass* m_classPtr;
+    NativeClass* m_classPtr;
     Array< PropertyBuilder > m_properties;
     Array< FunctionBuilder* > m_functions;
     Array< StringID > m_oldNames;
@@ -141,7 +141,7 @@ private:
 class CORE_REFLECTION_API CustomTypeBuilder : public NoCopy
 {
 public:
-    CustomTypeBuilder(rtti::CustomType* customType);
+    CustomTypeBuilder(CustomType* customType);
     ~CustomTypeBuilder();
 
     // apply changes to target class
@@ -155,7 +155,7 @@ public:
         return m_traits;
     }
 
-    INLINE rtti::CustomType& type()
+    INLINE CustomType& type()
     {
         return *m_type;
     }
@@ -163,8 +163,8 @@ public:
     //--
 
 private:
-    rtti::CustomType* m_type;
+    CustomType* m_type;
     TypeTraitBuilder m_traits;
 };
 
-END_BOOMER_NAMESPACE_EX(reflection)
+END_BOOMER_NAMESPACE()

@@ -113,21 +113,21 @@ class ResourceLoader;
 
 END_BOOMER_NAMESPACE_EX(res)
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 /// Meta type (type of type)
 enum class MetaType
 {
     Void,           // empty type (used to represent invalid type of no value)
     Simple,         // simple type (indivisible into smaller pieces)
-    Enum,           // rtti::EnumType
-    Bitfield,       // rtti::BitfieldType
-    Class,          // rtti::ClassType
-    Array,          // rtti::IArrayType - array type, may have different implementations
-    StrongHandle,   // rtti::StringHandleType - handle to object that keeps it alive
-    WeakHandle,     // rtti::WeakHandleType - handle to object that does not keep it alive
-    ResourceRef,    // rtti::IReferenceType - resource reference
-    AsyncResourceRef,  // rtti::IAsyncReferenceType - async resource reference
+    Enum,           // EnumType
+    Bitfield,       // BitfieldType
+    Class,          // ClassType
+    Array,          // IArrayType - array type, may have different implementations
+    StrongHandle,   // StringHandleType - handle to object that keeps it alive
+    WeakHandle,     // WeakHandleType - handle to object that does not keep it alive
+    ResourceRef,    // IReferenceType - resource reference
+    AsyncResourceRef,  // IAsyncReferenceType - async resource reference
     ClassRef,       // SpecificClassType - reference to class
 };
 
@@ -157,7 +157,7 @@ struct DataViewInfo;
 struct DataViewMemberInfo;
 struct DataViewOptionInfo;
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -246,7 +246,7 @@ struct CORE_OBJECT_API DataViewErrorResult
 //---
 
 /// copy value from one property to other property, handles type conversions, inlined objects etc
-extern CORE_OBJECT_API bool CopyPropertyValue(const IObject* srcObject, const rtti::Property* srcProperty, IObject* targetObject, const rtti::Property* targetProperty);
+extern CORE_OBJECT_API bool CopyPropertyValue(const IObject* srcObject, const Property* srcProperty, IObject* targetObject, const Property* targetProperty);
 
 //---
 

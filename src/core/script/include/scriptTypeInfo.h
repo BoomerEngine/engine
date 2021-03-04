@@ -188,7 +188,7 @@ public:
     RTTI_DECLARE_NONVIRTUAL_CLASS(PropertyInfo)
 
 public:
-    PropertyInfo(const rtti::Property* prop = nullptr);
+    PropertyInfo(const Property* prop = nullptr);
     INLINE PropertyInfo(const PropertyInfo& other) = default;
     INLINE PropertyInfo& operator=(const PropertyInfo& other) = default;
 
@@ -221,12 +221,12 @@ public:
     INLINE bool operator==(const PropertyInfo& other) const { return nativeProperty == other.nativeProperty; }
     INLINE bool operator!=(const PropertyInfo& other) const { return nativeProperty != other.nativeProperty; }
 
-    INLINE const rtti::Property* rawProperty() const { return nativeProperty; }
+    INLINE const Property* rawProperty() const { return nativeProperty; }
 
     //--
 
 private:
-    const rtti::Property* nativeProperty;
+    const Property* nativeProperty;
 };
 
 //----
@@ -237,7 +237,7 @@ struct CORE_SCRIPT_API ArrayTypeInfo
     RTTI_DECLARE_NONVIRTUAL_CLASS(ArrayTypeInfo)
 
 public:
-    ArrayTypeInfo(const rtti::IArrayType* type = nullptr);
+    ArrayTypeInfo(const IArrayType* type = nullptr);
     INLINE ArrayTypeInfo(const ArrayTypeInfo& other) = default;
     INLINE ArrayTypeInfo& operator=(const ArrayTypeInfo& other) = default;
 
@@ -266,12 +266,12 @@ public:
     INLINE bool operator==(const ArrayTypeInfo& other) const { return nativeType == other.nativeType; }
     INLINE bool operator!=(const ArrayTypeInfo& other) const { return nativeType != other.nativeType; }
 
-    INLINE const rtti::IArrayType* rawType() const { return nativeType; }
+    INLINE const IArrayType* rawType() const { return nativeType; }
 
     //--
 
 private:
-    const rtti::IArrayType* nativeType;
+    const IArrayType* nativeType;
 };
 
 //--
@@ -282,7 +282,7 @@ struct CORE_SCRIPT_API EnumTypeInfo
     RTTI_DECLARE_NONVIRTUAL_CLASS(EnumTypeInfo)
 
 public:
-    EnumTypeInfo(const rtti::EnumType* type = nullptr);
+    EnumTypeInfo(const EnumType* type = nullptr);
     INLINE EnumTypeInfo(const EnumTypeInfo& other) = default;
     INLINE EnumTypeInfo& operator=(const EnumTypeInfo& other) = default;
 
@@ -336,12 +336,12 @@ public:
     INLINE bool operator==(const EnumTypeInfo& other) const { return nativeType == other.nativeType; }
     INLINE bool operator!=(const EnumTypeInfo& other) const { return nativeType != other.nativeType; }
 
-    INLINE const rtti::EnumType* rawType() const { return nativeType; }
+    INLINE const EnumType* rawType() const { return nativeType; }
 
     //--
 
 private:
-    const rtti::EnumType* nativeType;
+    const EnumType* nativeType;
 };
 
 //--
@@ -352,7 +352,7 @@ struct CORE_SCRIPT_API FunctionInfo
     RTTI_DECLARE_NONVIRTUAL_CLASS(FunctionInfo)
 
 public:
-    FunctionInfo(const rtti::Function* func = nullptr);
+    FunctionInfo(const Function* func = nullptr);
     INLINE FunctionInfo(const FunctionInfo& other) = default;
     INLINE FunctionInfo& operator=(const FunctionInfo& other) = default;
 
@@ -392,12 +392,12 @@ public:
     INLINE bool operator==(const FunctionInfo& other) const { return nativeFunction == other.nativeFunction; }
     INLINE bool operator!=(const FunctionInfo& other) const { return nativeFunction != other.nativeFunction; }
 
-    INLINE const rtti::Function* rawFunction() const { return nativeFunction; }
+    INLINE const Function* rawFunction() const { return nativeFunction; }
 
     //--
 
 private:
-    const rtti::Function* nativeFunction;
+    const Function* nativeFunction;
 };
 
 //--

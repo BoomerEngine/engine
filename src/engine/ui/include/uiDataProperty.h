@@ -24,7 +24,7 @@ class ENGINE_UI_API DataProperty : public DataInspectorNavigationItem, public ID
     RTTI_DECLARE_VIRTUAL_CLASS(DataProperty, DataInspectorNavigationItem);
 
 public:
-    DataProperty(DataInspector* inspector, DataInspectorNavigationItem* parent, uint8_t indent, const StringBuf& path, const StringBuf& caption, const rtti::DataViewInfo& info, bool parentReadOnly, int arrayIndex=-1);
+    DataProperty(DataInspector* inspector, DataInspectorNavigationItem* parent, uint8_t indent, const StringBuf& path, const StringBuf& caption, const DataViewInfo& info, bool parentReadOnly, int arrayIndex=-1);
     virtual ~DataProperty();
 
     inline DataProperty* parentProperty() const { return rtti_cast<DataProperty>(parentItem()); }
@@ -37,7 +37,7 @@ protected:
     uint8_t m_indent = 0;
     int32_t m_arrayIndex = -1;
 
-    rtti::DataViewInfo m_viewInfo;
+    DataViewInfo m_viewInfo;
     bool m_viewDataResetableStyle = false;
     bool m_parentReadOnly = false;
 

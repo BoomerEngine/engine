@@ -16,14 +16,14 @@ BEGIN_BOOMER_NAMESPACE()
 namespace prv
 {
 
-    void WriteBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
+    void WriteBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
     {
         const auto& buffer = *(const Buffer*)data;
         stream.writeTypedData<uint8_t>(0); // compression type - none, allows for binary compatibility with compressed buffers
         stream.writeBuffer(buffer);
     }
 
-    void ReadBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
+    void ReadBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
     {
         auto& buffer = *(Buffer*)data;
 

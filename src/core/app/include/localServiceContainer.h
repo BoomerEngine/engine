@@ -39,7 +39,7 @@ public:
     template< typename T >
     INLINE T* service() const
     {
-        static auto userIndex = reflection::ClassID<T>()->userIndex();
+        static auto userIndex = ClassID<T>()->userIndex();
         if (userIndex != -1)
         {
             auto service = m_serviceMap[userIndex];

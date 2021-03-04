@@ -12,7 +12,7 @@
 #include "core/containers/include/array.h"
 #include "core/containers/include/stringID.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -322,4 +322,4 @@ protected:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

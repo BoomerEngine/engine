@@ -18,7 +18,7 @@
 #include "core/containers/include/stringID.h"
 #include "rttiResourceReferenceType.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -439,4 +439,4 @@ bool ConvertData(const void* srcData, Type srcType, void* destData, Type destTyp
     return convMatrix.convertData(srcData, srcType.ptr(), destData, destType.ptr());
 }
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

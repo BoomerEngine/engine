@@ -363,15 +363,15 @@ class DataBoxResourceFactory : public IDataBoxFactory
     RTTI_DECLARE_VIRTUAL_CLASS(DataBoxResourceFactory, IDataBoxFactory);
 
 public:
-    virtual DataBoxPtr tryCreate(const rtti::DataViewInfo& info) const override
+    virtual DataBoxPtr tryCreate(const DataViewInfo& info) const override
     {
-        if (info.dataType->metaType() == rtti::MetaType::ResourceRef)
+        if (info.dataType->metaType() == MetaType::ResourceRef)
         {
             const auto* refType = static_cast<const res::ResourceRefType*>(info.dataType.ptr());
             if (const auto refClass = refType->resourceClass())
                 return RefNew<DataBoxResource>(refClass, false, info.dataType);
         }
-        else if (info.dataType->metaType() == rtti::MetaType::AsyncResourceRef)
+        else if (info.dataType->metaType() == MetaType::AsyncResourceRef)
         {
             const auto* refType = static_cast<const res::ResourceAsyncRefType*>(info.dataType.ptr());
             if (const auto refClass = refType->resourceClass())

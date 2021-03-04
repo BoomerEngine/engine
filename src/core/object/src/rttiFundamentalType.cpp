@@ -14,7 +14,7 @@
 #include "streamOpcodeReader.h"
 #include "core/xml/include/xmlWrappers.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 /// simple type definition
 template < class T >
@@ -290,4 +290,4 @@ void RegisterFundamentalTypes(TypeSystem& typeSystem)
     typeSystem.registerType(new SimpleTypeStringID);
 }
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

@@ -8,7 +8,7 @@
 
 #include "rttiArrayType.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 class IArrayHelper;
 
@@ -55,4 +55,4 @@ namespace prv
 
 } // prv
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

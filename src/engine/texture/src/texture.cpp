@@ -202,7 +202,7 @@ void Texture::describe(IFormatStream& f) const
 {
     f.appendf("{}x{}x{}, {}, {}",
             m_mainView.width(), m_mainView.height(), m_mainView.depth(),
-            reflection::GetEnumValueName(m_mainView.format()),
+            GetEnumValueName(m_mainView.format()),
             m_textureGroup);
 }
 

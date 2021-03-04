@@ -30,9 +30,9 @@ BEGIN_BOOMER_NAMESPACE_EX(test)
 //---
 
 // order of test
-class CanvasTestOrderMetadata : public rtti::IMetadata
+class CanvasTestOrderMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CanvasTestOrderMetadata, rtti::IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(CanvasTestOrderMetadata, IMetadata);
 
 public:
     INLINE CanvasTestOrderMetadata()

@@ -36,6 +36,30 @@ void FrameViewStats::merge(const FrameViewStats& stats)
     cullingTime += stats.cullingTime;
 }
 
+template<typename T>
+struct MergedStats : public T
+{
+    template< uint32_t N >
+    INLINE MergedStats<T>(const T (&table)[N])
+    {
+        for (uint32_t i = 0; i < N; ++i)
+            merge(table[i]);
+    }
+
+    MergedStats(const MergedStats<T>& other) = delete;
+    MergedStats& operator=(const MergedStats<T>& other) = delete;
+};
+
+struct StaticGUISettings
+{
+    bool breakDownPerFragmentType = false;
+    bool breakDownPerBucketType = false;
+    bool breakDownPerProxyType = false;
+    bool breakDownPerViewType = false;
+};
+
+static StaticGUISettings GGuiSettings;
+
 #if 0
 
 //--
@@ -72,29 +96,7 @@ void FrameStats::merge(const FrameStats& other)
 
 //--
 
-template<typename T>
-struct MergedStats : public T
-{
-    template< uint32_t N >
-    INLINE MergedStats<T>(const T (&table)[N])
-    {
-        for (uint32_t i = 0; i < N; ++i)
-            merge(table[i]);
-    }
 
-    MergedStats(const MergedStats<T>& other) = delete;
-    MergedStats& operator=(const MergedStats<T>& other) = delete;
-};
-        
-struct StaticGUISettings
-{
-    bool breakDownPerFragmentType = false;
-    bool breakDownPerBucketType = false;
-    bool breakDownPerProxyType = false;
-    bool breakDownPerViewType = false;
-};
-
-static StaticGUISettings GGuiSettings;
 
 /*void RenderStatsGuid(const SceneCullingProxyStats& stat)
 {
@@ -213,6 +215,7 @@ void RenderStatsGui(const FrameViewStats& frameView, const SceneViewStats& scene
         RenderStatsGui(mergedFrameBuckets, mergedSceneBuckets);
     }
 }*/
+#endif
 
 void RenderStatsGui(const FrameStats& frameStats)
 {
@@ -242,7 +245,6 @@ void RenderStatsGui(const FrameStats& frameStats)
     }
 }
 
-#endif
 
 //--
 

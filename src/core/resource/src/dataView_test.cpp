@@ -58,8 +58,8 @@ public:
     //--
 
 
-    rtti::DataHolder m_valueToOverride;
-    mutable rtti::DataHolder m_lastPropertyChangingValue;
+    DataHolder m_valueToOverride;
+    mutable DataHolder m_lastPropertyChangingValue;
     mutable StringBuf m_lastPropertyChangingPath;
     StringBuf m_lastPropertyChangedPath;
     bool m_failPropertyChanging;
@@ -127,7 +127,7 @@ public:
     virtual bool onPropertyChanging(StringView path, const void* data, Type dataType) const override
     {
         m_lastPropertyChangingPath = StringBuf(path);
-        m_lastPropertyChangingValue = rtti::DataHolder(dataType, data);
+        m_lastPropertyChangingValue = DataHolder(dataType, data);
 
         /*if (!m_valueToOverride.empty())
             valueToSet = m_valueToOverride;*/
@@ -173,43 +173,43 @@ RTTI_BEGIN_TYPE_CLASS(DataViewTestObject);
 RTTI_END_TYPE();
 
 template< typename T >
-INLINE bool DescribeView(StringView viewPath, const T& data, rtti::DataViewInfo& outInfo)
+INLINE bool DescribeView(StringView viewPath, const T& data, DataViewInfo& outInfo)
 {
-    return reflection::GetTypeObject<T>()->describeDataView(viewPath, &data, outInfo).valid();
+    return GetTypeObject<T>()->describeDataView(viewPath, &data, outInfo).valid();
 }
 
 template< typename T, typename U >
 INLINE bool ReadView(StringView viewPath, const T& data, U& outData)
 {
-    return reflection::GetTypeObject<T>()->readDataView(viewPath, &data, &outData, reflection::GetTypeObject<U>()).valid();
+    return GetTypeObject<T>()->readDataView(viewPath, &data, &outData, GetTypeObject<U>()).valid();
 }
 
 template< typename T, typename U >
 INLINE bool WriteView(StringView viewPath, T& data, const U& inputData)
 {
-    return reflection::GetTypeObject<T>()->writeDataView(viewPath, &data, &inputData, reflection::GetTypeObject<U>()).valid();
+    return GetTypeObject<T>()->writeDataView(viewPath, &data, &inputData, GetTypeObject<U>()).valid();
 }
 
 
 TEST(EditView, SimpleIntViewDesribed)
 {
     int value = 42;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     ASSERT_TRUE(DescribeView("", value, info));
 }
 
 TEST(EditView, SimpleIntViewTypeReturned)
 {
     int value = 42;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     ASSERT_TRUE(DescribeView("", value, info));
-    EXPECT_EQ(info.dataType, reflection::GetTypeObject<int>());
+    EXPECT_EQ(info.dataType, GetTypeObject<int>());
 }
 
 TEST(EditView, SimpleIntViewPointerPointsToValue)
 {
     int value = 42;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     ASSERT_TRUE(DescribeView("", value, info));
     EXPECT_EQ(info.dataPtr, &value);
 }
@@ -217,17 +217,17 @@ TEST(EditView, SimpleIntViewPointerPointsToValue)
 TEST(EditView, SimpleIntValueLikeReported)
 {
     int value = 42;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     ASSERT_TRUE(DescribeView("", value, info));
-    EXPECT_TRUE(info.flags.test(rtti::DataViewInfoFlagBit::LikeValue));
-    EXPECT_FALSE(info.flags.test(rtti::DataViewInfoFlagBit::LikeStruct));
-    EXPECT_FALSE(info.flags.test(rtti::DataViewInfoFlagBit::LikeArray));
+    EXPECT_TRUE(info.flags.test(DataViewInfoFlagBit::LikeValue));
+    EXPECT_FALSE(info.flags.test(DataViewInfoFlagBit::LikeStruct));
+    EXPECT_FALSE(info.flags.test(DataViewInfoFlagBit::LikeArray));
 }
 
 TEST(EditView, SimpleIntReadWorks)
 {
     int value = 42;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     int temp = 0;
     ASSERT_TRUE(ReadView("", value, temp));
     EXPECT_EQ(value, temp);
@@ -236,7 +236,7 @@ TEST(EditView, SimpleIntReadWorks)
 TEST(EditView, SimpleIntWriteWorks)
 {
     int value = 0;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     int temp = 24;
     ASSERT_TRUE(WriteView("", value, temp));
     EXPECT_EQ(value, temp);
@@ -245,7 +245,7 @@ TEST(EditView, SimpleIntWriteWorks)
 TEST(EditView, SimpleIntReadIfMemberFails)
 {
     int value = 42;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     int temp = 0;
     ASSERT_FALSE(ReadView("x", value, temp));
     EXPECT_EQ(0, temp);
@@ -254,7 +254,7 @@ TEST(EditView, SimpleIntReadIfMemberFails)
 TEST(EditView, SimpleIntReadIfArrayFails)
 {
     int value = 42;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     int temp = 0;
     ASSERT_FALSE(ReadView("[0]", value, temp));
     EXPECT_EQ(0, temp);
@@ -263,7 +263,7 @@ TEST(EditView, SimpleIntReadIfArrayFails)
 TEST(EditView, SimpleIntWriteMemberFails)
 {
     int value = 42;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     int temp = 0;
     ASSERT_FALSE(WriteView("x", value, temp));
     EXPECT_EQ(42, value);
@@ -272,7 +272,7 @@ TEST(EditView, SimpleIntWriteMemberFails)
 TEST(EditView, SimpleIntWriteOfArrayFails)
 {
     int value = 42;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     int temp = 0;
     ASSERT_FALSE(WriteView("[0]", value, temp));
     EXPECT_EQ(42, value);
@@ -281,7 +281,7 @@ TEST(EditView, SimpleIntWriteOfArrayFails)
 TEST(EditView, SimpleIntReadToString)
 {
     int value = 42;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     StringBuf txt;
     ASSERT_TRUE(ReadView("", value, txt));
     EXPECT_STREQ("42", txt.c_str());
@@ -290,7 +290,7 @@ TEST(EditView, SimpleIntReadToString)
 TEST(EditView, SimpleIntWriteFromString)
 {
     int value = 42;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     StringBuf txt("666");
     ASSERT_TRUE(WriteView("", value, txt));
     EXPECT_EQ(666, value);
@@ -301,18 +301,18 @@ TEST(EditView, SimpleIntWriteFromString)
 TEST(EditView, Vector3FlagsReported)
 {
     Vector3 value;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     ASSERT_TRUE(DescribeView("", value, info));
-    EXPECT_TRUE(info.flags.test(rtti::DataViewInfoFlagBit::LikeValue));
-    EXPECT_TRUE(info.flags.test(rtti::DataViewInfoFlagBit::LikeStruct));
-    EXPECT_FALSE(info.flags.test(rtti::DataViewInfoFlagBit::LikeArray));
-    EXPECT_EQ(info.dataType, reflection::GetTypeObject<Vector3>());
+    EXPECT_TRUE(info.flags.test(DataViewInfoFlagBit::LikeValue));
+    EXPECT_TRUE(info.flags.test(DataViewInfoFlagBit::LikeStruct));
+    EXPECT_FALSE(info.flags.test(DataViewInfoFlagBit::LikeArray));
+    EXPECT_EQ(info.dataType, GetTypeObject<Vector3>());
 }
 
 TEST(EditView, Vector3MembersNotReportedByDefault)
 {
     Vector3 value;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     ASSERT_TRUE(DescribeView("", value, info));
     EXPECT_EQ(0, info.members.size());
 }
@@ -320,8 +320,8 @@ TEST(EditView, Vector3MembersNotReportedByDefault)
 TEST(EditView, Vector3MembersReportedWhenAsked)
 {
     Vector3 value;
-    rtti::DataViewInfo info;
-    info.requestFlags |= rtti::DataViewRequestFlagBit::MemberList;
+    DataViewInfo info;
+    info.requestFlags |= DataViewRequestFlagBit::MemberList;
     ASSERT_TRUE(DescribeView("", value, info));
     EXPECT_EQ(3, info.members.size());
 }
@@ -329,8 +329,8 @@ TEST(EditView, Vector3MembersReportedWhenAsked)
 TEST(EditView, Vector3MembersNamesCorrect)
 {
     Vector3 value;
-    rtti::DataViewInfo info;
-    info.requestFlags |= rtti::DataViewRequestFlagBit::MemberList;
+    DataViewInfo info;
+    info.requestFlags |= DataViewRequestFlagBit::MemberList;
     ASSERT_TRUE(DescribeView("", value, info));
     ASSERT_EQ(3, info.members.size());
     EXPECT_STREQ("x", info.members[0].name.c_str());
@@ -341,19 +341,19 @@ TEST(EditView, Vector3MembersNamesCorrect)
 TEST(EditView, Vector3MembersCanDescribeThemselves)
 {
     Vector3 value;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     ASSERT_TRUE(DescribeView("x", value, info));
-    EXPECT_EQ(info.dataType, reflection::GetTypeObject<float>());
+    EXPECT_EQ(info.dataType, GetTypeObject<float>());
     ASSERT_TRUE(DescribeView("y", value, info));
-    EXPECT_EQ(info.dataType, reflection::GetTypeObject<float>());
+    EXPECT_EQ(info.dataType, GetTypeObject<float>());
     ASSERT_TRUE(DescribeView("z", value, info));
-    EXPECT_EQ(info.dataType, reflection::GetTypeObject<float>());
+    EXPECT_EQ(info.dataType, GetTypeObject<float>());
 }
 
 TEST(EditView, Vector3MembersReturnCorrectPointers)
 {
     Vector3 value;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     ASSERT_TRUE(DescribeView("x", value, info));
     EXPECT_EQ(info.dataPtr, &value.x);
     ASSERT_TRUE(DescribeView("y", value, info));
@@ -365,21 +365,21 @@ TEST(EditView, Vector3MembersReturnCorrectPointers)
 TEST(EditView, Vector3MembersDescribeUnknownMemberFails)
 {
     Vector3 value;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     ASSERT_FALSE(DescribeView("w", value, info));
 }
 
 TEST(EditView, Vector3MembersDescribeArrayFails)
 {
     Vector3 value;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     ASSERT_FALSE(DescribeView("[0]", value, info));
 }
 
 TEST(EditView, Vector3MembersRead)
 {
     Vector3 value(1,2,3);
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     float temp = 0.0f;
     ASSERT_TRUE(ReadView("x", value, temp));
     EXPECT_FLOAT_EQ(temp, value.x);
@@ -392,7 +392,7 @@ TEST(EditView, Vector3MembersRead)
 TEST(EditView, Vector3InvalidReadFails)
 {
     Vector3 value(1, 2, 3);
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     float temp = 5.0f;
     ASSERT_FALSE(ReadView("w", value, temp));
     EXPECT_FLOAT_EQ(temp, 5.0f);
@@ -401,7 +401,7 @@ TEST(EditView, Vector3InvalidReadFails)
 TEST(EditView, Vector3WholeValueAsVector3)
 {
     Vector3 value(1, 2, 3);
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     Vector3 temp(0, 0, 0);
     ASSERT_TRUE(ReadView("", value, temp));
     EXPECT_FLOAT_EQ(temp.x, value.x);
@@ -412,7 +412,7 @@ TEST(EditView, Vector3WholeValueAsVector3)
 TEST(EditView, Vector3WholeValueReadAsString)
 {
     Vector3 value(1, 2, 3);
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     StringBuf txt;
     ASSERT_TRUE(ReadView("", value, txt));
     EXPECT_STREQ("(x=1.000000)(y=2.000000)(z=3.000000)", txt.c_str());
@@ -421,7 +421,7 @@ TEST(EditView, Vector3WholeValueReadAsString)
 TEST(EditView, Vector3MembersWrite)
 {
     Vector3 value(1, 2, 3);
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     ASSERT_TRUE(WriteView("x", value, 4.0f));
     ASSERT_TRUE(WriteView("y", value, 5.0f));
     ASSERT_TRUE(WriteView("z", value, 6.0f));
@@ -434,7 +434,7 @@ TEST(EditView, Vector3MembersWrite)
 TEST(EditView, Vector3WholeValueWriteAsVector3)
 {
     Vector3 value(1, 2, 3);
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     Vector3 temp(4, 5, 6);
     ASSERT_TRUE(WriteView("", value, temp));
     EXPECT_FLOAT_EQ(temp.x, value.x);
@@ -445,7 +445,7 @@ TEST(EditView, Vector3WholeValueWriteAsVector3)
 TEST(EditView, Vector3WholeValueWriteAsString)
 {
     Vector3 value(1, 2, 3);
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     StringBuf txt("(x=4)(y=5)(z=6)");
     ASSERT_TRUE(WriteView("", value, txt));
     EXPECT_FLOAT_EQ(4.0f, value.x);
@@ -456,7 +456,7 @@ TEST(EditView, Vector3WholeValueWriteAsString)
 TEST(EditView, Vector3PartialValueWriteAsString)
 {
     Vector3 value(1, 2, 3);
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     StringBuf txt("(x=4)(z=6)");
     ASSERT_TRUE(WriteView("", value, txt));
     EXPECT_FLOAT_EQ(4.0f, value.x);
@@ -467,7 +467,7 @@ TEST(EditView, Vector3PartialValueWriteAsString)
 TEST(EditView, NestedStructureRead)
 {
     Box value(Vector3(1, 2, 3), Vector3(4, 5, 6));
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     float temp = 0.0f;
     EXPECT_TRUE(ReadView("min.x", value, temp));
     EXPECT_FLOAT_EQ(1.0f, temp);
@@ -486,7 +486,7 @@ TEST(EditView, NestedStructureRead)
 TEST(EditView, NestedStructureWrite)
 {
     Box value;
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     EXPECT_TRUE(WriteView("min.x", value, 1.0f));
     EXPECT_TRUE(WriteView("min.y", value, 2.0f));
     EXPECT_TRUE(WriteView("min.z", value, 3.0f));
@@ -506,19 +506,19 @@ TEST(EditView, NestedStructureWrite)
 TEST(EditView, StaticArrayReportedAsArray)
 {
     int value[4];
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     EXPECT_TRUE(DescribeView("", value, info));
-    EXPECT_TRUE(info.flags.test(rtti::DataViewInfoFlagBit::LikeArray));
-    EXPECT_TRUE(info.flags.test(rtti::DataViewInfoFlagBit::LikeValue));
-    EXPECT_FALSE(info.flags.test(rtti::DataViewInfoFlagBit::LikeStruct));
+    EXPECT_TRUE(info.flags.test(DataViewInfoFlagBit::LikeArray));
+    EXPECT_TRUE(info.flags.test(DataViewInfoFlagBit::LikeValue));
+    EXPECT_FALSE(info.flags.test(DataViewInfoFlagBit::LikeStruct));
     EXPECT_EQ(0, info.members.size());
 }
 
 TEST(EditView, StaticArrayDoesNotReportMembers)
 {
     int value[4];
-    rtti::DataViewInfo info;
-    info.requestFlags |= rtti::DataViewRequestFlagBit::MemberList;
+    DataViewInfo info;
+    info.requestFlags |= DataViewRequestFlagBit::MemberList;
     EXPECT_TRUE(DescribeView("", value, info));
     EXPECT_EQ(0, info.members.size());
 }
@@ -526,7 +526,7 @@ TEST(EditView, StaticArrayDoesNotReportMembers)
 TEST(EditView, StaticArraySizeReported)
 {
     int value[4];
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     EXPECT_TRUE(DescribeView("", value, info));
     EXPECT_EQ(4, info.arraySize);
 }
@@ -534,21 +534,21 @@ TEST(EditView, StaticArraySizeReported)
 TEST(EditView, StaticArrayMembersDescribeThemselves)
 {
     int value[4];
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     EXPECT_TRUE(DescribeView("[0]", value, info));
-    EXPECT_EQ(info.dataType, reflection::GetTypeObject<int>());
+    EXPECT_EQ(info.dataType, GetTypeObject<int>());
     EXPECT_TRUE(DescribeView("[1]", value, info));
-    EXPECT_EQ(info.dataType, reflection::GetTypeObject<int>());
+    EXPECT_EQ(info.dataType, GetTypeObject<int>());
     EXPECT_TRUE(DescribeView("[2]", value, info));
-    EXPECT_EQ(info.dataType, reflection::GetTypeObject<int>());
+    EXPECT_EQ(info.dataType, GetTypeObject<int>());
     EXPECT_TRUE(DescribeView("[3]", value, info));
-    EXPECT_EQ(info.dataType, reflection::GetTypeObject<int>());
+    EXPECT_EQ(info.dataType, GetTypeObject<int>());
 }
 
 TEST(EditView, StaticArrayMembersReturnPropertPointers)
 {
     int value[4];
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     EXPECT_TRUE(DescribeView("[0]", value, info));
     EXPECT_EQ(info.dataPtr, &value[0]);
     EXPECT_TRUE(DescribeView("[1]", value, info));
@@ -562,7 +562,7 @@ TEST(EditView, StaticArrayMembersReturnPropertPointers)
 TEST(EditView, StaticArrayMemberOutofRangeFailsDescribe)
 {
     int value[4];
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     EXPECT_FALSE(DescribeView("[5]", value, info));
     EXPECT_FALSE(DescribeView("[-1]", value, info));
     EXPECT_FALSE(DescribeView("[aab]", value, info));
@@ -577,7 +577,7 @@ TEST(EditView, StaticArrayMemberOutofRangeFailsDescribe)
 TEST(EditView, StaticArrayMembersRead)
 {
     int value[4] = { 1,2,3,4 };
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     int temp = 0;
     EXPECT_TRUE(ReadView("[0]", value, temp));
     EXPECT_EQ(1, temp);
@@ -593,7 +593,7 @@ TEST(EditView, StaticArrayMembersRead)
 TEST(EditView, StaticArrayMembersWrite)
 {
     int value[4] = { 1,2,3,4 };
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     EXPECT_TRUE(WriteView("[0]", value, 5));
     EXPECT_TRUE(WriteView("[1]", value, 6));
     EXPECT_TRUE(WriteView("[2]", value, 7));
@@ -607,7 +607,7 @@ TEST(EditView, StaticArrayMembersWrite)
 TEST(EditView, StaticArrayReadWholeAsString)
 {
     int value[4] = { 1,2,3,4 };
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     StringBuf txt;
     EXPECT_TRUE(ReadView("", value, txt));
     EXPECT_STREQ(txt.c_str(), "[1][2][3][4]");
@@ -616,7 +616,7 @@ TEST(EditView, StaticArrayReadWholeAsString)
 TEST(EditView, StaticArrayWriteWholeString)
 {
     int value[4] = { 1,2,3,4 };
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     StringBuf txt("[5][6][7][8]");
     EXPECT_TRUE(WriteView("", value, txt));
     EXPECT_EQ(5, value[0]);
@@ -628,7 +628,7 @@ TEST(EditView, StaticArrayWriteWholeString)
 TEST(EditView, StaticArrayPartialWriteString)
 {
     int value[4] = { 1,2,3,4 };
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     StringBuf txt("[5][6]");
     EXPECT_TRUE(WriteView("", value, txt));
     EXPECT_EQ(5, value[0]);
@@ -642,7 +642,7 @@ TEST(EditView, StaticArrayOverflowWriteStringDoesNotFail)
     int protectorA[2] = { 0,0 };
     int value[4] = { 1,2,3,4 };
     int protectorB[2] = { 0,0 };
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     StringBuf txt("[5][6][7][8][9]");
     EXPECT_TRUE(WriteView("", value, txt));
     EXPECT_EQ(5, value[0]);
@@ -661,31 +661,31 @@ TEST(EditView, PointerDescribedPropertlyWhenAsHandle)
 {
     auto ptr = RefNew<DataViewTestObject>();
 
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     EXPECT_TRUE(DescribeView("", ptr, info));
-    EXPECT_TRUE(info.flags.test(rtti::DataViewInfoFlagBit::LikeStruct));
-    EXPECT_FALSE(info.flags.test(rtti::DataViewInfoFlagBit::LikeArray));
-    EXPECT_TRUE(info.flags.test(rtti::DataViewInfoFlagBit::Object));
-    EXPECT_TRUE(info.flags.test(rtti::DataViewInfoFlagBit::LikeValue));
+    EXPECT_TRUE(info.flags.test(DataViewInfoFlagBit::LikeStruct));
+    EXPECT_FALSE(info.flags.test(DataViewInfoFlagBit::LikeArray));
+    EXPECT_TRUE(info.flags.test(DataViewInfoFlagBit::Object));
+    EXPECT_TRUE(info.flags.test(DataViewInfoFlagBit::LikeValue));
 }
 
 TEST(EditView, PointerEmptyDescribedAsNonStruct)
 {
     RefPtr<DataViewTestObject> ptr;
 
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     EXPECT_TRUE(DescribeView("", ptr, info));
-    EXPECT_FALSE(info.flags.test(rtti::DataViewInfoFlagBit::LikeStruct));
-    EXPECT_FALSE(info.flags.test(rtti::DataViewInfoFlagBit::LikeArray));
-    EXPECT_FALSE(info.flags.test(rtti::DataViewInfoFlagBit::Object));
-    EXPECT_TRUE(info.flags.test(rtti::DataViewInfoFlagBit::LikeValue));
+    EXPECT_FALSE(info.flags.test(DataViewInfoFlagBit::LikeStruct));
+    EXPECT_FALSE(info.flags.test(DataViewInfoFlagBit::LikeArray));
+    EXPECT_FALSE(info.flags.test(DataViewInfoFlagBit::Object));
+    EXPECT_TRUE(info.flags.test(DataViewInfoFlagBit::LikeValue));
 }
 
 TEST(EditView, PointerDoesNotReportMembersWhenNotAsked)
 {
     auto ptr = RefNew<DataViewTestObject>();
 
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     EXPECT_TRUE(DescribeView("", ptr, info));
     EXPECT_EQ(0, info.members.size());
 }
@@ -694,7 +694,7 @@ TEST(EditView, PointerDoesNotSetObjectDataWhenNotAsked)
 {
     auto ptr = RefNew<DataViewTestObject>();
 
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     EXPECT_TRUE(DescribeView("", ptr, info));
     EXPECT_EQ(nullptr, info.objectPtr);
     EXPECT_FALSE(info.objectClass);
@@ -704,7 +704,7 @@ TEST(EditView, PointerDescribedPointerValid)
 {
     auto ptr = RefNew<DataViewTestObject>();
 
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     EXPECT_TRUE(DescribeView("", ptr, info));
     //EXPECT_EQ(info.dataPtr, ptr.get());
     EXPECT_EQ(info.dataPtr, &ptr);
@@ -714,40 +714,40 @@ TEST(EditView, PointerDescribedTypeIsHandleType)
 {
     auto ptr = RefNew<DataViewTestObject>();
 
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     EXPECT_TRUE(DescribeView("", ptr, info));
-    EXPECT_EQ(info.dataType, reflection::GetTypeObject<RefPtr<DataViewTestObject>>());
+    EXPECT_EQ(info.dataType, GetTypeObject<RefPtr<DataViewTestObject>>());
 }
 
 TEST(EditView, PointerDescribedAsObjectWhenAsked)
 {
     auto ptr = RefNew<DataViewTestObject>();
 
-    rtti::DataViewInfo info;
-    info.requestFlags |= rtti::DataViewRequestFlagBit::ObjectInfo;
+    DataViewInfo info;
+    info.requestFlags |= DataViewRequestFlagBit::ObjectInfo;
     EXPECT_TRUE(DescribeView("", ptr, info));
-    EXPECT_FALSE(info.flags.test(rtti::DataViewInfoFlagBit::LikeArray));
-    EXPECT_TRUE(info.flags.test(rtti::DataViewInfoFlagBit::LikeStruct));
-    EXPECT_TRUE(info.flags.test(rtti::DataViewInfoFlagBit::Object));
-    EXPECT_TRUE(info.flags.test(rtti::DataViewInfoFlagBit::LikeValue));
+    EXPECT_FALSE(info.flags.test(DataViewInfoFlagBit::LikeArray));
+    EXPECT_TRUE(info.flags.test(DataViewInfoFlagBit::LikeStruct));
+    EXPECT_TRUE(info.flags.test(DataViewInfoFlagBit::Object));
+    EXPECT_TRUE(info.flags.test(DataViewInfoFlagBit::LikeValue));
 }
 
 TEST(EditView, PointerTypeStillResportedAsHandleEvenWhenObjectDataAsked)
 {
     auto ptr = RefNew<DataViewTestObject>();
 
-    rtti::DataViewInfo info;
-    info.requestFlags |= rtti::DataViewRequestFlagBit::ObjectInfo;
+    DataViewInfo info;
+    info.requestFlags |= DataViewRequestFlagBit::ObjectInfo;
     EXPECT_TRUE(DescribeView("", ptr, info));
-    EXPECT_EQ(info.dataType, reflection::GetTypeObject<RefPtr<DataViewTestObject>>());
+    EXPECT_EQ(info.dataType, GetTypeObject<RefPtr<DataViewTestObject>>());
 }
 
 TEST(EditView, PointerDescribedObjectDataWhenAsked)
 {
     auto ptr = RefNew<DataViewTestObject>();
 
-    rtti::DataViewInfo info;
-    info.requestFlags |= rtti::DataViewRequestFlagBit::ObjectInfo;
+    DataViewInfo info;
+    info.requestFlags |= DataViewRequestFlagBit::ObjectInfo;
     EXPECT_TRUE(DescribeView("", ptr, info));
     EXPECT_EQ(info.objectPtr, ptr.get());
     EXPECT_EQ(info.objectClass, DataViewTestObject::GetStaticClass());
@@ -757,8 +757,8 @@ TEST(EditView, PointerDoesReportMembersWhenAsked)
 {
     auto ptr = RefNew<DataViewTestObject>();
 
-    rtti::DataViewInfo info;
-    info.requestFlags |= rtti::DataViewRequestFlagBit::MemberList;
+    DataViewInfo info;
+    info.requestFlags |= DataViewRequestFlagBit::MemberList;
     EXPECT_TRUE(DescribeView("", ptr, info));
     EXPECT_EQ(24, info.members.size());
 }
@@ -768,7 +768,7 @@ TEST(EditView, PointerReadWholeValueReadsAPointer)
     auto ptr = RefNew<DataViewTestObject>();
     RefPtr<DataViewTestObject> ptr2;
 
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     EXPECT_TRUE(ReadView("", ptr, ptr2));
     EXPECT_EQ(ptr.get(), ptr2.get());
 }
@@ -778,7 +778,7 @@ TEST(EditView, PointerReadWholeValueWriteWorks)
     auto ptr = RefNew<DataViewTestObject>();
     auto ptr2 = RefNew<DataViewTestObject>();
 
-    rtti::DataViewInfo info;
+    DataViewInfo info;
     EXPECT_TRUE(WriteView("", ptr, ptr2));
     EXPECT_EQ(ptr.get(), ptr2.get());
 }

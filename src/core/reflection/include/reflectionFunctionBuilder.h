@@ -14,7 +14,7 @@
 #include "core/object/include/rttiFunction.h"
 #include "core/object/include/rttiFunctionPointer.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(reflection)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -27,26 +27,26 @@ public:
     FunctionBuilder(const char* name);
     ~FunctionBuilder();
 
-    void submit(rtti::IClassType* targetClass);
+    void submit(IClassType* targetClass);
 
     template< typename T >
-    INLINE static rtti::FunctionParamType MakeType()
+    INLINE static FunctionParamType MakeType()
     {
         typedef typename std::remove_reference< typename std::remove_pointer<T>::type >::type InnerT;
         typedef typename std::remove_cv<InnerT>::type SafeT;
 
-        auto retType  = reflection::GetTypeObject<SafeT>();
+        auto retType  = GetTypeObject<SafeT>();
         ASSERT_EX(retType != nullptr, "Return type not found in RTTI, only registered types can be used");
 
-        rtti::FunctionParamFlags flags = rtti::FunctionParamFlag::Normal;
+        FunctionParamFlags flags = FunctionParamFlag::Normal;
         if (std::is_const<InnerT>::value)
-            flags |= rtti::FunctionParamFlag::Const;
+            flags |= FunctionParamFlag::Const;
         if (std::is_reference<T>::value)
-            flags |= rtti::FunctionParamFlag::Ref;
+            flags |= FunctionParamFlag::Ref;
         if (std::is_pointer<T>::value)
-            flags |= rtti::FunctionParamFlag::Ptr;
+            flags |= FunctionParamFlag::Ptr;
 
-        return rtti::FunctionParamType(retType, flags);
+        return FunctionParamType(retType, flags);
     }
 
     template< typename T >
@@ -61,12 +61,12 @@ public:
         m_paramTypes.pushBack(MakeType<T>());
     }
 
-    INLINE void functionPtr(const rtti::FunctionPointer& ptr)
+    INLINE void functionPtr(const FunctionPointer& ptr)
     {
         m_functionPtr = ptr;
     }
 
-    INLINE void functionWrapper(rtti::TFunctionWrapperPtr ptr)
+    INLINE void functionWrapper(TFunctionWrapperPtr ptr)
     {
         m_functionWrapperPtr = ptr;
     }
@@ -84,12 +84,12 @@ public:
 protected:
     StringBuf m_name; // name of the function
 
-    rtti::FunctionPointer m_functionPtr; // point to the function
-    rtti::TFunctionWrapperPtr m_functionWrapperPtr; // point to the function
+    FunctionPointer m_functionPtr; // point to the function
+    TFunctionWrapperPtr m_functionWrapperPtr; // point to the function
 
-    rtti::FunctionParamType m_returnType; // type returned by the function
+    FunctionParamType m_returnType; // type returned by the function
 
-    Array<rtti::FunctionParamType> m_paramTypes; // type of parameters accepted by function
+    Array<FunctionParamType> m_paramTypes; // type of parameters accepted by function
 
     bool m_isConst;
     bool m_isStatic;
@@ -108,9 +108,9 @@ public:
 
     //-- Param Count: 0
 
-    INLINE void setupProxy(void(_class::*func)(), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(_class::*func)(), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc  = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -122,9 +122,9 @@ public:
     }
 
     template< typename Ret >
-    INLINE void setupProxy(Ret(_class::*func)(), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(_class::*func)(), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc  = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -140,9 +140,9 @@ public:
     //-- Param Count: 1
 
     template< typename F1 >
-    INLINE void setupProxy(void(_class::*func)(F1), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(_class::*func)(F1), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc  = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -156,9 +156,9 @@ public:
     }
 
     template< typename Ret, typename F1 >
-    INLINE void setupProxy(Ret(_class::*func)(F1), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(_class::*func)(F1), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc  = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -176,9 +176,9 @@ public:
     //-- Param Count: 2
 
     template< typename F1, typename F2 >
-    INLINE void setupProxy(void(_class::*func)(F1, F2), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(_class::*func)(F1, F2), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc  = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -193,9 +193,9 @@ public:
     }
 
     template< typename Ret, typename F1, typename F2 >
-    INLINE void setupProxy(Ret(_class::*func)(F1, F2), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(_class::*func)(F1, F2), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc  = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -213,9 +213,9 @@ public:
     //-- Param Count: 3
 
     template< typename F1, typename F2, typename F3 >
-    INLINE void setupProxy(void(_class::*func)(F1, F2, F3), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(_class::*func)(F1, F2, F3), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc  = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -231,9 +231,9 @@ public:
     }
 
     template< typename Ret, typename F1, typename F2, typename F3 >
-    INLINE void setupProxy(Ret(_class::*func)(F1, F2, F3), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(_class::*func)(F1, F2, F3), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc  = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -252,9 +252,9 @@ public:
     //-- Param Count: 4
 
     template< typename F1, typename F2, typename F3, typename F4 >
-    INLINE void setupProxy(void(_class::*func)(F1, F2, F3, F4), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(_class::*func)(F1, F2, F3, F4), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -271,9 +271,9 @@ public:
     }
 
     template< typename Ret, typename F1, typename F2, typename F3, typename F4 >
-    INLINE void setupProxy(Ret(_class::*func)(F1, F2, F3, F4), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(_class::*func)(F1, F2, F3, F4), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -293,9 +293,9 @@ public:
     //-- Param Count: 5
 
     template< typename F1, typename F2, typename F3, typename F4, typename F5 >
-    INLINE void setupProxy(void(_class::*func)(F1, F2, F3, F4, F5), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(_class::*func)(F1, F2, F3, F4, F5), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -313,9 +313,9 @@ public:
     }
 
     template< typename Ret, typename F1, typename F2, typename F3, typename F4, typename F5 >
-    INLINE void setupProxy(Ret(_class::*func)(F1, F2, F3, F4, F5), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(_class::*func)(F1, F2, F3, F4, F5), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -337,9 +337,9 @@ public:
 
     //-- Param Count: 0
 
-    INLINE void setupProxy(void(_class::*func)() const, const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(_class::*func)() const, const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -353,9 +353,9 @@ public:
     }
 
     template< typename Ret >
-    INLINE void setupProxy(Ret(_class::*func)() const, const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(_class::*func)() const, const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -372,9 +372,9 @@ public:
     //-- Param Count: 1
 
     template< typename F1 >
-    INLINE void setupProxy(void(_class::*func)(F1) const, const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(_class::*func)(F1) const, const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -389,9 +389,9 @@ public:
     }
 
     template< typename Ret, typename F1 >
-    INLINE void setupProxy(Ret(_class::*func)(F1) const, const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(_class::*func)(F1) const, const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -409,9 +409,9 @@ public:
     //-- Param Count: 2
 
     template< typename F1, typename F2 >
-    INLINE void setupProxy(void(_class::*func)(F1, F2) const, const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(_class::*func)(F1, F2) const, const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -427,9 +427,9 @@ public:
     }
 
     template< typename Ret, typename F1, typename F2 >
-    INLINE void setupProxy(Ret(_class::*func)(F1, F2) const, const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(_class::*func)(F1, F2) const, const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -448,9 +448,9 @@ public:
     //-- Param Count: 3
 
     template< typename F1, typename F2, typename F3 >
-    INLINE void setupProxy(void(_class::*func)(F1, F2, F3) const, const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(_class::*func)(F1, F2, F3) const, const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -467,9 +467,9 @@ public:
     }
 
     template< typename Ret, typename F1, typename F2, typename F3 >
-    INLINE void setupProxy(Ret(_class::*func)(F1, F2, F3) const, const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(_class::*func)(F1, F2, F3) const, const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -489,9 +489,9 @@ public:
     //-- Param Count: 4
 
     template< typename F1, typename F2, typename F3, typename F4 >
-    INLINE void setupProxy(void(_class::*func)(F1, F2, F3, F4) const, const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(_class::*func)(F1, F2, F3, F4) const, const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -509,9 +509,9 @@ public:
     }
 
     template< typename Ret, typename F1, typename F2, typename F3, typename F4 >
-    INLINE void setupProxy(Ret(_class::*func)(F1, F2, F3, F4) const, const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(_class::*func)(F1, F2, F3, F4) const, const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -532,9 +532,9 @@ public:
     //-- Param Count: 5
 
     template< typename F1, typename F2, typename F3, typename F4, typename F5 >
-    INLINE void setupProxy(void(_class::*func)(F1, F2, F3, F4, F5) const, const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(_class::*func)(F1, F2, F3, F4, F5) const, const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -553,9 +553,9 @@ public:
     }
 
     template< typename Ret, typename F1, typename F2, typename F3, typename F4, typename F5 >
-    INLINE void setupProxy(Ret(_class::*func)(F1, F2, F3, F4, F5) const, const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(_class::*func)(F1, F2, F3, F4, F5) const, const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = *((decltype(func)*)&nativeFunc.ptr.dummy);
             auto classPtr  = (_class*)contextPtr;
@@ -590,9 +590,9 @@ public:
 
     //-- Param Count: 0
 
-    INLINE void setupProxy(void(*func)(), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(*func)(), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = ((decltype(func))nativeFunc.ptr.f.func);
             (*callableFunc)();
@@ -604,9 +604,9 @@ public:
     }
 
     template< typename Ret >
-    INLINE void setupProxy(Ret(*func)(), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(*func)(), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = ((decltype(func))nativeFunc.ptr.f.func);
             params.writeResult<Ret>( (*callableFunc)() );
@@ -621,9 +621,9 @@ public:
     //-- Param Count: 1
 
     template< typename F1 >
-    INLINE void setupProxy(void(*func)(F1), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(*func)(F1), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = ((decltype(func))nativeFunc.ptr.f.func);
             (*callableFunc)( params.arg<F1,0>());
@@ -636,9 +636,9 @@ public:
     }
 
     template< typename Ret, typename F1 >
-    INLINE void setupProxy(Ret(*func)(F1), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(*func)(F1), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = ((decltype(func))nativeFunc.ptr.f.func);
             params.writeResult<Ret>( (*callableFunc)( params.arg<F1,0>()));
@@ -654,9 +654,9 @@ public:
     //-- Param Count: 2
 
     template< typename F1, typename F2 >
-    INLINE void setupProxy(void(*func)(F1, F2), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(*func)(F1, F2), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = ((decltype(func))nativeFunc.ptr.f.func);
             (*callableFunc)( params.arg<F1,0>(), params.arg<F2,1>() );
@@ -670,9 +670,9 @@ public:
     }
 
     template< typename Ret, typename F1, typename F2 >
-    INLINE void setupProxy(Ret(*func)(F1, F2), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(*func)(F1, F2), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = ((decltype(func))nativeFunc.ptr.f.func);
             params.writeResult<Ret>( (*callableFunc)( params.arg<F1,0>(), params.arg<F2,1>() ));
@@ -689,9 +689,9 @@ public:
     //-- Param Count: 3
 
     template< typename F1, typename F2, typename F3 >
-    INLINE void setupProxy(void(*func)(F1, F2, F3), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(*func)(F1, F2, F3), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = ((decltype(func))nativeFunc.ptr.f.func);
             (*callableFunc)( params.arg<F1,0>(), params.arg<F2,1>(), params.arg<F3,2>() );
@@ -706,9 +706,9 @@ public:
     }
 
     template< typename Ret, typename F1, typename F2, typename F3 >
-    INLINE void setupProxy(Ret(*func)(F1, F2, F3), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(*func)(F1, F2, F3), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = ((decltype(func))nativeFunc.ptr.f.func);
             params.writeResult<Ret>( (*callableFunc)( params.arg<F1,0>(), params.arg<F2,1>(), params.arg<F3,2>() ));
@@ -726,9 +726,9 @@ public:
     //-- Param Count: 4
 
     template< typename F1, typename F2, typename F3, typename F4 >
-    INLINE void setupProxy(void(*func)(F1, F2, F3, F4), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(*func)(F1, F2, F3, F4), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = ((decltype(func))nativeFunc.ptr.f.func);
             (*callableFunc)( params.arg<F1,0>(), params.arg<F2,1>(), params.arg<F3,2>(), params.arg<F4,3>());
@@ -744,9 +744,9 @@ public:
     }
 
     template< typename Ret, typename F1, typename F2, typename F3, typename F4 >
-    INLINE void setupProxy(Ret(*func)(F1, F2, F3, F4), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(*func)(F1, F2, F3, F4), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = ((decltype(func))nativeFunc.ptr.f.func);
             params.writeResult<Ret>( (*callableFunc)( params.arg<F1,0>(), params.arg<F2,1>(), params.arg<F3,2>(), params.arg<F4,3>()));
@@ -765,9 +765,9 @@ public:
     //-- Param Count: 5
 
     template< typename F1, typename F2, typename F3, typename F4, typename F5 >
-    INLINE void setupProxy(void(*func)(F1, F2, F3, F4, F5), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(*func)(F1, F2, F3, F4, F5), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = ((decltype(func))nativeFunc.ptr.f.func);
             (*callableFunc)( params.arg<F1,0>(), params.arg<F2,1>(), params.arg<F3,2>(), params.arg<F4,3>(), params.arg<F5,4>() );
@@ -784,9 +784,9 @@ public:
     }
 
     template< typename Ret, typename F1, typename F2, typename F3, typename F4, typename F5 >
-    INLINE void setupProxy(Ret(*func)(F1, F2, F3, F4, F5), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(*func)(F1, F2, F3, F4, F5), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = ((decltype(func))nativeFunc.ptr.f.func);
             params.writeResult<Ret>( (*callableFunc)( params.arg<F1,0>(), params.arg<F2,1>(), params.arg<F3,2>(), params.arg<F4,3>(), params.arg<F5,4>() ));
@@ -806,9 +806,9 @@ public:
     //-- Param Count: 6
 
     template< typename F1, typename F2, typename F3, typename F4, typename F5, typename F6 >
-    INLINE void setupProxy(void(*func)(F1, F2, F3, F4, F5, F6), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(void(*func)(F1, F2, F3, F4, F5, F6), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = ((decltype(func))nativeFunc.ptr.f.func);
             (*callableFunc)( params.arg<F1,0>(), params.arg<F2,1>(), params.arg<F3,2>(), params.arg<F4,3>(), params.arg<F5,4>(), params.arg<F6,5>() );
@@ -826,9 +826,9 @@ public:
     }
 
     template< typename Ret, typename F1, typename F2, typename F3, typename F4, typename F5, typename F6 >
-    INLINE void setupProxy(Ret(*func)(F1, F2, F3, F4, F5, F6), const rtti::FunctionPointer& funcPtr)
+    INLINE void setupProxy(Ret(*func)(F1, F2, F3, F4, F5, F6), const FunctionPointer& funcPtr)
     {
-        rtti::TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const rtti::FunctionPointer& nativeFunc, const rtti::FunctionCallingParams& params)
+        TFunctionWrapperPtr wrapperPtr = [](void* contextPtr, const FunctionPointer& nativeFunc, const FunctionCallingParams& params)
         {
             auto callableFunc = ((decltype(func))nativeFunc.ptr.f.func);
             params.writeResult<Ret>( (*callableFunc)( params.arg<F1,0>(), params.arg<F2,1>(), params.arg<F3,2>(), params.arg<F4,3>(), params.arg<F5,4>(), params.arg<F6,5>() ));
@@ -850,4 +850,4 @@ private:
     FunctionBuilder* m_builder;
 };
 
-END_BOOMER_NAMESPACE_EX(reflection)
+END_BOOMER_NAMESPACE()

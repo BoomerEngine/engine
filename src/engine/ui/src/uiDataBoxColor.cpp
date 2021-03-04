@@ -125,9 +125,9 @@ class DataBoxColorFactory : public IDataBoxFactory
     RTTI_DECLARE_VIRTUAL_CLASS(DataBoxColorFactory, IDataBoxFactory);
 
 public:
-    virtual DataBoxPtr tryCreate(const rtti::DataViewInfo& info) const override
+    virtual DataBoxPtr tryCreate(const DataViewInfo& info) const override
     {
-        if (info.dataType == reflection::GetTypeObject<Color>())
+        if (info.dataType == GetTypeObject<Color>())
             return RefNew<DataBoxColorPicker>(true);
         return nullptr;
     }

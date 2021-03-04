@@ -9,7 +9,7 @@
 #include "build.h"
 #include "rttiResourceReferenceType.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -22,4 +22,4 @@ IResourceReferenceType::~IResourceReferenceType()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

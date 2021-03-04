@@ -42,7 +42,7 @@ public:
     template< typename T >
     INLINE bool read(StringView key, T& data) const
     {
-        return m_data->readRaw(m_path, key, reflection::GetTypeObject<T>(), &data);
+        return m_data->readRaw(m_path, key, GetTypeObject<T>(), &data);
     }
 
     // read config value from current group or return the default
@@ -50,7 +50,7 @@ public:
     INLINE T readOrDefault(StringView key, T defaultValue = T()) const
     {
         T ret;
-        if (m_data->readRaw(m_path, key, reflection::GetTypeObject<T>(), &ret))
+        if (m_data->readRaw(m_path, key, GetTypeObject<T>(), &ret))
             return ret;
 
         return defaultValue;
@@ -60,7 +60,7 @@ public:
     template< typename T >
     INLINE void write(StringView key, const T& data) const
     {
-        m_data->writeRaw(m_path, key, reflection::GetTypeObject<T>(), &data);
+        m_data->writeRaw(m_path, key, GetTypeObject<T>(), &data);
     }
 
     //--

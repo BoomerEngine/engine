@@ -80,7 +80,7 @@ public:
     virtual DataViewPtr createDataView() const;
     virtual DataViewResult readDataView(StringView viewPath, void* targetData, Type targetType) const override;
     virtual DataViewResult writeDataView(StringView viewPath, const void* sourceData, Type sourceType) override;
-    virtual DataViewResult describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const override;
+    virtual DataViewResult describeDataView(StringView viewPath, DataViewInfo& outInfo) const override;
 
     virtual bool onResourceReloading(res::IResource* currentResource, res::IResource* newResource) override;
     virtual void onResourceReloadFinished(res::IResource* currentResource, res::IResource* newResource) override;
@@ -92,7 +92,7 @@ public:
     {
         static_assert(!std::is_pointer<T>::value, "Pointer type is unexpected here");
         static_assert(!std::is_same<T, Variant>::value, "Variant should not be used here, use the real value or use the writeParameter");
-        return writeParameter(name, &data, reflection::GetTypeObject<T>(), refresh);
+        return writeParameter(name, &data, GetTypeObject<T>(), refresh);
     }
 
 protected:

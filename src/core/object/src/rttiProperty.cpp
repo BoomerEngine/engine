@@ -10,7 +10,7 @@
 #include "rttiType.h"
 #include "rttiProperty.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -47,4 +47,4 @@ Property::~Property()
 {
 }
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

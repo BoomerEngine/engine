@@ -122,9 +122,9 @@ class DataBoxTypeFactory : public IDataBoxFactory
     RTTI_DECLARE_VIRTUAL_CLASS(DataBoxTypeFactory, IDataBoxFactory);
 
 public:
-    virtual DataBoxPtr tryCreate(const rtti::DataViewInfo& info) const override
+    virtual DataBoxPtr tryCreate(const DataViewInfo& info) const override
     {
-        if (info.dataType == reflection::GetTypeObject<Type>())
+        if (info.dataType == GetTypeObject<Type>())
             return RefNew<DataBoxTypePicker>();
         return nullptr;
     }

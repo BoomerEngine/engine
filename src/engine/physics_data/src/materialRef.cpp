@@ -42,12 +42,12 @@ const PhysicsMaterialDefinition& PhysicsMaterialReference::GetDefinition() const
     return *(const PhysicsMaterialDefinition*)nullptr;
 }
 
-void PhysicsMaterialReference::writeBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeWriter& stream) const
+void PhysicsMaterialReference::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& stream) const
 {
     stream.writeStringID(m_name);
 }
 
-void PhysicsMaterialReference::readBinary(rtti::TypeSerializationContext& typeContext, stream::OpcodeReader& stream)
+void PhysicsMaterialReference::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& stream)
 {
     m_name = stream.readStringID();
 }

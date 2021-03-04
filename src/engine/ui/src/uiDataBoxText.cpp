@@ -150,13 +150,13 @@ class DataBoxStringFactory : public IDataBoxFactory
     RTTI_DECLARE_VIRTUAL_CLASS(DataBoxStringFactory, IDataBoxFactory);
 
 public:
-    virtual DataBoxPtr tryCreate(const rtti::DataViewInfo& info) const override
+    virtual DataBoxPtr tryCreate(const DataViewInfo& info) const override
     {
-        if (info.dataType == reflection::GetTypeObject<StringID>())
+        if (info.dataType == GetTypeObject<StringID>())
         {
             return RefNew<DataBoxStringID>();
         }
-        else if (info.dataType == reflection::GetTypeObject<StringBuf>())
+        else if (info.dataType == GetTypeObject<StringBuf>())
         {
             return RefNew<DataBoxStringBuf>();
         }

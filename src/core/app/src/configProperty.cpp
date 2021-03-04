@@ -152,7 +152,7 @@ void ConfigPropertyBase::print(IFormatStream& txt) const
         // arrays are written as multiple entries
         if (type.isArray())
         {
-            auto arrayType  = static_cast<const rtti::IArrayType *>(type.ptr());
+            auto arrayType  = static_cast<const IArrayType *>(type.ptr());
             auto size  = arrayType->arraySize(data());
 
             for (uint32_t i = 0; i < size; ++i)
@@ -212,9 +212,9 @@ void ConfigPropertyBase::SaveToEntry(Type type, const void* data, const void* de
     StringBuilder txt;
 
     // arrays are written as multiple entries
-    if (type->metaType() == rtti::MetaType::Array)
+    if (type->metaType() == MetaType::Array)
     {
-        auto arrayType  = static_cast<const rtti::IArrayType *>(type.ptr());
+        auto arrayType  = static_cast<const IArrayType *>(type.ptr());
         auto size  = arrayType->arraySize(data);
 
         for (uint32_t i = 0; i < size; ++i)
@@ -223,13 +223,13 @@ void ConfigPropertyBase::SaveToEntry(Type type, const void* data, const void* de
             auto elementDefaultData = defaultData ? arrayType->arrayElementData(defaultData, i) : nullptr;
 
             txt.clear();
-            arrayType->innerType()->printToText(txt, elementData, rtti::PrintToFlag_TextSerializaitonStructElement); // force quotes
+            arrayType->innerType()->printToText(txt, elementData, PrintToFlag_TextSerializaitonStructElement); // force quotes
             entry.appendValue(txt.toString());
         }
     }
     else
     {
-        type->printToText(txt, data, rtti::PrintToFlag_TextSerializaitonStructElement); // force quotes
+        type->printToText(txt, data, PrintToFlag_TextSerializaitonStructElement); // force quotes
         entry.appendValue(txt.toString());
     }
 }
@@ -242,9 +242,9 @@ bool ConfigPropertyBase::LoadFromEntry(Type type, void* data, const void* defaul
     Variant newValue;
     newValue.init(type, defaultData);
 
-    if (type->metaType() == rtti::MetaType::Array)
+    if (type->metaType() == MetaType::Array)
     {
-        auto arrayType = static_cast<const rtti::IArrayType *>(type.ptr());
+        auto arrayType = static_cast<const IArrayType *>(type.ptr());
         auto values = entry.values(); // TODO: monitor performance of this crap...
 
         arrayType->clearArrayElements(newValue.data());

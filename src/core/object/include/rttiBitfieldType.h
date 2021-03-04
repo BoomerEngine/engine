@@ -12,7 +12,7 @@
 #include "core/containers/include/array.h"
 #include "core/containers/include/stringID.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 /// Collection of named flags
 class CORE_OBJECT_API BitfieldType : public IType
@@ -38,7 +38,7 @@ public:
 
     //---
 
-    // rtti::IType interface
+    // IType interface
     virtual void construct(void *mem) const override final {};
     virtual void destruct(void *mem) const override final {};
             
@@ -70,4 +70,4 @@ private:
     virtual void releaseTypeReferences() override;
 };
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

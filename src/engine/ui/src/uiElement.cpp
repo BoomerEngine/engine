@@ -1052,7 +1052,7 @@ bool IElement::bindNamedProperties(const HashMap<StringView, IElement*>& namedEl
             continue;
 
         // we can only bind to shared pointers
-        if (prop->type()->metaType() != rtti::MetaType::StrongHandle)
+        if (prop->type()->metaType() != MetaType::StrongHandle)
         {
             valid = false;
             TRACE_WARNING("Auto binding property '{}' in '{}' request a SharedPtr type", prop->name(), cls()->name());
@@ -1060,7 +1060,7 @@ bool IElement::bindNamedProperties(const HashMap<StringView, IElement*>& namedEl
         }
 
         // we can only bind to element classes
-        const auto* handleType = static_cast<const rtti::IHandleType*>(prop->type().ptr());
+        const auto* handleType = static_cast<const IHandleType*>(prop->type().ptr());
         if (!handleType->pointedClass()->is(IElement::GetStaticClass()))
         {
             valid = false;

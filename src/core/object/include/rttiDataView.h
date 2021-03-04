@@ -12,7 +12,7 @@
 #include "core/containers/include/array.h"
 #include "rttiProperty.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -99,4 +99,4 @@ extern CORE_OBJECT_API bool ExtractParentPath(StringView& view, StringView& outC
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

@@ -45,7 +45,7 @@ public:
     template< typename T >
     INLINE void broadcast(const T& messageData)
     {
-        broadcast(&messageData, reflection::GetTypeObject<T>());
+        broadcast(&messageData, GetTypeObject<T>());
     }
 
     //---

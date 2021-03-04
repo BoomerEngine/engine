@@ -11,9 +11,9 @@
 
 #include "core/object/include/rttiBitfieldType.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(reflection)
+BEGIN_BOOMER_NAMESPACE()
 
-BitFieldBuilder::BitFieldBuilder(rtti::BitfieldType* enumPtr, uint32_t flagsType)
+BitFieldBuilder::BitFieldBuilder(BitfieldType* enumPtr, uint32_t flagsType)
     : m_bitFieldType(enumPtr)
     , m_flagsType(flagsType)
 {
@@ -81,4 +81,4 @@ void BitFieldBuilder::addRawOption(const char* rawName, uint64_t value, const ch
     }
 }
 
-END_BOOMER_NAMESPACE_EX(reflection)
+END_BOOMER_NAMESPACE()

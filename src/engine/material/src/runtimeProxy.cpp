@@ -58,19 +58,19 @@ MaterialDataDescriptor* MaterialDataDescriptor::Create(const MaterialDataLayoutD
 					break;
 
 				case MaterialDataLayoutParameterType::Float:
-					source.readParameter(entry.name, targetDataPtr, reflection::GetTypeObject<float>());
+					source.readParameter(entry.name, targetDataPtr, GetTypeObject<float>());
 					break;
 
 				case MaterialDataLayoutParameterType::Vector2:
-					source.readParameter(entry.name, targetDataPtr, reflection::GetTypeObject<Vector2>());
+					source.readParameter(entry.name, targetDataPtr, GetTypeObject<Vector2>());
                     break;
 
 				case MaterialDataLayoutParameterType::Vector3:
-					source.readParameter(entry.name, targetDataPtr, reflection::GetTypeObject<Vector3>());
+					source.readParameter(entry.name, targetDataPtr, GetTypeObject<Vector3>());
                     break;
 
 				case MaterialDataLayoutParameterType::Vector4:
-                    source.readParameter(entry.name, targetDataPtr, reflection::GetTypeObject<Vector4>());
+                    source.readParameter(entry.name, targetDataPtr, GetTypeObject<Vector4>());
                     break;
 
 				case MaterialDataLayoutParameterType::Color:

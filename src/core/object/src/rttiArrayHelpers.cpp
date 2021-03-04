@@ -10,7 +10,7 @@
 #include "rttiType.h"
 #include "rttiArrayHelpers.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -212,4 +212,4 @@ const IArrayHelper* IArrayHelper::GetHelperForType(Type elementType)
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()

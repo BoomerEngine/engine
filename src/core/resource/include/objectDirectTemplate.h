@@ -58,7 +58,7 @@ public:
     //--
 
     /// Get metadata for view - describe what we will find here: flags, list of members, size of array, etc
-    virtual DataViewResult describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const override;
+    virtual DataViewResult describeDataView(StringView viewPath, DataViewInfo& outInfo) const override;
 
     /// Read data from memory
     virtual DataViewResult readDataView(StringView viewPath, void* targetData, Type targetType) const override;
@@ -76,8 +76,8 @@ public:
 protected:
     virtual void onPropertyChanged(StringView path) override;
 
-    virtual bool onPropertyShouldLoad(const rtti::Property* prop) override;
-    virtual bool onPropertyShouldSave(const rtti::Property* prop) const override;
+    virtual bool onPropertyShouldLoad(const Property* prop) override;
+    virtual bool onPropertyShouldSave(const Property* prop) const override;
 
 private:
     HashSet<StringID> m_overridenProperties; // properties that were historically changed via onPropertyModified

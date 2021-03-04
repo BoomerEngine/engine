@@ -176,7 +176,7 @@ bool MaterialTemplate::readParameter(StringID name, void* data, Type type) const
 {
     for (const auto& param : m_parameters)
         if (param->name() == name)
-            return rtti::ConvertData(param->queryDefaultValue(), param->queryDataType(), data, type);
+            return ConvertData(param->queryDefaultValue(), param->queryDataType(), data, type);
     
     return false;
 }

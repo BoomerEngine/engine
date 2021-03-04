@@ -11,7 +11,7 @@
 #include "core/containers/include/array.h"
 #include "rttiClassRef.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rtti)
+BEGIN_BOOMER_NAMESPACE()
 
 class IClassType;
 class TypeSystem;
@@ -33,7 +33,7 @@ public:
     //--
 
     // initialize class (since we have no automatic reflection in this project)
-    static void RegisterType(rtti::TypeSystem& typeSystem);
+    static void RegisterType(TypeSystem& typeSystem);
 };
 
 ///--
@@ -110,7 +110,7 @@ public:
     virtual ClassType nativeClass() const override;
 
     // initialize class (since we have no automatic reflection in this project)
-    static void RegisterType(rtti::TypeSystem& typeSystem);
+    static void RegisterType(TypeSystem& typeSystem);
 
 private:
     const char* m_shortName;
@@ -118,4 +118,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rtti)
+END_BOOMER_NAMESPACE()
