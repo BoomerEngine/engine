@@ -42,7 +42,7 @@ void FrameViewCascades::render(gpu::CommandWriter& cmd, FrameViewRecorder* paren
     initializeCommandStreams(cmd, rec);
 
     // render scene into cascades, background scene is not casting global shadows
-    if (auto* scene = m_frame.frame().scenes.mainScenePtr)
+    if (auto* scene = m_frame.scene())
         scene->renderCascadesView(rec, *this, m_frame);
 
     // wait for recording jobs to finish

@@ -149,6 +149,23 @@ void ItemView::rebuildSortedOrder()
         buildSortedList(m_mainRows);
 }    
 
+void ItemView::attachStaticElement(IElement* element)
+{
+    DEBUG_CHECK_RETURN_EX(element, "Invalid element");
+    DEBUG_CHECK_RETURN_EX(!element->parentElement(), "Element already has parent");
+    attachChild(element);
+    m_staticElements.pushBack(AddRef(element));
+}
+
+void ItemView::detachStaticElement(IElement* element)
+{
+    DEBUG_CHECK_RETURN_EX(element, "Invalid element");
+    DEBUG_CHECK_RETURN_EX(element->parentElement() == this, "Element not attached here");
+    DEBUG_CHECK_RETURN_EX(m_staticElements.contains(this), "Element not present here");
+    detachChild(element);
+    m_staticElements.remove(element);
+}
+
 void ItemView::buildSortedList(const Array<ViewItem*>& rawItems, Array<ViewItem*>& outSortedItems) const
 {
     outSortedItems.reset();
@@ -164,7 +181,7 @@ void ItemView::buildSortedList(const Array<ViewItem*>& rawItems, Array<ViewItem*
         DEBUG_CHECK(item->m_index.model() == model());
     }
 
-    if (m_sortingAsc || m_sortingColumnIndex == INDEX_NONE)
+    /*if (m_sortingAsc || m_sortingColumnIndex == INDEX_NONE)
     {
         std::sort(outSortedItems.begin(), outSortedItems.end(), [this](const ViewItem *a, const ViewItem *b)
         {
@@ -177,7 +194,7 @@ void ItemView::buildSortedList(const Array<ViewItem*>& rawItems, Array<ViewItem*
         {
             return m_model->compare(b->m_index, a->m_index, m_sortingColumnIndex);
         });
-    }
+    }*/
 }
 
 void ItemView::buildSortedList(ViewItemChildren& items) const
@@ -366,14 +383,8 @@ void ItemView::focusElement(const ModelIndex& index)
 
 bool ItemView::iterateDrawChildren(ElementDrawListToken& token) const
 {
-    if (nullptr == token.curToken)
-    {
-        if (nullptr == m_displayList.head())
-            return false;
-
-        token.curToken = nullptr;
+    if (token.start())
         token.nextToken = m_displayList.head();
-    }
 
     while (token.nextToken != nullptr)
     {
@@ -387,6 +398,14 @@ bool ItemView::iterateDrawChildren(ElementDrawListToken& token) const
             token.m_unadjustedArea = &viewElem->m_unadjustedCachedArea;
             return true;
         }
+    }
+
+    while (token.index < m_staticElements.lastValidIndex())
+    {
+        token.index += 1;
+        token.elem = m_staticElements[token.index];
+        token.m_unadjustedArea = nullptr;
+        return true;
     }
 
     return false;

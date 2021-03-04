@@ -30,9 +30,9 @@ BEGIN_BOOMER_NAMESPACE_EX(rendering)
 
 void ObjectProxyMeshChunk::updatePassTypes()
 {
-    if (shader)
+    if (material)
     {
-        const auto& shaderMetadata = shader->metadata();
+        const auto& shaderMetadata = material->renderStates();
         if (!shaderMetadata.hasTransparency)
         {
             if (!shaderMetadata.hasVertexAnimation && staticGeometry)
@@ -114,17 +114,17 @@ ObjectProxyMeshPtr ObjectProxyMesh::Compile(const Setup& setup)
     auto* lodTable = (ObjectProxyMeshLOD*)ret->lods();
     if (setup.forcedLodLevel != -1)
     {
-        const auto& sourceLod = setup.mesh->detailLevels()[setup.forcedLodLevel];
-        lodTable[0].minDistance = sourceLod.rangeMin;
-        lodTable[0].maxDistance = sourceLod.rangeMax;
+		const auto& lastLOD = setup.mesh->detailLevels().back();
+		lodTable[0].minDistanceSquared = 0.0f;
+        lodTable[0].maxDistanceSquared = lastLOD.rangeMax * lastLOD.rangeMax;
     }
     else
     {
         for (uint32_t i = 0; i < maxLods; ++i)
         {
             const auto& sourceLod = setup.mesh->detailLevels().typedData()[i];
-            lodTable[i].minDistance = sourceLod.rangeMin;
-            lodTable[i].maxDistance = sourceLod.rangeMax;
+            lodTable[i].minDistanceSquared = sourceLod.rangeMin * sourceLod.rangeMin;
+            lodTable[i].maxDistanceSquared = sourceLod.rangeMax * sourceLod.rangeMax;
         }
     }
 
@@ -177,6 +177,32 @@ ObjectProxyMeshPtr ObjectProxyMesh::Compile(const Setup& setup)
     return AddRef(ret);
 }
 
+float ObjectProxyMesh::visibilityDistanceSquared() const
+{
+	if (m_numLods)
+		return lods()[m_numLods - 1].maxDistanceSquared;
+	else
+		return 0.0f;
+}
+
+uint32_t ObjectProxyMesh::calcDetailMask(float distanceSquared) const
+{
+	uint32_t mask = 0;
+	uint32_t bit = 1;
+
+	const auto* lod = lods();
+	const auto* lodEnd = lod + m_numLods;
+	while (lod < lodEnd)
+	{
+		if (distanceSquared >= lod->minDistanceSquared && distanceSquared < lod->maxDistanceSquared)
+			mask |= bit;
+		bit <<= 1;
+		++lod;
+	}
+
+	return mask;
+}
+
 //---
 
 RTTI_BEGIN_TYPE_CLASS(ObjectManagerMesh);
@@ -202,7 +228,38 @@ void ObjectManagerMesh::shutdown()
 
 void ObjectManagerMesh::prepare(gpu::CommandWriter& cmd, gpu::IDevice* dev, const FrameRenderer& frame)
 {
+	m_stats = ObjectMeshTotalStats();
+}
 
+void ObjectManagerMesh::finish(gpu::CommandWriter& cmd, gpu::IDevice* dev, const FrameRenderer& frame, FrameStats& outStats)
+{
+	{
+		auto lock = CreateLock(m_statLock);
+		m_lastStats = m_stats;
+	}
+
+	exportStats(m_lastStats.mainVisibility, outStats.mainView);
+	exportStats(m_lastStats.globalShadowsVisibility, outStats.globalShadowView);
+    
+	exportStats(m_lastStats.depthBatching, outStats.depthView);
+	exportStats(m_lastStats.mainBatching, outStats.mainView);
+	exportStats(m_lastStats.globalShadowsBatching, outStats.globalShadowView);
+    exportStats(m_lastStats.localShadowsBatching, outStats.localShadowView);
+}
+
+void ObjectManagerMesh::exportStats(const ObjectMeshBatchingStats& stats, FrameViewStats& outStats) const
+{
+	outStats.numChunks += stats.numInstances;
+	outStats.numDrawCalls += stats.numBatches;
+	outStats.numMaterials += stats.numMaterialChanges;
+	outStats.numShaders += stats.numShaderChanges;
+	outStats.numTriangles += stats.numTriangles;
+	outStats.recordingTime += stats.recordingTime;
+}
+
+void ObjectManagerMesh::exportStats(const ObjectMeshVisibilityStats& stats, FrameViewStats& outStats) const
+{
+	outStats.cullingTime += stats.cullingTime;
 }
 
 void ObjectManagerMesh::render(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame)
@@ -211,7 +268,7 @@ void ObjectManagerMesh::render(FrameViewMainRecorder& cmd, const FrameViewMain& 
 
 	auto& collector = m_cacheViewMain;
 
-	collectMainViewChunks(view, collector);
+	collectMainViewChunks(view, collector, m_stats.mainVisibility);
 
 	sortChunksByBatch(collector.depthLists[0].standaloneChunks);
 	sortChunksByBatch(collector.depthLists[1].standaloneChunks);
@@ -222,14 +279,14 @@ void ObjectManagerMesh::render(FrameViewMainRecorder& cmd, const FrameViewMain& 
 
 	sortChunksByBatch(collector.selectionOutlineList.standaloneChunks);
 
-	renderChunkListStandalone(cmd.depthPrePassStatic, collector.depthLists[0].standaloneChunks, MaterialPass::DepthPrepass);
-	renderChunkListStandalone(cmd.depthPrePassOther, collector.depthLists[1].standaloneChunks, MaterialPass::DepthPrepass);
+	renderChunkListStandalone(cmd.depthPrePassStatic, collector.depthLists[0].standaloneChunks, MaterialPass::DepthPrepass, m_stats.depthBatching);
+	renderChunkListStandalone(cmd.depthPrePassOther, collector.depthLists[1].standaloneChunks, MaterialPass::DepthPrepass, m_stats.depthBatching);
 
-    renderChunkListStandalone(cmd.forwardSolid, collector.forwardLists[0].standaloneChunks, MaterialPass::Forward);
-    renderChunkListStandalone(cmd.forwardMasked, collector.forwardLists[1].standaloneChunks, MaterialPass::Forward);
-	renderChunkListStandalone(cmd.forwardTransparent, collector.forwardLists[2].standaloneChunks, MaterialPass::ForwardTransparent);
+    renderChunkListStandalone(cmd.forwardSolid, collector.forwardLists[0].standaloneChunks, MaterialPass::Forward, m_stats.mainBatching);
+    renderChunkListStandalone(cmd.forwardMasked, collector.forwardLists[1].standaloneChunks, MaterialPass::Forward, m_stats.mainBatching);
+	renderChunkListStandalone(cmd.forwardTransparent, collector.forwardLists[2].standaloneChunks, MaterialPass::ForwardTransparent, m_stats.mainBatching);
 
-	renderChunkListStandalone(cmd.selectionOutline, collector.selectionOutlineList.standaloneChunks, MaterialPass::DepthPrepass);
+	renderChunkListStandalone(cmd.selectionOutline, collector.selectionOutlineList.standaloneChunks, MaterialPass::DepthPrepass, m_stats.depthBatching);
 }
 
 void ObjectManagerMesh::render(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame)
@@ -248,18 +305,20 @@ void ObjectManagerMesh::render(FrameViewWireframeRecorder& cmd, const FrameViewW
     sortChunksByBatch(collector.mainList.standaloneChunks);
 	sortChunksByBatch(collector.selectionOutlineList.standaloneChunks);
 
+	ObjectMeshBatchingStats stats;
+
 	const auto solid = (frame.frame().mode == FrameRenderMode::WireframeSolid);
 	if (solid)
 	{
-		renderChunkListStandalone(cmd.depthPrePass, collector.mainList.standaloneChunks, MaterialPass::DepthPrepass);
-		renderChunkListStandalone(cmd.mainSolid, collector.mainList.standaloneChunks, MaterialPass::WireframeSolid);
+		renderChunkListStandalone(cmd.depthPrePass, collector.mainList.standaloneChunks, MaterialPass::DepthPrepass, stats);
+		renderChunkListStandalone(cmd.mainSolid, collector.mainList.standaloneChunks, MaterialPass::WireframeSolid, stats);
 	}
 	else
 	{
-		renderChunkListStandalone(cmd.mainSolid, collector.mainList.standaloneChunks, MaterialPass::WireframePassThrough);
+		renderChunkListStandalone(cmd.mainSolid, collector.mainList.standaloneChunks, MaterialPass::WireframePassThrough, stats);
 	}			
 
-	renderChunkListStandalone(cmd.selectionOutline, collector.selectionOutlineList.standaloneChunks, MaterialPass::DepthPrepass);
+	renderChunkListStandalone(cmd.selectionOutline, collector.selectionOutlineList.standaloneChunks, MaterialPass::DepthPrepass, stats);
 }
 
 void ObjectManagerMesh::render(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame)
@@ -272,8 +331,9 @@ void ObjectManagerMesh::render(FrameViewCaptureSelectionRecorder& cmd, const Fra
 
 	sortChunksByBatch(collector.mainList.standaloneChunks);
 
-    renderChunkListStandalone(cmd.depthPrePass, collector.mainList.standaloneChunks, MaterialPass::DepthPrepass);
-    renderChunkListStandalone(cmd.mainFragments, collector.mainList.standaloneChunks, MaterialPass::SelectionFragments);
+    ObjectMeshBatchingStats stats;
+    renderChunkListStandalone(cmd.depthPrePass, collector.mainList.standaloneChunks, MaterialPass::DepthPrepass, stats);
+    renderChunkListStandalone(cmd.mainFragments, collector.mainList.standaloneChunks, MaterialPass::SelectionFragments, stats);
 }
 
 void ObjectManagerMesh::render(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame)
@@ -286,7 +346,8 @@ void ObjectManagerMesh::render(FrameViewCaptureDepthRecorder& cmd, const FrameVi
 
     sortChunksByBatch(collector.mainList.standaloneChunks);
 
-	renderChunkListStandalone(cmd.depth, collector.mainList.standaloneChunks, MaterialPass::DepthPrepass);
+    ObjectMeshBatchingStats stats;
+	renderChunkListStandalone(cmd.depth, collector.mainList.standaloneChunks, MaterialPass::DepthPrepass, stats);
 }
 
 //--
@@ -332,9 +393,11 @@ void ObjectManagerMesh::VisibleCaptureCollector::prepare(uint32_t totalChunkCoun
 
 //--
 
-void ObjectManagerMesh::collectMainViewChunks(const FrameViewSingleCamera& view, VisibleMainViewCollector& outCollector) const
+void ObjectManagerMesh::collectMainViewChunks(const FrameViewSingleCamera& view, VisibleMainViewCollector& outCollector, ObjectMeshVisibilityStats& outStats) const
 {
 	PC_SCOPE_LVL1(CollectMainView);
+
+	ScopeTimer timer;
 
     // render only chunks that we want to show in the main view
     const auto renderMask = (uint32_t)MeshChunkRenderingMaskBit::Scene;
@@ -342,6 +405,7 @@ void ObjectManagerMesh::collectMainViewChunks(const FrameViewSingleCamera& view,
 	// visit all objects
 	const auto* objects = m_localObjects.values().typedData();
     const auto* objectsEnd = objects + m_localObjects.values().size();
+	outStats.numTestedObjects += m_localObjects.values().size();
 
     // prepare culling camera
     VisibilityFrustum frustum;
@@ -358,50 +422,64 @@ void ObjectManagerMesh::collectMainViewChunks(const FrameViewSingleCamera& view,
 		if (!object.box.isInFrustum(frustum))
 			continue;
 
-		const auto lodMask = 1; // TODO: compute lod mask
+		const auto lodDistance = view.lodReferencePoint().squareDistance(object.distanceRefPoint);
+		if (lodDistance >= object.maxDistanceSquared)
+			continue;
+
+		const auto lodMask = object.data->calcDetailMask(lodDistance);
+		if (!lodMask)
+			continue;
 
         const auto selected = object.data->m_flags.test(ObjectProxyFlagBit::Selected);
+
+		outStats.numVisibleObjects += 1;
+		outStats.numTestedChunks += object.data->m_numChunks;
 
 		const auto* chunk = object.data->chunks();
 		const auto* chunkEnd = chunk + object.data->m_numChunks;
 		while (chunk < chunkEnd)
 		{
-			if (!(chunk->lodMask & lodMask))
-				continue;
-
-			/*if (!(chunk->renderMask & renderMask))
-				continue;*/
-
-			if (chunk->forwardPassType >= 0)
+			if (chunk->lodMask & lodMask)
 			{
-				auto& visChunk = outCollector.forwardLists[chunk->forwardPassType].standaloneChunks.emplaceBack();
-				visChunk.object = object.data;
-				visChunk.chunk = (const MeshChunkProxy_Standalone*)chunk->data.get();
-				visChunk.material = chunk->material;
-				visChunk.shader = chunk->shader;
-			}
+				if (chunk->forwardPassType >= 0)
+				{
+					outStats.numVisibleChunks += 1;
 
-            if (chunk->depthPassType >= 0)
-            {
-                auto& visChunk = outCollector.depthLists[chunk->depthPassType].standaloneChunks.emplaceBack();
-                visChunk.object = object.data;
-                visChunk.chunk = (const MeshChunkProxy_Standalone*)chunk->data.get();
-                visChunk.material = chunk->material;
-                visChunk.shader = chunk->shader; // TODO: allow fallback to simpler depth-only shader ?
-            }
+					auto& visChunk = outCollector.forwardLists[chunk->forwardPassType].standaloneChunks.emplaceBack();
+					visChunk.object = object.data;
+					visChunk.chunk = (const MeshChunkProxy_Standalone*)chunk->data.get();
+					visChunk.material = chunk->material;
+					visChunk.shader = chunk->shader;
+				}
 
-			if (selected && chunk->forwardPassType <= 2) // ignore transparent
-			{
-				auto& visChunk = outCollector.selectionOutlineList.standaloneChunks.emplaceBack();
-                visChunk.object = object.data;
-                visChunk.chunk = (const MeshChunkProxy_Standalone*)chunk->data.get();
-                visChunk.material = chunk->material;
-                visChunk.shader = chunk->shader;
+				if (chunk->depthPassType >= 0)
+				{
+					outStats.numVisibleChunks += 1;
+
+					auto& visChunk = outCollector.depthLists[chunk->depthPassType].standaloneChunks.emplaceBack();
+					visChunk.object = object.data;
+					visChunk.chunk = (const MeshChunkProxy_Standalone*)chunk->data.get();
+					visChunk.material = chunk->material;
+					visChunk.shader = chunk->shader; // TODO: allow fallback to simpler depth-only shader ?
+				}
+
+				if (selected && chunk->forwardPassType <= 2) // ignore transparent
+				{
+					outStats.numVisibleChunks += 1;
+
+					auto& visChunk = outCollector.selectionOutlineList.standaloneChunks.emplaceBack();
+					visChunk.object = object.data;
+					visChunk.chunk = (const MeshChunkProxy_Standalone*)chunk->data.get();
+					visChunk.material = chunk->material;
+					visChunk.shader = chunk->shader;
+				}
 			}
 
 			++chunk;
 		}
 	}
+
+	outStats.cullingTime += timer.timeElapsed();
 }
 
 void ObjectManagerMesh::collectCaptureChunks(const FrameViewSingleCamera& view, VisibleCaptureCollector& outCollector) const
@@ -430,19 +508,19 @@ void ObjectManagerMesh::collectCaptureChunks(const FrameViewSingleCamera& view, 
 		if (!object.box.isInFrustum(frustum))
 			continue;
 
-		const auto lodMask = 1; // TODO: compute lod mask
+        const auto lodDistance = view.lodReferencePoint().squareDistance(object.distanceRefPoint);
+        if (lodDistance >= object.maxDistanceSquared)
+            continue;
+
+        const auto lodMask = object.data->calcDetailMask(lodDistance);
+        if (!lodMask)
+            continue;
 
 		const auto* chunk = object.data->chunks();
 		const auto* chunkEnd = chunk + object.data->m_numChunks;
 		while (chunk < chunkEnd)
 		{
-			if (!(chunk->lodMask & lodMask))
-				continue;
-
-			/*if (!(chunk->renderMask & renderMask))
-				continue;*/
-
-			//if (chunk->forwardPassType != 2)
+			if (chunk->lodMask & lodMask)
 			{
 				auto& visChunk = outCollector.mainList.standaloneChunks.emplaceBack();
 				visChunk.object = object.data;
@@ -483,7 +561,13 @@ void ObjectManagerMesh::collectWireframeViewChunks(const FrameViewSingleCamera& 
 		if (!object.box.isInFrustum(frustum))
 			continue;
 
-		const auto lodMask = 1; // TODO: compute lod mask
+        const auto lodDistance = view.lodReferencePoint().squareDistance(object.distanceRefPoint);
+        if (lodDistance >= object.maxDistanceSquared)
+            continue;
+
+        const auto lodMask = object.data->calcDetailMask(lodDistance);
+        if (!lodMask)
+            continue;
 
 		const auto selected = object.data->m_flags.test(ObjectProxyFlagBit::Selected);
 
@@ -491,28 +575,25 @@ void ObjectManagerMesh::collectWireframeViewChunks(const FrameViewSingleCamera& 
 		const auto* chunkEnd = chunk + object.data->m_numChunks;
 		while (chunk < chunkEnd)
 		{
-			if (!(chunk->lodMask & lodMask))
-				continue;
-
-			/*if (!(chunk->renderMask & renderMask))
-				continue;*/
-
-			if (chunk->forwardPassType != 2)
+			if (chunk->lodMask & lodMask)
 			{
-				auto& visChunk = outCollector.mainList.standaloneChunks.emplaceBack();
-				visChunk.object = object.data;
-				visChunk.chunk = (const MeshChunkProxy_Standalone*)chunk->data.get();
-				visChunk.material = chunk->material;
-				visChunk.shader = chunk->shader;
+				if (chunk->forwardPassType != 2)
+				{
+					auto& visChunk = outCollector.mainList.standaloneChunks.emplaceBack();
+					visChunk.object = object.data;
+					visChunk.chunk = (const MeshChunkProxy_Standalone*)chunk->data.get();
+					visChunk.material = chunk->material;
+					visChunk.shader = chunk->shader;
 
-                if (selected)
-                {
-                    auto& visChunk = outCollector.selectionOutlineList.standaloneChunks.emplaceBack();
-                    visChunk.object = object.data;
-                    visChunk.chunk = (const MeshChunkProxy_Standalone*)chunk->data.get();
-                    visChunk.material = chunk->material;
-                    visChunk.shader = chunk->shader;
-                }
+					if (selected)
+					{
+						auto& visChunk = outCollector.selectionOutlineList.standaloneChunks.emplaceBack();
+						visChunk.object = object.data;
+						visChunk.chunk = (const MeshChunkProxy_Standalone*)chunk->data.get();
+						visChunk.material = chunk->material;
+						visChunk.shader = chunk->shader;
+					}
+				}
 			}
 
 			++chunk;
@@ -556,8 +637,10 @@ void ObjectManagerMesh::sortChunksByBatch(Array<VisibleStandaloneChunk>& chunks)
         });
 }
 
-void ObjectManagerMesh::renderChunkListStandalone(gpu::CommandWriter& cmd, const Array<VisibleStandaloneChunk>& chunks, MaterialPass pass) const
+void ObjectManagerMesh::renderChunkListStandalone(gpu::CommandWriter& cmd, const Array<VisibleStandaloneChunk>& chunks, MaterialPass pass, ObjectMeshBatchingStats& outStats) const
 {
+	ScopeTimer timer;
+
     const auto* objects = m_localObjects.values().typedData();
 
 	// last bound data
@@ -566,6 +649,7 @@ void ObjectManagerMesh::renderChunkListStandalone(gpu::CommandWriter& cmd, const
     const MeshChunkProxy_Standalone* lastBoundChunk = nullptr;
 	const gpu::GraphicsPipelineObject* lastMaterialPSO = nullptr;
 	MeshVertexFormat lastBoundVertexFormat = MeshVertexFormat::MAX;
+	uint32_t lastStaticSwitches = 0;
 
 	// render chunks
 	const auto* chunk = chunks.typedData();
@@ -605,6 +689,7 @@ void ObjectManagerMesh::renderChunkListStandalone(gpu::CommandWriter& cmd, const
 		{
 			startChunk->chunk->bind(cmd);
 			lastBoundChunk = startChunk->chunk;
+			outStats.numGeometryChanges += 1;
 
 			if (lastBoundVertexFormat != lastBoundChunk->format())
 			{
@@ -614,24 +699,43 @@ void ObjectManagerMesh::renderChunkListStandalone(gpu::CommandWriter& cmd, const
 		}
 
 		// bind material parameters
+		bool forceRebindMaterial = false;
 		if (lastBoundMaterial != startChunk->material)
 		{
-			startChunk->material->bind(cmd);
+			uint32_t staticSwitchMask = 0;
+
+			outStats.numMaterialChanges += 1;
+			startChunk->material->bind(cmd, staticSwitchMask);
 			lastBoundMaterial = startChunk->material;
+
+			if (lastStaticSwitches != staticSwitchMask)
+			{
+				outStats.numShaderVariantChanges += 1;
+				lastStaticSwitches = staticSwitchMask;
+				forceRebindMaterial = true;
+			}
 		}
 
 		// select material technique
-		if (lastBoundShader != startChunk->shader)
+		if (lastBoundShader != startChunk->shader || forceRebindMaterial)
 		{
 			MaterialCompilationSetup setup;
 			setup.bindlessTextures = false;
 			setup.meshletsVertices = false;
 			setup.vertexFormat = lastBoundVertexFormat;
+			setup.staticSwitches = lastStaticSwitches;
 			setup.pass = pass;
 			setup.msaa = false;
 
 			if (auto technique = startChunk->shader->fetchTechnique(setup))
-				lastMaterialPSO = technique->pso();
+			{
+				auto* pso = technique->pso();
+				if (pso != lastMaterialPSO)
+				{
+					outStats.numShaderChanges += 1;
+					lastMaterialPSO = pso;
+				}
+			}
 
 			lastBoundShader = startChunk->shader;
 		}
@@ -648,8 +752,14 @@ void ObjectManagerMesh::renderChunkListStandalone(gpu::CommandWriter& cmd, const
 		{
 			const auto numInstances = (uint32_t)(chunk - startChunk);
 			lastBoundChunk->draw(lastMaterialPSO, cmd, numInstances);
+			outStats.numBatches += 1;
+			outStats.numInstances += numInstances;
+			outStats.numTriangles += lastBoundChunk->indexCount() / 3;
 		}
 	}
+
+	outStats.numExecutions += 1;
+	outStats.recordingTime += timer.timeElapsed();
 }
 
 void ObjectManagerMesh::handleMaterialProxyChanges(const MaterialDataProxyChangesRegistry& changedProxies)
@@ -679,9 +789,13 @@ void ObjectManagerMesh::attachProxy(ObjectProxyMeshPtr meshProxy)
 		DEBUG_CHECK_RETURN_EX(meshProxy, "No mesh proxy");
 		DEBUG_CHECK_RETURN_EX(!m_localObjects.contains(meshProxy), "Proxy already registered");
 
+		const auto box = meshProxy->m_localToWorld.transformBox(meshProxy->m_localBox);
+
 		LocalObject obj;
-		obj.box.setup(meshProxy->m_localToWorld.transformBox(meshProxy->m_localBox));
+		obj.box.setup(box);
 		obj.data = meshProxy;
+		obj.distanceRefPoint = box.center();
+		obj.maxDistanceSquared = meshProxy->visibilityDistanceSquared();
 
 		m_localObjects[meshProxy] = obj;
 		});
@@ -704,7 +818,9 @@ void ObjectManagerMesh::moveProxy(ObjectProxyMeshPtr meshProxy, Matrix localToWo
 		DEBUG_CHECK_RETURN_EX(localObject != nullptr, "Proxy not registered");
 
 		const auto* proxy = localObject->data.get();
-		localObject->box.setup(proxy->m_localToWorld.transformBox(proxy->m_localBox));
+		const auto box = proxy->m_localToWorld.transformBox(proxy->m_localBox);
+		localObject->box.setup(box);
+		localObject->distanceRefPoint = box.center();
 		});
 }
 

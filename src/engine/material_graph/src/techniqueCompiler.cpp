@@ -34,18 +34,15 @@ ConfigProperty<StringBuf> cvDumpCompiledMaterailTechniquesPath("Rendering.Materi
 
 //--
 
-static const MaterialDataLayout* CompileDataLayout(const MaterialGraphContainer& graph)
+static const MaterialDataLayout* CompileDataLayout(const Array<MaterialTemplateParamInfo>& params)
 {
     Array<MaterialDataLayoutEntry> layoutEntries;
 
-    for (const auto& param : graph.parameters())
+    for (const auto& param : params)
     {
-        if (param->name() && param->dataType())
-        {
-            auto& entry = layoutEntries.emplaceBack();
-            entry.name = param->name();
-            entry.type = param->parameterType();
-        }
+        auto& entry = layoutEntries.emplaceBack();
+        entry.name = param.name;
+        entry.type = param.parameterType;
     }
 
     // TODO: optimize layout/order
@@ -119,7 +116,7 @@ static void GatherDefinesForCompilationSetup(const MaterialCompilationSetup& set
 
 //--
 
-MaterialCompiledTechnique* CompileTechnique(const StringBuf& materialGraphPath, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup)
+MaterialCompiledTechnique* CompileTechnique(const StringBuf& materialGraphPath, const Array<MaterialTemplateParamInfo>& params, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup)
 {
     ScopeTimer timer;
 
@@ -142,7 +139,7 @@ MaterialCompiledTechnique* CompileTechnique(const StringBuf& materialGraphPath, 
 
     // Determine the data layout of the material parameters - this is something that must match between template and and an instance
     // In here we need this layout to print the material descriptor and/or generate material attribute fetch code
-    const auto* dataLayout = CompileDataLayout(*graph);
+    const auto* dataLayout = CompileDataLayout(params);
 
     // create the compiler regardless of the result - if anything we will generate an "error" material
     MaterialTechniqueRenderStates renderStates;
@@ -190,9 +187,10 @@ MaterialCompiledTechnique* CompileTechnique(const StringBuf& materialGraphPath, 
 
 //--
 
-MaterialTechniqueCompiler::MaterialTechniqueCompiler(const StringBuf& contextName, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup, MaterialTechniquePtr& outputTechnique)
+MaterialTechniqueCompiler::MaterialTechniqueCompiler(const StringBuf& contextName, const Array<MaterialTemplateParamInfo>& params, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup, MaterialTechniquePtr& outputTechnique)
     : m_setup(setup)
     , m_graph(graph)
+    , m_params(params)
     , m_technique(outputTechnique)
     , m_contextName(contextName)
 {}
@@ -200,7 +198,7 @@ MaterialTechniqueCompiler::MaterialTechniqueCompiler(const StringBuf& contextNam
 bool MaterialTechniqueCompiler::compile()
 {
     // compile technique
-    auto* compiledTechnique = CompileTechnique(m_contextName, m_graph, m_setup);
+    auto* compiledTechnique = CompileTechnique(m_contextName, m_params, m_graph, m_setup);
     DEBUG_CHECK_RETURN_EX_V(compiledTechnique && compiledTechnique->shader, "Failed to compile material technique", false);
 
     // push new state to target technique, from now one this will be used for rendering

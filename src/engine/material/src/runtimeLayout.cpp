@@ -7,6 +7,7 @@
 ***/
 
 #include "build.h"
+#include "material.h"
 #include "runtimeLayout.h"
 
 BEGIN_BOOMER_NAMESPACE()
@@ -24,12 +25,48 @@ RTTI_END_TYPE();
 
 ///---
 
+#pragma optimize ("", off)
+
 MaterialDataLayout::MaterialDataLayout(MaterialDataLayoutID id, Array<MaterialDataLayoutEntry>&& entries)
     : m_entries(std::move(entries))
     , m_id(id)
 {
 	BuildDescriptorLayout(m_entries, m_discreteDataLayout);
 	BuildBindlessLayout(m_entries, m_bindlessDataLayout);
+	BuildStaticSwitches(m_entries, m_staticSwitches);
+}
+
+uint32_t MaterialDataLayout::queryStaticSwitchMask(StringID switchName) const
+{
+    uint32_t mask = 1;
+	for (const auto& test : m_staticSwitches)
+	{
+		if (test == switchName)
+			return mask;
+		mask <<= 1;
+	}
+
+	return 0;
+}
+
+uint32_t MaterialDataLayout::compileStaticSwitchMask(const IMaterial& source) const
+{
+	uint32_t ret = 0;
+
+	uint32_t mask = 1;
+	for (const auto& switchName : m_staticSwitches)
+	{
+		bool value = false;
+		if (source.readParameterTyped(switchName, value))
+		{
+			if (value)
+				ret |= mask;
+		}
+
+		mask <<= 1;
+	}
+
+	return ret;
 }
 
 void MaterialDataLayout::BuildDescriptorLayout(const Array<MaterialDataLayoutEntry>& entries, MaterialDataLayoutDescriptor& outLayout)
@@ -50,6 +87,12 @@ void MaterialDataLayout::BuildDescriptorLayout(const Array<MaterialDataLayoutEnt
         uint32_t dataAlign = 4;
         switch (entry.type)
         {
+			case MaterialDataLayoutParameterType::StaticBool:
+			{
+				dataSize = 0; // not part of constant buffer
+				break;
+			}
+
             case MaterialDataLayoutParameterType::Float:
             {
                 dataSize = 4;
@@ -141,6 +184,12 @@ void MaterialDataLayout::BuildBindlessLayout(const Array<MaterialDataLayoutEntry
 		uint32_t dataAlign = 4;
 		switch (entry.type)
 		{
+			case MaterialDataLayoutParameterType::StaticBool:
+			{
+				dataSize = 0; // not part of constant buffer
+				break;
+			}
+
 			case MaterialDataLayoutParameterType::Float:
 			{
 				dataSize = 4;
@@ -188,6 +237,18 @@ void MaterialDataLayout::BuildBindlessLayout(const Array<MaterialDataLayoutEntry
 			outLayout.constantDataSize = descEntry.dataOffset + descEntry.dataSize;
 		}
 	}
+}
+
+void MaterialDataLayout::BuildStaticSwitches(const Array<MaterialDataLayoutEntry>& entries, Array<StringID>& outSwitches)
+{
+	for (const auto& param : entries)
+		if (param.type == MaterialDataLayoutParameterType::StaticBool)
+			outSwitches.pushBack(param.name);
+
+	std::sort(outSwitches.begin(), outSwitches.end(), [](const auto a, const auto b)
+		{
+			return a.view() < b.view();
+		});
 }
 
 ///---

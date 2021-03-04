@@ -102,23 +102,39 @@ void ComboBox::clearOptions()
     m_text->text(StringBuf::EMPTY());
 }
 
-void ComboBox::addOption(const StringBuf& txt)
+int ComboBox::addOption(const StringBuf& txt)
 {
     m_options.pushBack(txt);
+    return m_options.lastValidIndex();
 }
 
-void ComboBox::selectOption(int option)
+void ComboBox::selectOption(int option, bool postEvent)
 {
     m_selectedOption = std::clamp(option, -1, (int)m_options.size() - 1);
     if (m_selectedOption >= 0 && m_selectedOption < (int)m_options.size())
         m_text->text(m_options[m_selectedOption]);
+    else
+        m_text->text("");
+
+    if (postEvent)
+        call(EVENT_COMBO_SELECTED, m_selectedOption);
 }
 
-void ComboBox::selectOption(StringView text)
+void ComboBox::selectOption(StringView text, bool postEvent)
 {
     auto index = m_options.find(text);
     if (index != INDEX_NONE)
-        selectOption(index);
+    {
+        selectOption(index, false);
+    }
+    else
+    {
+        m_selectedOption = INDEX_NONE;
+        m_text->text(text);
+    }
+
+    if (postEvent)
+        call(EVENT_COMBO_SELECTED, m_selectedOption);
 }
 
 bool ComboBox::removeOption(int option)
@@ -153,11 +169,9 @@ int ComboBox::selectedOption() const
     return m_selectedOption;
 }
 
-StringBuf ComboBox::selectedOptionText() const
+StringBuf ComboBox::text() const
 {
-    if (m_selectedOption < 0 || m_selectedOption > m_options.lastValidIndex())
-        return StringBuf::EMPTY();
-    return m_options[m_selectedOption];
+    return m_text->text();
 }
 
 int ComboBox::numOptions() const

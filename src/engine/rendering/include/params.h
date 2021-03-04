@@ -209,19 +209,6 @@ struct ENGINE_RENDERING_API FrameParams_ColorGrading
 
 //---
 
-/// collected scenes to render
-struct ENGINE_RENDERING_API FrameParams_Scenes
-{
-	// NOTE: all scenes use the same camera setup
-
-	Scene* backgroundScenePtr = nullptr; // rendered after main scene's opaque objects but before transparencies
-    Scene* mainScenePtr = nullptr; // main scene
-
-    FrameParams_Scenes();
-};
-
-//---
-
 /// collected debug geometry to render
 struct ENGINE_RENDERING_API FrameParams_DebugGeometry
 {
@@ -291,7 +278,6 @@ struct ENGINE_RENDERING_API FrameParams : public NoCopy
     FrameParams_Resolution resolution;
     FrameParams_Capture capture;
     FrameParams_GlobalLighting globalLighting;
-    FrameParams_Scenes scenes;
     FrameParams_DebugGeometry geometry;
     FrameParams_DebugData debug;
     FrameParams_ToneMapping toneMapping;

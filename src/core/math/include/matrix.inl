@@ -117,6 +117,59 @@ INLINE Matrix::Matrix(const Vector4& x, const Vector4& y, const Vector4& z, cons
     m[3][3] = w.w;
 }
 
+INLINE Matrix::Matrix(const float* data)
+{
+    memcpy(this, data, sizeof(Matrix));
+}
+
+INLINE Matrix::Matrix(const double* data)
+{
+    auto* writePtr = (float*)this;
+    const auto* endPtr = data + 16;
+    while (data < endPtr)
+        *writePtr++ = (float)*data++;
+}
+
+INLINE Matrix::Matrix(ETransposedFlag, const float* data)
+{
+    m[0][0] = *data++;
+    m[1][0] = *data++;
+    m[2][0] = *data++;
+    m[3][0] = *data++;
+    m[0][1] = *data++;
+    m[1][1] = *data++;
+    m[2][1] = *data++;
+    m[3][1] = *data++;
+    m[0][2] = *data++;
+    m[1][2] = *data++;
+    m[2][2] = *data++;
+    m[3][2] = *data++;
+    m[0][3] = *data++;
+    m[1][3] = *data++;
+    m[2][3] = *data++;
+    m[3][3] = *data++;
+}
+
+INLINE Matrix::Matrix(ETransposedFlag, const double* data)
+{
+    m[0][0] = (float)*data++;
+    m[1][0] = (float)*data++;
+    m[2][0] = (float)*data++;
+    m[3][0] = (float)*data++;
+    m[0][1] = (float)*data++;
+    m[1][1] = (float)*data++;
+    m[2][1] = (float)*data++;
+    m[3][1] = (float)*data++;
+    m[0][2] = (float)*data++;
+    m[1][2] = (float)*data++;
+    m[2][2] = (float)*data++;
+    m[3][2] = (float)*data++;
+    m[0][3] = (float)*data++;
+    m[1][3] = (float)*data++;
+    m[2][3] = (float)*data++;
+    m[3][3] = (float)*data++;
+}
+
 INLINE void Matrix::zero()
 {
     memzero(&m[0][0], sizeof(m));

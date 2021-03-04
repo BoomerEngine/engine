@@ -40,42 +40,10 @@ public:
     /// NOTE: may be null for VERY broken materials
     virtual const MaterialTemplate* resolveTemplate() const = 0;
 
-    //! check if parameter value differs from the base value (whatever that base seems to be)
-    //! NOTE: for material templates this always returns false as, by definition, all template values are non-overridable
-    virtual bool checkParameterOverride(StringID name) const = 0;
-
-    //! reset parameter to default value
-    virtual bool resetParameter(StringID name) = 0;
-
-    //! write value of material parameter
-    //! NOTE: data buffer must match the type of the param
-    virtual bool writeParameter(StringID name, const void* data, Type type, bool refresh = true) = 0;
-
     //! read current value of parameter
     virtual bool readParameter(StringID name, void* data, Type type) const = 0;
 
-    //! read base value of parameter, NOTE: the value is read only if the type matches our own definition of the same parameter
-    //! NOTE: for material templates this reads the the same value as readParameter
-    virtual bool readBaseParameter(StringID name, void* data, Type type) const = 0;
-
-    //--
-
-    // raw interface - find (recursively) the pointer to parameter data holder, IF IT EXISTS
-    // NOTE: this checks in the base material as well
-    virtual const void* findParameterDataInternal(StringID name, Type& dataType) const = 0;
-
-    // raw interface - find (recursively) the pointer to parameter data holder, IF IT EXISTS
-    virtual const void* findBaseParameterDataInternal(StringID name, Type& dataType) const = 0;
-
-    ///---
-
-    template< typename T >
-    INLINE bool writeParameterTyped(StringID name, const T& data, bool refresh = true)
-    {
-        static_assert(!std::is_pointer<T>::value, "Pointer type is unexpected here");
-        static_assert(!std::is_same<T, Variant>::value, "Variant should not be used here, use the real value or use the writeParameter");
-        return writeParameter(name, &data, reflection::GetTypeObject<T>(), refresh);
-    }
+    //----
 
     template< typename T >
     INLINE bool readParameterTyped(StringID name, T& data) const

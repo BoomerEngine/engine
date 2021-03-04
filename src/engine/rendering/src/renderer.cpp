@@ -73,33 +73,18 @@ FrameHelper::~FrameHelper()
 
 //--
 
-FrameRenderer::FrameRenderer(const FrameParams& frame, const FrameCompositionTarget& target, const FrameResources& resources, const FrameHelper& helpers)
+FrameRenderer::FrameRenderer(const FrameParams& frame, const FrameCompositionTarget& target, const FrameResources& resources, const FrameHelper& helpers, const Scene* scene)
     : m_frame(frame)
     , m_resources(resources)
 	, m_helpers(helpers)
 	, m_target(target)
     , m_allocator(POOL_RENDERING_FRAME)
+    , m_scene(scene)
 {
-    // lock scenes
-    {
-        PC_SCOPE_LVL1(LockScenes);
-        if (m_frame.scenes.backgroundScenePtr)
-            m_frame.scenes.backgroundScenePtr->renderLock();
-        if (m_frame.scenes.mainScenePtr)
-            m_frame.scenes.mainScenePtr->renderLock();
-    }
 }
 
 FrameRenderer::~FrameRenderer()
 {
-    // unlock all scenes
-    {
-        PC_SCOPE_LVL1(UnlockScenes);
-        if (m_frame.scenes.backgroundScenePtr)
-            m_frame.scenes.backgroundScenePtr->renderUnlock();
-        if (m_frame.scenes.mainScenePtr)
-            m_frame.scenes.mainScenePtr->renderUnlock();
-    }
 }
 
 bool FrameRenderer::usesMultisamping() const
@@ -117,7 +102,7 @@ void FrameRenderer::bindFrameParameters(gpu::CommandWriter& cmd) const
     cmd.opBindDescriptor("FrameParams"_id, desc);
 }
 
-void FrameRenderer::prepareFrame(gpu::CommandWriter& cmd)
+void FrameRenderer::prepare(gpu::CommandWriter& cmd)
 {
     gpu::CommandWriterBlock block(cmd, "PrepareFrame");
 
@@ -129,20 +114,10 @@ void FrameRenderer::prepareFrame(gpu::CommandWriter& cmd)
 
     // bind global frame params
     bindFrameParameters(cmd);
-
-    /*// prepare background
-    if (frame().scenes.backgroundScenePtr)
-        frame().scenes.backgroundScenePtr->prepare(cmd, *this);*/
-
-    // prepare main scene
-    if (frame().scenes.mainScenePtr)
-        frame().scenes.mainScenePtr->prepare(cmd, *this);
 }
 
-void FrameRenderer::finishFrame()
+void FrameRenderer::finish(gpu::CommandWriter& cmd, FrameStats& outStats)
 {
-    /*for (auto& scene : m_scenes)
-        m_mergedSceneStats.merge(scene.stats);*/
 }
 
 //--

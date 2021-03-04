@@ -34,8 +34,42 @@ struct ObjectProxyMeshChunk
 
 struct ObjectProxyMeshLOD
 {
-    float minDistance = 0.0f;
-    float maxDistance = 0.0f;
+    float minDistanceSquared = 0.0f;
+    float maxDistanceSquared = 0.0f;
+};
+
+struct ObjectMeshBatchingStats
+{
+    uint32_t numTriangles = 0;
+    uint32_t numShaderChanges = 0;
+    uint32_t numShaderVariantChanges = 0;
+    uint32_t numMaterialChanges = 0;
+    uint32_t numGeometryChanges = 0;
+    uint32_t numInstances = 0;
+    uint32_t numBatches = 0;
+    uint32_t numExecutions = 0;
+    double recordingTime = 0.0;
+};
+
+struct ObjectMeshVisibilityStats
+{
+    uint32_t numTestedObjects = 0;
+    uint32_t numVisibleObjects = 0;
+    uint32_t numTestedChunks = 0;
+    uint32_t numVisibleChunks = 0;
+    double cullingTime = 0.0;
+};
+
+struct ObjectMeshTotalStats
+{
+    ObjectMeshVisibilityStats mainVisibility;
+    ObjectMeshVisibilityStats globalShadowsVisibility;
+
+    ObjectMeshBatchingStats depthBatching;
+    ObjectMeshBatchingStats mainBatching;
+    ObjectMeshBatchingStats globalShadowsBatching;
+    ObjectMeshBatchingStats localShadowsBatching;
+    double totalTime = 0.0;
 };
 
 class ENGINE_RENDERING_API ObjectProxyMesh : public IObjectProxy
@@ -89,6 +123,14 @@ public:
 
     // compile a mesh proxy from given setup
     static ObjectProxyMeshPtr Compile(const Setup& setup);
+
+    //--
+
+    // get total visibility distance
+    float visibilityDistanceSquared() const;
+
+    // determine LOD mask for given squared distance
+    uint32_t calcDetailMask(float distanceSquared) const;
 };
 
 ///--
@@ -108,6 +150,8 @@ public:
 	virtual void shutdown() override final;
 
 	virtual void prepare(gpu::CommandWriter& cmd, gpu::IDevice* dev, const FrameRenderer& frame) override final;
+    virtual void finish(gpu::CommandWriter& cmd, gpu::IDevice* dev, const FrameRenderer& frame, FrameStats& outStats) override final;
+
 	virtual void render(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame) override final;
 	virtual void render(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame) override final;
 	virtual void render(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame) override final;
@@ -127,6 +171,8 @@ public:
 
 	//--
 
+    INLINE const ObjectMeshTotalStats& stats() const { return m_lastStats; }
+
 private:
     struct GPUObjectInfo
 	{
@@ -144,6 +190,8 @@ private:
 	struct LocalObject
 	{
 		VisibilityBox box;
+        Vector3 distanceRefPoint;
+        float maxDistanceSquared = 0.0f;
         //uint16_t chunkCount = 0;
 		ObjectProxyMeshPtr data = nullptr;
 	};
@@ -198,14 +246,22 @@ private:
 	VisibleWireframeViewCollector m_cacheViewWireframe;
 	VisibleCaptureCollector m_cacheCaptureView;
 
+    SpinLock m_statLock;
+    ObjectMeshTotalStats m_lastStats;
+    ObjectMeshTotalStats m_stats;
+
 	//--
 
-	void collectMainViewChunks(const FrameViewSingleCamera& view, VisibleMainViewCollector& outCollector) const;
+	void collectMainViewChunks(const FrameViewSingleCamera& view, VisibleMainViewCollector& outCollector, ObjectMeshVisibilityStats& outStats) const;
 	void collectWireframeViewChunks(const FrameViewSingleCamera& view, VisibleWireframeViewCollector& outCollector) const;
 	void collectCaptureChunks(const FrameViewSingleCamera& view, VisibleCaptureCollector& outCollector) const;
-	void renderChunkListStandalone(gpu::CommandWriter& cmd, const Array<VisibleStandaloneChunk>& chunks, MaterialPass pass) const;
+
+	void renderChunkListStandalone(gpu::CommandWriter& cmd, const Array<VisibleStandaloneChunk>& chunks, MaterialPass pass, ObjectMeshBatchingStats& outStats) const;
 
 	void sortChunksByBatch(Array<VisibleStandaloneChunk>& chunks) const;
+
+    void exportStats(const ObjectMeshBatchingStats& stats, FrameViewStats& outStats) const;
+    void exportStats(const ObjectMeshVisibilityStats& stats, FrameViewStats& outStats) const;
 
 	//--
 };

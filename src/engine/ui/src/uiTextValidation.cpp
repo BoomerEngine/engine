@@ -32,18 +32,54 @@ TInputValidationFunction MakeCustomValidationFunction(StringView validChars)
 
 //--
 
+bool ValidateIdentifier(StringView name)
+{
+    if (name.empty())
+        return false;
+
+    static const auto validCharCodes = UTF16StringVector("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_");
+    static const auto validCharCodesFirst = UTF16StringVector("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_");
+
+    bool firstChar = true;
+
+    for (utf8::CharIterator it(name); it; ++it)
+    {
+        const auto& charSet = firstChar ? validCharCodesFirst : validCharCodes;
+        if (charSet.view().findFirstChar(*it) == -1)
+            return false;
+
+        firstChar = false;
+    }
+
+    return true;
+}
+
 TInputValidationFunction MakeAlphaNumValidationFunction(StringView additionalChars /*= ""*/)
 {
     auto validCharCodes = UTF16StringVector("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_");
+    auto validCharCodesFirst = UTF16StringVector("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_");
 
     if (additionalChars)
-        validCharCodes += UTF16StringVector(additionalChars);
-
-    return [validCharCodes](StringView text)
     {
+        validCharCodes += UTF16StringVector(additionalChars);
+        validCharCodesFirst += UTF16StringVector(additionalChars);
+    }
+
+    return [validCharCodes, validCharCodesFirst](StringView text)
+    {
+        if (text.empty())
+            return false;
+
+        bool firstChar = true;
         for (utf8::CharIterator it(text); it; ++it)
-            if (validCharCodes.view().findFirstChar(*it) == -1)
+        {
+            const auto& charSet = firstChar ? validCharCodesFirst : validCharCodes;
+            if (charSet.view().findFirstChar(*it) == -1)
                 return false;
+
+            firstChar = false;
+        }
+
         return true;
     };
 }

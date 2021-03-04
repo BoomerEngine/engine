@@ -26,6 +26,23 @@ BEGIN_BOOMER_NAMESPACE_EX(rendering)
 
 //--
 
+uint32_t FrameCompositionTarget::width() const
+{
+    return targetRect.width();
+}
+
+uint32_t FrameCompositionTarget::height() const
+{
+    return targetRect.height();
+}
+
+float FrameCompositionTarget::aspectRatio() const
+{
+    return width() / std::max<float>(1.0f, (float)height());
+}
+
+//--
+
 RTTI_BEGIN_TYPE_CLASS(FrameRenderingService);
     RTTI_METADATA(app::DependsOnServiceMetadata).dependsOn<res::LoadingService>();
     RTTI_METADATA(app::DependsOnServiceMetadata).dependsOn<DeviceService>();
@@ -72,23 +89,36 @@ void FrameRenderingService::onSyncUpdate()
 
 }
 
-gpu::CommandBuffer* FrameRenderingService::renderFrame(const FrameParams& frame, const FrameCompositionTarget& targetView, FrameStats* outFrameStats, SceneStats* outMergedStateStats)
+gpu::CommandBuffer* FrameRenderingService::render(const FrameParams& frame, const FrameCompositionTarget& targetView, Scene* scene, FrameStats& outStats)
 {
     PC_SCOPE_LVL0(RenderFrame);
+
+    ScopeTimer timer;
 
     // adjust surfaces to support the requires resolution
     const auto requiredWidth = frame.resolution.width;
     const auto requiredHeight = frame.resolution.height;
 	m_sharedResources->adjust(requiredWidth, requiredHeight);
 
+    // lock scene for rendering
+    if (scene)
+        scene->renderLock();
+
 	// rendering block
-	gpu::CommandWriter cmd("RenderFrame");
+    {
+        gpu::CommandWriter cmd("RenderFrame");
 
-	{
-		FrameRenderer renderer(frame, targetView, *m_sharedResources, *m_sharedHelpers);
+        // create frame renderer
+        FrameRenderer renderer(frame, targetView, *m_sharedResources, *m_sharedHelpers, scene);
 
-        renderer.prepareFrame(cmd);
+        // prepare renderer
+        renderer.prepare(cmd);
 
+        // prepare scene for rendering
+        if (scene)
+            scene->prepare(cmd, renderer);
+
+        //  render scene
         if (frame.capture.mode == FrameCaptureMode::SelectionRect)
         {
             FrameViewCaptureSelection::Setup setup;
@@ -134,42 +164,21 @@ gpu::CommandBuffer* FrameRenderingService::renderFrame(const FrameParams& frame,
             view.render(cmd);
         }
 
-        {
-            /*// render main camera view
-                    
+        // finish scene frame
+        if (scene)
+            scene->finish(cmd, renderer, outStats);
 
-            // post process the result
-            FinalCopy(cmd, view.width(), view.height(), m_surfaceCache->m_sceneFullColorRT, targetWidth, targetHeight, targetView, 1.0f / 2.2f);
+        // finish renderer frame
+        renderer.finish(cmd, outStats);
 
-            // regardless of the rendering mode draw the depth buffer with selected fragments so we can compose a selection outline
-            if (frame.filters & FilterBit::PostProcesses_SelectionHighlight || frame.filters & FilterBit::PostProcesses_SelectionOutline)
-            {
-                gpu::CommandWriter localCmd(cmd.opCreateChildCommandBuffer(), "SelectionOutline");
-
-                BindSingleCamera(localCmd, frame.camera.camera);
-
-                const auto selectionDepthBufferRT = renderer.surfaces().m_sceneSelectionDepthRT;
-                RenderDepthSelection(localCmd, view, selectionDepthBufferRT);
-
-                VisualizeSelectionOutline(localCmd, view.width(), view.height(), targetView, m_surfaceCache->m_sceneFullDepthRT, m_surfaceCache->m_sceneSelectionDepthRT, frame.selectionOutline);
-            }*/
-
-            // draw overlay fragments
-            //RenderOverlay(cmd, view, targetView);
-        }
-
-        renderer.finishFrame();
-
-        if (outFrameStats)
-            outFrameStats->merge(renderer.frameStats());
-
-        if (outMergedStateStats)
-            outMergedStateStats->merge(renderer.scenesStats());
+        // export command buffer
+        outStats.totals.merge(outStats.depthView);
+        outStats.totals.merge(outStats.mainView);
+        outStats.totals.merge(outStats.globalShadowView);
+        outStats.totals.merge(outStats.localShadowView);
+        outStats.totalTime = timer.timeElapsed();
+        return cmd.release();
     }
-
-			
-
-	return cmd.release();
 }
 
 //--

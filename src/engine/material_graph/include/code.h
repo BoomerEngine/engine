@@ -363,6 +363,12 @@ public:
     // find parameter entry
     const MaterialDataLayoutEntry* findParamEntry(StringID entry) const;
 
+    // check static switch value
+    bool evalStaticSwitch(StringID name) const;
+
+    // check if static switch is defined at all (not it's value)
+    bool hasStaticSwitch(StringID name) const;
+
     //--
 
     // request global include to be added to the file

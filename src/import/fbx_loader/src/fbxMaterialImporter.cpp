@@ -9,7 +9,6 @@
 #include "build.h"
 
 #include "fbxMaterialImporter.h"
-#include "fbxFileLoaderService.h"
 #include "fbxFileData.h"
 
 #include "engine/material/include/materialInstance.h"
@@ -34,7 +33,7 @@ FBXMaterialImportConfig::FBXMaterialImportConfig()
 void FBXMaterialImportConfig::computeConfigurationKey(CRC64& crc) const
 {
     TBaseClass::computeConfigurationKey(crc);
-    crc << m_materialName.view();        
+    crc << m_materialName.view();
 }
 
 //--
@@ -80,60 +79,37 @@ RTTI_END_TYPE();
 
 //--
 
-static bool TryReadTexturePath(const FbxSurfaceMaterial& material, const char* propertyName, GeneralMaterialTextrureInfo& outTexture)
+static bool TryReadString(const ofbx::DataView path, StringBuf& outString)
 {
-    auto prop = material.FindProperty(propertyName, false);
-    if (!prop.IsValid())
-        return false;
-
-    if (auto numLayeredTextures = prop.GetSrcObjectCount<FbxLayeredTexture>())
+    const auto txt = StringView((const char*)path.begin, (const char*)path.end);
+    if (!txt.empty())
     {
-        for (int j = 0; j < numLayeredTextures; j++)
-        {
-            FbxLayeredTexture* layered_texture = FbxCast<FbxLayeredTexture>(prop.GetSrcObject<FbxLayeredTexture>(j));
-            int lcount = layered_texture->GetSrcObjectCount<FbxTexture>();
-            for (int k = 0; k < lcount; k++)
-            {
-                if (auto* lTex = FbxCast<FbxFileTexture>(layered_texture->GetSrcObject<FbxTexture>(k)))
-                {
-                    if (lTex->GetFileName() && lTex->GetFileName()[0])
-                    {
-                        TRACE_INFO("Found texture '{}' (FbxLayeredTexture[{}][{}]) at property '{}' in material '{}'", lTex->GetFileName(), j, k, propertyName, material.GetName());
-
-                        auto uOffset = lTex->GetTranslationU();
-                        auto vOffset = lTex->GetTranslationV();
-                        auto uScale = lTex->GetScaleU();
-                        auto vScale = lTex->GetScaleV();
-                        TRACE_INFO("UV setup for '{}': Offset: [{},{}], Scale: [{},{}]", lTex->GetFileName(), uOffset, vOffset, uScale, vScale);
-
-                        outTexture.path = StringBuf(lTex->GetFileName());
-                        return true;
-                    }
-                }
-            }
-        }
+        outString = StringBuf(txt);
+        return true;
     }
 
-    if (auto numTextures = prop.GetSrcObjectCount<FbxTexture>())
+    return false;    
+}
+
+static bool TryReadTexturePath(const ofbx::Material* material, ofbx::Texture::TextureType textureType, GeneralMaterialTextrureInfo& outTexture)
+{
+    if (const auto* texture = material->getTexture(textureType))
     {
-        for (int j = 0; j < numTextures; ++j)
+        TRACE_INFO("Found texture '{}' in material '{}'", texture->name, material->name);
+
+        StringBuf path;
+        if (TryReadString(texture->getFileName(), path))
         {
-            if (auto lTex = prop.GetSrcObject<FbxFileTexture>(j))
-            {
-                if (lTex->GetFileName() && lTex->GetFileName()[0])
-                {
-                    TRACE_INFO("Found texture '{}' (FbxTexture[{}]) at property '{}' in material '{}'", lTex->GetFileName(), j, propertyName, material.GetName());
+            TRACE_INFO("Texture path for '{}': '{}'", texture->name, path);
+            outTexture.path = path;
+            return true;
+        }
 
-                    auto uOffset = lTex->GetTranslationU();
-                    auto vOffset = lTex->GetTranslationV();
-                    auto uScale = lTex->GetScaleU();
-                    auto vScale = lTex->GetScaleV();
-                    TRACE_INFO("UV setup for '{}': Offset: [{},{}], Scale: [{},{}]", lTex->GetFileName(), uOffset, vOffset, uScale, vScale);
-
-                    outTexture.path = StringBuf(lTex->GetFileName());
-                    return true;
-                }
-            }
+        if (TryReadString(texture->getRelativeFileName(), path))
+        {
+            TRACE_INFO("Texture path for '{}': '{}'", texture->name, path);
+            outTexture.path = path;
+            return true;
         }
     }
 
@@ -166,7 +142,7 @@ res::ResourcePtr MaterialImporter::importResource(res::IResourceImporterInterfac
     auto config = importer.queryConfigration<FBXMaterialImportConfig>();
 
     // find material to import
-    const FbxSurfaceMaterial* material = importedScene->materials()[0];
+    const auto* material = importedScene->materials()[0];
     if (config->m_materialName)
     {
         material = importedScene->findMaterial(config->m_materialName);
@@ -183,20 +159,18 @@ res::ResourcePtr MaterialImporter::importResource(res::IResourceImporterInterfac
     GeneralMaterialInfo info;
 
     // lighting mode
-    {
-        auto shadingModel = material->ShadingModel.Get();
-        TRACE_INFO("Material '{}' uses shading model '{}'", material->GetName(), shadingModel.Buffer());
-        if (shadingModel == "Unlit" || shadingModel == "unlit" || shadingModel == "flat")
-            info.forceUnlit = true;
-        else
-            info.forceUnlit = false;
-    }
+    if (StringView(material->name).endsWithNoCase("unlit"))
+        info.forceUnlit = true;
+    else
+        info.forceUnlit = false;
 
     // load properties
-    TryReadTexturePath(*material, "DiffuseColor", info.textures[GeneralMaterialTextureType_Diffuse]);
-    TryReadTexturePath(*material, "NormalMap", info.textures[GeneralMaterialTextureType_Normal]);
-    TryReadTexturePath(*material, "SpecularColor", info.textures[GeneralMaterialTextureType_Specularity]);
-    TryReadTexturePath(*material, "EmissiveColor", info.textures[GeneralMaterialTextureType_Emissive]);        
+    TryReadTexturePath(material, ofbx::Texture::DIFFUSE, info.textures[GeneralMaterialTextureType_Diffuse]);
+    TryReadTexturePath(material, ofbx::Texture::NORMAL, info.textures[GeneralMaterialTextureType_Normal]);
+    TryReadTexturePath(material, ofbx::Texture::SPECULAR, info.textures[GeneralMaterialTextureType_Specularity]);
+    TryReadTexturePath(material, ofbx::Texture::EMISSIVE, info.textures[GeneralMaterialTextureType_Emissive]);
+    TryReadTexturePath(material, ofbx::Texture::SHININESS, info.textures[GeneralMaterialTextureType_Roughness]);
+    TryReadTexturePath(material, ofbx::Texture::REFLECTION, info.textures[GeneralMaterialTextureType_Roughness]);
 
     return importMaterial(importer, *config, info);
 }

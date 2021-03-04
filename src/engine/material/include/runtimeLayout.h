@@ -23,6 +23,7 @@ BEGIN_BOOMER_NAMESPACE()
 /// parameter type, unified and simplified to an enum
 enum class MaterialDataLayoutParameterType : uint8_t
 {
+    StaticBool,
     Float,
     Vector2,
     Vector3,
@@ -104,17 +105,31 @@ public:
 	// get descriptor for bindless resource binding
 	INLINE const MaterialDataLayoutBindless& bindlessDataLayout() const { return m_bindlessDataLayout; }
 
+    // name (and order) of the static switches
+    INLINE const Array<StringID>& staticSwitches() const { return m_staticSwitches; }
+
 	//--
+
+    // compile a static switch mask
+    uint32_t compileStaticSwitchMask(const IMaterial& source) const;
+
+    // get bit mask for given static switch
+    uint32_t queryStaticSwitchMask(StringID switchName) const;
+
+    //--
 
 private:
     Array<MaterialDataLayoutEntry> m_entries;
     MaterialDataLayoutID m_id;
+
+    Array<StringID> m_staticSwitches;
 
 	MaterialDataLayoutDescriptor m_discreteDataLayout;
 	MaterialDataLayoutBindless m_bindlessDataLayout;
 
     static void BuildDescriptorLayout(const Array<MaterialDataLayoutEntry>& entries, MaterialDataLayoutDescriptor& outLayout);
 	static void BuildBindlessLayout(const Array<MaterialDataLayoutEntry>& entries, MaterialDataLayoutBindless& outLayout);
+    static void BuildStaticSwitches(const Array<MaterialDataLayoutEntry>& entries, Array<StringID>& outSwitches);
 };
 
 //---

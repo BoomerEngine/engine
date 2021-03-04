@@ -53,7 +53,7 @@ public:
 
     /// register material data layout, returns unique ID
     /// NOTE: layouts are never unregistered (we don't have that many)
-    const MaterialDataLayout* registerDataLayout( Array<MaterialDataLayoutEntry>&& entries);
+    const MaterialDataLayout* registerDataLayout(Array<MaterialDataLayoutEntry>&& entries);
 
     //--
 

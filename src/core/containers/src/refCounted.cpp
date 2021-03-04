@@ -25,6 +25,11 @@ RefWeakContainer::RefWeakContainer(IReferencable* ptr)
 
 RefWeakContainer::~RefWeakContainer()
 {
+    if (m_ptr != nullptr)
+    {
+        TRACE_ERROR("Object still referenced");
+    }
+
     DEBUG_CHECK_EX(m_refCount.load() == 0, "Invalid ref count");
     DEBUG_CHECK_EX(m_ptr == nullptr, "Object still referenced");
 }

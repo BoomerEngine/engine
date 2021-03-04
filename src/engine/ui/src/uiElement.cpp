@@ -1762,11 +1762,11 @@ void IElement::render(HitCache& hitCache, DataStash& stash, const ElementArea& o
                 }
             }
         }
-    }
 
-    // custom overlay
-    if (!m_renderOverlayElements)
-        renderCustomOverlayElements(hitCache, stash, drawArea, clipArea, canvas, mergedOpacity);
+        // custom overlay
+        if (!m_renderOverlayElements)
+            renderCustomOverlayElements(hitCache, stash, drawArea, clipArea, canvas, mergedOpacity);
+    }
 
     // restore clipping rect to parent one
     canvas.popScissorRect();

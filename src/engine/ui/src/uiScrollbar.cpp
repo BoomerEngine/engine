@@ -171,21 +171,21 @@ void Scrollbar::handleEnableStateChange(bool isEnabled)
 
 bool Scrollbar::handleMouseWheel(const input::MouseMovementEvent &evt, float delta)
 {
+    auto oldPos = scrollPosition();
+
     if (isEnabled())
     {
         if (delta > 0.0f)
         {
             scrollPosition(scrollPosition() - m_smallStepSize * 3.0f);
-            return true;
         }
         else if (delta < 0.0f)
         {
             scrollPosition(scrollPosition() + m_smallStepSize * 3.0f);
-            return true;
         }
     }
 
-    return false;
+    return (oldPos != scrollPosition());
 }
 
 void Scrollbar::arrangeChildren(const ElementArea& innerArea, const ElementArea& clipArea, ArrangedChildren& outArrangedChildren, const ElementDynamicSizing* dynamicSizing) const

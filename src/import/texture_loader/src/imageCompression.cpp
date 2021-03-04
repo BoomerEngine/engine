@@ -343,6 +343,9 @@ ImageContentColorSpace ChooseAutoColorSpace(ImageContentType type, image::PixelF
     if (format == image::PixelFormat::Float16_Raw || format == image::PixelFormat::Float32_Raw)
         return ImageContentColorSpace::HDR;
 
+    if (format == image::PixelFormat::Uint16_Norm)
+        return ImageContentColorSpace::Linear;
+
     switch (type)
     {
         case ImageContentType::Specularity:
@@ -971,13 +974,13 @@ RefPtr<ImageCompressedResult> CompressImage(const image::ImageView& data, const 
     if (colorSpace == ImageContentColorSpace::Auto) 
         colorSpace = ChooseAutoColorSpace(contentType, data.format());
 
-    uint8_t requiredChannelCount = data.channels();
-    auto uncomressedImageView = data;
-    auto uncompressedFormat = ChooseUncompressedFormat(data.format(), data.channels(), colorSpace, requiredChannelCount);
-
     // drop alpha channel
+    uint8_t requiredChannelCount = data.channels();
     if (requiredChannelCount == 4 && (settings.m_contentAlphaMode == ImageAlphaMode::RemoveAlpha || !CheckIfImageHasAlphaData(data)))
         requiredChannelCount = 3;
+
+    auto uncomressedImageView = data;
+    auto uncompressedFormat = ChooseUncompressedFormat(data.format(), requiredChannelCount, colorSpace, requiredChannelCount);
 
     image::ImagePtr tempImage;
     if (requiredChannelCount != data.channels())

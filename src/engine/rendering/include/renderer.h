@@ -65,7 +65,7 @@ public:
 class ENGINE_RENDERING_API FrameRenderer : public NoCopy
 {
 public:
-    FrameRenderer(const FrameParams& frame, const FrameCompositionTarget& target, const FrameResources& resources, const FrameHelper& helpers);
+    FrameRenderer(const FrameParams& frame, const FrameCompositionTarget& target, const FrameResources& resources, const FrameHelper& helpers, const Scene* scene);
     ~FrameRenderer();
 
     //--
@@ -79,11 +79,10 @@ public:
     INLINE const FrameResources& resources() const { return m_resources; }
 	INLINE const FrameHelper& helpers() const { return m_helpers; }
 
-    INLINE const FrameStats& frameStats() const { return m_frameStats; } // frame only stats
-    INLINE const SceneStats& scenesStats() const { return m_mergedSceneStats; } // merged from all scenes
-
     INLINE uint32_t width() const { return m_frame.resolution.width; }
     INLINE uint32_t height() const { return m_frame.resolution.height; }
+
+    INLINE const Scene* scene() const { return m_scene; }
 
     //--
 
@@ -91,8 +90,8 @@ public:
 
     //--
 
-    void prepareFrame(gpu::CommandWriter& cmd);
-    void finishFrame();
+    void prepare(gpu::CommandWriter& cmd);
+    void finish(gpu::CommandWriter& cmd, FrameStats& outStats);
 
     //--
 
@@ -102,15 +101,14 @@ public:
 private:
     bool m_msaa = false;
 
+    const Scene* m_scene = nullptr;
+
     mem::LinearAllocator m_allocator;
 
     const FrameParams& m_frame;
 	const FrameCompositionTarget& m_target;
 	const FrameResources& m_resources;
 	const FrameHelper& m_helpers;
-
-    FrameStats m_frameStats;
-    SceneStats m_mergedSceneStats;
 
     //--
 };

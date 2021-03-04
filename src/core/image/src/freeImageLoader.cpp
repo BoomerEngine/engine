@@ -14,9 +14,15 @@
 #include "core/resource/include/resource.h"
 #include "core/io/include/ioFileHandle.h"
 
+#ifdef BUILD_AS_LIBS
+    #define FREEIMAGE_LIB
+#endif
+
 #include <freeimage/FreeImage.h>
 
 BEGIN_BOOMER_NAMESPACE_EX(image)
+
+#pragma optimize("", off)
 
 namespace loader
 {
@@ -80,10 +86,13 @@ namespace memory
         if (totalRead > left)
             totalRead = range_cast<uint32_t>(left);
 
-        memcpy(buffer, reader->m_data + reader->m_pos, totalRead);
-        reader->m_pos += totalRead;
+        if (totalRead)
+        {
+            memcpy(buffer, reader->m_data + reader->m_pos, totalRead);
+            reader->m_pos += totalRead;
+        }
 
-        return totalRead;
+        return totalRead / size;
     }
 
     static unsigned DLL_CALLCONV WriteProc(void* buffer, unsigned size, unsigned count, fi_handle handle)
@@ -234,11 +243,6 @@ static FREE_IMAGE_FORMAT GetFormat(io::IReadFileHandle& file, const char* typeHi
 
 static FREE_IMAGE_FORMAT GetFormat(memory::MemoryState& buf, const char* typeHint)
 {
-    // try to get format with the type hint
-    auto format = GetFormat(typeHint);
-    if (format != FIF_UNKNOWN)
-        return format;
-
     // set the IO
     FreeImageIO io;
     io.read_proc = memory::ReadProc;
@@ -247,7 +251,12 @@ static FREE_IMAGE_FORMAT GetFormat(memory::MemoryState& buf, const char* typeHin
     io.seek_proc = memory::SeekProc;
 
     // read
-    return FreeImage_GetFileTypeFromHandle(&io, (fi_handle)&buf, (int)buf.m_size);
+    auto format = FreeImage_GetFileTypeFromHandle(&io, (fi_handle)&buf, (int)buf.m_size);
+    if (format != FIF_UNKNOWN)
+        return format;
+
+    // try to get format with the type hint
+    return GetFormat(typeHint);
 }
 
 static const char* GetTypeName(FREE_IMAGE_TYPE type)
@@ -353,8 +362,7 @@ static void SwapRedBlue(FIBITMAP* bitmap)
     }
 }
 
-
-static bool ConvertFormat(FIBITMAP* bitmap, image::PixelFormat& outFormat, uint8_t& outNumChannels)
+static bool ConvertFormat(FIBITMAP*& bitmap, image::PixelFormat& outFormat, uint8_t& outNumChannels)
 {
     auto width = FreeImage_GetWidth(bitmap);
     auto height = FreeImage_GetHeight(bitmap);
@@ -370,8 +378,18 @@ static bool ConvertFormat(FIBITMAP* bitmap, image::PixelFormat& outFormat, uint8
             // promote to 8-bits per pixel
             if (bpp < 8)
             {
-                bitmap = FreeImage_ConvertTo8Bits(bitmap);
-                bpp = 8;
+                auto newBitmap = FreeImage_ConvertToGreyscale(bitmap);
+                if (!newBitmap)
+                    return false;
+
+                bpp = FreeImage_GetBPP(newBitmap);
+                DEBUG_CHECK_EX(bpp == 8, "Image not grayscale after conversion");
+
+                if (bitmap != newBitmap)
+                {
+                    FreeImage_Unload(bitmap);
+                    bitmap = newBitmap;
+                }
             }
 
             // use the data directly
@@ -421,21 +439,32 @@ static bool ConvertFormat(FIBITMAP* bitmap, image::PixelFormat& outFormat, uint8
 
 static bool FormatSupported(FIBITMAP* bitmap)
 {
-    image::PixelFormat format;
-    uint8_t channes = 0;
-    return ConvertFormat(bitmap, format, channes);
+    auto bpp = FreeImage_GetBPP(bitmap);
+    auto type = FreeImage_GetImageType(bitmap);
+
+    switch (type)
+    {
+    case FIT_FLOAT:
+    case FIT_BITMAP:
+    case FIT_UINT16:
+    case FIT_RGBF:
+    case FIT_RGB16:
+    case FIT_RGBA16:
+        return true;
+    }
+
+    return false;
 }
 
 //---
 
 FreeImageLoadedData::FreeImageLoadedData(void* object_)
-    : object(object_)
 {
     auto dib = (FIBITMAP*)object_;
 
     ConvertFormat(dib, format, channels);
 
-    if (format != image::PixelFormat::Float16_Raw && format != image::PixelFormat::Float32_Raw)
+    if (format == image::PixelFormat::Uint8_Norm)
         SwapRedBlue(dib);
 
     data = FreeImage_GetBits(dib);
@@ -443,6 +472,8 @@ FreeImageLoadedData::FreeImageLoadedData(void* object_)
     height = FreeImage_GetHeight(dib);
     rowPitch = FreeImage_GetPitch(dib);
     pixelPitch = rowPitch / width;
+
+    object = dib;
 }
 
 FreeImageLoadedData::~FreeImageLoadedData()
@@ -457,7 +488,7 @@ FreeImageLoadedData::~FreeImageLoadedData()
 static void FreeImageOutput(FREE_IMAGE_FORMAT fif, const char* msg)
 {
     const char* name = FreeImage_GetFormatFromFIF(fif);
-    TRACE_INFO("FreeImage: {}: {}", name, msg);
+    TRACE_WARNING("FreeImage: {}: {}", name, msg);
 }
 
 static void InitFreeImage()
@@ -465,7 +496,7 @@ static void InitFreeImage()
     static bool initialized = false;
     if (!initialized)
     {
-        FreeImage_Initialise();
+        FreeImage_Initialise(true);
         FreeImage_SetOutputMessage(&FreeImageOutput);
         initialized = true;
     }

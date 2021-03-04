@@ -56,7 +56,7 @@ public:
     //--
 
     // add new import file to the list
-    ui::ModelIndex addNewImportFile(const StringBuf& assetPath, TImportClass importClass, const StringBuf& fileName, const ManagedDirectory* directory, const res::ResourceConfigurationPtr& specificUserConfiguration = nullptr);
+    ui::ModelIndex addNewImportFile(const StringBuf& assetPath, TImportClass importClass, const StringBuf& fileName, const ManagedDirectory* directory, const res::ResourceConfigurationPtr& specificUserConfiguration = nullptr, bool enabled = true);
 
     // add new reimport file
     ui::ModelIndex addReimportFile(ManagedFileNativeResource* file, const res::ResourceConfigurationPtr& specificUserConfiguration = nullptr);

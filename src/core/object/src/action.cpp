@@ -28,6 +28,16 @@ IAction::~IAction()
 
 //--
 
+ActionInplace::ActionInplace(StringView caption, StringID id)
+    : m_caption(caption)
+    , m_id(id)
+{}
+
+ActionInplace::~ActionInplace()
+{}
+
+//--
+
 void IAction::BumpSequenceNumber()
 {
     GActionSequenceNumber++;

@@ -77,35 +77,35 @@ void Scene::renderUnlock()
 	ASSERT_EX(prevFlag == true, "Scene was not locked for rendering");
 }
 
-void Scene::renderMainView(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame)
+void Scene::renderMainView(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame) const
 {
 	for (auto* manager : m_managers)
 		if (manager)
 			manager->render(cmd, view, frame);
 }
 
-void Scene::renderCascadesView(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame)
+void Scene::renderCascadesView(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame) const
 {
     for (auto* manager : m_managers)
         if (manager)
             manager->render(cmd, view, frame);
 }
 
-void Scene::renderWireframeView(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame)
+void Scene::renderWireframeView(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame) const
 {
     for (auto* manager : m_managers)
         if (manager)
             manager->render(cmd, view, frame);
 }
 
-void Scene::renderCaptureSelectionView(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame)
+void Scene::renderCaptureSelectionView(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame) const
 {
     for (auto* manager : m_managers)
         if (manager)
             manager->render(cmd, view, frame);
 }
 
-void Scene::renderCaptureDepthView(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame)
+void Scene::renderCaptureDepthView(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame) const
 {
     for (auto* manager : m_managers)
         if (manager)
@@ -117,6 +117,13 @@ void Scene::prepare(gpu::CommandWriter& cmd, const FrameRenderer& frame)
 	for (auto* manager : m_managers)
 		if (manager)
 			manager->prepare(cmd, m_device, frame);
+}
+
+void Scene::finish(gpu::CommandWriter& cmd, const FrameRenderer& frame, FrameStats& outStats)
+{
+    for (auto* manager : m_managers)
+        if (manager)
+            manager->finish(cmd, m_device, frame, outStats);
 }
 
 //--

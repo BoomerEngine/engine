@@ -664,6 +664,59 @@ Transform Matrix::toTransform() const
     return Transform(translation(), toQuat(), columnLengths());
 }
 
+void Matrix::toFloats(float* outData) const
+{
+    memcpy(outData, this, sizeof(Matrix));
+}
+
+void Matrix::toDoubles(double* outData) const
+{
+    auto* endData = outData + 16;
+    const auto* readData = (const float*)this;
+    while (outData < endData)
+        *outData++ = *readData++;
+}
+
+void Matrix::toFloatsTransposed(float* outData) const
+{
+    *outData++ = m[0][0];
+    *outData++ = m[1][0];
+    *outData++ = m[2][0];
+    *outData++ = m[3][0];
+    *outData++ = m[0][1];
+    *outData++ = m[1][1];
+    *outData++ = m[2][1];
+    *outData++ = m[3][1];
+    *outData++ = m[0][2];
+    *outData++ = m[1][2];
+    *outData++ = m[2][2];
+    *outData++ = m[3][2];
+    *outData++ = m[0][3];
+    *outData++ = m[1][3];
+    *outData++ = m[2][3];
+    *outData++ = m[3][3];
+}
+
+void Matrix::toDoublesTransposed(float* outData) const
+{
+    *outData++ = m[0][0];
+    *outData++ = m[1][0];
+    *outData++ = m[2][0];
+    *outData++ = m[3][0];
+    *outData++ = m[0][1];
+    *outData++ = m[1][1];
+    *outData++ = m[2][1];
+    *outData++ = m[3][1];
+    *outData++ = m[0][2];
+    *outData++ = m[1][2];
+    *outData++ = m[2][2];
+    *outData++ = m[3][2];
+    *outData++ = m[0][3];
+    *outData++ = m[1][3];
+    *outData++ = m[2][3];
+    *outData++ = m[3][3];
+}
+
 //--
 
 static Matrix IDENTITY_M(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1);
@@ -677,6 +730,24 @@ const Matrix& Matrix::IDENTITY()
 const Matrix& Matrix::ZERO()
 {
     return ZERO_M;
+}
+
+//--
+
+void Matrix::print(IFormatStream& f) const
+{
+    f.appendf("X:[{},{},{}]  ", m[0][0], m[0][1], m[0][2]);
+    f.appendf("Y:[{},{},{}]  ", m[1][0], m[1][1], m[1][2]);
+    f.appendf("Z:[{},{},{}]  ", m[2][0], m[2][1], m[2][2]);
+    f.appendf("T:[{},{},{}]  ", m[0][3], m[1][3], m[2][3]);
+
+    f.appendf("SH:[{},{},{}]  ", row(0).xyz().length(), row(1).xyz().length(), row(2).xyz().length());
+    f.appendf("SV:[{},{},{}]  ", column(0).xyz().length(), column(1).xyz().length(), column(2).xyz().length());
+
+    const auto r = this->toRotator();
+    f.appendf("R:[{},{},{}]  ", r.pitch, r.yaw, r.roll);
+
+    f.appendf("Det:{}  Det33: {}", det(), det3());
 }
 
 //--

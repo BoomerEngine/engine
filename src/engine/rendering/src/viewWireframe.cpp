@@ -54,7 +54,7 @@ void FrameViewWireframe::render(gpu::CommandWriter& cmd)
     // start cascade rendering
 
     // render scene into the pre-created command buffers
-	if (auto* scene = m_frame.frame().scenes.mainScenePtr)
+	if (auto* scene = m_frame.scene())
 		scene->renderWireframeView(rec, *this, m_frame);
 
     // TODO: render background

@@ -41,4 +41,9 @@ extern ENGINE_UI_API TInputValidationFunction MakeRealNumbersInRangeValidationFu
 
 ///--
 
+/// check if given string is valid identifier
+extern ENGINE_UI_API bool ValidateIdentifier(StringView name);
+
+///--
+
 END_BOOMER_NAMESPACE_EX(ui)

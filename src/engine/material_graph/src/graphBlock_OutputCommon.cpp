@@ -21,6 +21,7 @@ BEGIN_BOOMER_NAMESPACE()
 RTTI_BEGIN_TYPE_ABSTRACT_CLASS(MaterialGraphBlockOutputCommon);
     RTTI_CATEGORY("Render state");
     RTTI_PROPERTY(m_twoSided).editable("Material is two sided");
+    RTTI_PROPERTY(m_twoSidedLighting).editable("Material is lit from two sides");
     RTTI_PROPERTY(m_depthWrite).editable("Material write to depth channel");
     RTTI_PROPERTY(m_maskThreshold).editable("Default masking threshold");
     RTTI_PROPERTY(m_transparent).editable("Enable blending");
@@ -39,21 +40,61 @@ void MaterialGraphBlockOutputCommon::buildLayout(graph::BlockLayoutBuilder& buil
 {
 }
     
-void MaterialGraphBlockOutputCommon::resolveMetadata(MaterialTemplateMetadata& outMetadata) const
+void MaterialGraphBlockOutputCommon::evalRenderStates(const IMaterial& params, MaterialRenderState& outMetadata) const
 {
-    if (m_transparent)
-        outMetadata.hasTransparency = true;
+    {
+        bool transparent = false;
+        if (params.readParameterTyped<bool>(PARAM_USE_TRANSPARENCY, transparent))
+            outMetadata.hasTransparency = transparent;
+        else
+            outMetadata.hasTransparency = m_transparent;
+    }
 
-    if (hasConnectionOnSocket("Mask"_id))
-        outMetadata.hasPixelDiscard = true;
+    {
+        bool mask = false;
+        if (params.readParameterTyped<bool>(PARAM_USE_MASK, mask))
+            outMetadata.hasPixelDiscard = mask;
+        else
+            outMetadata.hasPixelDiscard = hasConnectionOnSocket("Mask"_id);
+    }
+}
+
+bool MaterialGraphBlockOutputCommon::evalTwoSidedFlag(const MaterialStageCompiler& compiler) const
+{
+    if (compiler.hasStaticSwitch(PARAM_USE_TWOSIDED))
+        return compiler.evalStaticSwitch(PARAM_USE_TWOSIDED);
     else
-        outMetadata.hasPixelDiscard = false;
+        return m_twoSided;
+}
+
+bool MaterialGraphBlockOutputCommon::evalTwoSidedLightingFlag(const MaterialStageCompiler& compiler) const
+{
+    if (compiler.hasStaticSwitch(PARAM_USE_TWOSIDED_LIGHTING))
+        return compiler.evalStaticSwitch(PARAM_USE_TWOSIDED_LIGHTING);
+    else
+        return false;
+}
+
+bool MaterialGraphBlockOutputCommon::evalTransparencyFlag(const MaterialStageCompiler& compiler) const
+{
+    if (compiler.hasStaticSwitch(PARAM_USE_TRANSPARENCY))
+        return compiler.evalStaticSwitch(PARAM_USE_TRANSPARENCY);
+    else
+        return m_transparent;
+}
+
+bool MaterialGraphBlockOutputCommon::evalMaskingFlag(const MaterialStageCompiler& compiler) const
+{
+    if (compiler.hasStaticSwitch(PARAM_USE_MASK))
+        return compiler.evalStaticSwitch(PARAM_USE_MASK);
+    else
+        return hasConnectionOnSocket("Mask"_id);
 }
 
 void MaterialGraphBlockOutputCommon::compilePixelFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderStates) const
 {
     // common states that are always set
-    outRenderStates.twoSided = m_twoSided;
+    outRenderStates.twoSided = evalTwoSidedFlag(compiler);
 
     // do we allow masking ? some modes have masking disabled
     const auto allowMasking = (compiler.context().pass != MaterialPass::MaterialDebug) 
@@ -63,7 +104,8 @@ void MaterialGraphBlockOutputCommon::compilePixelFunction(MaterialStageCompiler&
     // simple case masking
     // TODO: integrate the "msaa" flag so alpha-to-coverage is not emitted when in non-mass output
     auto mask = CodeChunk(1.0f);
-    if (allowMasking && hasConnectionOnSocket("Mask"_id))
+    const auto flagMask = evalMaskingFlag(compiler);
+    if (allowMasking && flagMask)
     {
         mask = compiler.evalInput(this, "Mask"_id, 1.0f).conform(1);
         if (!outRenderStates.alphaToCoverage)

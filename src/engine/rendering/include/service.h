@@ -26,11 +26,15 @@ class FrameHelper;
 ///---
 
 /// composition target for the frame
-struct FrameCompositionTarget
+struct ENGINE_RENDERING_API FrameCompositionTarget
 {
 	const gpu::RenderTargetView* targetColorRTV = nullptr;
 	const gpu::RenderTargetView* targetDepthRTV = nullptr;
 	Rect targetRect;
+
+    uint32_t width() const;
+    uint32_t height() const;
+    float aspectRatio() const;
 };
 
 ///---
@@ -46,8 +50,8 @@ public:
 
     //--
 
-    /// render command buffers for rendering given frame
-    gpu::CommandBuffer* renderFrame(const FrameParams& frame, const FrameCompositionTarget& target, FrameStats* outFrameStats = nullptr, SceneStats* outMergedStateStats = nullptr);
+    /// render given scene
+    gpu::CommandBuffer* render(const FrameParams& frame, const FrameCompositionTarget& target, Scene* scene, FrameStats& outStats);
 
     //--
 

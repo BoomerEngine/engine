@@ -716,6 +716,18 @@ const MaterialDataLayoutEntry* MaterialStageCompiler::findParamEntry(StringID en
     return nullptr;
 }
 
+bool MaterialStageCompiler::evalStaticSwitch(StringID name) const
+{
+    const auto mask = m_dataLayout->queryStaticSwitchMask(name);
+    return 0 != (m_context.staticSwitches & mask);
+}
+
+bool MaterialStageCompiler::hasStaticSwitch(StringID name) const
+{
+    const auto mask = m_dataLayout->queryStaticSwitchMask(name);
+    return 0 != mask; // mask is non zero only for defined switches
+}
+
 StringBuf MaterialStageCompiler::autoName()
 {
     return TempString("temp{}", m_autoNameCounter++);

@@ -32,17 +32,16 @@ public:
     int numOptions() const;
 
     void clearOptions();
-    void addOption(const StringBuf& txt);
+    int addOption(const StringBuf& txt);
 
     bool removeOption(int option);
     bool removeOption(StringView txt);
 
-    void selectOption(int option);
-    void selectOption(StringView text);
+    void selectOption(int option, bool postEvent=false);
+    void selectOption(StringView text, bool postEvent = false);
+    int selectedOption() const; // always index of valid option or -1 if no valid option is selected (a different text may still be present)
 
-    int selectedOption() const;
-    StringBuf selectedOptionText() const;
-
+    StringBuf text() const; // note: explicit text set, can be different than any option
 
     //--
 

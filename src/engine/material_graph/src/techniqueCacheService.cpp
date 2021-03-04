@@ -64,11 +64,12 @@ void MaterialTechniqueCacheService::onSyncUpdate()
 
 //---
 
-void MaterialTechniqueCacheService::requestTechniqueCompilation(StringView contextName, const MaterialGraphContainerPtr& graph, MaterialTechnique* technique)
+void MaterialTechniqueCacheService::requestTechniqueCompilation(StringView contextName, const Array<MaterialTemplateParamInfo>& params, const MaterialGraphContainerPtr& graph, MaterialTechnique* technique)
 {
     auto* info = new TechniqueInfo;
     info->contextName = StringBuf(contextName);
     info->graph = graph;
+    info->params = params;
     info->technique = technique;
 
     {
@@ -84,7 +85,7 @@ void MaterialTechniqueCacheService::requestTechniqueCompilation(TechniqueInfo* i
     if (auto technique = info->technique.lock())
     {
         // create compiler
-        auto compiler = new MaterialTechniqueCompiler(info->contextName, info->graph, technique->setup(), technique);
+        auto compiler = new MaterialTechniqueCompiler(info->contextName, info->params, info->graph, technique->setup(), technique);
 
         // keep track of compilers for the duration of compilation
         {

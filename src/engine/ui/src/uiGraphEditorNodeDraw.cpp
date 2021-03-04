@@ -1053,8 +1053,8 @@ void GraphEditorBlockNode::renderCustomOverlayElements(HitCache& hitCache, DataS
             if (canvas.scissorRect(payloadClipArea.left(), payloadClipArea.top(), payloadClipArea.size().x, payloadClipArea.size().y))
             {
                 m_payload->render(hitCache, stash, payloadArea, payloadClipArea, canvas, mergedOpacity, nullptr);
-                canvas.popScissorRect();
             }
+            canvas.popScissorRect();
         }
     }
 }

@@ -27,7 +27,6 @@ BEGIN_BOOMER_NAMESPACE()
 ///---
 
 RTTI_BEGIN_TYPE_CLASS(MaterialGraphContainer);
-    RTTI_PROPERTY(m_parameters);
 RTTI_END_TYPE();
 
 MaterialGraphContainer::MaterialGraphContainer()
@@ -49,23 +48,18 @@ void MaterialGraphContainer::supportedBlockClasses(Array<SpecificClassType<graph
 void MaterialGraphContainer::notifyStructureChanged()
 {
     TBaseClass::notifyStructureChanged();
-    cacheParameterBlocks();
 }
 
-void MaterialGraphContainer::refreshParameterList()
+bool MaterialGraphContainer::checkParameterUsed(IMaterialTemplateParam* param) const
 {
-    Array<MaterialGraphParameterBlockPtr> newParameters;
-    buildParameterList(newParameters);
+    bool hasParam = false;
 
-    if (m_parameters != newParameters)
+    for (const auto& block : blocks())
     {
-        m_parameters = newParameters;
-        buildParameterMap();
-        markModified();
 
-        if (auto graph = findParent<MaterialGraph>())
-            graph->postEvent(EVENT_OBJECT_STRUCTURE_CHANGED);
     }
+
+    return hasParam;
 }
 
 const MaterialGraphBlockOutput* MaterialGraphContainer::findOutputBlock() const
@@ -77,62 +71,9 @@ const MaterialGraphBlockOutput* MaterialGraphContainer::findOutputBlock() const
     return nullptr;
 }
 
-const MaterialGraphBlockParameter* MaterialGraphContainer::findParamBlock(StringID name) const
-{
-    MaterialGraphBlockParameter* ret = nullptr;
-    m_parameterMap.find(name, ret);
-    return ret;
-}
-
-MaterialGraphBlockParameter* MaterialGraphContainer::findParamBlock(StringID name)
-{
-    MaterialGraphBlockParameter* ret = nullptr;
-    m_parameterMap.find(name, ret);
-    return ret;
-}
-
 void MaterialGraphContainer::onPostLoad()
 {
     TBaseClass::onPostLoad();
-    cacheParameterBlocks();
-}
-
-void MaterialGraphContainer::buildParameterMap()
-{
-    m_parameterMap.reset();
-
-    for (const auto& param : m_parameters)
-    {
-        DEBUG_CHECK_EX(param->name(), "Material parameter without name");
-        DEBUG_CHECK_EX(!m_parameterMap.contains(param->name()), "Material parameter with duplicated name");
-        m_parameterMap[param->name()] = param;
-    }
-}
-
-void MaterialGraphContainer::buildParameterList(Array<MaterialGraphParameterBlockPtr>& outParamList) const
-{
-    HashMap<StringID, MaterialGraphParameterBlockPtr> newParametersMap;
-
-    for (const auto& block : blocks())
-        if (auto paramBlock = rtti_cast<MaterialGraphBlockParameter>(block))
-            if (!paramBlock->name().empty())
-                if (!newParametersMap.contains(paramBlock->name()))
-                    newParametersMap[paramBlock->name()] = paramBlock;
-
-    auto newParameters = newParametersMap.values();
-    std::sort(newParameters.begin(), newParameters.end(), [](const MaterialGraphParameterBlockPtr& a, const MaterialGraphParameterBlockPtr& b)
-        {
-            return a->name().view() < b->name().view();
-        });
-
-    outParamList = std::move(newParameters);
-}
-
-void MaterialGraphContainer::cacheParameterBlocks()
-{
-    m_parameters.clear();
-    buildParameterList(m_parameters);
-    buildParameterMap();
 }
 
 ///---
@@ -157,6 +98,57 @@ MaterialGraph::~MaterialGraph()
 {
 }
 
+void MaterialGraph::attachParameter(IMaterialTemplateParam* param)
+{
+    DEBUG_CHECK_RETURN_EX(param, "Invalid paramter");
+    DEBUG_CHECK_RETURN_EX(param->parent() == nullptr, "Paramter should not be attached");
+    DEBUG_CHECK_RETURN_EX(!m_parameters.contains(param), "Parameter should not be on the list");
+    m_parameters.pushBack(AddRef(param));
+    param->parent(this);
+
+    onPropertyChanged("parameters");
+    notifyBaseMaterialChanged();
+}
+
+bool MaterialGraph::detachParameter(IMaterialTemplateParam* param)
+{
+    DEBUG_CHECK_RETURN_EX_V(param, "Invalid paramter", false);
+    DEBUG_CHECK_RETURN_EX_V(param->parent() == this, "Paramter should be attached", false);
+    DEBUG_CHECK_RETURN_EX_V(m_parameters.contains(param), "Parameter should be on the list", false);
+    DEBUG_CHECK_RETURN_EX_V(!checkParameterUsed(param), "Cannot detach used parameters", false);
+
+    m_parameters.pushBack(AddRef(param));
+    param->parent(nullptr);
+
+    onPropertyChanged("parameters");
+    notifyBaseMaterialChanged();
+
+    return true;
+}
+
+bool MaterialGraph::renameParameter(IMaterialTemplateParam* param, StringID name)
+{
+    DEBUG_CHECK_RETURN_EX_V(param, "Invalid paramter", false);
+    DEBUG_CHECK_RETURN_EX_V(param->parent() == this, "Paramter should be attached", false);
+    DEBUG_CHECK_RETURN_EX_V(m_parameters.contains(param), "Parameter should be on the list", false);
+
+    for (const auto& otherParam : m_parameters)
+        if (otherParam != param && param->name() == name)
+            return false;
+
+    param->rename(name);
+
+    onPropertyChanged("parameters");
+    notifyBaseMaterialChanged();
+
+    return true;
+}
+
+bool MaterialGraph::checkParameterUsed(IMaterialTemplateParam* param) const
+{
+    return m_graph && m_graph->checkParameterUsed(param);
+}
+
 //--
 
 /// material compiler based on preview graph
@@ -168,18 +160,28 @@ public:
     PreviewGraphTechniqueCompiler()
     {}
 
-    PreviewGraphTechniqueCompiler(const MaterialGraphContainerPtr& graph)
+    PreviewGraphTechniqueCompiler(const MaterialGraphContainerPtr& graph, const Array<MaterialTemplateParamInfo>& params)
         : m_graph(graph)
+        , m_params(params)
     {
+        m_output = AddRef(m_graph->findOutputBlock());
+    }
+
+    virtual void evalRenderStates(const IMaterial& setup, MaterialRenderState& outRenderStates) const override final
+    {
+        if (m_output)
+            m_output->evalRenderStates(setup, outRenderStates);
     }
 
     virtual void requestTechniqueComplation(StringView contextName, MaterialTechnique* technique) override final
     {
-        GetService<MaterialTechniqueCacheService>()->requestTechniqueCompilation(contextName, m_graph, technique);
+        GetService<MaterialTechniqueCacheService>()->requestTechniqueCompilation(contextName, m_params, m_graph, technique);
     }
 
 private:
     MaterialGraphContainerPtr m_graph;
+    Array<MaterialTemplateParamInfo> m_params;
+    RefPtr<MaterialGraphBlockOutput> m_output;
 };
 
 RTTI_BEGIN_TYPE_CLASS(PreviewGraphTechniqueCompiler);
@@ -199,201 +201,28 @@ MaterialTemplatePtr MaterialGraph::createPreviewTemplate(StringView label) const
     }
 
     return nullptr;
-/*
-    // find output node and read settings
-    MaterialTemplateMetadata metadata;
-    if (const auto* outputBlock = m_graph->findOutputBlock())
-        outputBlock->resolveMetadata(metadata);
-
-    // enumerate parameters
-    Array<MaterialTemplateParamInfo> parameters;
-    parameters.reserve(m_graph->parameters().size());
-
-    for (const auto& block : m_graph->parameters())
-    {
-        if (block->name() && block->dataType())
-        {
-            auto& outInfo = parameters.emplaceBack();
-            outInfo.name = block->name();
-            outInfo.category = block->category() ? block->category() : "Material parameters"_id;
-            outInfo.type = block->dataType();
-            outInfo.parameterType = block->parameterType();
-            outInfo.defaultValue = Variant(block->dataType(), block->dataValue());
-        }
-    }
-
-    // copy the graph
-    auto graphCopy = rtti_cast<MaterialGraphContainer>(m_graph->clone());
-    DEBUG_CHECK_EX(graphCopy, "Failed to make a copy of source graph");
-    if (!graphCopy)
-        return nullptr;
-
-    // create a version of material template that supports runtime compilation from the source graph
-    auto compiler = RefNew<PreviewGraphTechniqueCompiler>(graphCopy);
-    return RefNew<MaterialTemplate>(std::move(parameters), metadata, compiler, StringBuf(label));*/
 }
 
 //--
 
-const void* MaterialGraph::findParameterDataInternal(StringID name, Type& outType) const
-{
-    for (const auto& block : m_graph->parameters())
-    {
-        if (block && block->name() == name && block->dataType())
-        {
-            outType = block->dataType();
-            return block->dataValue();
-        }
-    }
-
-    return nullptr;
-}
-
-bool MaterialGraph::queryParameterInfo(StringID name, MaterialTemplateParamInfo& outInfo) const
-{
-    for (const auto& block : m_graph->parameters())
-    {
-        if (block && block->name() == name && block->dataType())
-        {
-            outInfo.name = block->name();
-            outInfo.category = block->category() ? block->category() : "Material parameters"_id;
-            outInfo.type = block->dataType();
-            outInfo.parameterType = block->parameterType();
-            outInfo.defaultValue = Variant(block->dataType(), block->dataValue());
-            return true;
-        }
-    }
-
-    return false;
-}
-
-void MaterialGraph::queryMatadata(MaterialTemplateMetadata& outMetadata) const
-{
-    if (const auto* outputBlock = m_graph->findOutputBlock())
-        outputBlock->resolveMetadata(outMetadata);
-}
-
-void MaterialGraph::queryAllParameterInfos(Array<MaterialTemplateParamInfo>& outParams) const
-{
-    Array<MaterialTemplateParamInfo> parameters;
-    outParams.reserve(m_graph->parameters().size());
-
-    for (const auto& block : m_graph->parameters())
-    {
-        if (block && block->name() && block->dataType())
-        {
-            auto& outInfo = outParams.emplaceBack();
-            outInfo.name = block->name();
-            outInfo.category = block->category() ? block->category() : "Material parameters"_id;
-            outInfo.type = block->dataType();
-            outInfo.parameterType = block->parameterType();
-            outInfo.defaultValue = Variant(block->dataType(), block->dataValue());
-        }
-    }
-}
-
-void MaterialGraph::listParameters(rtti::DataViewInfo& outInfo) const
-{
-    for (const auto& block : m_graph->parameters())
-    {
-        if (block && block->name() && block->dataType())
-        {
-            auto& memberInfo = outInfo.members.emplaceBack();
-            memberInfo.name = block->name();
-            memberInfo.category = block->category() ? block->category() : "Material parameters"_id;
-            memberInfo.type = block->dataType();
-        }
-    }
-}
-
 RefPtr<IMaterialTemplateDynamicCompiler> MaterialGraph::queryDynamicCompiler() const
 {
-    // copy the graph
-    /*auto graphCopy = rtti_cast<MaterialGraphContainer>(m_graph->clone());
-    DEBUG_CHECK_EX(graphCopy, "Failed to make a copy of source graph");
-    if (!graphCopy)
-        return nullptr;*/
+    Array<MaterialTemplateParamInfo> paramInfos;
+    paramInfos.reserve(m_parameters.size());
+
+    for (const auto& param : m_parameters)
+    {
+        if (param->name() && param->queryDataType())
+        {
+            auto& info = paramInfos.emplaceBack();
+            info.name = param->name();
+            info.parameterType = param->queryType();
+        }
+    }
 
     // create a version of material template that supports runtime compilation from the source graph
-    return RefNew<PreviewGraphTechniqueCompiler>(m_graph);
+    return RefNew<PreviewGraphTechniqueCompiler>(m_graph, paramInfos);
 }
-
-//---
-
-/*bool MaterialGraph::readDataView(const IDataView* rootView, StringView rootViewPath, StringView viewPath, void* targetData, Type targetType) const
-{
-    if (TBaseClass::readDataView(rootView, rootViewPath, viewPath, targetData, targetType))
-        return true;
-
-    if (!viewPath.empty())
-    {
-        StringView propertyName;
-        if (rtti::ParsePropertyName(viewPath, propertyName) && !propertyName.empty())
-        {
-            if (const auto* paramBlock = m_graph->findParamBlock(propertyName))
-            {
-                return paramBlock->dataType()->readDataView(nullptr, nullptr, "", viewPath, paramBlock->dataValue(), targetData, targetType);
-            }
-        }
-    }
-
-    return false;
-}
-
-bool MaterialGraph::writeDataView(const IDataView* rootView, StringView rootViewPath, StringView viewPath, const void* sourceData, Type sourceType)
-{
-    if (TBaseClass::writeDataView(rootView, rootViewPath, viewPath, sourceData, sourceType))
-        return true;
-
-    if (!viewPath.empty())
-    {
-        StringView propertyName;
-        if (rtti::ParsePropertyName(viewPath, propertyName) && !propertyName.empty())
-        {
-            if (auto* paramBlock = m_graph->findParamBlock(propertyName))
-            {
-                return paramBlock->dataType()->writeDataView(nullptr, nullptr, "", viewPath, (void*)paramBlock->dataValue(), sourceData, sourceType);
-            }
-        }
-    }
-
-    return false;
-}
-
-bool MaterialGraph::describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const
-{
-    StringView propertyName;
-    if (viewPath.empty())
-    {
-        if (!TBaseClass::describeDataView(viewPath, outInfo))
-            return false;
-
-        if (outInfo.requestFlags.test(rtti::DataViewRequestFlagBit::MemberList))
-        {
-            for (const auto& parameterBlock : m_graph->parameters())
-            {
-                auto& memberInfo = outInfo.members.emplaceBack();
-                memberInfo.name = parameterBlock->name();
-                memberInfo.category = parameterBlock->category();
-            }
-        }
-
-        return true;
-    }
-    else
-    {
-        if (TBaseClass::describeDataView(viewPath, outInfo))
-            return true;
-
-        if (rtti::ParsePropertyName(viewPath, propertyName))
-        {
-            if (auto* paramBlock = m_graph->findParamBlock(propertyName))
-                return paramBlock->dataType()->describeDataView(viewPath, paramBlock->dataValue(), outInfo);
-        }
-    }
-
-    return false;
-}*/
 
 //---
 

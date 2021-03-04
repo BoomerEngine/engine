@@ -457,7 +457,9 @@ FrameViewSingleCamera::FrameViewSingleCamera(const FrameRenderer& frame, const C
     : m_frame(frame)
     , m_camera(camera)
     , m_viewport(viewport)
-{}
+{
+    m_lodReferencePoint = camera.position();
+}
 
 FrameViewSingleCamera::~FrameViewSingleCamera()
 {}

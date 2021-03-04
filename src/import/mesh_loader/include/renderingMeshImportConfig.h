@@ -149,19 +149,7 @@ public:
 
     // calculate the space conversion matrix for given content type
     // NOTE: includes custom transformation specified in the manifest itself
-    Matrix calcAssetToEngineConversionMatrix(MeshImportUnits defaultAssetUnits, MeshImportSpace defaultAssetSpace) const;
-
-    //--
-
-    INLINE MeshImportUnits resolveUnits(MeshImportUnits defaultAssetUnits) const
-    {
-        return (units == MeshImportUnits::Auto) ? defaultAssetUnits : units;
-    }
-
-    INLINE MeshImportSpace resolveSpace(MeshImportSpace defaultAssetSpace) const
-    {
-        return (space == MeshImportSpace::Auto) ? defaultAssetSpace : space;
-    }
+    Matrix calcAssetToEngineConversionMatrix(float defaultAssetUnits, MeshImportSpace defaultAssetSpace) const;
 
     //--
 

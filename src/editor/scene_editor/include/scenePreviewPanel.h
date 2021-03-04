@@ -57,6 +57,8 @@ private:
     virtual GizmoReferenceSpace gizmoHost_referenceSpace() const override final;
     virtual GizmoActionContextPtr gizmoHost_startAction() const override final;
 
+    virtual rendering::Scene* scene() const override final;
+
     void recreateGizmo();
 
     SceneEditModeWeakPtr m_editMode;

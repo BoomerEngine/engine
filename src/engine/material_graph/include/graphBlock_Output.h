@@ -23,7 +23,7 @@ public:
     MaterialGraphBlockOutput();
         
     // determine material metadata based on the output block
-    virtual void resolveMetadata(MaterialTemplateMetadata& outMetadata) const;
+    virtual void evalRenderStates(const IMaterial& params, MaterialRenderState& outMetadata) const;
 
     // compile the pixel shader side of the material block
     virtual void compilePixelFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const = 0;

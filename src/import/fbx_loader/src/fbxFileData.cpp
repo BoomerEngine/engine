@@ -8,7 +8,6 @@
 
 #include "build.h"
 #include "fbxFileData.h"
-#include "fbxFileLoaderService.h"
 
 #include "core/io/include/ioFileHandle.h"
 #include "core/app/include/localServiceContainer.h"
@@ -18,6 +17,12 @@
 #include "engine/mesh/include/streamBuilder.h"
 #include "engine/mesh/include/streamIterator.h"
 #include "core/resource/include/resourceTags.h"
+#include "../../mesh_loader/include/renderingMeshImportConfig.h"
+
+#pragma optimize("", off)
+
+#undef TRACE_INFO
+#define TRACE_INFO TRACE_WARNING
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 
@@ -32,7 +37,7 @@ MaterialMapper::MaterialMapper()
 uint32_t MaterialMapper::addMaterial(const char* materialName)
 {
     if (!materialName || !*materialName)
-        materialName = "DefaultMaterial";
+        materialName = "default";
 
     uint32_t ret = 0;
     if (materialsMapping.find(StringView(materialName), ret))
@@ -83,7 +88,7 @@ uint32_t SkeletonBuilder::addBone(const FBXFile& owner, const DataNode* node)
     return index;
 }
 
-uint32_t SkeletonBuilder::addBone(const FBXFile& owner, const fbxsdk::FbxNode* node)
+uint32_t SkeletonBuilder::addBone(const FBXFile& owner, const ofbx::Object* node)
 {
     // invalid node, map to root
     if (!node)
@@ -172,42 +177,66 @@ struct Position
     Vector3 vector;
 };
 
-static void ExtractStreamElement(const FbxVector4& source, Position& writeTo, const Matrix& localToWorld)
+static void ExtractStreamElement(const ofbx::Vec3& source, Position& writeTo, const Matrix& localToWorld)
 {
-    writeTo.vector.x = source[0];
-    writeTo.vector.y = source[1];
-    writeTo.vector.z = source[2];
+    writeTo.vector.x = source.x;
+    writeTo.vector.y = source.y;
+    writeTo.vector.z = source.z;
     writeTo.vector = localToWorld.transformPoint(writeTo.vector);
 }
 
-static void ExtractStreamElement(const FbxVector4& source, NormalVector& writeTo, const Matrix& localToWorld)
+static void ExtractStreamElement(const ofbx::Vec3& source, NormalVector& writeTo, const Matrix& localToWorld)
 {
-    writeTo.vector.x = source[0];
-    writeTo.vector.y = source[1];
-    writeTo.vector.z = source[2];
+    writeTo.vector.x = source.x;
+    writeTo.vector.y = source.y;
+    writeTo.vector.z = source.z;
     writeTo.vector = localToWorld.transformVector(writeTo.vector);
     writeTo.vector.normalize();
 }
 
-static void ExtractStreamElement(const FbxVector4& source, Vector3& writeTo, const Matrix& localToWorld)
+static void ExtractStreamElement(const ofbx::Vec4& source, Position& writeTo, const Matrix& localToWorld)
 {
-    writeTo.x = source[0];
-    writeTo.y = source[1];
-    writeTo.z = source[2];
+    writeTo.vector.x = source.x;
+    writeTo.vector.y = source.y;
+    writeTo.vector.z = source.z;
+    writeTo.vector = localToWorld.transformPoint(writeTo.vector);
 }
 
-static void ExtractStreamElement(const FbxVector2& source, Vector2& writeTo, const Matrix& localToWorld)
+static void ExtractStreamElement(const ofbx::Vec4& source, NormalVector& writeTo, const Matrix& localToWorld)
 {
-    writeTo.x = source[0];
-    writeTo.y = source[1];
+    writeTo.vector.x = source.x;
+    writeTo.vector.y = source.y;
+    writeTo.vector.z = source.z;
+    writeTo.vector = localToWorld.transformVector(writeTo.vector);
+    writeTo.vector.normalize();
 }
 
-static void ExtractStreamElement(const FbxColor& source, Color& writeTo, const Matrix& localToWorld)
+static void ExtractStreamElement(const ofbx::Vec4& source, Vector3& writeTo, const Matrix& localToWorld)
 {
-    writeTo.r = FloatTo255(source.mRed);
-    writeTo.g = FloatTo255(source.mGreen);
-    writeTo.b = FloatTo255(source.mBlue);
-    writeTo.a = FloatTo255(source.mAlpha);
+    writeTo.x = source.x;
+    writeTo.y = source.y;
+    writeTo.z = source.z;
+}
+
+static void ExtractStreamElement(const ofbx::Vec3& source, Vector3& writeTo, const Matrix& localToWorld)
+{
+    writeTo.x = source.x;
+    writeTo.y = source.y;
+    writeTo.z = source.z;
+}
+
+static void ExtractStreamElement(const ofbx::Vec2& source, Vector2& writeTo, const Matrix& localToWorld)
+{
+    writeTo.x = source.x;
+    writeTo.y = source.y;
+}
+
+static void ExtractStreamElement(const ofbx::Vec4& source, Color& writeTo, const Matrix& localToWorld)
+{
+    writeTo.r = FloatTo255(source.x);
+    writeTo.g = FloatTo255(source.y);
+    writeTo.b = FloatTo255(source.z);
+    writeTo.a = FloatTo255(source.w);
 }
 
 /*static void ExtractStreamElement(const FbxVector4& source, Vector3& writeTo)
@@ -215,84 +244,18 @@ static void ExtractStreamElement(const FbxColor& source, Color& writeTo, const M
 }*/
 
 template< typename T, typename DataType >
-static void ExtractStreamData(const T* stream, const Matrix& localToWorld, uint32_t vertexIndex, uint32_t controlPointIndex, DataType& writeTo)
+static void ExtractStreamData(const T* stream, const Matrix& localToWorld, uint32_t vertexIndex, DataType& writeTo)
 {
     if (stream)
-    {
-        if (stream->GetMappingMode() == FbxGeometryElement::eByControlPoint)
-        {
-            switch (stream->GetReferenceMode())
-            {
-                case FbxGeometryElement::eDirect:
-                {
-                    ExtractStreamElement(stream->GetDirectArray().GetAt(controlPointIndex), writeTo, localToWorld);
-                    break;
-                }
-
-                case FbxGeometryElement::eIndexToDirect:
-                {
-                    uint32_t id = stream->GetIndexArray().GetAt(controlPointIndex);
-                    ExtractStreamElement(stream->GetDirectArray().GetAt(id), writeTo, localToWorld);
-                    break;
-                }
-            }
-        }
-        else if (stream->GetMappingMode() == FbxGeometryElement::eByPolygonVertex)
-        {
-            switch (stream->GetReferenceMode())
-            {
-                case FbxGeometryElement::eDirect:
-                {
-                    ExtractStreamElement(stream->GetDirectArray().GetAt(vertexIndex), writeTo, localToWorld);
-                    break;
-                }
-
-                case FbxGeometryElement::eIndexToDirect:
-                {
-                    uint32_t id = stream->GetIndexArray().GetAt(vertexIndex);
-                    ExtractStreamElement(stream->GetDirectArray().GetAt(id), writeTo, localToWorld);
-                    break;
-                }
-            }
-        }
-    }
+        ExtractStreamElement(stream[vertexIndex], writeTo, localToWorld);
 }
 
 template< typename T, typename DataType >
-static void ExtractStreamDataUV(const T* stream, const Matrix& localToWorld, uint32_t vertexIndex, uint32_t controlPointIndex, DataType& writeTo, bool flipUV)
+static void ExtractStreamDataUV(const T* stream, const Matrix& localToWorld, uint32_t vertexIndex, DataType& writeTo, bool flipUV)
 {
     if (stream)
     {
-        if (stream->GetMappingMode() == FbxGeometryElement::eByControlPoint)
-        {
-            switch (stream->GetReferenceMode())
-            {
-            case FbxGeometryElement::eDirect:
-            {
-                ExtractStreamElement(stream->GetDirectArray().GetAt(controlPointIndex), writeTo, localToWorld);
-                break;
-            }
-
-            case FbxGeometryElement::eIndexToDirect:
-            {
-                uint32_t id = stream->GetIndexArray().GetAt(controlPointIndex);
-                ExtractStreamElement(stream->GetDirectArray().GetAt(id), writeTo, localToWorld);
-                break;
-            }
-            }
-        }
-        else if (stream->GetMappingMode() == FbxGeometryElement::eByPolygonVertex)
-        {
-            switch (stream->GetReferenceMode())
-            {
-                case FbxGeometryElement::eIndexToDirect:
-                case FbxGeometryElement::eDirect:
-                {
-                    ExtractStreamElement(stream->GetDirectArray().GetAt(vertexIndex), writeTo, localToWorld);
-                    break;
-                }
-            }
-        }
+        ExtractStreamElement(stream[vertexIndex], writeTo, localToWorld);
 
         if (flipUV)
             writeTo.y = 1.0f - writeTo.y;
@@ -301,61 +264,50 @@ static void ExtractStreamDataUV(const T* stream, const Matrix& localToWorld, uin
 
 struct FBXMeshStreams : public NoCopy
 {
-    const FbxVector4* positions = nullptr;
-    const FbxGeometryElementNormal* normals = nullptr;
-    const FbxGeometryElementBinormal* bitangents = nullptr;
-    const FbxGeometryElementTangent* tangents = nullptr;
-    const FbxGeometryElementVertexColor* color0 = nullptr;
-    const FbxGeometryElementVertexColor* color1 = nullptr;
-    const FbxGeometryElementUV* uv0 = nullptr;
-    const FbxGeometryElementUV* uv1 = nullptr;
+    const ofbx::Vec3* positions = nullptr;
+    const ofbx::Vec3* normals = nullptr;
+    const ofbx::Vec3* bitangents = nullptr;
+    const ofbx::Vec3* tangents = nullptr;
+    const ofbx::Vec4* color0 = nullptr;
+    const ofbx::Vec4* color1 = nullptr;
+    const ofbx::Vec2* uv0 = nullptr;
+    const ofbx::Vec2* uv1 = nullptr;
 
     const MeshVertexInfluence* skinInfluences = nullptr;
 
     MeshStreamMask streamMask = 0;
 
     bool flipUV = true;
-    bool flipFaces = false;
 
-    const fbxsdk::FbxMesh* mesh = nullptr;
+    const ofbx::Geometry* geometry = nullptr;
 
-    FBXMeshStreams(const fbxsdk::FbxMesh* mesh_, const Array<MeshVertexInfluence>& skinningData)
-        : mesh(mesh_)
+    FBXMeshStreams(const ofbx::Geometry* geom_, const Array<MeshVertexInfluence>& skinningData)
+        : geometry(geom_)
     {
-        // get mesh flags
-        auto hasNormal = (mesh->GetElementNormalCount() >= 1);
-        auto hasTangents = (mesh->GetElementTangentCount() >= 1);
-        auto hasBitangents = (mesh->GetElementBinormalCount() >= 1);
-        auto hasUV0 = (mesh->GetElementUVCount() >= 1);
-        auto hasUV1 = (mesh->GetElementUVCount() >= 2);
-        auto hasColor0 = (mesh->GetElementVertexColorCount() >= 1);
-        auto hasColor1 = (mesh->GetElementVertexColorCount() >= 2);
-
         // get input data streams
-        positions = mesh->GetControlPoints();
-        normals = hasNormal ? mesh->GetElementNormal(0) : NULL;
-        tangents = hasTangents ? mesh->GetElementTangent(0) : NULL;
-        bitangents = hasBitangents ? mesh->GetElementBinormal(0) : NULL;
-        color0 = hasColor0 ? mesh->GetElementVertexColor(0) : NULL;
-        color1 = hasColor1 ? mesh->GetElementVertexColor(1) : NULL;
-        uv0 = hasUV0 ? mesh->GetElementUV(0) : NULL;
-        uv1 = hasUV1 ? mesh->GetElementUV(1) : NULL;
+        positions = geometry->getVertices();
+        normals = geometry->getNormals();
+        //tangents = nullptr;
+        //bitangents = nullptr;
+        color0 = geometry->getColors();
+        uv0 = geometry->getUVs(0);
+        uv1 = geometry->getUVs(1);
 
         // determine stream mask for all chunks in this model
         streamMask = MeshStreamMaskFromType(MeshStreamType::Position_3F);
-        if (normals)
+        if (positions != nullptr)
             streamMask |= MeshStreamMaskFromType(MeshStreamType::Normal_3F);
-        if (bitangents)
+        if (bitangents != nullptr)
             streamMask |= MeshStreamMaskFromType(MeshStreamType::Binormal_3F);
-        if (tangents)
+        if (tangents != nullptr)
             streamMask |= MeshStreamMaskFromType(MeshStreamType::Tangent_3F);
-        if (color0)
+        if (color0 != nullptr)
             streamMask |= MeshStreamMaskFromType(MeshStreamType::Color0_4U8);
-        if (color1)
+        if (color1 != nullptr)
             streamMask |= MeshStreamMaskFromType(MeshStreamType::Color1_4U8);
-        if (uv0)
+        if (uv0 != nullptr)
             streamMask |= MeshStreamMaskFromType(MeshStreamType::TexCoord0_2F);
-        if (uv1)
+        if (uv1 != nullptr)
             streamMask |= MeshStreamMaskFromType(MeshStreamType::TexCoord1_2F);
 
         // skinning data
@@ -372,6 +324,8 @@ struct FBXMeshStreams : public NoCopy
 
 struct MeshWriteStreams
 {
+    uint32_t numVerticesPerFace = 0;;
+
     Position* writePosition = nullptr;
     NormalVector* writeNormal = nullptr;
     NormalVector* writeTangent = nullptr;
@@ -389,9 +343,11 @@ struct MeshWriteStreams
         : builder(topology)
     {
         if (topology == MeshTopologyType::Triangles)
-            builder.reserveVertices(numFaces * 3, streams);
+            numVerticesPerFace = 3;
         else if (topology == MeshTopologyType::Quads)
-            builder.reserveVertices(numFaces * 4, streams);
+            numVerticesPerFace = 4;
+
+        builder.reserveVertices(numFaces * numVerticesPerFace, streams);
 
         writePosition = (Position*)builder.vertexData<MeshStreamType::Position_3F>();
         writeNormal = (NormalVector*)builder.vertexData<MeshStreamType::Normal_3F>();
@@ -434,116 +390,67 @@ struct MeshWriteStreams
     }
 };
 
-static void ExtractVertex(const FBXMeshStreams& streams, const Matrix& localToWorld, uint32_t controlPoint, uint32_t vertexIndex, uint32_t uvVertexIndex, uint32_t j, MeshWriteStreams& outWriter)
+struct GeometryFace
 {
-    ExtractStreamElement(streams.positions[controlPoint], outWriter.writePosition[j], localToWorld);
-    ExtractStreamData(streams.normals, localToWorld, vertexIndex, controlPoint, outWriter.writeNormal[j]);
-    ExtractStreamData(streams.tangents, localToWorld, vertexIndex, controlPoint, outWriter.writeTangent[j]);
-    ExtractStreamData(streams.bitangents, localToWorld, vertexIndex, controlPoint, outWriter.writeBitangent[j]);
-    ExtractStreamData(streams.color0, localToWorld, vertexIndex, controlPoint, outWriter.writeColor0[j]);
-    ExtractStreamData(streams.color1, localToWorld, vertexIndex, controlPoint, outWriter.writeColor1[j]);
-    ExtractStreamDataUV(streams.uv0, localToWorld, uvVertexIndex, controlPoint, outWriter.writeUV0[j], streams.flipUV);
-    ExtractStreamDataUV(streams.uv1, localToWorld, uvVertexIndex, controlPoint, outWriter.writeUV1[j], streams.flipUV);
+    //uint32_t material = 0;
+    mutable const GeometryFace* next = nullptr;
 
-    if (streams.skinInfluences)
-    {
-        const auto& skin = streams.skinInfluences[vertexIndex];
+    uint32_t vertices[4]; // up to 4, can be 3 if triangle was exported
+    uint32_t indices[4]; // original indices
+};
 
-        // TODO: remap bones or just switch to 16bit indices
-        outWriter.writeSkinIndices[j].indices[0] = skin.m_indices[0];
-        outWriter.writeSkinIndices[j].indices[1] = skin.m_indices[1];
-        outWriter.writeSkinIndices[j].indices[2] = skin.m_indices[2];
-        outWriter.writeSkinIndices[j].indices[3] = skin.m_indices[3];
-        outWriter.writeSkinWeights[j].weights[3] = skin.m_weights[0];
-        outWriter.writeSkinWeights[j].weights[1] = skin.m_weights[1];
-        outWriter.writeSkinWeights[j].weights[2] = skin.m_weights[2];
-        outWriter.writeSkinWeights[j].weights[3] = skin.m_weights[3];
-    }
-}
-
-static void ExtractTriangles(const FBXMeshStreams& streams, const Matrix& localToWorld, uint32_t polygonIndex, uint32_t vertexIndex, MeshWriteStreams& outWriter)
+struct GeometryFaceList
 {
-    const auto polygonSize = streams.mesh->GetPolygonSize(polygonIndex);
+    int globalMaterialIndex = INDEX_NONE;
 
-    uint32_t controlPoints[3];
-    controlPoints[0] = streams.mesh->GetPolygonVertex(polygonIndex, 0);
-    controlPoints[1] = streams.mesh->GetPolygonVertex(polygonIndex, 1);
+    const GeometryFace* firstFace = nullptr;
+    const GeometryFace* lastFace = nullptr;
+    uint32_t count = 0;
+};
 
-    uint32_t uvControlPoints[3];
-    uvControlPoints[0] = ((FbxMesh*)streams.mesh)->GetTextureUVIndex(polygonIndex, 0);
-    uvControlPoints[1] = ((FbxMesh*)streams.mesh)->GetTextureUVIndex(polygonIndex, 1);
-        
-    uint32_t vertices[3];
-    vertices[0] = vertexIndex + 0;
-    vertices[1] = vertexIndex + 1;
-
-    for (uint32_t i = 2; i < polygonSize; ++i)
+static void ExtractFace(const FBXMeshStreams& streams, const Matrix& localToWorld, const GeometryFace& face, MeshWriteStreams& outWriter, bool normalOrder)
+{
+    auto ri = outWriter.numVerticesPerFace - 1;
+    for (uint32_t i = 0; i < outWriter.numVerticesPerFace; ++i, --ri)
     {
-        // extract "lead vertex"
-        controlPoints[2] = streams.mesh->GetPolygonVertex(polygonIndex, i);
-        uvControlPoints[2] = ((FbxMesh*)streams.mesh)->GetTextureUVIndex(polygonIndex, i);
-        vertices[2] = vertexIndex + i;
+        const auto vi = face.vertices[normalOrder ? i : ri];
+        const auto di = face.indices[normalOrder ? i : ri];
 
-        // process triangle
-        if (streams.flipFaces)
+        ExtractStreamData(streams.positions, localToWorld, vi, outWriter.writePosition[i]);
+        ExtractStreamData(streams.normals, localToWorld, di, outWriter.writeNormal[i]);
+        ExtractStreamData(streams.tangents, localToWorld, di, outWriter.writeTangent[i]);
+        ExtractStreamData(streams.bitangents, localToWorld, di, outWriter.writeBitangent[i]);
+        ExtractStreamData(streams.color0, localToWorld, di, outWriter.writeColor0[i]);
+        ExtractStreamData(streams.color1, localToWorld, di, outWriter.writeColor1[i]);
+        ExtractStreamDataUV(streams.uv0, localToWorld, di, outWriter.writeUV0[i], streams.flipUV);
+        ExtractStreamDataUV(streams.uv1, localToWorld, di, outWriter.writeUV1[i], streams.flipUV);
+
+        if (streams.skinInfluences)
         {
-            for (uint32_t j = 0; j < 3; ++j)
-                ExtractVertex(streams, localToWorld, controlPoints[2-j], vertices[2 - j], uvControlPoints[2 - j], j, outWriter);
+            const auto& skin = streams.skinInfluences[vi];
+            for (auto j = 0; j < 4; ++j)
+            {
+                outWriter.writeSkinIndices[i].indices[j] = skin.m_indices[j];
+                outWriter.writeSkinWeights[i].weights[j] = skin.m_weights[j];
+            }
         }
-        else
-        {
-            for (uint32_t j = 0; j < 3; ++j)
-                ExtractVertex(streams, localToWorld, controlPoints[j], vertices[j], uvControlPoints[j], j, outWriter);
-        }
+    }
 
-        // save for next pass
-        vertices[1] = vertices[2];
-        controlPoints[1] = controlPoints[2];
-        uvControlPoints[1] = uvControlPoints[2];
+    outWriter.advance(outWriter.numVerticesPerFace);
+}
 
-        // advance writing stream
-        outWriter.advance(3);
+static void ExtractFaces(const FBXMeshStreams& streams, const Matrix& localToWorld, const GeometryFace* facePtr, MeshWriteStreams& outWriter, bool normalOrder)
+{
+    while (facePtr)
+    {
+        ExtractFace(streams, localToWorld, *facePtr, outWriter, normalOrder);
+        facePtr = facePtr->next;
     }
 }
 
-static void ExtractQuad(const FBXMeshStreams& streams, const Matrix& localToWorld, uint32_t polygonIndex, uint32_t vertexIndex, MeshWriteStreams& outWriter)
+static void ExtractSkinInfluences(const ofbx::Geometry* geom, Array<MeshVertexInfluence>& outInfluences, SkeletonBuilder& outSkeleton, bool forceSkinToNode)
 {
-    DEBUG_CHECK(streams.mesh->GetPolygonSize(polygonIndex) == 4);
-
-    uint32_t controlPoints[4];
-    controlPoints[0] = streams.mesh->GetPolygonVertex(polygonIndex, 0);
-    controlPoints[1] = streams.mesh->GetPolygonVertex(polygonIndex, 1);
-    controlPoints[2] = streams.mesh->GetPolygonVertex(polygonIndex, 2);
-    controlPoints[3] = streams.mesh->GetPolygonVertex(polygonIndex, 3);
-
-    uint32_t uvControlPoints[4];
-    uvControlPoints[0] = ((FbxMesh*)streams.mesh)->GetTextureUVIndex(polygonIndex, 0);
-    uvControlPoints[1] = ((FbxMesh*)streams.mesh)->GetTextureUVIndex(polygonIndex, 1);
-    uvControlPoints[2] = ((FbxMesh*)streams.mesh)->GetTextureUVIndex(polygonIndex, 2);
-    uvControlPoints[3] = ((FbxMesh*)streams.mesh)->GetTextureUVIndex(polygonIndex, 3);
-
-    uint32_t vertices[4];
-    vertices[0] = vertexIndex + 0;
-    vertices[1] = vertexIndex + 1;
-    vertices[2] = vertexIndex + 2;
-    vertices[3] = vertexIndex + 3;
-
-    if (streams.flipFaces)
-    {
-        for (uint32_t j = 0; j < 4; ++j)
-            ExtractVertex(streams, localToWorld, controlPoints[3-j], vertices[3 - j], uvControlPoints[3 - j], j, outWriter);
-    }
-    else
-    {
-        for (uint32_t j = 0; j < 4; ++j)
-            ExtractVertex(streams, localToWorld, controlPoints[j], vertices[j], uvControlPoints[j], j, outWriter);
-    }
-
-    outWriter.advance(4);
-}
-
-void DataNode::extractSkinInfluences(const FBXFile& owner, Array<MeshVertexInfluence>& outInfluences, SkeletonBuilder& outSkeleton, bool forceSkinToNode) const
-{
+#if 0
     // extract skinning
     const auto numVertices = m_mesh->GetControlPointsCount();
     if (forceSkinToNode)
@@ -599,223 +506,254 @@ void DataNode::extractSkinInfluences(const FBXFile& owner, Array<MeshVertexInflu
 
         TRACE_INFO("FBX: Loaded {} total skin influences", numTotalInfluences);
     }
+#endif
 }
 
-void DataNode::extractBuildChunks(const FBXFile& owner, Array<ChunkInfo>& outBuildChunks, MaterialMapper& outMaterials) const
+static int DecodeIndex(int idx)
 {
-    // get number of vertices
-    uint32_t numVertices = m_mesh->GetControlPointsCount();
-    const FbxVector4* pControlPoints = m_mesh->GetControlPoints();
-    TRACE_INFO("FBX: Found {} control points (vertices) in {}", numVertices, m_name);
+    return (idx < 0) ? (-idx - 1) : idx;
+}
 
-    // get number of polygons
-    uint32_t numPolygons = m_mesh->GetPolygonCount();
-    TRACE_INFO("FBX: Found {} polygons in {}", numPolygons, m_name);
+static void DetermineTopology(const ofbx::Geometry* geometry, MeshTopologyType& outTopology, bool& outHasToTriangulate, uint32_t& outNumFaces, uint32_t& outNumMaterials)
+{
+    const auto* indexPtr = geometry->getFaceIndices();
+    const auto* indexEndPtr = indexPtr + geometry->getIndexCount();
+    const auto* materialIndicesPerTriangle = geometry->getMaterials();
 
-    // check if all materials on mesh are the same (faster loading)
-    bool bIsAllSame = true;
-    if (m_mesh->GetElementMaterialCount() > 0)
+    bool hasTriangles = false;
+    bool hasQuads = false;
+    bool hasNgons = false;
+
+    uint32_t numQuads = 0;
+    uint32_t numTriangles = 0;
+
+    uint32_t currentVertexCount = 0;
+    while (indexPtr < indexEndPtr)
     {
-        const FbxGeometryElementMaterial* pMaterialElement = m_mesh->GetElementMaterial(0);
-        if (pMaterialElement->GetMappingMode() == FbxGeometryElement::eByPolygon)
+        currentVertexCount += 1;
+
+        const auto index = *indexPtr++;
+        if (index < 0)
         {
-            TRACE_INFO("FBX: Mesh {} has per-polygon material mapping", m_name);
-            bIsAllSame = false;
-        }
-    }
+            const auto materialIndex = materialIndicesPerTriangle ? materialIndicesPerTriangle[numTriangles] : 0;
+            outNumMaterials = std::max<uint32_t>(outNumMaterials, materialIndex + 1);
 
-    // check if the same material is used for the whole mesh
-    uint32_t meshMaterialID = 0;
-    if (bIsAllSame)
-    {
-        const FbxGeometryElementMaterial* lMaterialElement = m_mesh->GetElementMaterial(0);
-        if (lMaterialElement && lMaterialElement->GetMappingMode() == FbxGeometryElement::eAllSame)
-        {
-            FbxSurfaceMaterial* lMaterial = m_mesh->GetNode()->GetMaterial(lMaterialElement->GetIndexArray().GetAt(0));
-            meshMaterialID = lMaterialElement->GetIndexArray().GetAt(0);
-            TRACE_INFO("FBX: Mesh uses material {} for all it's content", meshMaterialID);
-        }
-    }
-
-
-    // gather information about polygons in each chunk
-    InplaceArray<int, 64> localMaterialMapping;
-    InplaceArray<ChunkInfo, 64> materialChunksInfo;
-    const auto numMaterials = std::max<uint32_t>(1, m_mesh->GetNode()->GetMaterialCount());
-    {
-        materialChunksInfo.resize(numMaterials);
-        localMaterialMapping.resizeWith(numMaterials, -1);
-
-        // reserve some space for polygon indices
-        for (auto& chunk : materialChunksInfo)
-        {
-            chunk.polygonIndices.reserve(2 * (numPolygons / numMaterials));
-            chunk.firstVertexIndices.reserve(2 * (numPolygons / numMaterials));
-        }
-
-        // gather polygons into buckets
-        uint32_t vertexIndex = 0;
-        for (uint32_t i = 0; i < numPolygons; i++)
-        {
-            // face vertex count
-            const auto polygonSize = m_mesh->GetPolygonSize(i);
-
-            // get material used on the face
-            uint32_t polygonMaterialID = meshMaterialID;
-            if (!bIsAllSame)
+            if (currentVertexCount == 3)
             {
-                const FbxGeometryElementMaterial* pMaterialElement = m_mesh->GetElementMaterial(0);
-                polygonMaterialID = pMaterialElement->GetIndexArray().GetAt(i);
-                if (polygonMaterialID < 0 || polygonMaterialID > materialChunksInfo.lastValidIndex())
-                    polygonMaterialID = 0;
+                numTriangles += 1;
+                hasTriangles = true;
             }
-
-            // map polygon material
-            DEBUG_CHECK(polygonMaterialID < numMaterials);
-            auto realPolygonMaterialId = localMaterialMapping[polygonMaterialID];
-            if (realPolygonMaterialId == -1)
+            else if (currentVertexCount == 4)
             {
-                auto lMaterial = m_mesh->GetNode()->GetMaterial(polygonMaterialID);
-                auto materialName = lMaterial ? lMaterial->GetName() : m_name.c_str();
-                realPolygonMaterialId = outMaterials.addMaterial(materialName);
-                localMaterialMapping[polygonMaterialID] = realPolygonMaterialId;
-            }
-
-            // count number of needed triangles
-            // TODO: add quads...
-            if (polygonSize == 4)
-            {
-                materialChunksInfo[polygonMaterialID].numQuads += 1;
+                numQuads += 1;
+                numTriangles += 2;
+                hasQuads = true;
             }
             else
             {
-                const auto numTriangles = polygonSize - 2;
-                materialChunksInfo[polygonMaterialID].numTriangles += numTriangles;
+                numTriangles += (currentVertexCount - 2);
+                hasNgons = true;
             }
 
-            // add to the chunk
-            materialChunksInfo[polygonMaterialID].polygonIndices.pushBack(i);
-            materialChunksInfo[polygonMaterialID].firstVertexIndices.pushBack(vertexIndex);
-            vertexIndex += polygonSize;
+            currentVertexCount = 0;
         }
     }
 
-    // finalize material mapping
-    for (uint32_t i = 0; i < materialChunksInfo.size(); ++i)
+    DEBUG_CHECK_EX(currentVertexCount == 0, "Not finished on right index");
+
+    if (hasNgons)
     {
-        auto& info = materialChunksInfo[i];
+        outHasToTriangulate = true;
+        outTopology = MeshTopologyType::Triangles;
+        outNumFaces = numTriangles;
+    }
+    else if (hasQuads && !hasTriangles)
+    {
+        outHasToTriangulate = false;
+        outTopology = MeshTopologyType::Quads;
+        outNumFaces = numQuads;
+    }
+    else
+    {
+        outHasToTriangulate = hasQuads;
+        outTopology = MeshTopologyType::Triangles;
+        outNumFaces = numTriangles;
+    }
+}
 
-        // if we don't have ALL QUADS than fall back to triangles
-        if (info.numTriangles != 0)
-        {
-            info.numTriangles += info.numQuads * 2;
-            info.numQuads = 0;
-        }
+static void AddFaceToMaterialList(GeometryFace& face, GeometryFaceList& materialFaceList)
+{
+    materialFaceList.count += 1;
 
-        if (info.numTriangles || info.numQuads)
+    if (!materialFaceList.firstFace)
+    {
+        materialFaceList.firstFace = &face;
+        materialFaceList.lastFace = &face;
+    }
+    else
+    {
+        materialFaceList.lastFace->next = &face;
+        materialFaceList.lastFace = &face;
+    }
+}
+
+static void ExtractRawFaces(const ofbx::Geometry* geometry, Array<GeometryFace>& outFaces, bool triangulate, GeometryFaceList* materialFaceList)
+{
+    const auto* vertexIndexStartPtr = geometry->getFaceIndices();
+    const auto* vertexIndexPtr = vertexIndexStartPtr;
+    const auto* vertexIndexEndPtr = vertexIndexStartPtr + geometry->getIndexCount();
+    const auto* materialIndicesPerTriangle = geometry->getMaterials();
+
+    InplaceArray<uint32_t, 64> localIndices;
+    InplaceArray<uint32_t, 64> localVertices;
+
+    uint32_t faceIndex = 0;
+    uint32_t triangleIndex = 0;
+    while (vertexIndexPtr < vertexIndexEndPtr)
+    {
+        const auto index = vertexIndexPtr - vertexIndexStartPtr;
+        const auto vertexIndex = *vertexIndexPtr++;
+        const auto decodedVertexIndex = DecodeIndex(vertexIndex);
+
+        localIndices.pushBack(index);
+        localVertices.pushBack(decodedVertexIndex);
+
+        if (vertexIndex < 0)
         {
-            auto& outChunk = outBuildChunks.emplaceBack();
-            outChunk.numTriangles = info.numTriangles;
-            outChunk.numQuads = info.numQuads;
-            outChunk.materialIndex = localMaterialMapping[i]; // get global material index for local material index
-            outChunk.polygonIndices = std::move(info.polygonIndices);
-            outChunk.firstVertexIndices = std::move(info.firstVertexIndices);
+            const auto materialIndex = materialIndicesPerTriangle ? materialIndicesPerTriangle[triangleIndex] : 0;
+
+            if (triangulate)
+            {
+                for (uint32_t i = 2; i < localVertices.size(); ++i)
+                {
+                    auto& outFace = outFaces.emplaceBack();
+                    outFace.indices[0] = localIndices[0];
+                    outFace.vertices[0] = localVertices[0];
+                    outFace.indices[1] = localIndices[i - 1];
+                    outFace.vertices[1] = localVertices[i - 1];
+                    outFace.indices[2] = localIndices[i];
+                    outFace.vertices[2] = localVertices[i];
+
+                    AddFaceToMaterialList(outFace, materialFaceList[materialIndex]);
+                    triangleIndex += 1;
+                }
+            }
+            else
+            {
+                ASSERT(localIndices.size() <= 4);
+
+                auto& outFace = outFaces.emplaceBack();
+
+                for (uint32_t i = 0; i < localVertices.size(); ++i)
+                {
+                    outFace.indices[i] = localIndices[i];
+                    outFace.vertices[i] = localVertices[i];
+                }
+
+                AddFaceToMaterialList(outFace, materialFaceList[materialIndex]);
+                triangleIndex += (localVertices.size() - 2);
+            }
+
+            localIndices.reset();
+            localVertices.reset();
         }
     }
 }
 
-static void ExtractChunkFaces(const FBXMeshStreams& source, const DataNode::ChunkInfo& buildChunk, const Matrix& localToWorld, MeshWriteStreams& outWriter)
+void DataNode::exportToMeshModel(IProgressTracker& progress, const FBXFile& owner, const Matrix& localToAsset, const DataMeshExportSetup& config, DataNodeMesh& outGeometry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials) const
 {
-    DEBUG_CHECK(buildChunk.polygonIndices.size() == buildChunk.firstVertexIndices.size());
+    // get mesh and geometry
+    if (m_node->getType() != ofbx::Object::Type::MESH)
+        return;
 
-    const auto numFaces = buildChunk.polygonIndices.size();
+    const auto* mesh = static_cast<const ofbx::Mesh*>(m_node);
+    const auto* geom = mesh->getGeometry();
+    if (!geom)
+        return;
 
-    if (buildChunk.topology() == MeshTopologyType::Triangles)
-    {
-        for (uint32_t i = 0; i < numFaces; ++i)
-        {
-            const auto polygonIndex = buildChunk.polygonIndices.typedData()[i];
-            const auto vertexIndex = buildChunk.firstVertexIndices.typedData()[i];
-            ExtractTriangles(source, localToWorld, polygonIndex, vertexIndex, outWriter);
-        }
-    }
-    else
-    {
-        for (uint32_t i = 0; i < numFaces; ++i)
-        {
-            const auto polygonIndex = buildChunk.polygonIndices.typedData()[i];
-            const auto vertexIndex = buildChunk.firstVertexIndices.typedData()[i];
-            ExtractQuad(source, localToWorld, polygonIndex, vertexIndex, outWriter);
-        }
-    }
-}
+    // assemble the final mesh -> world matrix
+    const auto geometryToLocal = ToMatrix(mesh->getGeometricMatrix());
+    const auto geometryToEngine = geometryToLocal * localToAsset * config.assetToEngine;
+    TRACE_INFO("GeometryToEngine for '{}': {}", m_name, geometryToEngine);
 
-bool DataNode::exportToMeshModel(IProgressTracker& progress, const FBXFile& owner, const DataMeshExportSetup& config, DataNodeMesh& outGeonetry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials) const
-{
-    // no mesh data
-    if (!m_mesh)
-        return false;
-
-    // print pivot
-    FbxAMatrix pivotMatrix;
-    const auto& pivot = m_mesh->GetPivot(pivotMatrix);
-    TRACE_INFO("Pivot for '{}': [{},{},{}] [{},{},{},{}] [{},{},{}]", m_node->GetName(),
-        pivotMatrix.GetT()[0], pivotMatrix.GetT()[1], pivotMatrix.GetT()[2],
-        pivotMatrix.GetR()[0], pivotMatrix.GetR()[1], pivotMatrix.GetR()[2], pivotMatrix.GetR()[3],
-        pivotMatrix.GetS()[0], pivotMatrix.GetS()[1], pivotMatrix.GetS()[2]);
-
-    //// remove pivot bullshit
-    ((FbxMesh*)m_mesh)->ApplyPivot();
-
-    // convert matrix
-    //FbxAMatrix pivotMatrixInv = pivotMatrix.Inverse();
-    //Matrix vertexToPivot = ToMatrix(pivotMatrix);
-
-    // flip faces ?
-    Matrix meshToEngine;
-    if (config.applyNodeTransform)
-        meshToEngine = m_meshToLocal * m_localToWorld * config.assetToEngine;
-    else
-        meshToEngine = m_meshToLocal * config.assetToEngine;
-
+    // determine if mesh is build from triangles, quads or a mix
+    uint32_t numFaces = 0;
+    uint32_t numMaterials = 0;
+    uint32_t numGeometryMaterials = mesh->getMaterialCount();
+    auto topology = MeshTopologyType::Triangles;
+    bool hasToTriangulate = false;
+    DetermineTopology(geom, topology, hasToTriangulate, numFaces, numMaterials);
+    TRACE_INFO("Geometry '{}': found {} faces, {} materials ({} at geometry), topology {}, {}", 
+        m_name, numFaces, numMaterials, numGeometryMaterials,
+        topology, hasToTriangulate ? "has to triangulate" : "no triangulation");
+    
     // prepare skin tables
     Array<MeshVertexInfluence> skinInfluences;
-    extractSkinInfluences(owner, skinInfluences, outSkeleton, config.forceSkinToNode);
+    if (const auto* skin = geom->getSkin())
+    {
+        ExtractSkinInfluences(geom, skinInfluences, outSkeleton, config.forceSkinToNode);
+        TRACE_INFO("Geometry '{}': found {} skin influences", m_name, skinInfluences.size());
+    }
 
-    // extract build chunk
-    Array<ChunkInfo> buildChunks;
-    extractBuildChunks(owner, buildChunks, outMaterials);
+    // group faces per material
+    Array<GeometryFace> faces;
+    Array<GeometryFaceList> facesPerMaterial;
+    {
+        facesPerMaterial.resize(numMaterials);
+        faces.reserve(numFaces);
+        ExtractRawFaces(geom, faces, hasToTriangulate, facesPerMaterial.typedData());
+        for (uint32_t i=0; i<numMaterials; ++i)
+        {
+            auto& faces = facesPerMaterial[i];
+            if (faces.count)
+            {
+                if (i < numGeometryMaterials)
+                {
+                    const auto* globalMaterial = mesh->getMaterial(i);
+                    if (globalMaterial)
+                    {
+                        TRACE_INFO("Geometry '{}': found material '{}' at slot {}", m_name, StringView(globalMaterial->name), i);
+                        faces.globalMaterialIndex = outMaterials.addMaterial(globalMaterial->name);
+                    }
+                }
+
+                if (faces.globalMaterialIndex == INDEX_NONE)
+                    faces.globalMaterialIndex = outMaterials.addMaterial("default");
+
+                TRACE_INFO("Geometry '{}': found {} faces for local material {} (global index {})", m_name, facesPerMaterial[i].count, i, faces.globalMaterialIndex);
+            }
+        }
+    }
+
+    // determine if we need to flip the faces
+    const auto normalVertexOrder = (geometryToEngine.det3() > 0.0f) ^ config.flipFace;
 
     // source stream data
-    FBXMeshStreams sourceStreams(m_mesh, skinInfluences);
+    FBXMeshStreams sourceStreams(geom, skinInfluences);
     sourceStreams.flipUV = config.flipUV;
-    sourceStreams.flipFaces = (meshToEngine.det3() < 0.0f) ^ config.flipFace;
 
     // process chunk data
     // TODO: run on fibers
-    for (const auto& buildChunk : buildChunks)
+    for (const auto& buildChunk : facesPerMaterial)
     {
-        MeshWriteStreams writer(buildChunk.topology(), buildChunk.faceCount(), sourceStreams.streamMask);
+        if (!buildChunk.count)
+            continue;
 
-        // break
         if (progress.checkCancelation())
-            return false;
+            break;
 
-        // export data
-        ExtractChunkFaces(sourceStreams, buildChunk, meshToEngine, writer);
-
-        // finalize chunk
         {
-            auto& exportChunk = outGeonetry.chunks.emplaceBack();
-            exportChunk.materialIndex = buildChunk.materialIndex;
+            MeshWriteStreams writer(topology, buildChunk.count, sourceStreams.streamMask);
+            ExtractFaces(sourceStreams, geometryToEngine, buildChunk.firstFace, writer, normalVertexOrder);
+
+            // finalize chunk
+            auto& exportChunk = outGeometry.chunks.emplaceBack();
+            exportChunk.materialIndex = buildChunk.globalMaterialIndex;
             exportChunk.detailMask = 1U << m_lodIndex;
             writer.extract(exportChunk);
-            TRACE_INFO("FBX: Extracted {} faces from mesh {}, material {}", exportChunk.numFaces, m_mesh->GetName(), exportChunk.materialIndex);
+            TRACE_INFO("FBX: Extracted {} faces from mesh {}, material {}", exportChunk.numFaces, m_name, exportChunk.materialIndex);
         }
     }
-
-    // done
-    return true;
 }
 
 //---
@@ -829,199 +767,174 @@ FBXFile::FBXFile()
     m_nodeMap.reserve(256);
 }
 
-bool GFBXSceneClosed = false;
-
 FBXFile::~FBXFile()
 {
     if (m_fbxScene)
     {
-		if (!GFBXSceneClosed)
-			m_fbxScene->Destroy();
+        m_fbxScene->destroy();
         m_fbxScene = nullptr;
     }
 }
 
-const FbxSurfaceMaterial* FBXFile::findMaterial(StringView name) const
+const ofbx::Material* FBXFile::findMaterial(StringView name) const
 {
-    const FbxSurfaceMaterial* ret = nullptr;
+    for (const auto* mat : m_materialMap.values())
+        if (0 == name.caseCmp(mat->name))
+            return mat;
+
+    /*const ofbx::Material* ret = nullptr;
     m_materialMap.find(name, ret);
-    return ret;
+    return ret;*/
+
+    return nullptr;
 }
 
-const DataNode* FBXFile::findDataNode(const fbxsdk::FbxNode* fbxNode) const
+const DataNode* FBXFile::findDataNode(const ofbx::Object* fbxNode) const
 {
     const DataNode* ret = nullptr;
     m_nodeMap.find(fbxNode, ret);
     return ret;
 }
 
-template<typename T>
-INLINE static T InitialValue(const FbxPropertyT<T>& prop)
+static bool ValidNodeForCapture(const ofbx::Object* node)
 {
-    FbxTime t = 0;
-    if (prop.IsAnimated())
+    switch (node->getType())
     {
-        auto evaluator = prop.GetAnimationEvaluator();
-        if (evaluator)
-            t = evaluator->ValidateTime(t);
+    case ofbx::Object::Type::ROOT:
+    case ofbx::Object::Type::MESH:
+    case ofbx::Object::Type::LIMB_NODE:
+    case ofbx::Object::Type::NULL_NODE:
+        return true;
     }
 
-    return const_cast<FbxPropertyT<T>&>(prop).EvaluateValue(t); // TODO: fix once FBX SDK comes to it's senses
+    return false;
 }
 
-void FBXFile::walkStructure(const fbxsdk::FbxAMatrix& fbxParentToWorld, const Matrix& spaceConversionMatrix, const fbxsdk::FbxNode* node, DataNode* parentDataNode)
+void FBXFile::collectExportNodes(const DataNode* node, const Matrix& localToAsset, Array<ExportNode>& outExportNodes) const
 {
-    // get the local pose of the node
-    FbxAMatrix fbxLocalToParent;
-    {
-        const auto rotationOrder = InitialValue(node->RotationOrder);
+    auto& entry = outExportNodes.emplaceBack();
+    entry.data = node;
+    entry.localToAsset = localToAsset;
 
-        const auto lT = InitialValue(node->LclTranslation);
-        const auto lR = InitialValue(node->LclRotation);
-        const auto lS = InitialValue(node->LclScaling);
-        TRACE_INFO("LocalTranslation for '{}': [{},{},{}]", node->GetName(), lT[0], lT[1], lT[2]);
-        TRACE_INFO("LocalRotation for '{}': [{},{},{}]", node->GetName(), lR[0], lR[1], lR[2]);
-        TRACE_INFO("LocalScale for '{}': [{},{},{}]", node->GetName(), lS[0], lS[1], lS[2]);
-        fbxLocalToParent.SetT(lT);
-        fbxLocalToParent.SetR(lR);
-        fbxLocalToParent.SetS(lS);
+    for (const auto* child : node->m_children)
+    {
+        const auto childToAsset = child->m_localToParent * localToAsset;
+        collectExportNodes(child, childToAsset, outExportNodes);
     }
+}
 
-    // get the local to world matrix of the node
-    const auto fbxLocalToWorld = fbxParentToWorld * fbxLocalToParent; // NOTE: inverted order
-
-    // get the additional transform, just for the mesh
-    FbxAMatrix fbxMeshToLocal;
-    fbxMeshToLocal.SetIdentity();
-    if (node->GetNodeAttribute())
+void FBXFile::collectExportNodes(bool applyRootTransform, Array<ExportNode>& outExportNodes) const
+{
+    if (applyRootTransform)
     {
-        const auto lT = node->GetGeometricTranslation(FbxNode::eSourcePivot);
-        const auto lR = node->GetGeometricRotation(FbxNode::eSourcePivot);
-        const auto lS = node->GetGeometricScaling(FbxNode::eSourcePivot);
-        TRACE_INFO("MeshTranslation for '{}': [{},{},{}]", node->GetName(), lT[0], lT[1], lT[2]);
-        TRACE_INFO("MeshRotation for '{}': [{},{},{}]", node->GetName(), lR[0], lR[1], lR[2]);
-        TRACE_INFO("MeshScale for '{}': [{},{},{}]", node->GetName(), lS[0], lS[1], lS[2]);
-        fbxMeshToLocal.SetT(lT);
-        fbxMeshToLocal.SetR(lR);
-        fbxMeshToLocal.SetS(lS);
+        collectExportNodes(rootNode(), Matrix::IDENTITY(), outExportNodes);
     }
-    /*if (node->GetNodeAttribute())
+    else
     {
-        const auto lT = node->GetGeometricTranslation(FbxNode::eDestinationPivot);
-        const auto lR = node->GetGeometricRotation(FbxNode::eDestinationPivot);
-        const auto lS = node->GetGeometricScaling(FbxNode::eDestinationPivot);
-        TRACE_INFO("PostMeshTranslation for '{}': [{},{},{}]", node->GetName(), lT[0], lT[1], lT[2]);
-        TRACE_INFO("PostMeshRotation for '{}': [{},{},{}]", node->GetName(), lR[0], lR[1], lR[2]);
-        TRACE_INFO("PostMeshScale for '{}': [{},{},{}]", node->GetName(), lS[0], lS[1], lS[2]);
-        fbxMeshToLocal.SetT(lT);
-        fbxMeshToLocal.SetR(lR);
-        fbxMeshToLocal.SetS(lS);
-    }*/
+        for (const auto* child : rootNode()->m_children)
+            collectExportNodes(child, Matrix::IDENTITY(), outExportNodes);
+    }
+}
 
-    // get our final matrices
-    //const auto localToWorld = ToMatrix(fbxLocalToWorld);
-    const auto meshToLocal = ToMatrix(fbxMeshToLocal.Inverse());
-
-    const auto localToWorld = ToMatrix(const_cast<FbxNode*>(node)->EvaluateGlobalTransform());
-
-    // get the local to parent matrix from FBX node
-    // NOTE: this code is still shit...
-    TRACE_INFO("LocalToWorld for '{}': [{},{},{},{}] [{},{},{},{}] [{},{},{},{}]", node->GetName(),
-        localToWorld.m[0][0], localToWorld.m[0][1], localToWorld.m[0][2], localToWorld.m[0][3],
-        localToWorld.m[1][0], localToWorld.m[1][1], localToWorld.m[1][2], localToWorld.m[1][3],
-        localToWorld.m[2][0], localToWorld.m[2][1], localToWorld.m[2][2], localToWorld.m[2][3]);
+void FBXFile::walkStructure(/*const Matrix& parentToAsset, */const ofbx::Object* node, DataNode* parentDataNode)
+{
+    // capture only some nodes
+    if (!ValidNodeForCapture(node))
+        return;
 
     // create the local node
     auto localNode = new DataNode;
-    //localNode->m_worldToAsset = spaceConversionMatrix;
-    localNode->m_localToWorld = localToWorld;
-    localNode->m_meshToLocal = meshToLocal;
-    //localNode->m_localToParent = localNode->m_localToWorld * worldToParent;
-    localNode->m_name = StringView(node->GetName());
-    localNode->m_parent = parentDataNode;
+    localNode->m_name = StringID(node->name);
+
+    // link in hierarchy
     if (parentDataNode)
         parentDataNode->m_children.pushBack(localNode);
+    localNode->m_parent = parentDataNode;
     m_nodes.pushBack(localNode);
 
     // map
     localNode->m_node = node;
     m_nodeMap[node] = localNode;
 
+    // get transforms
+    localNode->m_localToParent = ToMatrix(node->getLocalTransform());
+    //localNode->m_localToAsset = localNode->m_localToParent * parentToAsset;
+    TRACE_INFO("LocalToParent for '{}': {}", localNode->m_name, localNode->m_localToParent);
+    //TRACE_INFO("LocalToAsset for '{}': {}", localNode->m_name, localNode->m_localToAsset);
+
     // extract mesh at this node
-    if (node->GetNodeAttribute() != NULL)
+    if (node->getType() == ofbx::Object::Type::MESH)
     {
-        if (node->GetNodeAttribute()->GetAttributeType() == FbxNodeAttribute::eMesh)
+        const auto* mesh = static_cast<const ofbx::Mesh*>(node);
+
+        // matrix
+        const auto geometryToLocal = ToMatrix(mesh->getGeometricMatrix());
+        TRACE_INFO("GeomtryToLocal for '{}': {}", localNode->m_name, geometryToLocal);
+
+        // skip
+        if (localNode->m_name.view().endsWithNoCase("_tri"))
         {
-            const FbxMesh *mesh = (const FbxMesh *) node->GetNodeAttribute();
-            localNode->m_mesh = mesh;
+            TRACE_INFO("Found triangle collision mesh data on node '{}'", localNode->m_name);
+            localNode->m_type = DataNodeType::TriangleCollision;
+        }
+        else if (localNode->m_name.view().endsWithNoCase("_convex") 
+            || localNode->m_name.view().endsWithNoCase("_col") 
+            || localNode->m_name.view().beginsWithNoCase("ucx_"))
+        {
+            TRACE_INFO("Found convex collision mesh data on node '{}'", localNode->m_name);
+            localNode->m_type = DataNodeType::ConvexCollision;
+        }
+        else
+        {
+            localNode->m_type = DataNodeType::VisualMesh;
 
-            // skip
-            if (localNode->m_name.view().endsWithNoCase("_tri"))
+            if (localNode->m_name.view().endsWithNoCase("_lod0"))
+                localNode->m_lodIndex = 0;
+            else if (localNode->m_name.view().endsWithNoCase("_lod1"))
+                localNode->m_lodIndex = 1;
+            else if (localNode->m_name.view().endsWithNoCase("_lod2"))
+                localNode->m_lodIndex = 2;
+            else if (localNode->m_name.view().endsWithNoCase("_lod3"))
+                localNode->m_lodIndex = 3;
+            else if (localNode->m_name.view().endsWithNoCase("_lod4"))
+                localNode->m_lodIndex = 4;
+            else if (localNode->m_name.view().endsWithNoCase("_lod5"))
+                localNode->m_lodIndex = 5;
+            else if (localNode->m_name.view().endsWithNoCase("_lod6"))
+                localNode->m_lodIndex = 6;
+            else if (localNode->m_name.view().endsWithNoCase("_lod7"))
+                localNode->m_lodIndex = 7;
+
+
+            TRACE_INFO("Found visual mesh (LOD{}) on node '{}'", localNode->m_lodIndex, localNode->m_name);
+        }
+
+        // extract materials
+        {
+            const auto numMaterials = mesh->getMaterialCount();
+            for (uint32_t i = 0; i < numMaterials; ++i)
             {
-                TRACE_INFO("Found triangle collision mesh data on node '{}'", localNode->m_name);
-                localNode->m_type = DataNodeType::TriangleCollision;
-            }
-            else if (localNode->m_name.view().endsWithNoCase("_convex") 
-                || localNode->m_name.view().endsWithNoCase("_col") 
-                || localNode->m_name.view().beginsWithNoCase("ucx_"))
-            {
-                TRACE_INFO("Found convex collision mesh data on node '{}'", localNode->m_name);
-                localNode->m_type = DataNodeType::ConvexCollision;
-            }
-            else
-            {
-                localNode->m_type = DataNodeType::VisualMesh;
+                auto lMaterial = mesh->getMaterial(i);
+                auto materialName = lMaterial ? lMaterial->name : localNode->m_name.c_str();
 
-                if (localNode->m_name.view().endsWithNoCase("_lod0"))
-                    localNode->m_lodIndex = 0;
-                else if (localNode->m_name.view().endsWithNoCase("_lod1"))
-                    localNode->m_lodIndex = 1;
-                else if (localNode->m_name.view().endsWithNoCase("_lod2"))
-                    localNode->m_lodIndex = 2;
-                else if (localNode->m_name.view().endsWithNoCase("_lod3"))
-                    localNode->m_lodIndex = 3;
-                else if (localNode->m_name.view().endsWithNoCase("_lod4"))
-                    localNode->m_lodIndex = 4;
-                else if (localNode->m_name.view().endsWithNoCase("_lod5"))
-                    localNode->m_lodIndex = 5;
-                else if (localNode->m_name.view().endsWithNoCase("_lod6"))
-                    localNode->m_lodIndex = 6;
-                else if (localNode->m_name.view().endsWithNoCase("_lod7"))
-                    localNode->m_lodIndex = 7;
-
-
-                TRACE_INFO("Found visual mesh (LOD{}) on node '{}'", localNode->m_lodIndex, localNode->m_name);
-            }
-
-            // extract materials
-            {
-                const auto numMaterials = mesh->GetNode()->GetMaterialCount() + 1;
-                for (uint32_t i = 0; i < numMaterials; ++i)
+                if (!m_materialMap.contains(materialName))
                 {
-                    auto lMaterial = mesh->GetNode()->GetMaterial(i);
-                    auto materialName = lMaterial ? lMaterial->GetName() : localNode->m_name.c_str();
-
-                    if (!m_materialMap.contains(materialName))
-                    {
-                        TRACE_INFO("Discovered FBX material '{}'", materialName);
-                        m_materialMap[StringBuf(materialName)] = lMaterial;
-                        m_materials.pushBack(lMaterial);
-                    }
+                    TRACE_INFO("Discovered FBX material '{}'", materialName);
+                    m_materialMap[StringBuf(materialName)] = lMaterial;
+                    m_materials.pushBack(lMaterial);
                 }
             }
         }
     }
 
     // visit children
-    uint32_t numChildren = node->GetChildCount();
-    if (numChildren)
+    for (uint32_t i = 0; ; ++i)
     {
-        auto worldToParent = localNode->m_localToWorld.inverted();
-        for (uint32_t i = 0; i < numChildren; ++i)
-        {
-            if (const FbxNode* childNode = node->GetChild(i))
-                walkStructure(fbxLocalToWorld, spaceConversionMatrix, childNode, localNode);
-        }
+        const auto* childNode = node->resolveObjectLink(i);
+        if (!childNode)
+            break;
+
+        walkStructure(/*localNode->m_localToAsset, */childNode, localNode);
     }
 }    
 
@@ -1031,6 +944,24 @@ uint64_t FBXFile::calcMemoryUsage() const
 }
 
 //---
+
+static MeshImportSpace FindMeshImportSpace(const ofbx::GlobalSettings& settings)
+{
+    if (settings.UpAxis == ofbx::UpVector_AxisZ)
+    {
+        if (settings.CoordAxis == ofbx::CoordSystem_RightHanded)
+            return MeshImportSpace::RightHandZUp;
+        else
+            return MeshImportSpace::LeftHandZUp;
+    }
+    else
+    {
+        if (settings.CoordAxis == ofbx::CoordSystem_RightHanded)
+            return MeshImportSpace::RightHandYUp;
+        else
+            return MeshImportSpace::LeftHandYUp;
+    }
+}
 
 /// source asset loader for OBJ data
 class FBXAssetLoader : public res::ISourceAssetLoader
@@ -1043,20 +974,18 @@ public:
         if (!data)
             return nullptr;
 
-        Matrix spaceConversionMatrix;
-        auto scene = GetService<FBXFileLoadingService>()->loadScene(data, spaceConversionMatrix);
+        auto scene = ofbx::load(data.data(), data.size(), 0);
         if (!scene)
             return nullptr;
 
         auto ret = RefNew<FBXFile>();
         ret->m_fbxDataSize = data.size();
         ret->m_fbxScene = scene;
+        ret->m_scaleFactor = scene->getGlobalSettings()->OriginalUnitScaleFactor;
+        ret->m_space = FindMeshImportSpace(*scene->getGlobalSettings());
 
-        FbxAMatrix rootMatrix;
-        rootMatrix.SetIdentity();
-
-        auto rootNode = ret->m_fbxScene->GetRootNode();
-        ret->walkStructure(rootMatrix, spaceConversionMatrix, rootNode, nullptr);
+        if (const auto* rootNode = ret->m_fbxScene->getRoot())
+            ret->walkStructure(rootNode, nullptr);
 
         return ret;
     }

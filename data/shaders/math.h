@@ -204,21 +204,6 @@ bool TestBoxSphere(vec3 boxMin, vec3 boxMax, vec3 sphereCenter, float radius)
 
 //--
 
-vec3 ComputeDiffuseColor(vec3 baseColor, float metallic)
-{
-    return baseColor.rgb * (1.0 - metallic);
-}
-
-vec3 ComputeF0(vec3 baseColor, float metallic, float reflectance)
-{
-    return baseColor.rgb * metallic + (reflectance * (1.0 - metallic));
-}
-
-float ComputeDielectricF0(float reflectance)
-{
-    return 0.16 * reflectance * reflectance;
-}
-
 const float MIN_N_DOT_V = 0.0001;
 
 vec3 reflect(vec3 V, vec3 N)

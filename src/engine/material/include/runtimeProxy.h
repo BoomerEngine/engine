@@ -69,8 +69,8 @@ public:
     // template proxy we got created for
 	INLINE const MaterialTemplateProxy* templateProxy() const { return m_template; }
 
-	// get material template's metadata
-	INLINE const MaterialTemplateMetadata& metadata() const { return m_metadata; }
+	// cached material render states
+	INLINE const MaterialRenderState& renderStates() const { return m_renderStates; }
 
     // data layout for the material data proxy
     INLINE const MaterialDataLayout* layout() const { return m_layout; };
@@ -83,7 +83,7 @@ public:
     //--
 
 	// bind material descriptor
-	void bind(gpu::CommandWriter& cmd) const;
+	void bind(gpu::CommandWriter& cmd, uint32_t& outStaticSwitchMask) const;
 
 	// write bindless data to provided memory
 	void writeBindlessData(void* ptr) const;
@@ -93,23 +93,18 @@ public:
 private:
     MaterialDataProxyID m_id;
 
-	const MaterialTemplateMetadata m_metadata; // copied from template
+	MaterialRenderState m_renderStates;
 
     const MaterialDataLayout* m_layout = nullptr;
     MaterialTemplateProxyPtr m_template;
 
 	//--
 
-	std::atomic<MaterialDataBindless*> m_bindlessData = nullptr;
-	std::atomic<MaterialDataDescriptor*> m_descriptorData = nullptr;
+    SpinLock m_lock;
 
-	//--
-
-	SpinLock m_prevDataLock;
-	Array<MaterialDataBindless*> m_prevBindlessData;
-	Array<MaterialDataDescriptor*> m_prevDescriptorData;
-
-	void clanupOldData();
+	uint32_t m_staticSwitchMask = 0;
+	MaterialDataBindless* m_bindlessData = nullptr;
+	MaterialDataDescriptor* m_descriptorData = nullptr;
 
 	//--
 };

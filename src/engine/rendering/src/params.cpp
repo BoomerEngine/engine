@@ -126,11 +126,6 @@ FrameParams_ColorGrading::FrameParams_ColorGrading()
 
 //--
 
-FrameParams_Scenes::FrameParams_Scenes()
-{}
-
-//--
-
 ConfigProperty<bool> cvAmbientOcclusionEnabled("Rendering.AmbientOcclusion", "Enabled", true);
 ConfigProperty<bool> cvAmbientOcclusionBlurEnabled("Rendering.AmbientOcclusion", "BlurEnabled", true);
 ConfigProperty<float> cvAmbientOcclusionIntensity("Rendering.AmbientOcclusion", "Intensity", 1.5f);

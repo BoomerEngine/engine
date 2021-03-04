@@ -21,7 +21,6 @@ BEGIN_BOOMER_NAMESPACE()
 RTTI_BEGIN_TYPE_CLASS(MaterialGraphBlockOutput_PBR);
     RTTI_METADATA(graph::BlockInfoMetadata).title("PBRMaterial").group("Material outputs");
     RTTI_CATEGORY("Lighting");
-    RTTI_PROPERTY(m_twoSidedLighting).editable("Material is lit from two sides");
     RTTI_PROPERTY(m_applyGlobalDirectionalLighting).editable("This material will be affected by directional lighting (sun)");
     RTTI_PROPERTY(m_applyGlobalAmbient).editable("This material will be affected by the simple global ambient lighting (horizon/zenith)");
     RTTI_PROPERTY(m_applyReflectionProbes).editable("This material will be affected by image based lighting (reflection probes)");
@@ -58,7 +57,7 @@ CodeChunk MaterialGraphBlockOutput_PBR::compileMainColor(MaterialStageCompiler& 
 {
     auto color = compiler.evalInput(this, "Base Color"_id, Vector4(0.5f, 0.5f, 0.5f, 1.0f)).conform(3);
     const auto metallic = compiler.evalInput(this, "Metallic"_id, 0.0f).conform(1);
-    const auto specular = compiler.evalInput(this, "Specular"_id, 0.5f).conform(1);
+    const auto specular = compiler.evalInput(this, "Specular"_id, Vector3(0.5f, 0.5f, 0.5f)).conform(3);
     const auto rougness = compiler.evalInput(this, "Roughness"_id, 0.18f).conform(1);
     auto ambientOcclusion = compiler.evalInput(this, "Ambient Occlusion"_id, 1.0f).conform(1);
 
@@ -94,6 +93,7 @@ CodeChunk MaterialGraphBlockOutput_PBR::compileMainColor(MaterialStageCompiler& 
 
     //--
 
+    const auto twoSidedLighting = evalTwoSidedLightingFlag(compiler);
     if (m_applyGlobalDirectionalLighting)
     {
         auto shadowOcclusion = compiler.var(1.0f);
@@ -103,28 +103,23 @@ CodeChunk MaterialGraphBlockOutput_PBR::compileMainColor(MaterialStageCompiler& 
 
         compiler.appendf("{} += Lighting.ComputeGlobalLighting(pbr, {});\n", result, shadowOcclusion);
 
-        if (m_twoSidedLighting)
+        if (twoSidedLighting)
         {
-            compiler.appendf("pbr.shading_normal = -pbr.shading_normal;\n");
+            compiler.appendf("FlipPBRToSecondSide(pbr);\n");
             compiler.appendf("{} += Lighting.ComputeGlobalLighting(pbr, {});\n", resultBack, shadowOcclusion);
         }
     }
 
-    if (m_applyGlobalAmbient)
-    {
-        compiler.appendf("{} += {} * Lighting.ComputeGlobalAmbient({}, {}, {});\n", result, color, worldPosition, worldNormal, ambientOcclusion);
-        /*
-        if (m_twoSidedLighting)
-            compiler.appendf("{} += {} * Lighting.ComputeGlobalAmbient({}, -{}, {});\n", resultBack, color, worldPosition, worldNormal, ambientOcclusion);*/
-    }
-
-    if (m_twoSidedLighting)
+    if (twoSidedLighting)
     {
         auto lightingBlend = compiler.evalInput(this, "Lighting Opacity"_id, Vector3(1.0f, 1.0f, 1.0f)).conform(3);
         auto frontSideLighting = compiler.var(CodeChunk(CodeChunkType::Numerical3, TempString("gl_FrontFacing ? vec3(1) : {}", lightingBlend), false));
         auto backSideLighting = compiler.var(CodeChunk(CodeChunkType::Numerical3, TempString("gl_FrontFacing ? {} : vec3(1)", lightingBlend), false));
         compiler.appendf("{} = ({}*{}) + ({}*{});\n", result, result, frontSideLighting, resultBack, backSideLighting);
     }
+
+    if (m_applyGlobalAmbient)
+        compiler.appendf("{} += {} * Lighting.ComputeGlobalAmbient({}, {}, {});\n", result, color, worldPosition, worldNormal, ambientOcclusion);
 
     //--
 

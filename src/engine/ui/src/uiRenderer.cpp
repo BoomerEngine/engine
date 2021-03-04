@@ -629,6 +629,9 @@ void Renderer::updateWindowState(WindowInfo& window)
 
 void Renderer::focus(IElement* element)
 {
+    m_requestFocusElement.reset();
+    m_requestFocusElementSet = false;
+
     if (m_currentFocusElement != element)
     {
         if (auto current = m_currentFocusElement.lock())

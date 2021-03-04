@@ -327,6 +327,12 @@ typedef RefPtr<ManagedFrame> ManagedFramePtr;
 class ComboBox;
 typedef RefPtr<ComboBox> ComboBoxPtr;
 
+class DynamicChoiceBox;
+typedef RefPtr<DynamicChoiceBox> DynamicChoiceBoxPtr;
+
+class DynamicChoiceList;
+typedef RefPtr<DynamicChoiceList> DynamicChoiceListPtr;
+
 class CheckBox;
 typedef RefPtr<CheckBox> CheckBoxPtr;
 
@@ -376,6 +382,9 @@ typedef RefPtr<ListView> ListViewPtr;
 
 class TreeView;
 typedef RefPtr<TreeView> TreeViewPtr;
+
+class SimpleListView;
+typedef RefPtr<SimpleListView> SimpleListViewPtr;
 
 //--
 

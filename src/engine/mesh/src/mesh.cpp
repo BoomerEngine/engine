@@ -98,6 +98,32 @@ Mesh::~Mesh()
     unregisterChunks();
 }
 
+int Mesh::calculateHighestDetailLevel(float distance) const
+{
+    for (const auto i : m_details.indexRange())
+    {
+        const auto& info = m_details[i];
+        if (distance >= info.rangeMin && distance < info.rangeMax)
+            return i;
+    }
+
+    return INDEX_NONE;
+}
+
+uint32_t Mesh::calculateActiveDetailLevels(float distance) const
+{
+    uint32_t mask = 0;
+
+    for (const auto i : m_details.indexRange())
+    {
+        const auto& info = m_details[i];
+        if (distance >= info.rangeMin && distance < info.rangeMax)
+            mask |= 1U << i;
+    }
+
+    return mask;
+}
+
 void Mesh::registerChunks()
 {
     if (auto* meshChunkService = GetService<MeshService>())

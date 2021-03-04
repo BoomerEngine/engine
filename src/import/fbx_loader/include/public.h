@@ -8,17 +8,13 @@
 
 #include "import_fbx_loader_glue.inl"
 
-namespace fbxsdk
+namespace ofbx
 {
-
-    class FbxNode;
-    class FbxManager;
-    class FbxScene;
-    class FbxMesh;
-    class FbxSurfaceMaterial;
-    class FbxNode;
-
-} // fbxsdk
+    struct IScene;
+    struct Material;
+    struct Mesh;
+    struct Object;
+} // ofbx
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 

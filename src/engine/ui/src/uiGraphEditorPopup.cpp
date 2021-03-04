@@ -33,44 +33,44 @@ void GraphEditor::buildBlockPopupMenu(GraphEditorBlockNode* node, MenuButtonCont
                 actionRemoveBlockConnections(node->block());
             };
             menu.createSeparator();
+        }
 
-            bool hasUnconnectedSockets = false;
-            auto showSocketsPopup = RefNew<MenuButtonContainer>();
-            //auto hideSocketsPopup = RefNew<MenuButtonContainer>();
+        bool hasUnconnectedSockets = false;
+        auto showSocketsPopup = RefNew<MenuButtonContainer>();
+        //auto hideSocketsPopup = RefNew<MenuButtonContainer>();
 
-            for (const auto& socket : block->sockets())
+        for (const auto& socket : block->sockets())
+        {
+            if (!socket->visible())
             {
-                if (!socket->visible())
+                showSocketsPopup->createCallback(TempString("Show '{}'", socket->name())) = [this, socket]()
                 {
-                    showSocketsPopup->createCallback(TempString("Show '{}'", socket->name())) = [this, socket]()
-                    {
-                        socket->updateVisibility(true);
-                    };
-                }
-                else if (socket->info().m_hiddableByUser)
-                {
-                    hasUnconnectedSockets = true;
-                }
-            }
-
-            if (auto popup = showSocketsPopup->convertToPopup())
-            {
-                menu.createSubMenu(popup, "Show hidden socket");
-            }
-
-            if (hasUnconnectedSockets)
-            {
-                menu.createCallback("Hide unused sockets") = [this, block]() {
-                    for (const auto& socket : block->sockets())
-                    {
-                        if (socket->visible() && socket->info().m_hiddableByUser && !socket->hasConnections())
-                            socket->updateVisibility(false);
-                    }
+                    socket->updateVisibility(true);
                 };
             }
-
-            menu.createSeparator();
+            else if (socket->info().m_hiddableByUser)
+            {
+                hasUnconnectedSockets = true;
+            }
         }
+
+        if (auto popup = showSocketsPopup->convertToPopup())
+        {
+            menu.createSubMenu(popup, "Show hidden socket");
+        }
+
+        if (hasUnconnectedSockets)
+        {
+            menu.createCallback("Hide unused sockets") = [this, block]() {
+                for (const auto& socket : block->sockets())
+                {
+                    if (socket->visible() && socket->info().m_hiddableByUser && !socket->hasConnections())
+                        socket->updateVisibility(false);
+                }
+            };
+        }
+
+        menu.createSeparator();
     }
 }
 

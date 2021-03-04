@@ -7,13 +7,25 @@ LibraryInclude("include")
 
 if PlatformName == "windows" then
 
-    if ConfigurationName == "debug" then
-        LibraryLink("lib/win/FreeImaged.lib")
-        Deploy("lib/win/FreeImaged.dll")
-    else
-        LibraryLink("lib/win/FreeImage.lib")
-        Deploy("lib/win/FreeImage.dll")
-    end
+	if UseStaticLibs then
+	
+		if ConfigurationName == "debug" then
+			LibraryLink("lib/win/FreeImageLibd.lib")
+		else
+			LibraryLink("lib/win/FreeImageLib.lib")
+		end
+		
+	else
+	
+		if ConfigurationName == "debug" then
+			LibraryLink("lib/win/FreeImaged.lib")
+			Deploy("lib/win/FreeImaged.dll")
+		else
+			LibraryLink("lib/win/FreeImage.lib")
+			Deploy("lib/win/FreeImage.dll")
+		end
+		
+	end
 
 elseif PlatformName == "linux" then
 

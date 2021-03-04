@@ -12,6 +12,11 @@ BEGIN_BOOMER_NAMESPACE()
 
 //--
 
+enum ETransposedFlag
+{
+    TRANSPOSED_FLAG,
+};
+
 /// 4x4 full matrix
 TYPE_ALIGN(16, class) CORE_MATH_API Matrix
 {
@@ -33,6 +38,11 @@ public:
     INLINE Matrix(Matrix&& other) = default;
     INLINE Matrix& operator=(const Matrix& other) = default;
     INLINE Matrix& operator=(Matrix&& other) = default;
+
+    INLINE Matrix(const float* data); // memcpy
+    INLINE Matrix(const double* data);
+    INLINE Matrix(ETransposedFlag, const float* data); // load transposed
+    INLINE Matrix(ETransposedFlag, const double* data); // convert from doubles and load transposed
 
     //--
 
@@ -237,6 +247,18 @@ public:
     //! NOTE: sheering is NOT preserved
     Transform toTransform() const;
 
+    //! export to table of floats
+    void toFloats(float* outData) const;
+
+    //! export to table of doubles
+    void toDoubles(double* outData) const;
+
+    //! export to TRANSPOSED table of floats
+    void toFloatsTransposed(float* outData) const;
+
+    //! export to TRANSPOSED table of doubles
+    void toDoublesTransposed(float* outData) const;
+
     //---
 
     //! get identity matrix
@@ -244,6 +266,11 @@ public:
 
     //! get zero matrix
     static const Matrix& ZERO();
+
+    //---
+
+    //! print matrix
+    void print(IFormatStream& f) const;
 
 private:
     double coFactor(int row, int col) const;

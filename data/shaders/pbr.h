@@ -17,26 +17,23 @@ struct Light
 {
     vec4 colorIntensity = vec4(1,1,1,1);  // rgb, pre-exposed intensity
     vec3 l = vec3(0,0,1);
-    float attenuation = 1.0f;
     float NoL = 1.0f;
 };
 
 // PBR Pixel information
 struct PBRPixel
 {
+    vec3 face_normal; // geometry normal
+
     vec3 shading_position; // position of the fragment in world space
     vec3 shading_view; // normalized vector from the fragment to the eye
     vec3 shading_normal; // normalized normal, in world space
-    vec3 shading_reflected; // reflection of view about normal
-    vec3 face_normal; // geometry normal
     float shading_NoV; // dot(normal, view), always strictly >= MIN_N_DOT_V
 
-    vec3 diffuseColor = vec3(1,1,1);
-    float perceptualRoughness = 0.5f;
-    vec3 f0 = vec3(1,1,1);
-    float roughness = 0.25f;
-    vec3 dfg = vec3(0,0,0);
-    vec3 energyCompensation = vec3(1,1,1);
+    float roughness = 0.5f;
+    float metalic = 0.0f;
+    vec3 specular = vec3(1,1,1);
+    vec3 base_color = vec3(1,1,1);
     
     vec3 anisotropicT;
     vec3 anisotropicB;
@@ -177,7 +174,11 @@ shader PBR : PBRBase
     {
         float D = distribution(pixel.roughness, NoH, h);
         float V = visibility(pixel.roughness, NoV, NoL, LoH);
-        vec3 F = fresnel(pixel.f0, LoH);
+
+        vec3 reflectance = 0.16 * pixel.base_color * pixel.base_color;
+        vec3 f0 = lerp(reflectance, pixel.base_color, pixel.metalic);
+
+        vec3 F = fresnel(f0, LoH) * pixel.specular;
 
         return (D * V) * F;
     }
@@ -187,7 +188,7 @@ shader PBR : PBRBase
     vec3 DiffuseLobe(PBRPixel pixel, float NoV, float NoL, float LoH)
     {
 		float diffuse = Fd_Burley(pixel.roughness, NoV, NoL, LoH);
-        return pixel.diffuseColor * diffuse;
+        return pixel.base_color * (1.0f - pixel.metalic) * diffuse; 
     }
 
     //----
@@ -204,10 +205,12 @@ shader PBR : PBRBase
         vec3 Fr = SpecularIsotropicLobe(pixel, light, h, NoV, NoL, NoH, LoH);
         vec3 Fd = DiffuseLobe(pixel, NoV, NoL, LoH);
 
-        // The energy compensation term is used to counteract the darkening effect at high roughness
-        vec3 color = Fd + Fr;// * pixel.energyCompensation;
+        float diffuseOcclusion = smoothstep(-0.05, 0.0, dot(pixel.face_normal, light.l));
+        float specularOcclusion = smoothstep(-0.05, 0.0, dot(pixel.face_normal, pixel.shading_view));
 
-        return (color * light.colorIntensity.rgb) * (light.colorIntensity.w * light.attenuation * NoL * occlusion);// + vec3(light.NoL,0,0);
+        vec3 color = (Fd * diffuseOcclusion) + (Fr * specularOcclusion);
+
+        return (color * light.colorIntensity.rgb) * (light.colorIntensity.w * NoL * occlusion);// + vec3(light.NoL,0,0);
     }
 	
 	//----

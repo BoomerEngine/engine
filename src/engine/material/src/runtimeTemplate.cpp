@@ -16,7 +16,7 @@ BEGIN_BOOMER_NAMESPACE()
 
 ///---
 
-RTTI_BEGIN_TYPE_CLASS(MaterialTemplateMetadata);
+RTTI_BEGIN_TYPE_CLASS(MaterialRenderState);
 	RTTI_PROPERTY(hasVertexAnimation);
 	RTTI_PROPERTY(hasPixelDiscard);
 	RTTI_PROPERTY(hasTransparency);
@@ -24,14 +24,13 @@ RTTI_BEGIN_TYPE_CLASS(MaterialTemplateMetadata);
 	RTTI_PROPERTY(hasPixelReadback);
 RTTI_END_TYPE();
 
-MaterialTemplateMetadata::MaterialTemplateMetadata()
+MaterialRenderState::MaterialRenderState()
 {}
  
 ///---
 
-MaterialTemplateProxy::MaterialTemplateProxy(const StringBuf& contextName, const Array<MaterialTemplateParamInfo>& parameters, const MaterialTemplateMetadata& metadata, const MaterialTemplateDynamicCompilerPtr& compiler, const Array<MaterialPrecompiledStaticTechnique>& precompiledTechniques)
+MaterialTemplateProxy::MaterialTemplateProxy(const StringBuf& contextName, const Array<MaterialTemplateParamInfo>& parameters, const MaterialTemplateDynamicCompilerPtr& compiler, const Array<MaterialPrecompiledStaticTechnique>& precompiledTechniques)
 	: m_parameters(parameters)
-	, m_metadata(metadata)
 	, m_precompiledTechniques(precompiledTechniques)
 	, m_dynamicCompiler(compiler)
 	, m_contextName(contextName)
@@ -76,6 +75,11 @@ void MaterialTemplateProxy::registerLayout()
 	m_layout = GetService<MaterialService>()->registerDataLayout(std::move(layoutEntries));
 }
 
+void MaterialTemplateProxy::evalRenderStates(const IMaterial& setup, MaterialRenderState& outRenderStates) const
+{
+	if (m_dynamicCompiler)
+		m_dynamicCompiler->evalRenderStates(setup, outRenderStates);
+}
 
 MaterialTechniquePtr MaterialTemplateProxy::fetchTechnique(const MaterialCompilationSetup& setup) const
 {

@@ -70,14 +70,11 @@ public:
 	virtual MaterialTemplateProxyPtr templateProxy() const override final;
     virtual const MaterialTemplate* resolveTemplate() const override final;
 
-    virtual bool checkParameterOverride(StringID name) const override final;
-    virtual bool resetParameter(StringID name) override final;
-    virtual bool writeParameter(StringID name, const void* data, Type type, bool refresh = true) override final;
     virtual bool readParameter(StringID name, void* data, Type type) const override final;
-    virtual bool readBaseParameter(StringID name, void* data, Type type) const override final;
 
-    virtual const void* findBaseParameterDataInternal(StringID name, Type& dataType) const override;
-    virtual const void* findParameterDataInternal(StringID name, Type& dataType) const override;
+    virtual bool checkParameterOverride(StringID name) const;
+    virtual bool resetParameter(StringID name);
+    virtual bool writeParameter(StringID name, const void* data, Type type, bool refresh = true);
 
     // IObject
     virtual DataViewPtr createDataView() const;
@@ -89,6 +86,14 @@ public:
     virtual void onResourceReloadFinished(res::IResource* currentResource, res::IResource* newResource) override;
 
     //--
+
+    template< typename T >
+    INLINE bool writeParameterTyped(StringID name, const T& data, bool refresh = true)
+    {
+        static_assert(!std::is_pointer<T>::value, "Pointer type is unexpected here");
+        static_assert(!std::is_same<T, Variant>::value, "Variant should not be used here, use the real value or use the writeParameter");
+        return writeParameter(name, &data, reflection::GetTypeObject<T>(), refresh);
+    }
 
 protected:
     virtual void onPostLoad() override;

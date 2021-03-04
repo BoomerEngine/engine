@@ -214,6 +214,16 @@ public:
     // attach input propagation control - usually a search bar - all unconsumed input will be propagated there
     void bindInputPropagationElement(IElement* element);
 
+    //
+
+    // attach static list element (non selectable, always displayed), usually used for "Add +" buttons
+    void attachStaticElement(IElement* element);
+
+    // attach static list element (non selectable, always displayed), usually used for "Add +" buttons
+    void detachStaticElement(IElement* element);
+
+    //--
+
 protected:
     //--
 
@@ -255,6 +265,8 @@ protected:
     uint32_t m_columnCount = 1;
 
     ItemDisplayList<ViewItem> m_displayList;
+
+    Array<ElementPtr> m_staticElements;
 
     RefWeakPtr<IElement> m_inputPropagationElement;
 

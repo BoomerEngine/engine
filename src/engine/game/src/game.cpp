@@ -12,6 +12,9 @@
 #include "gameWorldLoader.h"
 
 #include "engine/world/include/entity.h"
+#include "engine/rendering/include/service.h"
+#include "engine/rendering/include/params.h"
+#include "gpu/device/include/commandWriter.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -51,13 +54,6 @@ GameTransitionInfo::GameTransitionInfo()
 
 //----
 
-RTTI_BEGIN_TYPE_CLASS(GameViewport);
-    RTTI_PROPERTY(world);
-    RTTI_PROPERTY(cameraPlacement);
-RTTI_END_TYPE();
-
-//----
-
 RTTI_BEGIN_TYPE_CLASS(Game);
 RTTI_END_TYPE();
 
@@ -72,6 +68,12 @@ Game::~Game()
 
 bool Game::processUpdate(double dt, GameLoadingScreenState loadingScreenState)
 {
+    PC_SCOPE_LVL0(GameUpdate);
+
+    m_frameIndex += 1;
+    m_gameTimeAccumulator += dt;
+    m_engineTimeAccumulator += dt;
+
     for (auto& scene : m_worlds)
         scene->update(dt);
 
@@ -88,18 +90,44 @@ bool Game::processUpdate(double dt, GameLoadingScreenState loadingScreenState)
     return true;
 }
 
-bool Game::processRender(GameViewport& outRendering)
+void Game::processRenderView(gpu::CommandWriter& cmd, const rendering::FrameCompositionTarget& viewport, rendering::CameraContext* cameraContext, rendering::FrameStats* outStats)
 {
+    PC_SCOPE_LVL0(GameRender);
+
+    if (!m_currentGameWorld)
+        return;
+
+    CameraSetup cameraSetup;
+    cameraSetup.aspect = viewport.aspectRatio();
+    cameraSetup.fov = 75.0f;
+    cameraSetup.nearPlane = 0.01f;
+    cameraSetup.farPlane = 4000.0f;
+    if (!m_currentGameWorld->calculateCamera(cameraSetup))
+        return;
+
+    Camera camera;
+    camera.setup(cameraSetup);
+
+    rendering::FrameParams params(viewport.width(), viewport.height(), camera);
+    params.index = m_frameIndex;
+    params.camera.cameraContext = AddRef(cameraContext);
+    params.time.gameTime = m_gameTimeAccumulator;
+    params.time.engineRealTime = m_engineTimeAccumulator;
+    params.time.timeOfDay = 12.0f; // TODO: get from system
+    params.time.dayNightFrac = 1.0f; // TODO: get from system
+
+    rendering::Scene* scene = nullptr;
     if (m_currentGameWorld)
     {
-        if (m_currentGameWorld->calculateCamera(outRendering.cameraPlacement))
-        {
-            outRendering.world = m_currentGameWorld;
-            return true;
-        }
+        m_currentGameWorld->render(params);
+        //m_currentGameWorld->system<rendering::
     }
 
-    return false;
+    if (auto sceneCmd = GetService<rendering::FrameRenderingService>()->render(params, viewport, scene, m_frameStats))
+        cmd.opAttachChildCommandBuffer(sceneCmd);
+
+    if (outStats)
+        *outStats = m_frameStats;
 }
 
 void Game::processRenderCanvas(canvas::Canvas& canvas)

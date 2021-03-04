@@ -19,7 +19,7 @@ enum class MaterialDataLayoutType : uint8_t
 };
 
 struct MaterialInstanceParam;
-struct MaterialTemplateMetadata;
+struct MaterialRenderState;
 
 class IMaterial;
 typedef RefPtr<IMaterial> MaterialPtr;
@@ -60,6 +60,9 @@ typedef RefPtr<MaterialDataProxy> MaterialDataProxyPtr;
 
 class MaterialDataView;
 typedef RefPtr<MaterialDataView> MaterialDataViewPtr;
+
+class IMaterialTemplateParam;
+typedef RefPtr<IMaterialTemplateParam> MaterialTemplateParamPtr;
 
 typedef uint16_t MaterialDataLayoutID;
 typedef uint16_t MaterialDataProxyID;
@@ -105,6 +108,8 @@ extern ENGINE_MATERIAL_API StringID MeshVertexFormatBindPointName(MeshVertexForm
 struct ENGINE_MATERIAL_API MaterialCompilationSetup
 {
     RTTI_DECLARE_NONVIRTUAL_CLASS(MaterialCompilationSetup);
+
+    uint16_t staticSwitches = 0;
 
     MaterialPass pass = MaterialPass::Forward;
 	MeshVertexFormat vertexFormat = MeshVertexFormat::Static;

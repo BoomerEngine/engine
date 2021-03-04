@@ -316,14 +316,13 @@ void Container::onPostLoad()
     // process base object
     TBaseClass::onPostLoad();
 
+    // remove empty blocks
+    m_blocks.removeAll(nullptr);
+
     // rebuild the layout data for each block
     // this will create sockets
     for (auto& block : m_blocks)
-    {
-        // NOTE: we need a null check because some blocks may have failed to load
-        if (block)
-            block->rebuildLayout();
-    }
+        block->rebuildLayout();
 
     // apply the stored connections to blocks
     if (!m_persistentConnections.empty())
@@ -331,9 +330,6 @@ void Container::onPostLoad()
         applyConnections(m_persistentConnections);
         m_persistentConnections.clear();
     }
-
-    // remove deleted/invalid blocks from the list
-    m_blocks.removeUnorderedAll(nullptr);
 }
 
 void Container::applyConnections(const Array<PersistentConnection>& persistentConnections)

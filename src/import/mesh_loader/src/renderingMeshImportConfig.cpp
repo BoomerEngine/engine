@@ -117,34 +117,44 @@ Matrix GetOrientationMatrixForSpace(MeshImportSpace space)
     switch (space)
     {
         case MeshImportSpace::RightHandZUp:
-            return Matrix::IDENTITY();
-
-        case MeshImportSpace::RightHandYUp:
-            return Matrix(1, 0, 0, 0, 0, -1, 0, 1, 0); // -1 to keep the stuff right handed
-
-        case MeshImportSpace::LeftHandZUp:
             return Matrix(1, 0, 0, 0, -1, 0, 0, 0, 1);
 
-        case MeshImportSpace::LeftHandYUp:
+        case MeshImportSpace::RightHandYUp:
             return Matrix(1, 0, 0, 0, 0, 1, 0, 1, 0); // swapping Y and Z causes the space to flip
+
+        case MeshImportSpace::LeftHandZUp:
+            return Matrix::IDENTITY();
+
+        case MeshImportSpace::LeftHandYUp:
+            return Matrix(1, 0, 0, 0, 0, -1, 0, 1, 0); // -1 to keep the stuff right handed
     }
 
     // default space
     return Matrix::IDENTITY();
 }
 
-Matrix CalcContentToEngineMatrix(MeshImportSpace space, MeshImportUnits units)
+Matrix CalcContentToEngineMatrix(MeshImportSpace space, float units)
 {
     auto orientationMatrix = GetOrientationMatrixForSpace(space);
-    orientationMatrix.scaleInner(GetScaleFactorForUnits(units));
+    orientationMatrix.scaleInner(units);
     return orientationMatrix;
 }
 
-Matrix MeshImportConfig::calcAssetToEngineConversionMatrix(MeshImportUnits defaultAssetUnits, MeshImportSpace defaultAssetSpace) const
+static float ResolveUnits(MeshImportUnits units, float defaultAssetUnits)
+{
+    return (units == MeshImportUnits::Auto) ? defaultAssetUnits : GetScaleFactorForUnits(units);
+}
+
+static MeshImportSpace  ResolveSpace(MeshImportSpace space, MeshImportSpace defaultAssetSpace)
+{
+    return (space == MeshImportSpace::Auto) ? defaultAssetSpace : space;
+}
+
+Matrix MeshImportConfig::calcAssetToEngineConversionMatrix(float defaultAssetUnits, MeshImportSpace defaultAssetSpace) const
 {
     // select setup
-    auto importUnits = resolveUnits(defaultAssetUnits);
-    auto importSpace = resolveSpace(defaultAssetSpace);
+    auto importUnits = ResolveUnits(units, defaultAssetUnits);
+    auto importSpace = ResolveSpace(space, defaultAssetSpace);
 
     // calculate the orientation matrix
     auto orientationMatrix = CalcContentToEngineMatrix(importSpace, importUnits);

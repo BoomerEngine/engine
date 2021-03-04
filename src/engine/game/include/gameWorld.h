@@ -62,7 +62,7 @@ public:
     //--
 
     /// calculate rendering camera 
-    bool calculateCamera(EntityCameraPlacement& outCamera);
+    bool calculateCamera(CameraSetup& outCamera);
 
     /// toggle free camera
     void toggleFreeCamera(bool enabled, const Vector3* newPosition=nullptr, const Angles* newRotation=nullptr);

@@ -25,14 +25,27 @@ public:
 protected:
     virtual void buildLayout(graph::BlockLayoutBuilder& builder) const override;
 
-    virtual void resolveMetadata(MaterialTemplateMetadata& outMetadata) const override final;
+    virtual void evalRenderStates(const IMaterial& params, MaterialRenderState& outMetadata) const override final;
     virtual void compilePixelFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const override final;
     virtual void compileVertexFunction(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const override final;
 
     virtual CodeChunk compileMainColor(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const = 0;
 
+    static inline const auto PARAM_USE_TRANSPARENCY = "UseTransparency"_id;
+    static inline const auto PARAM_USE_TWOSIDED = "UseTwoSidedRendering"_id;
+    static inline const auto PARAM_USE_TWOSIDED_LIGHTING = "UseTwoSidedLighting"_id;
+    static inline const auto PARAM_USE_MASK = "UseMasking"_id;
+
+    bool evalTwoSidedFlag(const MaterialStageCompiler& compiler) const;
+    bool evalTwoSidedLightingFlag(const MaterialStageCompiler& compiler) const;
+    bool evalTransparencyFlag(const MaterialStageCompiler& compiler) const;
+    bool evalMaskingFlag(const MaterialStageCompiler& compiler) const;
+
     bool m_applyFog = true;
+
     bool m_twoSided = false;
+    bool m_twoSidedLighting = false;
+
     bool m_maskAlphaToCoverage = false;
     bool m_depthWrite = true; // can be set to false even for "solid" materials
     bool m_premultiplyAlpha = true;

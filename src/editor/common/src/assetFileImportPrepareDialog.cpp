@@ -179,7 +179,7 @@ StringBuf AssetImportListModel::fileSourceAssetAbsolutePath(const ui::ModelIndex
     return StringBuf::EMPTY();
 }
 
-ui::ModelIndex AssetImportListModel::addNewImportFile(const StringBuf& sourcePath, TImportClass resourceClass, const StringBuf& fileName, const ManagedDirectory* directory, const res::ResourceConfigurationPtr& specificUserConfiguration)
+ui::ModelIndex AssetImportListModel::addNewImportFile(const StringBuf& sourcePath, TImportClass resourceClass, const StringBuf& fileName, const ManagedDirectory* directory, const res::ResourceConfigurationPtr& specificUserConfiguration, bool enabled)
 {
     if (sourcePath && resourceClass && directory)
     {
@@ -200,7 +200,7 @@ ui::ModelIndex AssetImportListModel::addNewImportFile(const StringBuf& sourcePat
         auto fileEntry = RefNew<FileData>();
         fileEntry->index = ui::ModelIndex(this, fileEntry);
         fileEntry->existingFile = nullptr;
-        fileEntry->importFlag = true;
+        fileEntry->importFlag = enabled;
         fileEntry->sourceAssetPath = sourcePath;
         fileEntry->targetClass = resourceClass;
         fileEntry->targetFileName = fileName;
@@ -713,6 +713,17 @@ void AssetImportPrepareDialog::addNewImportFiles(const ManagedDirectory* current
             const auto ext = ExtractFileExtension(path);
             const auto fileName = ExtractFileName(path);
 
+            // HACKS :D
+            bool enabled = true;
+            if (ext.caseCmp("fbx") == 0)
+            {
+                if (fileName.endsWithNoCase("_phys") || fileName.endsWithNoCase("_l1") || fileName.endsWithNoCase("_l2")
+                    || fileName.endsWithNoCase("_l3") || fileName.endsWithNoCase("_l4") || fileName.endsWithNoCase("_l5"))
+                {
+                    enabled = false;
+                }
+            }
+
             const auto& targetClasses = ExtractResourceForExtension(ext, ClassRegistry);
             if (!targetClasses.empty())
             {
@@ -720,7 +731,7 @@ void AssetImportPrepareDialog::addNewImportFiles(const ManagedDirectory* current
                 if (!targetClasses.contains(importClass))
                     importClass = targetClasses[0];
 
-                if (auto index = m_filesListModel->addNewImportFile(path, importClass, StringBuf(fileName), currentDirectory))
+                if (auto index = m_filesListModel->addNewImportFile(path, importClass, StringBuf(fileName), currentDirectory, nullptr, enabled))
                 {
                     createdIndices.pushBack(index);
                 }

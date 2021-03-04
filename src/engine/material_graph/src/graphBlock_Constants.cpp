@@ -100,8 +100,8 @@ public:
     virtual void buildLayout(graph::BlockLayoutBuilder& builder) const override
     {
         builder.socket("Out"_id, MaterialOutputSocket());
-        builder.socket("X"_id, MaterialOutputSocket().swizzle("x"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
-        builder.socket("Y"_id, MaterialOutputSocket().swizzle("y"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
+        builder.socket("X"_id, MaterialOutputSocket().swizzle("x"_id).color(COLOR_SOCKET_RED).hiddenByDefault());
+        builder.socket("Y"_id, MaterialOutputSocket().swizzle("y"_id).color(COLOR_SOCKET_GREEN).hiddenByDefault());
     }
 
     virtual CodeChunk compile(MaterialStageCompiler& compiler, StringID outputName) const override
@@ -128,9 +128,9 @@ public:
     virtual void buildLayout(graph::BlockLayoutBuilder& builder) const override
     {
         builder.socket("Out"_id, MaterialOutputSocket().hideCaption());
-        builder.socket("X"_id, MaterialOutputSocket().swizzle("x"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
-        builder.socket("Y"_id, MaterialOutputSocket().swizzle("y"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
-        builder.socket("Z"_id, MaterialOutputSocket().swizzle("z"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
+        builder.socket("X"_id, MaterialOutputSocket().swizzle("x"_id).color(COLOR_SOCKET_RED).hiddenByDefault());
+        builder.socket("Y"_id, MaterialOutputSocket().swizzle("y"_id).color(COLOR_SOCKET_GREEN).hiddenByDefault());
+        builder.socket("Z"_id, MaterialOutputSocket().swizzle("z"_id).color(COLOR_SOCKET_BLUE).hiddenByDefault());
     }
 
     virtual CodeChunk compile(MaterialStageCompiler& compiler, StringID outputName) const override
@@ -157,9 +157,9 @@ public:
     virtual void buildLayout(graph::BlockLayoutBuilder& builder) const override
     {
         builder.socket("Out"_id, MaterialOutputSocket());
-        builder.socket("X"_id, MaterialOutputSocket().swizzle("x"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
-        builder.socket("Y"_id, MaterialOutputSocket().swizzle("y"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
-        builder.socket("Z"_id, MaterialOutputSocket().swizzle("z"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
+        builder.socket("X"_id, MaterialOutputSocket().swizzle("x"_id).color(COLOR_SOCKET_RED).hiddenByDefault());
+        builder.socket("Y"_id, MaterialOutputSocket().swizzle("y"_id).color(COLOR_SOCKET_GREEN).hiddenByDefault());
+        builder.socket("Z"_id, MaterialOutputSocket().swizzle("z"_id).color(COLOR_SOCKET_BLUE).hiddenByDefault());
         builder.socket("W"_id, MaterialOutputSocket().swizzle("w"_id).color(COLOR_SOCKET_ALPHA).hiddenByDefault());
     }
 

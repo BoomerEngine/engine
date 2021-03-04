@@ -14,6 +14,30 @@ BEGIN_BOOMER_NAMESPACE_EX(rendering)
 
 //--
 
+void FrameViewStats::print(StringView prefix, IFormatStream& f) const
+{
+    f.appendf("{}NumTriangles: [b]{}[/b][br]", prefix, numTriangles);
+    f.appendf("{}NumDraws: [b]{}[/b][br]", prefix, numDrawCalls);
+    f.appendf("{}NumChunks: [b]{}[/b][br]", prefix, numChunks);
+    f.appendf("{}NumMaterials: [b]{}[/b][br]", prefix, numMaterials);
+    f.appendf("{}NumShaders: [b]{}[/b][br]", prefix, numShaders);
+    f.appendf("{}TimeCulling: [b]{}[/b][br]", prefix, TimeInterval(cullingTime));
+    f.appendf("{}RecCulling: [b]{}[/b][br]", prefix, TimeInterval(recordingTime));
+}
+
+void FrameViewStats::merge(const FrameViewStats& stats)
+{
+    numTriangles += stats.numTriangles;
+    numDrawCalls += stats.numDrawCalls;
+    numChunks += stats.numChunks;
+    numShaders += stats.numShaders;
+    numMaterials += stats.numMaterials;
+    recordingTime += stats.recordingTime;
+    cullingTime += stats.cullingTime;
+}
+
+#if 0
+
 SceneViewStats::SceneViewStats()
 {}
 
@@ -261,6 +285,8 @@ void RenderStatsGui(const FrameStats& frameStats, const SceneStats& mergedSceneS
         //RenderStatsGui(mergedFrameViews, mergedSceneViews);
     }
 }
+
+#endif
 
 //--
 

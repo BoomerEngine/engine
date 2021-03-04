@@ -41,8 +41,13 @@ Group
     > #Container
     {
         horizontal-align: expand;
-        padding: 1em 1em 1em 1em;        
-    }    
+        padding: 1em 1em 1em 1em;
+
+        &.opaque
+        {
+            background: solid(#1E1E1E);
+        }
+    }
 }
 
 Group.expanded > #Header > Button > TextLabel#ExpandIcon

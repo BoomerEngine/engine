@@ -15,6 +15,8 @@
 
 BEGIN_BOOMER_NAMESPACE_EX(image)
 
+#pragma optimize("",off)
+
 //--
 
 template< typename T >
@@ -121,9 +123,9 @@ static void ConvertChannelsLineWorker(const T* readPtr, uint8_t srcChannelCount,
 }
 
 static uint8_t COLOR_DEFAULTS_UINT8[4] = { 0, 0, 0, 255 }; // is this a hack ?
-static uint16_t COLOR_DEFAULTS_UINT16[4] = { 0, 0, 0, 0 };
-static uint16_t COLOR_DEFAULTS_FLOAT16[4] = { 0, 0, 0, 0 };
-static uint32_t COLOR_DEFAULTS_FLOAT32[4] = { 0, 0, 0, 0 };
+static uint16_t COLOR_DEFAULTS_UINT16[4] = { 0, 0, 0, 65535 };
+static uint16_t COLOR_DEFAULTS_FLOAT16[4] = { 0, 0, 0, 0 }; // TODO: 1
+static uint32_t COLOR_DEFAULTS_FLOAT32[4] = { 0, 0, 0, 0 }; // TODO: 1
 
 void ConvertChannelsLine(PixelFormat format, const void* srcMem, uint8_t srcChannelCount, void* destMem, uint8_t destChannelCount, uint32_t width, const void* defaults)
 {
@@ -531,7 +533,7 @@ public:
             Uint8SrgbToLinear[i] = srgb_to_linear_float(alpha);
         }
 
-        for (int i = 0; i < 65535; ++i)
+        for (int i = 0; i < 65536; ++i)
         {
             float alpha = i / 65535.0f;
             Uint16SrgbToLinear[i] = srgb_to_linear_float(alpha);
@@ -685,7 +687,7 @@ struct PackerLinear
 
 struct PackerSRGB
 {
-    static void Pack(float from, uint8_t& to) { to = GColorLookup.Uint8LinearToSrgb[PackFloat65536(from)]; }
+    static void Pack(float from, uint8_t& to) { to = GColorLookup.Uint8LinearToSrgb[PackFloat65536(from)]; } // the lookup table is 16 bit, so PackFloat65536 not 255
     static void Pack(float from, uint16_t& to) { to = GColorLookup.Uint16LinearToSrgb[PackFloat65536(from)]; }
     static void Pack(float from, Half& to) { to.val = Float16Helper::Compress(linear_to_srgb_float(from)); }
     static void Pack(float from, float& to) { to = linear_to_srgb_float(from); }

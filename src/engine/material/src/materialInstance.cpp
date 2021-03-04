@@ -111,6 +111,57 @@ MaterialInstance::~MaterialInstance()
 {
 }
 
+//--
+
+static const void* FindParameterDataInternal(const IMaterial* a, StringID name, Type& outType)
+{
+    if (const auto* mt = rtti_cast<MaterialTemplate>(a))
+    {
+        if (const auto* param = mt->findParameter(name))
+        {
+            outType = param->queryDataType();
+            return param->queryDefaultValue();
+        }
+    }
+
+    else if (const auto* mi = rtti_cast<MaterialInstance>(a))
+    {
+        for (const auto& param : mi->parameters())
+        {
+            if (param.name == name)
+            {
+                outType = param.value.type();
+                return param.value.data();
+            }
+        }
+
+        return FindParameterDataInternal(mi->baseMaterial().load(), name, outType);
+    }
+
+    return nullptr;
+}
+
+static const void* FindBaseParameterDataInternal(const MaterialInstance* a, StringID name, Type& outType)
+{
+    // if we were imported then use the imported values as a base FIRST
+    if (a->imported())
+    {
+        for (const auto& param : a->imported()->parameters())
+        {
+            if (param.name == name)
+            {
+                outType = param.value.type();
+                return param.value.data();
+            }
+        }
+    }
+
+    // check the base as normal
+    return FindParameterDataInternal(a->baseMaterial().load(), name, outType);
+}
+
+//--
+
 static res::StaticResource<MaterialTemplate> resFallbackMaterial("/engine/materials/fallback.v4mg", true);
 
 MaterialDataProxyPtr MaterialInstance::dataProxy() const
@@ -262,10 +313,9 @@ bool MaterialInstance::writeParameter(StringID name, const void* data, Type type
     // we don't know about this parameter, add it only if it's in the base material
     if (auto materialTemplate = resolveTemplate())
     {
-        MaterialTemplateParamInfo info;
-        if (materialTemplate->queryParameterInfo(name, info))
+        if (const auto* param = materialTemplate->findParameter(name))
         {
-            auto value = info.defaultValue;
+            Variant value(param->queryDataType()); // create value holder of type compatible with the template
             if (rtti::ConvertData(data, type, value.data(), value.type()))
             {
                 writeParameterInternal(name, std::move(value));
@@ -277,20 +327,6 @@ bool MaterialInstance::writeParameter(StringID name, const void* data, Type type
     return false;
 }
 
-const void* MaterialInstance::findParameterDataInternal(StringID name, Type& outType) const
-{
-    if (const auto* param = findParameterInternal(name))
-    {
-        outType = param->value.type();
-        return param->value.data();
-    }
-
-    if (auto base = m_baseMaterial.load())
-        return base->findParameterDataInternal(name, outType);
-
-    return nullptr;
-}
-
 bool MaterialInstance::readParameter(StringID name, void* data, Type type) const
 {
     // allow to read the "baseMaterial" via the same interface, for completeness
@@ -299,7 +335,7 @@ bool MaterialInstance::readParameter(StringID name, void* data, Type type) const
 
     // find data
     Type paramType;
-    if (const auto* paramData = findParameterDataInternal(name, paramType))
+    if (const auto* paramData = FindParameterDataInternal(this, name, paramType))
         return rtti::ConvertData(paramData, paramType, data, type);
         
     return false;
@@ -323,24 +359,23 @@ void MaterialInstance::removeAllParameters()
     }
 }
 
-void MaterialInstance::baseMaterial(const MaterialRef& baseMaterial)
+void MaterialInstance::baseMaterial(const MaterialRef& baseMaterial) 
 {
-    if (m_baseMaterial != baseMaterial)
-    {
-        m_baseMaterial = baseMaterial;
+    auto prevBase = m_baseMaterial.resource();
+     
+    m_baseMaterial = baseMaterial;
 
+    if (prevBase != m_baseMaterial.resource())
+    {
         // HARD-drop all parameters that have incompatible types (this should be rare)
         // ie. in previous base DiffuseScale was "float" but in current base is "Color"
         if (auto materialTemplate = resolveTemplate())
         {
-            InplaceArray<MaterialTemplateParamInfo, 16> allTemplateParams;
-            materialTemplate->queryAllParameterInfos(allTemplateParams);
-
-            for (const auto& templateParamInfo : allTemplateParams)
+            for (const auto& templateParamInfo : materialTemplate->parameters())
             {
-                if (auto* paramInfo = findParameterInternal(templateParamInfo.name))
+                if (auto* paramInfo = findParameterInternal(templateParamInfo->name()))
                 {
-                    if (paramInfo->value.type() != templateParamInfo.type)
+                    if (paramInfo->value.type() != templateParamInfo->queryDataType())
                     {
                         //TRACE_INFO("Changed type for parameter '{}' from '{}' to '{}', dropping it", templateParamInfo.name, paramInfo->value.type(), templateParamInfo.type);
                         m_parameters.eraseUnordered(paramInfo - m_parameters.typedData());
@@ -421,8 +456,7 @@ void MaterialInstance::onPropertyChanged(StringView path)
         {
             if (const auto* baseTemplate = resolveTemplate())
             {
-                MaterialTemplateParamInfo info;
-                if (baseTemplate->queryParameterInfo(propertyName, info))
+                if (const auto* param = baseTemplate->findParameter(StringID(propertyName)))
                 {
                     notifyDataChanged();
                 }
@@ -527,7 +561,7 @@ DataViewResult MaterialInstance::readDataView(StringView viewPath, void* targetD
         // try to read as a parameter name
         Type paramType;
         const auto parameterName = StringID::Find(propertyName); // do not allocate invalid name
-        if (const auto* paramData = findParameterDataInternal(parameterName, paramType))
+        if (const auto* paramData = FindParameterDataInternal(this, parameterName, paramType))
             return paramType->readDataView(viewPath, paramData, targetData, targetType);
     }
 
@@ -546,11 +580,10 @@ DataViewResult MaterialInstance::writeDataView(StringView viewPath, const void* 
         {
             const auto paramName = StringID::Find(propertyName);
 
-            MaterialTemplateParamInfo info;
-            if (materialTemplate->queryParameterInfo(paramName, info))
+            if (const auto* param = materialTemplate->findParameter(paramName))
             {
                 // ALWAYS write to compatible type to avoid confusion
-                auto value = info.defaultValue;
+                Variant value(param->queryDataType());
                 if (const auto ret = HasError(value.type()->writeDataView(viewPath, value.data(), sourceData, sourceType)))
                     return ret; // writing data to type container failed - something is wrong with the data
 
@@ -575,7 +608,26 @@ DataViewResult MaterialInstance::describeDataView(StringView viewPath, rtti::Dat
         if (outInfo.requestFlags.test(rtti::DataViewRequestFlagBit::MemberList))
         {
             if (const auto* materialTemplate = resolveTemplate())
-                materialTemplate->listParameters(outInfo);
+            {
+                for (const auto& param : materialTemplate->parameters())
+                {
+                    if (param && param->name())
+                    {
+                        if (auto type = param->queryDataType())
+                        {
+                            auto& memberInfo = outInfo.members.emplaceBack();
+                            memberInfo.name = param->name();
+                            memberInfo.category = param->category() ? param->category() : "Generic"_id;
+                            memberInfo.type = type;
+                        }
+                    }
+                }
+            }
+
+            std::sort(outInfo.members.begin(), outInfo.members.end(), [](const auto& a, const auto& b)
+                {
+                    return a.name.view() < b.name.view();
+                });
         }
     }
     else
@@ -595,9 +647,8 @@ DataViewResult MaterialInstance::describeDataView(StringView viewPath, rtti::Dat
                         outInfo.flags -= rtti::DataViewInfoFlagBit::ResetableToBaseValue;
                 }
 
-                const auto ret = materialTemplate->describeParameterView(propertyName, viewPath, outInfo);
-                if (ret.code != DataViewResultCode::ErrorUnknownProperty)
-                    return ret;
+                if (const auto* param = materialTemplate->findParameter(StringID::Find(propertyName)))
+                    return param->queryDataType()->describeDataView(viewPath, param->queryDefaultValue(), outInfo);
             }
         }
     }
@@ -605,42 +656,7 @@ DataViewResult MaterialInstance::describeDataView(StringView viewPath, rtti::Dat
     return TBaseClass::describeDataView(originalViewPath, outInfo);
 }
 
-const void* MaterialInstance::findBaseParameterDataInternal(StringID name, Type& outType) const
-{
-    // if we were imported then use the imported values as a base FIRST
-    if (m_imported)
-    {
-        if (const auto* importParamInfo = m_imported->findParameterInternal(name))
-        {
-            outType = importParamInfo->value.type();
-            return importParamInfo->value.data();
-        }
-    }
-
-    // check the base as normal
-    if (auto base = m_baseMaterial.load())
-        return base->findParameterDataInternal(name, outType); // NOTE: we ask base for it's value, not it's base value
-
-    return nullptr;
-}
-
-bool MaterialInstance::readBaseParameter(StringID name, void* data, Type type) const
-{
-    // small "hack" for imported materials to report the base material from the imported template
-    if (m_imported && name == BASE_MATERIAL_NAME)
-        return rtti::ConvertData(&m_imported->m_baseMaterial, TYPE_OF(m_baseMaterial), data, type);
-
-    // find the data holder
-    Type paramType;
-    if (const auto* paramValue = findBaseParameterDataInternal(name, paramType))
-        return rtti::ConvertData(paramValue, paramType, data, type);
-
-    // no base value to read
-    // TODO: consider returning default value for the type ?
-    return false;
-}
-
-//---
+//--
 
 class MaterialInstanceDataView : public DataViewNative
 {
@@ -663,7 +679,7 @@ public:
             const auto paramName = StringID::Find(propertyName); // avoid allocating BS names
 
             Type paramType;
-            if (const auto* paramValue = m_material->findBaseParameterDataInternal(paramName, paramType))
+            if (const auto* paramValue = FindBaseParameterDataInternal(m_material, paramName, paramType))
                 return paramType->readDataView(viewPath, paramValue, targetData, targetType); // just follow with the read
         }
 

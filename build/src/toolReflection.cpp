@@ -11,12 +11,16 @@ ProjectReflection::~ProjectReflection()
 
 static bool ProjectsNeedsReflectionUpdate(const fs::path& reflectionFile, const std::vector<ProjectReflection::RefelctionFile*>& files, fs::file_time_type& outNewstTimestamp)
 {
+    if (files.empty())
+        return true;
+
     try
     {
         if (!fs::is_regular_file(reflectionFile))
             return true;
 
         const auto reflectionFileTimestamp = fs::last_write_time(reflectionFile);
+        //std::cout << "Reflection timestamp for " << reflectionFile << ": " << reflectionFileTimestamp.time_since_epoch().count() << "\n";
 
         outNewstTimestamp = reflectionFileTimestamp;
 
@@ -24,6 +28,8 @@ static bool ProjectsNeedsReflectionUpdate(const fs::path& reflectionFile, const 
         for (const auto* file : files)
         {
             const auto sourceFileTimestamp = fs::last_write_time(file->file->absolutePath);
+            //std::cout << "Timestamp for source " << file->file->absolutePath << ": " << sourceFileTimestamp.time_since_epoch().count() << "\n";
+
             if (sourceFileTimestamp > reflectionFileTimestamp)
             {
                 if (sourceFileTimestamp > outNewstTimestamp)
@@ -52,7 +58,7 @@ bool ProjectReflection::extract(const ProjectStructure& structure, const Configu
 {
     for (auto* proj : structure.projects)
     {
-        if (proj->type == ProjectType::LocalApplication || proj->type == ProjectType::LocalLibrary)
+        //if (proj->type == ProjectType::LocalApplication || proj->type == ProjectType::LocalLibrary)
         {
             // do not include dev-only project in standalone builds
             if (config.build != BuildType::Development)

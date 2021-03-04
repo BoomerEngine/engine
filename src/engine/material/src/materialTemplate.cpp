@@ -26,12 +26,31 @@ BEGIN_BOOMER_NAMESPACE()
 
 RTTI_BEGIN_TYPE_CLASS(MaterialTemplateParamInfo);
     RTTI_PROPERTY(name);
-    RTTI_PROPERTY(category);
-    RTTI_PROPERTY(type);
     RTTI_PROPERTY(defaultValue);
-    RTTI_PROPERTY(automaticTextureSuffix);
     RTTI_PROPERTY(parameterType);
 RTTI_END_TYPE();
+
+///---
+
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IMaterialTemplateParam);
+    RTTI_CATEGORY("Naming");
+    RTTI_PROPERTY(m_name); // not editable directly
+    RTTI_PROPERTY(m_category).editable("Parameter display category");
+    RTTI_CATEGORY("Editor");
+    RTTI_PROPERTY(m_hint).editable("User tooltip");
+RTTI_END_TYPE();
+
+IMaterialTemplateParam::~IMaterialTemplateParam()
+{}
+
+void IMaterialTemplateParam::rename(StringID name)
+{
+    if (m_name != name)
+    {
+        m_name = name;
+        onPropertyChanged("name");
+    }
+}
 
 ///---
 
@@ -58,6 +77,7 @@ MaterialPrecompiledStaticTechnique::~MaterialPrecompiledStaticTechnique()
 
 RTTI_BEGIN_TYPE_ABSTRACT_CLASS(MaterialTemplate);
     RTTI_PROPERTY(m_contextPath);
+    RTTI_PROPERTY(m_parameters);
 RTTI_END_TYPE();
 
 MaterialTemplate::MaterialTemplate()
@@ -71,6 +91,13 @@ MaterialTemplate::~MaterialTemplate()
 void MaterialTemplate::onPostLoad()
 {
     TBaseClass::onPostLoad();
+
+    for (auto& param : m_parameters)
+        if (param && !param->name())
+            param = nullptr;
+
+    m_parameters.removeAll(nullptr);
+
     createTemplateProxy();
     createDataProxy();
 }
@@ -105,6 +132,7 @@ uint32_t MaterialCompilationSetup::key() const
     uint32_t ret = 0;
     uint8_t bitCount = 0;
 #define MERGE_BITS(data, num) { ret |= (uint32_t)(data) << bitCount; bitCount += num; }
+    MERGE_BITS(staticSwitches, 10);
     MERGE_BITS(msaa ? 1 : 0, 1);
 	MERGE_BITS(bindlessTextures, 1);
 	MERGE_BITS(meshletsVertices, 1);
@@ -144,105 +172,24 @@ const MaterialTemplate* MaterialTemplate::resolveTemplate() const
 	return this;
 }
 
-bool MaterialTemplate::checkParameterOverride(StringID name) const
-{
-    return false;
-}
-
-bool MaterialTemplate::resetParameter(StringID name)
-{
-    return false;
-}
-
-bool MaterialTemplate::writeParameter(StringID name, const void* data, Type type, bool refresh /*= true*/)
-{
-    return false; // templates are read only
-}
-
 bool MaterialTemplate::readParameter(StringID name, void* data, Type type) const
 {
-    MaterialTemplateParamInfo info;
-    if (queryParameterInfo(name, info))
-        return info.defaultValue.get(data, type);
-
+    for (const auto& param : m_parameters)
+        if (param->name() == name)
+            return rtti::ConvertData(param->queryDefaultValue(), param->queryDataType(), data, type);
+    
     return false;
-}
-
-bool MaterialTemplate::readBaseParameter(StringID name, void* data, Type type) const
-{
-    return readParameter(name, data, type);
-}
-
-/*const void* MaterialTemplate::findParameterDataInternal(StringID name, Type& outType) const
-{
-    MaterialTemplateParamInfo info;
-    if (queryParameterInfo(name, info))
-    {
-        outType = info.defaultValue.type();
-        return info.defaultValue.data();
-    }
-
-    return nullptr;
-}*/
-
-const void* MaterialTemplate::findBaseParameterDataInternal(StringID name, Type& outType) const
-{
-    return findParameterDataInternal(name, outType);
 }
 
 ///---
 
-DataViewResult MaterialTemplate::readDataView(StringView viewPath, void* targetData, Type targetType) const
+const IMaterialTemplateParam* MaterialTemplate::findParameter(StringID name) const
 {
-    const auto originalPath = viewPath;
+    for (const auto& param : m_parameters)
+        if (param->name() == name)
+            return param;
 
-    StringView propertyName;
-    if (rtti::ParsePropertyName(viewPath, propertyName))
-    {
-        MaterialTemplateParamInfo info;
-        if (queryParameterInfo(propertyName, info))
-        {
-            return info.type->readDataView(viewPath, info.defaultValue.data(), targetData, targetType);
-        }
-    }
-
-    return TBaseClass::readDataView(originalPath, targetData, targetType);
-}
-
-DataViewResult MaterialTemplate::describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const
-{
-    const auto orgViewPath = viewPath;
-
-    if (viewPath.empty())
-    {
-        if (outInfo.requestFlags.test(rtti::DataViewRequestFlagBit::MemberList))
-            listParameters(outInfo);
-    }
-    else
-    {
-        StringView propertyName;
-        if (rtti::ParsePropertyName(viewPath, propertyName))
-        {
-            MaterialTemplateParamInfo info;
-            if (queryParameterInfo(propertyName, info))
-            {
-                return info.type->describeDataView(viewPath, info.defaultValue.data(), outInfo);
-            }
-        }
-    }
-
-    return TBaseClass::describeDataView(orgViewPath, outInfo);
-}
-
-DataViewResult MaterialTemplate::describeParameterView(StringView paramName, StringView viewPath, rtti::DataViewInfo& outInfo) const
-{
-    MaterialTemplateParamInfo info;
-    if (queryParameterInfo(paramName, info))
-    {
-        return info.type->describeDataView(viewPath, info.defaultValue.data(), outInfo);
-    }
-
-    return DataViewResultCode::ErrorUnknownProperty;
+    return nullptr;
 }
 
 ///---
@@ -259,17 +206,27 @@ void MaterialTemplate::createTemplateProxy()
 {
 	DEBUG_CHECK_EX(!m_templateProxy, "Template proxy for material template should be immutable");
 
-    Array<MaterialTemplateParamInfo> parameters;
-    queryAllParameterInfos(parameters);
+    Array<MaterialTemplateParamInfo> proxyParameters;
+    proxyParameters.reserve(m_parameters.size());
 
-    MaterialTemplateMetadata metadata;
-    queryMatadata(metadata);
+    for (const auto& param : parameters())
+    {
+        if (param->name())
+        {
+            if (const auto type = param->queryDataType())
+            {
+                auto& proxyParam = proxyParameters.emplaceBack();
+                proxyParam.name = param->name();
+                proxyParam.parameterType = param->queryType();
+                proxyParam.defaultValue = Variant(param->queryDataType(), param->queryDefaultValue());
+            }
+        }
+    }
 
     Array<MaterialPrecompiledStaticTechnique> precompiledTechniques;
-       
 
     const auto& contextPath = path() ? path().str() : m_contextPath;
-	m_templateProxy = RefNew<MaterialTemplateProxy>(contextPath, parameters, metadata, queryDynamicCompiler(), precompiledTechniques);
+	m_templateProxy = RefNew<MaterialTemplateProxy>(contextPath, proxyParameters, queryDynamicCompiler(), precompiledTechniques);
 }
 
 ///---

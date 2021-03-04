@@ -12,6 +12,7 @@
 
 #include "engine/rendering/include/filters.h"
 #include "engine/rendering/include/params.h"
+#include "engine/rendering/include/stats.h"
 #include "engine/ui/include/uiRenderingPanel.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
@@ -165,11 +166,19 @@ public:
 
     //--
 
+    // get the scene to render :)
+    virtual rendering::Scene* scene() const { return nullptr; }
+
+    //--
+
     // get the overlay toolbar
     INLINE const ToolBarPtr& toolbar() const { return m_toolbar; }
 
     // get the bottom overlay toolbar
     INLINE const ToolBarPtr& bottomToolbar() const { return m_bottomToolbar; }
+
+    // center area (stats windows)
+    INLINE const ElementPtr& centerArea() const { return m_centerArea; }
 
     /// get last computed camera
     INLINE const Camera& cachedCamera() const { return m_cachedCamera; }
@@ -179,6 +188,9 @@ public:
 
     // get the camera settings
     INLINE const ViewportCameraControllerSettings& cameraSettings() const { return m_cameraController.settings(); }
+
+    // get last frame stats
+    INLINE const rendering::FrameStats& stats() const { return m_frameStats; }
 
     // change panel settings
     void panelSettings(const RenderingScenePanelSettings& settings);
@@ -221,6 +233,7 @@ protected:
     virtual void handlePointSelection(bool ctrl, bool shift, const Point& clientPosition);
     virtual void handleAreaSelection(bool ctrl, bool shift, const Rect& clientRect);
     virtual bool handleContextMenu(const ElementArea& area, const Position& absolutePosition, input::KeyMask controlKeys) override;
+    virtual void handlePostRenderContent();
 
     virtual void handlePointSelection(bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables);
     virtual void handleAreaSelection(bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables);
@@ -245,6 +258,8 @@ protected:
 protected:
     RenderingScenePanelSettings m_panelSettings;
 
+    rendering::FrameStats m_frameStats;
+
 private:
     Timer m_updateTimer;
     NativeTimePoint m_lastUpdateTime;
@@ -264,6 +279,7 @@ private:
 
     ToolBarPtr m_toolbar;
     ToolBarPtr m_bottomToolbar;
+    ElementPtr m_centerArea;
 
     //--
 
@@ -288,13 +304,11 @@ public:
 
     //--
 
-    INLINE rendering::Scene* scene() const { return m_scene; }
+    virtual rendering::Scene* scene() const override final { return m_scene; }
 
     //--
 
 protected:
-    virtual void handleRender(rendering::FrameParams& frame) override;
-
     rendering::ScenePtr m_scene;
 };
 

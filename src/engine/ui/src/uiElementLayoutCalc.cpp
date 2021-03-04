@@ -312,7 +312,7 @@ void IElement::arrangeChildrenVertical(const ElementArea& innerArea, const Eleme
             totalHeight += area.size().y;
 
             if (nullptr != it.m_unadjustedArea)
-                * it.m_unadjustedArea = area;
+                *it.m_unadjustedArea = area;
         }
     }
 

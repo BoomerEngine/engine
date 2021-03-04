@@ -36,19 +36,24 @@ export shader MaterialPS
 	
 	//--
 	
-	void PackPBR(out PBRPixel pbr, vec3 worldPosition, vec3 worldNormal, vec3 shadingNormal, vec3 baseColor, float metallic, float specular, float roughness)
+	void PackPBR(out PBRPixel pbr, vec3 worldPosition, vec3 worldNormal, vec3 shadingNormal, vec3 baseColor, float metallic, vec3 specular, float roughness)
 	{
 		pbr.shading_position = worldPosition;
 		pbr.shading_normal = shadingNormal;
 		pbr.face_normal = worldNormal;
 		pbr.shading_view = normalize(CameraPosition - worldPosition);
 		pbr.shading_NoV = max(MIN_N_DOT_V, dot(pbr.shading_normal, pbr.shading_view));
-		pbr.shading_reflected = reflect(-pbr.shading_view, pbr.shading_normal);
-		pbr.diffuseColor = baseColor * (1.0 - metallic);
-		pbr.f0 = ComputeF0(baseColor, metallic, ComputeDielectricF0(specular));
-		pbr.perceptualRoughness = roughness;
-		pbr.roughness = pbr.perceptualRoughness * pbr.perceptualRoughness;
-		pbr.energyCompensation = vec3(1);
+		pbr.base_color = baseColor;
+		pbr.metalic = metallic;
+		pbr.roughness = roughness * roughness;
+		pbr.specular = specular;
+	}
+
+	void FlipPBRToSecondSide(out PBRPixel pbr)
+	{
+		pbr.shading_normal = pbr.shading_normal - (2.0 * pbr.face_normal * dot(pbr.face_normal, pbr.shading_normal));
+		pbr.face_normal = -pbr.face_normal;
+		pbr.shading_NoV = max(MIN_N_DOT_V, dot(pbr.shading_normal, pbr.shading_view));
 	}
 	
 	//--

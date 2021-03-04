@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include "engine/rendering/include/stats.h"
+
 BEGIN_BOOMER_NAMESPACE()
 
 //--
@@ -93,6 +95,7 @@ private:
     gpu::RenderTargetViewPtr m_flippedDepthTargetRTV;
 
     rendering::CameraContextPtr m_cameraContext;
+    rendering::FrameStats m_frameStats;
 
     uint32_t m_frameIndex = 0;
 

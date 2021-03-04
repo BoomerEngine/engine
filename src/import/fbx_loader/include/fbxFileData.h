@@ -11,6 +11,7 @@
 #include "core/resource_compiler/include/importSourceAsset.h"
 #include "engine/mesh/include/streamBuilder.h"
 #include "engine/mesh/include/streamData.h"
+#include "import/mesh_loader/include/renderingMeshImportConfig.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 
@@ -40,14 +41,14 @@ struct IMPORT_FBX_LOADER_API SkeletonBuilder
     Array<SkeletonBone> m_skeletonBones;
 
     HashMap<const DataNode*, uint32_t> m_skeletonBonesMapping;
-    HashMap<const fbxsdk::FbxNode*, uint32_t> m_skeletonRawBonesMapping;
+    HashMap<const ofbx::Object*, uint32_t> m_skeletonRawBonesMapping;
 
     //--
 
     SkeletonBuilder();
 
     uint32_t addBone(const FBXFile& owner, const DataNode* node);
-    uint32_t addBone(const FBXFile& owner, const fbxsdk::FbxNode* node);
+    uint32_t addBone(const FBXFile& owner, const ofbx::Object* node);
 };
 
 struct MeshVertexInfluence;
@@ -73,7 +74,7 @@ struct IMPORT_FBX_LOADER_API DataNodeMesh
 struct IMPORT_FBX_LOADER_API DataMeshExportSetup
 {
     Matrix assetToEngine;
-    bool applyNodeTransform = false; // export in "world space" of the model, rare
+    bool applyRootTransform = false;
     bool forceSkinToNode = false;
     bool flipUV = false;
     bool flipFace = false;
@@ -86,45 +87,24 @@ struct IMPORT_FBX_LOADER_API DataNode
     StringID m_name;
     uint8_t m_lodIndex = 0; // for Visual Mesh
 
-    //Matrix m_worldToAsset; // space conversion matrix for the FBX file
-    Matrix m_localToWorld; // placement of the node in world space
-    Matrix m_meshToLocal;
+    //Matrix m_localToAsset; // placement of the node in asset space
+    Matrix m_localToParent; // placement of the node in parent space
 
     DataNode* m_parent = nullptr;
     Array<DataNode*> m_children;
 
-    const fbxsdk::FbxMesh* m_mesh = nullptr;
-    const fbxsdk::FbxNode* m_node = nullptr;
+    const ofbx::Object* m_node = nullptr;
 
     //--
 
-    struct ChunkInfo
-    {
-        uint32_t materialIndex = 0; // global
-        uint32_t numTriangles = 0; // only if we export triangles
-        uint32_t numQuads = 0; // only if we export quads
-        Array<uint32_t> polygonIndices;
-        Array<uint32_t> firstVertexIndices;
+    void exportToMeshModel(IProgressTracker& progress, const FBXFile& owner, const Matrix& localToAsset, const DataMeshExportSetup& config, DataNodeMesh& outGeometry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials) const;
+};
 
-        INLINE MeshTopologyType topology() const
-        {
-            DEBUG_CHECK(numTriangles == 0 || numQuads == 0);
-            return numQuads ? MeshTopologyType::Quads : MeshTopologyType::Triangles;
-        }
-
-        INLINE uint32_t faceCount() const
-        {
-            DEBUG_CHECK(numTriangles == 0 || numQuads == 0);
-            return numQuads ? numQuads : numTriangles;
-        }
-    };
-
-
-    void extractSkinInfluences(const FBXFile& owner, Array<MeshVertexInfluence>& outInfluences, SkeletonBuilder& outSkeleton, bool forceSkinToNode) const;
-
-    void extractBuildChunks(const FBXFile& owner, Array<ChunkInfo>& outBuildChunks, MaterialMapper& outMaterials) const;
-
-    bool exportToMeshModel(IProgressTracker& progress, const FBXFile& owner, const DataMeshExportSetup& config, DataNodeMesh& outGeonetry, SkeletonBuilder& outSkeleton, MaterialMapper& outMaterials) const;
+// export node
+struct IMPORT_FBX_LOADER_API ExportNode
+{
+    const DataNode* data = nullptr;
+    Matrix localToAsset;
 };
 
 class FBXAssetLoader;
@@ -141,7 +121,7 @@ public:
     ///--
 
     // get the scene object
-    INLINE fbxsdk::FbxScene* sceneData() const { return m_fbxScene; }
+    INLINE ofbx::IScene* sceneData() const { return m_fbxScene; }
 
     // get the root node
     INLINE const DataNode* rootNode() const { return m_nodes[0]; }
@@ -150,29 +130,42 @@ public:
     INLINE const Array<const DataNode*>& nodes() const { return (const Array<const DataNode*>&)m_nodes; }
 
     // get all materials
-    INLINE const Array<const FbxSurfaceMaterial*>& materials() const { return m_materials; }
+    INLINE const Array<const ofbx::Material*>& materials() const { return m_materials; }
+
+    // get the FILE scale factor
+    INLINE float scaleFactor() const { return m_scaleFactor; }
+
+    // get the import space of the mesh
+    INLINE MeshImportSpace space() const { return m_space; }
 
     ///--
 
     // find data node for given  node
-    const DataNode* findDataNode(const fbxsdk::FbxNode* fbxNode) const;
+    const DataNode* findDataNode(const ofbx::Object* fbxNode) const;
 
     // find material by name
-    const FbxSurfaceMaterial* findMaterial(StringView name) const;
+    const ofbx::Material* findMaterial(StringView name) const;
 
     //--
 
+    // collect export nodes
+    void collectExportNodes(bool applyRootTransform, Array<ExportNode>& outExportNodes) const;
+
 private:
     uint64_t m_fbxDataSize = 0;
-    fbxsdk::FbxScene* m_fbxScene = nullptr;
+    ofbx::IScene* m_fbxScene = nullptr;
+
+    float m_scaleFactor = 1.0f;
+    MeshImportSpace m_space = MeshImportSpace::LeftHandYUp;
 
     Array<DataNode*> m_nodes;
-    HashMap<const fbxsdk::FbxNode*, const DataNode*> m_nodeMap;
+    HashMap<const ofbx::Object*, const DataNode*> m_nodeMap;
 
-    Array<const FbxSurfaceMaterial*> m_materials;
-    HashMap<StringBuf, const FbxSurfaceMaterial*> m_materialMap;
+    Array<const ofbx::Material*> m_materials;
+    HashMap<StringBuf, const ofbx::Material*> m_materialMap;
 
-    void walkStructure(const fbxsdk::FbxAMatrix& fbxWorldToParent, const Matrix& spaceConversionMatrix, const fbxsdk::FbxNode* node, DataNode* parentDataNode);
+    void walkStructure(const ofbx::Object* node, DataNode* parentDataNode);
+    void collectExportNodes(const DataNode* node, const Matrix& localToAsset, Array<ExportNode>& outExportNodes) const;
 
     //--
 

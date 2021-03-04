@@ -54,4 +54,37 @@ private:
     uint32_t m_sequenceNumber;
 };
 
+//---
+
+/// inplace undo/redo action, uses lambda function to define the jobs so it's easier on the C++ side (no friend classes)
+class CORE_OBJECT_API ActionInplace : public IAction
+{
+public:
+    ActionInplace(StringView caption, StringID id);
+    virtual ~ActionInplace();
+
+    //--
+
+    virtual StringID id() const { return m_id; }
+    virtual StringBuf description() const { return m_caption; }
+
+    virtual bool execute() { return doFunc ? doFunc() : true; }
+    virtual bool undo() { return undoFunc ? undoFunc() : true; }
+
+    //--
+
+    typedef std::function<bool(void)> TActionFunction;
+
+    TActionFunction doFunc;
+    TActionFunction undoFunc;
+
+    //--
+
+protected:
+    StringBuf m_caption;
+    StringID m_id;
+};
+
+//--
+
 END_BOOMER_NAMESPACE()

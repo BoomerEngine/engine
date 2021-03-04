@@ -54,12 +54,14 @@ void ScenePreviewPanel::requestRecreateGizmo()
     recreateGizmo();
 }
 
+rendering::Scene* ScenePreviewPanel::scene() const
+{
+    return nullptr; // TODO
+}
+
 void ScenePreviewPanel::handleRender(rendering::FrameParams& frame)
 {
     TBaseClass::handleRender(frame);
-
-	frame.scenes.mainScenePtr = nullptr;
-	frame.scenes.backgroundScenePtr = nullptr;
 
     if (m_container)
     {

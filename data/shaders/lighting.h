@@ -81,7 +81,6 @@ shader Lighting
 		light.colorIntensity = GlobalLightingData.LightColor.xyz1;
 		light.l = GlobalLightingData.LightDirection;
 		light.NoL = saturate(dot(GlobalLightingData.LightDirection, pbr.shading_normal));
-        light.attenuation = saturate((dot(GlobalLightingData.LightDirection, pbr.face_normal) + 0.05) / 1.05);
         return max(vec3(0), PBR.SurfaceShading(pbr, light, occlusion));
 	}
 	

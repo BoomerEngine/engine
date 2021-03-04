@@ -9,6 +9,7 @@
 
 #include "engine/world/include/entity.h"
 #include "core/object/include/object.h"
+#include "../../rendering/include/stats.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -58,17 +59,6 @@ struct ENGINE_GAME_API GameTransitionInfo
 
 //--
 
-/// rendering viewport
-struct ENGINE_GAME_API GameViewport
-{
-    RTTI_DECLARE_NONVIRTUAL_CLASS(GameViewport);
-
-    GameWorldPtr world;
-    EntityCameraPlacement cameraPlacement;
-};
-
-//--
-
 /// loading screen state
 enum class GameLoadingScreenState : uint8_t
 {
@@ -102,7 +92,7 @@ public:
     bool processUpdate(double dt, GameLoadingScreenState loadingScreenState);
 
     // render all required content, all command should be recorded via provided command buffer writer
-    bool processRender(GameViewport& outRendering);
+    void processRenderView(gpu::CommandWriter& cmd, const rendering::FrameCompositionTarget& viewport, rendering::CameraContext* cameraContext, rendering::FrameStats* outStats = nullptr);
 
     // render to on screen canvas
     void processRenderCanvas(canvas::Canvas& canvas);
@@ -137,6 +127,12 @@ protected:
 
     GameWorldPtr m_currentGameWorld;
     Array<GameWorldPtr> m_worlds;
+
+    uint32_t m_frameIndex = 0;
+    double m_gameTimeAccumulator = 0.0;
+    double m_engineTimeAccumulator = 0.0;
+
+    rendering::FrameStats m_frameStats;
 
     //--
 

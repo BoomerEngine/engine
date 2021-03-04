@@ -307,6 +307,12 @@ RenderingScenePanel::RenderingScenePanel()
     m_toolbar->customVerticalAligment(ElementVerticalLayout::Top);
     m_toolbar->overlay(true);
 
+    m_centerArea = createChild<IElement>();
+    m_centerArea->customHorizontalAligment(ElementHorizontalLayout::Expand);
+    m_centerArea->customVerticalAligment(ElementVerticalLayout::Expand);
+    m_centerArea->customMargins(10, 50, 10, 50);
+    m_centerArea->overlay(true);
+
     m_bottomToolbar = createChildWithType<ToolBar>("PreviewPanelToolbar"_id);
     m_bottomToolbar->customHorizontalAligment(ElementHorizontalLayout::Expand);
     m_bottomToolbar->customVerticalAligment(ElementVerticalLayout::Bottom);
@@ -1291,6 +1297,11 @@ RefPtr<RenderingPanelDepthBufferQuery> RenderingScenePanel::queryDepth(const Rec
 
 //--
 
+void RenderingScenePanel::handlePostRenderContent()
+{
+
+}
+
 void RenderingScenePanel::renderContent(const ViewportParams& viewport, Camera* outCameraUsedToRender)
 {
     // compute camera
@@ -1332,11 +1343,16 @@ void RenderingScenePanel::renderContent(const ViewportParams& viewport, Camera* 
 	target.targetRect = Rect(0, 0, viewport.width, viewport.height);
 
     // generate command buffers
-    if (auto* commandBuffer = GetService<rendering::FrameRenderingService>()->renderFrame(frame, target))
+    m_frameStats = rendering::FrameStats();
+    if (auto* commandBuffer = GetService<rendering::FrameRenderingService>()->render(frame, target, scene(), m_frameStats))
     {
         auto device = GetService<DeviceService>()->device();
         device->submitWork(commandBuffer);
     }
+
+    // update 
+    if (!viewport.capture)
+        handlePostRenderContent();
 }
 
 //--    
@@ -1551,12 +1567,6 @@ RenderingSimpleScenePanel::RenderingSimpleScenePanel()
 RenderingSimpleScenePanel::~RenderingSimpleScenePanel()
 {
     m_scene.reset();
-}
-
-void RenderingSimpleScenePanel::handleRender(rendering::FrameParams& frame)
-{
-    TBaseClass::handleRender(frame);
-    frame.scenes.mainScenePtr = m_scene;
 }
 
 //--

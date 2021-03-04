@@ -103,7 +103,6 @@ public:
 
 protected:
     RefPtr<ComboBox> m_box;
-    RefPtr<TextLabel> m_message;
     Array<StringID> m_options;
       
     void write()

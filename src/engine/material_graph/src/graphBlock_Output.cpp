@@ -21,7 +21,7 @@ RTTI_END_TYPE();
 MaterialGraphBlockOutput::MaterialGraphBlockOutput()
 {}
 
-void MaterialGraphBlockOutput::resolveMetadata(MaterialTemplateMetadata& outMetadata) const
+void MaterialGraphBlockOutput::evalRenderStates(const IMaterial& params, MaterialRenderState& outMetadata) const
 {
     // nothing specific
 }

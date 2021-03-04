@@ -789,7 +789,7 @@ void SceneStructurePanel::presetSave()
 
 void SceneStructurePanel::presetSelect()
 {
-    auto name = m_presetList->selectedOptionText();
+    auto name = m_presetList->text();
     for (auto* preset : m_presets)
     {
         if (preset->name == name)

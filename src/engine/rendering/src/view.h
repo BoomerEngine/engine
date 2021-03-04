@@ -174,6 +174,8 @@ public:
 
     INLINE const Camera& visibilityCamera() const { return m_camera; }
 
+    INLINE const Vector3 lodReferencePoint() const { return m_lodReferencePoint; }
+
     //--
 
     void bindCamera(gpu::CommandWriter& cmd);
@@ -182,6 +184,8 @@ public:
 
 protected:
     const FrameRenderer& m_frame;
+
+    Vector3 m_lodReferencePoint;
 
     Rect m_viewport;
     Camera m_camera;

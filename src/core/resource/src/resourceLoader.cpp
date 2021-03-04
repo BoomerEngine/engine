@@ -20,6 +20,8 @@ BEGIN_BOOMER_NAMESPACE_EX(res)
 
 //--
 
+#pragma optimize("", off)
+
 ResourceLoader::ResourceLoader()
 {
     m_eventKey = MakeUniqueEventKey("ResourceLoader");
@@ -33,6 +35,13 @@ ResourceLoader::~ResourceLoader()
 
 bool ResourceLoader::validateResource(const ResourcePath& key, const io::TimeStamp& existingTimestamp)
 {
+    io::TimeStamp currentFileTime;
+    if (GetService<DepotService>()->queryFileTimestamp(key.view(), currentFileTime))
+    {
+        if (existingTimestamp < currentFileTime) // what we have loaded is older
+            return false;
+    }
+
     return true;
 }
 

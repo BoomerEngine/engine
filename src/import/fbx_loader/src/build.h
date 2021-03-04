@@ -8,8 +8,10 @@
 
 #include "public.h"
 
-#define FBXSDK_SHARED
-#include <fbxsdk.h>
+//#define FBXSDK_SHARED
+//#include <fbxsdk.h>
+
+#include "ofbx/ofbx.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 
@@ -24,28 +26,19 @@ class FBXFile;
 
 //--
 
-static Vector3 ToVector(const fbxsdk::FbxVector4& v)
+static Vector3 ToVector(const ofbx::Vec4& v)
 {
-    return Vector3((float)v[0], (float)v[1], (float)v[2]);
+    return Vector3((float)v.x, (float)v.y, (float)v.z);
 }
 
-static Matrix ToMatrix(const fbxsdk::FbxMatrix& m)
+static Vector3 ToVector(const ofbx::Vec3& v)
 {
-    Matrix ret;
-    ret.identity();
-    ret.m[0][0] = (float)m.Get(0,0);
-    ret.m[0][1] = (float)m.Get(1,0);
-    ret.m[0][2] = (float)m.Get(2,0);
-    ret.m[0][3] = (float)m.Get(3,0);
-    ret.m[1][0] = (float)m.Get(0,1);
-    ret.m[1][1] = (float)m.Get(1,1);
-    ret.m[1][2] = (float)m.Get(2,1);
-    ret.m[1][3] = (float)m.Get(3,1);
-    ret.m[2][0] = (float)m.Get(0,2);
-    ret.m[2][1] = (float)m.Get(1,2);
-    ret.m[2][2] = (float)m.Get(2,2);
-    ret.m[2][3] = (float)m.Get(3,2);
-    return ret;
+    return Vector3((float)v.x, (float)v.y, (float)v.z);
+}
+
+static Matrix ToMatrix(const ofbx::Matrix& m)
+{
+    return Matrix(TRANSPOSED_FLAG, m.m);
 }
 
 END_BOOMER_NAMESPACE_EX(assets)

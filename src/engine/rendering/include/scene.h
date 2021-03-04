@@ -106,13 +106,14 @@ private:
 
 	//--
 
-	void renderMainView(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame);
-	void renderCascadesView(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame);
-	void renderWireframeView(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame);
-	void renderCaptureSelectionView(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame);
-	void renderCaptureDepthView(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame);
+	void renderMainView(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame) const;
+	void renderCascadesView(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame) const;
+	void renderWireframeView(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame) const;
+	void renderCaptureSelectionView(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame) const;
+	void renderCaptureDepthView(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame) const;
 
 	void prepare(gpu::CommandWriter& cmd, const FrameRenderer& frame);
+	void finish(gpu::CommandWriter& cmd, const FrameRenderer& frame, FrameStats& outStats);
 
 	friend class FrameRenderingService;
 	friend class FrameViewMain;

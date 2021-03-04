@@ -250,6 +250,7 @@ struct ElementDrawListToken : public NoCopy
     void* nextToken = nullptr;
     ElementArea* m_unadjustedArea = nullptr;
 
+    INLINE bool start() const { return index == INDEX_NONE && curToken == nullptr && nextToken == nullptr; }
     INLINE const IElement* operator->() const { return elem; }
     INLINE const IElement* operator*() const { return elem; }
 };

@@ -29,7 +29,7 @@ public:
     FBXMeshImportConfig();
 
     // geometry stuff
-    bool m_applyNodeTransform = false;
+    bool m_importAtRootSpace = false;
     bool m_flipUV = true;
     bool m_forceNodeSkin = false;
     bool m_createNodeMaterials = false;

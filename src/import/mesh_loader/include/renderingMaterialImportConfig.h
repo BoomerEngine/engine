@@ -52,15 +52,12 @@ public:
 
     StringBuf m_bindingColor;
     StringBuf m_bindingMapColor;
-    StringBuf m_bindingMapColorMask;
     StringBuf m_bindingMapBump;
     StringBuf m_bindingMapNormal;
-    StringBuf m_bindingMapDissolve;
+    StringBuf m_bindingMapMask;
     StringBuf m_bindingMapSpecular;
     StringBuf m_bindingMapEmissive;
     StringBuf m_bindingMapRoughness;
-    StringBuf m_bindingMapNormalSpecularity;
-    StringBuf m_bindingMapRoughnessSpecularity;
     StringBuf m_bindingMapMetallic;
     StringBuf m_bindingMapAmbientOcclusion;
         
@@ -76,6 +73,7 @@ public:
     StringBuf m_postfixRoughnessSpecularity;
     StringBuf m_postfixMetallic;
     StringBuf m_postfixAmbientOcclusion;
+    StringBuf m_postfixMetallicAOSpecularSmoothness;
 
     //--
 
@@ -105,6 +103,7 @@ enum GeneralMaterialTextureType
     GeneralMaterialTextureType_Metallic,
     GeneralMaterialTextureType_Emissive,
     GeneralMaterialTextureType_AO,
+    GeneralMaterialTextureType_MetallicAOSpecularSmoothness,
 
     GeneralMaterialTextureType_MAX,
 };
@@ -137,16 +136,21 @@ protected:
     static StringBuf BuildTextureDepotPath(StringView referenceDepotPath, StringView textureImportPath, StringView assetFileName);
 
     static bool WriteTexture(const TextureRef& textureRef, StringID name, Array<MaterialInstanceParam>& outParams);
+    static bool WriteBool(bool value, StringID name, Array<MaterialInstanceParam>& outParams);
+    static bool WriteVector4(Vector4 value, StringID name, Array<MaterialInstanceParam>& outParams);
 
     virtual bool tryApplyTexture(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, StringView mappingParams, const MaterialTemplate* knownTemplate, const LoadedTexture& texture, Array<MaterialInstanceParam>& outParams) const;
+
+    bool applyBoolParam(StringView paramNames, const MaterialTemplate* knownTemplate, bool value, Array<MaterialInstanceParam>& outParams) const;
+    bool applyVector4Param(StringView paramNames, const MaterialTemplate* knownTemplate, Vector4 value, Array<MaterialInstanceParam>& outParams) const;
         
     bool loadTexture(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialTextrureInfo& info, LoadedTexture& outLoadedTextures) const;
+
+    bool tryLoadAlternativeTexture(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialTextrureInfo& info, StringView additionalSuffixes, LoadedTexture& outLoadedTextures) const;
 
     bool findAssetSourcePath(res::IResourceImporterInterface& importer, const Array<StringBuf>& paths, const Array<StringView>& suffixes, StringBuf& outPath) const;
 
     void loadAdditionalTextures(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, LoadedTextures& outLoadedTextures) const;
-
-    virtual MaterialRef loadBaseMaterial(const LoadedTextures& info, const MaterialImportConfig& config) const;
 
     virtual MaterialInstancePtr importMaterial(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialInfo& sourceMaterial) const;
 

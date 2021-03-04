@@ -25,10 +25,7 @@ struct ENGINE_MATERIAL_API MaterialTemplateParamInfo
     RTTI_DECLARE_NONVIRTUAL_CLASS(MaterialTemplateParamInfo);
 
     StringID name;
-    StringID category;
-    Type type;
     Variant defaultValue;
-    StringBuf automaticTextureSuffix;
     MaterialDataLayoutParameterType parameterType;
 };
 
@@ -42,6 +39,9 @@ class ENGINE_MATERIAL_API IMaterialTemplateDynamicCompiler : public IObject
 
 public:
     virtual ~IMaterialTemplateDynamicCompiler();
+
+    /// query material render states for given material setup
+    virtual void evalRenderStates(const IMaterial& setup, MaterialRenderState& outRenderStates) const = 0;
 
     /// compile shaders for given material technique, when compiled the technique will be updated with new "compiled state"
     virtual void requestTechniqueComplation(StringView contextName, MaterialTechnique* technique) = 0;
@@ -64,9 +64,9 @@ class ENGINE_MATERIAL_API MaterialPrecompiledStaticTechnique
 ///---
 
 // material rendering flags
-struct ENGINE_MATERIAL_API MaterialTemplateMetadata
+struct ENGINE_MATERIAL_API MaterialRenderState
 {
-    RTTI_DECLARE_NONVIRTUAL_CLASS(MaterialTemplateMetadata);
+    RTTI_DECLARE_NONVIRTUAL_CLASS(MaterialRenderState);
 
 public:
     bool hasVertexAnimation = false; // vertices are moving
@@ -75,9 +75,52 @@ public:
     bool hasLighting = false; // material has lighting
     bool hasPixelReadback = false; // material is reading back the color (fake glass)
 
-    MaterialTemplateMetadata();
+    MaterialRenderState();
 };
 
+///---
+
+/// parameter of the material template
+class ENGINE_MATERIAL_API IMaterialTemplateParam : public IObject
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(IMaterialTemplateParam, IObject);
+
+public:
+    virtual ~IMaterialTemplateParam();
+
+    //--
+
+    /// change name
+    void rename(StringID name);
+
+    //--
+
+    /// get name of the parameter
+    INLINE StringID name() const { return m_name; }
+
+    // get parameter category
+    INLINE StringID category() const { return m_category; }
+
+    // editor hint
+    INLINE const StringBuf& hint() const { return m_hint; }
+
+    //--
+
+    // get the type
+    virtual MaterialDataLayoutParameterType queryType() const = 0;
+
+    // get data type of the parameter
+    virtual Type queryDataType() const = 0;
+
+    // get default value of the parameter
+    virtual const void* queryDefaultValue() const = 0;
+
+private:
+    StringID m_name;
+    StringID m_category;
+
+    StringBuf m_hint;
+};
 
 ///---
 
@@ -93,46 +136,31 @@ public:
 
     //----
 
+    // list of material parameters
+    INLINE const Array<MaterialTemplateParamPtr>& parameters() const { return m_parameters; }
+
+    //----
+
     // IMaterial interface
     virtual MaterialDataProxyPtr dataProxy() const override final;
 	virtual MaterialTemplateProxyPtr templateProxy() const override final;
 
 	virtual const MaterialTemplate* resolveTemplate() const override final;
-    virtual bool checkParameterOverride(StringID name) const override final;
-    virtual bool resetParameter(StringID name) override final;
-    virtual bool writeParameter(StringID name, const void* data, Type type, bool refresh = true) override final; // NOTE: writing to template is not supported (immutable resources and all...)
     virtual bool readParameter(StringID name, void* data, Type type) const override final;
-    virtual bool readBaseParameter(StringID name, void* data, Type type) const override final;
-
-    virtual const void* findBaseParameterDataInternal(StringID name, Type& outType) const override final;
-
-    // IObject - extension of object property model that allows to see the template parameters
-    virtual DataViewResult readDataView(StringView viewPath, void* targetData, Type targetType) const override;
-    virtual DataViewResult describeDataView(StringView viewPath, rtti::DataViewInfo& outInfo) const override;
-
-    ///---
-
-    // list material parameters (for data view)
-    virtual void listParameters(rtti::DataViewInfo& outInfo) const = 0;
-
-    // find info about material parameters
-    virtual bool queryParameterInfo(StringID name, MaterialTemplateParamInfo& outInfo) const = 0;
-
-    /// get the material template metadata
-    virtual void queryMatadata(MaterialTemplateMetadata& outMetadata) const = 0;
-
-    /// get list of template parameters
-    virtual void queryAllParameterInfos(Array<MaterialTemplateParamInfo>& outParams) const = 0;
 
     //--
 
-    // describe parameter data
-    DataViewResult describeParameterView(StringView paramName, StringView viewPath, rtti::DataViewInfo& outInfo) const;
+    // find parameter by name
+    const IMaterialTemplateParam* findParameter(StringID name) const;
 
 	///---
 
 protected:
     virtual void onPostLoad() override;
+
+    //--
+
+    Array<MaterialTemplateParamPtr> m_parameters;
 
     //--
 

@@ -131,7 +131,7 @@ void GameWorld::toggleFreeCamera(bool enabled, const Vector3* newPosition /*= nu
     }
 }
 
-bool GameWorld::calculateCamera(EntityCameraPlacement& outCamera)
+bool GameWorld::calculateCamera(CameraSetup& outCamera)
 {
     // use free camera if it's enabled or we don't have any entity on the stack
     if (m_freeCameraEnabled || m_viewStack.empty())

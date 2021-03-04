@@ -162,7 +162,7 @@ public:
     virtual bool handleInput(const input::BaseEvent& evt);
 
     /// calculate viewport
-    virtual bool handleCamera(EntityCameraPlacement& outCamera);
+    virtual bool handleCamera(CameraSetup& outCamera);
 
     /// handle stream-in of the component island, called after children were streamed in
     /// NOTE: none of the entities in the island are attached at the time of stream it so we can modify the hierarchy freely

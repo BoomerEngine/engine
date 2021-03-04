@@ -21,6 +21,9 @@ Dependency("engine_mesh")
 
 Dependency("import_mesh_loader")
 
-Dependency("lib_fbx2019")
+--Dependency("lib_fbx2019")
 
 ProjectOption("devonly")
+
+FileOption("src/ofbx/miniz.c", "nopch")
+FileOption("src/ofbx/ofbx.cpp", "nopch")

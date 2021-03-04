@@ -90,81 +90,47 @@ bool Host::update(double dt)
 
 void Host::render(gpu::CommandWriter& cmd, const HostViewport& hostViewport)
 {
-    // render game stack
-    GameViewport viewport;
-    if (m_game->processRender(viewport))
+    if (hostViewport.backBufferColor->flipped())
     {
-        const float defaultAspect = hostViewport.width / (float)hostViewport.height;
-        const float defaultFOV = 75.0f;
-        const float defaultNearPlane = 0.01f;
-        const float defaultFarPlane = 4000.0f;
+        if (m_flippedColorTarget && (m_flippedColorTarget->width() != hostViewport.backBufferColor->width() || m_flippedColorTarget->height() != hostViewport.backBufferColor->height()))
+        {
+            m_flippedColorTarget.reset();
+            m_flippedDepthTarget.reset();
+        }
 
-        CameraSetup cameraSetup;
-        cameraSetup.position = viewport.cameraPlacement.position.approximate();
-        cameraSetup.rotation = viewport.cameraPlacement.rotation;
-        cameraSetup.aspect = viewport.cameraPlacement.customAspect ? viewport.cameraPlacement.customAspect : defaultAspect;
-        cameraSetup.fov = viewport.cameraPlacement.customFov ? viewport.cameraPlacement.customFov : defaultFOV;
-        cameraSetup.nearPlane = viewport.cameraPlacement.customNearPlane ? viewport.cameraPlacement.customNearPlane : defaultNearPlane;
-        cameraSetup.farPlane = viewport.cameraPlacement.customFarPlane ? viewport.cameraPlacement.customFarPlane : defaultFarPlane;
+        if (!m_flippedColorTarget)
+        {
+            gpu::ImageCreationInfo info;
+            info.allowRenderTarget = true;
+            info.width = hostViewport.backBufferColor->width();
+            info.height = hostViewport.backBufferColor->height();
+            info.format = hostViewport.backBufferColor->format();
+            info.label = "FlippedColorOutput";
+            m_flippedColorTarget = GetService<gpu::DeviceService>()->device()->createImage(info);
+            m_flippedColorTargetRTV = m_flippedColorTarget->createRenderTargetView();
 
-        Camera camera;
-        camera.setup(cameraSetup);
+            info.format = hostViewport.backBufferDepth->format();
+            m_flippedDepthTarget = GetService<gpu::DeviceService>()->device()->createImage(info);
+            m_flippedDepthTargetRTV = m_flippedDepthTarget->createRenderTargetView();
+        }
 
-        rendering::FrameParams params(hostViewport.width, hostViewport.height, camera);
-        params.index = m_frameIndex;
-        params.camera.cameraContext = m_cameraContext;
-        params.time.gameTime = m_gameAccumulatedTime;
-        params.time.engineRealTime = m_startTime.timeTillNow().toSeconds();
-        params.time.timeOfDay = 12.0f;
-        params.time.dayNightFrac = 1.0f;
+        rendering::FrameCompositionTarget flippedTarget;
+        flippedTarget.targetColorRTV = m_flippedColorTargetRTV;
+        flippedTarget.targetDepthRTV = m_flippedDepthTargetRTV;
+        flippedTarget.targetRect = Rect(0, 0, hostViewport.width, hostViewport.height);
 
-        if (viewport.world)
-            viewport.world->render(params);
+        m_game->processRenderView(cmd, flippedTarget, m_cameraContext, &m_frameStats);
 
+        cmd.opCopyRenderTarget(m_flippedColorTargetRTV, hostViewport.backBufferColor, 0, 0, true);
+    }
+    else
+    {
         rendering::FrameCompositionTarget targets;
         targets.targetColorRTV = hostViewport.backBufferColor;
         targets.targetDepthRTV = hostViewport.backBufferDepth;
         targets.targetRect = Rect(0, 0, hostViewport.width, hostViewport.height);
 
-        if (targets.targetColorRTV->flipped())
-        {
-            if (m_flippedColorTarget && (m_flippedColorTarget->width() != targets.targetColorRTV->width() || m_flippedColorTarget->height() != targets.targetColorRTV->height()))
-            {
-                m_flippedColorTarget.reset();
-                m_flippedDepthTarget.reset();
-            }
-
-            if (!m_flippedColorTarget)
-            {
-                gpu::ImageCreationInfo info;
-                info.allowRenderTarget = true;
-                info.width = targets.targetColorRTV->width();
-                info.height = targets.targetColorRTV->height();
-                info.format = targets.targetColorRTV->format();
-                info.label = "FlippedColorOutput";
-                m_flippedColorTarget = GetService<gpu::DeviceService>()->device()->createImage(info);
-                m_flippedColorTargetRTV = m_flippedColorTarget->createRenderTargetView();
-
-                info.format = targets.targetDepthRTV->format();
-                m_flippedDepthTarget = GetService<gpu::DeviceService>()->device()->createImage(info);
-                m_flippedDepthTargetRTV = m_flippedDepthTarget->createRenderTargetView();
-            }
-
-            rendering::FrameCompositionTarget flippedTarget;
-            flippedTarget.targetColorRTV = m_flippedColorTargetRTV;
-            flippedTarget.targetDepthRTV = m_flippedDepthTargetRTV;
-            flippedTarget.targetRect = targets.targetRect;
-
-            if (auto sceneCmd = GetService<rendering::FrameRenderingService>()->renderFrame(params, flippedTarget))
-                cmd.opAttachChildCommandBuffer(sceneCmd);
-
-            cmd.opCopyRenderTarget(m_flippedColorTargetRTV, targets.targetColorRTV, 0, 0, true);
-        }
-        else
-        {
-            if (auto sceneCmd = GetService<rendering::FrameRenderingService>()->renderFrame(params, targets))
-                cmd.opAttachChildCommandBuffer(sceneCmd);
-        }
+        m_game->processRenderView(cmd, targets, m_cameraContext, &m_frameStats);
     }
 
     // render debug overlay

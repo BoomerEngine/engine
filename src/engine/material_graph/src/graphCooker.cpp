@@ -30,10 +30,12 @@ public:
     MaterialTemplateGraphTechniqueCompiler()
     {}
 
-    MaterialTemplateGraphTechniqueCompiler(const MaterialGraphContainerPtr& graph)
+    MaterialTemplateGraphTechniqueCompiler(const MaterialGraphContainerPtr& graph, const Array<MaterialTemplateParamInfo>& params)
         : m_graph(graph)
+        , m_params(params)
     {
         m_graph->parent(this);
+        m_output = AddRef(m_graph->findOutputBlock());
     }
 
     virtual ~MaterialTemplateGraphTechniqueCompiler()
@@ -41,13 +43,21 @@ public:
         TRACE_INFO("Releasing template compiler");
     }
 
+    virtual void evalRenderStates(const IMaterial& setup, MaterialRenderState& outRenderStates) const override final
+    {
+        if (m_output)
+            m_output->evalRenderStates(setup, outRenderStates);
+    }
+
     virtual void requestTechniqueComplation(StringView contextName, MaterialTechnique* technique) override final
     {
-        GetService<MaterialTechniqueCacheService>()->requestTechniqueCompilation(contextName, m_graph, technique);
+        GetService<MaterialTechniqueCacheService>()->requestTechniqueCompilation(contextName, m_params, m_graph, technique);
     }
 
 private:
     MaterialGraphContainerPtr m_graph;
+    Array<MaterialTemplateParamInfo> m_params;
+    RefPtr<MaterialGraphBlockOutput> m_output;
 };
 
 RTTI_BEGIN_TYPE_CLASS(MaterialTemplateGraphTechniqueCompiler);

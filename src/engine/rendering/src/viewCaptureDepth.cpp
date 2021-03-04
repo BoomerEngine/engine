@@ -46,7 +46,7 @@ void FrameViewCaptureDepth::render(gpu::CommandWriter& cmd)
     // start cascade rendering
 
     // render scene into the pre-created command buffers
-    if (auto* scene = m_frame.frame().scenes.mainScenePtr)
+    if (auto* scene = m_frame.scene())
         scene->renderCaptureDepthView(rec, *this, m_frame);
 
     // TODO: render background

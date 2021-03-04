@@ -73,7 +73,7 @@ void FrameViewMain::render(gpu::CommandWriter& cmd)
     // start cascade rendering
 
     // render main scene into the pre-created command buffers
-	if (auto* scene = m_frame.frame().scenes.mainScenePtr)
+	if (auto* scene = m_frame.scene())
 		scene->renderMainView(rec, *this, m_frame);
 
     // TODO: render background

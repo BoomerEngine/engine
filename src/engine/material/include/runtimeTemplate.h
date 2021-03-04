@@ -23,7 +23,7 @@ class ENGINE_MATERIAL_API MaterialTemplateProxy : public IReferencable
 	RTTI_DECLARE_POOL(POOL_MATERIAL_DATA);
 
 public:
-	MaterialTemplateProxy(const StringBuf& contextName, const Array<MaterialTemplateParamInfo>& parameters, const MaterialTemplateMetadata& metadata, const MaterialTemplateDynamicCompilerPtr& compiler, const Array<MaterialPrecompiledStaticTechnique>& precompiledTechniques);
+	MaterialTemplateProxy(const StringBuf& contextName, const Array<MaterialTemplateParamInfo>& parameters, const MaterialTemplateDynamicCompilerPtr& compiler, const Array<MaterialPrecompiledStaticTechnique>& precompiledTechniques);
     virtual ~MaterialTemplateProxy();
 
     //--
@@ -31,13 +31,13 @@ public:
 	// data layout for the material template, compiled from parameters
 	INLINE const MaterialDataLayout* layout() const { return m_layout; };
 
-    // get metadata for the material
-    INLINE const MaterialTemplateMetadata& metadata() const { return m_metadata; }
-
     //--
 
 	/// find/compile a rendering technique for given rendering settings
 	MaterialTechniquePtr fetchTechnique(const MaterialCompilationSetup& setup) const;
+
+    /// query material render states for given material setup
+    void evalRenderStates(const IMaterial& setup, MaterialRenderState& outRenderStates) const;
 
 	//--
 
@@ -45,8 +45,6 @@ private:
 	//--
 
 	const MaterialDataLayout* m_layout = nullptr;
-
-	MaterialTemplateMetadata m_metadata;
 
 	SpinLock m_techniqueMapLock;
 	mutable HashMap<uint32_t, MaterialTechniquePtr> m_techniqueMap;

@@ -26,7 +26,7 @@ public:
     virtual ~MaterialTechniqueCacheService();
 
     /// request compilation of given material technique
-    void requestTechniqueCompilation(StringView contextName, const MaterialGraphContainerPtr& graph, MaterialTechnique* technique);
+    void requestTechniqueCompilation(StringView contextName, const Array<MaterialTemplateParamInfo>& params, const MaterialGraphContainerPtr& graph, MaterialTechnique* technique);
 
 protected:
     // ILocalService
@@ -49,6 +49,7 @@ protected:
 
         RefWeakPtr<MaterialTechnique> technique; // may be lost
         StringBuf contextName;
+        Array<MaterialTemplateParamInfo> params;
         MaterialGraphContainerPtr graph;
 
         ~TechniqueInfo();

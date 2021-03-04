@@ -26,19 +26,6 @@ public:
 
     StringBuf m_materialName; // name of the material to import from MTL file
 
-    StringBuf m_bindingColor;
-
-    StringBuf m_bindingMapColor;
-    StringBuf m_bindingMapBump;
-    StringBuf m_bindingMapNormal;
-    StringBuf m_bindingMapDissolve;
-    StringBuf m_bindingMapSpecular;
-    StringBuf m_bindingMapEmissive;
-    StringBuf m_bindingMapRoughness;
-    StringBuf m_bindingMapRoughnessSpecularity;
-    StringBuf m_bindingMapMetallic;
-    StringBuf m_bindingMapAmbientOcclusion;
-
     virtual void computeConfigurationKey(CRC64& crc) const override;
 };
 

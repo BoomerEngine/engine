@@ -177,9 +177,9 @@ bool Entity::handleInput(const input::BaseEvent& evt)
     return false;
 }
 
-bool Entity::handleCamera(EntityCameraPlacement& outCamera)
+bool Entity::handleCamera(CameraSetup& outCamera)
 {
-    outCamera.position = absoluteTransform().position();
+    outCamera.position = absoluteTransform().position().approximate();
     outCamera.rotation = absoluteTransform().rotation();
     return true;
 }

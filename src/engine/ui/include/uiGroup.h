@@ -16,17 +16,24 @@ BEGIN_BOOMER_NAMESPACE_EX(ui)
 
 DECLARE_UI_EVENT(EVENT_GROUP_EXPANDED)
 DECLARE_UI_EVENT(EVENT_GROUP_COLLAPSED)
-    
+
 //--
 
-/// ui group container (3ds max style) that can be collapsed (hidden)
-/// very good for placing tools in a side panel
-class ENGINE_UI_API Group : public IElement
+/// expandable container (3ds max style) that can be collapsed (hidden)
+class ENGINE_UI_API ExpandableContainer : public IElement
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(Group, IElement);
+    RTTI_DECLARE_VIRTUAL_CLASS(ExpandableContainer, IElement);
 
 public:
-    Group(StringView caption = "Group", bool expanded = true);
+    ExpandableContainer(bool expanded = false);
+
+    //--
+
+    // get the header element (allows to insert custom elements)
+    INLINE const ElementPtr& header() const { return m_header; }
+
+    // get the body element
+    INLINE const ElementPtr& body() const { return m_container; }
 
     //--
 
@@ -42,10 +49,27 @@ public:
     virtual void detachChild(IElement* childElement) override final;
 
 protected:
-    RefPtr<Button> m_button;
-    RefPtr<TextLabel> m_caption;
-    RefPtr<IElement> m_container;
-    RefPtr<IElement> m_header;
+    ButtonPtr m_button;
+    ElementPtr m_container;
+    ElementPtr m_header;
+};
+    
+//--
+
+/// ui group container (3ds max style) that can be collapsed (hidden)
+/// very good for placing tools in a side panel
+class ENGINE_UI_API Group : public ExpandableContainer
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(Group, ExpandableContainer);
+
+public:
+    Group(StringView caption = "Group", bool expanded = true);
+
+    /// change name
+    void name(StringView txt);
+
+protected:
+    TextLabelPtr m_caption;
 };
 
 //--

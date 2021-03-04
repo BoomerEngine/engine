@@ -290,99 +290,22 @@ void ProjectStructure::ProjectInfo::internalRegisterFunctions(lua_State* L)
     internalRegisterFunction(L, "LibraryInclude", &ExportLibraryInclude);    
 }
 
+template< typename T >
+static void ExportEnumToLUA(lua_State* L, const char* name, T val)
+{
+    lua_pushstring(L, NameEnumOption(val));
+    lua_setglobal(L, name);
+}
+
 void ProjectStructure::ProjectInfo::internalExportConfiguration(lua_State* L, const Configuration& config)
 {
-    switch (config.generator)
-    {
-        case GeneratorType::VisualStudio:
-        {
-            lua_pushstring(L, "vs");
-            lua_setglobal(L, "GeneratorName");
-            break;
-        }
-
-        case GeneratorType::CMake:
-        {
-            lua_pushstring(L, "cmake");
-            lua_setglobal(L, "GeneratorName");
-            break;
-        }
-    }
-
-    switch (config.platform)
-    {
-        case PlatformType::Windows:
-        {
-            lua_pushstring(L, "windows");
-            lua_setglobal(L, "PlatformName");
-            break;
-        }
-
-        case PlatformType::UWP:
-        {
-            lua_pushstring(L, "uwp");
-            lua_setglobal(L, "PlatformName");
-            break;
-        }
-
-        case PlatformType::Linux:
-        {
-            lua_pushstring(L, "linux");
-            lua_setglobal(L, "PlatformName");
-            break;
-        }
-    }
-
-    switch (config.build)
-    {
-        case BuildType::Shipment:
-        {
-            lua_pushstring(L, "shipment");
-            lua_setglobal(L, "BuildName");
-            break;
-        }
-
-        case BuildType::Development:
-        {
-            lua_pushstring(L, "dev");
-            lua_setglobal(L, "BuildName");
-            break;
-        }
-    }
-
+    ExportEnumToLUA(L, "GeneratorName", config.generator);
+    ExportEnumToLUA(L, "PlatformName", config.platform);
+    ExportEnumToLUA(L, "BuildName", config.build);
+    ExportEnumToLUA(L, "ConfigurationName", config.configuration);
+    
     lua_pushboolean(L, config.libs == LibraryType::Static);
     lua_setglobal(L, "UseStaticLibs");
-
-    switch (config.configuration)
-    {
-        case ConfigurationType::Debug:
-        {
-            lua_pushstring(L, "debug");
-            lua_setglobal(L, "ConfigurationName");
-            break;
-        }
-
-        case ConfigurationType::Release:
-        {
-            lua_pushstring(L, "release");
-            lua_setglobal(L, "ConfigurationName");
-            break;
-        }
-
-        case ConfigurationType::Checked:
-        {
-            lua_pushstring(L, "checked");
-            lua_setglobal(L, "ConfigurationName");
-            break;
-        }
-
-        case ConfigurationType::Final:
-        {
-            lua_pushstring(L, "final");
-            lua_setglobal(L, "ConfigurationName");
-            break;
-        }
-    }
 }
 
 bool ProjectStructure::ProjectInfo::setupProject(const Configuration& config)

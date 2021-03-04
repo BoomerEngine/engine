@@ -961,14 +961,8 @@ res::ResourcePtr OBJMeshImporter::importResource(res::IResourceImporterInterface
     auto meshGeometryManifest = importer.queryConfigration<OBJMeshImportConfig>();
     auto existingData = rtti_cast<Mesh>(importer.existingData());
 
-    // calculate the transform to apply to source data
-    // TODO: move to config file!
-    auto defaultSpace = MeshImportSpace::LeftHandYUp;
-    if (importer.queryResourcePath().view().beginsWith("/engine/"))
-        defaultSpace = MeshImportSpace::RightHandZUp;
-
     // calculate asset transformation to engine space
-    auto assetToEngineTransform = meshGeometryManifest->calcAssetToEngineConversionMatrix(MeshImportUnits::Meters, defaultSpace);
+    auto assetToEngineTransform = meshGeometryManifest->calcAssetToEngineConversionMatrix(1.0f, MeshImportSpace::RightHandYUp); // spec: right handed Y up
     auto allowThreads = meshGeometryManifest->allowThreads && cvAllowWavefrontThreads.get();
 
     // should we swap faces ?

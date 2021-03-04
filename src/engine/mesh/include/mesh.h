@@ -145,6 +145,14 @@ public:
 
     //---
 
+    // helper, select LOD index based on given distance, will return -1 if we are outside the visibility distance
+    int calculateHighestDetailLevel(float distance) const;
+
+    // helper, calculate the detail mask (all active LODs) for given distance
+    uint32_t calculateActiveDetailLevels(float distance) const;
+
+    //--
+
 protected:
     Box m_bounds;
 

@@ -22,9 +22,6 @@ typedef RefPtr<MaterialGraphContainer> MaterialGraphContainerPtr;
 class MaterialGraphBlock;
 typedef RefPtr<MaterialGraphBlock> MaterialGraphBlockPtr;
 
-class MaterialGraphBlockParameter;
-typedef RefPtr<MaterialGraphBlockParameter> MaterialGraphParameterBlockPtr;
-
 class MaterialGraphBlockOutput;
 
 ///---

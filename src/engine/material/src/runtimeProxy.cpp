@@ -54,6 +54,9 @@ MaterialDataDescriptor* MaterialDataDescriptor::Create(const MaterialDataLayoutD
 			auto* targetDataPtr = ret->constantData + entry.dataOffset;
 			switch (entry.type)
 			{
+				case MaterialDataLayoutParameterType::StaticBool:
+					break;
+
 				case MaterialDataLayoutParameterType::Float:
 					source.readParameter(entry.name, targetDataPtr, reflection::GetTypeObject<float>());
 					break;
@@ -134,7 +137,6 @@ MaterialDataBindless* MaterialDataBindless::Create(const MaterialDataLayoutBindl
 
 MaterialDataProxy::MaterialDataProxy(const MaterialTemplateProxy* materialTemplate)
     : m_layout(materialTemplate->layout())
-    , m_metadata(materialTemplate->metadata())
     , m_template(AddRef(materialTemplate))
 {
 }
@@ -148,25 +150,17 @@ MaterialDataProxy::~MaterialDataProxy()
 	m_descriptorData = nullptr;
 }
 
-void MaterialDataProxy::clanupOldData()
+void MaterialDataProxy::bind(gpu::CommandWriter& cmd, uint32_t& outStaticSwitchMask) const
 {
-	m_prevDataLock.acquire();
-	auto oldBindless = std::move(m_prevBindlessData);
-	auto oldDescriptors = std::move(m_prevDescriptorData);
-	m_prevDataLock.release();
+	auto lock = CreateLock(m_lock);
 
-	oldBindless.clearPtr();
-	oldDescriptors.clearPtr();
-}
-
-void MaterialDataProxy::bind(gpu::CommandWriter& cmd) const
-{
-	auto* data = m_descriptorData.load();
-	if (data->descriptorName)
+	if (m_descriptorData && m_descriptorData->descriptorName)
 	{
-		DEBUG_CHECK_RETURN_EX(data->descriptorCount != 0, "No descirptors");
-		cmd.opBindDescriptorEntries(data->descriptorName, data->descriptorData, data->descriptorCount);
+		DEBUG_CHECK_RETURN_EX(m_descriptorData->descriptorCount != 0, "No descirptors");
+		cmd.opBindDescriptorEntries(m_descriptorData->descriptorName, m_descriptorData->descriptorData, m_descriptorData->descriptorCount);
 	}
+
+	outStaticSwitchMask = m_staticSwitchMask;
 }
 
 void MaterialDataProxy::writeBindlessData(void* ptr) const
@@ -176,17 +170,13 @@ void MaterialDataProxy::writeBindlessData(void* ptr) const
 
 void MaterialDataProxy::update(const IMaterial& dataSource)
 {
-	{
-		auto bindlessData = MaterialDataBindless::Create(m_template->layout()->bindlessDataLayout(), dataSource);
-		if (auto prevBindlessData = m_bindlessData.exchange(bindlessData))
-			m_prevBindlessData.pushBack(prevBindlessData);
-	}
+	auto lock = CreateLock(m_lock);
 
-	{
-		auto descriptorData = MaterialDataDescriptor::Create(m_template->layout()->discreteDataLayout(), dataSource);
-		if (auto prevDescriptorData = m_descriptorData.exchange(descriptorData))
-			m_prevDescriptorData.pushBack(prevDescriptorData);
-	}
+	m_template->evalRenderStates(dataSource, m_renderStates);
+
+	m_staticSwitchMask = m_template->layout()->compileStaticSwitchMask(dataSource);
+	m_descriptorData = MaterialDataDescriptor::Create(m_template->layout()->discreteDataLayout(), dataSource);
+	m_bindlessData = MaterialDataBindless::Create(m_template->layout()->bindlessDataLayout(), dataSource);
 }
 
 ///---

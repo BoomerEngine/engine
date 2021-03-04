@@ -14,7 +14,7 @@ BEGIN_BOOMER_NAMESPACE()
 
 /// compiler material technique
 struct MaterialCompiledTechnique;
-extern MaterialCompiledTechnique* CompileTechnique(const StringBuf& contextName, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup);
+extern MaterialCompiledTechnique* CompileTechnique(const StringBuf& contextName, const Array<MaterialTemplateParamInfo>& params, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup);
 
 //---
 
@@ -24,12 +24,14 @@ class MaterialTechniqueCompiler : public NoCopy
     RTTI_DECLARE_POOL(POOL_RENDERING_TECHNIQUE_COMPILER)
 
 public:
-    MaterialTechniqueCompiler(const StringBuf& contextName, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup, MaterialTechniquePtr& outputTechnique);
+    MaterialTechniqueCompiler(const StringBuf& contextName, const Array<MaterialTemplateParamInfo>& params, const MaterialGraphContainerPtr& graph, const MaterialCompilationSetup& setup, MaterialTechniquePtr& outputTechnique);
 
     bool compile() CAN_YIELD; // NOTE: slow
 
 private:
     MaterialCompilationSetup m_setup;
+
+    Array<MaterialTemplateParamInfo> m_params;
 
     MaterialGraphContainerPtr m_graph;
     MaterialTechniquePtr m_technique;

@@ -15,48 +15,51 @@ BEGIN_BOOMER_NAMESPACE()
 
 //--
 
-/// material parameter block
-class ENGINE_MATERIAL_GRAPH_API MaterialGraphBlockParameter : public MaterialGraphBlock
+/// material block bound to a material parameter
+class ENGINE_MATERIAL_GRAPH_API IMaterialGraphBlockBoundParameter : public MaterialGraphBlock
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlockParameter, MaterialGraphBlock);
+    RTTI_DECLARE_VIRTUAL_CLASS(IMaterialGraphBlockBoundParameter, MaterialGraphBlock);
 
 public:
-    MaterialGraphBlockParameter();
-    MaterialGraphBlockParameter(StringID name);
+    IMaterialGraphBlockBoundParameter();
 
-    // get name
-    INLINE StringID name() const { return m_name; }
+    // get bound parameter
+    INLINE const StringID parameterName() const { return m_paramName; }
 
-    // get display category
-    INLINE StringID category() const { return m_category; }
+    // bind to new parameter, will rebuild the layout
+    void bind(StringID paramName);
 
-    // get parameter type
-    virtual Type dataType() const = 0;
-
-    // get the current default value (matches the reported type)
-    virtual const void* dataValue() const = 0;
-
-    // get the parameter type
+    // get type of parameter that can be bound here
     virtual MaterialDataLayoutParameterType parameterType() const = 0;
-
-    //--
-
-    // read value
-    virtual bool resetValue();
-
-    // write new value
-    virtual bool writeValue(const void* data, Type type);
-
-    // read current value
-    virtual bool readValue(void* data, Type type, bool defaultValueOnly = false) const;
 
 protected:
     virtual StringBuf chooseTitle() const override;
     virtual void onPropertyChanged(StringView path) override;
 
-private:
-    StringID m_name;
-    StringID m_category;
+    StringID m_paramName;
+};
+
+//--
+
+// static switch block
+class ENGINE_MATERIAL_GRAPH_API MaterialGraphBlock_StaticSwitch : public IMaterialGraphBlockBoundParameter
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphBlock_StaticSwitch, IMaterialGraphBlockBoundParameter);
+
+public:
+    MaterialGraphBlock_StaticSwitch();
+
+    virtual void buildLayout(graph::BlockLayoutBuilder& builder) const override;
+    virtual CodeChunk compile(MaterialStageCompiler& compiler, StringID outputName) const override;
+
+protected:
+    // get type of parameter that can be bound here
+    virtual MaterialDataLayoutParameterType parameterType() const;
+
+    bool m_invert = false;
+
+    float m_valueFalse = 0.0f;
+    float m_valueTrue = 1.0f;
 };
 
 //--

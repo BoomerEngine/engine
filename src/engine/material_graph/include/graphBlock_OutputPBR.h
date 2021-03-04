@@ -26,8 +26,6 @@ private:
     virtual void buildLayout(graph::BlockLayoutBuilder& builder) const override;
     virtual CodeChunk compileMainColor(MaterialStageCompiler& compiler, MaterialTechniqueRenderStates& outRenderState) const override;
 
-    bool m_twoSidedLighting = false;
-        
     bool m_applyGlobalAmbient = true;
     bool m_applyGlobalDirectionalLighting = true;
     bool m_applyAmbientOcclusion = true;

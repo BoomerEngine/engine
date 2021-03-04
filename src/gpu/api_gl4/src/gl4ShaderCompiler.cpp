@@ -973,6 +973,8 @@ void ShaderCodePrinter::printVariableDeclaration(StringBuilder& f, const shader:
 			
 void ShaderCodePrinter::printStatement(StringBuilder& f, const shader::StubOpcode* baseOp, int depth)
 {
+	DEBUG_CHECK_RETURN_EX(baseOp, "Empty opcode, that should never happen");
+
 	if (const auto* op = baseOp->asOpcodeScope())
 	{
 		for (auto* child : op->statements)

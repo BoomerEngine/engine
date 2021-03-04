@@ -166,3 +166,28 @@ StatusBar
 	margin: 0em 0em 0em 0em;
 	background: #3C3F41;
 }
+
+SimpleListElement
+{
+	//border-color: #AAA;
+	//border-bottom: 1em;
+	//padding: 2em 2em 2em 2em;
+	
+	&.opaque {
+		background: solid(#1E1E1E);
+	}	
+}
+
+StatsPanel
+{
+	border-color: $client-border;
+	border-width: 1em;
+	//border-radius: 8em;
+	background: #0005;
+	padding: 10em 10em 10em 10em;
+
+	* {
+		font-family: $code-font;
+		font-size: 12em;
+	}
+} 

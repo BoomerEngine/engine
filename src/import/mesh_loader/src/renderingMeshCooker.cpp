@@ -17,6 +17,9 @@
 #include "engine/texture/include/texture.h"
 #include "core/resource/include/resourceLoadingService.h"
 
+#undef TRACE_INFO
+#define TRACE_INFO TRACE_WARNING
+
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //--
@@ -201,6 +204,12 @@ static void GenerateBuildChunks(const ImportChunkRegistry& importChunks, BuildCh
 
     TRACE_INFO("Created {} build chunk(s) from {} source chunk(s) ({} skipped)", 
         outBuildChunks.m_buildChunks.size(), importChunks.importChunks.size(), numSkippedChunks);
+    
+    for (uint32_t i : outBuildChunks.m_buildChunks.indexRange())
+    {
+        const auto& buildChunk = outBuildChunks.m_buildChunks[i];
+        TRACE_INFO("BuildChunk[{}]: material {}, format {}, renderMask {}, detailMask {}", i, buildChunk->m_material, buildChunk->m_format, Hex(buildChunk->m_renderMask), Hex(buildChunk->m_detailMask));
+    }
 }
 
 //--

@@ -26,17 +26,9 @@ public:
 
     //--
 
-    INLINE const Array<MaterialGraphParameterBlockPtr>& parameters() const { return m_parameters; }
-
-    //--
-
-    void refreshParameterList();
-
     const MaterialGraphBlockOutput* findOutputBlock() const;
 
-    const MaterialGraphBlockParameter* findParamBlock(StringID name) const;
-
-    MaterialGraphBlockParameter* findParamBlock(StringID name);
+    bool checkParameterUsed(IMaterialTemplateParam* param) const;
 
     //--
 
@@ -45,14 +37,6 @@ protected:
     virtual void supportedBlockClasses(Array<SpecificClassType<graph::Block>>& outBlockClasses) const override;
     virtual void notifyStructureChanged() override;
     virtual void onPostLoad() override;
-
-    void cacheParameterBlocks();
-
-    void buildParameterList(Array<MaterialGraphParameterBlockPtr>& outParamList) const;
-    void buildParameterMap();
-
-    Array<MaterialGraphParameterBlockPtr> m_parameters;
-    HashMap<StringID, MaterialGraphBlockParameter*> m_parameterMap;
 };
 
 ///---
@@ -76,16 +60,18 @@ public:
 
     //--
 
+    bool checkParameterUsed(IMaterialTemplateParam* param) const;
+
+    bool renameParameter(IMaterialTemplateParam* param, StringID name);
+
+    void attachParameter(IMaterialTemplateParam* param);
+
+    bool detachParameter(IMaterialTemplateParam* param);
+
+    //--
+
 private:
     MaterialGraphContainerPtr m_graph;
-
-    // MaterialTemplate
-    virtual void listParameters(rtti::DataViewInfo& outInfo) const override final;
-    virtual bool queryParameterInfo(StringID name, MaterialTemplateParamInfo& outInfo) const override final;
-    virtual void queryMatadata(MaterialTemplateMetadata& outMetadata) const override final;
-    virtual void queryAllParameterInfos(Array<MaterialTemplateParamInfo>& outParams) const override final;
-
-    virtual const void* findParameterDataInternal(StringID name, Type& outType) const override final; // NOTE: returns pointer to the value inside the material block that defines the value
 
     virtual RefPtr<IMaterialTemplateDynamicCompiler> queryDynamicCompiler() const override final;
 
