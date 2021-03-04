@@ -14,7 +14,7 @@ BEGIN_BOOMER_NAMESPACE()
 
 class MaterialGraph;
 typedef RefPtr<MaterialGraph> MaterialGraphPtr;
-typedef res::Ref<MaterialGraph> MaterialGraphRef;
+typedef ResourceRef<MaterialGraph> MaterialGraphRef;
 
 class MaterialGraphContainer;
 typedef RefPtr<MaterialGraphContainer> MaterialGraphContainerPtr;

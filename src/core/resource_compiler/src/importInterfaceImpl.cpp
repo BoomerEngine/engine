@@ -12,9 +12,9 @@
 #include "importInterfaceImpl.h"
 #include "importSourceAssetRepository.h"
 
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -147,9 +147,9 @@ bool LocalImporterInterface::checkSourceFile(StringView assetImportPath) const
 
 //--
 
-MetadataPtr LocalImporterInterface::buildMetadata() const
+ResourceMetadataPtr LocalImporterInterface::buildMetadata() const
 {
-    auto ret = RefNew<Metadata>();
+    auto ret = RefNew<ResourceMetadata>();
 
     ret->importDependencies.reserve(m_importDependencies.size());
     for (const auto& dep : m_importDependencies)
@@ -189,4 +189,4 @@ void LocalImporterInterface::reportProgress(uint64_t currentCount, uint64_t tota
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

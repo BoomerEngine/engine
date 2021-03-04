@@ -16,7 +16,7 @@
 #include "engine/mesh/include/streamData.h"
 #include "engine/mesh/include/streamBuilder.h"
 #include "engine/mesh/include/streamIterator.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 #include "../../mesh_loader/include/renderingMeshImportConfig.h"
 
 #pragma optimize("", off)
@@ -964,12 +964,12 @@ static MeshImportSpace FindMeshImportSpace(const ofbx::GlobalSettings& settings)
 }
 
 /// source asset loader for OBJ data
-class FBXAssetLoader : public res::ISourceAssetLoader
+class FBXAssetLoader : public ISourceAssetLoader
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(FBXAssetLoader, res::ISourceAssetLoader);
+    RTTI_DECLARE_VIRTUAL_CLASS(FBXAssetLoader, ISourceAssetLoader);
 
 public:
-    virtual res::SourceAssetPtr loadFromMemory(StringView importPath, StringView contextPath, Buffer data) const override
+    virtual SourceAssetPtr loadFromMemory(StringView importPath, StringView contextPath, Buffer data) const override
     {
         if (!data)
             return nullptr;
@@ -992,7 +992,7 @@ public:
 };
 
 RTTI_BEGIN_TYPE_CLASS(FBXAssetLoader);
-    RTTI_METADATA(res::ResourceSourceFormatMetadata).addSourceExtensions("fbx").addSourceExtensions("FBX");
+    RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtensions("fbx").addSourceExtensions("FBX");
 RTTI_END_TYPE();
 
 //--

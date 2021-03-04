@@ -1381,11 +1381,11 @@ namespace helper
 
     //--
 
-    //res::StaticResource<font::BitmapFont> resScreenFontNormal("/engine/fonts/DejaVuSansMono.ttf:size=16");
-    //res::StaticResource<font::BitmapFont> resScreenFontBold("/engine/fonts/DejaVuSansMono-Bold.ttf:size=16");
-    //res::StaticResource<font::BitmapFont> resScreenFontItalic("/engine/fonts/DejaVuSansMono-Oblique.ttf:size=16");
-    //res::StaticResource<font::BitmapFont> resScreenFontBig("/engine/fonts/DejaVuSansMono.ttf:size=32");
-    //res::StaticResource<font::BitmapFont> resScreenFontTiny("/engine/fonts/DejaVuSansMono.ttf:size=12");
+    //StaticResource<font::BitmapFont> resScreenFontNormal("/engine/fonts/DejaVuSansMono.ttf:size=16");
+    //StaticResource<font::BitmapFont> resScreenFontBold("/engine/fonts/DejaVuSansMono-Bold.ttf:size=16");
+    //StaticResource<font::BitmapFont> resScreenFontItalic("/engine/fonts/DejaVuSansMono-Oblique.ttf:size=16");
+    //StaticResource<font::BitmapFont> resScreenFontBig("/engine/fonts/DejaVuSansMono.ttf:size=32");
+    //StaticResource<font::BitmapFont> resScreenFontTiny("/engine/fonts/DejaVuSansMono.ttf:size=12");
 
     static const font::BitmapFont* GetFont(DebugFont font)
     {

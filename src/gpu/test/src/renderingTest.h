@@ -368,7 +368,7 @@ protected:
 
 private:
     SpinLock m_allLoadedResourcesLock;
-    Array<res::ResourcePtr> m_allLoadedResources;
+    Array<ResourcePtr> m_allLoadedResources;
             
 	HashMap<uint64_t, GraphicsRenderStatesObjectPtr> m_renderStatesMap;
 

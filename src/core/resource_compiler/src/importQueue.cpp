@@ -9,10 +9,10 @@
 #include "build.h"
 #include "importer.h"
 #include "importQueue.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 #include "importSaveThread.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -237,4 +237,4 @@ bool ImportQueue::processNextJob(IProgressTracker* progressTracker)
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

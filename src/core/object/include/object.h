@@ -196,10 +196,10 @@ public:
     // This function is called GLOBALLY ON ALL OBJECTSs when a in-editor resource reload occurs, by default it automatically patches up properties referencing that object
     // NOTE: this function should return true if it did some patching and it requires some post-reload work (ie. after all other objects were patched)
     // NOTE: the automatic patching will call "onPropertyChanged" on each changed property
-    virtual bool onResourceReloading(res::IResource* currentResource, res::IResource* newResource);
+    virtual bool onResourceReloading(IResource* currentResource, IResource* newResource);
 
     // Called after all objects were patched after resource reload
-    virtual void onResourceReloadFinished(res::IResource* currentResource, res::IResource* newResource);
+    virtual void onResourceReloadFinished(IResource* currentResource, IResource* newResource);
 
     //---
 
@@ -261,7 +261,7 @@ public:
     //--
 
     // clone this object
-    ObjectPtr clone(const IObject* newParent = nullptr, res::ResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedObjectClass = nullptr) const;
+    ObjectPtr clone(const IObject* newParent = nullptr, ResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedObjectClass = nullptr) const;
 
     // save this object tree to a buffer
     Buffer toBuffer() const;
@@ -269,7 +269,7 @@ public:
     //--
 
     // load object from buffer in memory
-    static ObjectPtr FromBuffer(const void* data, uint32_t size, res::ResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedClass = nullptr);
+    static ObjectPtr FromBuffer(const void* data, uint32_t size, ResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedClass = nullptr);
 
     //--
 
@@ -288,9 +288,9 @@ public:
     //--
 
     // register clone function
-    static void RegisterCloneFunction(const std::function<ObjectPtr(const IObject*, const IObject*, res::ResourceLoader * loader, SpecificClassType<IObject>)>& func);
+    static void RegisterCloneFunction(const std::function<ObjectPtr(const IObject*, const IObject*, ResourceLoader * loader, SpecificClassType<IObject>)>& func);
     static void RegisterSerializeFunction(const std::function<Buffer(const IObject*)>& func);
-    static void RegisterDeserializeFunction(const std::function<ObjectPtr(const void* data, uint32_t size, res::ResourceLoader* loader, SpecificClassType<IObject> mutatedClass)>& func);
+    static void RegisterDeserializeFunction(const std::function<ObjectPtr(const void* data, uint32_t size, ResourceLoader* loader, SpecificClassType<IObject> mutatedClass)>& func);
 
 protected:
     INLINE IObject(const IObject&) {};

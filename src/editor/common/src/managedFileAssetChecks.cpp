@@ -13,7 +13,7 @@
 #include "managedFileNativeResource.h"
 
 #include "core/resource_compiler/include/importFileService.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 #include "core/resource_compiler/include/importer.h"
 #include "core/resource_compiler/include/importSourceAssetRepository.h"
 #include "engine/ui/include/uiElement.h"
@@ -24,7 +24,7 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 ManagedFileImportStatusCheck::ManagedFileImportStatusCheck(const ManagedFileNativeResource* file, ui::IElement* owner)
     : m_file(file)
-    , m_status(res::ImportStatus::Checking)
+    , m_status(ImportStatus::Checking)
     , m_owner(owner)
 {
     if (m_file->fileFormat().nativeResourceClass())
@@ -38,14 +38,14 @@ ManagedFileImportStatusCheck::ManagedFileImportStatusCheck(const ManagedFileNati
     }
     else
     {
-        m_status = res::ImportStatus::NotImportable;
+        m_status = ImportStatus::NotImportable;
     }
 }
 
 ManagedFileImportStatusCheck::~ManagedFileImportStatusCheck()
 {}
 
-res::ImportStatus ManagedFileImportStatusCheck::status()
+ImportStatus ManagedFileImportStatusCheck::status()
 {
     auto lock = CreateLock(m_lock);
     return m_status;
@@ -66,7 +66,7 @@ void ManagedFileImportStatusCheck::reportProgress(uint64_t currentCount, uint64_
     // TODO: we can utilize this somehow
 }
 
-void ManagedFileImportStatusCheck::postStatusChange(res::ImportStatus status)
+void ManagedFileImportStatusCheck::postStatusChange(ImportStatus status)
 {
     bool statusChanged = false;
 
@@ -98,22 +98,22 @@ void ManagedFileImportStatusCheck::runCheck()
     auto metadata = m_file->loadMetadata();
     if (!metadata)
     {
-        postStatusChange(res::ImportStatus::NotImportable); // TODO: different error code ?
+        postStatusChange(ImportStatus::NotImportable); // TODO: different error code ?
         return;
     }
 
     // do we even have a single source file ? if not than this file was never imported but manually created
     if (metadata->importDependencies.empty())
     {
-        postStatusChange(res::ImportStatus::UpToDate); // TODO: different error code ?
+        postStatusChange(ImportStatus::UpToDate); // TODO: different error code ?
         return;
     }
 
     // check file status
     {
-        auto* assetSource = GetService<res::ImportFileService>();
-        static res::SourceAssetRepository repository(assetSource);
-        static res::Importer localImporter(&repository, nullptr); // TODO: cleanup!
+        auto* assetSource = GetService<ImportFileService>();
+        static SourceAssetRepository repository(assetSource);
+        static Importer localImporter(&repository, nullptr); // TODO: cleanup!
 
         const auto status = localImporter.checkStatus(m_file->depotPath(), *metadata, nullptr, this);
         postStatusChange(status);
@@ -124,7 +124,7 @@ void ManagedFileImportStatusCheck::runCheck()
 
 //--
 
-ManagedFileSourceAssetCheck::ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, const TimeStamp& lastKnownTimestamp, const res::ImportFileFingerprint& lastKnownCRC)
+ManagedFileSourceAssetCheck::ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, const TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownCRC)
     : m_sourceAssetPath(sourceAssetPath)
     , m_sourceLastKnownTimestamp(lastKnownTimestamp)
     , m_sourceLastKnownCRC(lastKnownCRC)
@@ -139,7 +139,7 @@ ManagedFileSourceAssetCheck::ManagedFileSourceAssetCheck(const StringBuf& source
 ManagedFileSourceAssetCheck::~ManagedFileSourceAssetCheck()
 {}
 
-res::SourceAssetStatus ManagedFileSourceAssetCheck::status()
+SourceAssetStatus ManagedFileSourceAssetCheck::status()
 {
     auto lock = CreateLock(m_lock);
     return m_status;
@@ -169,7 +169,7 @@ void ManagedFileSourceAssetCheck::reportProgress(uint64_t currentCount, uint64_t
     m_progress = (float)progress;
 }
 
-void ManagedFileSourceAssetCheck::postStatusChange(res::SourceAssetStatus status)
+void ManagedFileSourceAssetCheck::postStatusChange(SourceAssetStatus status)
 {
     auto lock = CreateLock(m_lock);
     if (m_status != status)
@@ -180,7 +180,7 @@ void ManagedFileSourceAssetCheck::postStatusChange(res::SourceAssetStatus status
 
 void ManagedFileSourceAssetCheck::runCheck()
 {
-    const auto ret = GetService<res::ImportFileService>()->checkFileStatus(m_sourceAssetPath, m_sourceLastKnownTimestamp, m_sourceLastKnownCRC, this);
+    const auto ret = GetService<ImportFileService>()->checkFileStatus(m_sourceAssetPath, m_sourceLastKnownTimestamp, m_sourceLastKnownCRC, this);
     postStatusChange(ret);
 }
 

@@ -81,7 +81,7 @@ void MaterialService::onSyncUpdate()
 
 //--
 
-MaterialBindlessTextureID MaterialService::queryBindlessTextureId(const res::IResource& res) const
+MaterialBindlessTextureID MaterialService::queryBindlessTextureId(const IResource& res) const
 {
 	return 0; // for now
 }

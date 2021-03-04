@@ -210,7 +210,7 @@ FiberBuilder::~FiberBuilder()
             job.name = m_name;
             job.localSink = m_propagateLogSink ? logging::Log::GetCurrentLocalSink() : nullptr;
 
-            GFibers->scheduleFiber(job, m_child, m_numInvocations);
+            GFibers->scheduleFiber(job, m_numInvocations, m_child);
         }
     }
 }

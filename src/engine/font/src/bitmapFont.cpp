@@ -11,7 +11,7 @@
 
 #include "core/containers/include/utf8StringFunctions.h"
 #include "core/image/include/image.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(font)
 
@@ -28,8 +28,8 @@ RTTI_END_TYPE();
 //--
 
 RTTI_BEGIN_TYPE_CLASS(BitmapFont);
-    RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4bf");
-    RTTI_METADATA(res::ResourceDescriptionMetadata).description("Bitmap Font");
+    RTTI_METADATA(ResourceExtensionMetadata).extension("v4bf");
+    RTTI_METADATA(ResourceDescriptionMetadata).description("Bitmap Font");
     RTTI_PROPERTY(m_image);
     RTTI_PROPERTY(m_glyphs);
     RTTI_PROPERTY(m_ascender);

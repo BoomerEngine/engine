@@ -222,7 +222,7 @@ IGeneralMeshImporter::~IGeneralMeshImporter()
 
 StringBuf IGeneralMeshImporter::BuildMaterialFileName(StringView name, uint32_t materialIndex)
 {
-    static const auto ext = res::IResource::GetResourceExtensionForClass(MaterialInstance::GetStaticClass());
+    static const auto ext = IResource::GetResourceExtensionForClass(MaterialInstance::GetStaticClass());
 
     StringBuf fileName;
     if (!MakeSafeFileName(name, fileName))
@@ -292,7 +292,7 @@ StringBuf IGeneralMeshImporter::BuildAssetDepotPath(StringView referenceDepotPat
 
 //--
 
-static StringBuf TransformRelativePath(res::IResourceImporterInterface& importer, StringView secondaryImportPath, StringView searchPath)
+static StringBuf TransformRelativePath(IResourceImporterInterface& importer, StringView secondaryImportPath, StringView searchPath)
 {
     if (!searchPath)
         return StringBuf::EMPTY();
@@ -314,7 +314,7 @@ static StringBuf TransformRelativePath(res::IResourceImporterInterface& importer
     return relativePath;        
 }
 
-MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, StringView name, StringView materialLibraryName, uint32_t materialIndex) const
+MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(IResourceImporterInterface& importer, const MeshImportConfig& cfg, StringView name, StringView materialLibraryName, uint32_t materialIndex) const
 {
     // don't import
     if (!cfg.m_importMaterials)
@@ -330,7 +330,7 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(res::IResourceImporterI
         if (importer.findDepotFile(importer.queryResourcePath(), cfg.m_materialSearchPath, materialFileName, materialDepotPath, cfg.m_depotSearchDepth))
         {
             TRACE_INFO("Existing material file found at '{}'", materialDepotPath);
-            return MaterialRef(res::ResourcePath(materialDepotPath));
+            return MaterialRef(ResourcePath(materialDepotPath));
         }
     }
 
@@ -379,7 +379,7 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(res::IResourceImporterI
                 importer.followupImport(resolvedMaterialLibraryPath, depotPath, materialImportConfig);
 
                 // build a unloaded material reference (so it can be saved)
-                return MaterialRef(res::ResourcePath(depotPath));
+                return MaterialRef(ResourcePath(depotPath));
             }
         }
         else
@@ -400,7 +400,7 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(res::IResourceImporterI
             importer.followupImport(importer.queryImportPath(), depotPath, materialImportConfig);
 
             // build a unloaded material reference (so it can be saved)
-            return MaterialRef(res::ResourcePath(depotPath));
+            return MaterialRef(ResourcePath(depotPath));
         }
     }
 
@@ -408,7 +408,7 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(res::IResourceImporterI
     return MaterialRef();
 }
 
-MaterialInstancePtr IGeneralMeshImporter::buildSingleMaterial(res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, StringView name, StringView materialLibraryName, uint32_t materialIndex, const Mesh* existingMesh) const
+MaterialInstancePtr IGeneralMeshImporter::buildSingleMaterial(IResourceImporterInterface& importer, const MeshImportConfig& cfg, StringView name, StringView materialLibraryName, uint32_t materialIndex, const Mesh* existingMesh) const
 {
     Array<MaterialInstanceParam> existingParameters;
 

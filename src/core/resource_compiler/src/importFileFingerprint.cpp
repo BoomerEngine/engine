@@ -13,7 +13,7 @@
 #include "core/io/include/fileHandle.h"
 #include "core/io/include/asyncFileHandle.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -279,4 +279,4 @@ CAN_YIELD extern CORE_RESOURCE_COMPILER_API FingerpintCalculationStatus Calculat
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

@@ -116,7 +116,7 @@ public:
     const Function* findFunctionNoCache(StringID functionName) const;
 
     // patch all pointers to resources, returns list of patched properties (top-level only)
-    bool patchResourceReferences(void* data, res::IResource* currentResource, res::IResource* newResource, Array<StringID>* outPatchedProperties) const;
+    bool patchResourceReferences(void* data, IResource* currentResource, IResource* newResource, Array<StringID>* outPatchedProperties) const;
 
     //---------------
 

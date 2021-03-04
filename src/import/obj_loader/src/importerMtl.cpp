@@ -14,7 +14,7 @@
 #include "engine/material/include/materialTemplate.h"
 #include "engine/texture/include/texture.h"
 
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 #include "core/resource_compiler/include/importInterface.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
@@ -41,10 +41,10 @@ void MTLMaterialImportConfig::computeConfigurationKey(CRC64& crc) const
 
 RTTI_BEGIN_TYPE_CLASS(MTLMaterialImporter);
     RTTI_OLD_NAME("wavefront::MTLMaterialImporter");
-    RTTI_METADATA(res::ResourceCookedClassMetadata).addClass<MaterialInstance>();
-    RTTI_METADATA(res::ResourceSourceFormatMetadata).addSourceExtension("mtl");
-    RTTI_METADATA(res::ResourceCookerVersionMetadata).version(5);
-    RTTI_METADATA(res::ResourceImporterConfigurationClassMetadata).configurationClass<MTLMaterialImportConfig>();
+    RTTI_METADATA(ResourceCookedClassMetadata).addClass<MaterialInstance>();
+    RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtension("mtl");
+    RTTI_METADATA(ResourceCookerVersionMetadata).version(5);
+    RTTI_METADATA(ResourceImporterConfigurationClassMetadata).configurationClass<MTLMaterialImportConfig>();
 RTTI_END_TYPE();
 
 MTLMaterialImporter::MTLMaterialImporter()
@@ -57,7 +57,7 @@ static void ExtractTextureInfo(GeneralMaterialTextrureInfo& outTexture, const Ma
         outTexture.path = src.m_path;
 }
 
-res::ResourcePtr MTLMaterialImporter::importResource(res::IResourceImporterInterface& importer) const
+ResourcePtr MTLMaterialImporter::importResource(IResourceImporterInterface& importer) const
 {
     // get the configuration for material import
     auto config = importer.queryConfigration<MTLMaterialImportConfig>();

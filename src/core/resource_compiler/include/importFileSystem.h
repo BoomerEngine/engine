@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -64,4 +64,4 @@ public:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

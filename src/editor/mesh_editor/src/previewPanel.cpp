@@ -147,7 +147,7 @@ void MeshPreviewPanel::buildStatsString(IFormatStream& f) const
                     {
                         if (const auto base = material.material->resolveTemplate())
                         {
-                            const auto loadPath = StringBuf(base->path().view());
+                            const auto loadPath = base->loadPath();
                             if (!loadPath.empty())
                             {
                                 activeShadersTris[loadPath] += chunk.indexCount / 3;

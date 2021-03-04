@@ -10,21 +10,21 @@
 
 #include "core/app/include/command.h"
 #include "core/app/include/commandline.h"
-#include "core/resource/include/resourcePath.h"
-#include "core/resource/include/resourceLoadingService.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/path.h"
+#include "core/resource/include/loadingService.h"
+#include "core/resource/include/metadata.h"
 #include "core/io/include/io.h"
 #include "core/io/include/fileHandle.h"
 #include "core/containers/include/stringBuilder.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
 #include "cookerSaveThread.h"
 
 #include "commandCook.h"
-#include "core/resource/include/resourceFileLoader.h"
-#include "core/resource/include/depotService.h"
+#include "core/resource/include/fileLoader.h"
+#include "core/resource/include/depot.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -116,8 +116,7 @@ bool CommandCook::collectSeedFiles()
 
         for (const auto* info : staticResources)
         {
-            const auto cls = info->resourceClass().cast<IResource>();
-            if (cls && info->path())
+            if (info->path())
             {
                 TRACE_INFO("Collected static resource '{}'", info->path());
                 m_seedFiles.insert(info->path());
@@ -262,7 +261,7 @@ void CommandCook::processSingleSeedFile(const ResourcePath& seedFileKey)
     TRACE_INFO("Processed {} source files for seed file '{}' in {}", localProcessed, seedFileKey, cookingTimer);
 }
 
-bool CommandCook::checkDependenciesUpToDate(const Metadata& deps) const
+bool CommandCook::checkDependenciesUpToDate(const ResourceMetadata& deps) const
 {
     /*// check if cooker class still exists
     if (deps.cookerClass == nullptr)
@@ -303,12 +302,12 @@ bool CommandCook::checkDependenciesUpToDate(const Metadata& deps) const
     return true;
 }
 
-MetadataPtr CommandCook::loadFileMetadata(StringView cookedOutputPath) const
+ResourceMetadataPtr CommandCook::loadFileMetadata(StringView cookedOutputPath) const
 {
     if (auto fileReader = OpenForAsyncReading(cookedOutputPath))
     {
-        res::FileLoadingContext context;
-        return res::LoadFileMetadata(fileReader, context);
+        FileLoadingContext context;
+        return LoadFileMetadata(fileReader, context);
     }
 
     return nullptr;
@@ -420,4 +419,4 @@ bool CommandCook::cookFile(const ResourcePath& key, SpecificClassType<IResource>
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

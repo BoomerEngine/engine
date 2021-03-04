@@ -11,7 +11,7 @@
 #include "renderingMaterialImportConfig.h"
 
 #include "core/resource/include/resource.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 #include "core/resource_compiler/include/importInterface.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
@@ -74,9 +74,9 @@ enum class MeshNormalComputationMode : uint8_t
 
 /// common manifest for assets importable into mesh formats
 /// contains coordinate system conversion and other setup for geometry importing from outside sources
-class IMPORT_MESH_LOADER_API MeshImportConfig : public res::ResourceConfiguration
+class IMPORT_MESH_LOADER_API MeshImportConfig : public ResourceConfiguration
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MeshImportConfig, res::ResourceConfiguration);
+    RTTI_DECLARE_VIRTUAL_CLASS(MeshImportConfig, ResourceConfiguration);
 
 public:
     MeshImportConfig();
@@ -159,9 +159,9 @@ public:
 //---
 
 /// general mesh importer, contains common functions
-class IMPORT_MESH_LOADER_API IGeneralMeshImporter : public res::IResourceImporter
+class IMPORT_MESH_LOADER_API IGeneralMeshImporter : public IResourceImporter
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(IGeneralMeshImporter, res::IResourceImporter);
+    RTTI_DECLARE_VIRTUAL_CLASS(IGeneralMeshImporter, IResourceImporter);
 
 public:
     virtual ~IGeneralMeshImporter();
@@ -175,9 +175,9 @@ protected:
 
     virtual RefPtr<MaterialImportConfig> createMaterialImportConfig(const MeshImportConfig& cfg, StringView name) const = 0;
 
-    virtual MaterialRef buildSingleMaterialRef(res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, StringView name, StringView materialLibraryName, uint32_t materialIndex) const;
+    virtual MaterialRef buildSingleMaterialRef(IResourceImporterInterface& importer, const MeshImportConfig& cfg, StringView name, StringView materialLibraryName, uint32_t materialIndex) const;
 
-    virtual MaterialInstancePtr buildSingleMaterial(res::IResourceImporterInterface& importer, const MeshImportConfig& cfg, StringView name, StringView materialLibraryName, uint32_t materialIndex, const Mesh* existingMesh) const;
+    virtual MaterialInstancePtr buildSingleMaterial(IResourceImporterInterface& importer, const MeshImportConfig& cfg, StringView name, StringView materialLibraryName, uint32_t materialIndex, const Mesh* existingMesh) const;
 };
 
 //---

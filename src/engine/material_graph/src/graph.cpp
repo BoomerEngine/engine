@@ -19,8 +19,8 @@
 
 #include "core/graph/include/graphSocket.h"
 #include "core/object/include/rttiDataView.h"
-#include "core/resource/include/resourceTags.h"
-#include "core/resource/include/resourceFactory.h"
+#include "core/resource/include/tags.h"
+#include "core/resource/include/factory.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -79,9 +79,9 @@ void MaterialGraphContainer::onPostLoad()
 ///---
 
 RTTI_BEGIN_TYPE_CLASS(MaterialGraph);
-    RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4mg");
-    RTTI_METADATA(res::ResourceDescriptionMetadata).description("Material Graph");
-    RTTI_METADATA(res::ResourceTagColorMetadata).color(0xFF, 0xA6, 0x30);
+    RTTI_METADATA(ResourceExtensionMetadata).extension("v4mg");
+    RTTI_METADATA(ResourceDescriptionMetadata).description("Material Graph");
+    RTTI_METADATA(ResourceTagColorMetadata).color(0xFF, 0xA6, 0x30);
     RTTI_PROPERTY(m_graph);
 RTTI_END_TYPE();
 
@@ -227,12 +227,12 @@ RefPtr<IMaterialTemplateDynamicCompiler> MaterialGraph::queryDynamicCompiler() c
 //---
 
 // factory class for the material graph
-class MaterialGraphFactory : public res::IFactory
+class MaterialGraphFactory : public IResourceFactory
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphFactory, res::IFactory);
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphFactory, IResourceFactory);
 
 public:
-    virtual res::ResourceHandle createResource() const override final
+    virtual ResourcePtr createResource() const override final
     {
         auto ret = RefNew<MaterialGraph>();
 
@@ -244,7 +244,7 @@ public:
 };
 
 RTTI_BEGIN_TYPE_CLASS(MaterialGraphFactory);
-    RTTI_METADATA(res::FactoryClassMetadata).bindResourceClass<MaterialGraph>();
+    RTTI_METADATA(ResourceFactoryClassMetadata).bindResourceClass<MaterialGraph>();
 RTTI_END_TYPE();
 
 //--

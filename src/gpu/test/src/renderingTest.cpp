@@ -14,7 +14,7 @@
 #include "core/image/include/imageView.h"
 #include "core/io/include/io.h"
 
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 #include "gpu/device/include/device.h"
 #include "gpu/device/include/buffer.h"
 #include "gpu/device/include/image.h"
@@ -25,7 +25,7 @@
 #include "gpu/device/include/pipeline.h"
 #include "gpu/device/include/output.h"
 #include "gpu/device/include/globalObjects.h"
-#include "core/resource/include/depotService.h"
+#include "core/resource/include/depot.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::test)
 

@@ -88,8 +88,8 @@ class MeshService;
 
 class Mesh;
 typedef RefPtr<Mesh> MeshPtr;
-typedef res::Ref<Mesh> MeshRef;
-typedef res::AsyncRef<Mesh> MeshAsyncRef;
+typedef ResourceRef<Mesh> MeshRef;
+typedef ResourceAsyncRef<Mesh> MeshAsyncRef;
 
 class IMeshChunkProxy;
 typedef RefPtr<IMeshChunkProxy> MeshChunkProxyPtr;

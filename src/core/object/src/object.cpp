@@ -45,11 +45,11 @@ ObjectPtr IObject::FindUniqueObjectById(ObjectID id)
 
 //--
 
-static std::function<ObjectPtr(const IObject*, const IObject*, res::ResourceLoader * loader, SpecificClassType<IObject>)> GCloneFunction;
+static std::function<ObjectPtr(const IObject*, const IObject*, ResourceLoader * loader, SpecificClassType<IObject>)> GCloneFunction;
 static std::function<Buffer(const IObject*)> GSerializeFunction;
-static std::function<ObjectPtr(const void* data, uint32_t size, res::ResourceLoader * loader, SpecificClassType<IObject> mutatedClass)> GDeserializeFunction;
+static std::function<ObjectPtr(const void* data, uint32_t size, ResourceLoader * loader, SpecificClassType<IObject> mutatedClass)> GDeserializeFunction;
 
-ObjectPtr IObject::clone(const IObject* newParent, res::ResourceLoader* loader, SpecificClassType<IObject> mutatedObjectClass) const
+ObjectPtr IObject::clone(const IObject* newParent, ResourceLoader* loader, SpecificClassType<IObject> mutatedObjectClass) const
 {
     return GCloneFunction(this, newParent, loader, mutatedObjectClass);
 }
@@ -59,14 +59,14 @@ Buffer IObject::toBuffer() const
     return GSerializeFunction(this);
 }
 
-ObjectPtr IObject::FromBuffer(const void* data, uint32_t size, res::ResourceLoader* loader /*= nullptr*/, SpecificClassType<IObject> mutatedClass /*= nullptr*/)
+ObjectPtr IObject::FromBuffer(const void* data, uint32_t size, ResourceLoader* loader /*= nullptr*/, SpecificClassType<IObject> mutatedClass /*= nullptr*/)
 {
     return GDeserializeFunction(data, size, loader, mutatedClass);
 }
 
 //--
 
-void IObject::RegisterCloneFunction(const std::function<ObjectPtr(const IObject*, const IObject*, res::ResourceLoader * loader, SpecificClassType<IObject>)>& func)
+void IObject::RegisterCloneFunction(const std::function<ObjectPtr(const IObject*, const IObject*, ResourceLoader * loader, SpecificClassType<IObject>)>& func)
 {
     GCloneFunction = func;
 }
@@ -76,7 +76,7 @@ void IObject::RegisterSerializeFunction(const std::function<Buffer(const IObject
     GSerializeFunction = func;
 }
 
-void IObject::RegisterDeserializeFunction(const std::function<ObjectPtr(const void* data, uint32_t size, res::ResourceLoader * loader, SpecificClassType<IObject> mutatedClass)>& func)
+void IObject::RegisterDeserializeFunction(const std::function<ObjectPtr(const void* data, uint32_t size, ResourceLoader * loader, SpecificClassType<IObject> mutatedClass)>& func)
 {
     GDeserializeFunction = func;
 }
@@ -349,7 +349,7 @@ bool IObject::onPropertyFilter(StringID propertyName) const
 
 //---
 
-bool IObject::onResourceReloading(res::IResource* currentResource, res::IResource* newResource)
+bool IObject::onResourceReloading(IResource* currentResource, IResource* newResource)
 {
     InplaceArray<StringID, 16> affectedProperties;
     if (!cls()->patchResourceReferences(this, currentResource, newResource, &affectedProperties))
@@ -361,7 +361,7 @@ bool IObject::onResourceReloading(res::IResource* currentResource, res::IResourc
     return true;
 }
 
-void IObject::onResourceReloadFinished(res::IResource* currentResource, res::IResource* newResource)
+void IObject::onResourceReloadFinished(IResource* currentResource, IResource* newResource)
 {
 
 }

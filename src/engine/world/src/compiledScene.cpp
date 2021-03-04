@@ -10,16 +10,16 @@
 #include "build.h"
 #include "compiledScene.h"
 #include "streamingIsland.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
 ///----
 
 RTTI_BEGIN_TYPE_CLASS(CompiledScene);
-    RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4sectors");
-    RTTI_METADATA(res::ResourceDescriptionMetadata).description("Compiled Scene");
-    RTTI_METADATA(res::ResourceTagColorMetadata).color(0x9d, 0x02, 0x08);
+    RTTI_METADATA(ResourceExtensionMetadata).extension("v4sectors");
+    RTTI_METADATA(ResourceDescriptionMetadata).description("Compiled Scene");
+    RTTI_METADATA(ResourceTagColorMetadata).color(0x9d, 0x02, 0x08);
     RTTI_PROPERTY(m_rootIslands);
 RTTI_END_TYPE();
 

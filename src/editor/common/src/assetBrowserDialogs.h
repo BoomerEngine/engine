@@ -32,7 +32,7 @@ extern EDITOR_COMMON_API bool ShowSaveAsFileDialog(ui::IElement* owner, ManagedD
 //--
 
 /// show a generic rename dialog, does not do any renaming
-extern EDITOR_COMMON_API bool ShowGenericRenameDialog(ui::IElement* owner, const ManagedItem* item, res::RenameConfiguration& outSettings);
+extern EDITOR_COMMON_API bool ShowGenericRenameDialog(ui::IElement* owner, const ManagedItem* item, RenameConfiguration& outSettings);
 
 //--
 

@@ -9,7 +9,7 @@
 #include "build.h"
 #include "importFileSystem.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -26,4 +26,4 @@ ISourceAssetFileSystemFactory::~ISourceAssetFileSystemFactory()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

@@ -51,9 +51,9 @@ struct ENGINE_TEXTURE_API TextureInfo
 //---
 
 /// abstract texture to be used in the rendering pipeline
-class ENGINE_TEXTURE_API ITexture : public res::IResource
+class ENGINE_TEXTURE_API ITexture : public IResource
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ITexture, res::IResource);
+    RTTI_DECLARE_VIRTUAL_CLASS(ITexture, IResource);
 
 public:
     ITexture(const TextureInfo& info);

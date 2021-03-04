@@ -11,17 +11,17 @@
 #include "rawLayer.h"
 #include "nodeTemplate.h"
 
-#include "core/resource/include/resourceFactory.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/factory.h"
+#include "core/resource/include/tags.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
 ///----
 
 RTTI_BEGIN_TYPE_CLASS(RawLayer);
-    RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4layer");
-    RTTI_METADATA(res::ResourceDescriptionMetadata).description("Scene Layer");
-    RTTI_METADATA(res::ResourceTagColorMetadata).color(0xe8, 0x5d, 0x04);
+    RTTI_METADATA(ResourceExtensionMetadata).extension("v4layer");
+    RTTI_METADATA(ResourceDescriptionMetadata).description("Scene Layer");
+    RTTI_METADATA(ResourceTagColorMetadata).color(0xe8, 0x5d, 0x04);
     RTTI_PROPERTY(m_nodes);
 RTTI_END_TYPE();
 

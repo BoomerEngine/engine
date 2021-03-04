@@ -12,7 +12,7 @@
 #include "core/containers/include/hashMap.h"
 #include "importFileFingerprint.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -74,4 +74,4 @@ private:
 
 //---
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

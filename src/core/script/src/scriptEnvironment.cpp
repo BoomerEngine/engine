@@ -90,7 +90,7 @@ bool Environment::load()
         package.m_path = entry.fullPath;
 
         // load the script definitions for package (striped down, imports only data)
-        res::ResourcePathBuilder pathBuilder;
+        ResourcePathBuilder pathBuilder;
         /*pathBuilder
                 .path(package.path.path())
                 .param("exportAs", package.name.c_str())
@@ -118,7 +118,7 @@ bool Environment::load()
     for (auto& package : packages)
     {
         // load the script definitions for package (striped down, imports only data)
-        /*auto compilePath  = res::ResourcePathBuilder()
+        /*auto compilePath  = ResourcePathBuilder()
                 .path(package.path.path())
                 .param("exportAs", package.name.c_str())
                 .buildPath();*/

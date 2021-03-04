@@ -41,7 +41,7 @@ class ENGINE_TEXTURE_API StaticTexture : public ITexture
 
 public:
     StaticTexture();
-    StaticTexture(Buffer&& data, res::AsyncBuffer&& asyncData, Array<StaticTextureMip>&& mips, const TextureInfo& info);
+    StaticTexture(Buffer&& data, AsyncBuffer&& asyncData, Array<StaticTextureMip>&& mips, const TextureInfo& info);
     StaticTexture(const image::ImageView& image); // create a simple texture directly from image, no compression
     virtual ~StaticTexture();
 
@@ -62,7 +62,7 @@ public:
 
 protected:
     Buffer m_persistentPayload; // payload loaded with the resource, contains part of the texture we don't want to stream
-    res::AsyncBuffer m_streamingPayload; // additional data payloads for streaming data - high res data
+    AsyncBuffer m_streamingPayload; // additional data payloads for streaming data - high res data
     Array<StaticTextureMip> m_mips; // mip map data
 
     //--

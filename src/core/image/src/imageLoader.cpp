@@ -11,7 +11,7 @@
 #include "imageView.h"
 
 #include "core/io/include/fileHandle.h"
-#include "core/resource/include/depotService.h"
+#include "core/resource/include/depot.h"
 
 #include "freeImageLoader.h"
 

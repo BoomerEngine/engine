@@ -21,7 +21,7 @@
 #include "managedFilePlaceholder.h"
 #include "managedDirectoryPlaceholder.h"
 
-#include "core/resource/include/resourceFactory.h"
+#include "core/resource/include/factory.h"
 #include "core/io/include/io.h"
 #include "core/app/include/localServiceContainer.h"
 #include "core/image/include/image.h"
@@ -643,11 +643,11 @@ static OpenSavePersistentData GImportFiles;
 bool ImportNewFiles(ui::IElement* owner, const ManagedFileFormat* format, ManagedDirectory* parentDir)
 {
     // get the native class to use for importing
-    auto nativeClass = format ? format->nativeResourceClass() : res::IResource::GetStaticClass();
+    auto nativeClass = format ? format->nativeResourceClass() : IResource::GetStaticClass();
 
     // get all extensions we support
     InplaceArray<StringView, 20> extensions;
-    res::IResourceImporter::ListImportableExtensionsForClass(nativeClass, extensions);
+    IResourceImporter::ListImportableExtensionsForClass(nativeClass, extensions);
 
     // nothing to import
     if (extensions.empty())
@@ -676,7 +676,7 @@ bool ImportNewFiles(ui::IElement* owner, const ManagedFileFormat* format, Manage
         assetPaths.reserve(importPaths.size());
         for (const auto& absolutePath : importPaths)
         {
-            const auto* fileService = GetService<res::ImportFileService>();
+            const auto* fileService = GetService<ImportFileService>();
 
             StringBuf sourceAssetPath;
             if (fileService->translateAbsolutePath(absolutePath, sourceAssetPath))

@@ -11,8 +11,8 @@
 #include "core/io/include/directoryWatcher.h"
 #include "core/system/include/spinLock.h"
 #include "core/system/include/mutex.h"
-#include "core/resource/include/resourceLoader.h"
-#include "core/resource/include/depotService.h"
+#include "core/resource/include/loader.h"
+#include "core/resource/include/depot.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

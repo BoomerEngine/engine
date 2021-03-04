@@ -167,6 +167,11 @@ Type TypeSystem::findType(StringID typeName)
         auto correctedName = StringID(typeName.view().afterFirst("base::"));
         return findType(correctedName);
     }
+    if (typeName.view().beginsWith("res::"))
+    {
+        auto correctedName = StringID(typeName.view().afterFirst("res::"));
+        return findType(correctedName);
+    }
     else if (typeName.view().beginsWith("rendering::"))
     {
         auto correctedName = StringID(typeName.view().afterFirst("rendering::"));

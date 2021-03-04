@@ -12,11 +12,11 @@ BEGIN_BOOMER_NAMESPACE()
 
 class ITexture;
 typedef RefPtr<ITexture> TexturePtr;
-typedef res::Ref<ITexture> TextureRef;
+typedef ResourceRef<ITexture> TextureRef;
 
 class StaticTexture;
 typedef RefPtr<StaticTexture> StaticTexturePtr;
-typedef res::Ref<StaticTexture> StaticTextureRef;
+typedef ResourceRef<StaticTexture> StaticTextureRef;
 
 END_BOOMER_NAMESPACE()
 

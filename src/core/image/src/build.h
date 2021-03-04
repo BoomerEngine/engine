@@ -13,7 +13,7 @@ class PixelAccess;
 
 class Image;
 typedef RefPtr<Image> ImagePtr;
-typedef res::Ref<Image> ImageRef;
+typedef ResourceRef<Image> ImageRef;
 
 class DynamicAtlas;
 

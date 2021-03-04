@@ -15,9 +15,9 @@ BEGIN_BOOMER_NAMESPACE()
 //---
 
 /// file with input mapping definitions
-class ENGINE_GAME_API InputDefinitions : public res::IResource
+class ENGINE_GAME_API InputDefinitions : public IResource
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(InputDefinitions, res::IResource);
+    RTTI_DECLARE_VIRTUAL_CLASS(InputDefinitions, IResource);
 
 public:
     InputDefinitions();

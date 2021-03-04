@@ -8,12 +8,12 @@
 
 #pragma once
 
-#include "resourcePath.h"
+#include "path.h"
 
 #include "core/containers/include/hashSet.h"
 #include "core/object/include/object.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //-----
 
@@ -23,8 +23,8 @@ class CORE_RESOURCE_API IResource : public IObject
     RTTI_DECLARE_VIRTUAL_CLASS(IResource, IObject);
 
 public:
-    // Get the resource path used to load this resource (it's an absolute depot path, ie. "/engine/textures/lena.png")
-    INLINE const ResourcePath& path() const { return m_path; }
+    // File path used to load the resource - NOTE, debug only
+    INLINE const StringBuf& loadPath() const { return m_loadPath; }
 
     // Get runtime only unique ID, allows to identify resources by simpler means than just the number
     // NOTE: the ID gets reset if the resource is reloaded
@@ -35,7 +35,7 @@ public:
     INLINE ResourceRuntimeVersion runtimeVersion() const { return m_runtimeVersion; }
 
     // Get resource metadata, NOTE: valid only for binary resources, can be loaded separately
-    INLINE const MetadataPtr& metadata() const { return m_metadata; }
+    INLINE const ResourceMetadataPtr& metadata() const { return m_metadata; }
 
     //--
 
@@ -50,8 +50,8 @@ public:
     // invalidate runtime version of the resource, may force users to refresh preview
     void invalidateRuntimeVersion();
 
-    // Bind source loader data for this resource
-    void bindToLoader(ResourceLoader* loader, const ResourcePath& loadPath);
+    // bind source load path
+    void bindLoadPath(StringView path);
 
     //---
 
@@ -86,23 +86,23 @@ public:
     //--
 
     // Bind new metadata
-    void metadata(const MetadataPtr& data);
+    void metadata(const ResourceMetadataPtr& data);
 
     //--
 
 private:
-    ResourcePath m_path; // path we loaded this resource from
+    StringBuf m_loadPath; // path we loaded this resource from, debug only
     RefWeakPtr<ResourceLoader> m_loader; // loader used to load this resource, NOTE: not set if never loaded
 
     ResourceUniqueID m_runtimeUniqueId; // resource runtime unique ID, can be used to index maps instead of pointer
     ResourceRuntimeVersion m_runtimeVersion; // internal runtime version of the resource, can be observed and a callback can be attached
 
-    MetadataPtr m_metadata; // source dependencies and stuff
-    ResourceHandle m_reloadedData; // new version of this resource
+    ResourceMetadataPtr m_metadata; // source dependencies and stuff
+    ResourcePtr m_reloadedData; // new version of this resource
 
     //--
 };
 
 //---
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

@@ -12,7 +12,7 @@
 
 #include "engine/world/include/world.h"
 #include "engine/world/include/entity.h"
-#include "core/resource/include/objectIndirectTemplate.h"
+#include "core/resource/include/indirectTemplate.h"
 
 #include "engine/mesh/include/mesh.h"
 //#include "game/world/include/meshEntity.h"
@@ -26,8 +26,7 @@ PlaneGround::PlaneGround(World* world, const MeshRef& planeMesh)
     , m_planeMesh(planeMesh)
     , m_planeSize(10.0f)
 {
-    if (m_planeMesh)
-        m_planeSize = planeMesh.load()->bounds().size().x;
+    m_planeSize = planeMesh.resource()->bounds().size().x;
 }
 
 void PlaneGround::ensureGroundUnder(float x, float y)
@@ -98,7 +97,7 @@ NodeTemplatePtr PrefabBuilder::BuildPrefabNode(const PrefabPtr& prefab, const Eu
     DEBUG_CHECK_RETURN_V(prefab, nullptr);
 
     auto node = RefNew<NodeTemplate>();
-    node->m_prefabAssets.pushBack(prefab);
+    node->m_prefabAssets.pushBack(PrefabRef(ResourcePath(), prefab));
 
     return node;
 }

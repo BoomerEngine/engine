@@ -8,7 +8,7 @@
 
 #include "build.h"
 #include "fileObj.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 
@@ -179,19 +179,19 @@ void SourceAssetOBJ::flipFaces()
 ///--
 
 /// source asset loader for OBJ data
-class SourceAssetOBJAssetLoader : public res::ISourceAssetLoader
+class SourceAssetOBJAssetLoader : public ISourceAssetLoader
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(SourceAssetOBJAssetLoader, res::ISourceAssetLoader);
+    RTTI_DECLARE_VIRTUAL_CLASS(SourceAssetOBJAssetLoader, ISourceAssetLoader);
 
 public:
-    virtual res::SourceAssetPtr loadFromMemory(StringView importPath, StringView contextPath, Buffer data) const override
+    virtual SourceAssetPtr loadFromMemory(StringView importPath, StringView contextPath, Buffer data) const override
     {
         return LoadObjectFile(contextPath, data.data(), data.size(), true);
     }
 };
 
 RTTI_BEGIN_TYPE_CLASS(SourceAssetOBJAssetLoader);
-    RTTI_METADATA(res::ResourceSourceFormatMetadata).addSourceExtensions("obj");
+    RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtensions("obj");
 RTTI_END_TYPE();
 
 ///--

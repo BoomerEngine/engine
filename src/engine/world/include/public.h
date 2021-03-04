@@ -8,7 +8,7 @@
 
 #include "engine_world_glue.inl"
 
-#include "core/resource/include/resourceAsyncReference.h"
+#include "core/resource/include/asyncReference.h"
 
 namespace boomer::rendering
 {
@@ -51,7 +51,7 @@ typedef BitFlags<NodeVisibilityFlag> NodeVisibilityFlags;
 class Prefab;
 typedef RefPtr<Prefab> PrefabPtr;
 typedef RefWeakPtr<Prefab> PrefabWeakPtr;
-typedef res::Ref<Prefab> PrefabRef;
+typedef ResourceRef<Prefab> PrefabRef;
 
 struct PrefabDependencies;
 
@@ -95,8 +95,8 @@ typedef RefPtr<StreamingIsland> StreamingIslandPtr;
 
 class CompiledScene;
 typedef RefPtr<CompiledScene> CompiledScenePtr;
-typedef res::Ref<CompiledScene> CompiledSceneRef;
-typedef res::AsyncRef<CompiledScene> CompiledSceneAsyncRef;
+typedef ResourceRef<CompiledScene> CompiledSceneRef;
+typedef ResourceAsyncRef<CompiledScene> CompiledSceneAsyncRef;
 
 //---
 

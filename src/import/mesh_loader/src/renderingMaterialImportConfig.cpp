@@ -147,7 +147,7 @@ StringBuf IGeneralMaterialImporter::ConvertPathToTextureSearchPath(StringView as
     if (!MakeSafeFileName(coreName, safeCoreName))
         return StringBuf();
 
-    static const auto textureExtension = res::IResource::GetResourceExtensionForClass(StaticTexture::GetStaticClass());
+    static const auto textureExtension = IResource::GetResourceExtensionForClass(StaticTexture::GetStaticClass());
     return TempString("{}.{}", safeCoreName, textureExtension);
 }
 
@@ -208,7 +208,7 @@ StringBuf IGeneralMaterialImporter::BuildTextureDepotPath(StringView referenceDe
     return txt.toString();
 }
 
-TextureRef IGeneralMaterialImporter::importTextureRef(res::IResourceImporterInterface& importer, const MaterialImportConfig& cfg, StringView assetPathToTexture, StringBuf& outAssetImportPath) const
+TextureRef IGeneralMaterialImporter::importTextureRef(IResourceImporterInterface& importer, const MaterialImportConfig& cfg, StringView assetPathToTexture, StringBuf& outAssetImportPath) const
 {
     // no path
     if (assetPathToTexture.empty())
@@ -240,7 +240,7 @@ TextureRef IGeneralMaterialImporter::importTextureRef(res::IResourceImporterInte
         {
             TRACE_INFO("Found '{}' at '{}'", assetPathToTexture, depotPath);
 
-            return TextureRef(res::ResourcePath(depotPath));
+            return TextureRef(ResourcePath(depotPath));
         }
     }
 
@@ -263,7 +263,7 @@ TextureRef IGeneralMaterialImporter::importTextureRef(res::IResourceImporterInte
             outAssetImportPath = foundTexturePath;
 
             // build a unloaded texture reference (so it can be saved)
-            return TextureRef(res::ResourcePath(depotPath));
+            return TextureRef(ResourcePath(depotPath));
         }
     }
 
@@ -334,7 +334,7 @@ bool IGeneralMaterialImporter::WriteVector4(Vector4 value, StringID name, Array<
     return true;
 }
 
-bool IGeneralMaterialImporter::loadTexture(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialTextrureInfo& info, LoadedTexture& outLoadedTexture) const
+bool IGeneralMaterialImporter::loadTexture(IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialTextrureInfo& info, LoadedTexture& outLoadedTexture) const
 {
     StringBuf importPath;
     if (auto textureRef = importTextureRef(importer, config, info.path, importPath))
@@ -347,7 +347,7 @@ bool IGeneralMaterialImporter::loadTexture(res::IResourceImporterInterface& impo
     return false;
 }
 
-bool IGeneralMaterialImporter::tryLoadAlternativeTexture(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialTextrureInfo& info, StringView additionalSuffixes, LoadedTexture& outLoadedTexture) const
+bool IGeneralMaterialImporter::tryLoadAlternativeTexture(IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialTextrureInfo& info, StringView additionalSuffixes, LoadedTexture& outLoadedTexture) const
 {
     if (!info)
         return false;
@@ -379,7 +379,7 @@ static void ExtractPathsAndStems(StringView importPath, Array<StringBuf>& outImp
         outImportPaths.pushBackUnique(StringBuf(importPath));
 }
 
-bool IGeneralMaterialImporter::findAssetSourcePath(res::IResourceImporterInterface& importer, const Array<StringBuf>& paths, const Array<StringView>& suffixes, StringBuf& outPath) const
+bool IGeneralMaterialImporter::findAssetSourcePath(IResourceImporterInterface& importer, const Array<StringBuf>& paths, const Array<StringView>& suffixes, StringBuf& outPath) const
 {
     for (const auto& path : paths)
     {
@@ -410,7 +410,7 @@ bool IGeneralMaterialImporter::findAssetSourcePath(res::IResourceImporterInterfa
     return false;
 }
 
-void IGeneralMaterialImporter::loadAdditionalTextures(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, LoadedTextures& outLoadedTextures) const
+void IGeneralMaterialImporter::loadAdditionalTextures(IResourceImporterInterface& importer, const MaterialImportConfig& config, LoadedTextures& outLoadedTextures) const
 {
     Array<StringBuf> importPaths;
     for (const auto& tex : outLoadedTextures.textures)
@@ -451,7 +451,7 @@ void IGeneralMaterialImporter::loadAdditionalTextures(res::IResourceImporterInte
     }
 }
 
-bool IGeneralMaterialImporter::tryApplyTexture(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, StringView mappingParams, const MaterialTemplate* knownTemplate, const LoadedTexture& texture, Array<MaterialInstanceParam>& outParams) const
+bool IGeneralMaterialImporter::tryApplyTexture(IResourceImporterInterface& importer, const MaterialImportConfig& config, StringView mappingParams, const MaterialTemplate* knownTemplate, const LoadedTexture& texture, Array<MaterialInstanceParam>& outParams) const
 {
     if (!knownTemplate)
         return false;
@@ -474,7 +474,7 @@ bool IGeneralMaterialImporter::tryApplyTexture(res::IResourceImporterInterface& 
                     return true;
             }
 
-            TRACE_WARNING("Unable to bind texture to parameter '{}' from template '{}' as its not a texture parameter", paramName, knownTemplate->path());
+            TRACE_WARNING("Unable to bind texture to parameter '{}' from template '{}' as its not a texture parameter", paramName, knownTemplate->loadPath());
         }
     }
 
@@ -534,10 +534,10 @@ bool IGeneralMaterialImporter::applyVector4Param(StringView mappingParams, const
     return false;
 }
 
-static res::StaticResource<IMaterial> resUnlitMaterialBase("/engine/materials/std_unlit.v4mg");
-static res::StaticResource<IMaterial> resDefaultMaterialBase("/engine/materials/std_pbr.v4mg");
+static StaticResource<IMaterial> resUnlitMaterialBase("/engine/materials/std_unlit.v4mg");
+static StaticResource<IMaterial> resDefaultMaterialBase("/engine/materials/std_pbr.v4mg");
 
-MaterialInstancePtr IGeneralMaterialImporter::importMaterial(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialInfo& sourceMaterial) const
+MaterialInstancePtr IGeneralMaterialImporter::importMaterial(IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialInfo& sourceMaterial) const
 {
     // load textures
     LoadedTextures loadedTextures;
@@ -557,12 +557,12 @@ MaterialInstancePtr IGeneralMaterialImporter::importMaterial(res::IResourceImpor
         loadAdditionalTextures(importer, config, loadedTextures);
 
     // load the base template to use, this can't fail - otherwise what's the point
-    const auto baseMaterial = loadedTextures.forceUnlit ? resUnlitMaterialBase.loadAndGetAsRef() : resDefaultMaterialBase.loadAndGetAsRef();
+    const auto baseMaterial = loadedTextures.forceUnlit ? resUnlitMaterialBase.load() : resDefaultMaterialBase.load();
     if (!baseMaterial)
         return nullptr;
 
     // we must have a valid template
-    const auto baseTemplate = baseMaterial.load() ? baseMaterial.load()->resolveTemplate() : nullptr;
+    const auto baseTemplate = baseMaterial.resource() ? baseMaterial.resource()->resolveTemplate() : nullptr;
     if (!baseTemplate)
         return nullptr;
 

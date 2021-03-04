@@ -31,7 +31,7 @@
 #include "engine/ui/include/uiDockContainer.h"
 #include "engine/ui/include/uiElementConfig.h"
 #include "engine/ui/include/uiButton.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 #include "core/resource_compiler/include/importFileList.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)

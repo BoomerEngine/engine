@@ -27,13 +27,13 @@ public:
     virtual ClassType referenceResourceClass() const = 0;
 
     /*/// read the currently referenced resource
-    virtual void referenceReadResource(const void* data, RefPtr<res::IResource>& outRef) const = 0;
+    virtual void referenceReadResource(const void* data, RefPtr<IResource>& outRef) const = 0;
 
     /// write new resource reference
-    virtual void referenceWriteResource(void* data, res::IResource* resource) const = 0;*/
+    virtual void referenceWriteResource(void* data, IResource* resource) const = 0;*/
 
     /// patch resource reference, returns true if indeed it was patched
-    virtual bool referencePatchResource(void* data, res::IResource* currentResource, res::IResource* newResources) const = 0;
+    virtual bool referencePatchResource(void* data, IResource* currentResource, IResource* newResources) const = 0;
 };
 
 //---

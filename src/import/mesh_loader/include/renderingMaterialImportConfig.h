@@ -9,7 +9,7 @@
 #pragma once
 
 #include "core/resource/include/resource.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 #include "core/resource_compiler/include/importInterface.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
@@ -17,9 +17,9 @@ BEGIN_BOOMER_NAMESPACE_EX(assets)
 //---
 
 /// common manifest for importable materials 
-class IMPORT_MESH_LOADER_API MaterialImportConfig : public res::ResourceConfiguration
+class IMPORT_MESH_LOADER_API MaterialImportConfig : public ResourceConfiguration
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MaterialImportConfig, res::ResourceConfiguration);
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialImportConfig, ResourceConfiguration);
 
 public:
     MaterialImportConfig();
@@ -121,9 +121,9 @@ struct LoadedTexture;
 struct LoadedTextures;
 
 /// generic material importer
-class IMPORT_MESH_LOADER_API IGeneralMaterialImporter : public res::IResourceImporter
+class IMPORT_MESH_LOADER_API IGeneralMaterialImporter : public IResourceImporter
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(IGeneralMaterialImporter, res::IResourceImporter);
+    RTTI_DECLARE_VIRTUAL_CLASS(IGeneralMaterialImporter, IResourceImporter);
 
 public:
     virtual ~IGeneralMaterialImporter();
@@ -139,22 +139,22 @@ protected:
     static bool WriteBool(bool value, StringID name, Array<MaterialInstanceParam>& outParams);
     static bool WriteVector4(Vector4 value, StringID name, Array<MaterialInstanceParam>& outParams);
 
-    virtual bool tryApplyTexture(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, StringView mappingParams, const MaterialTemplate* knownTemplate, const LoadedTexture& texture, Array<MaterialInstanceParam>& outParams) const;
+    virtual bool tryApplyTexture(IResourceImporterInterface& importer, const MaterialImportConfig& config, StringView mappingParams, const MaterialTemplate* knownTemplate, const LoadedTexture& texture, Array<MaterialInstanceParam>& outParams) const;
 
     bool applyBoolParam(StringView paramNames, const MaterialTemplate* knownTemplate, bool value, Array<MaterialInstanceParam>& outParams) const;
     bool applyVector4Param(StringView paramNames, const MaterialTemplate* knownTemplate, Vector4 value, Array<MaterialInstanceParam>& outParams) const;
         
-    bool loadTexture(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialTextrureInfo& info, LoadedTexture& outLoadedTextures) const;
+    bool loadTexture(IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialTextrureInfo& info, LoadedTexture& outLoadedTextures) const;
 
-    bool tryLoadAlternativeTexture(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialTextrureInfo& info, StringView additionalSuffixes, LoadedTexture& outLoadedTextures) const;
+    bool tryLoadAlternativeTexture(IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialTextrureInfo& info, StringView additionalSuffixes, LoadedTexture& outLoadedTextures) const;
 
-    bool findAssetSourcePath(res::IResourceImporterInterface& importer, const Array<StringBuf>& paths, const Array<StringView>& suffixes, StringBuf& outPath) const;
+    bool findAssetSourcePath(IResourceImporterInterface& importer, const Array<StringBuf>& paths, const Array<StringView>& suffixes, StringBuf& outPath) const;
 
-    void loadAdditionalTextures(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, LoadedTextures& outLoadedTextures) const;
+    void loadAdditionalTextures(IResourceImporterInterface& importer, const MaterialImportConfig& config, LoadedTextures& outLoadedTextures) const;
 
-    virtual MaterialInstancePtr importMaterial(res::IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialInfo& sourceMaterial) const;
+    virtual MaterialInstancePtr importMaterial(IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialInfo& sourceMaterial) const;
 
-    virtual TextureRef importTextureRef(res::IResourceImporterInterface& importer, const MaterialImportConfig& csg, StringView assetPathToTexture, StringBuf& outAssetImportPath) const;
+    virtual TextureRef importTextureRef(IResourceImporterInterface& importer, const MaterialImportConfig& csg, StringView assetPathToTexture, StringBuf& outAssetImportPath) const;
 };
 
 //---

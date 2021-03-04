@@ -35,7 +35,7 @@ END_BOOMER_NAMESPACE_EX(font)
 BEGIN_BOOMER_NAMESPACE()
 
 typedef RefPtr<font::Font> FontPtr;
-typedef res::Ref<font::Font> FontRef;
+typedef ResourceRef<font::Font> FontRef;
 
 //--
 

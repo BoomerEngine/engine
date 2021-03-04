@@ -15,11 +15,11 @@
 #include "core/io/include/fileHandleMemory.h"
 
 #include "resource.h"
-#include "resourceLoader.h"
-#include "resourcePath.h"
-#include "resourceTags.h"
-#include "resourceFileSaver.h"
-#include "resourceFileLoader.h"
+#include "loader.h"
+#include "path.h"
+#include "tags.h"
+#include "fileSaver.h"
+#include "fileLoader.h"
 
 DECLARE_TEST_FILE(Resource);
 

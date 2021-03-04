@@ -185,7 +185,7 @@ static void SaveLayerStructure(ManagedDirectory* dir, const SceneContentWorldDir
         {
             bool shouldSave = childDataLayer->modified();
 
-            auto layerExt = res::IResource::GetResourceExtensionForClass(RawLayer::GetStaticClass());
+            auto layerExt = IResource::GetResourceExtensionForClass(RawLayer::GetStaticClass());
 
             auto fullFileName = StringBuf(TempString("{}.{}", childDataLayer->name(), layerExt));
             auto* existingFile = rtti_cast<ManagedFileNativeResource>(dir->file(fullFileName, true));

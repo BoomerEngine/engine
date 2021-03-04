@@ -12,8 +12,8 @@
 #include "prefab.h"
 #include "path.h"
 
-#include "core/resource/include/objectIndirectTemplate.h"
-#include "core/resource/include/objectIndirectTemplateCompiler.h"
+#include "core/resource/include/indirectTemplate.h"
+#include "core/resource/include/indirectTemplateCompiler.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -29,11 +29,6 @@ NodeTemplatePrefabSetup::NodeTemplatePrefabSetup()
 {}
 
 NodeTemplatePrefabSetup::NodeTemplatePrefabSetup(const PrefabRef& prefab_, bool enabled_ /*= true*/)
-    : prefab(prefab_)
-    , enabled(enabled_)
-{}
-
-NodeTemplatePrefabSetup::NodeTemplatePrefabSetup(const PrefabPtr& prefab_, bool enabled_ /*= true*/)
     : prefab(prefab_)
     , enabled(enabled_)
 {}
@@ -203,7 +198,7 @@ static void SuckInPrefab(const NodeTemplatePrefabSetup& prefabEntry, HashSet<con
     if (!prefabEntry.enabled)
         return;
 
-    auto loadedPrefab = prefabEntry.prefab.load();
+    auto loadedPrefab = prefabEntry.prefab.resource();
     if (!loadedPrefab)
         return;
 
@@ -354,7 +349,7 @@ NodeTemplatePtr UnpackTopLevelPrefabs(const NodeTemplate* rootNode)
 
 static const int MAX_DEPTH = 10;
 
-RefPtr<HierarchyEntity> ProcessSingleEntity(int depth, NodePathBuilder& path, const Array<const NodeTemplate*>& inputTemplates, const AbsoluteTransform& placement, bool applyLocalPlacement, res::ResourceLoader* loader)
+RefPtr<HierarchyEntity> ProcessSingleEntity(int depth, NodePathBuilder& path, const Array<const NodeTemplate*>& inputTemplates, const AbsoluteTransform& placement, bool applyLocalPlacement, ResourceLoader* loader)
 {
     auto ret = RefNew<HierarchyEntity>();
     ret->id = path.toID();
@@ -458,7 +453,7 @@ uint32_t HierarchyEntity::countTotalEntities() const
     return ret;
 }
 
-RefPtr<HierarchyEntity> CompileEntityHierarchy(const NodePathBuilder& path, const NodeTemplate* rootTemplateNode, const AbsoluteTransform* forceInitialPlacement, res::ResourceLoader* loader)
+RefPtr<HierarchyEntity> CompileEntityHierarchy(const NodePathBuilder& path, const NodeTemplate* rootTemplateNode, const AbsoluteTransform* forceInitialPlacement, ResourceLoader* loader)
 {
     InplaceArray<const NodeTemplate*, 10> nodeTemplates;
     if (rootTemplateNode)

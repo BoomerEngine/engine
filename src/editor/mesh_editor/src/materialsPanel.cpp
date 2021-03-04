@@ -26,8 +26,8 @@
 #include "engine/ui/include/uiDragDrop.h"
 #include "engine/ui/include/uiCheckBox.h"
 
-#include "core/resource/include/resourcePath.h"
-#include "core/resource/include/resourceLoadingService.h"
+#include "core/resource/include/path.h"
+#include "core/resource/include/loadingService.h"
 #include "core/object/include/dataViewNative.h"
 #include "core/object/include/rttiDataView.h"
 #include "engine/ui/include/uiToolBar.h"
@@ -57,7 +57,7 @@ bool MeshMaterialParameters::updateDisplayString()
     {
         if (auto materialTemplate = m_data->resolveTemplate())
         {
-            if (const auto fileName = materialTemplate->path().fileStem())
+            if (const auto fileName = materialTemplate->loadPath().view().fileStem())
             {
                 txt.appendf(" [tag:#888]{}[/tag]", fileName);
             }
@@ -70,7 +70,7 @@ bool MeshMaterialParameters::updateDisplayString()
                 if (m_data->checkParameterOverride(param->name()))
                 {
                     const auto metaType = param->queryDataType().metaType();
-                    if (metaType == MetaType::ResourceRef || metaType == MetaType::AsyncResourceRef)
+                    if (metaType == MetaType::ResourceRef || metaType == MetaType::ResourceAsyncRef)
                         hasTextureOverrides = true;
                     else
                         hasParamOverrides = true;
@@ -172,10 +172,9 @@ bool MeshMaterialListModel::handleDragDropCompletion(ui::AbstractItemView* view,
         auto fileData = rtti_cast<ed::AssetBrowserFileDragDrop>(dragData);
         if (fileData && fileData->file())
         {
-            if (auto material = LoadResource<IMaterial>(fileData->file()->depotPath()))
-            {
-                return elem->baseMaterial(material);
-            }
+            const auto loadedMaterial = LoadResource<IMaterial>(fileData->file()->depotPath());
+            const auto materialRef = MaterialRef(fileData->file()->depotPath().view(), loadedMaterial);
+            return elem->baseMaterial(materialRef);
         }
     }
 

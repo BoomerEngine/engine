@@ -71,9 +71,9 @@ public:
 
 /// unpacked format data for MTL file
 /// can be stored in the import cache to speed up reimports from the same file
-class IMPORT_OBJ_LOADER_API SourceAssetMTL : public res::ISourceAsset
+class IMPORT_OBJ_LOADER_API SourceAssetMTL : public ISourceAsset
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(SourceAssetMTL, res::ISourceAsset);
+    RTTI_DECLARE_VIRTUAL_CLASS(SourceAssetMTL, ISourceAsset);
 
 public:
     SourceAssetMTL();

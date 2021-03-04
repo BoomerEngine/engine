@@ -12,9 +12,9 @@
 #include "core/containers/include/stringBuf.h"
 #include "rttiMetadata.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 class ResourceLoader;
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()
 
 BEGIN_BOOMER_NAMESPACE()
 

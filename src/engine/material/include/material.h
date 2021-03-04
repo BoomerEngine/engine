@@ -15,9 +15,9 @@ BEGIN_BOOMER_NAMESPACE()
 ///---
 
 /// a generalized material
-class ENGINE_MATERIAL_API IMaterial : public res::IResource
+class ENGINE_MATERIAL_API IMaterial : public IResource
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(IMaterial, res::IResource);
+    RTTI_DECLARE_VIRTUAL_CLASS(IMaterial, IResource);
 
 public:
     IMaterial();

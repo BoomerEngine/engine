@@ -54,10 +54,10 @@ public:
 //----
 
 /// scene prefab, self contain data set from which a self contained node group may be spawned
-class ENGINE_WORLD_API Prefab : public res::IResource
+class ENGINE_WORLD_API Prefab : public IResource
 {
     RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
-    RTTI_DECLARE_VIRTUAL_CLASS(Prefab, res::IResource);
+    RTTI_DECLARE_VIRTUAL_CLASS(Prefab, IResource);
 
 public:
     Prefab(uint64_t seed=0);

@@ -14,13 +14,13 @@
 
 #include "core/app/include/command.h"
 #include "core/app/include/commandline.h"
-#include "core/resource/include/resourceLoadingService.h"
-#include "core/resource/include/resourceLoader.h"
+#include "core/resource/include/loadingService.h"
+#include "core/resource/include/loader.h"
 #include "engine/world/include/rawScene.h"
 #include "engine/world/include/compiledScene.h"
-#include "core/resource/include/resourceFileSaver.h"
+#include "core/resource/include/fileSaver.h"
 #include "core/io/include/fileHandle.h"
-#include "core/resource/include/depotService.h"
+#include "core/resource/include/depot.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -57,7 +57,7 @@ static bool SaveFileToDepot(StringView path, IObject* data)
         return false;
     }
 
-    res::FileSavingContext context;
+    FileSavingContext context;
     context.rootObject.pushBack(AddRef(data));
     if (!SaveFile(file, context))
     {
@@ -72,7 +72,7 @@ static bool SaveFileToDepot(StringView path, IObject* data)
 
 /*static StringBuf BuildCellSavePath(StringView outputDirectoryPath, const SourceStreamingGridCell& cell)
 {
-    const auto extension = res::IResource::GetResourceExtensionForClass(StreamingSector::GetStaticClass());
+    const auto extension = IResource::GetResourceExtensionForClass(StreamingSector::GetStaticClass());
     return StringBuf(TempString("{}sectors/sector_{}_({}x{}).{}",
         outputDirectoryPath,
         cell.level, cell.cellX, cell.cellY,
@@ -83,7 +83,7 @@ bool CommandCompileScene::run(IProgressTracker* progress, const app::CommandLine
 {
     ScopeTimer timer;
 
-    auto loadingService = GetService<res::LoadingService>();
+    auto loadingService = GetService<LoadingService>();
     if (!loadingService || !loadingService->loader())
     {
         TRACE_ERROR("Resource loading service not started properly (incorrect depot mapping?), cooking won't be possible.");
@@ -100,8 +100,8 @@ bool CommandCompileScene::run(IProgressTracker* progress, const app::CommandLine
     StringBuf outputDepotPath = commandline.singleValue("outputDepotPath");
     if (outputDepotPath.empty())
     {
-        const auto extension = res::IResource::GetResourceExtensionForClass(CompiledScene::GetStaticClass());
-        const auto loadPath = res::ResourcePath(depotPath);
+        const auto extension = IResource::GetResourceExtensionForClass(CompiledScene::GetStaticClass());
+        const auto loadPath = ResourcePath(depotPath);
         outputDepotPath = TempString("{}.compiled/{}.{}", loadPath.basePath(), loadPath.fileStem(), extension);
         TRACE_INFO("No location for cooked scene specified, using the default '{}'", outputDepotPath);
     }
@@ -128,7 +128,7 @@ bool CommandCompileScene::run(IProgressTracker* progress, const app::CommandLine
 
     // extract entity source
     SourceEntitySoup soup;
-    ExtractSourceEntities(res::ResourcePath(depotPath), soup);
+    ExtractSourceEntities(ResourcePath(depotPath), soup);
 
     // build entity islands
     SourceIslands islands;
@@ -167,7 +167,7 @@ bool CommandCompileScene::run(IProgressTracker* progress, const app::CommandLine
 
             auto& cellInfo = setup.cells.emplaceBack();
             cellInfo.streamingBox = cellData->streamingBounds();
-            cellInfo.data = StreamingSectorAsyncRef(res::ResourcePath(savePath));
+            cellInfo.data = StreamingSectorAsyncRef(ResourcePath(savePath));
         }
     }*/
 

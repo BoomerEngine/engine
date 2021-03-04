@@ -22,9 +22,9 @@
 #include "core/io/include/io.h"
 #include "core/app/include/localServiceContainer.h"
 #include "core/resource/include/resource.h"
-#include "core/resource/include/resourceLoader.h"
+#include "core/resource/include/loader.h"
 #include "core/containers/include/inplaceArray.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 
@@ -79,10 +79,10 @@ void OBJMeshImportConfig::computeConfigurationKey(CRC64& crc) const
 
 RTTI_BEGIN_TYPE_CLASS(OBJMeshImporter);
     RTTI_OLD_NAME("wavefront::OBJMeshImporter");
-    RTTI_METADATA(res::ResourceCookedClassMetadata).addClass<Mesh>();
-    RTTI_METADATA(res::ResourceSourceFormatMetadata).addSourceExtension("obj");
-    RTTI_METADATA(res::ResourceCookerVersionMetadata).version(3);
-    RTTI_METADATA(res::ResourceImporterConfigurationClassMetadata).configurationClass<OBJMeshImportConfig>();
+    RTTI_METADATA(ResourceCookedClassMetadata).addClass<Mesh>();
+    RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtension("obj");
+    RTTI_METADATA(ResourceCookerVersionMetadata).version(3);
+    RTTI_METADATA(ResourceImporterConfigurationClassMetadata).configurationClass<OBJMeshImportConfig>();
 RTTI_END_TYPE();
 
 OBJMeshImporter::OBJMeshImporter()
@@ -812,7 +812,7 @@ static void ProcessSingleChunk(MeshTopologyType top, const SourceAssetOBJ& data,
 
 //--
 
-void OBJMeshImporter::buildMaterials(const SourceAssetOBJ& data, const Mesh* existingMesh, res::IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, Array<int> &outSourceToExportMaterialIndexMapping, Array<MeshMaterial>& outExportMaterials) const
+void OBJMeshImporter::buildMaterials(const SourceAssetOBJ& data, const Mesh* existingMesh, IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, Array<int> &outSourceToExportMaterialIndexMapping, Array<MeshMaterial>& outExportMaterials) const
 {
     auto meshGeometryManifest = importer.queryConfigration<OBJMeshImportConfig>();
 
@@ -897,7 +897,7 @@ static void PreparePackingJobs(const GroupBuildModelList& exportGeometry, const 
     }
 }
 
-static void BuildRenderChunks(const SourceAssetOBJ& sourceData, const Matrix assetToEngineTransform, const OBJMeshImportConfig& config, res::IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, const Array<int>& sourceToExportMaterialIndexMapping, Array<MeshChunk>& outChunks, Box& outBounds)
+static void BuildRenderChunks(const SourceAssetOBJ& sourceData, const Matrix assetToEngineTransform, const OBJMeshImportConfig& config, IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, const Array<int>& sourceToExportMaterialIndexMapping, Array<MeshChunk>& outChunks, Box& outBounds)
 {
     ScopeTimer packingTime;
 
@@ -949,7 +949,7 @@ RefPtr<MaterialImportConfig> OBJMeshImporter::createMaterialImportConfig(const M
     return ret;
 }
 
-res::ResourcePtr OBJMeshImporter::importResource(res::IResourceImporterInterface& importer) const
+ResourcePtr OBJMeshImporter::importResource(IResourceImporterInterface& importer) const
 {
     // load source data from OBJ format
     auto sourceFilePath = importer.queryImportPath();
@@ -1007,7 +1007,7 @@ res::ResourcePtr OBJMeshImporter::importResource(res::IResourceImporterInterface
 }
 
 #if 0
-content::PhysicsDataPtr OBJMeshImporter::buildPhysicsData(const res::CookingParams& ctx, const content::GeometryData& geometryData) const
+content::PhysicsDataPtr OBJMeshImporter::buildPhysicsData(const CookingParams& ctx, const content::GeometryData& geometryData) const
 {
     // get the rendering blob, we will use it to build physics
     auto renderingBlob = geometryData.renderingBlob();

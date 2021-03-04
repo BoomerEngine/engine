@@ -16,8 +16,8 @@
 #include "core/object/include/streamOpcodeWriter.h"
 #include "core/object/include/rttiProperty.h"
 
-#include "resourceFileSaver.h"
-#include "resourceFileTables.h"
+#include "fileSaver.h"
+#include "fileTables.h"
 
 DECLARE_TEST_FILE(StreamWriter);
 
@@ -371,14 +371,14 @@ TEST(StreamOpcodes, DynamicArray)
     ASSERT_FALSE(it);
 }
 
-TEST(StreamOpcodes, AsyncResourceRef)
+TEST(StreamOpcodes, ResourceAsyncRef)
 {
     stream::OpcodeStream stream;
     stream::OpcodeWriterReferences references;
     stream::OpcodeWriter writer(stream, references);
 
-    res::AsyncRef<res::IResource> testRef;
-    testRef = res::ResourcePath("/test.txt");
+    ResourceAsyncRef<IResource> testRef;
+    testRef = ResourcePath("/test.txt");
 
     HelperWriteType(writer, testRef);
 
@@ -389,7 +389,7 @@ TEST(StreamOpcodes, AsyncResourceRef)
         ASSERT_EQ(stream::StreamOpcode::DataResourceRef, it->op);
         const auto* op = (const stream::StreamOpDataResourceRef*)(*it);
         ASSERT_STREQ("/test.txt", op->path.c_str());
-        ASSERT_EQ(res::IResource::GetStaticClass(), op->type);
+        ASSERT_EQ(IResource::GetStaticClass(), op->type);
         ASSERT_TRUE(op->async);
         ++it;
     }
@@ -400,7 +400,7 @@ TEST(StreamOpcodes, AsyncResourceRef)
     ASSERT_EQ(0, references.syncResources.size());
 
     ASSERT_STREQ("/test.txt", references.asyncResources.keys()[0].resourcePath.c_str());
-    ASSERT_EQ(res::IResource::GetStaticClass(), references.asyncResources.keys()[0].resourceType);
+    ASSERT_EQ(IResource::GetStaticClass(), references.asyncResources.keys()[0].resourceType);
 }
 
 TEST(StreamOpcodes, SyncResourceRef)
@@ -409,8 +409,8 @@ TEST(StreamOpcodes, SyncResourceRef)
     stream::OpcodeWriterReferences references;
     stream::OpcodeWriter writer(stream, references);
 
-    res::Ref<res::IResource> testRef;
-    *((res::BaseReference*)&testRef) = res::BaseReference(res::ResourcePath("/test.txt"));
+    ResourceRef<IResource> testRef;
+    *((BaseReference*)&testRef) = BaseReference(ResourcePath("/test.txt"));
 
     HelperWriteType(writer, testRef);
 
@@ -425,7 +425,7 @@ TEST(StreamOpcodes, SyncResourceRef)
         ASSERT_EQ(stream::StreamOpcode::DataResourceRef, it->op);
         const auto* op = (const stream::StreamOpDataResourceRef*)(*it);
         ASSERT_STREQ("/test.txt", op->path.c_str());
-        ASSERT_EQ(res::IResource::GetStaticClass(), op->type);
+        ASSERT_EQ(IResource::GetStaticClass(), op->type);
         ASSERT_FALSE(op->async);
         ++it;
     }
@@ -436,7 +436,7 @@ TEST(StreamOpcodes, SyncResourceRef)
     ASSERT_EQ(1, references.syncResources.size());
 
     ASSERT_STREQ("/test.txt", references.syncResources.keys()[0].resourcePath.c_str());
-    ASSERT_EQ(res::IResource::GetStaticClass(), references.syncResources.keys()[0].resourceType);
+    ASSERT_EQ(IResource::GetStaticClass(), references.syncResources.keys()[0].resourceType);
 }
 
 TEST(StreamOpcodes, CompoundEmpty)

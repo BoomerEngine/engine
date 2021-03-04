@@ -431,12 +431,12 @@ JITProjectPtr JITProject::Compile(const CompiledProjectPtr& project)
     auto jitClass  = RTTI::GetInstance().findClass(cvJITCompilerClass.get());
     if (!jitClass)
     {
-        TRACE_ERROR("JIT: Compiler class '{}' not found, unable to compile project '{}'", cvJITCompilerClass.get(), project->path());
+        TRACE_ERROR("JIT: Compiler class '{}' not found, unable to compile project '{}'", cvJITCompilerClass.get(), project->loadPath());
         return nullptr;
     }
 
     // generate path where we will store the compiled module
-    auto jitPath = GetJITModulePath(project->path().str());
+    auto jitPath = GetJITModulePath(project->loadPath().view());
     TRACE_INFO("JIT: Scripts '{}' will be JITed into '{}'", project->path(), jitPath);
 
     // setup JIT compiler settings
@@ -449,12 +449,12 @@ JITProjectPtr JITProject::Compile(const CompiledProjectPtr& project)
     auto compiler = jitClass->create<IJITCompiler>();
     if (!compiler->compile(IJITNativeTypeInsight::GetCurrentTypes(), project, jitPath, settings))
     {
-        TRACE_ERROR("JIT: Failed to JIT '{}'", project->path());
+        TRACE_ERROR("JIT: Failed to JIT '{}'", project->loadPath());
         return nullptr;
     }
 
     // try to load JITed module
-    TRACE_INFO("Scripts '{}' were JITed in {}", project->path(), TimeInterval(timer.timeElapsed()));
+    TRACE_INFO("Scripts '{}' were JITed in {}", project->loadPath(), TimeInterval(timer.timeElapsed()));
     return Load(jitPath);
 }
 

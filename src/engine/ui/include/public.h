@@ -82,7 +82,7 @@ namespace style
 
 typedef RefPtr<style::ParamTable> ParamTablePtr;
 typedef RefPtr<style::Library> StyleLibraryPtr;
-typedef res::Ref<style::Library> StyleLibraryRef;
+typedef ResourceRef<style::Library> StyleLibraryRef;
 typedef RefWeakPtr<style::Library> StyleLibraryWeakPtr;
 
 class CachedGeometryBuilder;

@@ -40,9 +40,9 @@ struct ENGINE_FONT_API BitmapFontPrintableGlyph
 //--
 
 /// a simple bitmap font
-class ENGINE_FONT_API BitmapFont : public res::IResource
+class ENGINE_FONT_API BitmapFont : public IResource
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(BitmapFont, res::IResource);
+    RTTI_DECLARE_VIRTUAL_CLASS(BitmapFont, IResource);
 
 public:
     BitmapFont();

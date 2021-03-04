@@ -10,7 +10,7 @@
 #include "resourceEditorNativeFile.h"
 #include "managedFile.h"
 #include "managedFileNativeResource.h"
-#include "core/resource/include/resourceLoadingService.h"
+#include "core/resource/include/loadingService.h"
 #include "engine/ui/include/uiMessageBox.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
@@ -34,11 +34,11 @@ void ResourceEditorNativeFile::handleContentModified()
 
 }
 
-void ResourceEditorNativeFile::handleLocalReimport(const res::ResourcePtr& ptr)
+void ResourceEditorNativeFile::handleLocalReimport(const ResourcePtr& ptr)
 {
 }
 
-void ResourceEditorNativeFile::applyLocalReimport(const res::ResourcePtr& ptr)
+void ResourceEditorNativeFile::applyLocalReimport(const ResourcePtr& ptr)
 {
     m_resourceEvents.clear();
 
@@ -92,8 +92,8 @@ bool ResourceEditorNativeFile::save()
     if (!m_nativeFile->storeContent(m_resource))
         return false;
 
-    auto loadingService = GetService<res::LoadingService>();
-    auto resoureKey = res::ResourcePath(nativeFile()->depotPath());
+    auto loadingService = GetService<LoadingService>();
+    auto resoureKey = ResourcePath(nativeFile()->depotPath());
     if (!loadingService->loadResource(resoureKey))
     {
         TRACE_WARNING("Reloading of '{}' impossible after save", nativeFile()->depotPath());

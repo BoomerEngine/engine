@@ -9,7 +9,7 @@
 #pragma once
 
 #include "core/object/include/rttiMetadata.h"
-#include "core/resource/include/resourceLoader.h"
+#include "core/resource/include/loader.h"
 
 #include "engine/canvas/include/geometryBuilder.h"
 #include "engine/canvas/include/geometry.h"

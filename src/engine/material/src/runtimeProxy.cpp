@@ -97,7 +97,7 @@ MaterialDataDescriptor* MaterialDataDescriptor::Create(const MaterialDataLayoutD
 			TextureRef textureRef;
 			source.readParameterTyped(entry.name, textureRef);
 
-			auto texture = textureRef.load();
+			auto texture = textureRef.resource();
 			auto textureView = texture ? texture->view() : nullptr;
 
 			if (!textureView)

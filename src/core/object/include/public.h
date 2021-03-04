@@ -106,12 +106,12 @@ typedef RefPtr< IDataBufferLatentLoader> DataBufferLatentLoaderPtr;
 
 END_BOOMER_NAMESPACE_EX(stream)
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 class IResource;
 class ResourceLoader;
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -127,7 +127,7 @@ enum class MetaType
     StrongHandle,   // StringHandleType - handle to object that keeps it alive
     WeakHandle,     // WeakHandleType - handle to object that does not keep it alive
     ResourceRef,    // IReferenceType - resource reference
-    AsyncResourceRef,  // IAsyncReferenceType - async resource reference
+    ResourceAsyncRef,  // IAsyncReferenceType - async resource reference
     ClassRef,       // SpecificClassType - reference to class
 };
 

@@ -41,7 +41,7 @@ typedef RefPtr<InputEvent> InputEventPtr;
 
 class InputDefinitions;
 typedef RefPtr<InputDefinitions> InputDefinitionsPtr;
-typedef res::Ref<InputDefinitions> InputDefinitionsRef;
+typedef ResourceRef<InputDefinitions> InputDefinitionsRef;
 
 //--
 

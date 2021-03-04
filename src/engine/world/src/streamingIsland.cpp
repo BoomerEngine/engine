@@ -124,7 +124,7 @@ void StreamingIsland::attachChild(StreamingIsland* child)
     }
 }
 
-StreamingIslandInstancePtr StreamingIsland::load(res::ResourceLoader* loader) const
+StreamingIslandInstancePtr StreamingIsland::load(ResourceLoader* loader) const
 {
     PC_SCOPE_LVL1(LoadStreamingIsland);
 

@@ -12,9 +12,9 @@
 #include "nodeTemplate.h"
 #include "path.h"
 
-#include "core/resource/include/resourceFactory.h"
-#include "core/resource/include/resourceTags.h"
-#include "core/resource/include/objectIndirectTemplate.h"
+#include "core/resource/include/factory.h"
+#include "core/resource/include/tags.h"
+#include "core/resource/include/indirectTemplate.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -25,12 +25,12 @@ ConfigProperty<float> cvPrefabUpdateDelay("Scene.Prefab", "UpdateDelay", 0.5f);
 ///----
 
 // factory class for the scene template
-class ScenePrefabFactory : public res::IFactory
+class ScenePrefabFactory : public IResourceFactory
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ScenePrefabFactory, res::IFactory);
+    RTTI_DECLARE_VIRTUAL_CLASS(ScenePrefabFactory, IResourceFactory);
 
 public:
-    virtual res::ResourceHandle createResource() const override final
+    virtual ResourcePtr createResource() const override final
     {
         const auto seed = rand(); // TODO!
 
@@ -42,7 +42,7 @@ public:
 };
 
 RTTI_BEGIN_TYPE_CLASS(ScenePrefabFactory);
-    RTTI_METADATA(res::FactoryClassMetadata).bindResourceClass<Prefab>();
+    RTTI_METADATA(ResourceFactoryClassMetadata).bindResourceClass<Prefab>();
 RTTI_END_TYPE();
 
 ///----
@@ -58,9 +58,9 @@ PrefabAppearance::PrefabAppearance()
 ///----
 
 RTTI_BEGIN_TYPE_CLASS(Prefab);
-    RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4prefab");
-    RTTI_METADATA(res::ResourceDescriptionMetadata).description("Prefab");
-    RTTI_METADATA(res::ResourceTagColorMetadata).color(0x86, 0x6b, 0xed);
+    RTTI_METADATA(ResourceExtensionMetadata).extension("v4prefab");
+    RTTI_METADATA(ResourceDescriptionMetadata).description("Prefab");
+    RTTI_METADATA(ResourceTagColorMetadata).color(0x86, 0x6b, 0xed);
     RTTI_PROPERTY(m_root);
     RTTI_PROPERTY(m_appearances);
     RTTI_PROPERTY(m_internalSeed);

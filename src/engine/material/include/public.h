@@ -23,8 +23,8 @@ struct MaterialRenderState;
 
 class IMaterial;
 typedef RefPtr<IMaterial> MaterialPtr;
-typedef res::Ref<IMaterial> MaterialRef;
-typedef res::AsyncRef<IMaterial> MaterialAsyncRef;
+typedef ResourceRef<IMaterial> MaterialRef;
+typedef ResourceAsyncRef<IMaterial> MaterialAsyncRef;
 
 class IMaterialCompiledParameters;
 typedef RefPtr<IMaterialCompiledParameters> MaterialCompiledParametersPtr;
@@ -34,12 +34,12 @@ typedef RefPtr<IMaterialCompiledTechnique> MaterialCompiledTechniquePtr;
 
 class MaterialInstance;
 typedef RefPtr<MaterialInstance> MaterialInstancePtr;
-typedef res::Ref<MaterialInstance> MaterialInstanceRef;
+typedef ResourceRef<MaterialInstance> MaterialInstanceRef;
 
 class MaterialTemplate;
 typedef RefPtr<MaterialTemplate> MaterialTemplatePtr;
 typedef RefWeakPtr<MaterialTemplate> MaterialTemplateWeakPtr;
-typedef res::Ref<MaterialTemplate> MaterialTemplateRef;
+typedef ResourceRef<MaterialTemplate> MaterialTemplateRef;
 
 class MaterialTemplateProxy;
 typedef RefPtr<MaterialTemplateProxy> MaterialTemplateProxyPtr;

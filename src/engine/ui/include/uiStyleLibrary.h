@@ -21,9 +21,9 @@ class SelectorMatchContext;
 //---
 
 /// library of styles, contains a parameters tables with selectors
-class ENGINE_UI_API Library : public res::IResource
+class ENGINE_UI_API Library : public IResource
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(Library, res::IResource);
+    RTTI_DECLARE_VIRTUAL_CLASS(Library, IResource);
 
 public:
     Library();

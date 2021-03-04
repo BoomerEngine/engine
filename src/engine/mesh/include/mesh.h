@@ -106,9 +106,9 @@ struct ENGINE_MESH_API MeshInitData
 //---
 
 /// a rendering mesh
-class ENGINE_MESH_API Mesh : public res::IResource
+class ENGINE_MESH_API Mesh : public IResource
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(Mesh, res::IResource);
+    RTTI_DECLARE_VIRTUAL_CLASS(Mesh, IResource);
 
 public:
     Mesh();

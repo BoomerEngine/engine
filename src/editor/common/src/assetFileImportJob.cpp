@@ -16,8 +16,8 @@
 #include "core/xml/include/xmlUtils.h"
 #include "core/app/include/commandline.h"
 #include "core/net/include/messageConnection.h"
-#include "core/resource/include/resourceFileLoader.h"
-#include "core/resource/include/resourceLoadingService.h"
+#include "core/resource/include/fileLoader.h"
+#include "core/resource/include/loadingService.h"
 #include "core/resource_compiler/include/importCommandHelper.h"
 #include "core/resource_compiler/include/importInterface.h"
 #include "core/resource_compiler/include/importFileList.h"
@@ -29,7 +29,7 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetImportJob);
 RTTI_END_TYPE();
 
-AssetImportJob::AssetImportJob(const res::ImportListPtr& fileList, bool force)
+AssetImportJob::AssetImportJob(const ImportListPtr& fileList, bool force)
     : IBackgroundTask("Import assets")
     , m_fileList(fileList)
     , m_force(force)
@@ -37,7 +37,7 @@ AssetImportJob::AssetImportJob(const res::ImportListPtr& fileList, bool force)
     m_listModel = RefNew<AssetProcessingListModel>();
 
     for (const auto& file : fileList->files())
-        m_listModel->setFileStatus(file.depotPath, res::ImportStatus::Pending);
+        m_listModel->setFileStatus(file.depotPath, ImportStatus::Pending);
 
     m_detailsDialog = RefNew<AssetImportDetailsDialog>(m_listModel);
 }
@@ -48,7 +48,7 @@ AssetImportJob::~AssetImportJob()
 
 void AssetImportJob::runImportTask()
 {
-    if (res::ProcessImport(m_fileList, this, this, m_force))
+    if (ProcessImport(m_fileList, this, this, m_force))
         m_status.exchange(BackgroundTaskStatus::Finished);
     else
         m_status.exchange(BackgroundTaskStatus::Failed);
@@ -56,7 +56,7 @@ void AssetImportJob::runImportTask()
 
 void AssetImportJob::cancelSingleFile(const StringBuf& depotPath)
 {
-    /*res::ImportQueueFileCancel msg;
+    /*ImportQueueFileCancel msg;
     msg.depotPath = depotPath;
     connection()->send(msg);*/
 }
@@ -91,13 +91,13 @@ ui::ElementPtr AssetImportJob::fetchStatusDialog()
 
 //--
 
-void AssetImportJob::queueJobAdded(const res::ImportJobInfo& info)
+void AssetImportJob::queueJobAdded(const ImportJobInfo& info)
 {
     auto model = m_listModel;
 
     RunSync() << [model, info](FIBER_FUNC)
     {
-        model->setFileStatus(info.depotFilePath, res::ImportStatus::Pending);
+        model->setFileStatus(info.depotFilePath, ImportStatus::Pending);
     };
 }
 
@@ -108,11 +108,11 @@ void AssetImportJob::queueJobStarted(StringView depotPath)
 
     RunSync() << [model, path](FIBER_FUNC)
     {
-        model->setFileStatus(path, res::ImportStatus::Processing);
+        model->setFileStatus(path, ImportStatus::Processing);
     };
 }
 
-void AssetImportJob::queueJobFinished(StringView depotPath, res::ImportStatus status, double timeTaken)
+void AssetImportJob::queueJobFinished(StringView depotPath, ImportStatus status, double timeTaken)
 {
     auto model = m_listModel;
     auto path = StringBuf(depotPath);

@@ -14,7 +14,7 @@
 
 #include "core/containers/include/stringBuilder.h"
 #include "core/containers/include/utf8StringFunctions.h"
-#include "core/resource/include/resourceReferenceType.h"
+#include "core/resource/include/referenceType.h"
 #include "engine/canvas/include/style.h"
 #include "core/containers/include/stringParser.h"
 #include "engine/font/include/font.h"
@@ -368,7 +368,7 @@ uint32_t ImageReference::hash() const
     CRC32 crc;
     crc << name;
     if (image)
-        crc << image->path().view();
+        crc << image->loadPath().view();
     return crc;
 }
 

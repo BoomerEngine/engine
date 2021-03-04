@@ -14,7 +14,7 @@
 #include "importFileFingerprintService.h"
 #include "importFileFingerprint.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -234,4 +234,4 @@ bool SourceAssetFileSystem_LocalComputer::convertToAbsolutePath(StringView fileS
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

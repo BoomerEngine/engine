@@ -39,7 +39,7 @@ class IMPORT_FBX_LOADER_API MaterialImporter : public IGeneralMaterialImporter
 public:
     MaterialImporter();
 
-    virtual res::ResourcePtr importResource(res::IResourceImporterInterface& importer) const override final;
+    virtual ResourcePtr importResource(IResourceImporterInterface& importer) const override final;
 };
 
 //--

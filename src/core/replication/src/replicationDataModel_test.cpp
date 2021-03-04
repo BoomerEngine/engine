@@ -127,7 +127,7 @@ RTTI_END_TYPE();
     RTTI_DECLARE_NONVIRTUAL_CLASS(TestReplicatedStruct_ResRef);
 
 public:
-    res::Ref<res::IResource> m_path;
+    ResourceRef<IResource> m_path;
 };
 
 RTTI_BEGIN_TYPE_STRUCT(TestReplicatedStruct_ResRef);
@@ -952,7 +952,7 @@ TEST(DataModel, EncodeWritesPathWhenSet)
 
     ASSERT_EQ(1, knowledge.m_strings.size());
     ASSERT_EQ(3, knowledge.m_paths.size());
-    ASSERT_STREQ("res::ITextResource", knowledge.m_paths[1].c_str());
+    ASSERT_STREQ("ITextResource", knowledge.m_paths[1].c_str());
     ASSERT_STREQ("dupa.txt", knowledge.m_paths[2].c_str());
 }
 
@@ -973,7 +973,7 @@ TEST(DataModel, EncodeWritesPathWhenSetOnlyOnce)
 
     ASSERT_EQ(1, knowledge.m_strings.size());
     ASSERT_EQ(3, knowledge.m_paths.size());
-    ASSERT_STREQ("res::ITextResource", knowledge.m_paths[1].c_str());
+    ASSERT_STREQ("ITextResource", knowledge.m_paths[1].c_str());
     ASSERT_STREQ("dupa.txt", knowledge.m_paths[2].c_str());
 }
 */

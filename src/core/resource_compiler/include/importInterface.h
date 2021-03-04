@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -110,7 +110,7 @@ public:
     template< typename T >
     INLINE ResourceImporterConfigurationClassMetadata& configurationClass()
     {
-        static_assert(std::is_base_of< res::ResourceConfiguration, T >::value, "Only resource configuration classes can be specified here");
+        static_assert(std::is_base_of< ResourceConfiguration, T >::value, "Only resource configuration classes can be specified here");
         m_class = T::GetStaticClass();
         return *this;
     }
@@ -157,4 +157,4 @@ public:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

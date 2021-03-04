@@ -13,7 +13,7 @@
 #include "engine/ui/include/uiListView.h"
 #include "engine/ui/include/uiSearchBar.h"
 #include "engine/ui/include/uiTextLabel.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 #include "engine/ui/include/uiComboBox.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
@@ -43,7 +43,7 @@ SceneObjectPalettePanel::~SceneObjectPalettePanel()
 
 void SceneObjectPalettePanel::enumerateResourceClasses()
 {
-    InplaceArray<SpecificClassType<res::IResource>, 100> allResourceClasses;
+    InplaceArray<SpecificClassType<IResource>, 100> allResourceClasses;
     RTTI::GetInstance().enumClasses(allResourceClasses);
 
     for (const auto resClass : allResourceClasses)
@@ -82,12 +82,12 @@ private:
     {
         StringView className;
 
-        if (const auto* descData = cls->findMetadata<res::ResourceDescriptionMetadata>())
+        if (const auto* descData = cls->findMetadata<ResourceDescriptionMetadata>())
             className = descData->description();
         else
             className = cls->shortName().view();
 
-        if (const auto* tagData = cls->findMetadata<res::ResourceTagColorMetadata>())
+        if (const auto* tagData = cls->findMetadata<ResourceTagColorMetadata>())
         {
             txt.appendf("[tag:{}]", tagData->color());
             txt.appendf("[img:file_empty_edit] ");

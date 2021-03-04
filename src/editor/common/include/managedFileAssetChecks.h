@@ -32,7 +32,7 @@ public:
     //--
 
     /// get last posted status
-    res::ImportStatus status();
+    ImportStatus status();
 
     /// cancel request 
     void cancel();
@@ -41,7 +41,7 @@ private:
     const ManagedFileNativeResource* m_file = nullptr;
 
     SpinLock m_lock;
-    res::ImportStatus m_status = res::ImportStatus::Checking;
+    ImportStatus m_status = ImportStatus::Checking;
     std::atomic<uint32_t> m_cancelFlag = 0;
 
     ui::ElementWeakPtr m_owner;
@@ -49,7 +49,7 @@ private:
     virtual bool checkCancelation() const override final;
     virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
 
-    void postStatusChange(res::ImportStatus status);
+    void postStatusChange(ImportStatus status);
 
     CAN_YIELD void runCheck();
 };
@@ -60,7 +60,7 @@ private:
 class ManagedFileSourceAssetCheck : public IReferencable, public IProgressTracker
 {
 public:
-    ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, const TimeStamp& lastKnownTimestamp, const res::ImportFileFingerprint& lastKnownCRC);
+    ManagedFileSourceAssetCheck(const StringBuf& sourceAssetPath, const TimeStamp& lastKnownTimestamp, const ImportFileFingerprint& lastKnownCRC);
     ~ManagedFileSourceAssetCheck();
 
     /// file being checked
@@ -69,7 +69,7 @@ public:
     //--
 
     /// get last posted status
-    res::SourceAssetStatus status();
+    SourceAssetStatus status();
 
     /// last progress (0-1) of check (usually CRC computation)
     float progress();
@@ -80,11 +80,11 @@ public:
 private:
     StringBuf m_sourceAssetPath;
     TimeStamp m_sourceLastKnownTimestamp;
-    res::ImportFileFingerprint m_sourceLastKnownCRC;
+    ImportFileFingerprint m_sourceLastKnownCRC;
 
     SpinLock m_lock;
 
-    res::SourceAssetStatus m_status = res::SourceAssetStatus::Checking;
+    SourceAssetStatus m_status = SourceAssetStatus::Checking;
     float m_progress = 0.0f;
 
     std::atomic<uint32_t> m_cancelFlag = 0;
@@ -92,7 +92,7 @@ private:
     virtual bool checkCancelation() const override final;
     virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
 
-    void postStatusChange(res::SourceAssetStatus status);
+    void postStatusChange(SourceAssetStatus status);
 
     CAN_YIELD void runCheck();
 };

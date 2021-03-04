@@ -75,41 +75,41 @@ void AssetFileSmallImportIndicator::updateStatus()
     const auto status = m_checker->status();
     switch (status)
     {
-        case res::ImportStatus::Pending:
-        case res::ImportStatus::Checking:
-        case res::ImportStatus::Canceled:
-        case res::ImportStatus::Processing:
+        case ImportStatus::Pending:
+        case ImportStatus::Checking:
+        case ImportStatus::Canceled:
+        case ImportStatus::Processing:
             visible = false;
             tooltip("Unknown file status");
             break;
             
-        case res::ImportStatus::NewAssetImported:
-        case res::ImportStatus::NotUpToDate:
+        case ImportStatus::NewAssetImported:
+        case ImportStatus::NotUpToDate:
             statusText = "[img:warning]";
             tooltip("File is not up to date, source files have changed");
             break;
 
-        case res::ImportStatus::MissingAssets:
+        case ImportStatus::MissingAssets:
             statusText = "[img:exclamation]";
             tooltip("Source files are missing");
             break;
 
-        case res::ImportStatus::NotSupported:
+        case ImportStatus::NotSupported:
             tooltip("Source format is no longer supported for importing (missing plugins?)");
             statusText = "[img:skull]";
             break;
 
-        case res::ImportStatus::InvalidAssets:
+        case ImportStatus::InvalidAssets:
             tooltip("There's a problem loading source assets for this file (data corruption?)");
             statusText = "[img:skull]";
             break;
 
-        case res::ImportStatus::UpToDate:
+        case ImportStatus::UpToDate:
             tooltip("File is up to date with the source data");
             statusText = "[img:tick]";
             break;
 
-        case res::ImportStatus::NotImportable:
+        case ImportStatus::NotImportable:
             tooltip("File was not imported from any source data but was generated in-engine");
             statusText = "[img:tick]";
             visible = false;

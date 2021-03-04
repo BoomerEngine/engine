@@ -11,13 +11,13 @@
 #include "build.h"
 #include "static_init.inl"
 
-#include "resourceReferenceType.h"
-#include "resourceAsyncReferenceType.h"
+#include "referenceType.h"
+#include "asyncReferenceType.h"
 
 DECLARE_MODULE(PROJECT_NAME)
 {
-    boomer::RTTI::GetInstance().registerDynamicTypeCreator(boomer::res::ResourceRefType::TypePrefix, &boomer::res::ResourceRefType::ParseType);
-    boomer::RTTI::GetInstance().registerDynamicTypeCreator(boomer::res::ResourceAsyncRefType::TypePrefix, &boomer::res::ResourceAsyncRefType::ParseType);
+    boomer::RTTI::GetInstance().registerDynamicTypeCreator(boomer::ResourceRefType::TypePrefix, &boomer::ResourceRefType::ParseType);
+    boomer::RTTI::GetInstance().registerDynamicTypeCreator(boomer::ResourceAsyncRefType::TypePrefix, &boomer::ResourceAsyncRefType::ParseType);
     boomer::IObject::RegisterCloneFunction(&boomer::CloneObjectUntyped);
     boomer::IObject::RegisterSerializeFunction(&boomer::SaveObjectToBuffer);
     boomer::IObject::RegisterDeserializeFunction(&boomer::LoadObjectFromBuffer);

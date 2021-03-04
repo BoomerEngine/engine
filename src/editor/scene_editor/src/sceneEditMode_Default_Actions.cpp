@@ -27,7 +27,7 @@
 #include "engine/world/include/entityBehavior.h"
 #include "engine/world/include/nodeTemplate.h"
 #include "engine/world/include/prefab.h"
-#include "core/resource/include/objectIndirectTemplate.h"
+#include "core/resource/include/indirectTemplate.h"
 #include "editor/common/include/managedFileFormat.h"
 #include "editor/common/include/managedDirectory.h"
 #include "editor/common/include/editorService.h"
@@ -771,17 +771,17 @@ void BindResourceToObjectTemplate(ObjectIndirectTemplate* ptr, const ManagedFile
     {
         for (const auto& temp : ptr->templateClass()->allTemplateProperties())
         {
-            if (temp.editorData.m_primaryResource && temp.type.metaType() == MetaType::AsyncResourceRef)
+            if (temp.editorData.m_primaryResource && temp.type.metaType() == MetaType::ResourceAsyncRef)
             {
                 const auto* asyncRefType = static_cast<const IResourceReferenceType*>(temp.type.ptr());
-                const auto asyncRefResourceClass = asyncRefType->referenceResourceClass().cast<res::IResource>();
+                const auto asyncRefResourceClass = asyncRefType->referenceResourceClass().cast<IResource>();
 
                 if (file->fileFormat().loadableAsType(asyncRefResourceClass))
                 {
-                    const auto key = res::ResourcePath(file->depotPath());
+                    const auto key = ResourcePath(file->depotPath());
 
                     DataHolder value(asyncRefType);
-                    *((res::BaseAsyncReference*)value.data()) = key;
+                    *((BaseAsyncReference*)value.data()) = key;
 
                     ptr->writeProperty(temp.name, value.data(), value.type());
                 }
@@ -882,7 +882,7 @@ void SceneEditMode_Default::createPrefabAtNodes(const Array<SceneContentNodePtr>
 
             auto& prefabInfo = sourceNode->m_prefabAssets.emplaceBack();
             prefabInfo.enabled = true;
-            prefabInfo.prefab = prefab;
+            prefabInfo.prefab = PrefabRef(ResourcePath(prefabFile->depotPath().view()), prefab);
 
             auto& info = createdNodes.emplaceBack();
             info.parent = node;
@@ -1398,7 +1398,7 @@ void SceneEditMode_Default::processGenericPrefabAction(const Array<SceneContentN
 
 void SceneEditMode_Default::cmdAddPrefabFile(const Array<SceneContentNodePtr>& inputNodes, const ManagedFile* file)
 {
-    const auto path = res::ResourcePath(file->depotPath());
+    const auto path = ResourcePath(file->depotPath());
 
     const auto prefabRef = LoadResource<Prefab>(file->depotPath());
     if (!prefabRef)
@@ -1422,7 +1422,7 @@ void SceneEditMode_Default::cmdAddPrefabFile(const Array<SceneContentNodePtr>& i
             {
                 auto& entry = node->m_prefabAssets.emplaceBack();
                 entry.enabled = true;
-                entry.prefab = prefabRef;
+                entry.prefab = PrefabRef(path, prefabRef);
             }
 
             return AddRef(node);
@@ -1431,10 +1431,10 @@ void SceneEditMode_Default::cmdAddPrefabFile(const Array<SceneContentNodePtr>& i
 
 void SceneEditMode_Default::cmdRemovePrefabFile(const Array<SceneContentNodePtr>& inputNodes, const Array<const ManagedFile*>& files)
 {
-    InplaceArray<res::ResourcePath, 10> paths;
+    InplaceArray<ResourcePath, 10> paths;
 
     for (const auto* file : files)
-        if (const auto path = res::ResourcePath(file->depotPath()))
+        if (const auto path = ResourcePath(file->depotPath()))
             paths.pushBack(path);
 
     processGenericPrefabAction(inputNodes, [&paths](NodeTemplate* node) -> NodeTemplatePtr

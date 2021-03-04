@@ -26,7 +26,7 @@ struct ENGINE_WORLD_COMPILER_API SourceEntitySoup : public NoCopy
 //---
 
 // extract source entities from a scene
-extern ENGINE_WORLD_COMPILER_API void ExtractSourceEntities(const res::ResourcePath& worldFilePath, SourceEntitySoup& outSoup);
+extern ENGINE_WORLD_COMPILER_API void ExtractSourceEntities(const ResourcePath& worldFilePath, SourceEntitySoup& outSoup);
 
 //---
 

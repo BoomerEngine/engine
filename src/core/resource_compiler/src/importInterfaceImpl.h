@@ -10,7 +10,7 @@
 #include "importFileFingerprint.h"
 #include "core/io/include/timestamp.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -44,7 +44,7 @@ public:
     virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
 
     // build import metadata from all gathered stuff
-    MetadataPtr buildMetadata() const;
+    ResourceMetadataPtr buildMetadata() const;
 
 private:
     const IResource* m_originalData;
@@ -93,4 +93,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

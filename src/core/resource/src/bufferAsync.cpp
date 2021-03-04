@@ -12,7 +12,7 @@
 #include "core/object/include/streamOpcodeWriter.h"
 #include "core/object/include/streamOpcodeReader.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 AsyncBuffer::AsyncBuffer()
 {
@@ -208,4 +208,4 @@ RTTI_BEGIN_CUSTOM_TYPE(AsyncBuffer);
     RTTI_BIND_CUSTOM_BINARY_SERIALIZATION(&prv::WriteAsyncBuffer, &prv::ReadAsyncBuffer);
 RTTI_END_TYPE();
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

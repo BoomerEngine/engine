@@ -9,7 +9,7 @@
 #pragma once
 
 #include "core/resource/include/resource.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(font)
 
@@ -27,9 +27,9 @@ public:
 };
 
 /// manifest for cooking textures
-class ENGINE_FONT_API BitmapFontImportConfig : public res::ResourceConfiguration
+class ENGINE_FONT_API BitmapFontImportConfig : public ResourceConfiguration
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(BitmapFontImportConfig, res::ResourceConfiguration);
+    RTTI_DECLARE_VIRTUAL_CLASS(BitmapFontImportConfig, ResourceConfiguration);
 
 public:
     BitmapFontImportConfig();

@@ -15,7 +15,7 @@
 #include "engine/material/include/materialInstance.h"
 #include "engine/material/include/materialTemplate.h"
 #include "engine/texture/include/texture.h"
-#include "core/resource/include/resourceLoadingService.h"
+#include "core/resource/include/loadingService.h"
 
 #undef TRACE_INFO
 #define TRACE_INFO TRACE_WARNING
@@ -304,7 +304,7 @@ static bool PackData(const BuildChunkRegistry& builder, const MeshImportConfig& 
             }
         }
 
-        auto loader = GetService<res::LoadingService>()->loader();
+        auto loader = GetService<LoadingService>()->loader();
         exportInfo.material = rtti_cast<MaterialInstance>(exportInfo.baseMaterial->clone(nullptr, loader));
 
         // apply material overrides on material as specified in the manifest

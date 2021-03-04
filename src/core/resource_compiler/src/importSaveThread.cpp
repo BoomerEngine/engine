@@ -9,11 +9,11 @@
 #include "build.h"
 #include "importSaveThread.h"
 #include "core/system/include/thread.h"
-#include "core/resource/include/resourceFileSaver.h"
+#include "core/resource/include/fileSaver.h"
 #include "core/io/include/fileHandle.h"
-#include "core/resource/include/depotService.h"
+#include "core/resource/include/depot.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -186,4 +186,4 @@ void ImportSaverThread::processSavingThread()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

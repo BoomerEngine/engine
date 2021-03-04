@@ -9,7 +9,7 @@
 #include "build.h"
 #include "staticTexture.h"
 
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 #include "gpu/device/include/device.h"
 #include "gpu/device/include/deviceService.h"
 #include "gpu/device/include/globalObjects.h"
@@ -34,9 +34,9 @@ RTTI_BEGIN_TYPE_STRUCT(StaticTextureMip)
 //---
 
 RTTI_BEGIN_TYPE_CLASS(StaticTexture);
-    RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4stex");
-    RTTI_METADATA(res::ResourceDescriptionMetadata).description("Static Texture");
-    RTTI_METADATA(res::ResourceTagColorMetadata).color(0xa8, 0xd6, 0xe2);
+    RTTI_METADATA(ResourceExtensionMetadata).extension("v4stex");
+    RTTI_METADATA(ResourceDescriptionMetadata).description("Static Texture");
+    RTTI_METADATA(ResourceTagColorMetadata).color(0xa8, 0xd6, 0xe2);
     RTTI_PROPERTY(m_persistentPayload);
     RTTI_PROPERTY(m_streamingPayload);
     RTTI_PROPERTY(m_mips);
@@ -47,7 +47,7 @@ StaticTexture::StaticTexture()
 {
 }
 
-StaticTexture::StaticTexture(Buffer&& data, res::AsyncBuffer&& asyncData, Array<StaticTextureMip>&& mips, const TextureInfo& info)
+StaticTexture::StaticTexture(Buffer&& data, AsyncBuffer&& asyncData, Array<StaticTextureMip>&& mips, const TextureInfo& info)
     : ITexture(info)
     , m_persistentPayload(std::move(data))
     , m_streamingPayload(std::move(asyncData))
@@ -156,9 +156,9 @@ void StaticTexture::createDeviceResources()
                 info.view = m_info.type;
                 info.format = m_info.format;
                 info.allowShaderReads = true;
-                info.label = StringBuf(TempString("{}", path()));
+                info.label = StringBuf(TempString("{}", loadPath()));
 
-				auto data = RefNew<StaticTextureSourceDataProvider>(m_persistentPayload, m_mips, path().str(), m_info.format, info.numMips);
+				auto data = RefNew<StaticTextureSourceDataProvider>(m_persistentPayload, m_mips, loadPath(), m_info.format, info.numMips);
 				if (m_object = device->createImage(info, data))
 					m_mainView = m_object->createSampledView();
             }

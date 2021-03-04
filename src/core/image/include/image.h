@@ -13,9 +13,9 @@
 BEGIN_BOOMER_NAMESPACE_EX(image)
 
 /// General image wrapper
-class CORE_IMAGE_API Image : public res::IResource
+class CORE_IMAGE_API Image : public IResource
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(Image, res::IResource);
+    RTTI_DECLARE_VIRTUAL_CLASS(Image, IResource);
 
 public:
     Image();

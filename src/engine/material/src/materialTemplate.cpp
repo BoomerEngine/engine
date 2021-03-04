@@ -16,9 +16,9 @@
 #include "runtimeTechnique.h"
 
 #include "gpu/device/include/shaderData.h"
-#include "core/resource/include/resourceFactory.h"
+#include "core/resource/include/factory.h"
 #include "core/object/include/rttiDataView.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -225,7 +225,7 @@ void MaterialTemplate::createTemplateProxy()
 
     Array<MaterialPrecompiledStaticTechnique> precompiledTechniques;
 
-    const auto& contextPath = path() ? path().str() : m_contextPath;
+    const auto& contextPath = loadPath() ? loadPath() : m_contextPath;
 	m_templateProxy = RefNew<MaterialTemplateProxy>(contextPath, proxyParameters, queryDynamicCompiler(), precompiledTechniques);
 }
 

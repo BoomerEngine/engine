@@ -16,7 +16,7 @@
 #include "core/image/include/imageView.h"
 #include "core/image/include/imageUtils.h"
 #include "core/resource/include/resource.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 #include "core/containers/include/inplaceArray.h"
 #include "engine/font/include/font.h"
 #include "engine/font/include/fontGlyph.h"
@@ -27,18 +27,18 @@ BEGIN_BOOMER_NAMESPACE_EX(font)
 /*
 //---
 
-class BitmapFontImporter : public res::IResourceImporter
+class BitmapFontImporter : public IResourceImporter
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(BitmapFontCooker, res::IResourceImporter);
+    RTTI_DECLARE_VIRTUAL_CLASS(BitmapFontCooker, IResourceImporter);
 
 public:
-    virtual res::ResourceHandle cook(res::IResourceCookerInterface& cooker) const override;
+    virtual ResourcePtr cook(IResourceCookerInterface& cooker) const override;
 };
 
 RTTI_BEGIN_TYPE_CLASS(BitmapFontCooker);
-    RTTI_METADATA(res::ResourceCookedClassMetadata).addClass<BitmapFont>();
-    RTTI_METADATA(res::ResourceSourceFormatMetadata).addSourceExtension("ttf").addSourceExtension("otf");
-    RTTI_METADATA(res::ResourceCookerBakingOnlyMetadata);
+    RTTI_METADATA(ResourceCookedClassMetadata).addClass<BitmapFont>();
+    RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtension("ttf").addSourceExtension("otf");
+    RTTI_METADATA(ResourceCookerBakingOnlyMetadata);
 RTTI_END_TYPE();
 
 struct BitmapFontCookingGlyph
@@ -59,7 +59,7 @@ struct BitmapFontCookingAtlasPage
     }
 };
 
-res::ResourceHandle BitmapFontCooker::cook(res::IResourceCookerInterface& cooker) const
+ResourcePtr BitmapFontCooker::cook(IResourceCookerInterface& cooker) const
 {
     // get size of the font
     auto fontSize = 16;// cooker.queryResourcePath().paramInt("size", 16);
@@ -72,7 +72,7 @@ res::ResourceHandle BitmapFontCooker::cook(res::IResourceCookerInterface& cooker
     }
 
     // load the raw font
-    res::ResourcePathBuilder fontPath(cooker.queryResourcePath());
+    ResourcePathBuilder fontPath(cooker.queryResourcePath());
     //fontPath.params.remove("size");
 
     // load the font

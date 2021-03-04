@@ -29,8 +29,8 @@
 #include "core/object/include/actionHistory.h"
 #include "core/object/include/action.h"
 
-#include "core/resource/include/objectIndirectTemplate.h"
-#include "core/resource/include/objectIndirectTemplateCompiler.h"
+#include "core/resource/include/indirectTemplate.h"
+#include "core/resource/include/indirectTemplateCompiler.h"
 
 #include "engine/world/include/nodeTemplate.h"
 #include "engine/world/include/entityBehavior.h"
@@ -96,7 +96,7 @@ struct PrefabInfoEntry
 {
     uint32_t count = 0;
     StringView fileName;
-    res::ResourcePath path;
+    ResourcePath path;
     bool enabled = false;
     bool disabled = false;
     bool inherited = false;
@@ -1327,12 +1327,12 @@ void SceneDefaultPropertyInspectorPanel::transformBox_ValueChanged(GizmoSpace sp
 void SceneDefaultPropertyInspectorPanel::refreshPrefabList()
 {
     // collect used prefabs
-    HashMap<res::ResourcePath, PrefabInfoEntry> prefabEntries;
+    HashMap<ResourcePath, PrefabInfoEntry> prefabEntries;
     for (const auto& node : m_nodes)
     {
         if (auto entityNode = rtti_cast<SceneContentEntityNode>(node))
         {
-            HashSet<res::ResourcePath> localPrefabEntries;
+            HashSet<ResourcePath> localPrefabEntries;
             for (const auto& info : entityNode->localPrefabs())
             {
                 if (const auto& path = info.prefab.path())

@@ -15,7 +15,7 @@
 #include "engine/material/include/materialTemplate.h"
 #include "engine/mesh/include/format.h"
 #include "gpu/shader_compiler/include/shaderCompiler.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
 BEGIN_BOOMER_NAMESPACE()
 

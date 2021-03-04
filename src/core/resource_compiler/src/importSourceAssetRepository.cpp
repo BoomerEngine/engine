@@ -13,7 +13,7 @@
 #include "importFileFingerprint.h"
 #include "core/io/include/timestamp.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -168,4 +168,4 @@ void SourceAssetRepository::ensureMemoryForAsset(uint64_t neededMemorySize)
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

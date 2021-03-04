@@ -19,14 +19,14 @@
 #include "engine/ui/include/uiTextLabel.h"
 #include "engine/ui/include/uiDataInspector.h"
 #include "engine/ui/include/uiDockLayout.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 #include "core/resource_compiler/include/importFileService.h"
 #include "core/resource_compiler/include/importInterface.h"
 #include "core/resource_compiler/include/importSaveThread.h"
 #include "core/resource_compiler/include/importQueue.h"
 #include "core/resource_compiler/include/importFileService.h"
 #include "core/resource_compiler/include/importSourceAssetRepository.h"
-#include "core/resource/include/resourceLoadingService.h"
+#include "core/resource/include/loadingService.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -67,13 +67,13 @@ bool ResourceEditorNativeImportAspect::initialize(ResourceEditor* editor)
     const auto rootSourceFileExtension = rootSourceAssetPath.stringAfterLast(".");
 
     // get required config class, we need the source path to know what we will be importing
-    SpecificClassType<res::ResourceConfiguration> configClass;
-    res::IResourceImporter::ListImportConfigurationForExtension(rootSourceFileExtension, nativeFile->resourceClass(), configClass);
+    SpecificClassType<ResourceConfiguration> configClass;
+    IResourceImporter::ListImportConfigurationForExtension(rootSourceFileExtension, nativeFile->resourceClass(), configClass);
     if (!configClass)
         return false; // import is not configurable :(
 
     // build the base import config from source asset directory
-    auto baseConfig = GetService<res::ImportFileService>()->compileBaseResourceConfiguration(rootSourceAssetPath, configClass);
+    auto baseConfig = GetService<ImportFileService>()->compileBaseResourceConfiguration(rootSourceAssetPath, configClass);
 
     // apply the ASSET SPECIFIC config from a followup-import
     DEBUG_CHECK_EX(metadata->importBaseConfiguration, "No base configuration stored in metadata, very strange");
@@ -110,7 +110,7 @@ bool ResourceEditorNativeImportAspect::initialize(ResourceEditor* editor)
             auto importWidget = importPanel->createChild<AssetFileImportWidget>();
             importWidget->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
             importWidget->bindFile(nativeFile, m_config);
-            importWidget->bind(EVENT_RESOURCE_REIMPORT_WITH_CONFIG) = [this](res::ResourceConfigurationPtr config)
+            importWidget->bind(EVENT_RESOURCE_REIMPORT_WITH_CONFIG) = [this](ResourceConfigurationPtr config)
             {
                 inplaceReimport();
             };
@@ -141,38 +141,38 @@ void ResourceEditorNativeImportAspect::close()
 
     //--
 
-class AssetImportSingleOutput : public res::IImportOutput
+class AssetImportSingleOutput : public IImportOutput
 {
 public:
     AssetImportSingleOutput(const StringBuf& expectedPath)
         : m_expectedPath(expectedPath)
     {}
 
-    virtual bool scheduleSave(const res::ResourcePtr& data, const StringBuf& depotPath) override
+    virtual bool scheduleSave(const ResourcePtr& data, const StringBuf& depotPath) override
     {
         if (m_expectedPath == depotPath)
             m_resource = data;
         return true;
     }
 
-    INLINE res::ResourcePtr result() const { return m_resource; }
+    INLINE ResourcePtr result() const { return m_resource; }
 
 private:
-    res::ResourcePtr m_resource;
+    ResourcePtr m_resource;
     StringBuf m_expectedPath;
 };
 
 //--
 
-class AssetImportSingleDepotFileLoader : public res::IImportDepotLoader
+class AssetImportSingleDepotFileLoader : public IImportDepotLoader
 {
 public:
-    AssetImportSingleDepotFileLoader(const StringBuf& depotPath, const res::ResourcePtr& existingResource)
+    AssetImportSingleDepotFileLoader(const StringBuf& depotPath, const ResourcePtr& existingResource)
         : m_depotPath(depotPath)
         , m_existingResource(existingResource)
     {}
 
-    virtual res::MetadataPtr loadExistingMetadata(StringView depotPath) const override final
+    virtual ResourceMetadataPtr loadExistingMetadata(StringView depotPath) const override final
     {
         if (depotPath == m_depotPath && m_existingResource)
             return m_existingResource->metadata();
@@ -180,7 +180,7 @@ public:
         return nullptr;
     }
 
-    virtual res::ResourcePtr loadExistingResource(StringView depotPath) const override final
+    virtual ResourcePtr loadExistingResource(StringView depotPath) const override final
     {
         if (depotPath == m_depotPath)
             return m_existingResource;
@@ -201,23 +201,23 @@ public:
 
 private:
     StringBuf m_depotPath;
-    res::ResourcePtr m_existingResource;
+    ResourcePtr m_existingResource;
 };
 
 //--
 
 // status pass through
-class LocalProgressTrackingImportQueueCallbacks : public res::IImportQueueCallbacks
+class LocalProgressTrackingImportQueueCallbacks : public IImportQueueCallbacks
 {
 public:
     LocalProgressTrackingImportQueueCallbacks(IProgressTracker& progress)
         : m_progress(progress)
     {}
 
-    virtual void queueJobAdded(const res::ImportJobInfo& info) override {};
+    virtual void queueJobAdded(const ImportJobInfo& info) override {};
     virtual void queueJobStarted(StringView depotPath) override {};
 
-    virtual void queueJobFinished(StringView depotPath, res::ImportStatus status, double timeTaken) override
+    virtual void queueJobFinished(StringView depotPath, ImportStatus status, double timeTaken) override
     {
         m_finished = true;
         m_finalStatus = status;
@@ -233,7 +233,7 @@ public:
         return m_finished;
     }
 
-    INLINE res::ImportStatus status() const
+    INLINE ImportStatus status() const
     {
         return m_finalStatus;
     }
@@ -243,7 +243,7 @@ private:
     //--
 
     bool m_finished = false;
-    res::ImportStatus m_finalStatus = res::ImportStatus::Processing;
+    ImportStatus m_finalStatus = ImportStatus::Processing;
 };
 
 //--
@@ -255,7 +255,7 @@ void ResourceEditorNativeImportAspect::inplaceReimport()
 
 bool ResourceEditorNativeImportAspect::inplaceReimportWorker(IProgressTracker& progress)
 {
-    auto assetSource = GetService<res::ImportFileService>();
+    auto assetSource = GetService<ImportFileService>();
     DEBUG_CHECK_RETURN_EX_V(assetSource, "Missing source depot service", false);
 
     auto editorService = GetEditor();
@@ -277,14 +277,14 @@ bool ResourceEditorNativeImportAspect::inplaceReimportWorker(IProgressTracker& p
     AssetImportSingleDepotFileLoader loader(depotPath, loadedResource);
 
     // create asset source cache
-    res::SourceAssetRepository repository(assetSource);
+    SourceAssetRepository repository(assetSource);
 
     // create the import queue
     LocalProgressTrackingImportQueueCallbacks reporter(progress);
-    res::ImportQueue queue(&repository, &loader, &saver, &reporter);
+    ImportQueue queue(&repository, &loader, &saver, &reporter);
 
     // add the initial job to the queue
-    res::ImportJobInfo info;
+    ImportJobInfo info;
     info.assetFilePath = loadedResource->metadata()->importDependencies[0].importPath;
     info.depotFilePath = depotPath;
     info.userConfig = m_config;
@@ -303,7 +303,7 @@ bool ResourceEditorNativeImportAspect::inplaceReimportWorker(IProgressTracker& p
     DEBUG_CHECK_EX(reporter.finished(), "Expected importer to finish");
 
     // do we have valid resource ?
-    if (reporter.status() != res::ImportStatus::NewAssetImported)
+    if (reporter.status() != ImportStatus::NewAssetImported)
         return false;
 
     auto importedResource = saver.result();
@@ -311,8 +311,8 @@ bool ResourceEditorNativeImportAspect::inplaceReimportWorker(IProgressTracker& p
 
     // make copy - needed to make sure we have detached objects
     // TODO: "ensure handles loaded" would be probably enough
-    auto resourceLoader = GetService<res::LoadingService>()->loader();
-    auto clonedImportedResource = rtti_cast<res::IResource>(CloneObject(importedResource, nullptr, resourceLoader));
+    auto resourceLoader = GetService<LoadingService>()->loader();
+    auto clonedImportedResource = rtti_cast<IResource>(CloneObject(importedResource, nullptr, resourceLoader));
 
     // apply
     nativeEditor->applyLocalReimport(clonedImportedResource);

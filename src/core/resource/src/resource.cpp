@@ -8,13 +8,13 @@
 
 #include "build.h"
 #include "resource.h"
-#include "resourceLoader.h"
-#include "resourceClassLookup.h"
-#include "resourceMetadata.h"
-#include "resourcePath.h"
-#include "resourceTags.h"
+#include "loader.h"
+#include "classLookup.h"
+#include "metadata.h"
+#include "path.h"
+#include "tags.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -35,16 +35,16 @@ IResource::IResource()
 
 IResource::~IResource()
 {
-    if (auto loader = m_loader.lock())
+    /*if (auto loader = m_loader.lock())
     {
         TRACE_INFO("Destroying resource 0x{} '{}'", Hex(this), path());
         loader->notifyResourceUnloaded(path());
-    }
+    }*/
 }
 
 //DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_RELOADED, m_reloadedData);
 
-void IResource::metadata(const MetadataPtr& data)
+void IResource::metadata(const ResourceMetadataPtr& data)
 {
     DEBUG_CHECK_EX(!data->parent(), "Metadata is already parented");
     m_metadata = data;
@@ -60,7 +60,6 @@ void IResource::markModified()
     TBaseClass::markModified();
 
     // mark as modified only if we are standalone resource
-    if (!parent() && m_path)
     {
         auto selfRef = ResourcePtr(AddRef(this));
         DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_MODIFIED, selfRef);
@@ -132,15 +131,11 @@ bool IResource::calcResourceStreamingDistance(float& outDistance) const
     return false;
 }
 
-void IResource::bindToLoader(ResourceLoader* loader, const ResourcePath& path)
+void IResource::bindLoadPath(StringView path)
 {
-    DEBUG_CHECK_RETURN_EX(m_loader == nullptr, "Resource already has a loader");
-    DEBUG_CHECK_RETURN_EX(!m_path, "Resource already has a loading path");
-
-    m_loader = loader;
-    m_path = path;
+    m_loadPath = StringBuf(path);
 }
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

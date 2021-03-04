@@ -14,7 +14,7 @@
 #include "engine/material/include/materialInstance.h"
 
 #include "core/app/include/localServiceContainer.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 
@@ -39,10 +39,10 @@ void FBXMaterialImportConfig::computeConfigurationKey(CRC64& crc) const
 //--
 
 RTTI_BEGIN_TYPE_CLASS(MaterialImporter);
-    RTTI_METADATA(res::ResourceCookedClassMetadata).addClass<MaterialInstance>();
-    RTTI_METADATA(res::ResourceSourceFormatMetadata).addSourceExtension("fbx").addSourceExtension("FBX");
-    RTTI_METADATA(res::ResourceCookerVersionMetadata).version(0);
-    RTTI_METADATA(res::ResourceImporterConfigurationClassMetadata).configurationClass<FBXMaterialImportConfig>();
+    RTTI_METADATA(ResourceCookedClassMetadata).addClass<MaterialInstance>();
+    RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtension("fbx").addSourceExtension("FBX");
+    RTTI_METADATA(ResourceCookerVersionMetadata).version(0);
+    RTTI_METADATA(ResourceImporterConfigurationClassMetadata).configurationClass<FBXMaterialImportConfig>();
 RTTI_END_TYPE();
 
 //--
@@ -121,7 +121,7 @@ static bool TryReadTexturePath(const ofbx::Material* material, ofbx::Texture::Te
 MaterialImporter::MaterialImporter()
 {}
 
-res::ResourcePtr MaterialImporter::importResource(res::IResourceImporterInterface& importer) const
+ResourcePtr MaterialImporter::importResource(IResourceImporterInterface& importer) const
 {
     // load the FBX data
     auto importedScene = rtti_cast<FBXFile>(importer.loadSourceAsset(importer.queryImportPath()));

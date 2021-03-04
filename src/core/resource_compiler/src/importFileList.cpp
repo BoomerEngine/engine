@@ -8,10 +8,10 @@
 
 #include "build.h"
 #include "importFileList.h"
-#include "core/resource/include/resourceTags.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/tags.h"
+#include "core/resource/include/metadata.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -24,9 +24,9 @@ RTTI_END_TYPE();
 //--
 
 RTTI_BEGIN_TYPE_CLASS(ImportList);
-    RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4imports");
-    RTTI_METADATA(res::ResourceDescriptionMetadata).description("Import List");
-    RTTI_METADATA(res::ResourceTagColorMetadata).color(0xe2, 0xd6, 0xa8);
+    RTTI_METADATA(ResourceExtensionMetadata).extension("v4imports");
+    RTTI_METADATA(ResourceDescriptionMetadata).description("Import List");
+    RTTI_METADATA(ResourceTagColorMetadata).color(0xe2, 0xd6, 0xa8);
     RTTI_PROPERTY(m_files);
 RTTI_END_TYPE();
 
@@ -62,4 +62,4 @@ ImportList::ImportList(const ImportFileEntry& entry)
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

@@ -10,7 +10,7 @@
 #include "image.h"
 #include "imageView.h"
 #include "imageUtils.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(image)
 
@@ -42,8 +42,8 @@ RTTI_END_TYPE();
 //--
 
 RTTI_BEGIN_TYPE_CLASS(Image);
-    RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4bitmap");
-    RTTI_METADATA(res::ResourceDescriptionMetadata).description("Bitmap Image");
+    RTTI_METADATA(ResourceExtensionMetadata).extension("v4bitmap");
+    RTTI_METADATA(ResourceDescriptionMetadata).description("Bitmap Image");
     RTTI_PROPERTY(m_format);
     RTTI_PROPERTY(m_channels);
     RTTI_PROPERTY(m_width);

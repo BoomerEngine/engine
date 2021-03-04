@@ -35,7 +35,7 @@ public:
     bool m_createNodeMaterials = false;
 
     // base material template to use when importing materials
-    res::AsyncRef<IMaterial> m_baseMaterialTemplate;
+    ResourceAsyncRef<IMaterial> m_baseMaterialTemplate;
 };
 
 //--
@@ -48,7 +48,7 @@ class IMPORT_FBX_LOADER_API MeshImporter : public IGeneralMeshImporter
 public:
     MeshImporter();
 
-    virtual res::ResourcePtr importResource(res::IResourceImporterInterface& importer) const override final;
+    virtual ResourcePtr importResource(IResourceImporterInterface& importer) const override final;
 
 protected:
     virtual RefPtr<MaterialImportConfig> createMaterialImportConfig(const MeshImportConfig& cfg, StringView name) const override final;

@@ -22,7 +22,7 @@
 #include "gpu/device/include/shader.h"
 
 #include "core/containers/include/stringBuilder.h"
-#include "core/resource/include/resourceStaticResource.h"
+#include "core/resource/include/staticResource.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(rendering)
 

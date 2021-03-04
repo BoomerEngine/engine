@@ -15,7 +15,7 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
-DECLARE_UI_EVENT(EVENT_RESOURCE_REIMPORT_WITH_CONFIG, res::ResourceConfigurationPtr);
+DECLARE_UI_EVENT(EVENT_RESOURCE_REIMPORT_WITH_CONFIG, ResourceConfigurationPtr);
 
 //--
 
@@ -28,13 +28,13 @@ public:
     AssetFileImportWidget();
     virtual ~AssetFileImportWidget();
 
-    void bindFile(ManagedFileNativeResource* file, const res::ResourceConfigurationPtr& config);
+    void bindFile(ManagedFileNativeResource* file, const ResourceConfigurationPtr& config);
 
 private:
     ManagedFileNativeResource* m_file;
 
     ManagedFileImportStatusCheckPtr m_checker;
-    res::ResourceConfigurationPtr m_config;
+    ResourceConfigurationPtr m_config;
 
     GlobalEventTable m_events;
 

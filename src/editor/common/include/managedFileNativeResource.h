@@ -22,7 +22,7 @@ class EDITOR_COMMON_API ManagedFileNativeResource : public ManagedFile
 
 public:
     /// resource class this file can be loaded into (shorthandl for fileFormat().nativeResoureClass())
-    INLINE SpecificClassType<res::IResource> resourceClass() const { return m_resourceNativeClass; }
+    INLINE SpecificClassType<IResource> resourceClass() const { return m_resourceNativeClass; }
 
 public:
     ManagedFileNativeResource(ManagedDepot* depot, ManagedDirectory* parentDir, StringView fileName);
@@ -31,7 +31,7 @@ public:
     //---
 
     // load resource metadata, valid only for serialized resources
-    res::MetadataPtr loadMetadata() const;
+    ResourceMetadataPtr loadMetadata() const;
 
     /// check if the file can be reimported
     bool canReimport() const;
@@ -40,16 +40,16 @@ public:
 
     // load content for this file for edition
     // NOTE: this will return previously loaded content if resource is still opened somewhere
-    res::ResourcePtr loadContent() const;
+    ResourcePtr loadContent() const;
 
     // save resource back to file, resets the modified flag
-    bool storeContent(const res::ResourcePtr& content);
+    bool storeContent(const ResourcePtr& content);
 
     // discard loaded content, usually done when deleting file
     void discardContent();
 
 protected:
-    SpecificClassType<res::IResource> m_resourceNativeClass;
+    SpecificClassType<IResource> m_resourceNativeClass;
 
     GlobalEventTable m_fileEvents;
 };

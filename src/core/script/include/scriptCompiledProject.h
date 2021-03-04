@@ -18,9 +18,9 @@ BEGIN_BOOMER_NAMESPACE_EX(script)
 class PortableData;
 
 // compiled script project, contains metadata
-class CORE_SCRIPT_API CompiledProject : public res::IResource
+class CORE_SCRIPT_API CompiledProject : public IResource
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CompiledProject, res::IResource);
+    RTTI_DECLARE_VIRTUAL_CLASS(CompiledProject, IResource);
 
 public:
     CompiledProject();

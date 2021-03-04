@@ -102,7 +102,7 @@ public:
     // NOTE: all files are loaded via specified loader to reuse/tracking
     // NOTE: all entities are created together and are linked using the links
     // NOTE: loaded entities are not yet linked to parent entities
-    CAN_YIELD StreamingIslandInstancePtr load(res::ResourceLoader* loader) const;
+    CAN_YIELD StreamingIslandInstancePtr load(ResourceLoader* loader) const;
 
     //--
 

@@ -29,7 +29,7 @@ public:
     void clear();
 
     // set file status, will add file if not there
-    void setFileStatus(const StringBuf& depotFileName, res::ImportStatus status, float time = 0.0);
+    void setFileStatus(const StringBuf& depotFileName, ImportStatus status, float time = 0.0);
 
     // set file progress information
     void setFileProgress(const StringBuf& depotFileName, uint64_t count, uint64_t total, StringView message);
@@ -48,7 +48,7 @@ private:
 
         StringBuf depotPath;
 
-        res::ImportStatus status = res::ImportStatus::Pending;
+        ImportStatus status = ImportStatus::Pending;
         float time = 0.0f; // time it took to check/process the resource
 
         StringBuf progressLastStatus;

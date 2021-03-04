@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -41,9 +41,9 @@ private:
 
     bool assembleCookedOutputPath(const ResourcePath& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath) const;
 
-    MetadataPtr loadFileMetadata(StringView cookedOutputPath) const;
+    ResourceMetadataPtr loadFileMetadata(StringView cookedOutputPath) const;
 
-    bool checkDependenciesUpToDate(const Metadata& deps) const;
+    bool checkDependenciesUpToDate(const ResourceMetadata& deps) const;
 
     bool cookFile(const ResourcePath& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath, Array<PendingCookingEntry>& outCookingQueue);
     void queueDependencies(const IResource& object, Array<PendingCookingEntry>& outCookingQueue);
@@ -71,4 +71,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

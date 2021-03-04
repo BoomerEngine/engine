@@ -140,7 +140,7 @@ class AssetBrowser;
 class AssetImportPrepareTab;
 class AssetImportMainTab;
 
-typedef SpecificClassType<res::IResource> TImportClass;
+typedef SpecificClassType<IResource> TImportClass;
 
 enum class AssetBrowserContext : uint8_t
 {

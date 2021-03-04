@@ -12,10 +12,10 @@
 
 #include "core/app/include/localService.h"
 #include "core/socket/include/tcpServer.h"
-#include "core/resource/include/resourceLoader.h"
+#include "core/resource/include/loader.h"
 #include "core/system/include/semaphoreCounter.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -47,7 +47,7 @@ public:
     virtual ~IImportDepotLoader();
 
     // load metadata of existing resource, should not be cached or reused
-    virtual MetadataPtr loadExistingMetadata(StringView depotPath) const = 0;
+    virtual ResourceMetadataPtr loadExistingMetadata(StringView depotPath) const = 0;
 
     // load existing content of a resource, should not be cached or reused
     virtual ResourcePtr loadExistingResource(StringView depotPath) const = 0;
@@ -115,4 +115,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

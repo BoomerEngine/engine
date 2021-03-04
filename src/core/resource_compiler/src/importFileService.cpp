@@ -9,12 +9,12 @@
 #include "build.h"
 #include "importFileSystem.h"
 #include "importFileService.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 
 #include "core/io/include/io.h"
 #include "importFileSystemNative.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -201,4 +201,4 @@ const ISourceAssetFileSystem* ImportFileService::resolveFileSystem(StringView as
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

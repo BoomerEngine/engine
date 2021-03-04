@@ -12,7 +12,7 @@
 #include "core/containers/include/queue.h"
 #include "core/system/include/thread.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -52,12 +52,12 @@ private:
         RTTI_DECLARE_POOL(POOL_IMPORT)
 
     public:
-        res::ResourcePtr unsavedResource;
+        ResourcePtr unsavedResource;
         StringBuf depotPath;
     };
 
     Queue<SaveJob*> m_saveJobQueue;
-    res::ResourcePtr m_saveCurrentResource;
+    ResourcePtr m_saveCurrentResource;
     SpinLock m_saveQueueLock;
 
     Semaphore m_saveThreadSemaphore;
@@ -68,9 +68,9 @@ private:
     ///--
 
     void processSavingThread();
-    bool saveSingleFile(const res::ResourcePtr& data, const StringBuf& path);
+    bool saveSingleFile(const ResourcePtr& data, const StringBuf& path);
 };
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

@@ -15,11 +15,11 @@
 #include "engine/rendering/include/params.h"
 
 #include "editor/common/include/managedFileNativeResource.h"
-#include "core/resource/include/objectIndirectTemplate.h"
+#include "core/resource/include/indirectTemplate.h"
 #include "engine/ui/include/uiAbstractItemModel.h"
 #include "engine/world/include/nodeTemplate.h"
 #include "engine/world/include/prefab.h"
-#include "core/resource/include/objectIndirectTemplateCompiler.h"
+#include "core/resource/include/indirectTemplateCompiler.h"
 #include "core/object/include/rttiResourceReferenceType.h"
 #include "engine/world/include/entity.h"
 
@@ -1051,7 +1051,7 @@ static void SuckInPrefab(uint64_t nodeSeed, const NodeTemplatePrefabSetup& prefa
     if (!prefabEntry.enabled)
         return;
 
-    auto loadedPrefab = prefabEntry.prefab.load();
+    auto loadedPrefab = prefabEntry.prefab.resource();
     if (!loadedPrefab)
         return;
 
@@ -1502,7 +1502,7 @@ void SceneContentNode::EnumEntityClassesForResource(ClassType resourceClass, Arr
     {
         for (const auto& templateProp : compClass->allTemplateProperties())
         {
-            if (templateProp.type->metaType() == MetaType::AsyncResourceRef && templateProp.editorData.m_primaryResource)
+            if (templateProp.type->metaType() == MetaType::ResourceAsyncRef && templateProp.editorData.m_primaryResource)
             {
                 const auto* asyncRefType = static_cast<const IResourceReferenceType*>(templateProp.type.ptr());
                 if (asyncRefType->referenceResourceClass().is(resourceClass))

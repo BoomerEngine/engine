@@ -8,10 +8,10 @@
 
 #include "build.h"
 #include "importInterface.h"
-#include "core/resource/include/resourceTags.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/tags.h"
+#include "core/resource/include/metadata.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -30,7 +30,7 @@ ResourceImporterConfigurationClassMetadata::ResourceImporterConfigurationClassMe
 //--
 
 RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IResourceImporter);
-    RTTI_METADATA(res::ResourceCookerVersionMetadata).version(1);
+    RTTI_METADATA(ResourceCookerVersionMetadata).version(1);
     RTTI_METADATA(ResourceImporterConfigurationClassMetadata).configurationClass<ResourceConfiguration>(); // we ALWAYS have a config class
 RTTI_END_TYPE();
 
@@ -51,7 +51,7 @@ void IResourceImporter::ListImportableResourceClasses(Array<SpecificClassType<IR
 {
     for (const auto& cls : AllImporterClasses())
     {
-        if (const auto mtd = cls->findMetadata<res::ResourceCookedClassMetadata>())
+        if (const auto mtd = cls->findMetadata<ResourceCookedClassMetadata>())
         {
             for (const auto& resoureCls : mtd->classList())
                 outResourceClasses.pushBackUnique(resoureCls);
@@ -64,7 +64,7 @@ bool IResourceImporter::ListImportableResourceClassesForExtension(StringView fil
     bool somethingAdded = false;
     for (const auto& cls : AllImporterClasses())
     {
-        if (const auto mtd = cls->findMetadata<res::ResourceSourceFormatMetadata>())
+        if (const auto mtd = cls->findMetadata<ResourceSourceFormatMetadata>())
         {
             bool hasExtension = false;
             for (const auto& ext : mtd->extensions())
@@ -78,7 +78,7 @@ bool IResourceImporter::ListImportableResourceClassesForExtension(StringView fil
 
             if (hasExtension)
             {
-                if (const auto mtd = cls->findMetadata<res::ResourceCookedClassMetadata>())
+                if (const auto mtd = cls->findMetadata<ResourceCookedClassMetadata>())
                 {
                     for (const auto& resoureCls : mtd->classList())
                     {
@@ -98,7 +98,7 @@ bool IResourceImporter::ListImportConfigurationForExtension(StringView fileExten
     bool somethingAdded = false;
     for (const auto& cls : AllImporterClasses())
     {
-        if (const auto mtd = cls->findMetadata<res::ResourceSourceFormatMetadata>())
+        if (const auto mtd = cls->findMetadata<ResourceSourceFormatMetadata>())
         {
             bool hasExtension = false;
             for (const auto& ext : mtd->extensions())
@@ -112,13 +112,13 @@ bool IResourceImporter::ListImportConfigurationForExtension(StringView fileExten
 
             if (hasExtension)
             {
-                if (const auto mtd = cls->findMetadata<res::ResourceCookedClassMetadata>())
+                if (const auto mtd = cls->findMetadata<ResourceCookedClassMetadata>())
                 {
                     for (const auto& resoureCls : mtd->classList())
                     {
                         if (targetClass == resoureCls)
                         {
-                            if (const auto mtd = cls->findMetadata<res::ResourceImporterConfigurationClassMetadata>())
+                            if (const auto mtd = cls->findMetadata<ResourceImporterConfigurationClassMetadata>())
                             {
                                 if (mtd->configurationClass())
                                 {
@@ -142,7 +142,7 @@ bool IResourceImporter::ListImportableExtensionsForClass(SpecificClassType<IReso
     for (const auto& cls : AllImporterClasses())
     {
         bool hasClass = false;
-        if (const auto mtd = cls->findMetadata<res::ResourceCookedClassMetadata>())
+        if (const auto mtd = cls->findMetadata<ResourceCookedClassMetadata>())
         {
             for (const auto& resoureCls : mtd->classList())
             {
@@ -156,7 +156,7 @@ bool IResourceImporter::ListImportableExtensionsForClass(SpecificClassType<IReso
 
         if (hasClass)
         {
-            if (const auto mtd = cls->findMetadata<res::ResourceSourceFormatMetadata>())
+            if (const auto mtd = cls->findMetadata<ResourceSourceFormatMetadata>())
             {
                 for (const auto& ext : mtd->extensions())
                 {
@@ -186,4 +186,4 @@ bool IResourceImporter::ListImportableExtensionsForClass(SpecificClassType<IReso
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

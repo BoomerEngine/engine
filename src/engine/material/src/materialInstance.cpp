@@ -14,15 +14,15 @@
 
 #include "engine/texture/include/texture.h"
 
-#include "core/resource/include/resourceFactory.h"
+#include "core/resource/include/factory.h"
 #include "core/object/include/rttiDataView.h"
 #include "core/object/include/dataViewNative.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 #include "core/object/include/objectGlobalRegistry.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
-extern CORE_OBJECT_API bool PatchResourceReferences(Type type, void* data, res::IResource* currentResource, res::IResource* newResource);
+extern CORE_OBJECT_API bool PatchResourceReferences(Type type, void* data, IResource* currentResource, IResource* newResource);
 
 END_BOOMER_NAMESPACE()
 
@@ -38,28 +38,28 @@ RTTI_END_TYPE();
 //----
 
 // factory class for the material instance
-class MaterialInstanceFactory : public res::IFactory
+class MaterialInstanceFactory : public IResourceFactory
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MaterialInstanceFactory, res::IFactory);
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialInstanceFactory, IResourceFactory);
 
 public:
-    virtual res::ResourceHandle createResource() const override final
+    virtual ResourcePtr createResource() const override final
     {
         return RefNew<MaterialInstance>();
     }
 };
 
 RTTI_BEGIN_TYPE_CLASS(MaterialInstanceFactory);
-    RTTI_METADATA(res::FactoryClassMetadata).bindResourceClass<MaterialInstance>();
+    RTTI_METADATA(ResourceFactoryClassMetadata).bindResourceClass<MaterialInstance>();
 RTTI_END_TYPE();
 
 
 ///---
 
 RTTI_BEGIN_TYPE_CLASS(MaterialInstance);
-    RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4mi");
-    RTTI_METADATA(res::ResourceDescriptionMetadata).description("Material Instance");
-    RTTI_METADATA(res::ResourceTagColorMetadata).color(0x4c, 0x5b, 0x61);
+    RTTI_METADATA(ResourceExtensionMetadata).extension("v4mi");
+    RTTI_METADATA(ResourceDescriptionMetadata).description("Material Instance");
+    RTTI_METADATA(ResourceTagColorMetadata).color(0x4c, 0x5b, 0x61);
     RTTI_PROPERTY(m_parameters);
     RTTI_PROPERTY(m_imported);
     RTTI_CATEGORY("Material hierarchy");
@@ -135,7 +135,7 @@ static const void* FindParameterDataInternal(const IMaterial* a, StringID name, 
             }
         }
 
-        return FindParameterDataInternal(mi->baseMaterial().load(), name, outType);
+        return FindParameterDataInternal(mi->baseMaterial().resource(), name, outType);
     }
 
     return nullptr;
@@ -157,12 +157,12 @@ static const void* FindBaseParameterDataInternal(const MaterialInstance* a, Stri
     }
 
     // check the base as normal
-    return FindParameterDataInternal(a->baseMaterial().load(), name, outType);
+    return FindParameterDataInternal(a->baseMaterial().resource(), name, outType);
 }
 
 //--
 
-static res::StaticResource<MaterialTemplate> resFallbackMaterial("/engine/materials/fallback.v4mg", true);
+static StaticResource<MaterialTemplate> resFallbackMaterial("/engine/materials/fallback.v4mg");
 
 MaterialDataProxyPtr MaterialInstance::dataProxy() const
 {
@@ -171,33 +171,33 @@ MaterialDataProxyPtr MaterialInstance::dataProxy() const
         return m_dataProxy;
 
     // use proxy from base material
-    if (auto base = m_baseMaterial.load())
+    if (auto base = m_baseMaterial.resource())
         return base->dataProxy();
 
     // use fallback proxy
-    auto fallbackTemplate = resFallbackMaterial.loadAndGet();
+    auto fallbackTemplate = resFallbackMaterial.load().resource();
     DEBUG_CHECK_EX(fallbackTemplate, "Failed to load fallback material template, rendering pipeline is seriously broken");
     return fallbackTemplate->dataProxy();
 }
 
 MaterialTemplateProxyPtr MaterialInstance::templateProxy() const
 {
-	if (auto base = m_baseMaterial.load())
+	if (auto base = m_baseMaterial.resource())
 		if (auto proxy = base->templateProxy())
 			return proxy;
 
-	auto fallbackTemplate = resFallbackMaterial.loadAndGet();
+	auto fallbackTemplate = resFallbackMaterial.load().resource();
 	DEBUG_CHECK_EX(fallbackTemplate, "Failed to load fallback material template, rendering pipeline is seriously broken");
 	return fallbackTemplate->templateProxy();
 }
 
 const MaterialTemplate* MaterialInstance::resolveTemplate() const
 {
-    if (auto base = m_baseMaterial.load())
+    if (auto base = m_baseMaterial.resource())
         if (auto baseTemplate = base->resolveTemplate())
             return baseTemplate;
 
-    auto fallbackTemplate = resFallbackMaterial.loadAndGet();
+    auto fallbackTemplate = resFallbackMaterial.load().resource();
     DEBUG_CHECK_EX(fallbackTemplate, "Failed to load fallback material template, rendering pipeline is seriously broken");
     return fallbackTemplate;
 }
@@ -396,7 +396,7 @@ void MaterialInstance::onPostLoad()
         if (m_parameters[i].value.type() == nullptr)
             m_parameters.eraseUnordered(i);
 
-    changeTrackedMaterial(m_baseMaterial.load());
+    changeTrackedMaterial(m_baseMaterial.resource());
     createMaterialProxy();
 }
 
@@ -406,7 +406,7 @@ static bool IsBasedOnMaterial(const MaterialInstance* a, const IMaterial* base)
     {
         if (a == base)
             return true;
-        a = rtti_cast<MaterialInstance>(a->baseMaterial().load());
+        a = rtti_cast<MaterialInstance>(a->baseMaterial().resource());
     }
 
     return false;
@@ -445,7 +445,7 @@ void MaterialInstance::onPropertyChanged(StringView path)
 
     if (path == BASE_MATERIAL_NAME.view())
     {
-        const auto baseMaterial = m_baseMaterial.load();
+        const auto baseMaterial = m_baseMaterial.resource();
         changeTrackedMaterial(baseMaterial);
         notifyBaseMaterialChanged();
     }
@@ -488,7 +488,7 @@ void MaterialInstance::createMaterialProxy()
 
 //--
 
-bool MaterialInstance::onResourceReloading(res::IResource* currentResource, res::IResource* newResource)
+bool MaterialInstance::onResourceReloading(IResource* currentResource, IResource* newResource)
 {
     if (currentResource->is<MaterialInstance>())
     {
@@ -509,7 +509,7 @@ bool MaterialInstance::onResourceReloading(res::IResource* currentResource, res:
     return ret;
 }
 
-void MaterialInstance::onResourceReloadFinished(res::IResource* currentResource, res::IResource* newResource)
+void MaterialInstance::onResourceReloadFinished(IResource* currentResource, IResource* newResource)
 {
     TBaseClass::onResourceReloadFinished(currentResource, newResource);
     createMaterialProxy();

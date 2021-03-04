@@ -19,7 +19,7 @@
 #include "core/app/include/localServiceContainer.h"
 #include "core/resource/include/resource.h"
 #include "core/containers/include/inplaceArray.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
 #include "import/mesh_loader/include/renderingMeshCooker.h"
 
@@ -31,8 +31,8 @@ BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 RTTI_BEGIN_TYPE_CLASS(FBXMeshImportConfig);
     RTTI_OLD_NAME("fbx::FBXMeshImportConfig");
-    //RTTI_METADATA(res::ResourceManifestExtensionMetadata).extension("mesh.meta");
-    //RTTI_METADATA(res::ResourceDescriptionMetadata).description("FBX Import SetupMetadata");
+    //RTTI_METADATA(ResourceManifestExtensionMetadata).extension("mesh.meta");
+    //RTTI_METADATA(ResourceDescriptionMetadata).description("FBX Import SetupMetadata");
     RTTI_CATEGORY("FBXTuning");
     RTTI_PROPERTY(m_importAtRootSpace).editable("Apply the inital transform of the root's chilren nodes").overriddable();
     RTTI_PROPERTY(m_forceNodeSkin).editable("Skin all meshes to parent nodes").overriddable();
@@ -46,10 +46,10 @@ FBXMeshImportConfig::FBXMeshImportConfig()
 //--
 
 RTTI_BEGIN_TYPE_CLASS(MeshImporter);
-    RTTI_METADATA(res::ResourceCookedClassMetadata).addClass<Mesh>();
-    RTTI_METADATA(res::ResourceSourceFormatMetadata).addSourceExtension("fbx").addSourceExtension("FBX");
-    RTTI_METADATA(res::ResourceCookerVersionMetadata).version(0);
-    RTTI_METADATA(res::ResourceImporterConfigurationClassMetadata).configurationClass<FBXMeshImportConfig>();
+    RTTI_METADATA(ResourceCookedClassMetadata).addClass<Mesh>();
+    RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtension("fbx").addSourceExtension("FBX");
+    RTTI_METADATA(ResourceCookerVersionMetadata).version(0);
+    RTTI_METADATA(ResourceImporterConfigurationClassMetadata).configurationClass<FBXMeshImportConfig>();
 RTTI_END_TYPE();
 
 //--
@@ -101,7 +101,7 @@ static const uint32_t CalcTrianglesForLOD(const MeshInitData& data, uint32_t lod
     return totalCount;
 }
 
-res::ResourcePtr MeshImporter::importResource(res::IResourceImporterInterface& importer) const
+ResourcePtr MeshImporter::importResource(IResourceImporterInterface& importer) const
 {
     // get the configuration
     auto importConfig = importer.queryConfigration<FBXMeshImportConfig>();

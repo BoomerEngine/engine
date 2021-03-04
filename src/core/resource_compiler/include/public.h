@@ -8,7 +8,7 @@
 
 #include "core_resource_compiler_glue.inl"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 struct RenameConfiguration;
 
@@ -67,4 +67,4 @@ enum class SourceAssetStatus : uint8_t
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

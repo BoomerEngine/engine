@@ -16,7 +16,7 @@
 #include "core/containers/include/stringBuilder.h"
 #include "core/resource/include/resource.h"
 #include "core/resource_compiler/include/importSourceAsset.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 
@@ -111,19 +111,19 @@ void SourceAssetMTL::onPostLoad()
 ///--
 
 /// source asset loader for OBJ data
-class SourceAssetMTLAssetLoader : public res::ISourceAssetLoader
+class SourceAssetMTLAssetLoader : public ISourceAssetLoader
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(SourceAssetMTLAssetLoader, res::ISourceAssetLoader);
+    RTTI_DECLARE_VIRTUAL_CLASS(SourceAssetMTLAssetLoader, ISourceAssetLoader);
 
 public:
-    virtual res::SourceAssetPtr loadFromMemory(StringView importPath, StringView contextPath, Buffer data) const override
+    virtual SourceAssetPtr loadFromMemory(StringView importPath, StringView contextPath, Buffer data) const override
     {
         return LoadMaterials(contextPath, data.data(), data.size());
     }
 };
 
 RTTI_BEGIN_TYPE_CLASS(SourceAssetMTLAssetLoader);
-    RTTI_METADATA(res::ResourceSourceFormatMetadata).addSourceExtensions("mtl");
+    RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtensions("mtl");
 RTTI_END_TYPE();
 
 ///--

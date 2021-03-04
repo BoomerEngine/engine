@@ -15,7 +15,7 @@
 #include "core/containers/include/stringParser.h"
 #include "core/parser/include/textParser.h"
 #include "core/memory/include/linearAllocator.h"
-#include "core/resource/include/depotService.h"
+#include "core/resource/include/depot.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui::style)
 

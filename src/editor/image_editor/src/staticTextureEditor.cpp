@@ -23,7 +23,7 @@
 #include "engine/ui/include/uiSplitter.h"
 #include "core/image/include/image.h"
 #include "core/image/include/imageView.h"
-#include "core/resource/include/resourceReference.h"
+#include "core/resource/include/reference.h"
 #include "engine/ui/include/uiNotebook.h"
 
 #include "engine/texture/include/staticTexture.h"
@@ -256,7 +256,7 @@ bool StaticTextureEditor::initialize()
     return true;
 }
 
-void StaticTextureEditor::handleLocalReimport(const res::ResourcePtr& ptr)
+void StaticTextureEditor::handleLocalReimport(const ResourcePtr& ptr)
 {
     if (auto newTexture = rtti_cast<StaticTexture>(ptr))
     {

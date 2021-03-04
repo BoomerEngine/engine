@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 // asynchronous buffer, can be loaded via async IO any time (even when the resources is unloaded)
 // each buffer is identified in a file by the CRC of the data and there's a table of buffers in the header of the file
@@ -73,4 +73,4 @@ private:
     stream::DataBufferLatentLoaderPtr m_access;
 };
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

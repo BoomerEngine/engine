@@ -10,7 +10,7 @@
 
 #include "core/containers/include/hashMap.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -89,4 +89,4 @@ extern CORE_RESOURCE_COMPILER_API FingerpintCalculationStatus CalculateFileFinge
 
 ///--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

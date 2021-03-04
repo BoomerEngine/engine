@@ -16,7 +16,7 @@
 #include "core/app/include/commandline.h"
 #include "core/io/include/io.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -99,4 +99,4 @@ bool CommandFingerprint::run(IProgressTracker* progress, const app::CommandLine&
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

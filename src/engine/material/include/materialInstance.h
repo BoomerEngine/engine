@@ -82,8 +82,8 @@ public:
     virtual DataViewResult writeDataView(StringView viewPath, const void* sourceData, Type sourceType) override;
     virtual DataViewResult describeDataView(StringView viewPath, DataViewInfo& outInfo) const override;
 
-    virtual bool onResourceReloading(res::IResource* currentResource, res::IResource* newResource) override;
-    virtual void onResourceReloadFinished(res::IResource* currentResource, res::IResource* newResource) override;
+    virtual bool onResourceReloading(IResource* currentResource, IResource* newResource) override;
+    virtual void onResourceReloadFinished(IResource* currentResource, IResource* newResource) override;
 
     //--
 

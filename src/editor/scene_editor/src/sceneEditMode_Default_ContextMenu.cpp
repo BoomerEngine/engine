@@ -31,7 +31,7 @@
 #include "engine/ui/include/uiRenderer.h"
 #include "core/object/include/actionHistory.h"
 #include "core/object/include/action.h"
-#include "core/resource/include/objectIndirectTemplate.h"
+#include "core/resource/include/indirectTemplate.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -409,7 +409,7 @@ void SceneEditMode_Default::buildContextMenu_ContextNode(ui::MenuButtonContainer
     }
 }
 
-static void ExtractResourcesFromNode(const SceneContentNode* node, HashMap<res::ResourcePath, uint32_t>& outResources)
+static void ExtractResourcesFromNode(const SceneContentNode* node, HashMap<ResourcePath, uint32_t>& outResources)
 {
     if (node->type() != SceneContentNodeType::Entity && node->type() != SceneContentNodeType::Behavior)
         return;
@@ -424,7 +424,7 @@ static void ExtractResourcesFromNode(const SceneContentNode* node, HashMap<res::
 
 void SceneEditMode_Default::buildContextMenu_Resources(ui::MenuButtonContainer* menu, const ContextMenuSetup& setup)
 {
-    HashMap<res::ResourcePath, uint32_t> usedResources;
+    HashMap<ResourcePath, uint32_t> usedResources;
 
     if (setup.contextClickedItem)
         ExtractResourcesFromNode(setup.contextClickedItem, usedResources);
@@ -435,7 +435,7 @@ void SceneEditMode_Default::buildContextMenu_Resources(ui::MenuButtonContainer* 
     {
         struct Entry
         {
-            res::ResourcePath key;
+            ResourcePath key;
             uint32_t count = 0;
         };
 

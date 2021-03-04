@@ -25,7 +25,7 @@ public:
     //--
 
     // get the asset import configuration
-    INLINE const res::ResourceConfigurationPtr& config() const { return m_config; }
+    INLINE const ResourceConfigurationPtr& config() const { return m_config; }
 
     //--
 
@@ -33,7 +33,7 @@ protected:
     virtual bool initialize(ResourceEditor* editor);
     virtual void close(); // called when editor is closed
 
-    res::ResourceConfigurationPtr m_config;
+    ResourceConfigurationPtr m_config;
 
     void inplaceReimport();
     bool inplaceReimportWorker(IProgressTracker& progress);

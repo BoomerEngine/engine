@@ -22,7 +22,7 @@
 
 #include "core/io/include/io.h"
 #include "core/app/include/commandline.h"
-#include "core/resource/include/resourceLoadingService.h"
+#include "core/resource/include/loadingService.h"
 #include "engine/ui/include/uiRenderer.h"
 #include "engine/ui/include/uiElementConfig.h"
 #include "core/xml/include/xmlUtils.h"
@@ -92,7 +92,7 @@ bool Editor::initialize(ui::Renderer* renderer, const app::CommandLine& cmdLine)
     m_renderer = renderer;
 
     // we can initialize the managed depot only if we are running from uncooked data
-    auto loaderService = GetService<res::LoadingService>();
+    auto loaderService = GetService<LoadingService>();
     DEBUG_CHECK_RETURN_EX_V(loaderService && loaderService->loader(), "No resource loading service spawned, no editor can be created", false);
 
     // create configuration

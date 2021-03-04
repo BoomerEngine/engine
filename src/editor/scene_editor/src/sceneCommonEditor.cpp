@@ -31,7 +31,7 @@
 #include "engine/ui/include/uiElementConfig.h"
 #include "engine/world/include/world.h"
 #include "engine/world/include/prefab.h"
-#include "core/resource/include/objectIndirectTemplate.h"
+#include "core/resource/include/indirectTemplate.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

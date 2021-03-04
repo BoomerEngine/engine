@@ -17,7 +17,7 @@
 #include "engine/ui/include/uiImage.h"
 #include "engine/ui/include/uiEditBox.h"
 #include "engine/ui/include/uiMessageBox.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -95,7 +95,7 @@ AssetFileImportWidget::~AssetFileImportWidget()
     }
 }
 
-void AssetFileImportWidget::bindFile(ManagedFileNativeResource* file, const res::ResourceConfigurationPtr& config)
+void AssetFileImportWidget::bindFile(ManagedFileNativeResource* file, const ResourceConfigurationPtr& config)
 {
     m_config = config;
     m_events.clear();
@@ -151,31 +151,31 @@ void AssetFileImportWidget::cmdReimport()
 {
     DEBUG_CHECK_RETURN_EX(m_file, "No file to reimport");
 
-    if (!m_checker || m_checker->status() == res::ImportStatus::Checking)
+    if (!m_checker || m_checker->status() == ImportStatus::Checking)
         return;
 
     auto setup = ui::MessageBoxSetup().question().yes().no().defaultNo().title("Update imported asset");
-    if (m_checker->status() == res::ImportStatus::UpToDate)
+    if (m_checker->status() == ImportStatus::UpToDate)
     {
         if (ui::MessageButton::No == ui::ShowMessageBox(this, setup.message("Resource is up to date, update any way?")))
             return;
     }
-    else if (m_checker->status() == res::ImportStatus::NotImportable)
+    else if (m_checker->status() == ImportStatus::NotImportable)
     {
         if (ui::MessageButton::No == ui::ShowMessageBox(this, setup.message("Asset seems to be not importable any more, update any way?")))
             return;
     }
-    else if (m_checker->status() == res::ImportStatus::MissingAssets)
+    else if (m_checker->status() == ImportStatus::MissingAssets)
     {
         if (ui::MessageButton::No == ui::ShowMessageBox(this, setup.message("Seems like some source files are missing, update any way?")))
             return;
     }
-    else if (m_checker->status() != res::ImportStatus::Checking)
+    else if (m_checker->status() != ImportStatus::Checking)
     {
         if (ui::MessageButton::No == ui::ShowMessageBox(this, setup.message("Checking for asset state has not finished yet, update any way?")))
             return;
     }
-    else if (m_checker->status() != res::ImportStatus::NotUpToDate)
+    else if (m_checker->status() != ImportStatus::NotUpToDate)
     {
         if (ui::MessageButton::No == ui::ShowMessageBox(this, setup.message("Asset is not a valid state to be imported, update any way?")))
             return;
@@ -196,7 +196,7 @@ void AssetFileImportWidget::cmdLoadConfiguration()
 
 //--
 
-extern StringView ImportStatusToDisplayText(res::ImportStatus status, bool withIcon);
+extern StringView ImportStatusToDisplayText(ImportStatus status, bool withIcon);
 
 void AssetFileImportWidget::updateStatus()
 {
@@ -206,23 +206,23 @@ void AssetFileImportWidget::updateStatus()
     const auto status = m_checker->status();
     switch (status)
     {
-    case res::ImportStatus::Pending:
-    case res::ImportStatus::Checking:
-    case res::ImportStatus::Canceled:
-    case res::ImportStatus::Processing:
-    case res::ImportStatus::NotImportable:
+    case ImportStatus::Pending:
+    case ImportStatus::Checking:
+    case ImportStatus::Canceled:
+    case ImportStatus::Processing:
+    case ImportStatus::NotImportable:
         break;
 
-    case res::ImportStatus::NewAssetImported:
-    case res::ImportStatus::NotUpToDate:
-    case res::ImportStatus::UpToDate:
-    case res::ImportStatus::MissingAssets:
+    case ImportStatus::NewAssetImported:
+    case ImportStatus::NotUpToDate:
+    case ImportStatus::UpToDate:
+    case ImportStatus::MissingAssets:
         canShowFiles = true;
         canReimport = true;
         break;
 
-    case res::ImportStatus::InvalidAssets:
-    case res::ImportStatus::NotSupported:
+    case ImportStatus::InvalidAssets:
+    case ImportStatus::NotSupported:
         canShowFiles = true;
         break;
     }

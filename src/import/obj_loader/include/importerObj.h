@@ -61,12 +61,12 @@ class IMPORT_OBJ_LOADER_API OBJMeshImporter : public IGeneralMeshImporter
 public:
     OBJMeshImporter();
 
-    virtual res::ResourcePtr importResource(res::IResourceImporterInterface& importer) const override final;
+    virtual ResourcePtr importResource(IResourceImporterInterface& importer) const override final;
 
 private:        
     virtual RefPtr<MaterialImportConfig> createMaterialImportConfig(const MeshImportConfig& cfg, StringView name) const override final;
 
-    void buildMaterials(const SourceAssetOBJ& data, const Mesh* existingMesh, res::IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, Array<int>& outSourceToExportMaterialIndexMapping, Array<MeshMaterial>& outExportMaterials) const;
+    void buildMaterials(const SourceAssetOBJ& data, const Mesh* existingMesh, IResourceImporterInterface& importer, const GroupBuildModelList& exportGeometry, Array<int>& outSourceToExportMaterialIndexMapping, Array<MeshMaterial>& outExportMaterials) const;
 };
 
 //--

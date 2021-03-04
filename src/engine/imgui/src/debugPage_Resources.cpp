@@ -13,8 +13,8 @@
 
 #include "core/memory/include/poolStats.h"
 #include "core/app/include/localServiceContainer.h"
-#include "core/resource/include/resourceLoader.h"
-#include "core/resource/include/resourceLoadingService.h"
+#include "core/resource/include/loader.h"
+#include "core/resource/include/loadingService.h"
 #include "core/object/include/globalEventTable.h"
 
 BEGIN_BOOMER_NAMESPACE()
@@ -45,31 +45,31 @@ public:
 
     virtual bool handleInitialize()
     {
-        auto loadingService = GetService<res::LoadingService>();
+        auto loadingService = GetService<LoadingService>();
         if (!loadingService || !loadingService->loader())
             return false;
 
         if (auto key = loadingService->loader()->eventKey())
         {
-            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_LOADING) = [this](res::ResourcePath data)
+            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_LOADING) = [this](ResourcePath data)
             {
                 auto lock = CreateLock(m_fileMapLock);
                 updateStatusNoLock(data, FileStatusMode::Loading);
             };
 
-            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_FAILED) = [this](res::ResourcePath data)
+            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_FAILED) = [this](ResourcePath data)
             {
                 auto lock = CreateLock(m_fileMapLock);
                 updateStatusNoLock(data, FileStatusMode::Failed);
             };
 
-            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_UNLOADED) = [this](res::ResourcePath data)
+            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_UNLOADED) = [this](ResourcePath data)
             {
                 auto lock = CreateLock(m_fileMapLock);
                 updateStatusNoLock(data, FileStatusMode::Unloaded);
             };
 
-            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_LOADED) = [this](res::ResourceHandle data)
+            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_LOADED) = [this](ResourcePtr data)
             {
                 auto lock = CreateLock(m_fileMapLock);
                 //updateStatusNoLock(data->key(), FileStatusMode::Loaded);
@@ -175,7 +175,7 @@ private:
         Unloaded,
     };
 
-    void updateStatusNoLock(const res::ResourcePath& key, FileStatusMode status)
+    void updateStatusNoLock(const ResourcePath& key, FileStatusMode status)
     {
         auto entry  = m_fileMap[key];
         if (!entry)
@@ -197,12 +197,12 @@ private:
         RTTI_DECLARE_POOL(POOL_MANAGED_DEPOT)
 
     public:
-        res::ResourcePath key;
+        ResourcePath key;
         FileStatusMode lastStatus;
         NativeTimePoint lastStatusTimestamp;
     };
 
-    HashMap<res::ResourcePath, FileInfo*> m_fileMap;
+    HashMap<ResourcePath, FileInfo*> m_fileMap;
     Array<const FileInfo*> m_fileListSorted;
     bool m_fileListSortedInvalid;
     Mutex m_fileMapLock;

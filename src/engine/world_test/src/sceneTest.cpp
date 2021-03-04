@@ -287,7 +287,7 @@ MeshRef ISceneTest::loadMesh(StringView assetFile)
         return nullptr;
     }
 
-    return meshPtr;
+    return MeshRef(assetFile, meshPtr);
 }
 
 //--

@@ -9,7 +9,7 @@
 #pragma once
 
 #include "managedItem.h"
-#include "core/resource/include/resourceFileLoader.h"
+#include "core/resource/include/fileLoader.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -18,7 +18,7 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 // file dependencies
 struct ManagedFileDependencies
 {
-    Array<res::FileLoadingDependency> dependencies;
+    Array<FileLoadingDependency> dependencies;
 };
 
 //---

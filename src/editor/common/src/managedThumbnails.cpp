@@ -13,7 +13,7 @@
 #include "core/io/include/directoryWatcher.h"
 #include "core/containers/include/stringParser.h"
 #include "core/process/include/process.h"
-#include "core/resource/include/resourceThumbnail.h"
+#include "core/resource/include/thumbnail.h"
 
 #include "editorService.h"
 
@@ -143,7 +143,7 @@ void ManagedThumbnailHelper::loadThumbnailData(ManagedFile* file)
     if (auto loader = m_depot.createFileReader(filePath))
     {
         stream::NativeFileReader reader(*loader);
-        if (auto data = rtti_cast<res::ResourceThumbnail>(res::LoadUncached(filePath, res::ResourceThumbnail::GetStaticClass(), reader)))
+        if (auto data = rtti_cast<ResourceThumbnail>(LoadUncached(filePath, ResourceThumbnail::GetStaticClass(), reader)))
         {
             file->newThumbnailDataAvaiable(*data);
         }

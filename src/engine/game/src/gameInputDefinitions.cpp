@@ -11,34 +11,34 @@
 #include "gameInputMapping.h"
 #include "gameInputDefinitions.h"
 
-#include "core/resource/include/resourceFactory.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/factory.h"
+#include "core/resource/include/tags.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
 ///---
 
 // factory class for the scene world
-class InputDefinitionsFactory : public res::IFactory
+class InputDefinitionsFactory : public IResourceFactory
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(InputDefinitionsFactory, res::IFactory);
+    RTTI_DECLARE_VIRTUAL_CLASS(InputDefinitionsFactory, IResourceFactory);
 
 public:
-    virtual res::ResourceHandle createResource() const override final
+    virtual ResourcePtr createResource() const override final
     {
         return RefNew<InputDefinitions>();
     }
 };
 
 RTTI_BEGIN_TYPE_CLASS(InputDefinitionsFactory);
-    RTTI_METADATA(res::FactoryClassMetadata).bindResourceClass<InputDefinitions>();
+    RTTI_METADATA(ResourceFactoryClassMetadata).bindResourceClass<InputDefinitions>();
 RTTI_END_TYPE();
 
 ///--
 
 RTTI_BEGIN_TYPE_CLASS(InputDefinitions);
-    RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4input");
-    RTTI_METADATA(res::ResourceDescriptionMetadata).description("Input Definitions");
+    RTTI_METADATA(ResourceExtensionMetadata).extension("v4input");
+    RTTI_METADATA(ResourceDescriptionMetadata).description("Input Definitions");
     RTTI_PROPERTY(m_root);
 RTTI_END_TYPE();
 

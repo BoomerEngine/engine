@@ -12,7 +12,7 @@ BEGIN_BOOMER_NAMESPACE_EX(image)
 
 class Image;
 typedef RefPtr<Image> ImagePtr;
-typedef res::Ref<Image> ImageRef;
+typedef ResourceRef<Image> ImageRef;
 
 class ImageView;
 

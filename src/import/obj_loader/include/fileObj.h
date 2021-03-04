@@ -101,9 +101,9 @@ public:
 };
 
 /// unpacked format data for OBJ file
-class IMPORT_OBJ_LOADER_API SourceAssetOBJ : public res::ISourceAsset
+class IMPORT_OBJ_LOADER_API SourceAssetOBJ : public ISourceAsset
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(SourceAssetOBJ, res::ISourceAsset);
+    RTTI_DECLARE_VIRTUAL_CLASS(SourceAssetOBJ, ISourceAsset);
 
 public:
     SourceAssetOBJ();

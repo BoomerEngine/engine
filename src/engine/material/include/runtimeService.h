@@ -81,7 +81,7 @@ public:
     //--
 
 	/// query texture's bindless index, NOTE: texture must be registered first
-	MaterialBindlessTextureID queryBindlessTextureId(const res::IResource& res) const;
+	MaterialBindlessTextureID queryBindlessTextureId(const IResource& res) const;
 
 	//--
 

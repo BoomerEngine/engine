@@ -44,7 +44,7 @@ public:
 
     /// get the name of the resource class linked to this format (if known)
     /// NOTE: this is set only for engine-serialized resources as non-engine files may be transformed into many different resource types
-    INLINE SpecificClassType<res::IResource> nativeResourceClass() const { return m_nativeResourceClass; }
+    INLINE SpecificClassType<IResource> nativeResourceClass() const { return m_nativeResourceClass; }
 
     /// do we have custom type thumbnail ?
     INLINE bool hasTypeThumbnail() const { return m_hasTypeThumbnail; }
@@ -64,7 +64,7 @@ public:
     //--
 
     /// create empty resource
-    res::ResourcePtr createEmpty() const;
+    ResourcePtr createEmpty() const;
 
     //--
 
@@ -82,11 +82,11 @@ private:
     StringBuf m_description;
     mutable image::ImagePtr m_thumbnail;
 
-    SpecificClassType<res::IResource> m_nativeResourceClass;
+    SpecificClassType<IResource> m_nativeResourceClass;
 
     Array<ManagedFileTag> m_tags;
 
-    RefPtr<res::IFactory> m_factory;
+    RefPtr<IResourceFactory> m_factory;
 
     Array<StringBuf> m_importExtensions;
 

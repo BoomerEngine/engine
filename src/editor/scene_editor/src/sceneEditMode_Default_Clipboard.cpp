@@ -14,7 +14,7 @@
 #include "sceneEditMode_Default_Clipboard.h"
 #include "sceneEditMode_Default.h"
 
-#include "core/resource/include/objectIndirectTemplate.h"
+#include "core/resource/include/indirectTemplate.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

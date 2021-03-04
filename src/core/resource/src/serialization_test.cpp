@@ -16,9 +16,9 @@
 #include "core/object/include/streamOpcodeWriter.h"
 #include "core/object/include/rttiProperty.h"
 
-#include "resourceFileSaver.h"
-#include "resourceFileTables.h"
-#include "resourceFileLoader.h"
+#include "fileSaver.h"
+#include "fileTables.h"
+#include "fileLoader.h"
 #include "core/memory/include/public.h"
 
 DECLARE_TEST_FILE(Serialization);
@@ -68,13 +68,13 @@ RTTI_END_TYPE();
 
 void HelperSave(const ObjectPtr& obj, Buffer& outData)
 {
-    res::FileSavingContext context;
+    FileSavingContext context;
     context.rootObject.pushBack(obj);
     context.protectedStream = false;
 
     auto writer = RefNew<MemoryWriterFileHandle>();
 
-    ASSERT_TRUE(res::SaveFile(writer, context)) << "Serialization failed";
+    ASSERT_TRUE(SaveFile(writer, context)) << "Serialization failed";
 
     outData = writer->extract();
 
@@ -83,13 +83,13 @@ void HelperSave(const ObjectPtr& obj, Buffer& outData)
 
 void HelperSave(const Array<ObjectPtr>& roots, Buffer& outData, bool protectedStream)
 {
-    res::FileSavingContext context;
+    FileSavingContext context;
     context.rootObject = roots;
     context.protectedStream = protectedStream;
 
     auto writer = RefNew<MemoryWriterFileHandle>();
 
-    ASSERT_TRUE(res::SaveFile(writer, context)) << "Serialization failed";
+    ASSERT_TRUE(SaveFile(writer, context)) << "Serialization failed";
 
     outData = writer->extract();
 
@@ -98,11 +98,11 @@ void HelperSave(const Array<ObjectPtr>& roots, Buffer& outData, bool protectedSt
 
 void HelperLoad(const Buffer& data, ObjectPtr& outRet)
 {
-    res::FileLoadingContext context;
+    FileLoadingContext context;
 
     auto reader = RefNew<MemoryAsyncReaderFileHandle>(data);
 
-    ASSERT_TRUE(res::LoadFile(reader, context)) << "Deserialization failed";
+    ASSERT_TRUE(LoadFile(reader, context)) << "Deserialization failed";
 
     ASSERT_EQ(1, context.loadedRoots.size()) << "Nothing loaded";
 
@@ -111,20 +111,20 @@ void HelperLoad(const Buffer& data, ObjectPtr& outRet)
 
 void HelperLoad(const Buffer& data, Array<ObjectPtr>& outRoots)
 {
-    res::FileLoadingContext context;
+    FileLoadingContext context;
 
     auto reader = RefNew<MemoryAsyncReaderFileHandle>(data);
 
-    ASSERT_TRUE(res::LoadFile(reader, context)) << "Deserialization failed";
+    ASSERT_TRUE(LoadFile(reader, context)) << "Deserialization failed";
 
     ASSERT_NE(0, context.loadedRoots.size()) << "Nothing loaded";
 
     outRoots = context.loadedRoots;
 }
 
-const char* HelperGetName(const res::FileTables& tables, uint32_t index)
+const char* HelperGetName(const FileTables& tables, uint32_t index)
 {
-    const auto numNames = tables.chunkCount(res::FileTables::ChunkType::Names);
+    const auto numNames = tables.chunkCount(FileTables::ChunkType::Names);
     if (index >= numNames)
         return "";
 
@@ -133,9 +133,9 @@ const char* HelperGetName(const res::FileTables& tables, uint32_t index)
     return stringTable + nameTable[index].stringIndex;
 }
 
-const char* HelperGetType(const res::FileTables& tables, uint32_t index)
+const char* HelperGetType(const FileTables& tables, uint32_t index)
 {
-    const auto numTypes = tables.chunkCount(res::FileTables::ChunkType::Types);
+    const auto numTypes = tables.chunkCount(FileTables::ChunkType::Types);
     if (index >= numTypes)
         return "";
 
@@ -143,9 +143,9 @@ const char* HelperGetType(const res::FileTables& tables, uint32_t index)
     return HelperGetName(tables, typeTable[index].nameIndex);
 }
 
-const char* HelperGetPropertyName(const res::FileTables& tables, uint32_t index)
+const char* HelperGetPropertyName(const FileTables& tables, uint32_t index)
 {
-    const auto numProps = tables.chunkCount(res::FileTables::ChunkType::Properties);
+    const auto numProps = tables.chunkCount(FileTables::ChunkType::Properties);
     if (index >= numProps)
         return "";
 
@@ -153,9 +153,9 @@ const char* HelperGetPropertyName(const res::FileTables& tables, uint32_t index)
     return HelperGetName(tables, propTable[index].nameIndex);
 }
 
-const char* HelperGetPropertyClassType(const res::FileTables& tables, uint32_t index)
+const char* HelperGetPropertyClassType(const FileTables& tables, uint32_t index)
 {
-    const auto numProps = tables.chunkCount(res::FileTables::ChunkType::Properties);
+    const auto numProps = tables.chunkCount(FileTables::ChunkType::Properties);
     if (index >= numProps)
         return "";
 
@@ -173,7 +173,7 @@ TEST(Serialization, SaveSimple)
     HelperSave(object, data);
 
     // get the tables
-    const auto& tables = *(const res::FileTables*)data.data();
+    const auto& tables = *(const FileTables*)data.data();
     ASSERT_TRUE(tables.validate(data.size())) << "Unable to validate files tables";
 
     // check names
@@ -185,7 +185,7 @@ TEST(Serialization, SaveSimple)
     ASSERT_STREQ("TestObject", HelperGetType(tables, 1));
 
     // check exports
-    const auto exportCount = tables.chunkCount(res::FileTables::ChunkType::Exports);
+    const auto exportCount = tables.chunkCount(FileTables::ChunkType::Exports);
     const auto exportData = tables.exportTable();
     ASSERT_EQ(1, exportCount);
     ASSERT_EQ(1, exportData[0].classTypeIndex);
@@ -209,7 +209,7 @@ TEST(Serialization, SaveSimpleWithSimpleData)
     HelperSave(object, data);
 
     // get the tables
-    const auto& tables = *(const res::FileTables*)data.data();
+    const auto& tables = *(const FileTables*)data.data();
     ASSERT_TRUE(tables.validate(data.size())) << "Unable to validate files tables";
 
     // check names
@@ -240,7 +240,7 @@ TEST(Serialization, SaveSimpleWithSimpleData)
     EXPECT_STREQ("TestObject", HelperGetPropertyClassType(tables, 3));
 
     // check exports
-    const auto exportCount = tables.chunkCount(res::FileTables::ChunkType::Exports);
+    const auto exportCount = tables.chunkCount(FileTables::ChunkType::Exports);
     const auto exportData = tables.exportTable();
     ASSERT_EQ(1, exportCount);
     ASSERT_EQ(5, exportData[0].classTypeIndex);
@@ -264,11 +264,11 @@ TEST(Serialization, ObjectChain)
     HelperSave(object, data);
 
     // get the tables
-    const auto& tables = *(const res::FileTables*)data.data();
+    const auto& tables = *(const FileTables*)data.data();
     ASSERT_TRUE(tables.validate(data.size())) << "Unable to validate files tables";
 
     // check exports
-    const auto exportCount = tables.chunkCount(res::FileTables::ChunkType::Exports);
+    const auto exportCount = tables.chunkCount(FileTables::ChunkType::Exports);
     const auto exportData = tables.exportTable();
     ASSERT_EQ(3, exportCount);
     ASSERT_EQ(2, exportData[0].classTypeIndex);
@@ -290,11 +290,11 @@ TEST(Serialization, ObjectChainBrokenLink)
     HelperSave(object, data);
 
     // get the tables
-    const auto& tables = *(const res::FileTables*)data.data();
+    const auto& tables = *(const FileTables*)data.data();
     ASSERT_TRUE(tables.validate(data.size())) << "Unable to validate files tables";
 
     // check exports
-    const auto exportCount = tables.chunkCount(res::FileTables::ChunkType::Exports);
+    const auto exportCount = tables.chunkCount(FileTables::ChunkType::Exports);
     const auto exportData = tables.exportTable();
     ASSERT_EQ(1, exportCount);
     ASSERT_EQ(2, exportData[0].classTypeIndex);

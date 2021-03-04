@@ -74,7 +74,7 @@ public:
     virtual ~IEntityHelperStreamingDistanceResolver();
 
     /// fetch streaming distance for given resource
-    virtual bool queryResourceStreamingDistance(const res::ResourcePath& key, float& outDistance) = 0;
+    virtual bool queryResourceStreamingDistance(const ResourcePath& key, float& outDistance) = 0;
 };
 
 //---

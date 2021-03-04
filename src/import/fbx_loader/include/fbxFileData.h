@@ -110,9 +110,9 @@ struct IMPORT_FBX_LOADER_API ExportNode
 class FBXAssetLoader;
 
 //  data blob (loaded asset scene)
-class IMPORT_FBX_LOADER_API FBXFile : public res::ISourceAsset
+class IMPORT_FBX_LOADER_API FBXFile : public ISourceAsset
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(FBXFile, res::ISourceAsset);
+    RTTI_DECLARE_VIRTUAL_CLASS(FBXFile, ISourceAsset);
 
 public:
     FBXFile();

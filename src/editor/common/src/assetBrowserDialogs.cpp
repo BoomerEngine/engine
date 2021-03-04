@@ -467,7 +467,7 @@ bool ShowSaveAsFileDialog(ui::IElement* owner, ManagedDirectory* specificDirecto
 
             if (editText->validationResult() && dirName->validationResult())
             {
-                auto extension = res::IResource::GetResourceExtensionForClass(resourceClass);
+                auto extension = IResource::GetResourceExtensionForClass(resourceClass);
                 auto depotPath = StringBuf(TempString("{}{}.{}", dirName->text(), editText->text(), extension));
                 if (ValidateDepotPath(depotPath))
                 {
@@ -482,7 +482,7 @@ bool ShowSaveAsFileDialog(ui::IElement* owner, ManagedDirectory* specificDirecto
 
         auto acceptFunc = [windowRef, editText, resourceClass, dirName, button, &outDepotPath]() {
             if (button->isEnabled() && editText->validationResult() && dirName->validationResult()) {
-                auto extension = res::IResource::GetResourceExtensionForClass(resourceClass);
+                auto extension = IResource::GetResourceExtensionForClass(resourceClass);
                 auto depotPath = StringBuf(TempString("{}{}.{}", dirName->text(), editText->text(), extension));
                 if (ValidateDepotPath(depotPath))
                 {
@@ -518,7 +518,7 @@ bool ShowSaveAsFileDialog(ui::IElement* owner, ManagedDirectory* specificDirecto
 
 //--
 
-bool ShowGenericRenameDialog(ui::IElement* owner, const ManagedItem* item, res::RenameConfiguration& outSettings)
+bool ShowGenericRenameDialog(ui::IElement* owner, const ManagedItem* item, RenameConfiguration& outSettings)
 {
     /*auto* file = rtti_cast<ManagedFile>(item);
     auto* dir = rtti_cast<ManagedDirectory>(item);

@@ -9,10 +9,10 @@
 #include "build.h"
 #include "cookerSaveThread.h"
 #include "core/io/include/io.h"
-#include "core/resource/include/resourceFileSaver.h"
+#include "core/resource/include/fileSaver.h"
 #include "core/io/include/fileHandle.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -170,4 +170,4 @@ void CookerSaveThread::processSavingThread()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

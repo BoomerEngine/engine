@@ -20,7 +20,7 @@
 
 #include "gpu/device/include/deviceService.h"
 #include "gpu/device/include/commandBuffer.h"
-#include "core/resource/include/resourceLoadingService.h"
+#include "core/resource/include/loadingService.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(rendering)
 
@@ -44,7 +44,7 @@ float FrameCompositionTarget::aspectRatio() const
 //--
 
 RTTI_BEGIN_TYPE_CLASS(FrameRenderingService);
-    RTTI_METADATA(app::DependsOnServiceMetadata).dependsOn<res::LoadingService>();
+    RTTI_METADATA(app::DependsOnServiceMetadata).dependsOn<LoadingService>();
     RTTI_METADATA(app::DependsOnServiceMetadata).dependsOn<DeviceService>();
 RTTI_END_TYPE();
 

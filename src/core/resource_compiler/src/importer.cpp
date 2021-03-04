@@ -14,11 +14,11 @@
 #include "importInterfaceImpl.h"
 #include "importFileFingerprint.h"
 
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 #include "core/object/include/rttiTypeSystem.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -60,7 +60,7 @@ Importer::Importer(SourceAssetRepository* assets, const IImportDepotChecker* dep
 Importer::~Importer()
 {}
             
-ResourceConfigurationPtr Importer::compileFinalImportConfiguration(const StringBuf& depotPath, const Metadata& metadata, const ResourceConfigurationPtr& newUserConfiguration) const
+ResourceConfigurationPtr Importer::compileFinalImportConfiguration(const StringBuf& depotPath, const ResourceMetadata& metadata, const ResourceConfigurationPtr& newUserConfiguration) const
 {
     // get the extension requested resource class for given depot extension
     const auto depotExtension = depotPath.view().afterLast(".");
@@ -130,19 +130,19 @@ static uint64_t CalcConfigurationKey(const ResourceConfiguration* cfg)
     return 0;
 }
 
-ImportStatus Importer::checkStatus(const StringBuf& depotPath, const Metadata& metadata, const ResourceConfigurationPtr& newUserConfiguration, IProgressTracker* progress) const
+ImportStatus Importer::checkStatus(const StringBuf& depotPath, const ResourceMetadata& metadata, const ResourceConfigurationPtr& newUserConfiguration, IProgressTracker* progress) const
 {
     /*// check if import class still exists
     if (metadata.cookerClass == nullptr)
         return ImportStatus::NotSupported;*/
 
     // check that cooker class has still the same version
-    /*const auto currentCookerVersion = metadata.cookerClass->findMetadata<res::ResourceCookerVersionMetadata>();
+    /*const auto currentCookerVersion = metadata.cookerClass->findMetadata<ResourceCookerVersionMetadata>();
     if (currentCookerVersion->version() != metadata.cookerClassVersion)
         return ImportStatus::NotUpToDate;*/
             
     // check that resource serialization class has still the same version
-    /*const auto currentCookerVersion = metadata.cookerClass->findMetadata<res::ResourceCookerVersionMetadata>();
+    /*const auto currentCookerVersion = metadata.cookerClass->findMetadata<ResourceCookerVersionMetadata>();
     if (currentCookerVersion->version() != metadata.cookerClassVersion)
         return ImportStatus::NotUpToDate;*/
 
@@ -278,8 +278,8 @@ ImportStatus Importer::importResource(const ImportJobInfo& info, const IResource
                 
     // fill in additional metadata information
     //metadata->cookerClass = importerClass;
-    //metadata->cookerClassVersion = importerClass->findMetadata<res::ResourceCookerVersionMetadata>()->version();
-    metadata->resourceClassVersion = 0;// importedResource->findMetadata<res::ResourceCookerVersionMetadata>()->version();
+    //metadata->cookerClassVersion = importerClass->findMetadata<ResourceCookerVersionMetadata>()->version();
+    metadata->resourceClassVersion = 0;// importedResource->findMetadata<ResourceCookerVersionMetadata>()->version();
 
     // update revision number
     if (existingData && existingData->metadata())
@@ -401,4 +401,4 @@ bool Importer::findBestImporter(StringView assetFilePath, SpecificClassType<IRes
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

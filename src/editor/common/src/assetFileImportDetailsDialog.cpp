@@ -29,7 +29,7 @@
 #include "core/resource_compiler/include/importInterface.h"
 #include "core/resource_compiler/include/importFileService.h"
 #include "core/io/include/io.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 #include "core/resource_compiler/include/importFileList.h"
 #include "engine/ui/include/uiSearchBar.h"
 #include "editorService.h"
@@ -54,7 +54,7 @@ void AssetProcessingListModel::clear()
     }
 }
 
-void AssetProcessingListModel::setFileStatus(const StringBuf& depotFileName, res::ImportStatus status, float time /*= 0.0*/)
+void AssetProcessingListModel::setFileStatus(const StringBuf& depotFileName, ImportStatus status, float time /*= 0.0*/)
 {
     FileData* data = nullptr;
     if (m_fileMap.find(depotFileName, data))
@@ -123,46 +123,46 @@ static StringView GetClassDisplayName(ClassType currentClass)
     return name;
 }
 
-StringView ImportStatusToDisplayText(res::ImportStatus status, bool withIcon=false)
+StringView ImportStatusToDisplayText(ImportStatus status, bool withIcon=false)
 {
     switch (status)
     {
-        case res::ImportStatus::Pending: return "[b][color:#888]Pending[/color]";
-        case res::ImportStatus::Processing: return "[b][color:#FF7]Processing...[/color]";
-        case res::ImportStatus::Checking: return "[b][color:#AAA]Checking...[/color]";
-        case res::ImportStatus::Canceled: return "[b][tag:#AAA]Canceled[/tag]";
+        case ImportStatus::Pending: return "[b][color:#888]Pending[/color]";
+        case ImportStatus::Processing: return "[b][color:#FF7]Processing...[/color]";
+        case ImportStatus::Checking: return "[b][color:#AAA]Checking...[/color]";
+        case ImportStatus::Canceled: return "[b][tag:#AAA]Canceled[/tag]";
 
-        case res::ImportStatus::NotSupported: 
+        case ImportStatus::NotSupported:
             if (withIcon)
                 return "[b][tag:#F88][color:#000][img:skull] Not supported[/tag]";
             else
                 return "[b][tag:#F88][color:#000]Not supported[/tag]";
 
-        case res::ImportStatus::MissingAssets: 
+        case ImportStatus::MissingAssets:
             if (withIcon)
                 return "[b][tag:#F88][color:#000][img:exclamation] Missing files[/tag]";
             else
                 return "[b][tag:#F88][color:#000]Missing files[/tag]";
 
-        case res::ImportStatus::InvalidAssets: 
+        case ImportStatus::InvalidAssets:
             if (withIcon)
                 return "[b][tag:#F88][color:#000][img:skull] Invalid files[/tag]";
             else
                 return "[b][tag:#F88][color:#000]Invalid files[/tag]";
 
-        case res::ImportStatus::UpToDate:
+        case ImportStatus::UpToDate:
             if (withIcon)
                 return "[b][tag:#88F][img:tick] Up to date[/tag]";
             else
                 return "[b][tag:#88F]Up to date[/tag]";
 
-        case res::ImportStatus::NotUpToDate: 
+        case ImportStatus::NotUpToDate:
             if (withIcon)
                 return "[b][tag:#FF8][color:#000][img:exclamation] Assets modified[/tag]";
             else
                 return "[b][tag:#FF8][color:#000]Assets modified[/tag]";
 
-        case res::ImportStatus::NewAssetImported:
+        case ImportStatus::NewAssetImported:
             if (withIcon)
                 return "[b][tag:#8F8][img:cog] [color:#000]Imported[/tag]";
             else
@@ -197,7 +197,7 @@ void AssetProcessingListModel::visualize(const ui::ModelIndex& item, int columnC
                     fileClass->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
 
                     const auto ext = file->depotPath.stringAfterLast(".");
-                    const auto resourceClass = res::IResource::FindResourceClassByExtension(ext);
+                    const auto resourceClass = IResource::FindResourceClassByExtension(ext);
                     fileClass->text(TempString("[img:class] {}", resourceClass));
                 }
 

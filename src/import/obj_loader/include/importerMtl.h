@@ -38,7 +38,7 @@ class IMPORT_OBJ_LOADER_API MTLMaterialImporter : public IGeneralMaterialImporte
 public:
     MTLMaterialImporter();
 
-    virtual res::ResourcePtr importResource(res::IResourceImporterInterface& importer) const override final;
+    virtual ResourcePtr importResource(IResourceImporterInterface& importer) const override final;
 };
 
 //--

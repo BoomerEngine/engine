@@ -61,7 +61,7 @@ const RefPtr<ImageHistogramData> ImageHistogramPendingData::fetchDataIfReady()
     
 //--
 
-//res::StaticResource<ShaderLibrary> resComputeImagePreviewHistogram("/editor/shaders/canvas_rendering_panel_integration.csl");
+//StaticResource<ShaderLibrary> resComputeImagePreviewHistogram("/editor/shaders/canvas_rendering_panel_integration.csl");
 
 //--
 

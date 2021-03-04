@@ -10,10 +10,10 @@
 
 #include "core/app/include/localService.h"
 #include "core/socket/include/tcpServer.h"
-#include "core/resource/include/resourceLoader.h"
+#include "core/resource/include/loader.h"
 #include "core/system/include/semaphoreCounter.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -57,4 +57,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

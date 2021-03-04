@@ -188,7 +188,7 @@ public:
     ManagedFile* createFile(StringView name, Buffer initialContent);
 
     /// create an file of given type in the file system, use provided resource as initial content
-    ManagedFile* createFile(StringView name, const res::ResourceHandle& initialContent);
+    ManagedFile* createFile(StringView name, const ResourcePtr& initialContent);
 
     /// create an empty file of given type in the file system
     ManagedFile* createFile(StringView name, const ManagedFileFormat& format);

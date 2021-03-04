@@ -35,7 +35,7 @@
 #include "engine/ui/include/uiMessageBox.h"
 #include "engine/ui/include/uiTextLabel.h"
 #include "engine/ui/include/uiProgressBar.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 #include "core/resource_compiler/include/importFileList.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)

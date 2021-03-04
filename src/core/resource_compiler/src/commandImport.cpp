@@ -19,17 +19,17 @@
 
 #include "core/app/include/command.h"
 #include "core/app/include/commandline.h"
-#include "core/resource/include/resourceLoadingService.h"
-#include "core/resource/include/resourceLoader.h"
-#include "core/resource/include/resourceFileLoader.h"
-#include "core/resource/include/resourceFileSaver.h"
+#include "core/resource/include/loadingService.h"
+#include "core/resource/include/loader.h"
+#include "core/resource/include/fileLoader.h"
+#include "core/resource/include/fileSaver.h"
 #include "core/object/include/object.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 #include "core/xml/include/xmlUtils.h"
 #include "core/net/include/messageConnection.h"
-#include "core/resource/include/depotService.h"
+#include "core/resource/include/depot.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -79,12 +79,12 @@ public:
         m_depot = GetService<DepotService>();
     }
 
-    virtual MetadataPtr loadExistingMetadata(StringView depotPath) const override final
+    virtual ResourceMetadataPtr loadExistingMetadata(StringView depotPath) const override final
     {
         if (const auto fileReader = m_depot->createFileAsyncReader(depotPath))
         {
             FileLoadingContext context;
-            return res::LoadFileMetadata(fileReader, context);
+            return LoadFileMetadata(fileReader, context);
         }
 
         return nullptr;
@@ -95,7 +95,7 @@ public:
         if (const auto fileReader = m_depot->createFileAsyncReader(depotPath))
         {
             FileLoadingContext context;
-            if (res::LoadFile(fileReader, context))
+            if (LoadFile(fileReader, context))
             {
                 if (const auto ret = context.root<IResource>())
                     return ret;
@@ -239,4 +239,4 @@ bool CommandImport::run(IProgressTracker* progress, const app::CommandLine& comm
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

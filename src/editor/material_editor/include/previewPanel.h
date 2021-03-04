@@ -27,7 +27,7 @@ struct EDITOR_MATERIAL_EDITOR_API MaterialPreviewPanelSettings
 {
     MaterialPreviewShape shape = MaterialPreviewShape::Box;
     int mode = 0;
-    res::Ref<Mesh> customMesh;
+    MeshPtr customMesh;
 
     MaterialPreviewPanelSettings();
 };

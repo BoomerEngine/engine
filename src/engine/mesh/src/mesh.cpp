@@ -11,7 +11,7 @@
 #include "service.h"
 #include "engine/material/include/material.h"
 #include "engine/material/include/materialInstance.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -51,10 +51,10 @@ RTTI_END_TYPE();
 ///---
 
 RTTI_BEGIN_TYPE_CLASS(Mesh);
-    RTTI_METADATA(res::ResourceExtensionMetadata).extension("v4mesh");
-    RTTI_METADATA(res::ResourceDescriptionMetadata).description("Mesh");
-    RTTI_METADATA(res::ResourceDataVersionMetadata).version(11);
-    RTTI_METADATA(res::ResourceTagColorMetadata).color(0xed, 0x6b, 0x86);
+    RTTI_METADATA(ResourceExtensionMetadata).extension("v4mesh");
+    RTTI_METADATA(ResourceDescriptionMetadata).description("Mesh");
+    RTTI_METADATA(ResourceDataVersionMetadata).version(11);
+    RTTI_METADATA(ResourceTagColorMetadata).color(0xed, 0x6b, 0x86);
     RTTI_PROPERTY(m_bounds);
     RTTI_PROPERTY(m_materials);
     RTTI_PROPERTY(m_details);

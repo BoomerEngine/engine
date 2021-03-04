@@ -10,7 +10,7 @@
 
 #include "core/resource/include/resource.h"
 #include "core/containers/include/hashSet.h"
-#include "core/resource/include/objectDirectTemplate.h"
+#include "core/resource/include/directTemplate.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -27,7 +27,6 @@ struct ENGINE_WORLD_API NodeTemplatePrefabSetup
 
     NodeTemplatePrefabSetup();
     NodeTemplatePrefabSetup(const PrefabRef& prefab, bool enabled = true);
-    NodeTemplatePrefabSetup(const PrefabPtr& prefab, bool enabled = true);
 };
 
 //--
@@ -142,7 +141,7 @@ struct ENGINE_WORLD_API HierarchyEntity : public IReferencable
 };
 
 // compile entity (prefab-style), returns the root entity directly and other all entities via array
-ENGINE_WORLD_API CAN_YIELD RefPtr<HierarchyEntity> CompileEntityHierarchy(const NodePathBuilder& path, const NodeTemplate* rootTemplateNode, const AbsoluteTransform* forceInitialPlacement, res::ResourceLoader* loader);
+ENGINE_WORLD_API CAN_YIELD RefPtr<HierarchyEntity> CompileEntityHierarchy(const NodePathBuilder& path, const NodeTemplate* rootTemplateNode, const AbsoluteTransform* forceInitialPlacement, ResourceLoader* loader);
 
 //--
 

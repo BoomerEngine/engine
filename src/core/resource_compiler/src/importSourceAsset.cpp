@@ -8,9 +8,9 @@
 
 #include "build.h"
 #include "importSourceAsset.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -65,7 +65,7 @@ private:
 
         for (auto cls : loaderClasses)
         {
-            if (auto metadata = cls->findMetadata<res::ResourceSourceFormatMetadata>())
+            if (auto metadata = cls->findMetadata<ResourceSourceFormatMetadata>())
             {
                 const auto loader = cls.create();
 
@@ -102,4 +102,4 @@ SourceAssetPtr ISourceAssetLoader::LoadFromMemory(StringView importPath, StringV
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

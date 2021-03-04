@@ -9,9 +9,9 @@
 #include "build.h"
 #include "importFileFingerprint.h"
 #include "importFileFingerprintCache.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -148,4 +148,4 @@ void ImportFingerprintCache::onPostLoad()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

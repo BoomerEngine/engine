@@ -15,10 +15,10 @@ BEGIN_BOOMER_NAMESPACE()
 //---
 
 /// Cooked scene
-class ENGINE_WORLD_API CompiledScene : public res::IResource
+class ENGINE_WORLD_API CompiledScene : public IResource
 {
     RTTI_DECLARE_POOL(POOL_WORLD_OBJECTS)
-    RTTI_DECLARE_VIRTUAL_CLASS(CompiledScene, res::IResource);
+    RTTI_DECLARE_VIRTUAL_CLASS(CompiledScene, IResource);
 
 public:
     CompiledScene();

@@ -14,13 +14,13 @@
 #include "scriptFunctionCode.h"
 
 #include "core/resource/include/resource.h"
-#include "core/resource/include/resourceFactory.h"
+#include "core/resource/include/factory.h"
 #include "core/script/include/scriptCompiledProject.h"
 #include "core/script/include/scriptPortableData.h"
 #include "core/containers/include/inplaceArray.h"
 #include "core/app/include/localServiceContainer.h"
 #include "core/memory/include/linearAllocator.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(script)
 
@@ -64,7 +64,7 @@ public:
 class ScriptProjectCooker : public NoCopy
 {
 public:
-    res::ResourceHandle exitWithMessage(StringView moduleName, LogErrorHandler& errHandler, bool valid = true) const
+    ResourcePtr exitWithMessage(StringView moduleName, LogErrorHandler& errHandler, bool valid = true) const
     {
         if (errHandler.m_numErrors.load() || !valid)
         {
@@ -82,7 +82,7 @@ public:
         return nullptr;
     }
 
-    virtual res::ResourceHandle cook(res::IResourceCookerInterface& cooker) const override final
+    virtual ResourcePtr cook(IResourceCookerInterface& cooker) const override final
     {
         // get name of the compilation module
         auto moduleName = StringBuf("core");// cooker.queryResourcePath().param("exportAs");
@@ -263,7 +263,7 @@ public:
 /*
         // create loading path
         // TODO: remove this hack :P
-        auto path = res::ResourcePathBuilder().path(importPath.path()).param("exportAs", name.c_str()).param("importsOnly", "1").buildPath();
+        auto path = ResourcePathBuilder().path(importPath.path()).param("exportAs", name.c_str()).param("importsOnly", "1").buildPath();
         auto compiledData = GetService<depot::DepotService>()->loadResource<CompiledProject>(path);
         if (!compiledData)
         {

@@ -12,10 +12,10 @@
 #include "importFileFingerprintCache.h"
 #include "core/io/include/asyncFileHandle.h"
 #include "core/io/include/io.h"
-#include "core/resource/include/resourceFileLoader.h"
-#include "core/resource/include/resourceFileSaver.h"
+#include "core/resource/include/fileLoader.h"
+#include "core/resource/include/fileSaver.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -186,4 +186,4 @@ CAN_YIELD FingerpintCalculationStatus ImportFileFingerprintService::calculateFin
 
 //--
 
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()

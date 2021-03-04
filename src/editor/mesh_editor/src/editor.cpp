@@ -121,7 +121,7 @@ bool MeshEditor::initialize()
     return true;
 }
 
-void MeshEditor::handleLocalReimport(const res::ResourcePtr& ptr)
+void MeshEditor::handleLocalReimport(const ResourcePtr& ptr)
 {
     if (auto mesh = rtti_cast<Mesh>(ptr))
     {

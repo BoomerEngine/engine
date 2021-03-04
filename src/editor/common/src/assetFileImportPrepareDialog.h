@@ -22,7 +22,7 @@ class AssetImportListModel;
 typedef Array<TImportClass> TImportClassRegistry;
 typedef HashMap<StringBuf, TImportClassRegistry> TImportClassRegistryMap;
 
-typedef SpecificClassType<res::ResourceConfiguration> TConfigClass;
+typedef SpecificClassType<ResourceConfiguration> TConfigClass;
 
 // internal import check status
 enum class AssetImportCheckStatus : uint8_t
@@ -56,10 +56,10 @@ public:
     //--
 
     // add new import file to the list
-    ui::ModelIndex addNewImportFile(const StringBuf& assetPath, TImportClass importClass, const StringBuf& fileName, const ManagedDirectory* directory, const res::ResourceConfigurationPtr& specificUserConfiguration = nullptr, bool enabled = true);
+    ui::ModelIndex addNewImportFile(const StringBuf& assetPath, TImportClass importClass, const StringBuf& fileName, const ManagedDirectory* directory, const ResourceConfigurationPtr& specificUserConfiguration = nullptr, bool enabled = true);
 
     // add new reimport file
-    ui::ModelIndex addReimportFile(ManagedFileNativeResource* file, const res::ResourceConfigurationPtr& specificUserConfiguration = nullptr);
+    ui::ModelIndex addReimportFile(ManagedFileNativeResource* file, const ResourceConfigurationPtr& specificUserConfiguration = nullptr);
 
     //--
 
@@ -75,7 +75,7 @@ public:
     //--
 
     // get import configuration for given element
-    res::ResourceConfigurationPtr fileConfiguration(const ui::ModelIndex& file) const;
+    ResourceConfigurationPtr fileConfiguration(const ui::ModelIndex& file) const;
 
     // get file depot path
     StringBuf fileDepotPath(const ui::ModelIndex& file) const;
@@ -92,7 +92,7 @@ public:
     //--
 
     // generate the import list from currently selected resources
-    res::ImportListPtr compileResourceList(bool activeOnly=false) const;
+    ImportListPtr compileResourceList(bool activeOnly=false) const;
 
     //--
 
@@ -112,7 +112,7 @@ private:
 
         TImportClass targetClass;
 
-        res::ResourceConfigurationPtr configuration; // user configuration
+        ResourceConfigurationPtr configuration; // user configuration
     };
 
     Array<RefPtr<FileData>> m_files;
@@ -131,9 +131,9 @@ private:
 
     virtual ui::PopupPtr contextMenu(ui::AbstractItemView* view, const Array<ui::ModelIndex>& indices) const override final;
 
-    mutable HashMap<StringBuf, Array<SpecificClassType<res::IResource>>> m_classPerExtensionMap;
+    mutable HashMap<StringBuf, Array<SpecificClassType<IResource>>> m_classPerExtensionMap;
 
-    const Array<SpecificClassType<res::IResource>>& getClassesForSourceExtension(StringView sourcePath) const;
+    const Array<SpecificClassType<IResource>>& getClassesForSourceExtension(StringView sourcePath) const;
 };
 
 //--
@@ -156,7 +156,7 @@ public:
     void addReimportFiles(const Array<ManagedFileNativeResource*>& files);
 
     // add request to reimport single file with new configuration
-    void addReimportFile(ManagedFileNativeResource* files, const res::ResourceConfigurationPtr& reimportConfiguration);
+    void addReimportFile(ManagedFileNativeResource* files, const ResourceConfigurationPtr& reimportConfiguration);
 
     //--
 
@@ -176,11 +176,11 @@ public:
 
     void updateSelection();
 
-    void addFilesFromList(const res::ImportList& list);
+    void addFilesFromList(const ImportList& list);
 
     ManagedDirectory* contextDirectory();
 
-    res::ImportListPtr compileResourceList() const;
+    ImportListPtr compileResourceList() const;
 
     RefPtr<AssetImportListModel> m_filesListModel;
 };

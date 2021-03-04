@@ -48,7 +48,7 @@ private:
 
     virtual bool initialize() override;
         
-    virtual void handleLocalReimport(const res::ResourcePtr& ptr) override;
+    virtual void handleLocalReimport(const ResourcePtr& ptr) override;
 };
 
 END_BOOMER_NAMESPACE_EX(ed)

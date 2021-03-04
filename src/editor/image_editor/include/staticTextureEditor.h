@@ -35,7 +35,7 @@ public:
     //--
 
     virtual bool initialize() override;
-    virtual void handleLocalReimport(const res::ResourcePtr& ptr) override;
+    virtual void handleLocalReimport(const ResourcePtr& ptr) override;
 
 private:
     StaticTexturePtr m_texture;

@@ -168,8 +168,8 @@ namespace prv
 
     static bool Conversion_ResourceHandle(const void* srcData, const IType* srcType, void* destData, const IType* destType)
     {
-        DEBUG_CHECK(srcType->metaType() == MetaType::ResourceRef || srcType->metaType() == MetaType::AsyncResourceRef);
-        DEBUG_CHECK(destType->metaType() == MetaType::ResourceRef || destType->metaType() == MetaType::AsyncResourceRef);
+        DEBUG_CHECK(srcType->metaType() == MetaType::ResourceRef || srcType->metaType() == MetaType::ResourceAsyncRef);
+        DEBUG_CHECK(destType->metaType() == MetaType::ResourceRef || destType->metaType() == MetaType::ResourceAsyncRef);
 
         const auto* destRefType = static_cast<const IResourceReferenceType*>(destType);
         const auto* srcRefType = static_cast<const IResourceReferenceType*>(srcType);

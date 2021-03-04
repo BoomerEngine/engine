@@ -29,7 +29,7 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
-//res::StaticResource<ShaderLibrary> resCanvasCustomHandlerChecker("/editor/shaders/canvas_checkers.csl");
+//StaticResource<ShaderLibrary> resCanvasCustomHandlerChecker("/editor/shaders/canvas_checkers.csl");
 
 /*struct CanvasCheckersData
 {
@@ -141,7 +141,7 @@ RTTI_END_TYPE();
 
 //--
 
-/*res::StaticResource<ShaderLibrary> resCanvasCustomCompressedTexturePreview("/editor/shaders/canvas_texture_compression_preview.csl");
+/*StaticResource<ShaderLibrary> resCanvasCustomCompressedTexturePreview("/editor/shaders/canvas_texture_compression_preview.csl");
 
 struct CanvasTextureCompressionPreviewParams
 {
@@ -193,7 +193,7 @@ RTTI_END_TYPE();*/
 
 //--
 
-/*res::StaticResource<ShaderLibrary> resCanvasCustomHandlerPixelGrid("/editor/shaders/canvas_pixel_grid.csl");
+/*StaticResource<ShaderLibrary> resCanvasCustomHandlerPixelGrid("/editor/shaders/canvas_pixel_grid.csl");
 
 /// custom rendering handler
 class CanvasImagePixelGridHandler : public canvas::ICanvasRendererCustomBatchHandler

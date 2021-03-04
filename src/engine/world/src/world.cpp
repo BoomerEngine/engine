@@ -304,7 +304,7 @@ EntityPtr World::createPrefabInstance(const AbsoluteTransform& placement, const 
         }
     }
 
-    TRACE_WARNING("Failed to create entity from prefab '{}'", prefab->path());
+    TRACE_WARNING("Failed to create entity from prefab '{}'", prefab->loadPath());
     return nullptr;
 }
 

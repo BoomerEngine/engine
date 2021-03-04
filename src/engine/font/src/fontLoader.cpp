@@ -10,7 +10,7 @@
 #include "font.h"
 #include "fontLibrary.h"
 #include "core/io/include/fileHandle.h"
-#include "core/resource/include/depotService.h"
+#include "core/resource/include/depot.h"
 
 BEGIN_BOOMER_NAMESPACE()
 

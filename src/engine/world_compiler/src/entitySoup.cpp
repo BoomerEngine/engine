@@ -15,9 +15,9 @@
 #include "engine/world/include/nodeTemplate.h"
 #include "engine/world/include/prefab.h"
 
-#include "core/resource/include/objectIndirectTemplateCompiler.h"
-#include "core/resource/include/objectIndirectTemplate.h"
-#include "core/resource/include/depotService.h"
+#include "core/resource/include/indirectTemplateCompiler.h"
+#include "core/resource/include/indirectTemplate.h"
+#include "core/resource/include/depot.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -35,7 +35,7 @@ void ExtractSourceLayersAtDirectory(StringView directoryPath, Array<SourceLayer*
     // scan the layers (they must come first so they can be loaded first)
     GetService<DepotService>()->enumFilesAtPath(directoryPath, [&outLayers, directoryPath](const DepotService::FileInfo& file)
         {
-            static const auto rawLayerExtensions = res::IResource::GetResourceExtensionForClass(RawLayer::GetStaticClass());
+            static const auto rawLayerExtensions = IResource::GetResourceExtensionForClass(RawLayer::GetStaticClass());
             if (file.name.endsWith(rawLayerExtensions))
             {
                 auto* entry = new SourceLayer();
@@ -86,7 +86,7 @@ bool ExtractLayerSoup(SourceLayer& layer)
     return true;
 }
 
-void ExtractSourceEntities(const res::ResourcePath& worldFilePath, SourceEntitySoup& outSoup)
+void ExtractSourceEntities(const ResourcePath& worldFilePath, SourceEntitySoup& outSoup)
 {
     InplaceArray<SourceLayer*, 128> collectedLayers;
 

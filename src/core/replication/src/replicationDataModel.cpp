@@ -350,7 +350,7 @@ void DataModel::encodeFieldData(const DataModelField& field, const void* fieldDa
 
         case DataModelFieldType::ResourceRef:
         {
-            /*auto &value = GetFieldValue<res::BaseReference>(field, fieldData);
+            /*auto &value = GetFieldValue<BaseReference>(field, fieldData);
 
             if (value.empty())
             {*/
@@ -539,7 +539,7 @@ bool DataModel::decodeFieldData(const DataModelField& field, void* fieldData, ID
 
         case DataModelFieldType::ResourceRef:
         {
-            //auto &value = GetFieldValue<res::BaseReference>(field, fieldData);
+            //auto &value = GetFieldValue<BaseReference>(field, fieldData);
 
             bool hasData = false;
             if (!r.readBit(hasData))
@@ -559,7 +559,7 @@ bool DataModel::decodeFieldData(const DataModelField& field, void* fieldData, ID
                 if (!resolver.resolveTypeRef(typeId, false, rttiType))
                     return decodingError(field, "ResourceRef type decoding error");
 
-                /*auto resourceClass = rttiType.toSpecificClass<res::IResource>();
+                /*auto resourceClass = rttiType.toSpecificClass<IResource>();
                 if (!resourceClass)
                     return decodingError(field, TempString("ResourceRef type '{}' is not a resource class", rttiType->name()));*/
 

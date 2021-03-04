@@ -10,16 +10,16 @@
 
 #include "imageCompression.h"
 #include "core/resource_compiler/include/importInterface.h"
-#include "core/resource/include/resourceMetadata.h"
+#include "core/resource/include/metadata.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 
 //--
 
 /// texture compression configuration
-class IMPORT_TEXTURE_LOADER_API StaticTextureCompressionConfiguration : public res::ResourceConfiguration
+class IMPORT_TEXTURE_LOADER_API StaticTextureCompressionConfiguration : public ResourceConfiguration
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureCompressionConfiguration, res::ResourceConfiguration);
+    RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureCompressionConfiguration, ResourceConfiguration);
 
 public:
     StaticTextureCompressionConfiguration();
@@ -42,14 +42,14 @@ public:
 //--
 
 // importer for static textures from images
-class IMPORT_TEXTURE_LOADER_API StaticTextureFromImageImporter : public res::IResourceImporter
+class IMPORT_TEXTURE_LOADER_API StaticTextureFromImageImporter : public IResourceImporter
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureFromImageImporter, res::IResourceImporter);
+    RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureFromImageImporter, IResourceImporter);
 
 public:
     StaticTextureFromImageImporter();
 
-    virtual res::ResourcePtr importResource(res::IResourceImporterInterface& importer) const override final;
+    virtual ResourcePtr importResource(IResourceImporterInterface& importer) const override final;
 };
 
 //--

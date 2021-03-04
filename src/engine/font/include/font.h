@@ -66,9 +66,9 @@ struct FontMetrics
 //---
 
 /// vector font, rendered via bitmaps
-class ENGINE_FONT_API Font : public res::IResource
+class ENGINE_FONT_API Font : public IResource
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(Font, res::IResource);
+    RTTI_DECLARE_VIRTUAL_CLASS(Font, IResource);
 
 public:
     Font();

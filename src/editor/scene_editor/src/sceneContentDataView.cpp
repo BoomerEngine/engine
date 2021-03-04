@@ -9,7 +9,7 @@
 #include "build.h"
 
 #include "sceneContentDataView.h"
-#include "core/resource/include/objectIndirectTemplateDataView.h"
+#include "core/resource/include/indirectTemplateDataView.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 

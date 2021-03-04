@@ -22,12 +22,12 @@ class AssetImportDetailsDialog;
 //--
 
 // asset importer process
-class EDITOR_COMMON_API AssetImportJob : public IBackgroundTask, public res::IImportQueueCallbacks
+class EDITOR_COMMON_API AssetImportJob : public IBackgroundTask, public IImportQueueCallbacks
 {
     RTTI_DECLARE_VIRTUAL_CLASS(AssetImportJob, IBackgroundTask)
 
 public:
-    AssetImportJob(const res::ImportListPtr& fileList, bool force);
+    AssetImportJob(const ImportListPtr& fileList, bool force);
     virtual ~AssetImportJob();
 
     //--
@@ -38,7 +38,7 @@ public:
     //--
 
 private:
-    const res::ImportListPtr m_fileList;
+    const ImportListPtr m_fileList;
 
     //--
 
@@ -62,9 +62,9 @@ private:
     virtual ui::ElementPtr fetchStatusDialog() override final;
 
     // IImportQueueCallbacks
-    virtual void queueJobAdded(const res::ImportJobInfo& info) override final;
+    virtual void queueJobAdded(const ImportJobInfo& info) override final;
     virtual void queueJobStarted(StringView depotPath) override final;
-    virtual void queueJobFinished(StringView depotPath, res::ImportStatus status, double timeTaken) override final;
+    virtual void queueJobFinished(StringView depotPath, ImportStatus status, double timeTaken) override final;
     virtual void queueJobProgressUpdate(StringView depotPath, uint64_t currentCount, uint64_t totalCount, StringView text) override final;
 };
 

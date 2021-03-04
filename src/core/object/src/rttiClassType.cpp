@@ -902,14 +902,14 @@ void IClassType::assignUserIndex(short index) const
 
 //--
 
-CORE_OBJECT_API bool PatchResourceReferences(Type type, void* data, res::IResource* currentResource, res::IResource* newResource)
+CORE_OBJECT_API bool PatchResourceReferences(Type type, void* data, IResource* currentResource, IResource* newResource)
 {
     bool patched = false;
 
     switch (type.metaType())
     {
         case MetaType::ResourceRef:
-        case MetaType::AsyncResourceRef:
+        case MetaType::ResourceAsyncRef:
         {
             const auto* specificType = static_cast<const IResourceReferenceType*>(type.ptr());
             patched = specificType->referencePatchResource(data, currentResource, newResource);
@@ -939,7 +939,7 @@ CORE_OBJECT_API bool PatchResourceReferences(Type type, void* data, res::IResour
     return patched;
 }
 
-bool IClassType::patchResourceReferences(void* data, res::IResource* currentResource, res::IResource* newResource, Array<StringID>* outPatchedProperties) const
+bool IClassType::patchResourceReferences(void* data, IResource* currentResource, IResource* newResource, Array<StringID>* outPatchedProperties) const
 {
     bool patched = false;
 

@@ -15,9 +15,9 @@ BEGIN_BOOMER_NAMESPACE()
 class Type;
 END_BOOMER_NAMESPACE()
 
-BEGIN_BOOMER_NAMESPACE_EX(res)
+BEGIN_BOOMER_NAMESPACE()
 class ResourceLoader;
-END_BOOMER_NAMESPACE_EX(res)
+END_BOOMER_NAMESPACE()
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -65,7 +65,7 @@ struct CORE_OBJECT_API TypeSerializationContext : public NoCopy
     IObject* parentObjectContext = nullptr; // parent object, can be used to handle property data conversion/missing properties
     IObject* directObjectContext = nullptr; // parent object, can be used to handle property data conversion/missing properties
 
-    res::ResourceLoader* resourceLoader = nullptr; // loader for resources
+    ResourceLoader* resourceLoader = nullptr; // loader for resources
     StringBuf resourceBasePath; // mount point
 
     void print(IFormatStream& f) const; // print context name

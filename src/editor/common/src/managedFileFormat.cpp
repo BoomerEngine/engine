@@ -15,19 +15,19 @@
 #include "core/image/include/image.h"
 #include "core/resource/include/resource.h"
 #include "core/resource/include/resource.h"
-#include "core/resource/include/resourceFactory.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/factory.h"
+#include "core/resource/include/tags.h"
 #include "core/resource_compiler/include/importInterface.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 ///---
 
-static void ExtractTagFromClass(SpecificClassType<res::IResource> resourceClass, Array<ManagedFileTag>& outTags)
+static void ExtractTagFromClass(SpecificClassType<IResource> resourceClass, Array<ManagedFileTag>& outTags)
 {
-    if (const auto* tagData = resourceClass->findMetadata<res::ResourceTagColorMetadata>())
+    if (const auto* tagData = resourceClass->findMetadata<ResourceTagColorMetadata>())
     {
-        if (const auto* descData = resourceClass->findMetadata<res::ResourceDescriptionMetadata>())
+        if (const auto* descData = resourceClass->findMetadata<ResourceDescriptionMetadata>())
         {
             const auto desc = StringView(descData->description());
             if (tagData->color().a > 0 && !desc.empty())
@@ -35,7 +35,7 @@ static void ExtractTagFromClass(SpecificClassType<res::IResource> resourceClass,
                 auto& tag = outTags.emplaceBack();
                 tag.color = tagData->color();
                 tag.name = StringBuf(desc);
-                //tag.baked = resourceClass->findMetadata < res::>() != nullptr;
+                //tag.baked = resourceClass->findMetadata < >() != nullptr;
             }
         }
     }
@@ -51,21 +51,21 @@ ManagedFileFormat::ManagedFileFormat(StringView extension)
     , m_hasTypeThumbnail(false)
 {
     // enum classes
-    static InplaceArray<SpecificClassType<res::IFactory>, 64> factoryClasses;
+    static InplaceArray<SpecificClassType<IResourceFactory>, 64> factoryClasses;
     if (factoryClasses.empty())
         RTTI::GetInstance().enumClasses(factoryClasses);
 
     // if the engine can read this format directly we will have a native class for it
-    m_nativeResourceClass = res::IResource::FindResourceClassByExtension(extension);
+    m_nativeResourceClass = IResource::FindResourceClassByExtension(extension);
     if (m_nativeResourceClass)
     {
         // create the "native" output for the file
-        m_description = res::IResource::GetResourceDescriptionForClass(m_nativeResourceClass);
+        m_description = IResource::GetResourceDescriptionForClass(m_nativeResourceClass);
 
         // find resource factory
         for (auto factoryClass : factoryClasses)
         {
-            if (auto factoryTargetClass = factoryClass->findMetadata<res::FactoryClassMetadata>())
+            if (auto factoryTargetClass = factoryClass->findMetadata<ResourceFactoryClassMetadata>())
             {
                 if (factoryTargetClass->resourceClass() == m_nativeResourceClass)
                 {
@@ -77,7 +77,7 @@ ManagedFileFormat::ManagedFileFormat(StringView extension)
         // find formats (extensions) we can import this file form
         {
             InplaceArray<StringView, 20> importExtensions;
-            res::IResourceImporter::ListImportableExtensionsForClass(m_nativeResourceClass, importExtensions);
+            IResourceImporter::ListImportableExtensionsForClass(m_nativeResourceClass, importExtensions);
 
             for (const auto& view : importExtensions)
                 m_importExtensions.pushBack(StringBuf(view).toLower());
@@ -96,7 +96,7 @@ ManagedFileFormat::ManagedFileFormat(StringView extension)
 ManagedFileFormat::~ManagedFileFormat()
 {}
 
-res::ResourcePtr ManagedFileFormat::createEmpty() const
+ResourcePtr ManagedFileFormat::createEmpty() const
 {
     if (m_factory)
         return m_factory->createResource();
@@ -174,13 +174,13 @@ ManagedFileFormatRegistry::ManagedFileFormatRegistry()
 
 void ManagedFileFormatRegistry::cacheFormats()
 {
-    InplaceArray<SpecificClassType<res::IResource>, 64> resourceClasses;
+    InplaceArray<SpecificClassType<IResource>, 64> resourceClasses;
     RTTI::GetInstance().enumClasses(resourceClasses);
 
     // auto cache all native formats
     for (const auto cls : resourceClasses)
     {
-        if (const auto ext = res::IResource::GetResourceExtensionForClass(cls))
+        if (const auto ext = IResource::GetResourceExtensionForClass(cls))
             format(ext);
     }
 }

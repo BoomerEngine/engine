@@ -18,7 +18,7 @@
 #include "core/image/include/image.h"
 #include "managedFileFormat.h"
 #include "core/io/include/fileHandle.h"
-#include "core/resource/include/resourceFileSaver.h"
+#include "core/resource/include/fileSaver.h"
 #include "managedFileNativeResource.h"
 #include "managedFileRawResource.h"
 #include "managedItemCollection.h"
@@ -285,7 +285,7 @@ StringBuf ManagedDirectory::adjustFileName(StringView fileName) const
     return StringBuf(TempString("{}{}.{}", coreName, startCounter, extPart));
 }
 
-ManagedFile* ManagedDirectory::createFile(StringView fileName, const res::ResourceHandle& initialContent)
+ManagedFile* ManagedDirectory::createFile(StringView fileName, const ResourcePtr& initialContent)
 {
     // no name
     DEBUG_CHECK_EX(fileName, "File name should be provided");
@@ -307,7 +307,7 @@ ManagedFile* ManagedDirectory::createFile(StringView fileName, const res::Resour
     }
 
     auto existingExtension = fileName.afterFirst(".");
-    auto expectedExtension = res::IResource::GetResourceExtensionForClass(initialContent->cls());
+    auto expectedExtension = IResource::GetResourceExtensionForClass(initialContent->cls());
     if (existingExtension && existingExtension != expectedExtension)
     {
         TRACE_ERROR("Unable to create '{}' in '{}': file extension '{}' does not match required by class '{}': '{}'",
@@ -356,11 +356,11 @@ ManagedFile* ManagedDirectory::createFile(StringView fileName, const res::Resour
     }
 
     // setup saving context
-    res::FileSavingContext context;
+    FileSavingContext context;
     context.rootObject.pushBack(initialContent);
 
     // save the file
-    if (!res::SaveFile(writer, context))
+    if (!SaveFile(writer, context))
     {
         TRACE_ERROR("Unable to create '{}' in '{}': filed to write file's content (out of disk space?)", fileName, depotPath());
         writer->discardContent();

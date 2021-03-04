@@ -101,6 +101,7 @@ RTTI_END_TYPE();
 //--
 
 RTTI_BEGIN_TYPE_ENUM(ImageCompressionFormat);
+    RTTI_OLD_NAME("rendering::ImageCompressionFormat");
     RTTI_ENUM_OPTION(Auto);
     RTTI_ENUM_OPTION(None);
     //RTTI_ENUM_OPTION(RGB565);

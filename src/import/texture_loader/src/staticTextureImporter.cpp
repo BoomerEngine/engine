@@ -18,7 +18,7 @@
 #include "core/containers/include/inplaceArray.h"
 #include "core/image/include/imageView.h"
 #include "core/image/include/freeImageLoader.h"
-#include "core/resource/include/resourceTags.h"
+#include "core/resource/include/tags.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 
@@ -73,9 +73,9 @@ void StaticTextureCompressionConfiguration::computeConfigurationKey(CRC64& crc) 
 
 RTTI_BEGIN_TYPE_CLASS(StaticTextureFromImageImporter);
     RTTI_OLD_NAME("rendering::StaticTextureFromImageImporter");
-    RTTI_METADATA(res::ResourceCookedClassMetadata).addClass<StaticTexture>();
-    RTTI_METADATA(res::ResourceSourceFormatMetadata).addSourceExtensions("bmp;dds;png;jpg;jpeg;jp2;jpx;tga;tif;tiff;hdr;exr;ppm;pbm;psd;xbm;nef;xpm;gif;webp");
-    RTTI_METADATA(res::ResourceImporterConfigurationClassMetadata).configurationClass<StaticTextureCompressionConfiguration>();
+    RTTI_METADATA(ResourceCookedClassMetadata).addClass<StaticTexture>();
+    RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtensions("bmp;dds;png;jpg;jpeg;jp2;jpx;tga;tif;tiff;hdr;exr;ppm;pbm;psd;xbm;nef;xpm;gif;webp");
+    RTTI_METADATA(ResourceImporterConfigurationClassMetadata).configurationClass<StaticTextureCompressionConfiguration>();
 RTTI_END_TYPE();
 
 StaticTextureFromImageImporter::StaticTextureFromImageImporter()
@@ -90,7 +90,7 @@ static StringView GetTextureSuffix(StringView path)
     return fileName.afterLast("_");
 }
 
-res::ResourcePtr StaticTextureFromImageImporter::importResource(res::IResourceImporterInterface& importer) const
+ResourcePtr StaticTextureFromImageImporter::importResource(IResourceImporterInterface& importer) const
 {
     // load the source data into memory
     // NOTE: we don't use source asset cache since image files are usually not imported many times over
@@ -130,7 +130,7 @@ res::ResourcePtr StaticTextureFromImageImporter::importResource(res::IResourceIm
     // TODO: split data into streamable/persistent part
 
     // create the static texture
-    res::AsyncBuffer streamingData;
+    AsyncBuffer streamingData;
     return RefNew<StaticTexture>(std::move(compressedData->data), std::move(streamingData), std::move(compressedData->mips), compressedData->info);
 }
 

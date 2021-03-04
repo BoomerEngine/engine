@@ -26,11 +26,11 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
-static res::StaticResource<Mesh> resDefaultCustomMesh("/engine/meshes/teapot.v4mesh");
+static StaticResource<Mesh> resDefaultCustomMesh("/engine/meshes/teapot.v4mesh");
 
 MaterialPreviewPanelSettings::MaterialPreviewPanelSettings()
 {
-    customMesh = resDefaultCustomMesh.loadAndGetAsRef();
+    customMesh = resDefaultCustomMesh.load().resource();
 }
 
 //--
@@ -136,11 +136,11 @@ void MaterialPreviewPanel::handleDragDropGenericCompletion(const ui::DragDropDat
     }
 }
 
-res::StaticResource<Mesh> resBoxMesh("/engine/meshes/cube.v4mesh");
-res::StaticResource<Mesh> resBoxSphere("/engine/meshes/sphere.v4mesh");
-res::StaticResource<Mesh> resBoxCylinder("/engine/meshes/cylinder.v4mesh");
-//res::StaticResource<Mesh> resBoxQuad("/engine/meshes/quad.v4mesh");
-res::StaticResource<Mesh> resBoxQuad("/engine/meshes/plane.v4mesh");
+StaticResource<Mesh> resBoxMesh("/engine/meshes/cube.v4mesh");
+StaticResource<Mesh> resBoxSphere("/engine/meshes/sphere.v4mesh");
+StaticResource<Mesh> resBoxCylinder("/engine/meshes/cylinder.v4mesh");
+//StaticResource<Mesh> resBoxQuad("/engine/meshes/quad.v4mesh");
+StaticResource<Mesh> resBoxQuad("/engine/meshes/plane.v4mesh");
 
 void MaterialPreviewPanel::createVisualization()
 {
@@ -155,11 +155,11 @@ void MaterialPreviewPanel::createVisualization()
             MeshPtr mesh;
             switch (m_previewSettings.shape)
             {
-            case MaterialPreviewShape::Box: mesh = resBoxMesh.loadAndGet(); break;
-            case MaterialPreviewShape::Sphere: mesh = resBoxSphere.loadAndGet(); break;
-            case MaterialPreviewShape::Cylinder: mesh = resBoxCylinder.loadAndGet(); break;
-            case MaterialPreviewShape::Plane: mesh = resBoxQuad.loadAndGet(); break;
-            case MaterialPreviewShape::Custom: mesh = m_previewSettings.customMesh.load(); break;
+                case MaterialPreviewShape::Box: mesh = resBoxMesh.load().resource(); break;
+                case MaterialPreviewShape::Sphere: mesh = resBoxSphere.load().resource(); break;
+                case MaterialPreviewShape::Cylinder: mesh = resBoxCylinder.load().resource(); break;
+                case MaterialPreviewShape::Plane: mesh = resBoxQuad.load().resource(); break;
+                case MaterialPreviewShape::Custom: mesh = m_previewSettings.customMesh; break;
             }
 
             if (mesh)

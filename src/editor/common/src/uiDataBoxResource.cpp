@@ -17,8 +17,8 @@
 #include "managedDirectory.h"
 
 #include "core/object/include/rttiDataView.h"
-#include "core/resource/include/resourceReferenceType.h"
-#include "core/resource/include/resourceAsyncReferenceType.h"
+#include "core/resource/include/referenceType.h"
+#include "core/resource/include/asyncReferenceType.h"
 
 #include "engine/ui/include/uiDataBox.h"
 #include "engine/ui/include/uiButton.h"
@@ -37,7 +37,7 @@ class DataBoxResource : public IDataBox
     RTTI_DECLARE_VIRTUAL_CLASS(DataBoxResource, IDataBox);
 
 public:
-    DataBoxResource(SpecificClassType<res::IResource> resourceClass, bool async, Type dataType)
+    DataBoxResource(SpecificClassType<IResource> resourceClass, bool async, Type dataType)
         : m_resourceClass(resourceClass)
         , m_async(async)
         , m_dataType(dataType)
@@ -148,18 +148,18 @@ public:
         StringView filePath = "";
         bool fileFound = false;
 
-        res::ResourcePath key;
+        ResourcePath key;
         DataViewResult ret;
 
         if (m_async)
         {
-            res::AsyncRef<res::IResource> data;
+            ResourceAsyncRef<IResource> data;
             ret = readValue(data);
             key = data.path();
         }
         else
         {
-            res::Ref<res::IResource> data;
+            ResourceRef<IResource> data;
             ret = readValue(data);
             key = data.path();
         }
@@ -281,24 +281,22 @@ public:
                 auto resPath = newFile->depotPath();
                 if (!resPath.empty())
                 {
-                    const auto key = res::ResourcePath(resPath);
+                    const auto key = ResourcePath(resPath);
 
                     // load the file
                     if (m_async)
                     {
-                        res::AsyncRef<res::IResource> newRef = key;
+                        ResourceAsyncRef<IResource> newRef = key;
                         if (const auto ret = HasError(writeValue(&newRef, m_dataType)))
-                            ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
-                    }
-                    else if (auto loadedResource = LoadResource(key))
-                    {
-                        res::BaseReference loadedResourceRef(loadedResource);
-                        if (const auto ret = HasError(writeValue(&loadedResourceRef, m_dataType)))
                             ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
                     }
                     else
                     {
-                        ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Unable to load '{}'.[br]Target class '{}'", resPath, m_resourceClass));
+                        auto loadedResource = LoadResource(key);
+                        BaseReference loadedResourceRef(key, loadedResource);
+
+                        if (const auto ret = HasError(writeValue(&loadedResourceRef, m_dataType)))
+                            ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
                     }
                 }
             }
@@ -306,13 +304,13 @@ public:
             {
                 if (m_async)
                 {
-                    res::AsyncRef<res::IResource> emptyRef;
+                    ResourceAsyncRef<IResource> emptyRef;
                     if (const auto ret = HasError(writeValue(&emptyRef, m_dataType)))
                         ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
                 }
                 else
                 {
-                    res::Ref<res::IResource> emptyRef;
+                    ResourceRef<IResource> emptyRef;
                     if (const auto ret = HasError(writeValue(&emptyRef, m_dataType)))
                         ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
                 }
@@ -345,7 +343,7 @@ protected:
     ui::ElementPtr m_buttonBar;
     ui::ElementPtr m_buttonShowInBrowser;
 
-    SpecificClassType<res::IResource> m_resourceClass;
+    SpecificClassType<IResource> m_resourceClass;
     Type m_dataType;
     bool m_async = false;
 
@@ -367,13 +365,13 @@ public:
     {
         if (info.dataType->metaType() == MetaType::ResourceRef)
         {
-            const auto* refType = static_cast<const res::ResourceRefType*>(info.dataType.ptr());
+            const auto* refType = static_cast<const ResourceRefType*>(info.dataType.ptr());
             if (const auto refClass = refType->resourceClass())
                 return RefNew<DataBoxResource>(refClass, false, info.dataType);
         }
-        else if (info.dataType->metaType() == MetaType::AsyncResourceRef)
+        else if (info.dataType->metaType() == MetaType::ResourceAsyncRef)
         {
-            const auto* refType = static_cast<const res::ResourceAsyncRefType*>(info.dataType.ptr());
+            const auto* refType = static_cast<const ResourceAsyncRefType*>(info.dataType.ptr());
             if (const auto refClass = refType->resourceClass())
                 return RefNew<DataBoxResource>(refClass, true, info.dataType);
         }
