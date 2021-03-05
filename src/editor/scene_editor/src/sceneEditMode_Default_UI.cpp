@@ -96,7 +96,8 @@ struct PrefabInfoEntry
 {
     uint32_t count = 0;
     StringView fileName;
-    ResourcePath path;
+    StringBuf path;
+    ResourceID id;
     bool enabled = false;
     bool disabled = false;
     bool inherited = false;
@@ -1327,22 +1328,24 @@ void SceneDefaultPropertyInspectorPanel::transformBox_ValueChanged(GizmoSpace sp
 void SceneDefaultPropertyInspectorPanel::refreshPrefabList()
 {
     // collect used prefabs
-    HashMap<ResourcePath, PrefabInfoEntry> prefabEntries;
+    HashMap<StringBuf, PrefabInfoEntry> prefabEntries;
     for (const auto& node : m_nodes)
     {
         if (auto entityNode = rtti_cast<SceneContentEntityNode>(node))
         {
-            HashSet<ResourcePath> localPrefabEntries;
+            HashSet<StringBuf> localPrefabEntries;
             for (const auto& info : entityNode->localPrefabs())
             {
-                if (const auto& path = info.prefab.path())
+                StringBuf path;
+                if (GetService<DepotService>()->resolvePathForID(info.prefab.id(), path))
                 {
                     auto& entry = prefabEntries[path];
 
                     if (!entry.path)
                     {
                         entry.path = path;
-                        entry.fileName = path.fileStem();
+                        entry.id = info.prefab.id();
+                        entry.fileName = path.view().fileStem();
                     }
 
                     if (localPrefabEntries.insert(path))

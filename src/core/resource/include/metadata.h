@@ -104,6 +104,11 @@ class CORE_RESOURCE_API ResourceMetadata : public IObject
     RTTI_DECLARE_VIRTUAL_CLASS(ResourceMetadata, IObject);
 
 public:
+    ResourceMetadata();
+
+    // assigned resource ID
+    Array<ResourceID> ids;
+
     // resource data version, if this does not match we need to recook as well
     uint32_t resourceClassVersion = 0;
 
@@ -131,6 +136,8 @@ public:
     // final FULL merged configuration (not based on ANYTHING)
     // this is what we used for importing, can be used to compare if we need to reimport stuff because of changed settings
     ResourceConfigurationPtr importFullConfiguration;
+
+    //--
 };
 
 ///---

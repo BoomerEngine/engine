@@ -28,9 +28,9 @@
 #include "engine/ui/include/uiCheckBox.h"
 #include "engine/ui/include/uiProgressBar.h"
 #include "engine/ui/include/uiTextValidation.h"
-//#include "core/resource_compiler/include/depotStructureRename.h"
 #include "engine/ui/include/uiMessageBox.h"
 #include "core/system/include/thread.h"
+#include "core/containers/include/path.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -469,7 +469,7 @@ bool ShowSaveAsFileDialog(ui::IElement* owner, ManagedDirectory* specificDirecto
             {
                 auto extension = IResource::GetResourceExtensionForClass(resourceClass);
                 auto depotPath = StringBuf(TempString("{}{}.{}", dirName->text(), editText->text(), extension));
-                if (ValidateDepotPath(depotPath))
+                if (ValidateDepotFilePath(depotPath))
                 {
                     const auto* existingFile = GetEditor()->managedDepot().findManagedFile(depotPath);
                     if (existingFile == nullptr)
@@ -484,7 +484,7 @@ bool ShowSaveAsFileDialog(ui::IElement* owner, ManagedDirectory* specificDirecto
             if (button->isEnabled() && editText->validationResult() && dirName->validationResult()) {
                 auto extension = IResource::GetResourceExtensionForClass(resourceClass);
                 auto depotPath = StringBuf(TempString("{}{}.{}", dirName->text(), editText->text(), extension));
-                if (ValidateDepotPath(depotPath))
+                if (ValidateDepotFilePath(depotPath))
                 {
                     outDepotPath = depotPath;
                     windowRef->requestClose(1);

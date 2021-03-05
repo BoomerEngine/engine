@@ -20,12 +20,13 @@
 #include "shaderCompiler.h"
 
 #include "core/containers/include/stringBuilder.h"
+#include "core/containers/include/path.h"
 #include "core/resource/include/resource.h"
 #include "core/parser/include/textFilePreprocessor.h"
+#include "core/parser/include/public.h"
 #include "core/io/include/io.h"
 
 #include "gpu/device/include/shaderData.h"
-#include "core/parser/include/public.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::compiler)
 

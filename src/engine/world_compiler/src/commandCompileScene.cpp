@@ -21,6 +21,7 @@
 #include "core/resource/include/fileSaver.h"
 #include "core/io/include/fileHandle.h"
 #include "core/resource/include/depot.h"
+#include "core/containers/include/path.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -101,14 +102,13 @@ bool CommandCompileScene::run(IProgressTracker* progress, const app::CommandLine
     if (outputDepotPath.empty())
     {
         const auto extension = IResource::GetResourceExtensionForClass(CompiledScene::GetStaticClass());
-        const auto loadPath = ResourcePath(depotPath);
-        outputDepotPath = TempString("{}.compiled/{}.{}", loadPath.basePath(), loadPath.fileStem(), extension);
+        outputDepotPath = TempString("{}.compiled/{}.{}", depotPath.view().baseDirectory(), depotPath.view().fileStem(), extension);
         TRACE_INFO("No location for cooked scene specified, using the default '{}'", outputDepotPath);
     }
     else
     {
         TRACE_INFO("Using specified cooked scene location: {}", outputDepotPath);
-        if (!ValidateDepotPath(outputDepotPath, DepotPathClass::AbsoluteFilePath))
+        if (!ValidateDepotFilePath(outputDepotPath))
         {
             TRACE_ERROR("Invalid output path: '{}'", outputDepotPath);
             return false;
@@ -128,7 +128,7 @@ bool CommandCompileScene::run(IProgressTracker* progress, const app::CommandLine
 
     // extract entity source
     SourceEntitySoup soup;
-    ExtractSourceEntities(ResourcePath(depotPath), soup);
+    ExtractSourceEntities(depotPath, soup);
 
     // build entity islands
     SourceIslands islands;

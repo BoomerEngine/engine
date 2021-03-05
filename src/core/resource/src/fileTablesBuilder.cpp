@@ -27,9 +27,6 @@ FileTablesBuilder::FileTablesBuilder()
     typeTable.reserve(64);
     typeTable.emplaceBack();
 
-    pathTable.reserve(64);
-    pathTable.emplaceBack();
-
     importTable.reserve(64);
     exportTable.reserve(64);
     propertyTable.reserve(64);
@@ -37,7 +34,7 @@ FileTablesBuilder::FileTablesBuilder()
     stringRawMap.reserve(64);
     nameRawMap.reserve(64);
     typeMap.reserve(64);
-    pathMap.reserve(64);
+    importMap.reserve(64);
 }
 
 template< typename T >
@@ -52,7 +49,6 @@ FileTablesBuilder::FileTablesBuilder(const FileTables& tables)
 {
     ExtractChunk(stringTable, tables, FileTables::ChunkType::Strings);
     ExtractChunk(nameTable, tables, FileTables::ChunkType::Names);
-    ExtractChunk(pathTable, tables, FileTables::ChunkType::Paths);
     ExtractChunk(propertyTable, tables, FileTables::ChunkType::Properties);
     ExtractChunk(importTable, tables, FileTables::ChunkType::Imports);
     ExtractChunk(exportTable, tables, FileTables::ChunkType::Exports);
@@ -79,14 +75,6 @@ FileTablesBuilder::FileTablesBuilder(const FileTables& tables)
         const auto* nameString = stringTable.typedData() + nameEntry.stringIndex;
         const auto name = StringID(nameString);
         nameRawMap[name] = i;
-    }
-
-    //--
-
-    for (uint32_t i = 0; i < pathTable.size(); ++i)
-    {
-        const auto& pathEntry = pathTable[i];
-        pathMap[pathEntry] = i;
     }
 
     //--
@@ -134,47 +122,6 @@ uint16_t FileTablesBuilder::mapName(StringID name)
     nameRawMap[name] = index;
 
     return index;
-}
-
-//--
-
-uint16_t FileTablesBuilder::mapPath(uint16_t parent, StringView elem)
-{
-    FileTables::Path entry;
-    entry.parentIndex = parent;
-    entry.stringIndex = mapString(elem);
-
-    uint32_t ret = 0;
-    if (pathMap.find(entry, ret))
-        return ret;
-
-    ret = pathTable.size();
-    pathTable.pushBack(entry);
-    pathMap[entry] = ret;
-    return ret;
-}
-
-uint16_t FileTablesBuilder::mapPath(StringView path)
-{
-    if (!path)
-        return 0;
-
-    DEBUG_CHECK_RETURN_V(ValidateDepotPath(path, DepotPathClass::AbsoluteFilePath), 0);
-
-    uint32_t ret = 0;
-    if (pathRawMap.find(path, ret))
-        return ret;
-
-    InplaceArray<StringView, 20> pathParts;
-    path.slice("/\\", false, pathParts);
-
-    uint16_t parentPath = 0;
-    for (const auto& pathElem : pathParts)
-        parentPath = mapPath(parentPath, pathElem);
-
-    pathRawMap[StringBuf(path)] = parentPath;
-
-    return parentPath;
 }
 
 //--
@@ -245,29 +192,28 @@ uint16_t FileTablesBuilder::mapProperty(const FileTables::Property& prop)
     return ret;
 }
 
-uint16_t FileTablesBuilder::mapImport(StringID classType, StringView importPath, bool async)
+uint16_t FileTablesBuilder::mapImport(StringID classType, GUID id, bool async)
 {
-    if (!classType || !importPath)
+    if (!classType || !id)
         return 0;
 
     FileTables::Import importInfo;
     importInfo.classTypeIndex = mapType(classType);
-    importInfo.pathIndex = mapPath(importPath);
+    importInfo.guid[0] = id.data()[0];
+    importInfo.guid[1] = id.data()[1];
+    importInfo.guid[2] = id.data()[2];
+    importInfo.guid[3] = id.data()[3];
     importInfo.flags = async ? 0 : FileTables::ImportFlag_Load;
     return mapImport(importInfo);
 }
 
 uint16_t FileTablesBuilder::mapImport(const FileTables::Import& importInfo)
 {
-    if (!importInfo.classTypeIndex || !importInfo.pathIndex)
+    if (!importInfo.classTypeIndex || (!importInfo.guid[0] && !importInfo.guid[1] && !!importInfo.guid[2] && !importInfo.guid[3]))
         return 0;
 
-    FileTables::ImportKey key;
-    key.classTypeIndex = importInfo.classTypeIndex;
-    key.pathIndex = importInfo.pathIndex;
-
     uint32_t ret = 0;
-    if (importMap.find(key, ret))
+    if (importMap.find(importInfo, ret))
     {
         ASSERT(ret != 0);
         auto& entry = importTable[ret - 1];
@@ -278,18 +224,17 @@ uint16_t FileTablesBuilder::mapImport(const FileTables::Import& importInfo)
     importTable.pushBack(importInfo);
     ret = importTable.size();
 
-    importMap[key] = ret;
+    importMap[importInfo] = ret;
     return ret;
 }
 
 //--
 
-void FileTablesBuilder::initFromTables(const FileTables& tables, const TImportRemapFunc& importPathRemapper)
+void FileTablesBuilder::initFromTables(const FileTables& tables)
 {
     stringTable.reset();
     nameTable.reset();
     typeTable.reset();
-    pathTable.reset();
     importTable.reset();
     exportTable.reset();
     propertyTable.reset();
@@ -297,7 +242,6 @@ void FileTablesBuilder::initFromTables(const FileTables& tables, const TImportRe
     stringTable.pushBack(0);
     nameTable.emplaceBack();
     typeTable.emplaceBack();
-    pathTable.emplaceBack();
 
     {
         const auto numNames = tables.chunkCount(FileTables::ChunkType::Names);
@@ -354,14 +298,14 @@ void FileTablesBuilder::initFromTables(const FileTables& tables, const TImportRe
         for (uint32_t i = 0; i < numImports; ++i)
         {
             const auto& src = tables.importTable()[i];
+
             auto& entry = importTable.emplaceBack();
             entry.classTypeIndex = src.classTypeIndex;
             entry.flags = src.flags;
-
-            auto path = tables.resolvePath(src.pathIndex);
-            if (importPathRemapper)
-                importPathRemapper(path);
-            entry.pathIndex = mapPath(path);
+            entry.guid[0] = src.guid[0];
+            entry.guid[1] = src.guid[1];
+            entry.guid[2] = src.guid[2];
+            entry.guid[3] = src.guid[3];
         }
     }
 }
@@ -397,8 +341,6 @@ bool FileTablesBuilder::write(IWriteFileHandle* file, uint32_t headerFlags, uint
     if (!WriteChunk(file, baseOffset, typeTable, writeHeader.chunks[(int)FileTables::ChunkType::Types]))
         return false;
     if (!WriteChunk(file, baseOffset, propertyTable, writeHeader.chunks[(int)FileTables::ChunkType::Properties]))
-        return false;
-    if (!WriteChunk(file, baseOffset, pathTable, writeHeader.chunks[(int)FileTables::ChunkType::Paths]))
         return false;
     if (!WriteChunk(file, baseOffset, importTable, writeHeader.chunks[(int)FileTables::ChunkType::Imports]))
         return false;

@@ -409,7 +409,7 @@ void SceneEditMode_Default::buildContextMenu_ContextNode(ui::MenuButtonContainer
     }
 }
 
-static void ExtractResourcesFromNode(const SceneContentNode* node, HashMap<ResourcePath, uint32_t>& outResources)
+static void ExtractResourcesFromNode(const SceneContentNode* node, HashMap<ResourceID, uint32_t>& outResources)
 {
     if (node->type() != SceneContentNodeType::Entity && node->type() != SceneContentNodeType::Behavior)
         return;
@@ -424,7 +424,7 @@ static void ExtractResourcesFromNode(const SceneContentNode* node, HashMap<Resou
 
 void SceneEditMode_Default::buildContextMenu_Resources(ui::MenuButtonContainer* menu, const ContextMenuSetup& setup)
 {
-    HashMap<ResourcePath, uint32_t> usedResources;
+    HashMap<ResourceID, uint32_t> usedResources;
 
     if (setup.contextClickedItem)
         ExtractResourcesFromNode(setup.contextClickedItem, usedResources);
@@ -435,17 +435,22 @@ void SceneEditMode_Default::buildContextMenu_Resources(ui::MenuButtonContainer* 
     {
         struct Entry
         {
-            ResourcePath key;
+            ResourceID id;
+            StringBuf path;
             uint32_t count = 0;
         };
 
         InplaceArray<Entry, 32> tempPairs;
-
         for (auto pair : usedResources.pairs())
         {
-            auto& info = tempPairs.emplaceBack();
-            info.key = pair.key;
-            info.count = pair.value;
+            StringBuf path;
+            if (GetService<DepotService>()->resolvePathForID(pair.key, path))
+            {
+                auto& info = tempPairs.emplaceBack();
+                info.id = pair.key;
+                info.count = pair.value;
+                info.path = path;
+            }
         }
 
         std::sort(tempPairs.begin(), tempPairs.end(), [](const Entry& a, const Entry& b) { return a.count < b.count; });
@@ -454,7 +459,7 @@ void SceneEditMode_Default::buildContextMenu_Resources(ui::MenuButtonContainer* 
 
         for (const auto& pair : tempPairs)
         {
-            if (auto* file = GetEditor()->managedDepot().findManagedFile(pair.key.view()))
+            if (auto* file = GetEditor()->managedDepot().findManagedFile(pair.path))
             {
                 StringBuilder txt;
                 file->fileFormat().printTags(txt, " ");

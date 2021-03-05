@@ -41,7 +41,7 @@ public:
     virtual bool depotFileExists(StringView depotPath) const = 0;
 
     // given a depot root path and file name find existing depot file
-    virtual bool depotFindFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const = 0;
+    virtual bool depotFindFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath, ResourceID& outFoundResourceID) const = 0;
 };
 
 //--

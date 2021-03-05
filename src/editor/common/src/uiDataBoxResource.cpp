@@ -17,6 +17,7 @@
 #include "managedDirectory.h"
 
 #include "core/object/include/rttiDataView.h"
+#include "core/containers/include/path.h"
 #include "core/resource/include/referenceType.h"
 #include "core/resource/include/asyncReferenceType.h"
 
@@ -148,25 +149,27 @@ public:
         StringView filePath = "";
         bool fileFound = false;
 
-        ResourcePath key;
+        ResourceID id;
         DataViewResult ret;
 
         if (m_async)
         {
             ResourceAsyncRef<IResource> data;
             ret = readValue(data);
-            key = data.path();
+            id = data.id();
         }
         else
         {
             ResourceRef<IResource> data;
             ret = readValue(data);
-            key = data.path();
+            id = data.id();
         }
+
+        StringBuf path;
 
         if (ret.code == DataViewResultCode::OK)
         {
-            auto managedFile = ed::GetEditor()->managedDepot().findManagedFile(key.view());
+            auto managedFile = ed::GetEditor()->managedDepot().findManagedFile(path);
             if (managedFile != m_currentFile)
             {
                 if (managedFile)
@@ -175,9 +178,9 @@ public:
             }
 
             // set file name
-            if (key)
+            if (path)
             {
-                fileName = key.fileStem();
+                fileName = path.view().fileStem();
                 fileFound = (managedFile != nullptr);
             }
             else
@@ -189,7 +192,7 @@ public:
             // update file name
             m_name->text(fileName);
             m_name->tooltip(filePath);
-            m_name->enable(key);
+            m_name->enable(true);
 
             // show ui elements
             m_buttonShowInBrowser->visibility(true);
@@ -278,25 +281,32 @@ public:
             // get depot path to the file
             if (newFile)
             {
-                auto resPath = newFile->depotPath();
-                if (!resPath.empty())
+                auto path = newFile->depotPath();
+                if (!path.empty())
                 {
-                    const auto key = ResourcePath(resPath);
-
-                    // load the file
-                    if (m_async)
+                    // resolve the ID
+                    ResourceID id;
+                    if (GetService<DepotService>()->resolveIDForPath(path, id))
                     {
-                        ResourceAsyncRef<IResource> newRef = key;
-                        if (const auto ret = HasError(writeValue(&newRef, m_dataType)))
-                            ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
+                        // load the file
+                        if (m_async)
+                        {
+                            auto newRef = BaseAsyncReference(id);
+                            if (const auto ret = HasError(writeValue(&newRef, m_dataType)))
+                                ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
+                        }
+                        else
+                        {
+                            auto loadedResource = LoadResource(path);
+                            auto loadedResourceRef = BaseReference(id, loadedResource);
+
+                            if (const auto ret = HasError(writeValue(&loadedResourceRef, m_dataType)))
+                                ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
+                        }
                     }
                     else
                     {
-                        auto loadedResource = LoadResource(key);
-                        BaseReference loadedResourceRef(key, loadedResource);
-
-                        if (const auto ret = HasError(writeValue(&loadedResourceRef, m_dataType)))
-                            ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
+                        ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Resource has no ID!"));
                     }
                 }
             }

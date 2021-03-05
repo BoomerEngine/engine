@@ -170,7 +170,9 @@ public:
     AssetImportSingleDepotFileLoader(const StringBuf& depotPath, const ResourcePtr& existingResource)
         : m_depotPath(depotPath)
         , m_existingResource(existingResource)
-    {}
+    {
+        m_depot = GetService<DepotService>();
+    }
 
     virtual ResourceMetadataPtr loadExistingMetadata(StringView depotPath) const override final
     {
@@ -194,12 +196,18 @@ public:
         return GetService<DepotService>()->queryFileTimestamp(depotPath, timestamp);
     }
 
-    virtual bool depotFindFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const override final
+    virtual bool depotFindFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath, ResourceID& outFoundResourceID) const override final
     {
-        return GetService<DepotService>()->findFile(depotPath, fileName, maxDepth, outFoundFileDepotPath);
+        if (m_depot->findFile(depotPath, fileName, maxDepth, outFoundFileDepotPath))
+            if (m_depot->resolveIDForPath(outFoundFileDepotPath, outFoundResourceID))
+                return true;
+
+        return false;
     }
 
 private:
+    DepotService* m_depot = nullptr;
+
     StringBuf m_depotPath;
     ResourcePtr m_existingResource;
 };

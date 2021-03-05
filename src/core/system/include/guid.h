@@ -19,6 +19,7 @@ public:
     static const uint32_t NUM_WORDS = 4;
 
     INLINE GUID(); // empty, zero guid
+    INLINE GUID(uint32_t a, uint32_t b, uint32_t c, uint32_t d);
     INLINE GUID(const GUID& other);
     INLINE GUID(GUID&& other); // clears the source
     INLINE GUID& operator=(const GUID& other);
@@ -44,6 +45,8 @@ public:
     //--
 
     static GUID Create(); // creates global guid
+
+    static bool Parse(const char* txt, uint32_t length, GUID& outValue);
 
     //--
 

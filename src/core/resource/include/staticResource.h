@@ -24,7 +24,7 @@ public:
     virtual ~IStaticResource();
 
     /// get the resource path
-    INLINE const ResourcePath& path() const { return m_path; }
+    INLINE StringView path() const { return m_path; }
 
     //--
 
@@ -37,7 +37,7 @@ public:
     static void CollectAllResources(Array<IStaticResource*>& outResources);
 
 private:
-    ResourcePath m_path;
+    const char* m_path = nullptr;
     IStaticResource* m_next;
     IStaticResource* m_prev;
 
@@ -59,13 +59,7 @@ public:
     INLINE ResourceRef<T> load() const
     {
         const auto baseRef = IStaticResource::load();
-        return ResourceRef<T>(baseRef.path(), rtti_cast<T>(baseRef.resource()));
-    }
-
-    /// get as async ref
-    INLINE ResourceAsyncRef<T> asyncRef() const
-    {
-        return ResourceAsyncRef<T>(path());
+        return ResourceRef<T>(baseRef.id(), rtti_cast<T>(baseRef.resource()));
     }
 };
 

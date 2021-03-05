@@ -85,7 +85,7 @@ NodeTemplatePtr PrefabBuilder::BuildMeshNode(const MeshRef& mesh, const EulerTra
         node->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
         node->m_entityTemplate->placement(placement);
         //node->m_entityTemplate->templateClass(game::MeshEntity::GetStaticClass());
-        node->m_entityTemplate->writeProperty("mesh"_id, MeshAsyncRef(mesh.path()));
+        node->m_entityTemplate->writeProperty("mesh"_id, MeshAsyncRef(mesh.id()));
         node->m_entityTemplate->writeProperty("color"_id, color);
     }
 
@@ -97,7 +97,7 @@ NodeTemplatePtr PrefabBuilder::BuildPrefabNode(const PrefabPtr& prefab, const Eu
     DEBUG_CHECK_RETURN_V(prefab, nullptr);
 
     auto node = RefNew<NodeTemplate>();
-    node->m_prefabAssets.pushBack(PrefabRef(ResourcePath(), prefab));
+    node->m_prefabAssets.pushBack(PrefabRef(ResourceID(), prefab));
 
     return node;
 }

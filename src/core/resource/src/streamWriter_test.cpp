@@ -378,7 +378,8 @@ TEST(StreamOpcodes, ResourceAsyncRef)
     stream::OpcodeWriter writer(stream, references);
 
     ResourceAsyncRef<IResource> testRef;
-    testRef = ResourcePath("/test.txt");
+    auto id = GUID::Create();
+    testRef = ResourceID(id);
 
     HelperWriteType(writer, testRef);
 
@@ -388,7 +389,7 @@ TEST(StreamOpcodes, ResourceAsyncRef)
     {
         ASSERT_EQ(stream::StreamOpcode::DataResourceRef, it->op);
         const auto* op = (const stream::StreamOpDataResourceRef*)(*it);
-        ASSERT_STREQ("/test.txt", op->path.c_str());
+        ASSERT_EQ(id, op->id);
         ASSERT_EQ(IResource::GetStaticClass(), op->type);
         ASSERT_TRUE(op->async);
         ++it;
@@ -399,7 +400,7 @@ TEST(StreamOpcodes, ResourceAsyncRef)
     ASSERT_EQ(1, references.asyncResources.size());
     ASSERT_EQ(0, references.syncResources.size());
 
-    ASSERT_STREQ("/test.txt", references.asyncResources.keys()[0].resourcePath.c_str());
+    ASSERT_EQ(id, references.asyncResources.keys()[0].resourceID);
     ASSERT_EQ(IResource::GetStaticClass(), references.asyncResources.keys()[0].resourceType);
 }
 
@@ -409,8 +410,10 @@ TEST(StreamOpcodes, SyncResourceRef)
     stream::OpcodeWriterReferences references;
     stream::OpcodeWriter writer(stream, references);
 
+    auto id = GUID::Create();
+
     ResourceRef<IResource> testRef;
-    *((BaseReference*)&testRef) = BaseReference(ResourcePath("/test.txt"));
+    *((BaseReference*)&testRef) = BaseReference(id);
 
     HelperWriteType(writer, testRef);
 
@@ -424,7 +427,7 @@ TEST(StreamOpcodes, SyncResourceRef)
     {
         ASSERT_EQ(stream::StreamOpcode::DataResourceRef, it->op);
         const auto* op = (const stream::StreamOpDataResourceRef*)(*it);
-        ASSERT_STREQ("/test.txt", op->path.c_str());
+        ASSERT_EQ(id, op->id);
         ASSERT_EQ(IResource::GetStaticClass(), op->type);
         ASSERT_FALSE(op->async);
         ++it;
@@ -435,7 +438,7 @@ TEST(StreamOpcodes, SyncResourceRef)
     ASSERT_EQ(0, references.asyncResources.size());
     ASSERT_EQ(1, references.syncResources.size());
 
-    ASSERT_STREQ("/test.txt", references.syncResources.keys()[0].resourcePath.c_str());
+    ASSERT_EQ(id, references.syncResources.keys()[0].resourceID);
     ASSERT_EQ(IResource::GetStaticClass(), references.syncResources.keys()[0].resourceType);
 }
 

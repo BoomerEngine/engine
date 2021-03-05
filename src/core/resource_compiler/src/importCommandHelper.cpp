@@ -74,9 +74,13 @@ public:
         return m_depot->queryFileTimestamp(depotPath, timestamp);
     }
 
-    virtual bool depotFindFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const override final
+    virtual bool depotFindFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath, ResourceID& outFoundResourceID) const override final
     {
-        return m_depot->findFile(depotPath, fileName, maxDepth, outFoundFileDepotPath);
+        if (m_depot->findFile(depotPath, fileName, maxDepth, outFoundFileDepotPath))
+            if (m_depot->resolveIDForPath(outFoundFileDepotPath, outFoundResourceID))
+                return true;
+
+        return false;
     }
 
 private:

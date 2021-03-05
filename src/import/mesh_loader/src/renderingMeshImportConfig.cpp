@@ -11,6 +11,7 @@
 #include "engine/mesh/include/mesh.h"
 #include "engine/material/include/material.h"
 #include "engine/material/include/materialInstance.h"
+#include "core/containers/include/path.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 
@@ -326,11 +327,12 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(IResourceImporterInterf
     {
         TRACE_INFO("Looking for material file '{}'...", materialFileName);
 
+        ResourceID materialDepotID;
         StringBuf materialDepotPath;
-        if (importer.findDepotFile(importer.queryResourcePath(), cfg.m_materialSearchPath, materialFileName, materialDepotPath, cfg.m_depotSearchDepth))
+        if (importer.findDepotFile(importer.queryResourcePath(), cfg.m_materialSearchPath, materialFileName, materialDepotPath, materialDepotID, cfg.m_depotSearchDepth))
         {
             TRACE_INFO("Existing material file found at '{}'", materialDepotPath);
-            return MaterialRef(ResourcePath(materialDepotPath));
+            return MaterialRef(materialDepotID);
         }
     }
 
@@ -376,10 +378,8 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(IResourceImporterInterf
                 }
 
                 // emit the follow-up import, no extra config at the moment
-                importer.followupImport(resolvedMaterialLibraryPath, depotPath, materialImportConfig);
-
-                // build a unloaded material reference (so it can be saved)
-                return MaterialRef(ResourcePath(depotPath));
+                if (const auto id = importer.followupImport(resolvedMaterialLibraryPath, depotPath, materialImportConfig))
+                    return MaterialRef(id);
             }
         }
         else
@@ -397,10 +397,8 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(IResourceImporterInterf
             }
 
             // emit the follow-up import, no extra config at the moment
-            importer.followupImport(importer.queryImportPath(), depotPath, materialImportConfig);
-
-            // build a unloaded material reference (so it can be saved)
-            return MaterialRef(ResourcePath(depotPath));
+            if (const auto id = importer.followupImport(importer.queryImportPath(), depotPath, materialImportConfig))
+                return MaterialRef(id);
         }
     }
 

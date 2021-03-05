@@ -24,34 +24,34 @@ private:
 
     //--
 
-    HashSet<ResourcePath> m_seedFiles;
+    HashSet<StringBuf> m_seedFiles;
     bool collectSeedFiles();
-    void scanDepotDirectoryForSeedFiles(StringView depotPath, Array<ResourcePath>& outList, uint32_t& outNumDirectoriesVisited) const;
+    void scanDepotDirectoryForSeedFiles(StringView depotPath, Array<StringBuf>& outList, uint32_t& outNumDirectoriesVisited) const;
 
     //--
 
     struct PendingCookingEntry
     {
-        ResourcePath key;
+        StringBuf path;
         ResourcePtr alreadyLoadedResource;
     };
 
     bool processSeedFiles();
-    void processSingleSeedFile(const ResourcePath& key);
+    void processSingleSeedFile(const StringBuf& key);
 
-    bool assembleCookedOutputPath(const ResourcePath& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath) const;
+    bool assembleCookedOutputPath(const StringBuf& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath) const;
 
     ResourceMetadataPtr loadFileMetadata(StringView cookedOutputPath) const;
 
     bool checkDependenciesUpToDate(const ResourceMetadata& deps) const;
 
-    bool cookFile(const ResourcePath& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath, Array<PendingCookingEntry>& outCookingQueue);
+    bool cookFile(const StringBuf& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath, Array<PendingCookingEntry>& outCookingQueue);
     void queueDependencies(const IResource& object, Array<PendingCookingEntry>& outCookingQueue);
     void queueDependencies(StringView cookedFile, Array<PendingCookingEntry>& outCookingQueue);
 
-    HashSet<ResourcePath> m_allCollectedFiles;
-    HashSet<ResourcePath> m_allCookedFiles;
-    HashSet<ResourcePath> m_allSeenFile;
+    HashSet<StringBuf> m_allCollectedFiles;
+    HashSet<StringBuf> m_allCookedFiles;
+    HashSet<StringBuf> m_allSeenFile;
 
     uint32_t m_cookFileIndex = 0;
     uint32_t m_numTotalVisited = 0;

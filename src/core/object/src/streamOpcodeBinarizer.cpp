@@ -134,13 +134,13 @@ uint32_t ResolveObjectIndex(const OpcodeMappedReferences& mappedReferences, cons
     return index;
 }
 
-uint32_t ResolveResourceIndex(const OpcodeMappedReferences& mappedReferences, const StringBuf& path, ClassType type)
+uint32_t ResolveResourceIndex(const OpcodeMappedReferences& mappedReferences, const GUID& id, ClassType type)
 {
-    if (!path || !type)
+    if (!id || !type)
         return 0;
 
     OpcodeWriterResourceReference key;
-    key.resourcePath = path;
+    key.resourceID = id;
     key.resourceType = type;
 
     uint32_t index = 0;
@@ -231,7 +231,7 @@ void WriteOpcodes(bool protectedStream, const OpcodeStream& stream, const Opcode
         case StreamOpcode::DataResourceRef:
         {
             const auto* op = (const StreamOpDataResourceRef*)(*it);
-            WriteIndex(writer, ResolveResourceIndex(mappedReferences, op->path, op->type));
+            WriteIndex(writer, ResolveResourceIndex(mappedReferences, op->id, op->type));
             break;
         }
 

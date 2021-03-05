@@ -48,7 +48,7 @@ ResourcePtr ManagedFileNativeResource::loadContent() const
     {
         FileLoadingContext context;
         context.resourceLoadPath = depotPath();
-        context.resourceLoader = GetService<LoadingService>()->loader();
+        context.loadImports = true;
 
         if (LoadFile(file, context))
             return context.root<IResource>();

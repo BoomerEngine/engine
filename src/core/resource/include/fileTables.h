@@ -30,7 +30,6 @@ public:
         Strings = 0,
         Names = 1,
         Types = 2,
-        Paths = 3,
         Imports = 4,
         Properties = 5,
         Exports = 6,
@@ -94,43 +93,21 @@ public:
         }
     };
 
-    struct Path
-    {
-        uint32_t stringIndex = 0;
-        uint16_t parentIndex = 0;
-
-        INLINE bool operator==(const Path& other) const
-        {
-            return (other.stringIndex == stringIndex) && (parentIndex == other.parentIndex);
-        }
-
-        static uint32_t CalcHash(const Path& entry)
-        {
-            return CRC32() << entry.stringIndex << entry.parentIndex;
-        }
-    };
-
-    struct ImportKey
-    {
-        uint16_t pathIndex = 0;
-        uint16_t classTypeIndex = 0;
-
-        INLINE bool operator==(const ImportKey& other) const
-        {
-            return (other.classTypeIndex == classTypeIndex) && (pathIndex == other.pathIndex);
-        }
-
-        static uint32_t CalcHash(const ImportKey& entry)
-        {
-            return CRC32() << entry.pathIndex << entry.classTypeIndex;
-        }
-    };
-
     struct Import
     {
-        uint16_t pathIndex = 0;
+        uint32_t guid[4];
         uint16_t classTypeIndex = 0;
         uint16_t flags = 0;
+
+        INLINE bool operator==(const Import& other) const
+        {
+            return (other.classTypeIndex == classTypeIndex) && (guid[0] == other.guid[0]) && (guid[1] == other.guid[1]) && (guid[2] == other.guid[2]) && (guid[3] == other.guid[3]);
+        }
+
+        static uint32_t CalcHash(const Import& entry)
+        {
+            return CRC32() << entry.guid[0] << entry.guid[1] << entry.guid[2] << entry.guid[3] << entry.classTypeIndex;
+        }
     };
 
     struct Export
@@ -171,8 +148,7 @@ public:
 
     static_assert(sizeof(Name) == 4, "Structure is read directly into memory. Size cannot be changed without an adapter.");
     static_assert(sizeof(Type) == 4, "Structure is read directly into memory. Size cannot be changed without an adapter.");                
-    static_assert(sizeof(Path) == 6, "Structure is read directly into memory. Size cannot be changed without an adapter.");
-    static_assert(sizeof(Import) == 6, "Structure is read directly into memory. Size cannot be changed without an adapter.");
+    static_assert(sizeof(Import) == 20, "Structure is read directly into memory. Size cannot be changed without an adapter.");
     static_assert(sizeof(Export) == 22, "Structure is read directly into memory. Size cannot be changed without an adapter.");
     static_assert(sizeof(Property) == 4, "Structure is read directly into memory. Size cannot be changed without an adapter.");
 
@@ -195,9 +171,6 @@ public:
 
     /// get the string table (NOTE: valid only after validate())
     INLINE const char* stringTable() const { return (const char*)chunkData(ChunkType::Strings); }
-
-    /// get the path table (NOTE: valid only after validate())
-    INLINE const Path* pathTable() const { return (const Path*)chunkData(ChunkType::Paths); }
 
     /// get the string ID table (NOTE: valid only after validate())
     INLINE const Name* nameTable() const { return (const Name*)chunkData(ChunkType::Names); }
@@ -224,14 +197,6 @@ public:
 
     // calculate CRC for the header
     static CRCValue CalcHeaderCRC(const Header& header);
-
-    //--
-
-    // resolve path to string
-    StringBuf resolvePath(uint32_t pathIndex) const;
-
-    // resolve path to string builder
-    void resolvePath(uint32_t pathIndex, StringBuilder& txt) const;
 };
 
 //--

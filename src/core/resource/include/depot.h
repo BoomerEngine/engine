@@ -16,7 +16,7 @@ BEGIN_BOOMER_NAMESPACE()
 //---
 
 /// depot data service
-class CORE_RESOURCE_API DepotService : public app::ILocalService, public IDirectoryWatcherListener
+class CORE_RESOURCE_API DepotService : public app::ILocalService
 {
     RTTI_DECLARE_VIRTUAL_CLASS(DepotService, app::ILocalService);
 
@@ -101,20 +101,26 @@ public:
 
     //--
 
+    // find load path for given resource ID
+    bool resolvePathForID(const ResourceID& id, StringBuf& outLoadPath) const;
+
+    // create or retrieve a resource ID for given depot path
+    bool resolveIDForPath(StringView depotPath, ResourceID& outID) const;
+
+    //--
+
 private:
     StringBuf m_engineDepotPath;
     StringBuf m_projectDepotPath;
 
-    RefPtr<IDirectoryWatcher> m_engineObserver;
-    RefPtr<IDirectoryWatcher> m_projectObserver;
+    DepotStructure* m_engineDepotStructure = nullptr;
+    DepotStructure* m_projectDepotStructure = nullptr;
 
     //--
 
     virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
     virtual void onShutdownService() override final;
     virtual void onSyncUpdate() override final;
-
-    virtual void handleEvent(const DirectoryWatcherEvent& evt) override;
 };
 
 //---

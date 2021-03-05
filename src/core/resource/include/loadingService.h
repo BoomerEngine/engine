@@ -33,17 +33,13 @@ public:
 
     /// load resource from specified path and of specified class (can be subclass)
     /// NOTE: this will yield the current job until the resource is loaded
-    CAN_YIELD ResourcePtr loadResource(const ResourcePath& key);
+    CAN_YIELD ResourcePtr loadResource(StringView path, ClassType expectedClassType);
 
-    /// nice helper for async loading of resources if the resource exists it's returned right away without any extra fibers created (it's the major performance win)
-    /// if resource does not exist it's queued for loading and internal fiber is created to service it
-    /// NOTE: if the resource exists at the moment of the call the callback function is called right away
-    void loadResourceAsync(const ResourcePath& path, const std::function<void(const ResourcePtr&)>& funcLoaded);
+    /// load resource from specified path and of specified class (can be subclass)
+    /// NOTE: this will yield the current job until the resource is loaded
+    CAN_YIELD ResourcePtr loadResource(const ResourceID& id, ClassType expectedClassType);
 
     //--
-
-    /// check if resource is in use
-    bool acquireLoadedResource(const ResourcePath& path, ResourcePtr& outLoadedPtr);
 
 protected:
     virtual app::ServiceInitializationResult onInitializeService( const app::CommandLine& cmdLine) override final;
@@ -54,28 +50,11 @@ protected:
 
     //---
 
-    struct AsyncLoadingJob : public IReferencable
-    {
-        ResourcePtr m_loadedResource;
-        FiberSemaphore m_signal;
-    };
-
-    HashMap<ResourcePath, RefWeakPtr<AsyncLoadingJob>> m_asyncLoadingJobsMap;
-    SpinLock m_asyncLoadingJobsMapLock;
-
-    //---
-
-    struct RetainedFile
-    {
-        NativeTimePoint m_expiration;
-        ResourcePtr m_ptr;
-    };
-
-    Queue<RetainedFile> m_retainedFiles;
+    Array<ResourcePtr> m_retainedFiles;
     SpinLock m_retainedFilesLock;
 
-    void addRetainedFile(const ResourcePtr& file);
     void releaseRetainedFiles();
+    void addRetainedFile(IResource* file);
 
     //--
 };

@@ -65,8 +65,7 @@ struct CORE_OBJECT_API TypeSerializationContext : public NoCopy
     IObject* parentObjectContext = nullptr; // parent object, can be used to handle property data conversion/missing properties
     IObject* directObjectContext = nullptr; // parent object, can be used to handle property data conversion/missing properties
 
-    ResourceLoader* resourceLoader = nullptr; // loader for resources
-    StringBuf resourceBasePath; // mount point
+    bool loadImports = true;
 
     void print(IFormatStream& f) const; // print context name
 };

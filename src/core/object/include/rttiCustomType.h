@@ -124,12 +124,12 @@ namespace prv
     template< typename T >
     struct ToStringFromStringHelper
     {
-        static void PrintToTextFunc(IFormatStream& f, const void* data, bool partOfLargerStream)
+        static void PrintToTextFunc(IFormatStream& f, const void* data, uint32_t flags)
         {
             ((const T*)data)->print(f);
         }
 
-        static bool ParseFromStringFunc(StringView txt, void* data, bool partOfLargerStream)
+        static bool ParseFromStringFunc(StringView txt, void* data, uint32_t flags)
         {
             return T::Parse(txt, *(T*)data);
         }

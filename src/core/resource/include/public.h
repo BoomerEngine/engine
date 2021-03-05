@@ -16,6 +16,7 @@ typedef RefPtr<ObjectIndirectTemplate> ObjectIndirectTemplatePtr;
 typedef RefWeakPtr<ObjectIndirectTemplate> ObjectIndirectTemplateWeakPtr;
 
 class DepotService;
+class DepotStructure;
 
 DECLARE_GLOBAL_EVENT(EVENT_RESOURCE_LOADER_FILE_LOADING, ResourceKey)
 DECLARE_GLOBAL_EVENT(EVENT_RESOURCE_LOADER_FILE_LOADED, ResourcePtr)
@@ -32,16 +33,12 @@ DECLARE_GLOBAL_EVENT(EVENT_DEPOT_FILE_RELOADED, StringBuf)
 DECLARE_GLOBAL_EVENT(EVENT_DEPOT_DIRECTORY_ADDED, StringBuf)
 DECLARE_GLOBAL_EVENT(EVENT_DEPOT_DIRECTORY_REMOVED, StringBuf)
 
-END_BOOMER_NAMESPACE()
-
-BEGIN_BOOMER_NAMESPACE()
-
 class PathResolver;
         
 class BaseReference;
 class BaseAsyncReference;
           
-class ResourcePath;
+class ResourceID;
 class ResourceThumbnail;
 
 class ResourceLoader;
@@ -80,37 +77,39 @@ typedef RefPtr<ResourceConfiguration> ResourceConfigurationPtr;
 // get global loader
 extern CORE_RESOURCE_API ResourceLoader* GlobalLoader();
 
-/// load resource from the default depot directory using the application loading service
+/// load resource by path from the default depot directory
 /// NOTE: this will yield the current job until the resource is loaded
-extern CORE_RESOURCE_API CAN_YIELD ResourcePtr LoadResource(const ResourcePath& path);
+extern CORE_RESOURCE_API CAN_YIELD ResourcePtr LoadResource(StringView path, ClassType expectedClass = nullptr);
 
-/// nice helper for async loading of resources if the resource exists it's returned right away without any extra fibers created (it's the major performance win)
-/// if resource does not exist it's queued for loading and internal fiber is created to service it
-/// NOTE: if the resource exists at the moment of the call the callback function is called right away
-extern CORE_RESOURCE_API void LoadResourceAsync(const ResourcePath& key, const std::function<void(const ResourcePtr&)>& funcLoaded);
+/// load resource by ID (requires the .xmeta file to exist) 
+/// NOTE: this will yield the current job until the resource is loaded
+extern CORE_RESOURCE_API CAN_YIELD ResourcePtr LoadResource(const ResourceID& id, ClassType expectedClass = nullptr);
 
-/// load resource from the default depot directory
-    /// NOTE: this will yield the current job until the resource is loaded
+/// load resource of given expected type by path from the default depot directory
+/// NOTE: this will yield the current job until the resource is loaded
 template< typename T >
 INLINE RefPtr<T> LoadResource(StringView path)
 {
-    return rtti_cast<T>(LoadResource(ResourcePath(path)));
+    return rtti_cast<T>(LoadResource(path, T::GetStaticClass()));
 }
 
-/// typed wrapper for loadResourceAsync
+/// load resource of given expected type by ID (requires the .xmeta file to exist) 
+/// NOTE: this will yield the current job until the resource is loaded
 template< typename T >
-INLINE void LoadResourceAsync(const ResourcePath& key, const std::function<void(const RefPtr<T>&)>& funcLoaded)
+INLINE RefPtr<T> LoadResource(const ResourceID& id)
 {
-    auto funcWrapper = [funcLoaded](const ResourcePtr& loaded)
-    {
-        funcLoaded(rtti_cast<T>(loaded));
-    };
-
-    LoadResourceAsync(key, funcWrapper);
+    return rtti_cast<T>(LoadResource(path, T::GetStaticClass()));
 }
+
+//--
+
+// extract list of resources used by given object (and child objects)
+extern CORE_RESOURCE_API void ExtractUsedResources(const IObject* object, HashMap<ResourceID, uint32_t>& outResourceCounts);
+
+//--
 
 // clone object
-extern CORE_RESOURCE_API ObjectPtr CloneObjectUntyped(const IObject* object, const IObject* newParent = nullptr, ResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedClass = nullptr);
+extern CORE_RESOURCE_API ObjectPtr CloneObjectUntyped(const IObject* object, const IObject* newParent = nullptr, bool loadImports = true, SpecificClassType<IObject> mutatedClass = nullptr);
 
 // clone object
 template< typename T >
@@ -130,12 +129,9 @@ INLINE RefPtr<T> CloneObject(const RefPtr<T>& object, const IObject* newParent =
 extern CORE_RESOURCE_API Buffer SaveObjectToBuffer(const IObject* object);
 
 // load object from binary buffer
-extern CORE_RESOURCE_API ObjectPtr LoadObjectFromBuffer(const void* data, uint64_t size, ResourceLoader* loader=nullptr, SpecificClassType<IObject> mutatedClass = nullptr);
+extern CORE_RESOURCE_API ObjectPtr LoadObjectFromBuffer(const void* data, uint64_t size, bool loadImports=false, SpecificClassType<IObject> mutatedClass = nullptr);
 
 //--
-
-// extract list of resources used by given object (and child objects)
-extern CORE_RESOURCE_API void ExtractUsedResources(const IObject* object, HashMap<ResourcePath, uint32_t>& outResourceCounts);
 
 END_BOOMER_NAMESPACE()
 

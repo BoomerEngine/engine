@@ -11,7 +11,6 @@
 #include "loader.h"
 #include "classLookup.h"
 #include "metadata.h"
-#include "path.h"
 #include "tags.h"
 
 BEGIN_BOOMER_NAMESPACE()
@@ -28,21 +27,13 @@ RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IResource);
 RTTI_END_TYPE();
 
 IResource::IResource()
-    : m_runtimeUniqueId(++GResourceUniqueID)
-    , m_runtimeVersion(0)
-    , m_loader(nullptr)
-{}
+{
+    m_runtimeUniqueId = ++GResourceUniqueID;
+}
 
 IResource::~IResource()
 {
-    /*if (auto loader = m_loader.lock())
-    {
-        TRACE_INFO("Destroying resource 0x{} '{}'", Hex(this), path());
-        loader->notifyResourceUnloaded(path());
-    }*/
 }
-
-//DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_RELOADED, m_reloadedData);
 
 void IResource::metadata(const ResourceMetadataPtr& data)
 {

@@ -85,7 +85,7 @@ IStaticResource::~IStaticResource()
 BaseReference IStaticResource::load() const
 {
     const auto loaded = LoadResource(m_path);
-    return BaseReference(m_path, loaded);
+    return BaseReference(ResourceID(), loaded);
 }
 
 void IStaticResource::CollectAllResources(Array<IStaticResource*>& outResources)

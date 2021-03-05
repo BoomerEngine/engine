@@ -33,12 +33,12 @@ Buffer SaveObjectToBuffer(const IObject* object)
     return Buffer();
 }
 
-ObjectPtr LoadObjectFromBuffer(const void* data, uint64_t size, ResourceLoader* loader /*= nullptr*/, SpecificClassType<IObject> mutatedClass /*= nullptr*/)
+ObjectPtr LoadObjectFromBuffer(const void* data, uint64_t size, bool loadImports/*=false*/, SpecificClassType<IObject> mutatedClass /*= nullptr*/)
 {
     ASSERT_EX(mutatedClass == nullptr, "Not used");
 
     FileLoadingContext context;
-    context.resourceLoader = loader;
+    context.loadImports = loadImports;
 
     auto reader = RefNew<MemoryAsyncReaderFileHandle>(data, size);
 
@@ -48,14 +48,11 @@ ObjectPtr LoadObjectFromBuffer(const void* data, uint64_t size, ResourceLoader* 
     return nullptr;
 }
 
-ObjectPtr CloneObjectUntyped(const IObject* object, const IObject* newParent /*= nullptr*/, ResourceLoader* loader /*= nullptr*/, SpecificClassType<IObject> mutatedClass /*= nullptr*/)
+ObjectPtr CloneObjectUntyped(const IObject* object, const IObject* newParent /*= nullptr*/, bool loadImports /*= true*/, SpecificClassType<IObject> mutatedClass /*= nullptr*/)
 {
     FileSavingContext saveContext;
     saveContext.rootObject.pushBack(AddRef(object));
     saveContext.protectedStream = false;
-
-    if (!loader)
-        loader = GetService<LoadingService>()->loader();
 
     auto writer = RefNew<MemoryWriterFileHandle>();
     if (SaveFile(writer, saveContext))
@@ -63,7 +60,7 @@ ObjectPtr CloneObjectUntyped(const IObject* object, const IObject* newParent /*=
         auto reader = RefNew<MemoryAsyncReaderFileHandle>(writer->extract());
 
         FileLoadingContext loadContext;
-        loadContext.resourceLoader = loader;
+        loadContext.loadImports = loadImports;
         loadContext.mutatedRootClass = mutatedClass;
 
         if (auto srcResource = rtti_cast<IResource>(object))

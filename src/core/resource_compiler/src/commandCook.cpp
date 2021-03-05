@@ -10,7 +10,7 @@
 
 #include "core/app/include/command.h"
 #include "core/app/include/commandline.h"
-#include "core/resource/include/path.h"
+#include "core/resource/include/id.h"
 #include "core/resource/include/loadingService.h"
 #include "core/resource/include/metadata.h"
 #include "core/io/include/io.h"
@@ -76,7 +76,7 @@ bool CommandCook::run(IProgressTracker* progress, const app::CommandLine& comman
 
 //--
 
-void CommandCook::scanDepotDirectoryForSeedFiles(StringView depotPath, Array<ResourcePath>& outList, uint32_t& outNumDirectoriesVisited) const
+void CommandCook::scanDepotDirectoryForSeedFiles(StringView depotPath, Array<StringBuf>& outList, uint32_t& outNumDirectoriesVisited) const
 {
     //static const auto seedFileExtension = IResource::GetResourceExtensionForClass(SeedFile::GetStaticClass());
 
@@ -88,7 +88,7 @@ void CommandCook::scanDepotDirectoryForSeedFiles(StringView depotPath, Array<Res
         {
             /*if (info.name.endsWith(seedFileExtension))
             {
-                const auto path = ResourcePath(TempString("{}{}", depotPath, info.name));
+                const auto path = StringBuf(TempString("{}{}", depotPath, info.name));
                 outList.emplaceBack(path, SeedFile::GetStaticClass());
             }*/
 
@@ -119,8 +119,8 @@ bool CommandCook::collectSeedFiles()
             if (info->path())
             {
                 TRACE_INFO("Collected static resource '{}'", info->path());
-                m_seedFiles.insert(info->path());
-                m_allCollectedFiles.insert(info->path());
+                m_seedFiles.insert(StringBuf(info->path()));
+                m_allCollectedFiles.insert(StringBuf(info->path()));
             }
         }
     }
@@ -129,7 +129,7 @@ bool CommandCook::collectSeedFiles()
     {
         // collect
         uint32_t numDirectoriesVisited = 0;
-        InplaceArray<ResourcePath, 100> seedFilesLists;
+        InplaceArray<StringBuf, 100> seedFilesLists;
         scanDepotDirectoryForSeedFiles("", seedFilesLists, numDirectoriesVisited);
         TRACE_INFO("Found {} seed lists in {} depot directories", seedFilesLists.size(), numDirectoriesVisited);
 
@@ -185,7 +185,7 @@ bool CommandCook::processSeedFiles()
     return m_numTotalFailed == 0;
 }
 
-void CommandCook::processSingleSeedFile(const ResourcePath& seedFileKey)
+void CommandCook::processSingleSeedFile(const StringBuf& seedFileKey)
 {
     bool valid = true;
 
@@ -193,7 +193,7 @@ void CommandCook::processSingleSeedFile(const ResourcePath& seedFileKey)
     ScopeTimer cookingTimer;
 
     auto& rootEntry = cookingQueue.emplaceBack();
-    rootEntry.key = seedFileKey;
+    rootEntry.path = seedFileKey;
 
     uint32_t localProcessed = 0;
     while (!cookingQueue.empty())
@@ -205,7 +205,7 @@ void CommandCook::processSingleSeedFile(const ResourcePath& seedFileKey)
         m_numTotalVisited += 1;
 
         // prevent this file from being recooked second time this session
-        if (!m_allSeenFile.insert(topEntry.key))
+        if (!m_allSeenFile.insert(topEntry.path))
             continue;
 
         /// check if can cook this file at all
@@ -218,7 +218,7 @@ void CommandCook::processSingleSeedFile(const ResourcePath& seedFileKey)
 
         // assemble cooked output path - cooked file will be stored there
         StringBuf cookedFilePath;
-        if (!assembleCookedOutputPath(topEntry.key, cookedClass, cookedFilePath))
+        if (!assembleCookedOutputPath(topEntry.path, cookedClass, cookedFilePath))
         {
             TRACE_WARNING("Resource '{}' is not cookable (no valid cooked extension)");
             continue;
@@ -243,12 +243,12 @@ void CommandCook::processSingleSeedFile(const ResourcePath& seedFileKey)
             }
             else
             {
-                TRACE_WARNING("Failed to load metadata for output file '{}'. It might be corrupted, recooking.", topEntry.key);
+                TRACE_WARNING("Failed to load metadata for output file '{}'. It might be corrupted, recooking.", topEntry.path);
             }
         }
 
         // cook the file
-        if (cookFile(topEntry.key, cookedClass, cookedFilePath, cookingQueue))
+        if (cookFile(topEntry.path, cookedClass, cookedFilePath, cookingQueue))
         {
             m_numTotalCooked += 1;
         }
@@ -313,7 +313,7 @@ ResourceMetadataPtr CommandCook::loadFileMetadata(StringView cookedOutputPath) c
     return nullptr;
 }
 
-bool CommandCook::assembleCookedOutputPath(const ResourcePath& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath) const
+bool CommandCook::assembleCookedOutputPath(const StringBuf& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath) const
 {
     const auto loadExtension = IResource::GetResourceExtensionForClass(cookedClass);
     if (!loadExtension)
@@ -325,8 +325,8 @@ bool CommandCook::assembleCookedOutputPath(const ResourcePath& key, SpecificClas
     StringBuilder localPath;
     localPath << m_outputDir;
     localPath << "cooked/";
-    localPath << key.basePath();
-    localPath << key.fileName();
+    localPath << key.view().baseDirectory();
+    localPath << key.view().fileName();
     localPath << "." << loadExtension;
 
     outPath = localPath.toString();
@@ -337,7 +337,7 @@ bool CommandCook::assembleCookedOutputPath(const ResourcePath& key, SpecificClas
 
 void CommandCook::queueDependencies(const IResource& object, Array<PendingCookingEntry>& outCookingQueue)
 {
-    HashSet<ResourcePath> referencedResources;
+    HashSet<StringBuf> referencedResources;
 
     ScopeTimer timer;
     {
@@ -356,7 +356,7 @@ void CommandCook::queueDependencies(const IResource& object, Array<PendingCookin
             {
                 TRACE_INFO("Added '{}' to cooking queue", key);
                 auto& outEntry = outCookingQueue.emplaceBack();
-                outEntry.key = key;
+                outEntry.path = key;
             }
         }
     }
@@ -375,13 +375,14 @@ void CommandCook::queueDependencies(StringView cookedFilePath, Array<PendingCook
             for (const auto& entry : dependencies)
             {
                 auto& outEntry = outCookingQueue.emplaceBack();
-                outEntry.key = entry.path;
+                // TODO: translate ID to path
+                //outEntry.path = entry.id;
             }
         }
     }
 }
 
-bool CommandCook::cookFile(const ResourcePath& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath, Array<PendingCookingEntry>& outCookingQueue)
+bool CommandCook::cookFile(const StringBuf& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath, Array<PendingCookingEntry>& outCookingQueue)
 {
     // do not cook files more than once, also promote the resource key to it's true class, ie ITexture:lena.png -> StaticTexture:lena.png
     if (!m_allCookedFiles.insert(key))

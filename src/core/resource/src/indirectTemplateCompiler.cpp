@@ -21,13 +21,8 @@ BEGIN_BOOMER_NAMESPACE()
 
 //---
 
-ObjectIndirectTemplateCompiler::ObjectIndirectTemplateCompiler()
-{
-    m_loader = GetService<LoadingService>()->loader();
-}
-
-ObjectIndirectTemplateCompiler::ObjectIndirectTemplateCompiler(ResourceLoader* loader)
-    : m_loader(loader)
+ObjectIndirectTemplateCompiler::ObjectIndirectTemplateCompiler(bool loadImports)
+    : m_loadImports(loadImports)
 {
 }
 
@@ -149,8 +144,8 @@ bool ObjectIndirectTemplateCompiler::compileValue(StringID name, Type expectedTy
                 }
                 else
                 {
-                    const auto loaded = m_loader ? m_loader->loadResource(asyncRef.path()) : nullptr;
-                    *outRef = BaseReference(asyncRef.path(), loaded);
+                    const auto loaded = m_loadImports ? LoadResource(asyncRef.id()) : nullptr;
+                    *outRef = BaseReference(asyncRef.id(), loaded);
                 }
 
                 return true;

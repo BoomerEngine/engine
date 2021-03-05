@@ -34,10 +34,10 @@ public:
     virtual Buffer loadSourceFileContent(StringView assetImportPath) const override final;
     virtual SourceAssetPtr loadSourceAsset(StringView assetImportPath) const override final;
     virtual bool findSourceFile(StringView assetImportPath, StringView inputPath, StringBuf& outImportPath, uint32_t maxScanDepth = 2) const override final;
-    virtual bool findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, uint32_t maxScanDepth = 2) const override final;
+    virtual bool findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, ResourceID& outID, uint32_t maxScanDepth = 2) const override final;
     virtual bool checkDepotFile(StringView depotPath) const override final;
     virtual bool checkSourceFile(StringView assetImportPath) const override final;
-    virtual void followupImport(StringView assetImportPath, StringView depotPath, const ResourceConfiguration* config = nullptr)  override final;
+    virtual ResourceID followupImport(StringView assetImportPath, StringView depotPath, const ResourceConfiguration* config = nullptr)  override final;
 
     // IProgressTracker
     virtual bool checkCancelation() const override final;

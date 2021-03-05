@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "path.h"
+#include "id.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -20,7 +20,7 @@ class CORE_RESOURCE_API BaseReference
 public:
     BaseReference();
     BaseReference(const BaseReference& other);
-    BaseReference(const ResourcePath& key, IResource* ptr=nullptr);
+    BaseReference(const ResourceID& id, IResource* ptr=nullptr);
     BaseReference(BaseReference&& other);
     BaseReference(std::nullptr_t);
     ~BaseReference();
@@ -30,18 +30,17 @@ public:
 
     ///--
 
-    // get resource "key" -> load class + resource path
-    // NOTE: this is not set for path-less embedded resources
-    INLINE const ResourcePath& path() const { return m_path; }
+    // get assigned resource ID, not set for inplace resources
+    INLINE const ResourceID& id() const { return m_id; }
 
     // peak current handle, do not load when missing
     INLINE const ResourcePtr& resource() const { return m_handle; }
 
     // is this an empty reference ? empty reference is one without key and without object
-    INLINE bool empty() const { return m_path.empty(); }
+    INLINE bool empty() const { return m_id.empty() && m_handle.empty(); }
 
     // validate
-    INLINE operator bool() const { return !m_path.empty(); }
+    INLINE operator bool() const { return !empty(); }
 
     //---
 
@@ -64,8 +63,8 @@ public:
     //--
 
 protected:
-    ResourcePath m_path; // never empty if reference is valid
-    ResourcePtr m_handle; // may be empty if resource is missing or we setup a unloaded ref
+    ResourceID m_id;
+    ResourcePtr m_handle;
 
     static const ResourcePtr& EMPTY_HANDLE();
 };
@@ -83,7 +82,7 @@ public:
     INLINE ResourceRef& operator=(const ResourceRef<T>& other) = default;
     INLINE ResourceRef& operator=(ResourceRef<T> && other) = default;
     INLINE ResourceRef(const ResourceRef<T>& other) = default;
-    INLINE ResourceRef(const ResourcePath& key, IResource* ptr = nullptr) : BaseReference(key, ptr) {};
+    INLINE ResourceRef(const ResourceID& key, IResource* ptr = nullptr) : BaseReference(key, ptr) {};
 
     template< typename U >
     INLINE ResourceRef(const ResourceRef<U>& other)
@@ -103,10 +102,7 @@ public:
 
     // check for in equality
     INLINE bool operator!=(const ResourceRef<T>& other) const { return BaseReference::operator!=(other); }
-
-    // validate
-    INLINE operator bool() const { return !empty(); }
-};
+ };
 
 ///--------
 

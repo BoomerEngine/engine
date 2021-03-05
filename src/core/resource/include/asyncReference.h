@@ -8,7 +8,6 @@
 
 #pragma once
 
-#include "path.h"
 #include "reference.h"
 
 BEGIN_BOOMER_NAMESPACE()
@@ -22,7 +21,7 @@ public:
     BaseAsyncReference();
     BaseAsyncReference(const BaseAsyncReference& other);
     BaseAsyncReference(BaseAsyncReference&& other);
-    BaseAsyncReference(const ResourcePath& key);
+    BaseAsyncReference(const ResourceID& key);
     ~BaseAsyncReference();
 
     BaseAsyncReference& operator=(const BaseAsyncReference& other);
@@ -30,35 +29,24 @@ public:
 
     ///--
 
-    // get resource path bound to this reference
-    // NOTE: this is not set for path-less embedded resources
-    INLINE const ResourcePath& path() const { return m_path; }
-
-    // is this a valid reference ? we need either a key or an object
-    INLINE bool valid() const { return !m_path.empty(); }
+    // get ID of assigned resource
+    INLINE const ResourceID& id() const { return m_id; }
 
     // is this an empty reference ? empty reference is one without key and without object
-    INLINE bool empty() const { return m_path.empty(); }
+    INLINE bool empty() const { return m_id.empty(); }
+
+    // check if assigned
+    INLINE operator bool() const { return !empty(); }
 
     //---
 
     // clear reference
     void reset();
 
-    // setup reference to a given resource key
-    void set(const ResourcePath& key);
-
     //---
 
     // load the resource into a "loaded" reference, a custom loader can be provided 
-    ResourcePtr load() const CAN_YIELD;
-
-    //---
-
-    // load asynchronously, call the callback when loaded
-    // basically a nice wrapper for a fiber job with a fast short circuit if the resource is already loaded
-    // NOTE: THIS DOES NOT CHANGE THE STATE OF THE OBJECT, just calls the callback, use the ensureLoaded() to do that
-    void loadAsync(const std::function<void(const ResourcePtr&)>& onLoadedFunc) const; // <--- look here, a "const"
+    BaseReference load() const CAN_YIELD;
 
     //--
 
@@ -74,7 +62,7 @@ public:
     //--
 
 protected:
-    ResourcePath m_path;
+    ResourceID m_id;
 
     static const BaseAsyncReference& EMPTY_HANDLE();
 };
@@ -92,18 +80,19 @@ public:
     INLINE ResourceAsyncRef& operator=(const ResourceAsyncRef<T>& other) = default;
     INLINE ResourceAsyncRef& operator=(ResourceAsyncRef<T> && other) = default;
 
-    INLINE ResourceAsyncRef(const ResourcePath& path)
-        : BaseAsyncReference(path)
+    INLINE ResourceAsyncRef(const ResourceID& id)
+        : BaseAsyncReference(id)
     {}
 
     INLINE bool operator==(const ResourceAsyncRef<T>& other) const { return BaseAsyncReference::operator==(other); }
     INLINE bool operator!=(const ResourceAsyncRef<T>& other) const { return BaseAsyncReference::operator!=(other); }
 
     template< typename U = T >
-    INLINE RefPtr<U> load() const CAN_YIELD
+    INLINE ResourceRef<U> load() const CAN_YIELD
     {
         static_assert(std::is_base_of<T, U>::value || std::is_base_of<U, T>::value, "Types are unrelated");
-        return rtti_cast<U>(BaseAsyncReference::load());
+        const auto loaded = rtti_cast<U>(BaseAsyncReference::load().resource());
+        return ResourceRef<U>(path(), loaded);
     }
 };
 

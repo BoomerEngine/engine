@@ -61,8 +61,6 @@ void DataStash::onPropertyChanged(StringView path)
     
 void DataStash::addIconSearchPath(StringView path)
 {
-    DEBUG_CHECK_RETURN(ValidateDepotPath(path, DepotPathClass::AbsoluteDirectoryPath));
-
     if (!path.empty())
         m_imageSearchPaths.pushBackUnique(StringBuf(path));
 }

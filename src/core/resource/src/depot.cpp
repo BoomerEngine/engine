@@ -8,8 +8,11 @@
 
 #include "build.h"
 #include "depot.h"
+
 #include "core/io/include/fileHandle.h"
 #include "core/app/include/commandline.h"
+#include "core/containers/include/path.h"
+#include "depotStructure.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -25,7 +28,7 @@ DepotService::DepotService()
 
 bool DepotService::queryFileAbsolutePath(StringView depotPath, StringBuf& outAbsolutePath) const
 {
-    DEBUG_CHECK_RETURN_EX_V(ValidateDepotPath(depotPath, DepotPathClass::AnyAbsolutePath), "Invalid path", false);
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
 
     if (m_engineDepotPath && depotPath.beginsWith("/engine/"))
     {
@@ -97,7 +100,7 @@ AsyncFileHandlePtr DepotService::createFileAsyncReader(StringView depotPath) con
 
 bool DepotService::enumDirectoriesAtPath(StringView rawDirectoryPath, const std::function<bool(const DirectoryInfo& info) >& enumFunc) const
 {
-    DEBUG_CHECK_RETURN_EX_V(ValidateDepotPath(rawDirectoryPath, DepotPathClass::AbsoluteDirectoryPath), "Invalid directory path", false);
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotDirPath(rawDirectoryPath), "Invalid directory path", false);
 
     if (rawDirectoryPath == "/")
     {
@@ -139,7 +142,7 @@ bool DepotService::enumDirectoriesAtPath(StringView rawDirectoryPath, const std:
 
 bool DepotService::enumFilesAtPath(StringView rawDirectoryPath, const std::function<bool(const FileInfo& info)>& enumFunc) const
 {
-    DEBUG_CHECK_RETURN_EX_V(ValidateDepotPath(rawDirectoryPath, DepotPathClass::AbsoluteDirectoryPath), "Invalid directory path", false);
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotDirPath(rawDirectoryPath), "Invalid directory path", false);
 
     if (rawDirectoryPath != "/")
     {
@@ -273,18 +276,37 @@ bool DepotStructure::findFileInternal(const DepotFileSystem* fs, DepotPathAppend
 
 bool DepotService::findFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const
 {
-    DEBUG_CHECK_RETURN_EX_V(ValidateDepotPath(depotPath, DepotPathClass::AbsoluteDirectoryPath), "Invalid directory path", false);
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotDirPath(depotPath), "Invalid directory path", false);
 
     return false;
 }
 
 //--
 
+class DepotErrorCapture : public IDepotProblemReporter
+{
+public:
+    virtual void reportInvalidFile(StringView path) override
+    {
+        TRACE_ERROR("Depot file '{}' is invalid");
+    }
+
+    virtual void reportDuplicatedID(ResourceID id, StringView path, StringView otherPath) override
+    {
+        TRACE_ERROR("Duplicated depot file ID found at '{}' and '{}'", id, path, otherPath);
+    }
+};
+
 app::ServiceInitializationResult DepotService::onInitializeService(const app::CommandLine& cmdLine)
 {
     const auto engineDir = SystemPath(PathCategory::EngineDir);
     m_engineDepotPath = TempString("{}data/depot/", engineDir);
     TRACE_INFO("Engine depot directory: '{}'", m_engineDepotPath);
+
+    DepotErrorCapture err;
+
+    m_engineDepotStructure = new DepotStructure(m_engineDepotPath);
+    m_engineDepotStructure->scan(err);
 
     const auto& projectDir = cmdLine.singleValue("projectDir");
     if (!projectDir.empty())
@@ -293,64 +315,32 @@ app::ServiceInitializationResult DepotService::onInitializeService(const app::Co
         {
             m_projectDepotPath = TempString("{}data/depot/", projectDir);
             TRACE_INFO("Project depot directory: '{}'", m_projectDepotPath);
+
+            m_projectDepotStructure = new DepotStructure(m_projectDepotPath);
+            m_projectDepotStructure->scan(err);
         }
     }
 
-    m_engineObserver = CreateDirectoryWatcher(m_engineDepotPath);
-    m_engineObserver->attachListener(this);
+    {
+        auto test = new DepotStructure("Z://projects//w3//r4data//");
+        test->scan(err);
+    }
 
     return app::ServiceInitializationResult::Finished;
 }
 
 void DepotService::onShutdownService()
 {
+    delete m_projectDepotStructure;
+    m_projectDepotStructure = nullptr;
 
+    delete m_engineDepotStructure;
+    m_engineDepotStructure = nullptr;
 }
 
 void DepotService::onSyncUpdate()
 {
-
-}
-
-//--
-
-void DepotService::handleEvent(const DirectoryWatcherEvent& evt)
-{
-    StringBuf depotPath;
-    if (queryFileDepotPath(evt.path, depotPath))
-    {
-        switch (evt.type)
-        {
-
-        case DirectoryWatcherEventType::FileAdded:
-            TRACE_INFO("Depot file was reported as added", depotPath);
-            DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_FILE_ADDED, depotPath);
-            break;
-
-        case DirectoryWatcherEventType::FileRemoved:
-            TRACE_INFO("Depot file was reported as removed", depotPath);
-            DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_FILE_REMOVED, depotPath);
-            break;
-
-        case DirectoryWatcherEventType::DirectoryAdded:
-            TRACE_INFO("Depot directory '{}' was reported as added", depotPath);
-            DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_DIRECTORY_ADDED, depotPath);
-            break;
-
-        case DirectoryWatcherEventType::DirectoryRemoved:
-            TRACE_INFO("Depot directory '{}' was reported as removed", depotPath);
-            DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_DIRECTORY_REMOVED, depotPath);
-            break;
-
-        case DirectoryWatcherEventType::FileContentChanged:
-            TRACE_INFO("Depot file '{}' was reported as changed", depotPath);
-            DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_FILE_CHANGED, depotPath);
-            break;
-
-        case DirectoryWatcherEventType::FileMetadataChanged:
-            break;
-        }
-    }
+    // TODO: process updates
 }
 
 //--
@@ -390,4 +380,36 @@ bool DepotService::loadFileToString(StringView depotPath, StringBuf& outContent,
     return false;
 }
 
+bool DepotService::resolvePathForID(const ResourceID& id, StringBuf& outLoadPath) const
+{
+    if (m_projectDepotStructure)
+    {
+        StringBuf path;
+        if (m_projectDepotStructure->resolveID(id, path))
+        {
+            outLoadPath = TempString("{}{}", m_projectDepotPath, path);
+            return true;
+        }
+    }
+
+    if (m_engineDepotStructure)
+    {
+        StringBuf path;
+        if (m_engineDepotStructure->resolveID(id, path))
+        {
+            outLoadPath = TempString("{}{}", m_engineDepotPath, path);
+            return true;
+        }
+    }
+
+    TRACE_WARNING("No depot path resolved for ID '{}'", id);
+    return false;
+}
+
+bool DepotService::resolveIDForPath(StringView depotPath, ResourceID& outID) const
+{
+    return false;
+}
+
 END_BOOMER_NAMESPACE()
+

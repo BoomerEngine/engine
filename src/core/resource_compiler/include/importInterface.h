@@ -80,7 +80,7 @@ public:
     virtual bool findSourceFile(StringView assetImportPath, StringView inputPath, StringBuf& outImportPath, uint32_t maxScanDepth = 2) const = 0;
 
     // same as findSourceFile but finds files in depot
-    virtual bool findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, uint32_t maxScanDepth = 2) const = 0;
+    virtual bool findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, ResourceID& outID, uint32_t maxScanDepth = 2) const = 0;
 
     // check if depot file exists
     virtual bool checkDepotFile(StringView depotPath) const = 0;
@@ -91,7 +91,7 @@ public:
     //--
 
     /// report a follow up import (other asset that we should import automatically)
-    virtual void followupImport(StringView assetImportPath, StringView depotPath, const ResourceConfiguration* config = nullptr) = 0;
+    virtual ResourceID followupImport(StringView assetImportPath, StringView depotPath, const ResourceConfiguration* config = nullptr) = 0;
 
     //--
 

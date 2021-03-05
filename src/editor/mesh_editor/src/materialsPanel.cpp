@@ -26,8 +26,8 @@
 #include "engine/ui/include/uiDragDrop.h"
 #include "engine/ui/include/uiCheckBox.h"
 
-#include "core/resource/include/path.h"
 #include "core/resource/include/loadingService.h"
+#include "core/resource/include/depot.h"
 #include "core/object/include/dataViewNative.h"
 #include "core/object/include/rttiDataView.h"
 #include "engine/ui/include/uiToolBar.h"
@@ -172,9 +172,15 @@ bool MeshMaterialListModel::handleDragDropCompletion(ui::AbstractItemView* view,
         auto fileData = rtti_cast<ed::AssetBrowserFileDragDrop>(dragData);
         if (fileData && fileData->file())
         {
-            const auto loadedMaterial = LoadResource<IMaterial>(fileData->file()->depotPath());
-            const auto materialRef = MaterialRef(fileData->file()->depotPath().view(), loadedMaterial);
-            return elem->baseMaterial(materialRef);
+            const auto path = fileData->file()->depotPath();
+
+            ResourceID id;
+            if (GetService<DepotService>()->resolveIDForPath(path, id))
+            {
+                const auto loadedMaterial = LoadResource<IMaterial>(path);
+                const auto materialRef = MaterialRef(id, loadedMaterial);
+                return elem->baseMaterial(materialRef);
+            }
         }
     }
 

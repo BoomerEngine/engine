@@ -10,6 +10,7 @@
 
 #include "core/containers/include/hashSet.h"
 #include "core/containers/include/inplaceArray.h"
+#include "core/system/include/guid.h"
 
 #include "streamOpcodes.h"
 
@@ -21,7 +22,7 @@ BEGIN_BOOMER_NAMESPACE_EX(stream)
 struct CORE_OBJECT_API OpcodeWriterResourceReference
 {
     ClassType resourceType;
-    StringBuf resourcePath;
+    GUID resourceID;
 
     INLINE OpcodeWriterResourceReference() {};
     INLINE OpcodeWriterResourceReference(const OpcodeWriterResourceReference& other) = default;
@@ -31,14 +32,17 @@ struct CORE_OBJECT_API OpcodeWriterResourceReference
 
     INLINE bool operator==(const OpcodeWriterResourceReference& other) const
     {
-        return (resourceType == other.resourceType) && (resourcePath == other.resourcePath);
+        return (resourceType == other.resourceType) && (resourceID == other.resourceID);
     }
 
     INLINE static uint32_t CalcHash(OpcodeWriterResourceReference& resref)
     {
         CRC32 crc;
         crc << resref.resourceType.name().view();
-        crc << resref.resourcePath.view();
+        crc << resref.resourceID.data()[0];
+        crc << resref.resourceID.data()[1];
+        crc << resref.resourceID.data()[2];
+        crc << resref.resourceID.data()[3];
         return crc;
     }
 };
@@ -92,7 +96,7 @@ public:
     INLINE void writeProperty(const Property* rttiProperty);
     INLINE void writePointer(const IObject* object);
 
-    void writeResourceReference(StringView path, ClassType resourceClass, bool async);
+    void writeResourceReference(GUID id, ClassType resourceClass, bool async);
     void writeBuffer(const Buffer& buffer);
 
     //--

@@ -18,7 +18,7 @@ BEGIN_BOOMER_NAMESPACE_EX(stream)
 
 struct CORE_OBJECT_API OpcodeResolvedResourceReference
 {
-    StringBuf path;
+    GUID id;
     ClassType type;
     ObjectPtr loaded; // only if loaded
 

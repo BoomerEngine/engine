@@ -23,14 +23,14 @@ struct CORE_RESOURCE_API FileLoadingContext
     // specific object class to load (usually the metadata or the thumbnail)
     ClassType loadSpecificClass;
 
-    // resource loader to use to load any other dependencies, if not specified the resources will not be loaded (although the keys will remain valid)
-    ResourceLoader* resourceLoader = nullptr;
-
     // load path of this resource
     StringBuf resourceLoadPath;
 
     // class override for root object - force changes the root object class but still tries to load properties
     ClassType mutatedRootClass;
+
+    // load imports (other referenced resources)
+    bool loadImports = true;
 
     //--
 
@@ -54,7 +54,7 @@ struct CORE_RESOURCE_API FileLoadingContext
 // file loading dependency
 struct CORE_RESOURCE_API FileLoadingDependency
 {
-    ResourcePath path;
+    ResourceID id;
     SpecificClassType<IResource> cls;
     bool loaded = true;
 

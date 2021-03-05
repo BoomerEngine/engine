@@ -45,9 +45,9 @@ public:
         return m_loader->depotFileExists(depotPath);
     }
 
-    virtual bool depotFindFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const override final
+    virtual bool depotFindFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath, ResourceID& outFoundResourceID) const override final
     {
-        return m_loader->depotFindFile(depotPath, fileName, maxDepth, outFoundFileDepotPath);
+        return m_loader->depotFindFile(depotPath, fileName, maxDepth, outFoundFileDepotPath, outFoundResourceID);
     }
 
 private:

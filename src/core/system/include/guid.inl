@@ -21,6 +21,14 @@ INLINE GUID::GUID()
     m_words[3] = 0;
 }
 
+INLINE GUID::GUID(uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+{
+    m_words[0] = a;
+    m_words[1] = b;
+    m_words[2] = c;
+    m_words[3] = d;
+}
+
 INLINE GUID::GUID(const GUID& other)
 {
     static_assert(NUM_WORDS == 4, "Adapt for different number");

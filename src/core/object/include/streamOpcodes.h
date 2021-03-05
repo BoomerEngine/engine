@@ -7,7 +7,9 @@
 ***/
 
 #pragma once
+
 #include "core/containers/include/hashSet.h"
+#include "core/system/include/guid.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(stream)
 
@@ -130,7 +132,7 @@ STREAM_OPCODE_DATA(DataObjectPointer)
 
 STREAM_OPCODE_DATA(DataResourceRef)
 {
-    StringBuf path; // destroyed explicitly
+    GUID id;
     ClassType type;
     bool async = false;
 };

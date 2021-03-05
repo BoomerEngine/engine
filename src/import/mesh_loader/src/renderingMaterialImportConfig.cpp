@@ -12,9 +12,10 @@
 #include "engine/texture/include/staticTexture.h"
 #include "engine/material/include/material.h"
 #include "engine/material/include/materialInstance.h"
+#include "engine/material/include/materialTemplate.h"
 
 #include "core/resource_compiler/include/importInterface.h"
-#include "engine/material/include/materialTemplate.h"
+#include "core/containers/include/path.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 
@@ -236,11 +237,11 @@ TextureRef IGeneralMaterialImporter::importTextureRef(IResourceImporterInterface
         // look for a depot file in existing depot
         const auto depotScanDepth = std::clamp<int>(cfg.m_depotSearchDepth, 0, 20);
         StringBuf depotPath;
-        if (importer.findDepotFile(importer.queryResourcePath().view(), cfg.m_textureSearchPath, findableName, depotPath, depotScanDepth))
+        ResourceID depotResourceID;
+        if (importer.findDepotFile(importer.queryResourcePath().view(), cfg.m_textureSearchPath, findableName, depotPath, depotResourceID, depotScanDepth))
         {
-            TRACE_INFO("Found '{}' at '{}'", assetPathToTexture, depotPath);
-
-            return TextureRef(ResourcePath(depotPath));
+            TRACE_INFO("Found '{}' at '{}' (as {})", assetPathToTexture, depotPath, depotResourceID);
+            return TextureRef(depotResourceID);
         }
     }
 
@@ -257,13 +258,14 @@ TextureRef IGeneralMaterialImporter::importTextureRef(IResourceImporterInterface
             TRACE_INFO("Texture '{}' found at '{}' will be improted as '{}'", assetPathToTexture, foundTexturePath, depotPath);
 
             // emit the follow-up import, no extra config at the moment
-            importer.followupImport(foundTexturePath, depotPath);
+            if (const auto depotResourceID = importer.followupImport(foundTexturePath, depotPath))
+            {
+                // export the asset import path
+                outAssetImportPath = foundTexturePath;
 
-            // export the asset import path
-            outAssetImportPath = foundTexturePath;
-
-            // build a unloaded texture reference (so it can be saved)
-            return TextureRef(ResourcePath(depotPath));
+                // build a unloaded texture reference (so it can be saved)
+                return TextureRef(depotResourceID);
+            }
         }
     }
 

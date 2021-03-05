@@ -45,24 +45,54 @@ bool ResourceLoader::validateResource(StringView key, const TimeStamp& existingT
     return true;
 }
 
-ResourcePtr ResourceLoader::loadResource(const ResourcePath& path)
+static char ConformChar(char ch)
 {
+    if (ch <= ' ') return ' ';
+    if (ch == '\\') return '/';
+    if (ch >= 'A' && ch <= 'Z')
+        return (ch - 'A') + 'a';
+    return ch;
+}
+
+ResourceLoader::FileKey::FileKey(StringView text)
+{
+    CRC64 hashLo, hashHi;
+
+    for (const auto ch : text)
+        hashLo << ConformChar(ch);
+
+    {
+        const auto* start = text.data() + text.length();
+        const auto* end = text.data();
+        while (start > end)
+        {
+            auto ch = ConformChar(*(--start));
+            hashHi << ch;
+        }
+    }
+
+    lo = hashLo;
+    hi = hashHi;
+}
+
+ResourcePtr ResourceLoader::loadResource(StringView path, ClassType expectedClass)
+{
+    // compute file key
+    const auto fileKey = FileKey(path);
+
     auto scopeLock = CreateLock(m_lock);
-
-    // TODO: use rename journal to translate path
-
 
     // get the loaded resource, that's the most common case so do it first
     // NOTE: if this is disabled we will always create the job to process the resource
     ResourcePtr existingLoadedResource;
     {
         RefPtr<LoadedResource> entry;
-        if (m_loadedResources.find(path, entry))
+        if (m_loadedResources.find(fileKey, entry))
         {
             existingLoadedResource = entry->loadedResource.lock();
 
             // use existing resource only if timestamp hasn't change since last load
-            if (existingLoadedResource && validateResource(path.view(), entry->timestamp))
+            if (existingLoadedResource && validateResource(entry->loadPath, entry->timestamp))
                 return existingLoadedResource;
         }
     }
@@ -71,7 +101,7 @@ ResourcePtr ResourceLoader::loadResource(const ResourcePath& path)
     // NOTE: there may be different resources loadable from a given file
     {
         RefWeakPtr<LoadingJob> weakJobRef;
-        if (m_loadingJobs.find(path, weakJobRef))
+        if (m_loadingJobs.find(fileKey, weakJobRef))
         {
             // get the lock to the loading job
             auto loadingJob = weakJobRef.lock();
@@ -90,7 +120,8 @@ ResourcePtr ResourceLoader::loadResource(const ResourcePath& path)
 
     // there's no loading job, create one, this will gate all other threads to wait for us to finish
     auto loadingJob = RefNew<LoadingJob>();
-    loadingJob->path = path;
+    loadingJob->key = fileKey;
+    loadingJob->loadPath = StringBuf(path);
     loadingJob->signal = CreateFence("LoadingJob", 1);
     m_loadingJobs[path] = loadingJob;
 
@@ -102,17 +133,16 @@ ResourcePtr ResourceLoader::loadResource(const ResourcePath& path)
 
     // ask the raw loader to load the content of the resource
     TimeStamp loadTimestamp;
-    if (auto resource = loadResourceOnce(path.view(), loadTimestamp))
+    if (auto resource = loadResourceOnce(path, loadTimestamp))
     {
-        ASSERT(resource->path() == path);
-
         // add for safe keeping so we can return it
         // NOTE: we may decide to reuse the same resource, but it does not change the logic here
         {
             auto scopeLock2 = CreateLock(m_lock);
 
             auto entry = RefNew<LoadedResource>();
-            entry->path = path;
+            entry->key = fileKey;
+            entry->loadPath = StringBuf(path);
             entry->loadedResource = resource;
             entry->timestamp = loadTimestamp;
 
@@ -141,6 +171,7 @@ ResourcePtr ResourceLoader::loadResource(const ResourcePath& path)
     return loadingJob->loadedResource;
 }
 
+#if 0
 bool ResourceLoader::acquireLoadedResource(const ResourcePath& path, ResourcePtr& outLoadedPtr)
 {
     auto lock = CreateLock(m_lock);
@@ -174,6 +205,7 @@ bool ResourceLoader::acquireLoadedResource(const ResourcePath& path, ResourcePtr
     // file not found as loaded
     return false;
 }
+#endif
 
 //--
 
@@ -188,7 +220,7 @@ ResourcePtr ResourceLoader::loadResourceOnce(StringView path, TimeStamp& outTime
 
     FileLoadingContext context;
     context.resourceLoadPath = StringBuf(path);
-    context.resourceLoader = this;
+    context.loadImports = true;
 
     if (LoadFile(file, context))
         return context.root<IResource>();
@@ -265,22 +297,22 @@ void ResourceLoader::notifyResourceReloaded(const ResourcePtr& currentResource, 
 
 //--
 
-void ResourceLoader::notifyResourceLoading(const ResourcePath& path)
+void ResourceLoader::notifyResourceLoading(StringView path)
 {
     DispatchGlobalEvent(m_eventKey, EVENT_RESOURCE_LOADER_FILE_LOADING, path);
 }
 
-void ResourceLoader::notifyResourceFailed(const ResourcePath& path)
+void ResourceLoader::notifyResourceFailed(StringView path)
 {
     DispatchGlobalEvent(m_eventKey, EVENT_RESOURCE_LOADER_FILE_FAILED, path);
 }
 
-void ResourceLoader::notifyResourceLoaded(const ResourcePath& path, const ResourcePtr& data)
+void ResourceLoader::notifyResourceLoaded(StringView path, const ResourcePtr& data)
 {
     DispatchGlobalEvent(m_eventKey, EVENT_RESOURCE_LOADER_FILE_LOADED, data);
 }
 
-void ResourceLoader::notifyResourceUnloaded(const ResourcePath& path)
+void ResourceLoader::notifyResourceUnloaded(StringView path)
 {
     DispatchGlobalEvent(m_eventKey, EVENT_RESOURCE_LOADER_FILE_UNLOADED, path);
 }

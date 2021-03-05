@@ -22,16 +22,16 @@ BaseAsyncReference::BaseAsyncReference()
 }
 
 BaseAsyncReference::BaseAsyncReference(const BaseAsyncReference& other)
-    : m_path(other.m_path)
+    : m_id(other.m_id)
 {
 }
 
-BaseAsyncReference::BaseAsyncReference(const ResourcePath& path)
-    : m_path(path)
+BaseAsyncReference::BaseAsyncReference(const ResourceID& path)
+    : m_id(path)
 {}
 
 BaseAsyncReference::BaseAsyncReference(BaseAsyncReference&& other)
-    : m_path(std::move(other.m_path))
+    : m_id(std::move(other.m_id))
 {}
 
 BaseAsyncReference::~BaseAsyncReference()
@@ -42,7 +42,7 @@ BaseAsyncReference& BaseAsyncReference::operator=(const BaseAsyncReference& othe
 {
     if (this != &other)
     {
-        m_path = other.m_path;
+        m_id = other.m_id;
     }
 
     return *this;
@@ -52,7 +52,7 @@ BaseAsyncReference& BaseAsyncReference::operator=(BaseAsyncReference&& other)
 {
     if (this != &other)
     {
-        m_path = std::move(other.m_path);
+        m_id = std::move(other.m_id);
     }
 
     return *this;
@@ -60,29 +60,15 @@ BaseAsyncReference& BaseAsyncReference::operator=(BaseAsyncReference&& other)
 
 void BaseAsyncReference::reset()
 {
-    m_path = ResourcePath();
+    m_id = ResourceID();
 }
 
-void BaseAsyncReference::set(const ResourcePath& path)
+BaseReference BaseAsyncReference::load() const
 {
-    m_path = path;
+    const auto loaded = LoadResource(m_id);
+    return BaseReference(m_id, loaded);
 }
 
-ResourcePtr BaseAsyncReference::load() const
-{
-    if (m_path)
-        return LoadResource(m_path);
-    return nullptr;
-}
-
-void BaseAsyncReference::loadAsync(const std::function<void(const ResourcePtr&)>& onLoadedFunc) const
-{
-    if (m_path)
-        LoadResourceAsync(m_path, onLoadedFunc);
-    else
-        onLoadedFunc(nullptr);
-}
-        
 const BaseAsyncReference& BaseAsyncReference::EMPTY_HANDLE()
 {
     static BaseAsyncReference theEmptyHandle;
@@ -91,7 +77,7 @@ const BaseAsyncReference& BaseAsyncReference::EMPTY_HANDLE()
 
 bool BaseAsyncReference::operator==(const BaseAsyncReference& other) const
 {
-    return m_path == other.m_path;
+    return m_id == other.m_id;
 }
 
 bool BaseAsyncReference::operator!=(const BaseAsyncReference& other) const
@@ -101,8 +87,8 @@ bool BaseAsyncReference::operator!=(const BaseAsyncReference& other) const
 
 void BaseAsyncReference::print(IFormatStream& f) const
 {
-    if (m_path)
-        f << m_path;
+    if (m_id)
+        f << m_id;
     else
         f << "null";
 }

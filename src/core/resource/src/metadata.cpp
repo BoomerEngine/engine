@@ -91,6 +91,7 @@ RTTI_END_TYPE();
 
 RTTI_BEGIN_TYPE_CLASS(ResourceMetadata);
     RTTI_OLD_NAME("res::Metadata");
+    RTTI_PROPERTY(ids);
     RTTI_PROPERTY(sourceDependencies);
     RTTI_PROPERTY(importDependencies);
     RTTI_PROPERTY(importFollowups);
@@ -100,6 +101,9 @@ RTTI_BEGIN_TYPE_CLASS(ResourceMetadata);
     RTTI_PROPERTY(importFullConfiguration);
     RTTI_PROPERTY(internalRevision);
 RTTI_END_TYPE();
+
+ResourceMetadata::ResourceMetadata()
+{}
 
 //--
 

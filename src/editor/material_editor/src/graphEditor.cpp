@@ -178,7 +178,7 @@ bool MaterialGraphEditor::save()
         return false;
 
     // load just saved material graph as a material template to force a reload
-    LoadResource(ResourcePath(nativeFile()->depotPath()));
+    LoadResource(nativeFile()->depotPath());
     return true;
 }
 
@@ -187,7 +187,7 @@ bool MaterialGraphEditor::save()
 void MaterialGraphEditor::updatePreviewMaterial()
 {
     auto previewTemplate = m_graph->createPreviewTemplate(TempString("{}.preview", nativeFile()->depotPath()));
-    m_previewMaterial->baseMaterial(MaterialRef(ResourcePath(), previewTemplate));
+    m_previewMaterial->baseMaterial(MaterialRef(ResourceID(), previewTemplate));
 }
 
 void MaterialGraphEditor::handleChangedSelection()

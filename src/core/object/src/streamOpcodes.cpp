@@ -308,9 +308,9 @@ public:
 
     virtual void processOpcode(const StreamOpDataResourceRef& op) override
     {
-        if (op.type && op.path)
+        if (op.type && op.id)
         {
-            m_stream.appendf(" Type='{}', Path='{}'", op.type, op.path);
+            m_stream.appendf(" Type='{}', Id='{}'", op.type, op.id);
 
             if (op.async)
                 m_stream.appendf(" ASYNC");

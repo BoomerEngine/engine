@@ -287,9 +287,11 @@ static const uint32_t VER_ABSOLUTE_DEPOT_PATHS = 2;
 
 static const uint32_t VER_THREAD_SAFE_GRAPHS = 3;
 
+static const uint32_t VER_NEW_RESOURCE_ID = 4;
+
 //--
 
-static const uint32_t VER_CURRENT = VER_THREAD_SAFE_GRAPHS;
+static const uint32_t VER_CURRENT = VER_NEW_RESOURCE_ID;
 
 END_BOOMER_NAMESPACE()
 

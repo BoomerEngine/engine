@@ -51,25 +51,25 @@ public:
 
         if (auto key = loadingService->loader()->eventKey())
         {
-            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_LOADING) = [this](ResourcePath data)
+            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_LOADING) = [this](StringBuf data)
             {
                 auto lock = CreateLock(m_fileMapLock);
                 updateStatusNoLock(data, FileStatusMode::Loading);
             };
 
-            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_FAILED) = [this](ResourcePath data)
+            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_FAILED) = [this](StringBuf data)
             {
                 auto lock = CreateLock(m_fileMapLock);
                 updateStatusNoLock(data, FileStatusMode::Failed);
             };
 
-            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_UNLOADED) = [this](ResourcePath data)
+            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_UNLOADED) = [this](StringBuf data)
             {
                 auto lock = CreateLock(m_fileMapLock);
                 updateStatusNoLock(data, FileStatusMode::Unloaded);
             };
 
-            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_LOADED) = [this](ResourcePtr data)
+            m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_LOADED) = [this](StringBuf data)
             {
                 auto lock = CreateLock(m_fileMapLock);
                 //updateStatusNoLock(data->key(), FileStatusMode::Loaded);
@@ -149,7 +149,7 @@ public:
                     }
 
                     ImGui::SameLine(100);
-                    ImGui::Text(TempString("{}", info->key.view()));
+                    ImGui::Text(TempString("{}", info->path));
                     //ImGui::SameLine();
                     //ImGui::TextColored(ImColor(Color::DARKGRAY), TempString("({})", info->key.cls()->name()));
                 }
@@ -175,15 +175,17 @@ private:
         Unloaded,
     };
 
-    void updateStatusNoLock(const ResourcePath& key, FileStatusMode status)
+    void updateStatusNoLock(StringView path, FileStatusMode status)
     {
-        auto entry  = m_fileMap[key];
+        FileInfo* entry = nullptr;
+        m_fileMap.find(path, entry);
+
         if (!entry)
         {
             entry = new FileInfo;
-            entry->key = key;
+            entry->path = StringBuf(path);
             entry->lastStatus = status;
-            m_fileMap[entry->key] = entry;
+            m_fileMap[entry->path] = entry;
             m_fileListSorted.pushBack(entry);
         }
 
@@ -197,12 +199,12 @@ private:
         RTTI_DECLARE_POOL(POOL_MANAGED_DEPOT)
 
     public:
-        ResourcePath key;
+        StringBuf path;
         FileStatusMode lastStatus;
         NativeTimePoint lastStatusTimestamp;
     };
 
-    HashMap<ResourcePath, FileInfo*> m_fileMap;
+    HashMap<StringBuf, FileInfo*> m_fileMap;
     Array<const FileInfo*> m_fileListSorted;
     bool m_fileListSortedInvalid;
     Mutex m_fileMapLock;

@@ -8,8 +8,6 @@
 
 #pragma once
 
-#include "path.h"
-
 #include "core/containers/include/hashSet.h"
 #include "core/object/include/object.h"
 
@@ -92,10 +90,9 @@ public:
 
 private:
     StringBuf m_loadPath; // path we loaded this resource from, debug only
-    RefWeakPtr<ResourceLoader> m_loader; // loader used to load this resource, NOTE: not set if never loaded
 
-    ResourceUniqueID m_runtimeUniqueId; // resource runtime unique ID, can be used to index maps instead of pointer
-    ResourceRuntimeVersion m_runtimeVersion; // internal runtime version of the resource, can be observed and a callback can be attached
+    ResourceUniqueID m_runtimeUniqueId = 0; // resource runtime unique ID, can be used to index maps instead of pointer
+    ResourceRuntimeVersion m_runtimeVersion = 0; // internal runtime version of the resource, can be observed and a callback can be attached
 
     ResourceMetadataPtr m_metadata; // source dependencies and stuff
     ResourcePtr m_reloadedData; // new version of this resource

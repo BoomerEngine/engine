@@ -261,7 +261,7 @@ void BuildFileTables(const Array<FileSerializedObject*>& objects, FileTablesBuil
     {
         for (const auto& ref : obj->localReferences.syncResources.keys())
         {
-            const auto index = outTables.mapImport(ref.resourceType->name(), ref.resourcePath, false);
+            const auto index = outTables.mapImport(ref.resourceType->name(), ref.resourceID, false);
             DEBUG_CHECK(index != 0);
             outMappedReferences.mappedResources[ref] = index;
         }
@@ -271,7 +271,7 @@ void BuildFileTables(const Array<FileSerializedObject*>& objects, FileTablesBuil
     {
         for (const auto& ref : obj->localReferences.asyncResources.keys())
         {
-            const auto index = outTables.mapImport(ref.resourceType->name(), ref.resourcePath, true);
+            const auto index = outTables.mapImport(ref.resourceType->name(), ref.resourceID, true);
             DEBUG_CHECK(index != 0);
             outMappedReferences.mappedResources[ref] = index;
         }
@@ -416,7 +416,7 @@ END_BOOMER_NAMESPACE()
 
 BEGIN_BOOMER_NAMESPACE()
 
-void ExtractUsedResources(const IObject* object, HashMap<ResourcePath, uint32_t>& outResourceCounts)
+void ExtractUsedResources(const IObject* object, HashMap<ResourceID, uint32_t>& outResourceCounts)
 {
     if (object)
     {
@@ -431,10 +431,7 @@ void ExtractUsedResources(const IObject* object, HashMap<ResourcePath, uint32_t>
             BuildFileTables(objectCollection.orderedObjects(), fileTables, mappedReferences);
 
             for (const auto& resourceRef : mappedReferences.mappedResources.keys())
-            {
-                const auto key = ResourcePath(resourceRef.resourcePath);
-                outResourceCounts[key] += 1;
-            }
+                outResourceCounts[resourceRef.resourceID] += 1;
         }
     }
 }

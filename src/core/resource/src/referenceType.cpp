@@ -70,7 +70,7 @@ bool ResourceRefType::referencePatchResource(void* data, IResource* currentResou
     if (ptr1.resource() != currentResource) // most common case
         return false;
 
-    ptr1 = BaseReference(ptr1.path(), newResource);
+    ptr1 = BaseReference(ptr1.id(), newResource);
     return true;
 }
 
@@ -119,20 +119,17 @@ void ResourceRefType::writeBinary(TypeSerializationContext& typeContext, stream:
     auto& ptr = *(const BaseReference*) data;
 
     uint8_t flag = 0;
-    if (!ptr.empty())
-    {
-        /*if (ptr.inlined()) 
-            flag = ResourceRefBinaryFlag::Inlined;
-        else*/
-            flag = ResourceRefBinaryFlag::External;
-    }
+    if (ptr.resource() && !ptr.id())
+        flag = ResourceRefBinaryFlag::Inlined;
+    else if (ptr.id())
+        flag = ResourceRefBinaryFlag::External;
 
     file.writeTypedData(flag);
 
-    /*if (flag == ResourceRefBinaryFlag::Inlined)
-        file.writePointer(ptr.acquire());
-    else if (flag == ResourceRefBinaryFlag::External)*/
-    file.writeResourceReference(ptr.path().view(), m_resourceClass, false);
+    if (flag == ResourceRefBinaryFlag::Inlined)
+        file.writePointer(ptr.resource());
+    else if (flag == ResourceRefBinaryFlag::External)
+        file.writeResourceReference(ptr.id().guid(), m_resourceClass, false);
 }
 
 void ResourceRefType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
@@ -146,18 +143,18 @@ void ResourceRefType::readBinary(TypeSerializationContext& typeContext, stream::
     {
         auto pointer = rtti_cast<IResource>(file.readPointer());
         if (pointer && pointer->is(m_resourceClass))
-            loadedRef = BaseReference(ResourcePath(), pointer);
+            loadedRef = BaseReference(ResourceID(), pointer);
     }
     else if (flags == ResourceRefBinaryFlag::External)
     {
         const auto* resData = file.readResource();
-        if (resData && resData->path)
+        if (resData && resData->id)
         {
             IResource* loaded = nullptr;
             if (resData->loaded && resData->loaded->is(m_resourceClass))
                 loaded = rtti_cast<IResource>(resData->loaded);
 
-            loadedRef = BaseReference(resData->path.view(), loaded);
+            loadedRef = BaseReference(resData->id, loaded);
         }
     }
             
@@ -170,20 +167,14 @@ void ResourceRefType::writeXML(TypeSerializationContext& typeContext, xml::Node&
 {
     auto& ptr = *(const BaseReference*) data;
 
-    if (!ptr.empty())
+    if (ptr.resource() && !ptr.id())
     {
-        /*if (ptr.inlined())
-        {
-            if (auto object = ptr.acquire())
-            {
-                node.writeAttribute("class", object->cls()->name().view());
-                object->writeXML(node);
-            }
-        }
-        else */if (ptr.path())
-        {
-            node.writeAttribute("path", ptr.path().view());
-        }
+        node.writeAttribute("class", ptr.resource()->cls()->name().view());
+        ptr.resource()->writeXML(node);
+    }
+    else if (ptr.id())
+    {
+        node.writeAttribute("id", TempString("{}", ptr.id()));
     }
 }
 
@@ -191,18 +182,27 @@ void ResourceRefType::readXML(TypeSerializationContext& typeContext, const xml::
 {
     BaseReference loadedRef;
 
-    const auto path = node.attribute("path");
-    if (path)
+    if (const auto idText = node.attribute("id"))
     {
-        if (typeContext.resourceLoader)
+        ResourceID id;
+        if (ResourceID::Parse(idText, id))
         {
-            auto loadedResource = typeContext.resourceLoader->loadResource(path);
+            ResourcePtr loadedResource;
 
-            if (loadedResource && !loadedResource->is(m_resourceClass))
-                loadedResource = nullptr;
+            if (typeContext.loadImports)
+            {
+                loadedResource = LoadResource(id);
 
-            loadedRef = BaseReference(path, loadedResource);
+                if (loadedResource && !loadedResource->is(m_resourceClass))
+                    loadedResource = nullptr;
+            }
+
+            loadedRef = BaseReference(id, loadedResource);
         }
+    }
+    else if (const auto classText = node.attribute("class"))
+    {
+        // TODO: support for inplace resources
     }
 
     *(BaseReference*)data = loadedRef;
@@ -225,13 +225,6 @@ Type ResourceRefType::ParseType(StringParser& typeNameString, TypeSystem& typeSy
         TRACE_ERROR("Unable to parse a resource reference type from '{}'", innerTypeName);
         return nullptr;
     }
-
-    /*auto resourceClass = classType.toSpecificClass<IResource>();
-    if (!resourceClass)
-    {
-        TRACE_ERROR("Unable to build a resource reference type from '{}' that is not a resource", innerTypeName);
-        return nullptr;
-    }*/
 
     return new ResourceRefType((const SpecificClassType<IResource>&) classType);
 }

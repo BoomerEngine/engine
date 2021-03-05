@@ -11,6 +11,7 @@
 #include "build.h"
 #include "static_init.inl"
 
+#include "id.h"
 #include "referenceType.h"
 #include "asyncReferenceType.h"
 
@@ -21,4 +22,12 @@ DECLARE_MODULE(PROJECT_NAME)
     boomer::IObject::RegisterCloneFunction(&boomer::CloneObjectUntyped);
     boomer::IObject::RegisterSerializeFunction(&boomer::SaveObjectToBuffer);
     boomer::IObject::RegisterDeserializeFunction(&boomer::LoadObjectFromBuffer);
+
+    auto id = boomer::ResourceID::Create();
+    auto txt = boomer::StringBuf(boomer::TempString("{}", id));
+
+    boomer::ResourceID id2;
+    boomer::ResourceID::Parse(txt, id2);
+
+    TRACE_WARNING("{} == {}", id, id2);
 }

@@ -778,12 +778,16 @@ void BindResourceToObjectTemplate(ObjectIndirectTemplate* ptr, const ManagedFile
 
                 if (file->fileFormat().loadableAsType(asyncRefResourceClass))
                 {
-                    const auto key = ResourcePath(file->depotPath());
+                    const auto path = file->depotPath();
 
-                    DataHolder value(asyncRefType);
-                    *((BaseAsyncReference*)value.data()) = key;
+                    ResourceID id;
+                    if (GetService<DepotService>()->resolveIDForPath(path, id))
+                    {
+                        DataHolder value(asyncRefType);
+                        *((BaseAsyncReference*)value.data()) = id;
 
-                    ptr->writeProperty(temp.name, value.data(), value.type());
+                        ptr->writeProperty(temp.name, value.data(), value.type());
+                    }
                 }
             }
         }
@@ -850,48 +854,55 @@ void SceneEditMode_Default::createPrefabAtNodes(const Array<SceneContentNodePtr>
     DEBUG_CHECK_RETURN_EX(prefabFile, "Invalid prefab file");
     DEBUG_CHECK_RETURN_EX(prefabFile->fileFormat().nativeResourceClass().is<Prefab>(), "Not a prefab resource");
 
-    auto prefab = LoadResource<Prefab>(prefabFile->depotPath());
-    if (!prefab)
+    const auto path = prefabFile->depotPath();
+
+    const auto prefabData = LoadResource<Prefab>(path);
+    if (!prefabData)
     {
         ui::PostWindowMessage(container(), ui::MessageType::Error, "LoadResource"_id, TempString("Unable to load prefab '{}'", prefabFile->depotPath()));
         return;
     }
-        
-    auto coreName = prefabFile->name().view().fileStem();
 
-    Array<AddedNodeData> createdNodes;
-    for (const auto& node : selection)
+    ResourceID id;
+    if (GetService<DepotService>()->resolveIDForPath(path, id))
     {
-        if (node->canAttach(SceneContentNodeType::Entity))
+        const auto prefabRef = PrefabRef(id, prefabData);
+        auto coreName = prefabFile->name().view().fileStem();
+
+        Array<AddedNodeData> createdNodes;
+        for (const auto& node : selection)
         {
-            const auto safeName = node->buildUniqueName(coreName);
-
-            auto sourceNode = RefNew<NodeTemplate>();
-            sourceNode->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
-            sourceNode->m_entityTemplate->parent(sourceNode);
-
-            if (initialPlacement)
+            if (node->canAttach(SceneContentNodeType::Entity))
             {
-                AbsoluteTransform parentTransform;
-                if (auto parentDataNode = rtti_cast<SceneContentDataNode>(node))
-                    parentTransform = parentDataNode->cachedLocalToWorldTransform();
+                const auto safeName = node->buildUniqueName(coreName);
 
-                auto placement = (*initialPlacement / parentTransform).toEulerTransform();
-                sourceNode->m_entityTemplate->placement(placement);
+                auto sourceNode = RefNew<NodeTemplate>();
+                sourceNode->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
+                sourceNode->m_entityTemplate->parent(sourceNode);
+
+                if (initialPlacement)
+                {
+                    AbsoluteTransform parentTransform;
+                    if (auto parentDataNode = rtti_cast<SceneContentDataNode>(node))
+                        parentTransform = parentDataNode->cachedLocalToWorldTransform();
+
+                    auto placement = (*initialPlacement / parentTransform).toEulerTransform();
+                    sourceNode->m_entityTemplate->placement(placement);
+                }
+
+                auto& prefabInfo = sourceNode->m_prefabAssets.emplaceBack();
+                prefabInfo.enabled = true;
+                prefabInfo.prefab = prefabRef;
+
+                auto& info = createdNodes.emplaceBack();
+                info.parent = node;
+                info.child = RefNew<SceneContentEntityNode>(safeName, sourceNode);
             }
-
-            auto& prefabInfo = sourceNode->m_prefabAssets.emplaceBack();
-            prefabInfo.enabled = true;
-            prefabInfo.prefab = PrefabRef(ResourcePath(prefabFile->depotPath().view()), prefab);
-
-            auto& info = createdNodes.emplaceBack();
-            info.parent = node;
-            info.child = RefNew<SceneContentEntityNode>(safeName, sourceNode);
         }
-    }
 
-    auto action = RefNew<ActionCreateNode>(std::move(createdNodes), this);
-    actionHistory()->execute(action);
+        auto action = RefNew<ActionCreateNode>(std::move(createdNodes), this);
+        actionHistory()->execute(action);
+    }
 }
 
 /*void SceneEditMode_Default::createEntityWithComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const AbsoluteTransform* initialPlacement, const ManagedFile* resourceFile)
@@ -1398,51 +1409,62 @@ void SceneEditMode_Default::processGenericPrefabAction(const Array<SceneContentN
 
 void SceneEditMode_Default::cmdAddPrefabFile(const Array<SceneContentNodePtr>& inputNodes, const ManagedFile* file)
 {
-    const auto path = ResourcePath(file->depotPath());
+    const auto path = file->depotPath();
 
-    const auto prefabRef = LoadResource<Prefab>(file->depotPath());
-    if (!prefabRef)
+    const auto prefabData = LoadResource<Prefab>(file->depotPath());
+    if (!prefabData)
     {
         ui::PostWindowMessage(m_panel, ui::MessageType::Error, "LoadResource"_id, TempString("Unable to load prefab '{}'", path));
         return;
     }
 
-    processGenericPrefabAction(inputNodes, [file, &path, prefabRef](NodeTemplate* node) -> NodeTemplatePtr
-        {
-            bool contains = false;
-            for (const auto& prefab : node->m_prefabAssets)
+    ResourceID id;
+    if (GetService<DepotService>()->resolveIDForPath(path, id))
+    {
+        const auto prefabRef = PrefabRef(id, prefabData);
+
+        processGenericPrefabAction(inputNodes, [file, id, prefabRef](NodeTemplate* node) -> NodeTemplatePtr
             {
-                if (prefab.prefab.path() == path)
+                bool contains = false;
+                for (const auto& prefab : node->m_prefabAssets)
                 {
-                    contains = true;
+                    if (prefab.prefab.id() == id)
+                    {
+                        contains = true;
+                    }
                 }
-            }
 
-            if (!contains)
-            {
-                auto& entry = node->m_prefabAssets.emplaceBack();
-                entry.enabled = true;
-                entry.prefab = PrefabRef(path, prefabRef);
-            }
+                if (!contains)
+                {
+                    auto& entry = node->m_prefabAssets.emplaceBack();
+                    entry.enabled = true;
+                    entry.prefab = prefabRef;
+                }
 
-            return AddRef(node);
-        });
+                return AddRef(node);
+            });
+    }
 }
 
 void SceneEditMode_Default::cmdRemovePrefabFile(const Array<SceneContentNodePtr>& inputNodes, const Array<const ManagedFile*>& files)
 {
-    InplaceArray<ResourcePath, 10> paths;
+    InplaceArray<ResourceID, 10> ids;
 
     for (const auto* file : files)
-        if (const auto path = ResourcePath(file->depotPath()))
-            paths.pushBack(path);
+    {
+        auto path = file->depotPath();
 
-    processGenericPrefabAction(inputNodes, [&paths](NodeTemplate* node) -> NodeTemplatePtr
+        ResourceID id;
+        if (GetService<DepotService>()->resolveIDForPath(path, id))
+            ids.pushBack(id);
+    }
+
+    processGenericPrefabAction(inputNodes, [&ids](NodeTemplate* node) -> NodeTemplatePtr
         {
             for (auto i : node->m_prefabAssets.indexRange().reversed())
             {
-                const auto& path = node->m_prefabAssets[i].prefab.path();
-                if (paths.contains(path))
+                const auto id = node->m_prefabAssets[i].prefab.id();
+                if (ids.contains(id))
                     node->m_prefabAssets.erase(i);
             }
 

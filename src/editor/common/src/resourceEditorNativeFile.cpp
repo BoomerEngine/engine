@@ -92,9 +92,7 @@ bool ResourceEditorNativeFile::save()
     if (!m_nativeFile->storeContent(m_resource))
         return false;
 
-    auto loadingService = GetService<LoadingService>();
-    auto resoureKey = ResourcePath(nativeFile()->depotPath());
-    if (!loadingService->loadResource(resoureKey))
+    if (!LoadResource(nativeFile()->depotPath()))
     {
         TRACE_WARNING("Reloading of '{}' impossible after save", nativeFile()->depotPath());
     }

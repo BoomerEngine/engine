@@ -104,20 +104,20 @@ void ResourceAsyncRefType::destruct(void* object) const
 
 void ResourceAsyncRefType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
 {
-    auto& ptr = *(BaseAsyncReference*) data;
-    file.writeResourceReference(ptr.path().view(), m_resourceClass, true);
+    const auto& ptr = *(const BaseAsyncReference*) data;
+    file.writeResourceReference(ptr.id().guid(), m_resourceClass, true);
 }
 
 void ResourceAsyncRefType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
 {
-    ResourcePath loadedKey;
+    ResourceID loadedKey;
 
     const auto* resData = file.readResource();
-    if (resData && resData->path)
+    if (resData && resData->id)
     {
         const auto resourceClass = resData->type.cast<IResource>();
         if (resourceClass && resourceClass->is(m_resourceClass))
-            loadedKey = ResourcePath(resData->path);
+            loadedKey = resData->id;
     }
 
     *(BaseAsyncReference*)data = loadedKey;
@@ -127,18 +127,28 @@ void ResourceAsyncRefType::writeXML(TypeSerializationContext& typeContext, xml::
 {
     auto& ptr = *(const BaseAsyncReference*) data;
     if (!ptr.empty())
-        node.writeAttribute("path", ptr.path().view());
+        node.writeAttribute("id", TempString("{}", ptr.id()));
 }
 
 void ResourceAsyncRefType::readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const
 {
-    auto& ptr = *(BaseAsyncReference*) data;
+    BaseAsyncReference ref;
 
-    const auto path = node.attribute("path");
-    if (path.empty())
-        ptr = BaseAsyncReference();
-    else
-        ptr = BaseAsyncReference(path);
+    const auto path = node.attribute("id");
+    if (!path.empty())
+    {
+        ResourceID id;
+        if (ResourceID::Parse(path, id))
+        {
+            ref = BaseAsyncReference(id);
+        }
+        else
+        {
+            // TODO!
+        }
+    }
+
+    *(BaseAsyncReference*)data = ref;
 }
 
 Type ResourceAsyncRefType::ParseType(StringParser& typeNameString, TypeSystem& typeSystem)
@@ -156,13 +166,6 @@ Type ResourceAsyncRefType::ParseType(StringParser& typeNameString, TypeSystem& t
         TRACE_ERROR("Unable to parse a resource reference type from '{}'", innerTypeName);
         return nullptr;
     }
-
-    /*auto resourceClass = classType.toSpecificClass<IResource>();
-    if (!resourceClass)
-    {
-        TRACE_ERROR("Unable to build a resource reference type from '{}' that is not a resource", innerTypeName);
-        return nullptr;
-    }*/
 
     return new ResourceAsyncRefType((const SpecificClassType<IResource>&) classType);
 }

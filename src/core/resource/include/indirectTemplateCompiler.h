@@ -16,8 +16,7 @@ BEGIN_BOOMER_NAMESPACE()
 class CORE_RESOURCE_API ObjectIndirectTemplateCompiler : public ITemplatePropertyValueContainer
 {
 public:
-    ObjectIndirectTemplateCompiler(); // use default loader
-    ObjectIndirectTemplateCompiler(ResourceLoader* loader); // use specific loader
+    ObjectIndirectTemplateCompiler(bool loadImports = false); // use default loader
     virtual ~ObjectIndirectTemplateCompiler();
 
     //--
@@ -55,7 +54,8 @@ private:
     InplaceArray<const ObjectIndirectTemplate*, 8> m_enabledTemplates; // reversed order so we can break on first match
 
     ClassType m_objectClass;
-    ResourceLoader* m_loader = nullptr;
+
+    bool m_loadImports = false;
 
     void updateObjectClass();
 

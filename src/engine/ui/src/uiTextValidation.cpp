@@ -9,6 +9,7 @@
 #include "build.h"
 #include "uiTextValidation.h"
 #include "core/containers/include/utf8StringFunctions.h"
+#include "core/containers/include/path.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 
@@ -100,7 +101,7 @@ TInputValidationFunction MakeDirectoryValidationFunction(bool allowRelative)
 {
     return [allowRelative](StringView text)
     {
-        return ValidateDepotPath(text, allowRelative ? DepotPathClass::AnyDirectoryPath : DepotPathClass::AbsoluteDirectoryPath);
+        return ValidateDepotDirPath(text);
     };
 }
 
@@ -110,7 +111,7 @@ TInputValidationFunction MakePathValidationFunction(bool allowRelative)
 {
     return [allowRelative](StringView text)
     {
-        return ValidateDepotPath(text, allowRelative ? DepotPathClass::AnyFilePath : DepotPathClass::AbsoluteFilePath);
+        return ValidateDepotFilePath(text);
     };
 }
 

@@ -16,7 +16,6 @@
 
 #include "resource.h"
 #include "loader.h"
-#include "path.h"
 #include "tags.h"
 #include "fileSaver.h"
 #include "fileLoader.h"

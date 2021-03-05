@@ -9,7 +9,9 @@
 #pragma once
 
 #include "fileTables.h"
+
 #include "core/containers/include/hashMap.h"
+#include "core/system/include/guid.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -34,7 +36,6 @@ public:
     Array<char> stringTable;
     Array<FileTables::Name> nameTable;
     Array<FileTables::Type> typeTable;
-    Array<FileTables::Path> pathTable;
     Array<FileTables::Property> propertyTable;
     Array<FileTables::Import> importTable;
     Array<FileTables::Export> exportTable;
@@ -42,14 +43,12 @@ public:
     //--
 
     HashMap<FileTables::Type, uint32_t> typeMap;
-    HashMap<FileTables::Path, uint32_t> pathMap;
     HashMap<FileTables::Property, uint32_t> propertyMap;
-    HashMap<FileTables::ImportKey, uint32_t> importMap;
+    HashMap<FileTables::Import, uint32_t> importMap;
 
     HashMap<StringBuf, uint32_t> stringRawMap;
     HashMap<StringID, uint32_t> nameRawMap;
     HashMap<StringID, uint32_t> typeRawMap;
-    HashMap<StringBuf, uint32_t> pathRawMap;
 
     //--
 
@@ -59,18 +58,14 @@ public:
     uint16_t mapType(StringID typeName);
     uint16_t mapType(Type type);
 
-    uint16_t mapPath(StringView path);
-    uint16_t mapPath(uint16_t parent, StringView elem);
-
     uint16_t mapProperty(StringID classType, StringID propName);
     uint16_t mapProperty(const FileTables::Property& prop);
     uint16_t mapProperty(const Property* prop);
 
-    uint16_t mapImport(StringID classType, StringView importPath, bool async);
+    uint16_t mapImport(StringID classType, GUID id, bool async);
     uint16_t mapImport(const FileTables::Import& importInfo);
 
-    typedef std::function<void(StringBuf&)> TImportRemapFunc;
-    void initFromTables(const FileTables& tables, const TImportRemapFunc& importPathRemapper);
+    void initFromTables(const FileTables& tables);
 };
 
 //--

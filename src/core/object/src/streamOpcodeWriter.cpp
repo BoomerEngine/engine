@@ -38,12 +38,12 @@ OpcodeWriter::~OpcodeWriter()
 }       
     
 
-void OpcodeWriter::writeResourceReference(StringView path, ClassType resourceClass, bool async)
+void OpcodeWriter::writeResourceReference(GUID id, ClassType resourceClass, bool async)
 {
-    if (path && resourceClass)
+    if (id && resourceClass)
     {
         OpcodeWriterResourceReference resref;
-        resref.resourcePath = StringBuf(path);
+        resref.resourceID = id;
         resref.resourceType = resourceClass;
 
         if (async)
@@ -53,7 +53,7 @@ void OpcodeWriter::writeResourceReference(StringView path, ClassType resourceCla
 
         if (auto op = m_stream.allocOpcode<StreamOpDataResourceRef>())
         {
-            op->path = resref.resourcePath;
+            op->id = id;
             op->type = resref.resourceType;
             op->async = async;
 

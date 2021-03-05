@@ -10,6 +10,7 @@
 #include "core/app/include/configProperty.h"
 #include "core/app/include/launcherPlatform.h"
 #include "core/input/include/inputContext.h"
+#include "core/containers/include/path.h"
 
 #include "gpu/device/include/device.h"
 #include "gpu/device/include/deviceService.h"
@@ -130,10 +131,10 @@ bool ParseGameStartInfo(const app::CommandLine& commandline, GameStartInfo& outD
 {
     bool validInfo = false;
 
-    const auto startuScenePath = commandline.singleValue("cookedScenePath");
-    if (ValidateDepotPath(startuScenePath, DepotPathClass::AbsoluteFilePath))
+    const auto& startuScenePath = commandline.singleValue("cookedScenePath");
+    if (ValidateDepotFilePath(startuScenePath))
     {
-        outData.scenePath = StringBuf(startuScenePath);
+        outData.scenePath = startuScenePath;
         TRACE_INFO("Using override startup scene: '{}'", outData.scenePath);
         validInfo = true;
     }

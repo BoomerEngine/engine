@@ -87,33 +87,6 @@ bool FileTables::validate(uint64_t memorySize) const
         }
     }
 
-    // check all path entries for sensible data
-    {
-        const auto count = chunkCount(ChunkType::Paths);
-        const auto stringCount = chunkCount(ChunkType::Strings);
-        const auto* ptr = pathTable();
-        for (uint32_t i=0; i<count; ++i, ptr++)
-        {
-            if (ptr->parentIndex >= count)
-            {
-                TRACE_WARNING("Path entry {} has parent entry {} that is invalid index (max index is {})", i, ptr->parentIndex, count);
-                return false;
-            }
-
-            if (i && ptr->parentIndex >= i)
-            {
-                TRACE_WARNING("Path entry {} has parent entry {} that is not preceeding it in file", i, ptr->parentIndex);
-                return false;
-            }
-
-            if (ptr->stringIndex >= stringCount)
-            {
-                TRACE_WARNING("Path entry {} points to stirng table at {} that is outside it's size {}", i, ptr->stringIndex, stringCount);
-                return false;
-            }
-        }
-    }
-
     // check all name entries
     {
         const auto count = chunkCount(ChunkType::Names);
@@ -197,19 +170,12 @@ bool FileTables::validate(uint64_t memorySize) const
     {
         const auto count = chunkCount(ChunkType::Imports);
         const auto typeCount = chunkCount(ChunkType::Types);
-        const auto pathCount = chunkCount(ChunkType::Paths);
         const auto* ptr = importTable();
         for (uint32_t i = 0; i < count; ++i, ptr++)
         {
             if (ptr->classTypeIndex >= typeCount)
             {
                 TRACE_WARNING("Import entry {} points to type table at {} that is outside it's size {}", i, ptr->classTypeIndex, typeCount);
-                return false;
-            }
-
-            if (ptr->pathIndex >= pathCount)
-            {
-                TRACE_WARNING("Import entry {} points to path table at {} that is outside it's size {}", i, ptr->pathIndex, count);
                 return false;
             }
         }
@@ -229,33 +195,6 @@ FileTables::CRCValue FileTables::CalcHeaderCRC(const Header& header)
     tempHeader.crc = 0xDEADBEEF; // special hacky stuff
 
     return CRC32().append(&tempHeader, sizeof(tempHeader)).crc();
-}
-
-//--
-
-StringBuf FileTables::resolvePath(uint32_t pathIndex) const
-{
-    StringBuilder txt;
-    resolvePath(pathIndex, txt);
-    return txt.toString();
-}
-
-void FileTables::resolvePath(uint32_t pathIndex, StringBuilder& txt) const
-{
-    InplaceArray<uint32_t, 32> pathIndices;
-    while (pathIndex)
-    {
-        const auto& entry = pathTable()[pathIndex];
-        pathIndices.pushBack(entry.stringIndex);
-        pathIndex = entry.parentIndex;
-    }
-
-    for (auto i : pathIndices.indexRange().reversed())
-    {
-        const auto* str = stringTable() + pathIndices[i];
-        txt << "/";
-        txt << str;
-    }
 }
 
 //--

@@ -13,6 +13,7 @@
 #include "importSourceAssetRepository.h"
 
 #include "core/resource/include/metadata.h"
+#include "core/containers/include/path.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -104,7 +105,7 @@ bool LocalImporterInterface::findSourceFile(StringView assetImportPath, StringVi
         });
 }
 
-void LocalImporterInterface::followupImport(StringView assetImportPath, StringView depotPath, const ResourceConfiguration* config)
+ResourceID LocalImporterInterface::followupImport(StringView assetImportPath, StringView depotPath, const ResourceConfiguration* config)
 {
     if (assetImportPath && depotPath)
     {
@@ -122,17 +123,19 @@ void LocalImporterInterface::followupImport(StringView assetImportPath, StringVi
             TRACE_WARNING("Followup import '{}' already specified", depotPath);
         }
     }
+
+    return ResourceID(); // TODO!
 }
 
 //--
 
-bool LocalImporterInterface::findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, uint32_t maxScanDepth) const
+bool LocalImporterInterface::findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, ResourceID& outID, uint32_t maxScanDepth) const
 {
     StringBuf depotFinalSearchPath;
     if (!ApplyRelativePath(depotReferencePath, depotSearchPath, depotFinalSearchPath))
         return false;
 
-    return m_depotChecker->depotFindFile(depotFinalSearchPath, searchFileName, maxScanDepth, outDepotPath);
+    return m_depotChecker->depotFindFile(depotFinalSearchPath, searchFileName, maxScanDepth, outDepotPath, outID);
 }
 
 bool LocalImporterInterface::checkDepotFile(StringView depotPath) const

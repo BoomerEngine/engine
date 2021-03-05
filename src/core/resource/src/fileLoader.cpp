@@ -10,7 +10,6 @@
 #include "fileTables.h"
 #include "fileLoader.h"
 #include "loader.h"
-#include "path.h"
 #include "resource.h"
 
 #include "core/io/include/asyncFileHandle.h"
@@ -93,6 +92,9 @@ void ResolveProperties(const FileTables& tables, const FileLoadingContext& conte
 
 void ResolveImports(const FileTables& tables, const FileLoadingContext& context, stream::OpcodeResolvedReferences& resolvedReferences)
 {
+    if (tables.header()->version < VER_NEW_RESOURCE_ID)
+        return;
+
     const auto numImports = tables.chunkCount(FileTables::ChunkType::Imports);
     resolvedReferences.resources.resize(numImports);
 
@@ -104,22 +106,17 @@ void ResolveImports(const FileTables& tables, const FileLoadingContext& context,
     {
         auto classType = resolvedReferences.types[ptr->classTypeIndex].toClass();
 
-        StringBuilder depotPath;
-        tables.resolvePath(ptr->pathIndex, depotPath);
-
-        DEBUG_CHECK(ValidateDepotPath(depotPath.view(), DepotPathClass::AbsoluteFilePath));
-
         resolvedReferences.resources[i].type = classType;
-        resolvedReferences.resources[i].path = depotPath.toString();
+        resolvedReferences.resources[i].id = GUID(ptr->guid[0], ptr->guid[1], ptr->guid[2], ptr->guid[3]);
 
         // load ?
         auto flagLoad = (0 != (ptr->flags & FileTables::ImportFlag_Load));
-        if (context.resourceLoader && flagLoad)
+        if (context.loadImports && flagLoad)
             resourcesToLoad.pushBack(i);
     }
 
     // load the imports
-    if (context.resourceLoader)
+    if (context.loadImports)
     {
         auto allLoadedSignal = CreateFence("WaitForImports", resourcesToLoad.size());
 
@@ -129,11 +126,7 @@ void ResolveImports(const FileTables& tables, const FileLoadingContext& context,
 
             RunChildFiber("LoadImport") << [&entry, &context, &allLoadedSignal](FIBER_FUNC)
             {
-                const auto path = ResourcePath(entry.path);
-                entry.loaded = context.resourceLoader->loadResource(path);
-                if (!entry.loaded)
-                    TRACE_WARNING("Loader: Missing reference to file '{}'", path);
-
+                entry.loaded = LoadResource(entry.id, entry.type);
                 SignalFence(allLoadedSignal);
             };
         }
@@ -192,15 +185,10 @@ void ResolveExports(const FileTables& tables, FileLoadingContext& context, strea
         auto obj = classType->create<IObject>();
         resolvedReferences.objects[i] = obj;
 
-        if (context.resourceLoader && context.resourceLoadPath)
-        {
-            if (i == 0 && obj->cls()->is<IResource>())
-            {
-                auto* resource = static_cast<IResource*>(obj.get());
+        if (i == 0 && context.resourceLoadPath)
+            if (auto* resource = rtti_cast<IResource>(obj.get()))
                 resource->bindLoadPath(context.resourceLoadPath);
-            }
-        }
-
+    
         if (parentObject)
             obj->parent(parentObject);
         else
@@ -454,7 +442,7 @@ bool LoadFileDependencies(IAsyncFileHandle* file, const FileLoadingContext& cont
         if (const auto resourceClass = info.type.cast<IResource>())
         {
             auto& outEntry = outDependencies.emplaceBack();
-            outEntry.path = ResourcePath(info.path);
+            outEntry.id = info.id;
             outEntry.cls = info.type.cast<IResource>();
             outEntry.loaded = info.loaded;
         }

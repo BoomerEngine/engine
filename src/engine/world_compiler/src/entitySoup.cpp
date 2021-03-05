@@ -86,12 +86,12 @@ bool ExtractLayerSoup(SourceLayer& layer)
     return true;
 }
 
-void ExtractSourceEntities(const ResourcePath& worldFilePath, SourceEntitySoup& outSoup)
+void ExtractSourceEntities(StringView worldFilePath, SourceEntitySoup& outSoup)
 {
     InplaceArray<SourceLayer*, 128> collectedLayers;
 
     // scan layers in the world
-    const auto worldDir = worldFilePath.basePath();
+    const auto worldDir = worldFilePath.baseDirectory();
     ExtractSourceLayersAtDirectory(TempString("{}layers/", worldDir), collectedLayers);
     TRACE_INFO("Found {} layers in scene {}", collectedLayers.size(), worldFilePath);
 
