@@ -121,7 +121,7 @@ private:
     virtual bool handleContextMenu(const ElementArea& area, const Position& absolutePosition, input::KeyMask controlKeys) override;
     virtual void handleFocusGained() override;
 
-    void moveCursor(const CursorNavigation& pos, bool extendSelection);
+    bool moveCursor(const CursorNavigation& pos, bool extendSelection);
 
     void cmdCopySelection();
     void cmdCutSelection();

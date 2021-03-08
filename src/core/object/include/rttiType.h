@@ -12,21 +12,11 @@
 #include "rttiMetadata.h"
 
 BEGIN_BOOMER_NAMESPACE()
+
 class Type;
-END_BOOMER_NAMESPACE()
-
-BEGIN_BOOMER_NAMESPACE()
-class ResourceLoader;
-END_BOOMER_NAMESPACE()
-
-BEGIN_BOOMER_NAMESPACE()
-
 class Property;
 class IMetadata;
 class IClassType;
-
-class ITextWriter;
-class ITextReader;
 
 /// type conversion "matrix" values
 enum class TypeConversionClass : char
@@ -176,10 +166,10 @@ public:
     // Binary serialization
 
     /// DataInternface: Write data to file
-    virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const = 0;
+    virtual void writeBinary(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData) const = 0;
 
     /// DataInternface: Read data from file
-    virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const = 0;
+    virtual void readBinary(TypeSerializationContext& typeContext, SerializationReader& file, void* data) const = 0;
 
     //----
     // To/From text

@@ -110,4 +110,20 @@ INLINE StringID FormatAsyncRefTypeName() {
 
 //--------
 
+namespace resolve
+{
+    // type name resolve for strong handles
+    template<typename T>
+    struct TypeName<ResourceAsyncRef<T>>
+    {
+        static StringID GetTypeName()
+        {
+            static auto cachedTypeName = FormatAsyncRefTypeName(TypeName<T>::GetTypeName());
+            return cachedTypeName;
+        }
+    };
+}
+
+//--------
+
 END_BOOMER_NAMESPACE()

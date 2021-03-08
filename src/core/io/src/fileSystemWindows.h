@@ -28,9 +28,9 @@ namespace prv
     public:
         WinIOSystem();
 
-        virtual ReadFileHandlePtr openForReading(StringView absoluteFilePath) override final;
+        virtual ReadFileHandlePtr openForReading(StringView absoluteFilePath, TimeStamp* outTimestamp) override final;
         virtual WriteFileHandlePtr openForWriting(StringView absoluteFilePath, FileWriteMode mode = FileWriteMode::StagedWrite) override final;
-        virtual AsyncFileHandlePtr openForAsyncReading(StringView absoluteFilePath) override final;
+        virtual AsyncFileHandlePtr openForAsyncReading(StringView absoluteFilePath, TimeStamp* outTimestamp) override final;
 
         virtual Buffer loadIntoMemoryForReading(StringView absoluteFilePath) override final;
         virtual Buffer openMemoryMappedForReading(StringView absoluteFilePath) override final;

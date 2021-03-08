@@ -79,7 +79,6 @@ void MaterialGraphContainer::onPostLoad()
 ///---
 
 RTTI_BEGIN_TYPE_CLASS(MaterialGraph);
-    RTTI_METADATA(ResourceExtensionMetadata).extension("v4mg");
     RTTI_METADATA(ResourceDescriptionMetadata).description("Material Graph");
     RTTI_METADATA(ResourceTagColorMetadata).color(0xFF, 0xA6, 0x30);
     RTTI_PROPERTY(m_graph);

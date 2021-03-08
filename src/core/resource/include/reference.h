@@ -118,6 +118,24 @@ INLINE StringID FormatRefTypeName() {
 
 //--------
 
+namespace resolve
+{
+
+    // type name resolve for strong handles
+    template<typename T>
+    struct TypeName<ResourceRef<T>>
+    {
+        static StringID GetTypeName()
+        {
+            static auto cachedTypeName = FormatRefTypeName(TypeName<T>::GetTypeName());
+            return cachedTypeName;
+        }
+    };
+
+} // resolve
+
+//--------
+
 END_BOOMER_NAMESPACE()
 
 //------

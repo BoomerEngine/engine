@@ -142,7 +142,7 @@ void ManagedThumbnailHelper::loadThumbnailData(ManagedFile* file)
     StringBuf filePath = TempString("{}.thumb", file->depotPath());
     if (auto loader = m_depot.createFileReader(filePath))
     {
-        stream::NativeFileReader reader(*loader);
+        NativeFileReader reader(*loader);
         if (auto data = rtti_cast<ResourceThumbnail>(LoadUncached(filePath, ResourceThumbnail::GetStaticClass(), reader)))
         {
             file->newThumbnailDataAvaiable(*data);

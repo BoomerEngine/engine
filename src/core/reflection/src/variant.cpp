@@ -8,11 +8,13 @@
 
 #include "build.h"
 #include "variant.h"
-#include "core/object/include/streamOpcodeWriter.h"
-#include "core/object/include/streamOpcodeReader.h"
+
+#include "core/object/include/serializationWriter.h"
+#include "core/object/include/serializationReader.h"
 #include "core/object/include/rttiType.h"
 
 #include "core/containers/include/stringBuilder.h"
+#include "core/xml/include/xmlWrappers.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -284,7 +286,7 @@ const Variant& Variant::EMPTY()
 
 namespace prv
 {
-    static void VariantWriteBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
+    static void VariantWriteBinary(TypeSerializationContext& typeContext, SerializationWriter& stream, const void* data, const void* defaultData)
     {
         const auto& v = *(const Variant*)data;
 
@@ -303,7 +305,7 @@ namespace prv
         }
     }
 
-    static void VariantReadBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
+    static void VariantReadBinary(TypeSerializationContext& typeContext, SerializationReader& stream, void* data)
     {
         auto& v = *(Variant*)data;
 
@@ -350,13 +352,13 @@ RTTI_END_TYPE();
 namespace prv
 {
 
-    static void WriteBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
+    static void WriteBinary(TypeSerializationContext& typeContext, SerializationWriter& stream, const void* data, const void* defaultData)
     {
         auto v = *(const Type*)data;
         stream.writeType(v);
     }
 
-    static void ReadBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
+    static void ReadBinary(TypeSerializationContext& typeContext, SerializationReader& stream, void* data)
     {
         StringID typeName;
         *(Type*)data = stream.readType(typeName);
@@ -374,29 +376,46 @@ RTTI_END_TYPE();
 
 //--
 
-namespace prv2
+namespace prv
 {
 
-    static void WriteBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* data, const void* defaultData)
+    void WriteClassTypeBinary(TypeSerializationContext& typeContext, SerializationWriter& stream, const void* data, const void* defaultData)
     {
-        auto v = *(const Type*)data;
-        stream.writeType(v);
+        const auto& cls = *(const ClassType*)data;
+        stream.writeType(cls.ptr());
     }
 
-    static void ReadBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* data)
+    void ReadClassTypeBinary(TypeSerializationContext& typeContext, SerializationReader& stream, void* data)
     {
         StringID typeName;
-        *(ClassType*)data = stream.readType(typeName).toClass();
+        const auto clsType = stream.readType(typeName);
+
+        auto& cls = *(ClassType*)data;
+        cls = clsType.toClass();
     }
 
-} // prv2
+    void WriteClassTypeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData)
+    {
+        const auto& cls = *(const ClassType*)data;
+        node.writeValue(cls.name().view());
+    }
+
+    void ReadClassTypeXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data)
+    {
+        StringView typeName = node.value();
+
+        auto& cls = *(ClassType*)data;
+        cls = RTTI::GetInstance().findClass(typeName);
+    }
+
+} // prv
 
 RTTI_BEGIN_CUSTOM_TYPE(ClassType);
 RTTI_BIND_NATIVE_CTOR_DTOR(ClassType);
-RTTI_BIND_NATIVE_COPY(ClassType);
 RTTI_BIND_NATIVE_COMPARE(ClassType);
-RTTI_BIND_NATIVE_PRINT(ClassType);
-RTTI_BIND_CUSTOM_BINARY_SERIALIZATION(&prv2::WriteBinary, &prv2::ReadBinary);
+RTTI_BIND_NATIVE_COPY(ClassType);
+RTTI_BIND_CUSTOM_BINARY_SERIALIZATION(&prv::WriteClassTypeBinary, &prv::ReadClassTypeBinary);
+RTTI_BIND_CUSTOM_XML_SERIALIZATION(&prv::WriteClassTypeXML, &prv::ReadClassTypeXML);
 RTTI_END_TYPE();
 
 END_BOOMER_NAMESPACE()

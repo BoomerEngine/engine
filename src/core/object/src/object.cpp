@@ -45,13 +45,13 @@ ObjectPtr IObject::FindUniqueObjectById(ObjectID id)
 
 //--
 
-static std::function<ObjectPtr(const IObject*, const IObject*, ResourceLoader * loader, SpecificClassType<IObject>)> GCloneFunction;
+static std::function<ObjectPtr(const IObject*)> GCloneFunction;
 static std::function<Buffer(const IObject*)> GSerializeFunction;
-static std::function<ObjectPtr(const void* data, uint32_t size, ResourceLoader * loader, SpecificClassType<IObject> mutatedClass)> GDeserializeFunction;
+static std::function<ObjectPtr(const void*, uint32_t, bool)> GDeserializeFunction;
 
-ObjectPtr IObject::clone(const IObject* newParent, ResourceLoader* loader, SpecificClassType<IObject> mutatedObjectClass) const
+ObjectPtr IObject::clone() const
 {
-    return GCloneFunction(this, newParent, loader, mutatedObjectClass);
+    return GCloneFunction(this);
 }
 
 Buffer IObject::toBuffer() const
@@ -59,14 +59,14 @@ Buffer IObject::toBuffer() const
     return GSerializeFunction(this);
 }
 
-ObjectPtr IObject::FromBuffer(const void* data, uint32_t size, ResourceLoader* loader /*= nullptr*/, SpecificClassType<IObject> mutatedClass /*= nullptr*/)
+ObjectPtr IObject::FromBuffer(const void* data, uint32_t size, bool loadImports)
 {
-    return GDeserializeFunction(data, size, loader, mutatedClass);
+    return GDeserializeFunction(data, size, loadImports);
 }
 
 //--
 
-void IObject::RegisterCloneFunction(const std::function<ObjectPtr(const IObject*, const IObject*, ResourceLoader * loader, SpecificClassType<IObject>)>& func)
+void IObject::RegisterCloneFunction(const std::function<ObjectPtr(const IObject*)>& func)
 {
     GCloneFunction = func;
 }
@@ -76,7 +76,7 @@ void IObject::RegisterSerializeFunction(const std::function<Buffer(const IObject
     GSerializeFunction = func;
 }
 
-void IObject::RegisterDeserializeFunction(const std::function<ObjectPtr(const void* data, uint32_t size, ResourceLoader * loader, SpecificClassType<IObject> mutatedClass)>& func)
+void IObject::RegisterDeserializeFunction(const std::function<ObjectPtr(const void*, uint32_t, bool)>& func)
 {
     GDeserializeFunction = func;
 }
@@ -167,7 +167,7 @@ void IObject::print(IFormatStream& f) const
 
 //--
 
-void IObject::onReadBinary(stream::OpcodeReader& reader)
+void IObject::onReadBinary(SerializationReader& reader)
 {
     TypeSerializationContext typeContext;
     typeContext.directObjectContext = this;
@@ -175,7 +175,7 @@ void IObject::onReadBinary(stream::OpcodeReader& reader)
     cls()->readBinary(typeContext, reader, this);
 }
 
-void IObject::onWriteBinary(stream::OpcodeWriter& writer) const
+void IObject::onWriteBinary(SerializationWriter& writer) const
 {
     TypeSerializationContext typeContext;
     typeContext.directObjectContext = (IObject*)this;

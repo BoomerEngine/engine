@@ -28,7 +28,7 @@
 #include "engine/world/include/nodeTemplate.h"
 #include "engine/world/include/prefab.h"
 #include "core/resource/include/indirectTemplate.h"
-#include "editor/common/include/managedFileFormat.h"
+#include "editor/common/include/assetFormat.h"
 #include "editor/common/include/managedDirectory.h"
 #include "editor/common/include/editorService.h"
 #include "editor/common/src/assetBrowserDialogs.h"

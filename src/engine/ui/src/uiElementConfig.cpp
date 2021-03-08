@@ -126,7 +126,7 @@ bool ConfigFileStorageDataInterface::saveToFile(StringView path) const
 {
     auto xml = xml::CreateDocument("config");
     m_root->save(*xml, xml->root());
-    return xml::SaveDocument(*xml, path);
+    return xml::SaveDocument(xml, path);
 }
 
 //--
@@ -157,7 +157,7 @@ bool ConfigFileStorageDataInterface::Value::write(Type type, const void* data)
 
 void ConfigFileStorageDataInterface::Value::save(xml::IDocument& doc, xml::NodeID nodeId) const
 {
-    doc.nodeAttribute(nodeId, "type", value.type()->name().view());
+    doc.writeNodeAttribute(nodeId, "type", value.type()->name().view());
 
     TypeSerializationContext context;
     xml::Node xmlNode(&doc, nodeId);
@@ -233,7 +233,7 @@ void ConfigFileStorageDataInterface::Group::save(xml::IDocument& doc, xml::NodeI
         if (!child->value.empty())
         {
             auto childNodeId = doc.createNode(nodeId, "value");
-            doc.nodeAttribute(childNodeId, "key", child->key);
+            doc.writeNodeAttribute(childNodeId, "key", child->key);
             child->save(doc, childNodeId);
         }
     }
@@ -243,7 +243,7 @@ void ConfigFileStorageDataInterface::Group::save(xml::IDocument& doc, xml::NodeI
         if (!child->values.empty() || !child->children.empty())
         {
             auto childNodeId = doc.createNode(nodeId, "group");
-            doc.nodeAttribute(childNodeId, "name", child->name);
+            doc.writeNodeAttribute(childNodeId, "name", child->name);
             child->save(doc, childNodeId);
         }
     }

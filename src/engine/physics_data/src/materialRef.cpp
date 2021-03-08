@@ -9,8 +9,8 @@
 #include "build.h"
 #include "materialRef.h"
 
-#include "core/object/include/streamOpcodeWriter.h"
-#include "core/object/include/streamOpcodeReader.h"
+#include "core/object/include/serializationWriter.h"
+#include "core/object/include/serializationReader.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -42,12 +42,12 @@ const PhysicsMaterialDefinition& PhysicsMaterialReference::GetDefinition() const
     return *(const PhysicsMaterialDefinition*)nullptr;
 }
 
-void PhysicsMaterialReference::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& stream) const
+void PhysicsMaterialReference::writeBinary(TypeSerializationContext& typeContext, SerializationWriter& stream) const
 {
     stream.writeStringID(m_name);
 }
 
-void PhysicsMaterialReference::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& stream)
+void PhysicsMaterialReference::readBinary(TypeSerializationContext& typeContext, SerializationReader& stream)
 {
     m_name = stream.readStringID();
 }

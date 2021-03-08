@@ -799,6 +799,9 @@ public:
 
     //---
 
+    /// query the tooltip string
+    virtual StringBuf queryTooltipString() const;
+
     /// query the tooltip element
     virtual ElementPtr queryTooltipElement(const Position& absolutePosition, ElementArea& outTooltipArea) const;
 

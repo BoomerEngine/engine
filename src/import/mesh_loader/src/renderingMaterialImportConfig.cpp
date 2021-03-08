@@ -148,7 +148,7 @@ StringBuf IGeneralMaterialImporter::ConvertPathToTextureSearchPath(StringView as
     if (!MakeSafeFileName(coreName, safeCoreName))
         return StringBuf();
 
-    static const auto textureExtension = IResource::GetResourceExtensionForClass(StaticTexture::GetStaticClass());
+    static const auto textureExtension = IResource::FILE_EXTENSION;
     return TempString("{}.{}", safeCoreName, textureExtension);
 }
 
@@ -238,7 +238,7 @@ TextureRef IGeneralMaterialImporter::importTextureRef(IResourceImporterInterface
         const auto depotScanDepth = std::clamp<int>(cfg.m_depotSearchDepth, 0, 20);
         StringBuf depotPath;
         ResourceID depotResourceID;
-        if (importer.findDepotFile(importer.queryResourcePath().view(), cfg.m_textureSearchPath, findableName, depotPath, depotResourceID, depotScanDepth))
+        if (importer.findDepotFile(importer.queryResourcePath().view(), cfg.m_textureSearchPath, findableName, depotPath, &depotResourceID, depotScanDepth))
         {
             TRACE_INFO("Found '{}' at '{}' (as {})", assetPathToTexture, depotPath, depotResourceID);
             return TextureRef(depotResourceID);
@@ -258,13 +258,13 @@ TextureRef IGeneralMaterialImporter::importTextureRef(IResourceImporterInterface
             TRACE_INFO("Texture '{}' found at '{}' will be improted as '{}'", assetPathToTexture, foundTexturePath, depotPath);
 
             // emit the follow-up import, no extra config at the moment
-            if (const auto depotResourceID = importer.followupImport(foundTexturePath, depotPath))
+            if (const auto textureRef = importer.followupImport<ITexture>(foundTexturePath, depotPath))
             {
                 // export the asset import path
                 outAssetImportPath = foundTexturePath;
 
                 // build a unloaded texture reference (so it can be saved)
-                return TextureRef(depotResourceID);
+                return textureRef;
             }
         }
     }

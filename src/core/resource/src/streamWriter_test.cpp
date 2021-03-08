@@ -12,8 +12,8 @@
 #include "core/object/include/object.h"
 #include "core/reflection/include/reflectionMacros.h"
 #include "core/io/include/fileHandleMemory.h"
-#include "core/object/include/streamOpcodes.h"
-#include "core/object/include/streamOpcodeWriter.h"
+#include "core/object/include/serializationStream.h"
+#include "core/object/include/serializationWriter.h"
 #include "core/object/include/rttiProperty.h"
 
 #include "fileSaver.h"
@@ -24,26 +24,26 @@ DECLARE_TEST_FILE(StreamWriter);
 BEGIN_BOOMER_NAMESPACE();
 
 template< typename T >
-void HelperWriteType(stream::OpcodeWriter& writer, const T& data)
+void HelperWriteType(SerializationWriter& writer, const T& data)
 {
     TypeSerializationContext type;
     GetTypeObject<T>()->writeBinary(type, writer, &data, nullptr);
 }
 
-TEST(StreamOpcodes, DataRaw)
+TEST(SerializationOpcodes, DataRaw)
 {
-    stream::OpcodeStream stream;
-    stream::OpcodeWriterReferences references;
-    stream::OpcodeWriter writer(stream, references);
+    SerializationStream stream;
+    SerializationWriterReferences references;
+    SerializationWriter writer(stream, references);
 
     HelperWriteType<uint32_t>(writer, 42);
 
     ASSERT_EQ(1, stream.totalOpcodeCount());
 
-    stream::OpcodeIterator it(&stream);
-    ASSERT_EQ(stream::StreamOpcode::DataRaw, it->op);
+    SerializationStreamIterator it(&stream);
+    ASSERT_EQ(SerializationOpcode::DataRaw, it->op);
 
-    const auto* op = (const stream::StreamOpDataRaw*)(*it);
+    const auto* op = (const SerializationOpDataRaw*)(*it);
     ASSERT_EQ(4, op->dataSize());
 
     const auto* data = (const uint32_t*)op->data();
@@ -57,11 +57,11 @@ TEST(StreamOpcodes, DataRaw)
     ASSERT_EQ(0, references.objects.size());
 }
 
-TEST(StreamOpcodes, DataMultipleValues)
+TEST(SerializationOpcodes, DataMultipleValues)
 {
-    stream::OpcodeStream stream;
-    stream::OpcodeWriterReferences references;
-    stream::OpcodeWriter writer(stream, references);
+    SerializationStream stream;
+    SerializationWriterReferences references;
+    SerializationWriter writer(stream, references);
 
     HelperWriteType<uint32_t>(writer, 1);
     HelperWriteType<uint32_t>(writer, 2);
@@ -69,26 +69,26 @@ TEST(StreamOpcodes, DataMultipleValues)
 
     ASSERT_EQ(3, stream.totalOpcodeCount());
 
-    stream::OpcodeIterator it(&stream);
+    SerializationStreamIterator it(&stream);
     {
-        ASSERT_EQ(stream::StreamOpcode::DataRaw, it->op);
-        const auto* op = (const stream::StreamOpDataRaw*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataRaw, it->op);
+        const auto* op = (const SerializationOpDataRaw*)(*it);
         ASSERT_EQ(4, op->dataSize());
         const auto* data = (const uint32_t*)op->data();
         ASSERT_EQ(1, *data);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::DataRaw, it->op);
-        const auto* op = (const stream::StreamOpDataRaw*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataRaw, it->op);
+        const auto* op = (const SerializationOpDataRaw*)(*it);
         ASSERT_EQ(4, op->dataSize());
         const auto* data = (const uint32_t*)op->data();
         ASSERT_EQ(2, *data);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::DataRaw, it->op);
-        const auto* op = (const stream::StreamOpDataRaw*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataRaw, it->op);
+        const auto* op = (const SerializationOpDataRaw*)(*it);
         ASSERT_EQ(4, op->dataSize());
         const auto* data = (const uint32_t*)op->data();
         ASSERT_EQ(3, *data);
@@ -98,47 +98,47 @@ TEST(StreamOpcodes, DataMultipleValues)
     ASSERT_FALSE(it);
 }
 
-TEST(StreamOpcodes, DataName)
+TEST(SerializationOpcodes, DataName)
 {
-    stream::OpcodeStream stream;
-    stream::OpcodeWriterReferences references;
-    stream::OpcodeWriter writer(stream, references);
+    SerializationStream stream;
+    SerializationWriterReferences references;
+    SerializationWriter writer(stream, references);
 
     HelperWriteType<StringID>(writer, "TEST"_id);
 
     ASSERT_EQ(1, stream.totalOpcodeCount());
 
-    stream::OpcodeIterator it(&stream);
-    ASSERT_EQ(stream::StreamOpcode::DataName, it->op);
+    SerializationStreamIterator it(&stream);
+    ASSERT_EQ(SerializationOpcode::DataName, it->op);
 
-    const auto* op = (const stream::StreamOpDataName*)(*it);
+    const auto* op = (const SerializationOpDataName*)(*it);
     ASSERT_EQ("TEST"_id, op->name);
 
     ASSERT_EQ(1, references.stringIds.size());
     ASSERT_EQ("TEST"_id, references.stringIds.keys()[0]);
 }
 
-TEST(StreamOpcodes, DataNameMappedOnce)
+TEST(SerializationOpcodes, DataNameMappedOnce)
 {
-    stream::OpcodeStream stream;
-    stream::OpcodeWriterReferences references;
-    stream::OpcodeWriter writer(stream, references);
+    SerializationStream stream;
+    SerializationWriterReferences references;
+    SerializationWriter writer(stream, references);
 
     HelperWriteType<StringID>(writer, "TEST"_id);
     HelperWriteType<StringID>(writer, "TEST"_id);
 
     ASSERT_EQ(2, stream.totalOpcodeCount());
 
-    stream::OpcodeIterator it(&stream);
+    SerializationStreamIterator it(&stream);
     {
-        ASSERT_EQ(stream::StreamOpcode::DataName, it->op);
-        const auto* op = (const stream::StreamOpDataName*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataName, it->op);
+        const auto* op = (const SerializationOpDataName*)(*it);
         ASSERT_EQ("TEST"_id, op->name);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::DataName, it->op);
-        const auto* op = (const stream::StreamOpDataName*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataName, it->op);
+        const auto* op = (const SerializationOpDataName*)(*it);
         ASSERT_EQ("TEST"_id, op->name);
         ++it;
     }
@@ -148,27 +148,27 @@ TEST(StreamOpcodes, DataNameMappedOnce)
     ASSERT_EQ("TEST"_id, references.stringIds.keys()[0]);
 }
 
-TEST(StreamOpcodes, DataDifferentNames)
+TEST(SerializationOpcodes, DataDifferentNames)
 {
-    stream::OpcodeStream stream;
-    stream::OpcodeWriterReferences references;
-    stream::OpcodeWriter writer(stream, references);
+    SerializationStream stream;
+    SerializationWriterReferences references;
+    SerializationWriter writer(stream, references);
 
     HelperWriteType<StringID>(writer, "TEST"_id);
     HelperWriteType<StringID>(writer, "TEST2"_id);
 
     ASSERT_EQ(2, stream.totalOpcodeCount());
 
-    stream::OpcodeIterator it(&stream);
+    SerializationStreamIterator it(&stream);
     {
-        ASSERT_EQ(stream::StreamOpcode::DataName, it->op);
-        const auto* op = (const stream::StreamOpDataName*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataName, it->op);
+        const auto* op = (const SerializationOpDataName*)(*it);
         ASSERT_EQ("TEST"_id, op->name);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::DataName, it->op);
-        const auto* op = (const stream::StreamOpDataName*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataName, it->op);
+        const auto* op = (const SerializationOpDataName*)(*it);
         ASSERT_EQ("TEST2"_id, op->name);
         ++it;
     }
@@ -179,21 +179,21 @@ TEST(StreamOpcodes, DataDifferentNames)
     ASSERT_EQ("TEST2"_id, references.stringIds.keys()[1]);
 }
 
-TEST(StreamOpcodes, DataType)
+TEST(SerializationOpcodes, DataType)
 {
-    stream::OpcodeStream stream;
-    stream::OpcodeWriterReferences references;
-    stream::OpcodeWriter writer(stream, references);
+    SerializationStream stream;
+    SerializationWriterReferences references;
+    SerializationWriter writer(stream, references);
 
     const auto intType = GetTypeObject<int>();
     HelperWriteType<Type>(writer, intType);
 
     ASSERT_EQ(1, stream.totalOpcodeCount());
 
-    stream::OpcodeIterator it(&stream);
+    SerializationStreamIterator it(&stream);
     {
-        ASSERT_EQ(stream::StreamOpcode::DataTypeRef, it->op);
-        const auto* op = (const stream::StreamOpDataTypeRef*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataTypeRef, it->op);
+        const auto* op = (const SerializationOpDataTypeRef*)(*it);
         ASSERT_EQ(intType, op->type);
     }
 
@@ -201,11 +201,11 @@ TEST(StreamOpcodes, DataType)
     ASSERT_EQ(intType, references.types.keys()[0]);
 }
 
-TEST(StreamOpcodes, DataTypeMappedOnce)
+TEST(SerializationOpcodes, DataTypeMappedOnce)
 {
-    stream::OpcodeStream stream;
-    stream::OpcodeWriterReferences references;
-    stream::OpcodeWriter writer(stream, references);
+    SerializationStream stream;
+    SerializationWriterReferences references;
+    SerializationWriter writer(stream, references);
 
     const auto intType = GetTypeObject<int>();
     HelperWriteType<Type>(writer, intType);
@@ -213,16 +213,16 @@ TEST(StreamOpcodes, DataTypeMappedOnce)
 
     ASSERT_EQ(2, stream.totalOpcodeCount());
 
-    stream::OpcodeIterator it(&stream);
+    SerializationStreamIterator it(&stream);
     {
-        ASSERT_EQ(stream::StreamOpcode::DataTypeRef, it->op);
-        const auto* op = (const stream::StreamOpDataTypeRef*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataTypeRef, it->op);
+        const auto* op = (const SerializationOpDataTypeRef*)(*it);
         ASSERT_EQ(intType, op->type);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::DataTypeRef, it->op);
-        const auto* op = (const stream::StreamOpDataTypeRef*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataTypeRef, it->op);
+        const auto* op = (const SerializationOpDataTypeRef*)(*it);
         ASSERT_EQ(intType, op->type);
         ++it;
     }
@@ -232,11 +232,11 @@ TEST(StreamOpcodes, DataTypeMappedOnce)
     ASSERT_EQ(intType, references.types.keys()[0]);
 }
 
-TEST(StreamOpcodes, DataDifferentTypes)
+TEST(SerializationOpcodes, DataDifferentTypes)
 {
-    stream::OpcodeStream stream;
-    stream::OpcodeWriterReferences references;
-    stream::OpcodeWriter writer(stream, references);
+    SerializationStream stream;
+    SerializationWriterReferences references;
+    SerializationWriter writer(stream, references);
 
     const auto intType = GetTypeObject<int>();
     const auto floatType = GetTypeObject<float>();
@@ -245,16 +245,16 @@ TEST(StreamOpcodes, DataDifferentTypes)
 
     ASSERT_EQ(2, stream.totalOpcodeCount());
 
-    stream::OpcodeIterator it(&stream);
+    SerializationStreamIterator it(&stream);
     {
-        ASSERT_EQ(stream::StreamOpcode::DataTypeRef, it->op);
-        const auto* op = (const stream::StreamOpDataTypeRef*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataTypeRef, it->op);
+        const auto* op = (const SerializationOpDataTypeRef*)(*it);
         ASSERT_EQ(intType, op->type);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::DataTypeRef, it->op);
-        const auto* op = (const stream::StreamOpDataTypeRef*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataTypeRef, it->op);
+        const auto* op = (const SerializationOpDataTypeRef*)(*it);
         ASSERT_EQ(floatType, op->type);
         ++it;
     }
@@ -265,11 +265,11 @@ TEST(StreamOpcodes, DataDifferentTypes)
     ASSERT_EQ(floatType, references.types.keys()[1]);
 }
 
-TEST(StreamOpcodes, NativeArray)
+TEST(SerializationOpcodes, NativeArray)
 {
-    stream::OpcodeStream stream;
-    stream::OpcodeWriterReferences references;
-    stream::OpcodeWriter writer(stream, references);
+    SerializationStream stream;
+    SerializationWriterReferences references;
+    SerializationWriter writer(stream, references);
 
     int ar[3];
     ar[0] = 1;
@@ -280,49 +280,49 @@ TEST(StreamOpcodes, NativeArray)
 
     ASSERT_EQ(5, stream.totalOpcodeCount()); // 3 data + being/end array
 
-    stream::OpcodeIterator it(&stream);
+    SerializationStreamIterator it(&stream);
     {
-        ASSERT_EQ(stream::StreamOpcode::Array, it->op);
-        const auto* op = (const stream::StreamOpArray*)(*it);
+        ASSERT_EQ(SerializationOpcode::Array, it->op);
+        const auto* op = (const SerializationOpArray*)(*it);
         ASSERT_EQ(3, op->count);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::DataRaw, it->op);
-        const auto* op = (const stream::StreamOpDataRaw*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataRaw, it->op);
+        const auto* op = (const SerializationOpDataRaw*)(*it);
         ASSERT_EQ(4, op->dataSize());
         const auto* data = (const uint32_t*)op->data();
         ASSERT_EQ(1, *data);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::DataRaw, it->op);
-        const auto* op = (const stream::StreamOpDataRaw*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataRaw, it->op);
+        const auto* op = (const SerializationOpDataRaw*)(*it);
         ASSERT_EQ(4, op->dataSize());
         const auto* data = (const uint32_t*)op->data();
         ASSERT_EQ(2, *data);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::DataRaw, it->op);
-        const auto* op = (const stream::StreamOpDataRaw*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataRaw, it->op);
+        const auto* op = (const SerializationOpDataRaw*)(*it);
         ASSERT_EQ(4, op->dataSize());
         const auto* data = (const uint32_t*)op->data();
         ASSERT_EQ(3, *data);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::ArrayEnd, it->op);
+        ASSERT_EQ(SerializationOpcode::ArrayEnd, it->op);
         ++it;
     }
     ASSERT_FALSE(it);
 }
 
-TEST(StreamOpcodes, DynamicArray)
+TEST(SerializationOpcodes, DynamicArray)
 {
-    stream::OpcodeStream stream;
-    stream::OpcodeWriterReferences references;
-    stream::OpcodeWriter writer(stream, references);
+    SerializationStream stream;
+    SerializationWriterReferences references;
+    SerializationWriter writer(stream, references);
 
     Array<int> ar;
     ar.pushBack(1);
@@ -333,49 +333,49 @@ TEST(StreamOpcodes, DynamicArray)
 
     ASSERT_EQ(5, stream.totalOpcodeCount()); // 3 data + being/end array
 
-    stream::OpcodeIterator it(&stream);
+    SerializationStreamIterator it(&stream);
     {
-        ASSERT_EQ(stream::StreamOpcode::Array, it->op);
-        const auto* op = (const stream::StreamOpArray*)(*it);
+        ASSERT_EQ(SerializationOpcode::Array, it->op);
+        const auto* op = (const SerializationOpArray*)(*it);
         ASSERT_EQ(3, op->count);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::DataRaw, it->op);
-        const auto* op = (const stream::StreamOpDataRaw*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataRaw, it->op);
+        const auto* op = (const SerializationOpDataRaw*)(*it);
         ASSERT_EQ(4, op->dataSize());
         const auto* data = (const uint32_t*)op->data();
         ASSERT_EQ(1, *data);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::DataRaw, it->op);
-        const auto* op = (const stream::StreamOpDataRaw*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataRaw, it->op);
+        const auto* op = (const SerializationOpDataRaw*)(*it);
         ASSERT_EQ(4, op->dataSize());
         const auto* data = (const uint32_t*)op->data();
         ASSERT_EQ(2, *data);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::DataRaw, it->op);
-        const auto* op = (const stream::StreamOpDataRaw*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataRaw, it->op);
+        const auto* op = (const SerializationOpDataRaw*)(*it);
         ASSERT_EQ(4, op->dataSize());
         const auto* data = (const uint32_t*)op->data();
         ASSERT_EQ(3, *data);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::ArrayEnd, it->op);
+        ASSERT_EQ(SerializationOpcode::ArrayEnd, it->op);
         ++it;
     }
     ASSERT_FALSE(it);
 }
 
-TEST(StreamOpcodes, ResourceAsyncRef)
+TEST(SerializationOpcodes, ResourceAsyncRef)
 {
-    stream::OpcodeStream stream;
-    stream::OpcodeWriterReferences references;
-    stream::OpcodeWriter writer(stream, references);
+    SerializationStream stream;
+    SerializationWriterReferences references;
+    SerializationWriter writer(stream, references);
 
     ResourceAsyncRef<IResource> testRef;
     auto id = GUID::Create();
@@ -385,10 +385,10 @@ TEST(StreamOpcodes, ResourceAsyncRef)
 
     ASSERT_EQ(1, stream.totalOpcodeCount()); // 3 data + being/end array
 
-    stream::OpcodeIterator it(&stream);
+    SerializationStreamIterator it(&stream);
     {
-        ASSERT_EQ(stream::StreamOpcode::DataResourceRef, it->op);
-        const auto* op = (const stream::StreamOpDataResourceRef*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataResourceRef, it->op);
+        const auto* op = (const SerializationOpDataResourceRef*)(*it);
         ASSERT_EQ(id, op->id);
         ASSERT_EQ(IResource::GetStaticClass(), op->type);
         ASSERT_TRUE(op->async);
@@ -404,11 +404,11 @@ TEST(StreamOpcodes, ResourceAsyncRef)
     ASSERT_EQ(IResource::GetStaticClass(), references.asyncResources.keys()[0].resourceType);
 }
 
-TEST(StreamOpcodes, SyncResourceRef)
+TEST(SerializationOpcodes, SyncResourceRef)
 {
-    stream::OpcodeStream stream;
-    stream::OpcodeWriterReferences references;
-    stream::OpcodeWriter writer(stream, references);
+    SerializationStream stream;
+    SerializationWriterReferences references;
+    SerializationWriter writer(stream, references);
 
     auto id = GUID::Create();
 
@@ -419,14 +419,14 @@ TEST(StreamOpcodes, SyncResourceRef)
 
     ASSERT_EQ(2, stream.totalOpcodeCount()); // 3 data + being/end array
 
-    stream::OpcodeIterator it(&stream);
+    SerializationStreamIterator it(&stream);
     {
-        ASSERT_EQ(stream::StreamOpcode::DataRaw, it->op);
+        ASSERT_EQ(SerializationOpcode::DataRaw, it->op);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::DataResourceRef, it->op);
-        const auto* op = (const stream::StreamOpDataResourceRef*)(*it);
+        ASSERT_EQ(SerializationOpcode::DataResourceRef, it->op);
+        const auto* op = (const SerializationOpDataResourceRef*)(*it);
         ASSERT_EQ(id, op->id);
         ASSERT_EQ(IResource::GetStaticClass(), op->type);
         ASSERT_FALSE(op->async);
@@ -442,27 +442,27 @@ TEST(StreamOpcodes, SyncResourceRef)
     ASSERT_EQ(IResource::GetStaticClass(), references.syncResources.keys()[0].resourceType);
 }
 
-TEST(StreamOpcodes, CompoundEmpty)
+TEST(SerializationOpcodes, CompoundEmpty)
 {
-    stream::OpcodeStream stream;
-    stream::OpcodeWriterReferences references;
-    stream::OpcodeWriter writer(stream, references);
+    SerializationStream stream;
+    SerializationWriterReferences references;
+    SerializationWriter writer(stream, references);
 
     Vector3 zero;
     HelperWriteType(writer, zero);
 
     ASSERT_EQ(2, stream.totalOpcodeCount());
 
-    stream::OpcodeIterator it(&stream);
+    SerializationStreamIterator it(&stream);
     {
-        ASSERT_EQ(stream::StreamOpcode::Compound, it->op);
-        const auto* op = (const stream::StreamOpCompound*)(*it);
+        ASSERT_EQ(SerializationOpcode::Compound, it->op);
+        const auto* op = (const SerializationOpCompound*)(*it);
         ASSERT_EQ(0, op->numProperties);
         ++it;
     }
     {
-        ASSERT_EQ(stream::StreamOpcode::CompoundEnd, it->op);
-        const auto* op = (const stream::StreamOpCompound*)(*it);
+        ASSERT_EQ(SerializationOpcode::CompoundEnd, it->op);
+        const auto* op = (const SerializationOpCompound*)(*it);
         ASSERT_EQ(0, op->numProperties);
         ++it;
     }
@@ -471,21 +471,21 @@ TEST(StreamOpcodes, CompoundEmpty)
     ASSERT_EQ(0, references.properties.size());
 }
 
-TEST(StreamOpcodes, CompoundValues)
+TEST(SerializationOpcodes, CompoundValues)
 {
-    stream::OpcodeStream stream;
-    stream::OpcodeWriterReferences references;
-    stream::OpcodeWriter writer(stream, references);
+    SerializationStream stream;
+    SerializationWriterReferences references;
+    SerializationWriter writer(stream, references);
 
     Vector3 zero(1,2,3);
     HelperWriteType(writer, zero);
 
     ASSERT_EQ(2+3*5, stream.totalOpcodeCount());
 
-    stream::OpcodeIterator it(&stream);
+    SerializationStreamIterator it(&stream);
     {
-        ASSERT_EQ(stream::StreamOpcode::Compound, it->op);
-        const auto* op = (const stream::StreamOpCompound*)(*it);
+        ASSERT_EQ(SerializationOpcode::Compound, it->op);
+        const auto* op = (const SerializationOpCompound*)(*it);
         ASSERT_EQ(3, op->numProperties);
         ++it;
     }
@@ -495,8 +495,8 @@ TEST(StreamOpcodes, CompoundValues)
     for (int i=1; i<=3; ++i)
     {
         {
-            ASSERT_EQ(stream::StreamOpcode::Property, it->op);
-            const auto* op = (const stream::StreamOpProperty*)(*it);
+            ASSERT_EQ(SerializationOpcode::Property, it->op);
+            const auto* op = (const SerializationOpProperty*)(*it);
             if (i == 1)
                 ASSERT_STREQ("x", op->prop->name().c_str());
             else if (i == 2)
@@ -506,32 +506,32 @@ TEST(StreamOpcodes, CompoundValues)
             ++it;
         }
         {
-            ASSERT_EQ(stream::StreamOpcode::DataTypeRef, it->op);
-            const auto* op = (const stream::StreamOpDataTypeRef*)(*it);
+            ASSERT_EQ(SerializationOpcode::DataTypeRef, it->op);
+            const auto* op = (const SerializationOpDataTypeRef*)(*it);
             ASSERT_EQ(floatType, op->type);
             ++it;
         }
         {
-            ASSERT_EQ(stream::StreamOpcode::SkipHeader, it->op);
+            ASSERT_EQ(SerializationOpcode::SkipHeader, it->op);
             ++it;
         }
         {
-            ASSERT_EQ(stream::StreamOpcode::DataRaw, it->op);
-            const auto* op = (const stream::StreamOpDataRaw*)(*it);
+            ASSERT_EQ(SerializationOpcode::DataRaw, it->op);
+            const auto* op = (const SerializationOpDataRaw*)(*it);
             ASSERT_EQ(4, op->dataSize());
             const auto* data = (const float*)op->data();
             ASSERT_EQ((float)i, *data);
             ++it;
         }
         {
-            ASSERT_EQ(stream::StreamOpcode::SkipLabel, it->op);
+            ASSERT_EQ(SerializationOpcode::SkipLabel, it->op);
             ++it;
         }
     }
 
     {
-        ASSERT_EQ(stream::StreamOpcode::CompoundEnd, it->op);
-        const auto* op = (const stream::StreamOpCompound*)(*it);
+        ASSERT_EQ(SerializationOpcode::CompoundEnd, it->op);
+        const auto* op = (const SerializationOpCompound*)(*it);
         ASSERT_EQ(0, op->numProperties);
         ++it;
     }
@@ -541,30 +541,23 @@ TEST(StreamOpcodes, CompoundValues)
     ASSERT_EQ(3, references.properties.size());
 }
 
-TEST(StreamOpcodes, InlinedBuffer)
+TEST(SerializationOpcodes, UncompressedBufferStores)
 {
-    stream::OpcodeStream stream;
-    stream::OpcodeWriterReferences references;
-    stream::OpcodeWriter writer(stream, references);
+    SerializationStream stream;
+    SerializationWriterReferences references;
+    SerializationWriter writer(stream, references);
 
     Buffer buffer = Buffer::Create(POOL_TEMP, 42);
     HelperWriteType(writer, buffer);
 
     ASSERT_EQ(2, stream.totalOpcodeCount());
 
-    stream::OpcodeIterator it(&stream);
+    SerializationStreamIterator it(&stream);
+
     {
-        ASSERT_EQ(stream::StreamOpcode::DataRaw, it->op);
-        const auto* op = (const stream::StreamOpDataRaw*)(*it);
-        ASSERT_EQ(1, op->dataSize());
-        const auto* data = (const uint8_t*)op->data();
-        ASSERT_EQ(0, *data);
-        ++it;
-    }
-    {
-        ASSERT_EQ(stream::StreamOpcode::DataInlineBuffer, it->op);
-        const auto* op = (const stream::StreamOpDataInlineBuffer*)(*it);
-        ASSERT_EQ(buffer, op->buffer);
+        ASSERT_EQ(SerializationOpcode::DataInlineBuffer, it->op);
+        const auto* op = (const SerializationOpDataInlineBuffer*)(*it);
+        ASSERT_EQ(buffer, op->data);
         ++it;
     }
 

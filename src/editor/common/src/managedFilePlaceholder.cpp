@@ -9,7 +9,7 @@
 #include "build.h"
 #include "managedDepot.h"
 #include "managedDirectory.h"
-#include "managedFileFormat.h"
+#include "assetFormat.h"
 #include "managedFilePlaceholder.h"
 #include "managedThumbnails.h"
 #include "core/resource_compiler/include/importFileService.h"

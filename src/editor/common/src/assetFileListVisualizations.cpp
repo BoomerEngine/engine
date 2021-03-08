@@ -11,12 +11,6 @@
 #include "assetFileSmallImportIndicator.h"
 #include "assetFileListVisualizations.h"
 
-#include "managedDirectory.h"
-#include "managedFile.h"
-#include "managedFileFormat.h"
-#include "managedFileNativeResource.h"
-#include "managedFilePlaceholder.h"
-
 #include "engine/ui/include/uiImage.h"
 #include "engine/ui/include/uiTextLabel.h"
 #include "engine/ui/include/uiTextValidation.h"
@@ -30,9 +24,34 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IAssetBrowserVisItem);
 RTTI_END_TYPE();
     
-IAssetBrowserVisItem::IAssetBrowserVisItem(ManagedItem* item, uint32_t size)
-    : m_item(item)
-    , m_size(size)
+IAssetBrowserVisItem::IAssetBrowserVisItem(AssetBrowserVisItemType type)
+    : m_type(type)
+{
+    layoutVertical();
+}
+
+bool IAssetBrowserVisItem::handleItemFilter(const ui::SearchPattern& filter) const
+{
+    return filter.testString(displayName());
+}
+
+bool IAssetBrowserVisItem::handleItemSort(const ui::ICollectionItem* ptr, int colIndex) const
+{
+    const auto* other = static_cast<const IAssetBrowserVisItem*>(ptr);
+    if (other->type() != type())
+        return (int)type() < (int)other->type();
+
+    return displayName() < other->displayName();
+}
+
+//--
+
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IAssetBrowserDepotVisItem);
+RTTI_END_TYPE();
+
+IAssetBrowserDepotVisItem::IAssetBrowserDepotVisItem(AssetBrowserVisItemType type, StringView depotPath)
+    : IAssetBrowserVisItem(type)
+    , m_depotPath(depotPath)
 {}
 
 //--
@@ -40,30 +59,31 @@ IAssetBrowserVisItem::IAssetBrowserVisItem(ManagedItem* item, uint32_t size)
 RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetBrowserFileVis);
 RTTI_END_TYPE();
 
-AssetBrowserFileVis::AssetBrowserFileVis(ManagedFile* file, uint32_t size)
-    : IAssetBrowserVisItem(file, size)
-    , m_file(file)
+AssetBrowserFileVis::AssetBrowserFileVis(StringView depotPath)
+    : IAssetBrowserDepotVisItem(AssetBrowserVisItemType::File, depotPath)
+    , m_displayName(depotPath.fileStem())
 {
     hitTest(true);
 
-	m_icon = createChild<ui::Image>(file->typeThumbnail());
+    static const auto defaultThumbnail = LoadImageFromDepotPath("/engine/interface/thumbnails/file.png");
+
+	m_icon = createChild<ui::Image>(defaultThumbnail);
     m_icon->customMargins(3.0f);
-    m_icon->customMaxSize(size, size);
+    m_icon->customMaxSize(m_size, m_size);
     m_icon->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
 
-    if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
     {
-        m_importIndicator = m_icon->createChild<AssetFileSmallImportIndicator>(nativeFile);
+        m_importIndicator = m_icon->createChild<AssetFileSmallImportIndicator>(depotPath);
         m_importIndicator->customMargins(20, 20, 0, 0);
         m_importIndicator->customHorizontalAligment(ui::ElementHorizontalLayout::Left);
         m_importIndicator->customVerticalAligment(ui::ElementVerticalLayout::Top);
-        m_importIndicator->visibility(size >= 80);
+        m_importIndicator->visibility(m_size >= 80);
         m_importIndicator->overlay(true);
     }
 
     StringBuilder displayText;
-    file->fileFormat().printTags(displayText, "[br]");
-    displayText << file->name().stringBeforeLast(".");
+    //file->fileFormat().printTags(displayText, "[br]");
+    displayText << m_displayName;
 
     m_label = createChild<ui::TextLabel>(displayText.toString());
     m_label->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
@@ -87,18 +107,20 @@ void AssetBrowserFileVis::resizeIcon(uint32_t size)
 RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetBrowserDirectoryVis);
 RTTI_END_TYPE();
 
-AssetBrowserDirectoryVis::AssetBrowserDirectoryVis(ManagedDirectory* dir, uint32_t size, bool parentDirectory /*= false*/)
-    : IAssetBrowserVisItem(dir, size)
-    , m_directory(dir)
+AssetBrowserDirectoryVis::AssetBrowserDirectoryVis(StringView depotPath, bool parentDirectory /*= false*/)
+    : IAssetBrowserDepotVisItem(parentDirectory ? AssetBrowserVisItemType::ParentDirectory : AssetBrowserVisItemType::ChildDirectory, depotPath)
+    , m_displayName(parentDirectory ? ".." : depotPath.directoryName())
 {
     hitTest(true);
 
-	m_icon = createChild<ui::Image>(dir->typeThumbnail());
+    static const auto thumbnail = LoadImageFromDepotPath("/engine/interface/thumbnails/directory.png");
+
+	m_icon = createChild<ui::Image>(thumbnail);
     m_icon->customMargins(3.0f);
-    m_icon->customMaxSize(size, size);
+    m_icon->customMaxSize(m_size, m_size);
     m_icon->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
 
-    m_label = createChild<ui::TextLabel>(parentDirectory ? ".." : dir->name());
+    m_label = createChild<ui::TextLabel>(m_displayName);
     m_label->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
     m_label->customMargins(3.0f);
 }
@@ -118,21 +140,24 @@ void AssetBrowserDirectoryVis::resizeIcon(uint32_t size)
 RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetBrowserPlaceholderFileVis);
 RTTI_END_TYPE();
 
-AssetBrowserPlaceholderFileVis::AssetBrowserPlaceholderFileVis(ManagedFilePlaceholder* placeholder, uint32_t size)
-    : IAssetBrowserVisItem(placeholder, size)
-    , m_filePlaceholder(AddRef(placeholder))
+AssetBrowserPlaceholderFileVis::AssetBrowserPlaceholderFileVis(const ManagedFileFormat* format, StringView parentDepotPath, StringView name)
+    : IAssetBrowserVisItem(AssetBrowserVisItemType::NewFile)
+    , m_parentDepotPath(parentDepotPath)
+    , m_format(format)
 {
     hitTest(true);
 
-	m_icon = createChild<ui::Image>(placeholder->typeThumbnail());
+    static const auto defaultThumbnail = LoadImageFromDepotPath("/engine/interface/thumbnails/file.png");
+
+	m_icon = createChild<ui::Image>(defaultThumbnail);
     m_icon->customMargins(3.0f);
-    m_icon->customMaxSize(size, size);
+    m_icon->customMaxSize(m_size, m_size);
     m_icon->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
 
     auto flags = ui::EditBoxFeatureBit::AcceptsEnter;
 
     m_label = createChild<ui::EditBox>(flags);
-    m_label->text(placeholder->shortName());
+    m_label->text(name);
     m_label->validation(ui::MakeFilenameValidationFunction());
     m_label->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
     m_label->customMargins(3.0f);
@@ -143,10 +168,12 @@ AssetBrowserPlaceholderFileVis::AssetBrowserPlaceholderFileVis(ManagedFilePlaceh
     {
         if (auto self = selfRef.lock())
         {
-            self->m_filePlaceholder->rename(self->m_label->text());
+            const auto name = self->m_label->text();
+
             self->m_label->enable(false);
-            DispatchGlobalEvent(self->m_filePlaceholder->eventKey(), EVENT_MANAGED_PLACEHOLDER_ACCEPTED);
-            DispatchGlobalEvent(self->m_filePlaceholder->depot()->eventKey(), EVENT_MANAGED_DEPOT_PLACEHOLDER_ACCEPTED, ManagedItemPtr(AddRef(self->item())));
+            self->removeSelfFromList();
+
+            self->call(EVENT_ASSET_PLACEHOLDER_ACCEPTED, name);
         }
     };
 
@@ -156,8 +183,7 @@ AssetBrowserPlaceholderFileVis::AssetBrowserPlaceholderFileVis(ManagedFilePlaceh
         if (auto self = selfRef.lock())
         {
             self->m_label->enable(false);
-            DispatchGlobalEvent(self->m_filePlaceholder->eventKey(), EVENT_MANAGED_PLACEHOLDER_DISCARDED);
-            DispatchGlobalEvent(self->m_filePlaceholder->depot()->eventKey(), EVENT_MANAGED_DEPOT_PLACEHOLDER_DISCARDED, ManagedItemPtr(AddRef(self->item())));
+            self->removeSelfFromList();
         }
     };    
 }
@@ -172,26 +198,33 @@ void AssetBrowserPlaceholderFileVis::resizeIcon(uint32_t size)
     }
 }
 
+StringView AssetBrowserPlaceholderFileVis::displayName() const
+{
+    return "";
+}
+
 //--
 
 RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetBrowserPlaceholderDirectoryVis);
 RTTI_END_TYPE();
 
-AssetBrowserPlaceholderDirectoryVis::AssetBrowserPlaceholderDirectoryVis(ManagedDirectoryPlaceholder* placeholder, uint32_t size)
-    : IAssetBrowserVisItem(placeholder, size)
-    , m_directoryPlaceholder(AddRef(placeholder))
+AssetBrowserPlaceholderDirectoryVis::AssetBrowserPlaceholderDirectoryVis(StringView parentDepotPath, StringView name)
+    : IAssetBrowserVisItem(AssetBrowserVisItemType::NewDirectory)
+    , m_parentDepotPath(parentDepotPath)
 {
     hitTest(true);
 
-	m_icon = createChild<ui::Image>(placeholder->typeThumbnail());
+    static const auto thumbnail = LoadImageFromDepotPath("/engine/interface/thumbnails/directory.png");
+
+	m_icon = createChild<ui::Image>(thumbnail);
     m_icon->customMargins(3.0f);
-    m_icon->customMaxSize(size, size);
+    m_icon->customMaxSize(m_size, m_size);
     m_icon->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
 
     auto flags = ui::EditBoxFeatureBit::AcceptsEnter;
 
     m_label = createChild<ui::EditBox>(flags);
-    m_label->text(placeholder->name());
+    m_label->text(name);
     m_label->validation(ui::MakeFilenameValidationFunction());
     m_label->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
     m_label->customMargins(3.0f);
@@ -202,10 +235,12 @@ AssetBrowserPlaceholderDirectoryVis::AssetBrowserPlaceholderDirectoryVis(Managed
     {
         if (auto self = selfRef.lock())
         {
-            self->m_directoryPlaceholder->rename(self->m_label->text());
+            const auto name = self->m_label->text();
+
             self->m_label->enable(false);
-            DispatchGlobalEvent(self->m_directoryPlaceholder->eventKey(), EVENT_MANAGED_PLACEHOLDER_ACCEPTED);
-            DispatchGlobalEvent(self->m_directoryPlaceholder->depot()->eventKey(), EVENT_MANAGED_DEPOT_PLACEHOLDER_ACCEPTED, ManagedItemPtr(AddRef(self->item())));
+            self->removeSelfFromList();
+
+            self->call(EVENT_ASSET_PLACEHOLDER_ACCEPTED, name);
         }
     };
 
@@ -215,8 +250,7 @@ AssetBrowserPlaceholderDirectoryVis::AssetBrowserPlaceholderDirectoryVis(Managed
         if (auto self = selfRef.lock())
         {
             self->m_label->enable(false);
-            DispatchGlobalEvent(self->m_directoryPlaceholder->eventKey(), EVENT_MANAGED_PLACEHOLDER_DISCARDED);
-            DispatchGlobalEvent(self->m_directoryPlaceholder->depot()->eventKey(), EVENT_MANAGED_DEPOT_PLACEHOLDER_DISCARDED, ManagedItemPtr(AddRef(self->item())));
+            self->removeSelfFromList();
         }
     };
 }
@@ -229,6 +263,11 @@ void AssetBrowserPlaceholderDirectoryVis::resizeIcon(uint32_t size)
             m_icon->customMaxSize(size, size);
         m_size = size;
     }
+}
+
+StringView AssetBrowserPlaceholderDirectoryVis::displayName() const
+{
+    return "";
 }
 
 //--

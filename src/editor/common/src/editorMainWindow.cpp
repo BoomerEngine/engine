@@ -18,7 +18,7 @@
 
 #include "resourceEditor.h"
 
-#include "managedFileFormat.h"
+#include "assetFormat.h"
 #include "managedFile.h"
 #include "managedDirectory.h"
 #include "managedItemCollection.h"

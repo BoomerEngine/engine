@@ -349,7 +349,7 @@ NodeTemplatePtr UnpackTopLevelPrefabs(const NodeTemplate* rootNode)
 
 static const int MAX_DEPTH = 10;
 
-RefPtr<HierarchyEntity> ProcessSingleEntity(int depth, NodePathBuilder& path, const Array<const NodeTemplate*>& inputTemplates, const AbsoluteTransform& placement, bool applyLocalPlacement, ResourceLoader* loader)
+RefPtr<HierarchyEntity> ProcessSingleEntity(int depth, NodePathBuilder& path, const Array<const NodeTemplate*>& inputTemplates, const AbsoluteTransform& placement, bool applyLocalPlacement, bool loadImports)
 {
     auto ret = RefNew<HierarchyEntity>();
     ret->id = path.toID();
@@ -368,7 +368,7 @@ RefPtr<HierarchyEntity> ProcessSingleEntity(int depth, NodePathBuilder& path, co
 
     // compile entity data
     {
-        ObjectIndirectTemplateCompiler compiler(loader);
+        ObjectIndirectTemplateCompiler compiler(loadImports);
         for (const auto* ptr : templates)
             if (ptr->m_entityTemplate)
                 compiler.addTemplate(ptr->m_entityTemplate);
@@ -425,7 +425,7 @@ RefPtr<HierarchyEntity> ProcessSingleEntity(int depth, NodePathBuilder& path, co
         {
             path.pushSingle(pair.key);
 
-            if (auto child = ProcessSingleEntity(depth + 1, path, pair.value, ret->entity->absoluteTransform(), true, loader))
+            if (auto child = ProcessSingleEntity(depth + 1, path, pair.value, ret->entity->absoluteTransform(), true, loadImports))
                 ret->children.pushBack(child);
 
             path.pop();
@@ -453,7 +453,7 @@ uint32_t HierarchyEntity::countTotalEntities() const
     return ret;
 }
 
-RefPtr<HierarchyEntity> CompileEntityHierarchy(const NodePathBuilder& path, const NodeTemplate* rootTemplateNode, const AbsoluteTransform* forceInitialPlacement, ResourceLoader* loader)
+RefPtr<HierarchyEntity> CompileEntityHierarchy(const NodePathBuilder& path, const NodeTemplate* rootTemplateNode, const AbsoluteTransform* forceInitialPlacement, bool loadImports)
 {
     InplaceArray<const NodeTemplate*, 10> nodeTemplates;
     if (rootTemplateNode)
@@ -461,9 +461,9 @@ RefPtr<HierarchyEntity> CompileEntityHierarchy(const NodePathBuilder& path, cons
 
     NodePathBuilder localPath(path);
     if (forceInitialPlacement)
-        return ProcessSingleEntity(0, localPath, nodeTemplates, *forceInitialPlacement, false, loader);
+        return ProcessSingleEntity(0, localPath, nodeTemplates, *forceInitialPlacement, false, loadImports);
     else
-        return ProcessSingleEntity(0, localPath, nodeTemplates, AbsoluteTransform::ROOT(), true, loader);
+        return ProcessSingleEntity(0, localPath, nodeTemplates, AbsoluteTransform::ROOT(), true, loadImports);
 }
 
 //--

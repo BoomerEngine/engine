@@ -51,10 +51,10 @@ public:
     //--
 
     // change title
-    void tabTitle(const StringBuf& titleString);
+    void tabTitle(StringView titleString);
 
     // change icon
-    void tabIcon(const StringBuf& icon);
+    void tabIcon(StringView icon);
 
     // toggle the close button
     void tabCloseButton(bool flag);

@@ -8,18 +8,17 @@
 
 #include "build.h"
 
-#include "core/test/include/gtest/gtest.h"
-#include "core/object/include/object.h"
-#include "core/reflection/include/reflectionMacros.h"
-#include "core/io/include/fileHandleMemory.h"
-#include "core/object/include/streamOpcodes.h"
-#include "core/object/include/streamOpcodeWriter.h"
-#include "core/object/include/rttiProperty.h"
-
 #include "fileSaver.h"
 #include "fileTables.h"
 #include "fileLoader.h"
-#include "core/memory/include/public.h"
+
+#include "core/object/include/object.h"
+#include "core/test/include/gtest/gtest.h"
+#include "core/reflection/include/reflectionMacros.h"
+#include "core/io/include/fileHandleMemory.h"
+#include "core/object/include/serializationStream.h"
+#include "core/object/include/serializationWriter.h"
+#include "core/object/include/rttiProperty.h"
 
 DECLARE_TEST_FILE(Serialization);
 
@@ -66,15 +65,16 @@ RTTI_END_TYPE();
 
 //--
 
-void HelperSave(const ObjectPtr& obj, Buffer& outData)
+void HelperSave(const IObject* obj, Buffer& outData)
 {
     FileSavingContext context;
-    context.rootObject.pushBack(obj);
-    context.protectedStream = false;
+    context.rootObjects.pushBack(obj);
+    context.format = FileSaveFormat::UnprotectedBinaryStream;
 
     auto writer = RefNew<MemoryWriterFileHandle>();
 
-    ASSERT_TRUE(SaveFile(writer, context)) << "Serialization failed";
+    FileSavingResult result;
+    ASSERT_TRUE(SaveFile(writer, context, result)) << "Serialization failed";
 
     outData = writer->extract();
 
@@ -84,12 +84,13 @@ void HelperSave(const ObjectPtr& obj, Buffer& outData)
 void HelperSave(const Array<ObjectPtr>& roots, Buffer& outData, bool protectedStream)
 {
     FileSavingContext context;
-    context.rootObject = roots;
-    context.protectedStream = protectedStream;
-
+    context.rootObjects = *(const Array<const IObject*>*) &roots;
+    context.format = protectedStream ? FileSaveFormat::ProtectedBinaryStream : FileSaveFormat::UnprotectedBinaryStream;
+    
     auto writer = RefNew<MemoryWriterFileHandle>();
 
-    ASSERT_TRUE(SaveFile(writer, context)) << "Serialization failed";
+    FileSavingResult result;
+    ASSERT_TRUE(SaveFile(writer, context, result)) << "Serialization failed";
 
     outData = writer->extract();
 
@@ -102,11 +103,12 @@ void HelperLoad(const Buffer& data, ObjectPtr& outRet)
 
     auto reader = RefNew<MemoryAsyncReaderFileHandle>(data);
 
-    ASSERT_TRUE(LoadFile(reader, context)) << "Deserialization failed";
+    FileLoadingResult result;
+    ASSERT_TRUE(LoadFile(reader, context, result)) << "Deserialization failed";
 
-    ASSERT_EQ(1, context.loadedRoots.size()) << "Nothing loaded";
+    ASSERT_EQ(1, result.roots.size()) << "Nothing loaded";
 
-    outRet = context.loadedRoots[0];
+    outRet = result.roots[0];
 }
 
 void HelperLoad(const Buffer& data, Array<ObjectPtr>& outRoots)
@@ -115,11 +117,12 @@ void HelperLoad(const Buffer& data, Array<ObjectPtr>& outRoots)
 
     auto reader = RefNew<MemoryAsyncReaderFileHandle>(data);
 
-    ASSERT_TRUE(LoadFile(reader, context)) << "Deserialization failed";
+    FileLoadingResult result;
+    ASSERT_TRUE(LoadFile(reader, context, result)) << "Deserialization failed";
 
-    ASSERT_NE(0, context.loadedRoots.size()) << "Nothing loaded";
+    ASSERT_NE(0, result.roots.size()) << "Nothing loaded";
 
-    outRoots = context.loadedRoots;
+    outRoots = result.roots;
 }
 
 const char* HelperGetName(const FileTables& tables, uint32_t index)

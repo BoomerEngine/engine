@@ -28,6 +28,22 @@ RTTI_END_TYPE();
 ResourceConfiguration::~ResourceConfiguration()
 {}
 
+bool ResourceConfiguration::compare(const ResourceConfiguration* other) const
+{
+    if (!other || other->cls() != cls())
+        return false;
+
+    for (const auto* prop : cls()->allProperties())
+    {
+        const auto* thisData = prop->offsetPtr(this);
+        const auto* otherData = prop->offsetPtr(other);
+        if (!prop->type()->compare(thisData, otherData))
+            return false;
+    }
+
+    return true;
+}
+
 void ResourceConfiguration::changeImportMetadata(StringView by, StringView at, TimeStamp time)
 {
     if (m_sourceImportedBy != by)
@@ -63,14 +79,6 @@ void ResourceConfiguration::computeConfigurationKey(CRC64& crc) const
 
 //--
 
-RTTI_BEGIN_TYPE_STRUCT(ResourceSourceDependency);
-    RTTI_OLD_NAME("res::SourceDependency");
-    RTTI_PROPERTY(sourcePath);
-    RTTI_PROPERTY(timestamp);
-RTTI_END_TYPE();
-
-//--
-
 RTTI_BEGIN_TYPE_STRUCT(ResourceImportDependency);
     RTTI_OLD_NAME("res::ImportDependency");
     RTTI_PROPERTY(importPath);
@@ -80,22 +88,14 @@ RTTI_END_TYPE();
 
 //--
 
-RTTI_BEGIN_TYPE_STRUCT(ResourceImportFollowup);
-    RTTI_OLD_NAME("res::ImportFollowup");
-    RTTI_PROPERTY(depotPath);
-    RTTI_PROPERTY(sourceImportPath);
-    RTTI_PROPERTY(configuration);
-RTTI_END_TYPE();
-
-//--
-
 RTTI_BEGIN_TYPE_CLASS(ResourceMetadata);
     RTTI_OLD_NAME("res::Metadata");
     RTTI_PROPERTY(ids);
-    RTTI_PROPERTY(sourceDependencies);
     RTTI_PROPERTY(importDependencies);
-    RTTI_PROPERTY(importFollowups);
+    RTTI_PROPERTY(resourceClassType);
     RTTI_PROPERTY(resourceClassVersion);
+    RTTI_PROPERTY(importerClassType);
+    RTTI_PROPERTY(importerClassVersion);
     RTTI_PROPERTY(importBaseConfiguration);
     RTTI_PROPERTY(importUserConfiguration);
     RTTI_PROPERTY(importFullConfiguration);

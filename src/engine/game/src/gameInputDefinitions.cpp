@@ -37,7 +37,6 @@ RTTI_END_TYPE();
 ///--
 
 RTTI_BEGIN_TYPE_CLASS(InputDefinitions);
-    RTTI_METADATA(ResourceExtensionMetadata).extension("v4input");
     RTTI_METADATA(ResourceDescriptionMetadata).description("Input Definitions");
     RTTI_PROPERTY(m_root);
 RTTI_END_TYPE();

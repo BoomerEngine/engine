@@ -7,10 +7,7 @@
 ***/
 
 #include "build.h"
-
-#include "managedFile.h"
-#include "managedFileAssetChecks.h"
-#include "managedFileNativeResource.h"
+#include "assetFileChecks.h"
 #include "assetFileSmallImportIndicator.h"
 
 #include "engine/ui/include/uiTextLabel.h"
@@ -23,8 +20,8 @@ RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetFileSmallImportIndicator);
     RTTI_METADATA(ui::ElementClassNameMetadata).name("AssetFileSmallImportIndicator");
 RTTI_END_TYPE();
 
-AssetFileSmallImportIndicator::AssetFileSmallImportIndicator(ManagedFileNativeResource* file)
-    : m_file(file)
+AssetFileSmallImportIndicator::AssetFileSmallImportIndicator(StringView depotPath)
+    : m_depotPath(depotPath)
     , m_events(this)
 {
     visibility(false);
@@ -33,12 +30,12 @@ AssetFileSmallImportIndicator::AssetFileSmallImportIndicator(ManagedFileNativeRe
 
     bind(EVENT_IMPORT_STATUS_CHANGED) = [this]() { updateStatus(); };
 
-    m_checker = RefNew<ManagedFileImportStatusCheck>(m_file, this);
+    m_checker = RefNew<AssetImportStatusCheck>(m_depotPath, this);
 
-    m_events.bind(file->eventKey(), EVENT_MANAGED_FILE_RELOADED) = [this]()
+    /*m_events.bind(file->eventKey(), EVENT_MANAGED_FILE_RELOADED) = [this]()
     {
         recheck();
-    };
+    };*/
 }
 
 void AssetFileSmallImportIndicator::recheck()
@@ -49,7 +46,7 @@ void AssetFileSmallImportIndicator::recheck()
         m_checker.reset();
     }
 
-    m_checker = RefNew<ManagedFileImportStatusCheck>(m_file, this);
+    m_checker = RefNew<AssetImportStatusCheck>(m_depotPath, this);
 }
 
 AssetFileSmallImportIndicator::~AssetFileSmallImportIndicator()

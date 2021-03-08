@@ -8,31 +8,21 @@
 
 #include "build.h"
 #include "fileTables.h"
-#include "fileSaver.h"
-#include "core/io/include/asyncFileHandle.h"
-#include "core/object/include/object.h"
-#include "core/object/include/streamOpcodes.h"
-#include "core/object/include/streamOpcodeWriter.h"
-#include "core/object/include/streamOpcodeBinarizer.h"
-#include "core/containers/include/queue.h"
-#include "core/io/include/fileHandle.h"
 #include "fileTablesBuilder.h"
+#include "fileSaver.h"
+
+#include "core/io/include/asyncFileHandle.h"
+#include "core/io/include/fileHandle.h"
+#include "core/object/include/object.h"
+#include "core/object/include/serializationStream.h"
+#include "core/object/include/serializationWriter.h"
+#include "core/object/include/serializationBinarizer.h"
+#include "core/object/include/asyncBuffer.h"
+#include "core/containers/include/queue.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
-//--
-
-bool FileSavingContext::shouldSave(const IObject* object) const
-{
-    while (object)
-    {
-        if (rootObject.contains(object))
-            return true;
-        object = object->parent();
-    }
-
-    return false;
-}
+#pragma optimize("",off)
 
 //--
 
@@ -43,8 +33,8 @@ struct FileSerializedObject : public NoCopy
 public:
     FileSerializedObject* parent = nullptr;
     ObjectPtr object;
-    stream::OpcodeWriterReferences localReferences;
-    stream::OpcodeStream stream;
+    SerializationWriterReferences localReferences;
+    SerializationStream stream;
 };
 
 struct FileSavingState
@@ -52,7 +42,7 @@ struct FileSavingState
     const Array<ObjectPtr>& roots; // only those objects and objects below can be saved
     Array<ObjectPtr> unsavedObjects; // objects yet unsaved
 
-    //stream::OpcodeMappedReferences mappedReferencesferences; // "knowledge" repository - merged
+    //SerializationMappedReferences mappedReferencesferences; // "knowledge" repository - merged
 
     Array<FileSerializedObject*> serializedObjects;
     HashMap<const IObject*, FileSerializedObject*> serializedObjectMap;
@@ -60,15 +50,13 @@ struct FileSavingState
     FileSavingState(const Array<ObjectPtr>& roots_)
         : roots(roots_)
     {}
-
-
 };
 
 //--
 
 bool SaveSingleObject(FileSerializedObject& objectState)
 {
-    stream::OpcodeWriter writer(objectState.stream, objectState.localReferences);
+    SerializationWriter writer(objectState.stream, objectState.localReferences);
     objectState.object->onWriteBinary(writer);
     return !objectState.stream.corrupted();
 }
@@ -174,12 +162,24 @@ private:
 
 //--
 
-bool CollectObjects(const FileSavingContext& context, FileSerializedObjectCollection& outCollection, IProgressTracker* progress)
+static bool ShouldSaveObject(const FileSavingContext& context, const IObject* object)
+{
+    while (object)
+    {
+        if (context.rootObjects.contains(object))
+            return true;
+        object = object->parent();
+    }
+
+    return false;
+}
+
+static bool CollectObjects(const FileSavingContext& context, FileSerializedObjectCollection& outCollection, IProgressTracker* progress)
 {
     FileSerializedObjectQueue objectQueue;
 
     // start saving with the root objects
-    for (const auto& obj : context.rootObject)
+    for (const auto* obj : context.rootObjects)
         objectQueue.push(outCollection.mapObject(obj));
 
     // save objects
@@ -195,7 +195,7 @@ bool CollectObjects(const FileSavingContext& context, FileSerializedObjectCollec
             progress->reportProgress(numSavedObjects, 0, TempString("Serializing object {}: {}", numSavedObjects, obj->object));
 
         // serialize object to opcodes
-        stream::OpcodeWriter writer(obj->stream, obj->localReferences);
+        SerializationWriter writer(obj->stream, obj->localReferences);
         obj->object->onWriteBinary(writer);
         if (obj->stream.corrupted())
         {
@@ -206,7 +206,7 @@ bool CollectObjects(const FileSavingContext& context, FileSerializedObjectCollec
         // make sure referenced objects get saved as well (if applicable)
         for (const auto& referencedObject : obj->localReferences.objects.keys())
         {
-            if (context.shouldSave(referencedObject))
+            if (ShouldSaveObject(context, referencedObject))
             {
                 objectQueue.push(outCollection.mapObject(referencedObject));
             }
@@ -224,7 +224,7 @@ bool CollectObjects(const FileSavingContext& context, FileSerializedObjectCollec
     return true;
 }
 
-void BuildFileTables(const Array<FileSerializedObject*>& objects, FileTablesBuilder& outTables, stream::OpcodeMappedReferences& outMappedReferences)
+static void BuildFileTables(const Array<FileSerializedObject*>& objects, FileTablesBuilder& outTables, SerializationMappedReferences& outMappedReferences)
 {
     // NOTE: maintain determinism
 
@@ -286,6 +286,15 @@ void BuildFileTables(const Array<FileSerializedObject*>& objects, FileTablesBuil
         }
     }
 
+    // gather all referenced async buffers
+    for (const auto* obj : objects)
+    {
+        for (const auto& ref : obj->localReferences.asyncBuffers.keys())
+        {
+            outMappedReferences.mappedAsyncBuffers.insert(ref);
+        }
+    }
+
     // build object table and export objects
     for (uint32_t i=0; i<objects.size(); ++i)
     {
@@ -304,9 +313,36 @@ void BuildFileTables(const Array<FileSerializedObject*>& objects, FileTablesBuil
         //TRACE_INFO("Mapped object {}/{}: {}", i + 1, objects.size(), obj->object);
         outMappedReferences.mappedPointers[obj->object.get()] = i + 1;
     }
+
+    // sort buffers by the CRC to allow for interpolation search
+    auto bufferKeys = outMappedReferences.mappedAsyncBuffers.keys();
+    std::sort(bufferKeys.begin(), bufferKeys.end(), [](const auto& a, const auto& b) { return a->crc() < b->crc(); });
+
+    // build buffer table
+    for (const auto& buffer : bufferKeys)
+    {
+        uint64_t crc = buffer->crc();
+        if (!outTables.bufferRawMap.contains(crc))
+        {
+            FileTablesBuilder::BufferData data;
+            if (buffer->extract(data.compressedData, data.compressionType) && data.compressedData)
+            {
+                data.crc = crc;
+                data.uncompressedSize = buffer->size();
+                outTables.bufferData.pushBack(data);
+
+                auto& entry = outTables.bufferTable.emplaceBack();
+                entry.crc = crc;
+                entry.compressionType = (uint8_t)data.compressionType;
+                entry.compressedSize = data.compressedData.size();
+                entry.uncompressedSize = buffer->size();
+                entry.dataOffset = 0; // not yet saved
+            }
+        }
+    }
 }
 
-bool WriteObjects(const FileSavingContext& context, const FileSerializedObjectCollection& objects, const stream::OpcodeMappedReferences& mappedReferences, FileTablesBuilder& tables, uint64_t baseOffset, IWriteFileHandle* file, IProgressTracker* progress)
+static bool WriteObjects(const FileSavingContext& context, const FileSerializedObjectCollection& objects, const SerializationMappedReferences& mappedReferences, FileTablesBuilder& tables, uint64_t baseOffset, IWriteFileHandle* file, IProgressTracker* progress)
 {
     const auto numObjects = objects.orderedObjects().size();
     for (uint32_t i = 0; i < numObjects; ++i)
@@ -324,8 +360,8 @@ bool WriteObjects(const FileSavingContext& context, const FileSerializedObjectCo
         // write binary opcode stream to file
         const auto objectStartPos = file->pos();
         {
-            stream::OpcodeFileWriter fileWriter(file);
-            stream::WriteOpcodes(context.protectedStream, object->stream, mappedReferences, fileWriter);
+            SerializationBinaryPacker fileWriter(file);
+            WriteOpcodes(context.format == FileSaveFormat::ProtectedBinaryStream, object->stream, mappedReferences, fileWriter);
             fileWriter.flush();
 
             tables.exportTable[i].crc = fileWriter.crc();
@@ -333,24 +369,27 @@ bool WriteObjects(const FileSavingContext& context, const FileSerializedObjectCo
 
         // patch object entry
         tables.exportTable[i].dataOffset = objectStartPos - baseOffset;
-        tables.exportTable[i].dataSize = file->pos() - objectStartPos;                
+        tables.exportTable[i].dataSize = file->pos() - objectStartPos;
     }
 
     // all objects saved
     return true;
 }
 
-uint32_t HeaderFlags(const FileSavingContext& context)
+static uint32_t HeaderFlags(const FileSavingContext& context)
 {
     uint32_t flags = 0;
 
-    if (context.protectedStream)
+    if (context.format == FileSaveFormat::ProtectedBinaryStream)
         flags |= FileTables::FileFlag_ProtectedLayout;
+
+    if (context.extractBuffers)
+        flags |= FileTables::FileFlag_ExtractedBuffers;
 
     return flags;
 }
 
-bool SaveFile(IWriteFileHandle* file, const FileSavingContext& context, IProgressTracker* progress)
+static bool SaveFileBinary(IWriteFileHandle* file, const FileSavingContext& context, FileSavingResult& outResult, IProgressTracker* progress)
 {
     ScopeTimer timer;
 
@@ -364,7 +403,7 @@ bool SaveFile(IWriteFileHandle* file, const FileSavingContext& context, IProgres
 
     // merge reference tables
     FileTablesBuilder fileTables;
-    stream::OpcodeMappedReferences mappedReferences;
+    SerializationMappedReferences mappedReferences;
     BuildFileTables(objectCollection.orderedObjects(), fileTables, mappedReferences);
 
     // store the file header to reserve space in the final file
@@ -386,7 +425,41 @@ bool SaveFile(IWriteFileHandle* file, const FileSavingContext& context, IProgres
     // remember file position after all objects were written
     const auto objectEnd = file->pos() - baseOffset;
 
-    // write buffers
+    // write or extract buffers
+    ASSERT(fileTables.bufferData.size() == fileTables.bufferTable.size());
+    for (auto i : fileTables.bufferData.indexRange())
+    {
+        const auto& data = fileTables.bufferData[i];
+
+        if (progress->checkCancelation())
+        {
+            file->discardContent();
+            return false;
+        }
+
+        if (context.extractBuffers)
+        {
+            auto& entry = outResult.extractedBuffers.emplaceBack();
+            entry.compressedData = data.compressedData;
+            entry.compressionType = data.compressionType;
+            entry.uncompressedSize = data.uncompressedSize;
+            entry.uncompressedCRC = data.crc;
+        }
+        else
+        {
+            auto& entry = fileTables.bufferTable[i];
+            entry.dataOffset = file->pos() - baseOffset;
+            entry.compressedSize = data.compressedData.size();
+
+            const auto numWritten = data.compressedData.size();
+            if (file->writeSync(data.compressedData.data(), data.compressedData.size()) != numWritten)
+            {
+                TRACE_WARNING("Failed to save {} bytes of async buffer {}, saved {} only", data.compressedData.size(), data.crc, numWritten);
+                file->discardContent();
+                return false;
+            }
+        }
+    }   
 
     // remember file position after all buffers were written
     const auto buffersEnd = file->pos() - baseOffset;
@@ -405,9 +478,26 @@ bool SaveFile(IWriteFileHandle* file, const FileSavingContext& context, IProgres
     file->pos(buffersEnd);
 
     // done
-    TRACE_INFO("Saved {} objects ({} of objects, {} of buffers) in {}", 
+    TRACE_INFO("Saved {} objects ({} of objects, {} of buffers) in {}",
         objectCollection.orderedObjects().size(), MemSize(objectEnd), MemSize(bufferDataSize), timer);
     return true;
+}
+
+//--
+
+static bool SaveFileText(IWriteFileHandle* file, const FileSavingContext& context, FileSavingResult& outResult, IProgressTracker* progress)
+{
+    return false;
+}
+
+//--
+
+bool SaveFile(IWriteFileHandle* file, const FileSavingContext& context, FileSavingResult& outResult, IProgressTracker* progress)
+{
+    if (context.format == FileSaveFormat::XML)
+        return SaveFileText(file, context, outResult, progress);
+    else
+        return SaveFileBinary(file, context, outResult, progress);
 }
 
 END_BOOMER_NAMESPACE()
@@ -421,13 +511,13 @@ void ExtractUsedResources(const IObject* object, HashMap<ResourceID, uint32_t>& 
     if (object)
     {
         FileSavingContext context;
-        context.rootObject.pushBack(AddRef(object));
+        context.rootObjects.pushBack(object);
 
         FileSerializedObjectCollection objectCollection;
         if (CollectObjects(context, objectCollection, nullptr))
         {
             FileTablesBuilder fileTables;
-            stream::OpcodeMappedReferences mappedReferences;
+            SerializationMappedReferences mappedReferences;
             BuildFileTables(objectCollection.orderedObjects(), fileTables, mappedReferences);
 
             for (const auto& resourceRef : mappedReferences.mappedResources.keys())

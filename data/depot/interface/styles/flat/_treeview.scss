@@ -3,28 +3,10 @@
 * Written by Tomasz "Rex Dex" Jonarski
 ***/
 
-TreeView
-{
+TreeView {
    background: #3A3D3E;
    vertical-align: expand;
    horizontal-align: expand;
-   //proportion: 100%;
-
-   ScrollContainer
-   {
-	    vertical-align: expand;
-	    horizontal-align: expand;
-	    //proportion: 100%;
-        padding: 0em 0em 0em 0em;
-	
-	    TreeViewItemContainer
-	    {
-	    	vertical-align: expand;
-	    	horizontal-align: expand;
-	    	//proportion: 100%;
-	    	padding: 0em 0em 0em 0em;
-	    }
-   }
 }
 
 TreeViewItem
@@ -109,4 +91,53 @@ TreeViewItem.nochildren > *#Button > TextLabel#ExpandIcon
 TreeViewItemContainer:focused
 {
 	overlay: box(100%,100%,0em,6em,#88888800,#88888888);
+}
+
+//--
+
+TreeViewItemEx {
+    margin: 0em 1em 0em 1em;
+	padding-left: 5em;
+	horizontal-align: expand;
+    min-height: 22em;
+    border-color: #303030;
+    border-bottom: 1em;
+	indent: 20em;
+
+    &.odd {
+         background: #353737;
+    }
+    
+    &:hover	{
+		background: linear(0, #333337, #00000000);
+	}
+	
+	&.selected {
+		background: solid(#007ACC);
+	}	
+}
+
+TreeViewExpandButton {
+    vertical-align: middle;
+    background: #0000;
+    border-width: 0em;
+	width: 18em;
+    height: 18em;
+
+    > TextLabel {
+        vertical-align: middle;
+        horizontal-align: center;
+        color: #FFFF;
+        font-family: $icon-font;
+        font-size: 12em;
+        content: "&#f067;";
+    }
+
+    &.expanded > TextLabel {
+        content: "&#f068;";
+    }
+
+    &.nochildren > TextLabel {
+        content: "";
+    }
 }

@@ -11,9 +11,10 @@
 #include "managedDirectory.h"
 #include "managedDepot.h"
 #include "managedFile.h"
-#include "managedFileFormat.h"
-#include "managedFileAssetChecks.h"
-#include "managedFileNativeResource.h"
+
+#include "assetFormat.h"
+#include "assetFileChecks.h"
+#include "assetFileImportJob.h"
 
 #include "editorService.h"
 
@@ -43,7 +44,6 @@
 #include "core/resource/include/metadata.h"
 #include "core/resource_compiler/include/importFileList.h"
 #include "engine/ui/include/uiSearchBar.h"
-#include "assetFileImportJob.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -171,7 +171,7 @@ StringBuf AssetImportListModel::fileSourceAssetAbsolutePath(const ui::ModelIndex
         if (const auto data = file.unsafe<FileData>())
         {
             StringBuf contextPath;
-            if (GetService<ImportFileService>()->resolveContextPath(data->sourceAssetPath, contextPath))
+            if (GetService<SourceAssetService>()->resolveContextPath(data->sourceAssetPath, contextPath))
                 return contextPath;
         }
     }
@@ -179,8 +179,9 @@ StringBuf AssetImportListModel::fileSourceAssetAbsolutePath(const ui::ModelIndex
     return StringBuf::EMPTY();
 }
 
-ui::ModelIndex AssetImportListModel::addNewImportFile(const StringBuf& sourcePath, TImportClass resourceClass, const StringBuf& fileName, const ManagedDirectory* directory, const ResourceConfigurationPtr& specificUserConfiguration, bool enabled)
+ui::ModelIndex AssetImportListModel::addNewImportFile(StringView sourceAssetFile, StringView depotDirectoryPath, TImportClass importClass, StringView fileName = "", const ResourceConfigurationPtr& specificUserConfiguration = nullptr, bool enabled = true)
 {
+#if 0
     if (sourcePath && resourceClass && directory)
     {
         // do not add the same file twice
@@ -207,7 +208,7 @@ ui::ModelIndex AssetImportListModel::addNewImportFile(const StringBuf& sourcePat
         fileEntry->targetDirectory = directory;
 
         // build the base import config from source asset directory
-        auto baseConfig = GetService<ImportFileService>()->compileBaseResourceConfiguration(sourcePath, configClass);
+        auto baseConfig = GetService<SourceAssetService>()->compileBaseResourceConfiguration(sourcePath, configClass);
 
         // create default file configuration
         if (specificUserConfiguration && specificUserConfiguration->is(configClass))
@@ -234,7 +235,7 @@ ui::ModelIndex AssetImportListModel::addNewImportFile(const StringBuf& sourcePat
     return ui::ModelIndex();
 }
 
-ui::ModelIndex AssetImportListModel::addReimportFile(ManagedFileNativeResource* file, const ResourceConfigurationPtr& specificUserConfiguration)
+ui::ModelIndex AssetImportListModel::addReimportFile(StringView depotPath, const ResourceConfigurationPtr& specificUserConfiguration)
 {
     // no file, what a waste
     if (!file)
@@ -267,7 +268,7 @@ ui::ModelIndex AssetImportListModel::addReimportFile(ManagedFileNativeResource* 
         return ui::ModelIndex();
 
     // build the base import config from source asset directory
-    auto baseConfig = GetService<ImportFileService>()->compileBaseResourceConfiguration(sourcePath, configClass);
+    auto baseConfig = GetService<SourceAssetService>()->compileBaseResourceConfiguration(sourcePath, configClass);
 
     // apply the ASSET SPECIFIC config from a followup-import
     DEBUG_CHECK_EX(metadata->importBaseConfiguration, "No base configuration stored in metadata, very strange");
@@ -538,12 +539,12 @@ ui::PopupPtr AssetImportListModel::contextMenu(ui::AbstractItemView* view, const
     if (indices.size() == 1)
     {
         auto rootFile = indices[0];
-        if (auto* managedFile = fileManagedFile(rootFile))
+        /*if (auto* managedFile = fileManagedFile(rootFile))
         {
             menu->createCallback("Show in depot...", "[img:zoom]") = [managedFile]() { 
                 ed::GetEditor()->showFile(managedFile);
             };
-        }
+        }*/
 
         if (const auto path = fileSourceAssetAbsolutePath(rootFile))
         {
@@ -701,7 +702,7 @@ static const TImportClassRegistry& ExtractResourceForExtension(StringView ext, T
     return classList;
 }
 
-void AssetImportPrepareDialog::addNewImportFiles(const ManagedDirectory* currentDirectory, SpecificClassType<IResource> resourceClass, const Array<StringBuf>& selectedAssetPaths)
+void AssetImportPrepareDialog::addNewImportFiles(StringView currentDirectory, SpecificClassType<IResource> resourceClass, const Array<StringBuf>& selectedAssetPaths)
 {
     static TImportClassRegistryMap ClassRegistry;
 
@@ -731,10 +732,10 @@ void AssetImportPrepareDialog::addNewImportFiles(const ManagedDirectory* current
                 if (!targetClasses.contains(importClass))
                     importClass = targetClasses[0];
 
-                if (auto index = m_filesListModel->addNewImportFile(path, importClass, StringBuf(fileName), currentDirectory, nullptr, enabled))
+                /*if (auto index = m_filesListModel->addNewImportFile(path, importClass, StringBuf(fileName), currentDirectory, nullptr, enabled))
                 {
                     createdIndices.pushBack(index);
-                }
+                }*/
             }
         }
     }
@@ -743,9 +744,9 @@ void AssetImportPrepareDialog::addNewImportFiles(const ManagedDirectory* current
     updateSelection();
 }
 
-void AssetImportPrepareDialog::addReimportFiles(const Array<ManagedFileNativeResource*>& files)
+void AssetImportPrepareDialog::addReimportFiles(const Array<StringBuf>& files)
 {
-    InplaceArray<ui::ModelIndex, 20> createdIndices;
+    /*InplaceArray<ui::ModelIndex, 20> createdIndices;
     for (auto* file : files)
     {
         if (file)
@@ -758,24 +759,7 @@ void AssetImportPrepareDialog::addReimportFiles(const Array<ManagedFileNativeRes
     }
 
     m_fileList->select(createdIndices);
-    updateSelection();
-}
-
-void AssetImportPrepareDialog::addReimportFile(ManagedFileNativeResource* file, const ResourceConfigurationPtr& reimportConfiguration)
-{
-    InplaceArray<ui::ModelIndex, 20> createdIndices;
-    if (file)
-    {
-        m_filesListModel->removeFile(file);
-
-        if (auto index = m_filesListModel->addReimportFile(file, reimportConfiguration))
-        {
-            createdIndices.pushBack(index);
-        }
-    }
-
-    m_fileList->select(createdIndices);
-    updateSelection();
+    updateSelection();*/
 }
 
 ImportListPtr AssetImportPrepareDialog::compileResourceList() const
@@ -815,15 +799,10 @@ void AssetImportPrepareDialog::cmdClearList()
     m_filesListModel->clearFiles();
 }
 
-ManagedDirectory* AssetImportPrepareDialog::contextDirectory()
-{
-    return GetEditor()->selectedDirectory();
-}
-
 void AssetImportPrepareDialog::cmdAddFiles()
 {
-    if (auto* dir = contextDirectory())
-        ImportNewFiles(this, nullptr, dir);
+    /*if (auto* dir = contextDirectory())
+        ImportNewFiles(this, nullptr, dir);*/
 }
 
 void AssetImportPrepareDialog::cmdRemoveFiles()

@@ -126,6 +126,70 @@ bool HashBuckets::Remove(HashBuckets* helper, const K* keys, const uint32_t keyC
     return false;
 }
 
+// remove element entry, does not do any rehashing
+template< typename K, typename FK  >
+bool HashBuckets::RemoveOrdered(HashBuckets* helper, const K* keys, const uint32_t keyCount, const FK& searchKey, uint32_t& outKeyIndex)
+{
+    if (helper)
+    {
+        const auto bucketIndex = Hasher<K>::CalcHash(searchKey) & helper->m_bucketMask;
+
+        int* prevPtr = &helper->m_buckets[bucketIndex];
+        while (*prevPtr != INDEX_NONE)
+        {
+            auto entryIndex = *prevPtr;
+            if (keys[entryIndex] == searchKey)
+            {
+                // unlink from array in this bucket
+                *prevPtr = helper->m_links[entryIndex];
+                outKeyIndex = entryIndex;
+
+                // all links with index >= entryIndex has to be decremented
+                auto* readPtr = helper->m_links;
+                auto* writePtr = helper->m_links;
+                for (uint32_t i = 0; i < keyCount; ++i)
+                {
+                    auto index = *readPtr++;
+                    ASSERT(index != entryIndex);
+                    if (index > entryIndex)
+                        index -= 1;
+
+                    if (i != entryIndex)
+                        *writePtr++ = index;
+                }
+
+                // all indices in buckets have to be updated as well
+                for (uint32_t i = 0; i < helper->m_bucketCount; ++i)
+                {
+                    ASSERT(helper->m_buckets[i] != entryIndex);
+                    if (helper->m_buckets[i] > entryIndex)
+                        helper->m_buckets[i] -= 1;
+                }
+
+                // item was removed
+                return true;
+            }
+
+            // go to next item
+            prevPtr = &helper->m_links[entryIndex];
+        }
+    }
+    else
+    {
+        for (uint32_t i = 0; i < keyCount; ++i)
+        {
+            if (keys[i] == searchKey)
+            {
+                outKeyIndex = i;
+                return true;
+            }
+        }
+    }
+
+    // item was not found
+    return false;
+}
+
 //--
 
 ALWAYS_INLINE uint32_t HashBuckets::BucketNextPow2(uint32_t v)

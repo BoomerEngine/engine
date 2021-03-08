@@ -9,6 +9,7 @@
 #pragma once
 
 #include "engine/ui/include/uiElement.h"
+#include "engine/ui/include/uiListViewEx.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -16,66 +17,105 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 class AssetFileSmallImportIndicator;
 
-// general visualization element for normal file or directory
-class IAssetBrowserVisItem : public ui::IElement
+//--
+
+enum class AssetBrowserVisItemType
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(IAssetBrowserVisItem, ui::IElement);
+    Invalid,
+    ParentDirectory,
+    ChildDirectory,
+    File,
+    NewFile,
+    NewDirectory,
+};
+
+//--
+
+// general visualization of something in the asset browser file list
+class IAssetBrowserVisItem : public ui::IListItem
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(IAssetBrowserVisItem, ui::IListItem);
 
 public:
-    IAssetBrowserVisItem(ManagedItem* item, uint32_t size);
+    IAssetBrowserVisItem(AssetBrowserVisItemType type);
 
-    INLINE ManagedItem* item() const { return m_item; }
+    INLINE AssetBrowserVisItemType type() const { return m_type; }
+
+    virtual StringView displayName() const = 0;
 
     virtual void resizeIcon(uint32_t size) = 0;
 
+    virtual bool handleItemFilter(const ui::SearchPattern& filter) const override;
+    virtual bool handleItemSort(const ui::ICollectionItem* other, int colIndex) const override;
+
 protected:
-    ManagedItem* m_item = nullptr;
+    AssetBrowserVisItemType m_type;
     uint32_t m_size = 100;
 };
 
 //--
 
-// general visualization element for normal file
-class AssetBrowserFileVis : public IAssetBrowserVisItem
+// general visualization element that has a depot path
+class IAssetBrowserDepotVisItem : public IAssetBrowserVisItem
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserFileVis, IAssetBrowserVisItem);
+    RTTI_DECLARE_VIRTUAL_CLASS(IAssetBrowserDepotVisItem, IAssetBrowserVisItem);
 
 public:
-    AssetBrowserFileVis(ManagedFile* item, uint32_t size);
+    IAssetBrowserDepotVisItem(AssetBrowserVisItemType type, StringView depotPath);
 
-    INLINE ManagedFile* file() const { return m_file; }
-
-    virtual void resizeIcon(uint32_t size) override;
+    INLINE const StringBuf& depotPath() const { return m_depotPath; }
 
 protected:
-    ManagedFile* m_file = nullptr;
+    StringBuf m_depotPath;
+};
+
+//--
+
+// general visualization element for normal file
+class AssetBrowserFileVis : public IAssetBrowserDepotVisItem
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserFileVis, IAssetBrowserDepotVisItem);
+
+public:
+    AssetBrowserFileVis(StringView depotPath);
+
+    virtual StringView displayName() const override final { return m_displayName; }
+
+protected:
+    StringBuf m_displayName;
 
     ui::ImagePtr m_icon;
     ui::TextLabelPtr m_label;
 
     RefPtr<AssetFileSmallImportIndicator> m_importIndicator;
+
+    virtual void resizeIcon(uint32_t size) override;
 };
 
 //--
 
 // general visualization element for normal directory
-class AssetBrowserDirectoryVis : public IAssetBrowserVisItem
+class AssetBrowserDirectoryVis : public IAssetBrowserDepotVisItem
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserDirectoryVis, IAssetBrowserVisItem);
+    RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserDirectoryVis, IAssetBrowserDepotVisItem);
 
 public:
-    AssetBrowserDirectoryVis(ManagedDirectory* dir, uint32_t size, bool parentDirectory = false);
+    AssetBrowserDirectoryVis(StringView depotPath, bool parentDir);
 
-    INLINE ManagedDirectory* directory() const { return m_directory; }
+    virtual StringView displayName() const override final { return m_displayName; }
 
     virtual void resizeIcon(uint32_t size) override;
 
 protected:
-    ManagedDirectory* m_directory = nullptr;
+    StringBuf m_displayName;
 
     ui::ImagePtr m_icon;
     ui::TextLabelPtr m_label;
 };
+
+//--
+
+DECLARE_UI_EVENT(EVENT_ASSET_PLACEHOLDER_ACCEPTED, StringBuf);
 
 //--
 
@@ -85,14 +125,18 @@ class AssetBrowserPlaceholderFileVis : public IAssetBrowserVisItem
     RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserPlaceholderFileVis, IAssetBrowserVisItem);
 
 public:
-    AssetBrowserPlaceholderFileVis(ManagedFilePlaceholder* file, uint32_t size);
+    AssetBrowserPlaceholderFileVis(const ManagedFileFormat* format, StringView parentDepotPath, StringView name);
 
-    INLINE ManagedFilePlaceholder* filePlaceholder() const { return m_filePlaceholder; }
+    INLINE const StringBuf& parentDepotPath() const { return m_parentDepotPath; }
+    INLINE const ManagedFileFormat* format() const { return m_format; }
+
+    virtual StringView displayName() const override final;
 
     virtual void resizeIcon(uint32_t size) override;
 
 protected:
-    ManagedFilePlaceholderPtr m_filePlaceholder;
+    StringBuf m_parentDepotPath;
+    const ManagedFileFormat* m_format = nullptr;
 
     ui::ImagePtr m_icon;
     ui::EditBoxPtr m_label;
@@ -106,14 +150,16 @@ class AssetBrowserPlaceholderDirectoryVis : public IAssetBrowserVisItem
     RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserPlaceholderDirectoryVis, IAssetBrowserVisItem);
 
 public:
-    AssetBrowserPlaceholderDirectoryVis(ManagedDirectoryPlaceholder* dir, uint32_t size);
+    AssetBrowserPlaceholderDirectoryVis(StringView parentDepotPath, StringView name);
 
-    INLINE ManagedDirectoryPlaceholder* filePlaceholder() const { return m_directoryPlaceholder; }
+    INLINE const StringBuf& parentDepotPath() const { return m_parentDepotPath; }
+
+    virtual StringView displayName() const override final;
 
     virtual void resizeIcon(uint32_t size) override;
 
 protected:
-    ManagedDirectoryPlaceholderPtr m_directoryPlaceholder;
+    StringBuf m_parentDepotPath;
 
     ui::ImagePtr m_icon;
     ui::EditBoxPtr m_label;

@@ -10,7 +10,7 @@
 
 #include "core/containers/include/hashMap.h"
 #include "core/resource/include/resource.h"
-#include "core/resource_compiler/include/importSourceAsset.h"
+#include "core/resource_compiler/include/sourceAsset.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 

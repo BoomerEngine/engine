@@ -90,8 +90,11 @@ public:
     // create zero initialized buffer
     static Buffer CreateZeroInitialized(PoolTag pool, uint64_t size, uint32_t alignment = 0);
 
-    // create buffer from external memory
+    // create buffer from external memory that is freed via given function
     static Buffer CreateExternal(PoolTag pool, uint64_t size, void* externalData, TBufferFreeFunc freeFunc = nullptr);
+
+    // create buffer from already allocated memory
+    static Buffer CreateFromAlreadyAllocatedMemory(PoolTag pool, uint64_t size, void* data);
 
     // create buffer from system memory (bypassing allocator), do it regardless of the buffer's size
     static Buffer CreateInSystemMemory(PoolTag pool, uint64_t size, const void* dataToCopy = nullptr, uint64_t dataSizeToCopy = INDEX_MAX64);

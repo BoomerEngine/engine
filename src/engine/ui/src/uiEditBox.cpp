@@ -185,9 +185,10 @@ void EditBox::renderForeground(DataStash& stash, const ElementArea& drawArea, ca
     }
 }
 
-void EditBox::moveCursor(const CursorNavigation& pos, bool extendSelection)
+bool EditBox::moveCursor(const CursorNavigation& pos, bool extendSelection)
 {
-    m_textBuffer->moveCursor(pos, extendSelection);
+    if (!m_textBuffer->moveCursor(pos, extendSelection))
+        return false;
 
     {
         auto cursorCharBounds = m_textBuffer->characterBounds(m_textBuffer->cursorPos().m_char);
@@ -200,6 +201,8 @@ void EditBox::moveCursor(const CursorNavigation& pos, bool extendSelection)
     m_cursorVisible = true;
     m_cursorToggleTime.resetToNow();
     m_cursorToggleTime += m_cursorToggleInterval;
+
+    return true;
 }
 
 bool EditBox::canModify() const
@@ -264,8 +267,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
             auto newCursorPos = m_textBuffer->findCursorPosition(m_textBuffer->cursorPos(), navigation);
 
             bool extendSelection = evt.keyMask().isShiftDown();
-            moveCursor(newCursorPos, extendSelection);
-            return true;
+            return moveCursor(newCursorPos, extendSelection);
         }
         else if (evt.keyCode() == input::KeyCode::KEY_RIGHT)
         {
@@ -273,8 +275,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
             auto newCursorPos = m_textBuffer->findCursorPosition(m_textBuffer->cursorPos(), navigation);
 
             bool extendSelection = evt.keyMask().isShiftDown();
-            moveCursor(newCursorPos, extendSelection);
-            return true;
+            return moveCursor(newCursorPos, extendSelection);
         }
         else if (evt.keyCode() == input::KeyCode::KEY_HOME)
         {
@@ -282,8 +283,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
             auto newCursorPos = m_textBuffer->findCursorPosition(m_textBuffer->cursorPos(), navigation);
 
             bool extendSelection = evt.keyMask().isShiftDown();
-            moveCursor(newCursorPos, extendSelection);
-            return true;
+            return moveCursor(newCursorPos, extendSelection);
         }
         else if (evt.keyCode() == input::KeyCode::KEY_END)
         {
@@ -291,8 +291,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
             auto newCursorPos = m_textBuffer->findCursorPosition(m_textBuffer->cursorPos(), navigation);
 
             bool extendSelection = evt.keyMask().isShiftDown();
-            moveCursor(newCursorPos, extendSelection);
-            return true;
+            return moveCursor(newCursorPos, extendSelection);
         }
         else if (evt.keyCode() == input::KeyCode::KEY_UP)
         {
@@ -302,8 +301,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
                 auto newCursorPos = m_textBuffer->findCursorPosition(m_textBuffer->cursorPos(), navigation);
 
                 bool extendSelection = evt.keyMask().isShiftDown();
-                moveCursor(newCursorPos, extendSelection);
-                return true;
+                return moveCursor(newCursorPos, extendSelection);
             }
             else
             {
@@ -318,8 +316,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
                 auto newCursorPos = m_textBuffer->findCursorPosition(m_textBuffer->cursorPos(), navigation);
 
                 bool extendSelection = evt.keyMask().isShiftDown();
-                moveCursor(newCursorPos, extendSelection);
-                return true;
+                return moveCursor(newCursorPos, extendSelection);
             }
             else
             {
@@ -334,8 +331,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
                 auto newCursorPos = m_textBuffer->findCursorPosition(m_textBuffer->cursorPos(), navigation);
 
                 bool extendSelection = evt.keyMask().isShiftDown();
-                moveCursor(newCursorPos, extendSelection);
-                return true;
+                return moveCursor(newCursorPos, extendSelection);
             }
         }
         else if (evt.keyCode() == input::KeyCode::KEY_NEXT)
@@ -346,8 +342,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
                 auto newCursorPos = m_textBuffer->findCursorPosition(m_textBuffer->cursorPos(), navigation);
 
                 bool extendSelection = evt.keyMask().isShiftDown();
-                moveCursor(newCursorPos, extendSelection);
-                return true;
+                return moveCursor(newCursorPos, extendSelection);
             }
         }
         else if (evt.keyCode() == input::KeyCode::KEY_ESCAPE)

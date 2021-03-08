@@ -15,7 +15,7 @@
 #include "engine/ui/include/uiDockLayout.h"
 #include "engine/ui/include/uiDataInspector.h"
 #include "editor/common/include/assetBrowser.h"
-#include "editor/common/include/managedFileFormat.h"
+#include "editor/common/include/assetFormat.h"
 #include "editor/common/include/managedFileNativeResource.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)

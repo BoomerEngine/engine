@@ -18,12 +18,6 @@ BEGIN_BOOMER_NAMESPACE_EX(ui)
 
 //---
 
-DECLARE_UI_EVENT(EVENT_ITEM_SELECTION_CHANGED)
-DECLARE_UI_EVENT(EVENT_ITEM_ACTIVATED, ModelIndex)
-DECLARE_UI_EVENT(EVENT_ITEM_CONTEXT_MENU)
-
-//---
-
 /// base class for a widget that interacts with abstract model
 class ENGINE_UI_API AbstractItemView : public ScrollArea, public IAbstractItemModelObserver
 {

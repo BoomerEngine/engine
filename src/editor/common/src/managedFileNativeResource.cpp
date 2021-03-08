@@ -9,15 +9,14 @@
 #include "build.h"
 #include "managedDepot.h"
 #include "managedFileNativeResource.h"
-#include "managedFileFormat.h"
-#include "resourceEditorNativeFile.h"
+#include "assetFormat.h"
 
 #include "core/resource/include/fileLoader.h"
 #include "core/resource/include/metadata.h"
 #include "core/resource/include/fileSaver.h"
 #include "core/io/include/fileHandle.h"
 #include "core/resource_compiler/include/importFileService.h"
-#include "core/resource/include/loadingService.h"
+#include "core/resource/include/loader.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -131,7 +130,7 @@ bool ManagedFileNativeResource::canReimport() const
 
     // does source exist ?
     const auto& sourcePath = metadata->importDependencies[0].importPath;
-    if (!GetService<ImportFileService>()->fileExists(sourcePath))
+    if (!GetService<SourceAssetService>()->fileExists(sourcePath))
         return false;
 
     // reimporting in principle should be possible

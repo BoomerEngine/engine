@@ -336,11 +336,8 @@ void AssetImportDetailsDialog::showSelectedFilesInBrowser()
     {
         if (auto depotPath = m_filesListModel->fileDepotPath(index))
         {
-            if (auto* managedFile = GetEditor()->managedDepot().findManagedFile(depotPath))
-            {
-                GetEditor()->showFile(managedFile);
-                break;
-            }
+            GetEditor()->showFile(depotPath);
+            break;
         }
     }
 }
@@ -357,12 +354,10 @@ void AssetImportDetailsDialog::showFilesContextMenu()
 
     if (depotPaths.size() == 1)
     {
-        if (auto* managedFile = GetEditor()->managedDepot().findManagedFile(depotPaths[0]))
-        {
-            menu->createCallback("Show in depot...", "[img:zoom]") = [managedFile]() {
-                ed::GetEditor()->showFile(managedFile);
-            };
-        }
+        const auto path = depotPaths[0];
+        menu->createCallback("Show in depot...", "[img:zoom]") = [path]() {
+            ed::GetEditor()->showFile(path);
+        };
 
         menu->createSeparator();
     }

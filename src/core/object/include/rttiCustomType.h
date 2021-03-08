@@ -87,12 +87,12 @@ namespace prv
     template< typename T >
     struct BinarySerializationHelper
     {
-        static void WriteBinaryFunc(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData)
+        static void WriteBinaryFunc(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData)
         {
             ((const T*)data)->writeBinary(file);
         }
 
-        static void ReadBinaryFunc(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data)
+        static void ReadBinaryFunc(TypeSerializationContext& typeContext, SerializationReader& file, void* data)
         {
             ((T*)data)->readBinary(file);
         }
@@ -185,8 +185,8 @@ public:
     typedef bool (*TCompareFunc)(const void* a, const void* b); // if empty we assume "compare via memcmp"
     typedef void (*TCopyFunc)(void* dest, const void* src); // if empty we assume "copy via memcpy"
 
-    typedef void (*TWriteBinaryFunc)(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData);
-    typedef void (*TReadBinaryFunc)(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data);
+    typedef void (*TWriteBinaryFunc)(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData);
+    typedef void (*TReadBinaryFunc)(TypeSerializationContext& typeContext, SerializationReader& file, void* data);
 
     typedef void (*TWriteXMLFunc)(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData);
     typedef void (*TReadXMLFunc)(TypeSerializationContext& typeContext, const xml::Node& node, void* data);
@@ -306,8 +306,8 @@ protected:
     virtual bool compare(const void* data1, const void* data2) const override;
     virtual void copy(void* dest, const void* src) const override;
 
-    virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override;
-    virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override;
+    virtual void writeBinary(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData) const override;
+    virtual void readBinary(TypeSerializationContext& typeContext, SerializationReader& file, void* data) const override;
 
     virtual void writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const override final;
     virtual void readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const override final;

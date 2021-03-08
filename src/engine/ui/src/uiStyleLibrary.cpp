@@ -22,7 +22,6 @@ BEGIN_BOOMER_NAMESPACE_EX(ui::style)
 //---
 
 RTTI_BEGIN_TYPE_CLASS(Library);
-    RTTI_METADATA(ResourceExtensionMetadata).extension("v4styles");
     RTTI_METADATA(ResourceDescriptionMetadata).description("UI Styles");
     RTTI_PROPERTY(m_selectors);
     RTTI_PROPERTY(m_values);

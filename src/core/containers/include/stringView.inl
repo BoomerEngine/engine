@@ -710,6 +710,29 @@ INLINE BaseStringView<T> BaseStringView<T>::parentDirectory() const
 }
 
 template< typename T >
+INLINE BaseStringView<T> BaseStringView<T>::directoryName() const
+{
+    const T* pathEnd = nullptr;
+    const T* prevPathEnd = nullptr;
+
+    const T* ptr = m_start;
+    while (ptr < m_end)
+    {
+        if (*ptr == '\\' || *ptr == '/')
+        {
+            prevPathEnd = pathEnd;
+            pathEnd = ptr + 1;
+        }
+        ++ptr;
+    }
+
+    if (pathEnd > prevPathEnd)
+        return BaseStringView<T>(prevPathEnd, pathEnd - 1);
+    else
+        return BaseStringView<T>();
+}
+
+template< typename T >
 INLINE bool BaseStringView<T>::matchString(const BaseStringView<T>& pattern) const
 {
     return prv::Helper<T>::MatchString(*this, pattern);

@@ -120,8 +120,8 @@ private:
     //mutable Array<PersistentBlockState> m_persistentBlockState;
 
     void applyConnections(const Array<PersistentConnection>& con);
-    void writePersistentConnections(stream::OpcodeWriter& writer) const;
-    void readPersistentConnections(stream::OpcodeReader& reader);
+    void writePersistentConnections(SerializationWriter& writer) const;
+    void readPersistentConnections(SerializationReader& reader);
 
 
     //--
@@ -139,8 +139,8 @@ private:
 protected:
     virtual void onPostLoad() override;
 
-    virtual void onReadBinary(stream::OpcodeReader& reader) override;
-    virtual void onWriteBinary(stream::OpcodeWriter& writer) const override;
+    virtual void onReadBinary(SerializationReader& reader) override;
+    virtual void onWriteBinary(SerializationWriter& writer) const override;
 
     friend class Block;
     friend class Socket;

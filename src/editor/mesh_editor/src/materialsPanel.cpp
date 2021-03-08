@@ -16,7 +16,7 @@
 
 #include "editor/common/include/assetBrowser.h"
 #include "editor/common/include/managedFile.h"
-#include "editor/common/include/managedFileFormat.h"
+#include "editor/common/include/assetFormat.h"
 
 #include "engine/ui/include/uiDataInspector.h"
 #include "engine/ui/include/uiDockLayout.h"
@@ -26,7 +26,7 @@
 #include "engine/ui/include/uiDragDrop.h"
 #include "engine/ui/include/uiCheckBox.h"
 
-#include "core/resource/include/loadingService.h"
+#include "core/resource/include/loader.h"
 #include "core/resource/include/depot.h"
 #include "core/object/include/dataViewNative.h"
 #include "core/object/include/rttiDataView.h"

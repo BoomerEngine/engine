@@ -114,9 +114,9 @@ class ManagedThumbnailEntry;
 typedef RefPtr<ManagedThumbnailEntry> ManagedThumbnailEntryPtr;
 typedef RefWeakPtr<ManagedThumbnailEntry> ManagedThumbnailEntryWeakPtr;
 
-class ManagedFileImportStatusCheck;
-typedef RefPtr<ManagedFileImportStatusCheck> ManagedFileImportStatusCheckPtr;
-typedef RefWeakPtr<ManagedFileImportStatusCheck> ManagedFileImportStatusCheckWeakPtr;
+class AssetImportStatusCheck;
+typedef RefPtr<AssetImportStatusCheck> AssetImportStatusCheckPtr;
+typedef RefWeakPtr<AssetImportStatusCheck> AssetImportStatusCheckWeakPtr;
 
 class ManagedFileFormat;
 class ManagedFilePlaceholder;

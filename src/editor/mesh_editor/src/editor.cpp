@@ -13,7 +13,7 @@
 #include "materialsPanel.h"
 
 #include "editor/common/include/managedFile.h"
-#include "editor/common/include/managedFileFormat.h"
+#include "editor/common/include/assetFormat.h"
 #include "editor/common/include/managedFileNativeResource.h"
 #include "engine/ui/include/uiDockPanel.h"
 #include "engine/ui/include/uiDockLayout.h"

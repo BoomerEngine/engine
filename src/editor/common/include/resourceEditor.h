@@ -30,8 +30,14 @@ typedef DirectFlags<ResourceEditorFeatureBit> ResourceEditorFeatureFlags;
 
 ///---
 
-/// internal editor saveable content
-     
+struct ResourceEditorData
+{
+    StringBuf physicalDepotPath; // master file on disk
+    ResourcePtr physicalResource; // master resource data
+    ResourcePtr editedResource; // resource we want to edit with the editor
+    StringBuf displayName; // name of the resource, usually the file name, can be something more complex for sub-resources
+};
+
 
 ///---
 
@@ -41,12 +47,12 @@ class EDITOR_COMMON_API ResourceEditor : public ui::DockPanel
     RTTI_DECLARE_VIRTUAL_CLASS(ResourceEditor, ui::DockPanel);
 
 public:
-    ResourceEditor(ManagedFile* file, ResourceEditorFeatureFlags flags, StringView defaultEditorTag = "Common");
+    ResourceEditor(const ResourceEditorData& context, ResourceEditorFeatureFlags flags, StringView defaultEditorTag = "Common");
     virtual ~ResourceEditor();
 
     INLINE ResourceEditorFeatureFlags features() const { return m_features; }
 
-    INLINE ManagedFile* file() const { return m_file; }
+    INLINE const ResourceEditorData& context() const { return m_context; }
 
     INLINE const StringBuf& containerTag() const { return m_containerTag; }
 
@@ -116,7 +122,7 @@ protected:
     void updateAspects();
 
 private:
-    ManagedFile* m_file = nullptr; // file being edited
+    ResourceEditorData m_context;
 
     ResourceEditorFeatureFlags m_features; // editor flags & features
  
@@ -185,11 +191,8 @@ class EDITOR_COMMON_API IResourceEditorOpener : public NoCopy
 public:
     virtual ~IResourceEditorOpener();
 
-    /// can we open given file FORMAT
-    virtual bool canOpen(const ManagedFileFormat& format) const = 0;
-
     // create editor for given file type
-    virtual RefPtr<ResourceEditor> createEditor(ManagedFile* file) const = 0;
+    virtual RefPtr<ResourceEditor> createEditor(const ResourceEditorData& context) const = 0;
 };
 
 ///---

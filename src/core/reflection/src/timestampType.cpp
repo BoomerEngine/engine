@@ -8,8 +8,8 @@
 
 #include "build.h"
 
-#include "core/object/include/streamOpcodeWriter.h"
-#include "core/object/include/streamOpcodeReader.h"
+#include "core/object/include/serializationWriter.h"
+#include "core/object/include/serializationReader.h"
 #include "core/io/include/timestamp.h"
 #include "core/xml/include/xmlWrappers.h"
 
@@ -18,13 +18,13 @@ BEGIN_BOOMER_NAMESPACE_EX(io)
 namespace prv
 {
 
-    void WriteBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& stream, const void* rawData, const void* defaultData)
+    void WriteBinary(TypeSerializationContext& typeContext, SerializationWriter& stream, const void* rawData, const void* defaultData)
     {
         const auto& data = *(const TimeStamp*)rawData;
         stream.writeTypedData<uint64_t>(data.value());
     }
 
-    void ReadBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& stream, void* rawData)
+    void ReadBinary(TypeSerializationContext& typeContext, SerializationReader& stream, void* rawData)
     {
         uint64_t value = 0;
         stream.readTypedData(value);

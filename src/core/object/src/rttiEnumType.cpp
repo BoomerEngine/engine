@@ -10,8 +10,8 @@
 #include "rttiEnumType.h"
 #include "rttiDataView.h"
 
-#include "streamOpcodeWriter.h"
-#include "streamOpcodeReader.h"
+#include "serializationWriter.h"
+#include "serializationReader.h"
 #include "core/xml/include/xmlWrappers.h"
 
 BEGIN_BOOMER_NAMESPACE()
@@ -201,7 +201,7 @@ bool EnumType::parseFromString(StringView txt, void* data, uint32_t flags) const
 
 //----
 
-void EnumType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
+void EnumType::writeBinary(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData) const
 {
     int64_t val = 0;
     readInt64(data, val);
@@ -215,7 +215,7 @@ void EnumType::writeBinary(TypeSerializationContext& typeContext, stream::Opcode
     file.writeStringID(optionName);
 }
 
-void EnumType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
+void EnumType::readBinary(TypeSerializationContext& typeContext, SerializationReader& file, void* data) const
 {
     auto optionName = file.readStringID();
 

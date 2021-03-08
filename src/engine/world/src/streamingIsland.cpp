@@ -78,7 +78,6 @@ RTTI_BEGIN_TYPE_CLASS(StreamingIsland);
     RTTI_PROPERTY(m_alwaysLoaded);
     RTTI_PROPERTY(m_streamingBox);
     RTTI_PROPERTY(m_entityCount);
-    RTTI_PROPERTY(m_entityUnpackedDataSize);
     RTTI_PROPERTY(m_entityPackedData);
     RTTI_PROPERTY(m_children);
 RTTI_END_TYPE();
@@ -111,8 +110,7 @@ StreamingIsland::StreamingIsland(const Setup& setup)
     }
             
     const auto data = container->toBuffer();
-    m_entityUnpackedDataSize = data.size();
-    m_entityPackedData = Compress(CompressionType::LZ4HC, data, POOL_WORLD_STREAMING);
+    m_entityPackedData.bind(data, CompressionType::LZ4HC);
 }
 
 void StreamingIsland::attachChild(StreamingIsland* child)
@@ -124,16 +122,16 @@ void StreamingIsland::attachChild(StreamingIsland* child)
     }
 }
 
-StreamingIslandInstancePtr StreamingIsland::load(ResourceLoader* loader) const
+StreamingIslandInstancePtr StreamingIsland::load(bool loadImports) const
 {
     PC_SCOPE_LVL1(LoadStreamingIsland);
 
     // decompress buffer
-    auto data = Decompress(CompressionType::LZ4HC, m_entityPackedData.data(), m_entityPackedData.size(), m_entityUnpackedDataSize, POOL_WORLD_STREAMING);
+    auto data = m_entityPackedData.decompress(POOL_WORLD_STREAMING);
     DEBUG_CHECK_RETURN_EX_V(data, "Unable to decompress entity data", nullptr);
 
     // unpack the objects
-    auto objects = rtti_cast<StreamingIslandPackedEntities>(LoadObjectFromBuffer(data.data(), data.size(), loader));
+    auto objects = rtti_cast<StreamingIslandPackedEntities>(LoadObjectFromBuffer(data.data(), data.size(), loadImports));
     DEBUG_CHECK_RETURN_EX_V(objects, "Unable to load packed entities", nullptr);
 
     // create runtime island

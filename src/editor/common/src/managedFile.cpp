@@ -9,7 +9,7 @@
 #include "build.h"
 #include "managedDirectory.h"
 #include "managedFile.h"
-#include "managedFileFormat.h"
+#include "assetFormat.h"
 #include "managedThumbnails.h"
 #include "managedDepot.h"
 
@@ -21,7 +21,7 @@
 #include "core/resource/include/thumbnail.h"
 #include "core/image/include/imageView.h"
 #include "core/image/include/image.h"
-#include "core/resource/include/loadingService.h"
+#include "core/resource/include/loader.h"
 #include "core/resource/include/fileLoader.h"
 #include "core/resource/include/metadata.h"
 #include "core/resource/include/fileSaver.h"

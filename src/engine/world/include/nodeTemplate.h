@@ -141,7 +141,7 @@ struct ENGINE_WORLD_API HierarchyEntity : public IReferencable
 };
 
 // compile entity (prefab-style), returns the root entity directly and other all entities via array
-ENGINE_WORLD_API CAN_YIELD RefPtr<HierarchyEntity> CompileEntityHierarchy(const NodePathBuilder& path, const NodeTemplate* rootTemplateNode, const AbsoluteTransform* forceInitialPlacement, ResourceLoader* loader);
+ENGINE_WORLD_API CAN_YIELD RefPtr<HierarchyEntity> CompileEntityHierarchy(const NodePathBuilder& path, const NodeTemplate* rootTemplateNode, const AbsoluteTransform* forceInitialPlacement, bool loadImports);
 
 //--
 

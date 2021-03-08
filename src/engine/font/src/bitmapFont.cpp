@@ -28,7 +28,6 @@ RTTI_END_TYPE();
 //--
 
 RTTI_BEGIN_TYPE_CLASS(BitmapFont);
-    RTTI_METADATA(ResourceExtensionMetadata).extension("v4bf");
     RTTI_METADATA(ResourceDescriptionMetadata).description("Bitmap Font");
     RTTI_PROPERTY(m_image);
     RTTI_PROPERTY(m_glyphs);

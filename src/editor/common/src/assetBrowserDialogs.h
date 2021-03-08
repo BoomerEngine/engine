@@ -22,7 +22,7 @@ extern EDITOR_COMMON_API void DeleteDepotItems(ui::IElement* owner, const Array<
 extern EDITOR_COMMON_API bool SaveDepotFiles(ui::IElement* owner, const ManagedFileCollection& files);
 
 /// show a list of opened files, allows to switch to editor, close windows etc
-extern EDITOR_COMMON_API void ShowOpenedFilesList(ui::IElement* owner, ManagedFile* focusFile);
+extern EDITOR_COMMON_API void ShowOpenedFilesList(ui::IElement* owner, StringView focusFile);
 
 //--
 

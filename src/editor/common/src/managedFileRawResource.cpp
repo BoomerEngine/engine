@@ -8,7 +8,7 @@
 
 #include "build.h"
 #include "managedFileRawResource.h"
-#include "managedFileFormat.h"
+#include "assetFormat.h"
 #include "managedItem.h"
 #include "managedDepot.h"
 #include "core/io/include/fileHandle.h"

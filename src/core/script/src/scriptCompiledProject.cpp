@@ -16,7 +16,6 @@ BEGIN_BOOMER_NAMESPACE_EX(script)
 //---
 
 RTTI_BEGIN_TYPE_CLASS(CompiledProject);
-    RTTI_METADATA(ResourceExtensionMetadata).extension("v4scripts");
     RTTI_METADATA(ResourceDescriptionMetadata).description("Compiled Script Project");
     RTTI_PROPERTY(m_data);
 RTTI_END_TYPE();

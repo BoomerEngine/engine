@@ -70,13 +70,13 @@ enum class FileWriteMode : uint8_t
 };
 
 // Open physical file for reading
-extern CORE_IO_API ReadFileHandlePtr OpenForReading(StringView absoluteFilePath);
+extern CORE_IO_API ReadFileHandlePtr OpenForReading(StringView absoluteFilePath, TimeStamp* outTimestamp = nullptr);
 
 // open physical file for writing
 extern CORE_IO_API WriteFileHandlePtr OpenForWriting(StringView absoluteFilePath, FileWriteMode mode = FileWriteMode::StagedWrite);
 
 // open physical file for async reading
-extern CORE_IO_API AsyncFileHandlePtr OpenForAsyncReading(StringView absoluteFilePath);
+extern CORE_IO_API AsyncFileHandlePtr OpenForAsyncReading(StringView absoluteFilePath, TimeStamp* outTimestamp = nullptr);
 
 // create a READ ONLY memory mapped buffer view of a file, used by some asset loaders
 extern CORE_IO_API Buffer OpenMemoryMappedForReading(StringView absoluteFilePath);

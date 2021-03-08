@@ -10,7 +10,8 @@
 #include "importer.h"
 #include "importInterface.h"
 #include "importInterfaceImpl.h"
-#include "importSourceAssetRepository.h"
+
+#include "sourceAssetService.h"
 
 #include "core/resource/include/metadata.h"
 #include "core/containers/include/path.h"
@@ -19,16 +20,14 @@ BEGIN_BOOMER_NAMESPACE()
 
 //--
 
-LocalImporterInterface::LocalImporterInterface(SourceAssetRepository* assetRepository, const IImportDepotChecker* depot, const IResource* originalData, const StringBuf& importPath, const StringBuf& depotPath, IProgressTracker* externalProgressTracker, const ResourceConfigurationPtr& configuration)
-    : m_originalData(originalData)
-    , m_importPath(importPath)
+LocalImporterInterface::LocalImporterInterface(const IImportDepotLoader* depot, const StringBuf& importPath, const StringBuf& depotPath, IProgressTracker* externalProgressTracker, const ResourceConfiguration* config)
+    : m_importPath(importPath)
     , m_depotPath(depotPath)
     , m_externalProgressTracker(externalProgressTracker)
-    , m_assetRepository(assetRepository)
-    , m_configuration(configuration)
-    , m_depotChecker(depot)
+    , m_depot(depot)
+    , m_configuration(AddRef(config))
 {
-    ASSERT(configuration != nullptr)
+    ASSERT(config != nullptr)
 }
 
 LocalImporterInterface::~LocalImporterInterface()
@@ -36,7 +35,12 @@ LocalImporterInterface::~LocalImporterInterface()
 
 const IResource* LocalImporterInterface::existingData() const
 {
-    return m_originalData;
+    auto lock = CreateLock(m_loadedOriginalDataLock);
+
+    if (!m_loadedOriginalData)
+        m_loadedOriginalData = m_depot->loadExistingResource(m_depotPath);
+
+    return m_loadedOriginalData;
 }
 
 const StringBuf& LocalImporterInterface::queryResourcePath() const
@@ -54,44 +58,65 @@ const ResourceConfiguration* LocalImporterInterface::queryConfigrationTypeless()
     return m_configuration;
 }
 
-Buffer LocalImporterInterface::loadSourceFileContent(StringView assetImportPath) const
+ResourceID LocalImporterInterface::queryResourceID(StringView depotPath) const
+{
+    return m_depot->queryResourceID(depotPath);
+}
+
+Buffer LocalImporterInterface::loadSourceFileContent(StringView assetImportPath, bool reportAsDependency)
 {
     TimeStamp timestamp;
-    ImportFileFingerprint fingerprint;
-    if (auto ret = m_assetRepository->loadSourceFileContent(assetImportPath, timestamp, fingerprint))
+    SourceAssetFingerprint fingerprint;
+    if (auto ret = GetService<SourceAssetService>()->loadRawContent(assetImportPath, timestamp, fingerprint))
     {
-        const_cast<LocalImporterInterface*>(this)->reportImportDependency(assetImportPath, timestamp, fingerprint);
+        if (reportAsDependency)
+            reportImportDependency(assetImportPath, timestamp, fingerprint);
         return ret;
     }
 
     return Buffer();
 }
 
-SourceAssetPtr LocalImporterInterface::loadSourceAsset(StringView assetImportPath) const
+SourceAssetPtr LocalImporterInterface::loadSourceAsset(StringView assetImportPath, bool reportAsDependency, bool allowCaching)
 {
     TimeStamp timestamp;
-    ImportFileFingerprint fingerprint;
-    if (auto ret = m_assetRepository->loadSourceAsset(assetImportPath, timestamp, fingerprint))
+    SourceAssetFingerprint fingerprint;
+
+    if (allowCaching)
     {
-        const_cast<LocalImporterInterface*>(this)->reportImportDependency(assetImportPath, timestamp, fingerprint);
-        return ret;
+        if (auto ret = GetService<SourceAssetService>()->loadAssetCached(assetImportPath, timestamp, fingerprint))
+        {
+            if (reportAsDependency)
+                reportImportDependency(assetImportPath, timestamp, fingerprint);
+            return ret;
+        }
+    }
+    else
+    {
+        if (auto ret = GetService<SourceAssetService>()->loadAssetUncached(assetImportPath, timestamp, fingerprint))
+        {
+            if (reportAsDependency)
+                reportImportDependency(assetImportPath, timestamp, fingerprint);
+            return ret;
+        }
     }
 
     return nullptr;
 }
 
-void LocalImporterInterface::reportImportDependency(StringView assetImportPath, const TimeStamp& timestamp, const ImportFileFingerprint& fingerprint)
+void LocalImporterInterface::reportImportDependency(StringView assetImportPath, const TimeStamp& timestamp, const SourceAssetFingerprint& fingerprint)
 {
-    auto lock = CreateLock(m_importDependenciesLock);
+    auto lock = CreateLock(m_dependenciesLock);
 
     const auto assetKey = StringBuf(assetImportPath).toLower();
 
-    if (m_importDependenciesSet.insert(assetKey))
+    if (m_dependenciesSet.insert(assetKey))
     {
-        auto& entry = m_importDependencies.emplaceBack();
+        auto& entry = m_dependencies.emplaceBack();
         entry.assetPath = StringBuf(assetImportPath);
         entry.fingerprint = fingerprint;
-        TRACE_INFO("Reported '{}' as import dependency, last modified at {}, fingerprint: {}", assetImportPath, timestamp, fingerprint);
+
+        TRACE_SPAM("Reported '{}' as import dependency, last modified at {}, fingerprint: {}", assetImportPath, timestamp, fingerprint);
     }
 }
 
@@ -101,78 +126,75 @@ bool LocalImporterInterface::findSourceFile(StringView assetImportPath, StringVi
 {
     return ScanRelativePaths(assetImportPath, inputPath, maxScanDepth, outImportPath, [this](StringView testPath)
         {
-            return m_assetRepository->fileExists(testPath);
+            return GetService<SourceAssetService>()->fileExists(testPath);
         });
 }
 
-ResourceID LocalImporterInterface::followupImport(StringView assetImportPath, StringView depotPath, const ResourceConfiguration* config)
+ResourceID LocalImporterInterface::followupImport(StringView assetImportPath, StringView depotPath, ResourceClass cls, const ResourceConfiguration* config)
 {
-    if (assetImportPath && depotPath)
-    {
-        const auto depotKey = StringBuf(depotPath).toLower();
+    DEBUG_CHECK_RETURN_EX_V(assetImportPath, "Invalid asset path", ResourceID());
+    DEBUG_CHECK_RETURN_EX_V(depotPath, "Invalid depot path", ResourceID());
 
-        if (m_followupImportsSet.insert(depotKey))
+    const auto depotKey = StringBuf(depotPath).toLower();
+
+    // reuse existing reference
+    ResourceID id;
+    if (m_followupImportsSet.find(depotKey, id))
+        return id;
+
+    // try to use existing resource key
+    const auto metadataPath = ReplaceExtension(depotPath, ResourceMetadata::FILE_EXTENSION);
+    if (const auto metadata = m_depot->loadExistingMetadata(metadataPath))
+    {
+        if (!metadata->ids.empty())
         {
-            auto& entry = m_followupImports.emplaceBack();
-            entry.assetPath = StringBuf(assetImportPath);
-            entry.depotPath = StringBuf(depotPath);
-            entry.config = AddRef(config);
+            id = metadata->ids.front();
+            TRACE_INFO("Followup import '{}' already exists and has ID '{}'", depotPath, id);
         }
         else
         {
-            TRACE_WARNING("Followup import '{}' already specified", depotPath);
+            id = ResourceID::Create();
+            TRACE_INFO("Followup import '{}' exists but has no ID assigned, assigned new ID {}", depotPath, id);
         }
     }
+    else
+    {
+        id = ResourceID::Create();
+        TRACE_INFO("Followup import '{}' does not exist yet, assigned new ID {}", depotPath, id);
+    }
 
-    return ResourceID(); // TODO!
+    // store
+    auto& entry = m_followupImports.emplaceBack();
+    entry.assetPath = StringBuf(assetImportPath);
+    entry.depotPath = StringBuf(depotPath);
+    entry.config = AddRef(config);
+    entry.resourceClass = cls;
+    entry.id = id;
+
+    // store in map
+    m_followupImportsSet[depotKey] = id;
+    return id;
 }
 
 //--
 
-bool LocalImporterInterface::findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, ResourceID& outID, uint32_t maxScanDepth) const
+bool LocalImporterInterface::findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, ResourceID* outID, uint32_t maxScanDepth) const
 {
     StringBuf depotFinalSearchPath;
     if (!ApplyRelativePath(depotReferencePath, depotSearchPath, depotFinalSearchPath))
         return false;
 
-    return m_depotChecker->depotFindFile(depotFinalSearchPath, searchFileName, maxScanDepth, outDepotPath, outID);
+    return m_depot->findFile(depotFinalSearchPath, searchFileName, maxScanDepth, outDepotPath, outID);
 }
 
 bool LocalImporterInterface::checkDepotFile(StringView depotPath) const
 {
-    return m_depotChecker->depotFileExists(depotPath);
+    return m_depot->fileExists(depotPath);
 }
 
 bool LocalImporterInterface::checkSourceFile(StringView assetImportPath) const
 {
-    return m_assetRepository->fileExists(assetImportPath);
-}
-
-//--
-
-ResourceMetadataPtr LocalImporterInterface::buildMetadata() const
-{
-    auto ret = RefNew<ResourceMetadata>();
-
-    ret->importDependencies.reserve(m_importDependencies.size());
-    for (const auto& dep : m_importDependencies)
-    {
-        auto& entry = ret->importDependencies.emplaceBack();
-        entry.importPath = dep.assetPath;
-        entry.timestamp = dep.timestamp;
-        entry.crc = dep.fingerprint.rawValue();
-    }
-
-    ret->importFollowups.reserve(m_followupImports.size());
-    for (const auto& info : m_followupImports)
-    {
-        auto& entry = ret->importFollowups.emplaceBack();
-        entry.sourceImportPath = info.assetPath;
-        entry.depotPath = info.depotPath;
-        entry.configuration = CloneObject(info.config, ret);
-    }
-
-    return ret;
+    return GetService<SourceAssetService>()->fileExists(assetImportPath);
 }
 
 //--

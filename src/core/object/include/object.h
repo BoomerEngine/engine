@@ -131,10 +131,10 @@ public:
     virtual void onPostLoad();
 
     // Load object from binary stream
-    virtual void onReadBinary(stream::OpcodeReader& reader);
+    virtual void onReadBinary(SerializationReader& reader);
 
     // Save object to binary stream
-    virtual void onWriteBinary(stream::OpcodeWriter& writer) const;
+    virtual void onWriteBinary(SerializationWriter& writer) const;
 
     // We are reading object from text/binary stream and previously serialized property is no longer in the object
     virtual bool onPropertyMissing(StringID propertyName, Type originalType, const void* originalData);
@@ -260,16 +260,18 @@ public:
 
     //--
 
-    // clone this object
-    ObjectPtr clone(const IObject* newParent = nullptr, ResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedObjectClass = nullptr) const;
+    // clone this object (and all linked child objects)
+    // NOTE: any references to objects outside the hierarchy will be nullified, beware!
+    // NOTE: any loaded resource references will still be loaded any unloaded ones will be loaded (slow...)
+    ObjectPtr clone() const;
 
     // save this object tree to a buffer
     Buffer toBuffer() const;
 
     //--
 
-    // load object from buffer in memory
-    static ObjectPtr FromBuffer(const void* data, uint32_t size, ResourceLoader* loader = nullptr, SpecificClassType<IObject> mutatedClass = nullptr);
+    // load object from buffer in memory, may or may not load file references
+    static ObjectPtr FromBuffer(const void* data, uint32_t size, bool loadImports=false);
 
     //--
 
@@ -287,10 +289,10 @@ public:
 
     //--
 
-    // register clone function
-    static void RegisterCloneFunction(const std::function<ObjectPtr(const IObject*, const IObject*, ResourceLoader * loader, SpecificClassType<IObject>)>& func);
+    // hacks to fight project dependencies...
+    static void RegisterCloneFunction(const std::function<ObjectPtr(const IObject*)>& func);
     static void RegisterSerializeFunction(const std::function<Buffer(const IObject*)>& func);
-    static void RegisterDeserializeFunction(const std::function<ObjectPtr(const void* data, uint32_t size, ResourceLoader* loader, SpecificClassType<IObject> mutatedClass)>& func);
+    static void RegisterDeserializeFunction(const std::function<ObjectPtr(const void*, uint32_t, bool)>& func);
 
 protected:
     INLINE IObject(const IObject&) {};

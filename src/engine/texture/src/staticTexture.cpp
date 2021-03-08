@@ -34,7 +34,6 @@ RTTI_BEGIN_TYPE_STRUCT(StaticTextureMip)
 //---
 
 RTTI_BEGIN_TYPE_CLASS(StaticTexture);
-    RTTI_METADATA(ResourceExtensionMetadata).extension("v4stex");
     RTTI_METADATA(ResourceDescriptionMetadata).description("Static Texture");
     RTTI_METADATA(ResourceTagColorMetadata).color(0xa8, 0xd6, 0xe2);
     RTTI_PROPERTY(m_persistentPayload);
@@ -47,7 +46,7 @@ StaticTexture::StaticTexture()
 {
 }
 
-StaticTexture::StaticTexture(Buffer&& data, AsyncBuffer&& asyncData, Array<StaticTextureMip>&& mips, const TextureInfo& info)
+StaticTexture::StaticTexture(CompressedBufer&& data, AsyncFileBuffer&& asyncData, Array<StaticTextureMip>&& mips, const TextureInfo& info)
     : ITexture(info)
     , m_persistentPayload(std::move(data))
     , m_streamingPayload(std::move(asyncData))
@@ -81,7 +80,7 @@ void StaticTexture::onPostLoad()
         const auto expectedSize = ((alignedWidth * alignedHeight * mip.depth) * format.bitsPerPixel) / 8;
 
         DEBUG_CHECK_EX(expectedSize == mip.dataSize, TempString("Static texture '{}' mipmap [{}x{}x{}] has unexpected size {} (expected {}), format {}",
-            path(), mip.width, mip.height, mip.depth, mip.dataSize, expectedSize, m_info.format));
+            loadPath(), mip.width, mip.height, mip.depth, mip.dataSize, expectedSize, m_info.format));
     }
 
     createDeviceResources();
@@ -97,7 +96,7 @@ gpu::ImageSampledViewPtr StaticTexture::view() const
 class StaticTextureSourceDataProvider : public gpu::ISourceDataProvider
 {
 public:
-	StaticTextureSourceDataProvider(Buffer data, const Array<StaticTextureMip>& mips, StringBuf path, ImageFormat format, uint32_t numMipsPerSlice)
+	StaticTextureSourceDataProvider(CompressedBufer data, const Array<StaticTextureMip>& mips, StringBuf path, ImageFormat format, uint32_t numMipsPerSlice)
 		: m_data(data)
 		, m_mips(mips)
         , m_numMipsPerSlice(numMipsPerSlice)
@@ -112,21 +111,23 @@ public:
 
     virtual CAN_YIELD void fetchSourceData(Array<SourceAtom>& outAtoms) const override final
 	{
+        const auto decompressed = m_data.decompress();
+
         for (auto index : m_mips.indexRange())
         {
             const auto& mip = m_mips[index];
             
             auto& atom = outAtoms.emplaceBack();
-            atom.buffer = m_data;
+            atom.buffer = decompressed;
             atom.mip = index % m_numMipsPerSlice;
             atom.slice = index / m_numMipsPerSlice;
             atom.sourceDataSize = mip.dataSize;
-            atom.sourceData = m_data.data() + mip.dataOffset;
+            atom.sourceData = decompressed.data() + mip.dataOffset;
         }
 	}
 
 private:
-	Buffer m_data;
+    CompressedBufer m_data;
 	Array<StaticTextureMip> m_mips; // mip map data
 	StringBuf m_path;
 
@@ -139,7 +140,6 @@ private:
 void StaticTexture::createDeviceResources()
 {
     DEBUG_CHECK_RETURN_EX(m_info.slices * m_info.mips == m_mips.size(), "Slice/Mip count mismatch");
-    DEBUG_CHECK_RETURN_EX(m_persistentPayload.data(), "No persistent data");
 
     if (auto service = GetService<gpu::DeviceService>())
     {

@@ -9,8 +9,9 @@
 #include "build.h"
 #include "rttiArrayType.h"
 
-#include "streamOpcodeWriter.h"
-#include "streamOpcodeReader.h"
+#include "serializationWriter.h"
+#include "serializationReader.h"
+
 #include "rttiDataView.h"
 #include "core/xml/include/xmlWrappers.h"
 
@@ -59,7 +60,7 @@ void IArrayType::copy(void* dest, const void* src) const
     }
 }
 
-void IArrayType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
+void IArrayType::writeBinary(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData) const
 {
     // save array size
     uint32_t size = arraySize(data);
@@ -82,7 +83,7 @@ void IArrayType::writeBinary(TypeSerializationContext& typeContext, stream::Opco
     file.endArray();
 }
 
-void IArrayType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
+void IArrayType::readBinary(TypeSerializationContext& typeContext, SerializationReader& file, void* data) const
 {
     // enter array block
     uint32_t size = 0;

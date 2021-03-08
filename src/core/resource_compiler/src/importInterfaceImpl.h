@@ -7,15 +7,11 @@
 ***/
 
 #pragma once
-#include "importFileFingerprint.h"
+
+#include "fingerprint.h"
 #include "core/io/include/timestamp.h"
 
 BEGIN_BOOMER_NAMESPACE()
-
-//--
-
-class SourceAssetRepository;
-class IImportDepotChecker;
 
 //--
 
@@ -23,45 +19,29 @@ class IImportDepotChecker;
 class CORE_RESOURCE_COMPILER_API LocalImporterInterface : public IResourceImporterInterface
 {
 public:
-    LocalImporterInterface(SourceAssetRepository* assetRepository, const IImportDepotChecker* depot, const IResource* originalData, const StringBuf& importPath, const StringBuf& depotPath, IProgressTracker* externalProgressTracker, const ResourceConfigurationPtr& importConfiguration);
+    LocalImporterInterface(const IImportDepotLoader* depot, const StringBuf& importPath, const StringBuf& depotPath, IProgressTracker* externalProgressTracker, const ResourceConfiguration* importConfiguration);
     virtual ~LocalImporterInterface();
 
     /// IResourceImporterInterface
     virtual const IResource* existingData() const override final;
     virtual const StringBuf& queryResourcePath() const override final;
-    virtual const StringBuf& queryImportPath() const  override final;
-    virtual const ResourceConfiguration* queryConfigrationTypeless() const  override final;
-    virtual Buffer loadSourceFileContent(StringView assetImportPath) const override final;
-    virtual SourceAssetPtr loadSourceAsset(StringView assetImportPath) const override final;
+    virtual const StringBuf& queryImportPath() const override final;
+    virtual const ResourceConfiguration* queryConfigrationTypeless() const override final;
+    virtual ResourceID queryResourceID(StringView depotPath) const override final;
+
+    virtual Buffer loadSourceFileContent(StringView assetImportPath, bool reportAsDependency/*= true*/) override final;
+    virtual SourceAssetPtr loadSourceAsset(StringView assetImportPath, bool reportAsDependency/*= true*/, bool allowCaching /*= true*/) override final;
+
     virtual bool findSourceFile(StringView assetImportPath, StringView inputPath, StringBuf& outImportPath, uint32_t maxScanDepth = 2) const override final;
-    virtual bool findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, ResourceID& outID, uint32_t maxScanDepth = 2) const override final;
+    virtual bool findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, ResourceID* outID = nullptr, uint32_t maxScanDepth = 2) const override final;
     virtual bool checkDepotFile(StringView depotPath) const override final;
     virtual bool checkSourceFile(StringView assetImportPath) const override final;
-    virtual ResourceID followupImport(StringView assetImportPath, StringView depotPath, const ResourceConfiguration* config = nullptr)  override final;
+
+    virtual ResourceID followupImport(StringView assetImportPath, StringView depotPath, ResourceClass cls, const ResourceConfiguration* config = nullptr)  override final;
 
     // IProgressTracker
     virtual bool checkCancelation() const override final;
     virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override final;
-
-    // build import metadata from all gathered stuff
-    ResourceMetadataPtr buildMetadata() const;
-
-private:
-    const IResource* m_originalData;
-
-    const IImportDepotChecker* m_depotChecker;
-
-    StringBuf m_importPath;
-    StringBuf m_depotPath;
-            
-    IProgressTracker* m_externalProgressTracker = nullptr;
-
-    SourceAssetRepository* m_assetRepository = nullptr;
-
-    ResourceConfigurationPtr m_configuration; // merged import configuration
-
-    mutable Array<ResourceConfigurationPtr> m_tempConfigurations;
-    SpinLock m_tempConfigurationsLock;
 
     //--
 
@@ -69,26 +49,57 @@ private:
     {
         StringBuf assetPath;
         StringBuf depotPath;
+        ResourceID id;
+        ResourceClass resourceClass;
         ResourceConfigurationPtr config;
     };
 
-    Array<FollowupImport> m_followupImports;
-    HashSet<StringBuf> m_followupImportsSet;
+    INLINE const Array<FollowupImport>& followupImports() const { return m_followupImports; }
 
     //--
 
-    struct ImportDependencies
+    struct Dependency
     {
         StringBuf assetPath;
         TimeStamp timestamp;
-        ImportFileFingerprint fingerprint;
+        SourceAssetFingerprint fingerprint;
     };
 
-    SpinLock m_importDependenciesLock;
-    Array<ImportDependencies> m_importDependencies;
-    HashSet<StringBuf> m_importDependenciesSet;
+    INLINE const Array<Dependency>& dependencies() const { return m_dependencies; }
 
-    void reportImportDependency(StringView assetImportPath, const TimeStamp& timestamp, const ImportFileFingerprint& fingerprint);
+    //--
+
+private:
+    const IImportDepotLoader* m_depot = nullptr;
+
+    StringBuf m_importPath;
+    StringBuf m_depotPath;
+            
+    IProgressTracker* m_externalProgressTracker = nullptr;
+
+    ResourceConfigurationPtr m_configuration; // merged import configuration
+
+    //--
+
+    SpinLock m_loadedOriginalDataLock;
+    mutable ResourcePtr m_loadedOriginalData;
+
+    //--
+
+    
+    SpinLock m_dependenciesLock;
+    Array<Dependency> m_dependencies;
+    HashSet<StringBuf> m_dependenciesSet;
+
+    //--
+
+    SpinLock m_followupImportsLock;
+    Array<FollowupImport> m_followupImports;
+    HashMap<StringBuf, ResourceID> m_followupImportsSet;
+
+    //--
+
+    void reportImportDependency(StringView assetImportPath, const TimeStamp& timestamp, const SourceAssetFingerprint& fingerprint);
 };
 
 //--

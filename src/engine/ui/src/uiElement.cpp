@@ -1779,16 +1779,20 @@ void IElement::render(HitCache& hitCache, DataStash& stash, const ElementArea& o
         hitCache.enableHitTestCollection();
 }
 
-ElementPtr IElement::queryTooltipElement(const Position& absolutePosition, ElementArea& outTooltipArea) const
+StringBuf IElement::queryTooltipString() const
 {
     if (auto tooltipStringPtr = evalStyleValueIfPresentPtr<StringBuf>("tooltip"_id))
-    {
-        auto tooltipText = *tooltipStringPtr;
-        if (!tooltipText.empty())
-        {
-            outTooltipArea = cachedDrawArea();
-            return RefNew<TextLabel>(tooltipText);
-        }
+        return *tooltipStringPtr;
+
+    return "";
+}
+
+ElementPtr IElement::queryTooltipElement(const Position& absolutePosition, ElementArea& outTooltipArea) const
+{   
+    if (const auto tooltipText = queryTooltipString())
+    {    
+        outTooltipArea = cachedDrawArea();
+        return RefNew<TextLabel>(tooltipText);
     }
 
     return nullptr;

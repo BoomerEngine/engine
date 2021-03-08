@@ -329,7 +329,8 @@ public:
 
     INLINE void add(const IElement* ptr, const ElementArea& drawArea, const ElementArea& clipArea)
     {
-        m_elements.emplaceBack(const_cast<IElement*>(ptr), drawArea, clipArea); // TODO: clenaup the const here
+        //if (drawArea.touches(clipArea))
+            m_elements.emplaceBack(const_cast<IElement*>(ptr), drawArea, clipArea); // TODO: clenaup the const here
     }
 
     INLINE ConstArrayIterator<Entry> begin() const

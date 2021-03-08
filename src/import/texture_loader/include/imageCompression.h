@@ -9,6 +9,7 @@
 #pragma once
 
 #include "engine/texture/include/staticTexture.h"
+#include "core/object/include/compressedBuffer.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 
@@ -109,7 +110,7 @@ public:
 
 struct IMPORT_TEXTURE_LOADER_API ImageCompressedResult : public IReferencable
 {
-    Buffer data;
+    CompressedBufer data;
     Array<StaticTextureMip> mips;
     TextureInfo info;
 

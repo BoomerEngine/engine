@@ -12,6 +12,9 @@
 #include "xmlDynamicDocument.h"
 #include "xmlStaticRapidXMLDocument.h"
 
+#include "core/io/include/fileHandle.h"
+#include "core/io/include/stringFileWriter.h"
+
 BEGIN_BOOMER_NAMESPACE_EX(xml)
 
 //--
@@ -83,19 +86,30 @@ DocumentPtr LoadDocument(ILoadingReporter& ctx, const Buffer& mem)
     }
 }
 
-bool SaveDocument(const IDocument& ptr, StringView absoluteFilePath, bool binaryFormat/*= false*/)
+bool SaveDocument(const IDocument* ptr, StringView absoluteFilePath, bool binaryFormat/*= false*/)
 {
-    if (binaryFormat)
+    auto file = OpenForWriting(absoluteFilePath);
+    DEBUG_CHECK_RETURN_EX_V(file, "Unable to open output file", false);
+
+    if (!SaveDocument(ptr, file, binaryFormat))
     {
-        auto data  = ptr.saveAsBinary(ptr.root());
-        return SaveFileFromBuffer(absoluteFilePath, data);
+        file->discardContent();
+        return false;
     }
-    else
-    {
-        StringBuilder txt;
-        ptr.saveAsText(txt, ptr.root());
-        return SaveFileFromString(absoluteFilePath, txt.toString());
-    }
+
+    return true;
+}
+
+bool SaveDocument(const IDocument* ptr, IWriteFileHandle* file, bool binaryFormat /*= false*/)
+{
+    DEBUG_CHECK_RETURN_EX_V(ptr, "Nothing to save", false);
+    DEBUG_CHECK_RETURN_EX_V(file, "Invalid file", false);
+
+    StringFileWriter writer(file);
+    ptr->saveAsText(writer, ptr->root());
+    writer.flush();
+
+    return !writer.hasErrors();
 }
 
 DocumentPtr CreateDocument(StringView rootNodeName)
@@ -112,7 +126,7 @@ void CopyNodes(const IDocument& srcDoc, NodeID srcNodeId, IDocument& destDoc, No
 void CopyInnerNodes(const IDocument& srcDoc, NodeID srcNodeId, IDocument& destDoc, NodeID destNodeId)
 {
     // copy value
-    destDoc.nodeValue(destNodeId, srcDoc.nodeValue(srcNodeId));
+    destDoc.writeNodeValue(destNodeId, srcDoc.nodeValue(srcNodeId));
 
     // create child nodes
     auto srcChildId  = srcDoc.nodeFirstChild(srcNodeId);
@@ -126,7 +140,7 @@ void CopyInnerNodes(const IDocument& srcDoc, NodeID srcNodeId, IDocument& destDo
     auto srcAttrId  = srcDoc.nodeFirstAttribute(srcNodeId);
     while (srcAttrId != 0)
     {
-        destDoc.nodeAttribute(destNodeId,
+        destDoc.writeNodeAttribute(destNodeId,
             srcDoc.attributeName(srcAttrId),
             srcDoc.attributeValue(srcAttrId));
 

@@ -11,7 +11,7 @@
 
 #include "editor/common/include/assetBrowser.h"
 #include "editor/common/include/managedFile.h"
-#include "editor/common/include/managedFileFormat.h"
+#include "editor/common/include/assetFormat.h"
 
 #include "engine/ui/include/uiMenuBar.h"
 #include "engine/ui/include/uiToolBar.h"

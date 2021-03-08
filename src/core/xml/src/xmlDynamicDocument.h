@@ -38,6 +38,7 @@ public:
     //---
 
     virtual StringView nodeValue(NodeID id) const override final;
+    virtual Buffer nodeValueBuffer(NodeID id) const override final;
     virtual StringView nodeName(NodeID id) const override final;
     virtual StringView nodeAttributeOfDefault(NodeID id, StringView name, StringView defaultVal = StringView()) const override final;
     virtual AttributeID nodeFirstAttribute(NodeID id, StringView name = StringView()) const override final;
@@ -56,10 +57,12 @@ public:
 
     virtual NodeID createNode(NodeID parentNodeID, StringView name) override final;
     virtual void deleteNode(NodeID id) override final;
-    virtual void nodeValue(NodeID id, StringView value) override final;
-    virtual void nodeName(NodeID id, StringView name) override final;
-    virtual void nodeAttribute(NodeID id, StringView name, StringView value) override final;
     virtual void deleteNodeAttribute(NodeID id, StringView name) override final;
+
+    virtual void writeNodeValue(NodeID id, StringView value) override final;
+    virtual void writeNodeValue(NodeID id, Buffer value) override final;
+    virtual void writeNodeName(NodeID id, StringView name) override final;
+    virtual void writeNodeAttribute(NodeID id, StringView name, StringView value) override final;
 
 private:
     typedef uint32_t ID;
@@ -90,6 +93,8 @@ private:
         StringView name;
         StringView value;
 
+        int bufferIndex = -1;
+
         ID parentID = 0;
         ID firstChildID = 0;
         ID lastChildID = 0;
@@ -100,7 +105,7 @@ private:
 
         INLINE bool empty() const
         {
-            return name.empty() && value.empty() && (parentID == 0) && (firstAttrID == 0) && (firstChildID == 0);
+            return name.empty() && value.empty() && (parentID == 0) && (firstAttrID == 0) && (firstChildID == 0) && (bufferIndex == -1);
         }
 
         INLINE bool valid() const
@@ -114,6 +119,8 @@ private:
 
     StaticStructurePool<Node> m_nodes;
     StaticStructurePool<Attr> m_attributes;
+    
+    Array<Buffer> m_buffers;
 
     //--
 

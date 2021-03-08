@@ -8,11 +8,17 @@
 
 #include "build.h"
 #include "depot.h"
+#include "depotStructure.h"
+#include "fileLoader.h"
+#include "fileSaver.h"
 
+#include "core/io/include/timestamp.h"
 #include "core/io/include/fileHandle.h"
 #include "core/app/include/commandline.h"
 #include "core/containers/include/path.h"
-#include "depotStructure.h"
+#include "core/xml/include/xmlUtils.h"
+#include "core/xml/include/xmlDocument.h"
+#include "core/xml/include/xmlWrappers.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -23,23 +29,33 @@ RTTI_END_TYPE();
 
 ///---
 
+static const StringView ENGINE_PREFIX = "/engine/";
+static const StringView PROJECT_PREFIX = "/engine/";
+
 DepotService::DepotService()
 {}
+
+StringBuf DepotService::queryDepotAbsolutePath(DepotType type) const
+{
+    const auto index = (int)type;
+    if (index >= 0 && index < MAX_DEPOTS)
+        return m_depots[index].absolutePath;
+
+    return "";
+}
 
 bool DepotService::queryFileAbsolutePath(StringView depotPath, StringBuf& outAbsolutePath) const
 {
     DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
 
-    if (m_engineDepotPath && depotPath.beginsWith("/engine/"))
+    for (const auto& depot : m_depots)
     {
-        outAbsolutePath = TempString("{}{}", m_engineDepotPath, depotPath.subString(8));
-        return true;
-    }
-
-    if (m_projectDepotPath && depotPath.beginsWith("/project/"))
-    {
-        outAbsolutePath = TempString("{}{}", m_projectDepotPath, depotPath.subString(9));
-        return true;
+        if (depot.prefix && depotPath.beginsWith(depot.prefix))
+        {
+            const auto remainingPath = depotPath.subString(depot.prefix.length());
+            outAbsolutePath = TempString("{}{}", depot.absolutePath, remainingPath);
+            return true;
+        }
     }
 
     return false;
@@ -47,16 +63,14 @@ bool DepotService::queryFileAbsolutePath(StringView depotPath, StringBuf& outAbs
 
 bool DepotService::queryFileDepotPath(StringView absolutePath, StringBuf& outDeptotPath) const
 {
-    if (m_engineDepotPath && absolutePath.beginsWith(m_engineDepotPath))
+    for (const auto& depot : m_depots)
     {
-        outDeptotPath = TempString("/engine/{}", absolutePath.afterFirst(m_engineDepotPath));
-        return true;
-    }
-
-    if (m_projectDepotPath && absolutePath.beginsWith(m_projectDepotPath))
-    {
-        outDeptotPath = TempString("/project/{}", absolutePath.afterFirst(m_projectDepotPath));
-        return true;
+        if (depot.prefix && absolutePath.beginsWith(depot.absolutePath))
+        {
+            const auto remainingPath = absolutePath.afterFirst(depot.absolutePath);
+            outDeptotPath = TempString("{}{}", depot.prefix, remainingPath);
+            return true;
+        }
     }
 
     return false;
@@ -71,13 +85,13 @@ bool DepotService::queryFileTimestamp(StringView depotPath, TimeStamp& outTimest
     return FileTimeStamp(absolutePath, outTimestamp);
 }
 
-ReadFileHandlePtr DepotService::createFileReader(StringView depotPath) const
+ReadFileHandlePtr DepotService::createFileReader(StringView depotPath, TimeStamp* outTimestamp) const
 {
     StringBuf absolutePath;
     if (!queryFileAbsolutePath(depotPath, absolutePath))
         return nullptr;
 
-    return OpenForReading(absolutePath);
+    return OpenForReading(absolutePath, outTimestamp);
 }
 
 WriteFileHandlePtr DepotService::createFileWriter(StringView depotPath) const
@@ -89,76 +103,55 @@ WriteFileHandlePtr DepotService::createFileWriter(StringView depotPath) const
     return OpenForWriting(absolutePath);
 }
 
-AsyncFileHandlePtr DepotService::createFileAsyncReader(StringView depotPath) const
+AsyncFileHandlePtr DepotService::createFileAsyncReader(StringView depotPath, TimeStamp* outTimestamp) const
 {
     StringBuf absolutePath;
     if (!queryFileAbsolutePath(depotPath, absolutePath))
         return nullptr;
 
-    return OpenForAsyncReading(absolutePath);
+    return OpenForAsyncReading(absolutePath, outTimestamp);
 }
 
-bool DepotService::enumDirectoriesAtPath(StringView rawDirectoryPath, const std::function<bool(const DirectoryInfo& info) >& enumFunc) const
+void DepotService::enumDirectoriesAtPath(StringView depotPath, const std::function<void(StringView) >& enumFunc) const
 {
-    DEBUG_CHECK_RETURN_EX_V(ValidateDepotDirPath(rawDirectoryPath), "Invalid directory path", false);
+    DEBUG_CHECK_RETURN_EX(ValidateDepotDirPath(depotPath), "Invalid directory path");
 
-    if (rawDirectoryPath == "/")
+    if (depotPath == "/")
     {
-        if (m_engineDepotPath)
+        for (const auto& depot : m_depots)
         {
-            DirectoryInfo info;
-            info.fileSystemRoot = true;
-            info.name = "engine";
-            if (enumFunc(info))
-                return true;
-        }
-
-        if (m_projectDepotPath)
-        {
-            DirectoryInfo info;
-            info.fileSystemRoot = true;
-            info.name = "project";
-            if (enumFunc(info))
-                return true;
+            if (depot.prefix)
+            {
+                const auto dirName = depot.prefix.subString(1, depot.prefix.length() - 2);
+                enumFunc(dirName);
+            }
         }
     }
     else
     {
-        StringBuf absolutePath;
-        if (queryFileAbsolutePath(rawDirectoryPath, absolutePath))
+        for (const auto& depot : m_depots)
         {
-            return FindSubDirs(absolutePath, [&enumFunc](StringView name)
-                {
-                    DirectoryInfo info;
-                    info.fileSystemRoot = true;
-                    info.name = name;
-                    return enumFunc(info);
-                });
-        }                
-    }
-
-    return false;
-}
-
-bool DepotService::enumFilesAtPath(StringView rawDirectoryPath, const std::function<bool(const FileInfo& info)>& enumFunc) const
-{
-    DEBUG_CHECK_RETURN_EX_V(ValidateDepotDirPath(rawDirectoryPath), "Invalid directory path", false);
-
-    if (rawDirectoryPath != "/")
-    {
-        StringBuf absolutePath;
-        if (queryFileAbsolutePath(rawDirectoryPath, absolutePath))
-        {
-            return FindLocalFiles(absolutePath, "*.*", [&enumFunc](StringView name)
-                {
-                    FileInfo info;
-                    info.name = name;
-                    return enumFunc(info);
-                });
+            if (depot.prefix && depotPath.beginsWith(depot.prefix))
+            {
+                const auto remainingPath = depotPath.subString(depot.prefix.length());
+                depot.structure->enumDirectories(remainingPath, enumFunc);
+            }
         }
     }
+}
 
-    return false;
+void DepotService::enumFilesAtPath(StringView depotPath, const std::function<void(StringView)>& enumFunc) const
+{
+    DEBUG_CHECK_RETURN_EX(ValidateDepotDirPath(depotPath), "Invalid directory path");
+
+    for (const auto& depot : m_depots)
+    {
+        if (depot.prefix && depotPath.beginsWith(depot.prefix))
+        {
+            const auto remainingPath = depotPath.subString(depot.prefix.length());
+            depot.structure->enumFiles(remainingPath, enumFunc);
+        }
+    }
 }
 
 //--
@@ -300,30 +293,31 @@ public:
 app::ServiceInitializationResult DepotService::onInitializeService(const app::CommandLine& cmdLine)
 {
     const auto engineDir = SystemPath(PathCategory::EngineDir);
-    m_engineDepotPath = TempString("{}data/depot/", engineDir);
-    TRACE_INFO("Engine depot directory: '{}'", m_engineDepotPath);
 
     DepotErrorCapture err;
 
-    m_engineDepotStructure = new DepotStructure(m_engineDepotPath);
-    m_engineDepotStructure->scan(err);
-
-    const auto& projectDir = cmdLine.singleValue("projectDir");
-    if (!projectDir.empty())
     {
-        if (FileExists(TempString("{}project.xml", projectDir)))
-        {
-            m_projectDepotPath = TempString("{}data/depot/", projectDir);
-            TRACE_INFO("Project depot directory: '{}'", m_projectDepotPath);
+        auto& depot = m_depots[(int)DepotType::Engine];
+        depot.absolutePath = TempString("{}data/depot/", engineDir);
+        TRACE_INFO("Engine depot directory: '{}'", depot.absolutePath);
 
-            m_projectDepotStructure = new DepotStructure(m_projectDepotPath);
-            m_projectDepotStructure->scan(err);
-        }
+        depot.prefix = "/engine/";
+        depot.structure = new DepotStructure(depot.absolutePath);
+        depot.structure->scan(err);
     }
 
+    auto projectDir = cmdLine.singleValue("projectDir");
+    if (!projectDir.empty())
     {
-        auto test = new DepotStructure("Z://projects//w3//r4data//");
-        test->scan(err);
+        auto& depot = m_depots[(int)DepotType::Project];
+
+        depot.absolutePath = TempString("{}data/depot/", projectDir);
+        //depot.absolutePath = "Z:\\projects\\w3\\r4data\\";
+        TRACE_INFO("Project depot directory: '{}'", depot.absolutePath);
+
+        depot.prefix = "/project/";
+        depot.structure = new DepotStructure(depot.absolutePath);
+        depot.structure->scan(err);
     }
 
     return app::ServiceInitializationResult::Finished;
@@ -331,11 +325,13 @@ app::ServiceInitializationResult DepotService::onInitializeService(const app::Co
 
 void DepotService::onShutdownService()
 {
-    delete m_projectDepotStructure;
-    m_projectDepotStructure = nullptr;
-
-    delete m_engineDepotStructure;
-    m_engineDepotStructure = nullptr;
+    for (auto& depot : m_depots)
+    {
+        delete depot.structure;
+        depot.structure = nullptr;
+        depot.absolutePath = StringBuf();
+        depot.prefix = StringBuf();
+    }    
 }
 
 void DepotService::onSyncUpdate()
@@ -347,6 +343,9 @@ void DepotService::onSyncUpdate()
 
 bool DepotService::loadFileToBuffer(StringView depotPath, Buffer& outContent, TimeStamp* timestamp) const
 {
+    DEBUG_CHECK_RETURN_EX_V(depotPath, "Invalid path", false);
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
+
     if (auto file = createFileReader(depotPath))
     {
         auto size = file->size();
@@ -365,6 +364,9 @@ bool DepotService::loadFileToBuffer(StringView depotPath, Buffer& outContent, Ti
 
 bool DepotService::loadFileToString(StringView depotPath, StringBuf& outContent, TimeStamp* timestamp) const
 {
+    DEBUG_CHECK_RETURN_EX_V(depotPath, "Invalid path", false);
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
+
     if (auto file = createFileReader(depotPath))
     {
         auto size = file->size();
@@ -380,24 +382,192 @@ bool DepotService::loadFileToString(StringView depotPath, StringBuf& outContent,
     return false;
 }
 
-bool DepotService::resolvePathForID(const ResourceID& id, StringBuf& outLoadPath) const
+bool DepotService::loadFileToXML(StringView depotPath, xml::DocumentPtr& outContent, TimeStamp* timestamp /*= nullptr*/) const
 {
-    if (m_projectDepotStructure)
+    DEBUG_CHECK_RETURN_EX_V(depotPath, "Invalid path", false);
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
+
+    Buffer data;
+    if (!loadFileToBuffer(depotPath, data, timestamp))
+        return false;
+
+    if (auto content = xml::LoadDocument(xml::ILoadingReporter::GetDefault(), data))
     {
-        StringBuf path;
-        if (m_projectDepotStructure->resolveID(id, path))
+        outContent = content;
+        return true;
+    }
+
+    return false;
+}
+
+bool DepotService::loadFileToXMLObject(StringView depotPath, ObjectPtr& outObject, ClassType expectedClass /*= nullptr*/, TimeStamp* timestamp /*= nullptr*/) const
+{
+    DEBUG_CHECK_RETURN_EX_V(depotPath, "Invalid path", false);
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
+
+    xml::DocumentPtr doc;
+    if (!loadFileToXML(depotPath, doc, timestamp))
+        return false;
+
+    if (const auto obj = LoadObjectFromXML(doc, expectedClass.cast<IObject>()))
+    {
+        outObject = obj;
+        return true;
+    }
+
+    return false;
+}
+
+bool DepotService::loadFileToResource(StringView depotPath, ResourcePtr& outResource, ResourceClass expectedClass /*= nullptr*/, bool loadImports /*=true*/, TimeStamp* outTimestamp /*= nullptr*/) const
+{
+    DEBUG_CHECK_RETURN_EX_V(depotPath, "Invalid path", false);
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
+
+    TimeStamp timestamp;
+    if (const auto file = this->createFileAsyncReader(depotPath, &timestamp))
+    {
+        FileLoadingContext context;
+        context.loadImports = loadImports;
+        context.knownMainFileSize = 0; 
+        context.resourceLoadPath = StringBuf(depotPath);
+        context.expectedRootClass = expectedClass ? expectedClass : IResource::GetStaticClass();
+
+        FileLoadingResult result;
+        if (LoadFile(file, context, result))
         {
-            outLoadPath = TempString("{}{}", m_projectDepotPath, path);
-            return true;
+            if (result.roots.size() == 1)
+            {
+                auto root = rtti_cast<IResource>(result.roots[0]);
+
+                if (expectedClass && !root->is(expectedClass))
+                {
+                    TRACE_WARNING("Loaded file '{}' is '{}' not expected '{}'", depotPath, root->cls(), expectedClass);
+                    root = nullptr;
+                }
+
+                if (root)
+                {
+                    outResource = root;
+
+                    if (outTimestamp)
+                        *outTimestamp = timestamp;
+
+                    return true;
+                }
+            }
         }
     }
 
-    if (m_engineDepotStructure)
+    return false;
+}
+
+//--
+
+bool DepotService::saveFileFromBuffer(StringView depotPath, Buffer content, TimeStamp* manualTimestamp /*= nullptr*/) const
+{
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
+
+    auto file = createFileWriter(depotPath);
+    DEBUG_CHECK_RETURN_EX_V(file, "Unable to create file writer", false);
+
+    const auto numWritten = file->writeSync(content.data(), content.size());
+    if (numWritten != content.size())
     {
-        StringBuf path;
-        if (m_engineDepotStructure->resolveID(id, path))
+        TRACE_ERROR("Failed to write data to '{}', saved {}, expected {}", depotPath, numWritten, content.size());
+        file->discardContent();
+        return false;
+    }
+
+    return true;
+}
+
+bool DepotService::saveFileFromString(StringView depotPath, StringView content, TimeStamp* manualTimestamp /*= nullptr*/) const
+{
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
+
+    // TODO: encoding ?
+
+    auto file = createFileWriter(depotPath);
+    DEBUG_CHECK_RETURN_EX_V(file, "Unable to create file writer", false);
+
+    const auto numWritten = file->writeSync(content.data(), content.length());
+    if (numWritten != content.length())
+    {
+        TRACE_ERROR("Failed to write data to '{}', saved {}, expected {}", depotPath, numWritten, content.length());
+        file->discardContent();
+        return false;
+    }
+
+    return true;
+}
+
+bool DepotService::saveFileFromXML(StringView depotPath, const xml::IDocument* doc, TimeStamp* manualTimestamp /*= nullptr*/) const
+{
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
+    DEBUG_CHECK_RETURN_EX_V(doc, "Nothing to save", false);
+
+    // open the writer
+    auto file = createFileWriter(depotPath);
+    DEBUG_CHECK_RETURN_EX_V(doc, "Failed to create file writer", false);
+
+    if (!xml::SaveDocument(doc, file))
+    {
+        file->discardContent();
+        return false;
+    }
+
+    return true;
+}
+
+bool DepotService::saveFileFromXMLObject(StringView depotPath, const IObject* data, TimeStamp* manualTimestamp /*= nullptr*/) const
+{
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
+
+    auto ret = xml::CreateDocument("object");
+    DEBUG_CHECK_RETURN_EX_V(ret, "Unable to create XML document", false);
+
+    if (data)
+    {
+        auto rootNode = xml::Node(ret);
+        rootNode.writeAttribute("class", data->cls().name().view());
+        data->writeXML(rootNode);
+    }
+
+    return saveFileFromXML(depotPath, ret, manualTimestamp);
+}
+
+bool DepotService::saveFileFromResource(StringView depotPath, const IResource* data, TimeStamp* manualTimestamp /*= nullptr*/) const
+{
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
+    DEBUG_CHECK_RETURN_EX_V(data, "Nothing to save", false);
+
+    auto file = createFileWriter(depotPath);
+    DEBUG_CHECK_RETURN_EX_V(file, "Unable to create file writer", false);
+
+    FileSavingContext context;
+    context.format = FileSaveFormat::ProtectedBinaryStream;
+    context.rootObjects.pushBack(data);
+
+    FileSavingResult result;
+    if (!SaveFile(file, context, result))
+    {
+        file->discardContent();
+        return false;
+    }
+
+    return true;
+}
+
+//--
+
+bool DepotService::resolvePathForID(const ResourceID& id, StringBuf& outLoadPath) const
+{
+    for (const auto& depot : m_depots)
+    {
+        StringBuf localPath;
+        if (depot.structure && depot.structure->resolvePathForID(id, localPath))
         {
-            outLoadPath = TempString("{}{}", m_engineDepotPath, path);
+            outLoadPath = TempString("{}{}", depot.prefix, localPath);
             return true;
         }
     }
@@ -408,8 +578,20 @@ bool DepotService::resolvePathForID(const ResourceID& id, StringBuf& outLoadPath
 
 bool DepotService::resolveIDForPath(StringView depotPath, ResourceID& outID) const
 {
+    for (const auto& depot : m_depots)
+    {
+        if (depot.prefix && depotPath.beginsWith(depot.prefix))
+        {
+            const auto remainingPath = depotPath.subString(depot.prefix.length());
+            if (depot.structure->resolveIDForPath(remainingPath, outID))
+                return true;
+        }
+    }
+
     return false;
 }
+
+//--
 
 END_BOOMER_NAMESPACE()
 

@@ -70,7 +70,6 @@ void MeshService::releaseMeshChunkId(MeshChunkID id)
 MeshChunkProxyPtr MeshService::createChunkProxy(const MeshChunk& data, const StringBuf& debugLabel)
 {
 	DEBUG_CHECK_RETURN_EX_V(data.indexCount && data.vertexCount, "Empty chunk", nullptr);
-	DEBUG_CHECK_RETURN_EX_V(data.unpackedIndexSize && data.unpackedVertexSize, "Nothing to allocate", nullptr);
 
 	// allocate ID
 	MeshChunkID id = 0;
@@ -82,20 +81,18 @@ MeshChunkProxyPtr MeshService::createChunkProxy(const MeshChunk& data, const Str
 	}
 
 	// unpack vertex data
-	auto vertexData = data.packedVertexData;
-	if (data.unpackedVertexSize != data.packedVertexData.size())
-	{
-		vertexData = UncompressVertexBuffer(data.packedVertexData.data(), data.packedVertexData.size(), data.vertexFormat, data.vertexCount);
-		DEBUG_CHECK_RETURN_EX_V(vertexData, "Failed to unpack vertex data", nullptr);
-	}
+	auto vertexData = data.packedVertexData.decompress();
+    DEBUG_CHECK_RETURN_EX_V(vertexData, "Failed to decompress vertex data", nullptr);
+
+	vertexData = UncompressVertexBuffer(vertexData.data(), vertexData.size(), data.vertexFormat, data.vertexCount);
+	DEBUG_CHECK_RETURN_EX_V(vertexData, "Failed to unpack vertex data", nullptr);
 
 	// index vertex data
-	auto indexData = data.packedIndexData;
-	if (data.unpackedIndexSize != data.packedIndexData.size())
-	{
-		indexData = UncompressIndexBuffer(data.packedIndexData.data(), data.packedIndexData.size(), data.indexCount);
-		DEBUG_CHECK_RETURN_EX_V(indexData, "Failed to unpack index data", nullptr);
-	}
+	auto indexData = data.packedIndexData.decompress();
+	DEBUG_CHECK_RETURN_EX_V(indexData, "Failed to decompress index data", nullptr);
+
+	indexData = UncompressIndexBuffer(indexData.data(), indexData.size(), data.indexCount);
+	DEBUG_CHECK_RETURN_EX_V(indexData, "Failed to unpack index data", nullptr);
 
 	// create chunk from unpacked data
 	return createStandaloneProxy(data, vertexData, indexData, debugLabel, id);

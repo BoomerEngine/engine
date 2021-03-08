@@ -16,10 +16,9 @@
 
 #include "resourceEditor.h"
 #include "assetBrowserDialogs.h"
-#include "assetFileListSimpleModel.h"
 
 #include "engine/ui/include/uiTextLabel.h"
-#include "engine/ui/include/uiListView.h"
+#include "engine/ui/include/uiListViewEx.h"
 #include "engine/ui/include/uiSearchBar.h"
 #include "engine/ui/include/uiButton.h"
 #include "engine/ui/include/uiColumnHeaderBar.h"
@@ -38,6 +37,7 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 bool SaveDepotFiles(ui::IElement* owner, const ManagedFileCollection& files)
 {
+#if 0
     DEBUG_CHECK_RETURN_V(owner, false);
 
     if (files.empty())
@@ -142,10 +142,13 @@ bool SaveDepotFiles(ui::IElement* owner, const ManagedFileCollection& files)
     }
 
     return window->runModal(owner);
+#else
+    return false;
+#endif
 }
 
 //---
-
+/*
 // from the initial untyped item list generate list of files and directories (recursive)
 static void CollectFilesAndDirs(const Array<ManagedItem*>& items, Array<ManagedFile*>& outFiles, Array<ManagedDirectory*>& outDirs)
 {
@@ -165,7 +168,7 @@ static void CollectFilesAndDirs(const Array<ManagedItem*>& items, Array<ManagedF
 
     outFiles = finalFiles.files();
     outDirs = (Array<ManagedDirectory*>&) context.visitedDirectories.keys();
-}
+}*/
 
 //---
 
@@ -176,6 +179,7 @@ void DeleteDepotFiles(ui::IElement* owner, const ManagedFileCollection& assetIte
 
 void DeleteDepotItems(ui::IElement* owner, const Array<ManagedItem*>& items)
 {
+#if 0
     auto window = RefNew<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, "Delete files");
     auto windowRef = window.get();
 
@@ -313,13 +317,52 @@ void DeleteDepotItems(ui::IElement* owner, const Array<ManagedItem*>& items)
     }
 
     window->runModal(owner, listView);
+#endif
 }
 
 //--
 
 ConfigProperty<Array<ui::SearchPattern>> cvFileListSearchFilter("Editor", "FileListSearchFilter", {});
 
-void ShowOpenedFilesList(ui::IElement* owner, ManagedFile* focusFile)
+class SimpleFileModel : public ui::IListItem
+{
+public:
+    SimpleFileModel(StringView depotPath, ResourceEditorPtr editor)
+        : m_depotPath(depotPath)
+        , m_fileName(depotPath.fileStem())
+        , m_editor(editor)
+    {
+        createChild<ui::TextLabel>(TempString("[img:page] {} [color:#888][i]({})[i][/color]", m_fileName, m_depotPath));
+    }
+
+    virtual bool handleItemFilter(const ui::SearchPattern& filter) const override
+    {
+        return filter.testString(m_fileName);
+    }
+
+    virtual bool handleItemSort(const ICollectionItem* other, int colIndex) const override
+    {
+        if (auto* otherFile = rtti_cast<SimpleFileModel>(other))
+            return m_fileName < otherFile->m_fileName;
+
+        return TBaseClass::handleItemSort(other, colIndex);
+    }
+
+    virtual bool handleItemActivate() override
+    {
+        GetEditor()->showFileEditor(m_depotPath);
+        call(ui::EVENT_ITEM_ACTIVATED);
+        return true;
+    }
+
+protected:
+    StringBuf m_depotPath;
+    StringBuf m_fileName;
+    ResourceEditorPtr m_editor;
+
+};
+
+void ShowOpenedFilesList(ui::IElement* owner, StringView focusFile)
 {
     auto window = RefNew<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, "Opened files");
     auto windowRef = window.get();
@@ -329,49 +372,43 @@ void ShowOpenedFilesList(ui::IElement* owner, ManagedFile* focusFile)
 
     auto& depot = GetEditor()->managedDepot();
 
-    auto fileList = RefNew<AssetPlainFilesSimpleListModel>();
-
-    InplaceArray<ResourceEditorPtr, 100> openedEditors;
-    GetEditor()->collectResourceEditors(openedEditors);
-
-    for (const auto& editor : openedEditors)
-        fileList->addFile(editor->file(), editor->tabLocked());
-
-    {
+    /*{
         auto bar = window->createChild<ui::ColumnHeaderBar>();
         bar->addColumn("", 30.0f, true, true, false);
         bar->addColumn("", 30.0f, true, true, false);
         bar->addColumn("Tags", 220.0f, false, false, true);
         bar->addColumn("Name", 150.0f, false, true, true);
         bar->addColumn("Directory", 600.0f, false, true, true);
-    }
+    }*/
 
     auto searchBar = window->createChild<ui::SearchBar>();
     searchBar->loadHistory(cvFileListSearchFilter.get());
 
-    auto listView = window->createChild<ui::ListView>();
+    auto listView = window->createChild<ui::ListViewEx>();
     listView->customPadding(10, 0, 10, 0);
     listView->customInitialSize(700, 800);
     listView->sort(0);
     listView->expand();
-    listView->columnCount(5);
-    listView->model(fileList);
 
-    searchBar->bindItemView(listView);
-
-    listView->bind(ui::EVENT_ITEM_ACTIVATED) = [windowRef, listView, fileList]() {
-        if (auto item = listView->current())
-            if (auto file = fileList->file(item))
-                if (GetEditor()->showFileEditor(file))
-                    windowRef->requestClose();
-    };
-
-    if (focusFile)
     {
-        if (auto item = fileList->index(focusFile))
+        InplaceArray<ResourceEditorPtr, 100> openedEditors;
+        GetEditor()->collectResourceEditors(openedEditors);
+
+        for (const auto& editor : openedEditors)
         {
-            listView->select(item);
-            listView->ensureVisible(item);
+            if (const auto path = editor->context().physicalDepotPath)
+            {
+                auto entry = RefNew<SimpleFileModel>(path, editor);
+                entry->bind(ui::EVENT_ITEM_ACTIVATED) = [windowRef]()
+                {
+                    windowRef->requestClose();
+                };
+
+                listView->addItem(entry);
+
+                if (path == focusFile)
+                    listView->select(entry);
+            }
         }
     }
 
@@ -430,8 +467,8 @@ bool ShowSaveAsFileDialog(ui::IElement* owner, ManagedDirectory* specificDirecto
     dirBar->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
     dirBar->customMargins(5, 5, 5, 0);
 
-    if (!specificDirectory)
-        specificDirectory = GetEditor()->selectedDirectory();
+    /*if (!specificDirectory)
+        specificDirectory = GetEditor()->selectedDirectory();*/
     if (!specificDirectory)
         specificDirectory = GetEditor()->managedDepot().root();
 

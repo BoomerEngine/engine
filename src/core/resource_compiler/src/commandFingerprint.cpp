@@ -9,8 +9,7 @@
 #include "build.h"
 
 #include "commandFingerprint.h"
-#include "importFileFingerprintService.h"
-#include "importFileService.h"
+#include "fingerprintService.h"
 
 #include "core/app/include/command.h"
 #include "core/app/include/commandline.h"
@@ -30,7 +29,7 @@ RTTI_END_TYPE();
 bool CommandFingerprint::run(IProgressTracker* progress, const app::CommandLine& commandline)
 {
     // find the source asset service - we need it to have access to source assets
-    auto fingerprintService = GetService<ImportFileFingerprintService>();
+    auto fingerprintService = GetService<SourceAssetFingerprintService>();
     if (!fingerprintService)
     {
         TRACE_ERROR("Source fingerprint service not started, importing not possible");
@@ -44,7 +43,7 @@ bool CommandFingerprint::run(IProgressTracker* progress, const app::CommandLine&
         if (auto file = OpenForAsyncReading(absolutePath))
         {
             ScopeTimer timer;
-            ImportFileFingerprint fingerprint;
+            SourceAssetFingerprint fingerprint;
             const auto ret = CalculateFileFingerprint(file, true, nullptr, fingerprint);
 
             if (ret == FingerpintCalculationStatus::Canceled)
@@ -82,7 +81,7 @@ bool CommandFingerprint::run(IProgressTracker* progress, const app::CommandLine&
     else if (const auto assetPath = commandline.singleValue("assetPath"))
     {
         // find the source asset service - we need it to have access to source assets
-        auto assetSource = GetService<ImportFileService>();
+        auto assetSource = GetService<SourceAssetFingerprint>();
         if (!assetSource)
         {
             TRACE_ERROR("Source fingerprint service not started, importing not possible");

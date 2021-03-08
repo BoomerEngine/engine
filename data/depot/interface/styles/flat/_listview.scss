@@ -30,6 +30,27 @@ ListView
 	}
 }
 
+ListViewItem
+{
+	padding: 2em 2em 2em 2em;
+		
+	&:hover
+	{
+		background: linear(0, #333337, #00000000);
+	}
+
+	&.selected
+	{
+		background: solid(#007ACC);
+	}
+
+	&.current
+	{
+		overlay: box(100%, 100%, 0em, 10em, #00000000, #007ACC);
+	}
+
+//		background: box(100%, 100%, 0em, 10em, #BBBBBB, #007ACC);
+}
 
 ListViewCategory
 {

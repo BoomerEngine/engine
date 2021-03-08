@@ -8,8 +8,8 @@
 
 #include "build.h"
 #include "graphicsStates.h"
-#include "core/object/include/streamOpcodeWriter.h"
-#include "core/object/include/streamOpcodeReader.h"
+#include "core/object/include/serializationWriter.h"
+#include "core/object/include/serializationReader.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu)
 
@@ -868,7 +868,7 @@ static bool IsBlendStateUsed(const GraphicsRenderStatesSetup::BlendState& bs)
 	return false;
 }
 
-void GraphicsRenderStatesSetup::writeBinary(stream::OpcodeWriter& stream) const
+void GraphicsRenderStatesSetup::writeBinary(SerializationWriter& stream) const
 {
 	uint8_t writeMask = 0;
 	uint8_t blendingMask = 0;
@@ -952,7 +952,7 @@ void GraphicsRenderStatesSetup::writeBinary(stream::OpcodeWriter& stream) const
 	}
 }
 
-void GraphicsRenderStatesSetup::readBinary(stream::OpcodeReader& stream)
+void GraphicsRenderStatesSetup::readBinary(SerializationReader& stream)
 {
 	reset();
 

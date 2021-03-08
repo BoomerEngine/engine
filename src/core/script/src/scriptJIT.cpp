@@ -437,7 +437,7 @@ JITProjectPtr JITProject::Compile(const CompiledProjectPtr& project)
 
     // generate path where we will store the compiled module
     auto jitPath = GetJITModulePath(project->loadPath().view());
-    TRACE_INFO("JIT: Scripts '{}' will be JITed into '{}'", project->path(), jitPath);
+    TRACE_INFO("JIT: Scripts '{}' will be JITed into '{}'", project->loadPath(), jitPath);
 
     // setup JIT compiler settings
     IJITCompiler::Settings settings;

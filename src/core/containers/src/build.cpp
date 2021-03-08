@@ -101,9 +101,20 @@ void* DecodeBase64(const char* startTxt, const char* endTxt, uint32_t& outDataSi
 
     uint32_t i = 0;
     uint8_t chars[4];
-    while (startTxt < endTxt && *startTxt != '=' && GBase64Table.isBase64(*startTxt))
+    while (startTxt < endTxt)
     {
-        chars[i++] = GBase64Table.value(*startTxt++);
+        auto ch = *startTxt++;
+
+        if (ch == '=')
+            break;
+
+        if (ch <= ' ') // allow and filter white spaces from BASE64 content
+            continue;
+
+        if (!GBase64Table.isBase64(ch))
+            break;
+
+        chars[i++] = GBase64Table.value(ch);
         if (i == 4)
         {
             *writePtr++ = (chars[0] << 2) + ((chars[1] & 0x30) >> 4);

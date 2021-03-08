@@ -9,7 +9,7 @@
 #include "build.h"
 #include "rttiType.h"
 #include "rttiDataView.h"
-#include "streamOpcodeWriter.h"
+#include "serializationWriter.h"
 #include "rttiDataHolder.h"
 #include "rttiClassType.h"
 #include "dataView.h"

@@ -21,7 +21,7 @@ class AssetFileSmallImportIndicator : public ui::Button
     RTTI_DECLARE_VIRTUAL_CLASS(AssetFileSmallImportIndicator, ui::Button);
 
 public:
-    AssetFileSmallImportIndicator(ManagedFileNativeResource* file);
+    AssetFileSmallImportIndicator(StringView depotPath);
     virtual ~AssetFileSmallImportIndicator();
 
     //--
@@ -29,9 +29,9 @@ public:
     void recheck();
 
 private:
-    ManagedFileNativeResource* m_file;
+    StringView m_depotPath;
 
-    ManagedFileImportStatusCheckPtr m_checker;
+    AssetImportStatusCheckPtr m_checker;
 
     ui::TextLabelPtr m_caption;
 

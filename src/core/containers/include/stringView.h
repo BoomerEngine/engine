@@ -172,6 +172,7 @@ public:
     INLINE BaseStringView<T> lastExtension() const; // .bak
     INLINE BaseStringView<T> baseDirectory() const; // Z:\test\files\lena.png -> "Z:\test\files\"
     INLINE BaseStringView<T> parentDirectory() const; // Z:\test\files\ -> "Z:\test\"
+    INLINE BaseStringView<T> directoryName() const; // Z:\test\files\ -> "files"
 
     //-----------------------------------------------------------------------------
 

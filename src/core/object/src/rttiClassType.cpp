@@ -16,8 +16,8 @@
 #include "rttiDataView.h"
 #include "rttiResourceReferenceType.h"
 
-#include "streamOpcodeWriter.h"
-#include "streamOpcodeReader.h"
+#include "serializationWriter.h"
+#include "serializationReader.h"
 #include "core/xml/include/xmlWrappers.h"
 
 BEGIN_BOOMER_NAMESPACE()
@@ -249,7 +249,7 @@ bool IClassType::parseFromString(StringView txt, void* data, uint32_t flags) con
     return true;
 }
         
-void IClassType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
+void IClassType::writeBinary(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData) const
 {
     TypeSerializationContextSetClass classContext(typeContext, this);
 
@@ -331,7 +331,7 @@ namespace helper
     }
 }
 
-void IClassType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
+void IClassType::readBinary(TypeSerializationContext& typeContext, SerializationReader& file, void* data) const
 {
     TypeSerializationContextSetClass classContext(typeContext, this);
 

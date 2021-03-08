@@ -21,6 +21,12 @@ class CORE_RESOURCE_API IResource : public IObject
     RTTI_DECLARE_VIRTUAL_CLASS(IResource, IObject);
 
 public:
+    //--
+
+    static inline StringView FILE_EXTENSION = "xfile";
+
+    //--
+
     // File path used to load the resource - NOTE, debug only
     INLINE const StringBuf& loadPath() const { return m_loadPath; }
 
@@ -35,6 +41,9 @@ public:
     // Get resource metadata, NOTE: valid only for binary resources, can be loaded separately
     INLINE const ResourceMetadataPtr& metadata() const { return m_metadata; }
 
+    // Is the resource considered modified ?
+    INLINE bool modified() const { return m_modified; }
+
     //--
 
     IResource();
@@ -45,6 +54,9 @@ public:
     // NOTE: the isModified flag is NOT stored in the resource but on the side of the managing structure (like ManagedDepot)
     virtual void markModified() override;
 
+    // reset resource modified flag
+    void resourceModifiedFlag();
+
     // invalidate runtime version of the resource, may force users to refresh preview
     void invalidateRuntimeVersion();
 
@@ -53,20 +65,8 @@ public:
 
     //---
 
-    // Find resource class based on the class hash
-    static SpecificClassType<IResource> FindResourceClassByHash(ResourceClassHash hash);
-
-    // Find resource class based on resource extension
-    static SpecificClassType<IResource> FindResourceClassByExtension(StringView extension);
-
-    // Find resource class based on resource path
-    static SpecificClassType<IResource> FindResourceClassByPath(StringView path);
-
     // Get resource description for given class
     static StringBuf GetResourceDescriptionForClass(ClassType resourceClass);
-
-    // Get resource extension for given class
-    static StringBuf GetResourceExtensionForClass(ClassType resourceClass);
 
     //---
 
@@ -96,6 +96,8 @@ private:
 
     ResourceMetadataPtr m_metadata; // source dependencies and stuff
     ResourcePtr m_reloadedData; // new version of this resource
+
+    bool m_modified = false;
 
     //--
 };

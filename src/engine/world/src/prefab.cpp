@@ -58,7 +58,6 @@ PrefabAppearance::PrefabAppearance()
 ///----
 
 RTTI_BEGIN_TYPE_CLASS(Prefab);
-    RTTI_METADATA(ResourceExtensionMetadata).extension("v4prefab");
     RTTI_METADATA(ResourceDescriptionMetadata).description("Prefab");
     RTTI_METADATA(ResourceTagColorMetadata).color(0x86, 0x6b, 0xed);
     RTTI_PROPERTY(m_root);
@@ -91,13 +90,13 @@ void Prefab::setup(NodeTemplate* root)
     markModified();
 }
 
-EntityPtr Prefab::compile(StringID appearance, const AbsoluteTransform& placement, Array<EntityPtr>& outAllEntities) const
+EntityPtr Prefab::compile(StringID appearance, const AbsoluteTransform& placement, Array<EntityPtr>& outAllEntities, bool loadImports) const
 {
     if (!m_root)
         return nullptr;
 
     NodePathBuilder path;
-    if (auto data = CompileEntityHierarchy(path, m_root, &placement, GlobalLoader()))
+    if (auto data = CompileEntityHierarchy(path, m_root, &placement, loadImports))
     {
         data->collectEntities(outAllEntities);
         return outAllEntities[0];

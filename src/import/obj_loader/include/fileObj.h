@@ -9,7 +9,7 @@
 #pragma once
 
 #include "core/resource/include/resource.h"
-#include "core/resource_compiler/include/importSourceAsset.h"
+#include "core/resource_compiler/include/sourceAsset.h"
 #include "core/math/include/vector3.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)

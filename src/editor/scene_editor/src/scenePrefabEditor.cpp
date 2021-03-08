@@ -14,7 +14,7 @@
 #include "sceneEditMode_Default.h"
 
 #include "engine/world/include/prefab.h"
-#include "editor/common/include/managedFileFormat.h"
+#include "editor/common/include/assetFormat.h"
 #include "editor/common/include/managedFileNativeResource.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)

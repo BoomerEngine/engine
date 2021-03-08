@@ -9,6 +9,7 @@
 #pragma once
 
 #include "format.h"
+#include "core/object/include/compressedBuffer.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -29,14 +30,14 @@ struct ENGINE_MESH_API MeshChunk
     uint32_t indexCount = 0;
     uint32_t vertexCount = 0;
 
-    uint32_t unpackedVertexSize = 0;
-    uint32_t unpackedIndexSize = 0;
-
     Vector3 quantizationOffset;
     Vector3 quantizationScale;
 
-    Buffer packedVertexData; // packed (compressed) vertex data
-    Buffer packedIndexData; // packed (compressed) index data
+    CompressedBufer packedVertexData; // packed (compressed) vertex data
+    CompressedBufer packedIndexData; // packed (compressed) index data
+
+    uint32_t unpackedVertexSize = 0;
+    uint32_t unpackedIndexSize = 0;
 };
 
 //---

@@ -12,8 +12,8 @@
 #include "reference.h"
 #include "referenceType.h"
 
-#include "core/object/include/streamOpcodeReader.h"
-#include "core/object/include/streamOpcodeWriter.h"
+#include "core/object/include/serializationReader.h"
+#include "core/object/include/serializationWriter.h"
 
 #include "core/containers/include/stringBuilder.h"
 #include "core/containers/include/stringParser.h"
@@ -114,7 +114,7 @@ enum ResourceRefBinaryFlag
     Inlined = 2,
 };
 
-void ResourceRefType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
+void ResourceRefType::writeBinary(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData) const
 {
     auto& ptr = *(const BaseReference*) data;
 
@@ -132,7 +132,7 @@ void ResourceRefType::writeBinary(TypeSerializationContext& typeContext, stream:
         file.writeResourceReference(ptr.id().guid(), m_resourceClass, false);
 }
 
-void ResourceRefType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
+void ResourceRefType::readBinary(TypeSerializationContext& typeContext, SerializationReader& file, void* data) const
 {
     BaseReference loadedRef;
 

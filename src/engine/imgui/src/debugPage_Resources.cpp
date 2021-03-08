@@ -14,7 +14,7 @@
 #include "core/memory/include/poolStats.h"
 #include "core/app/include/localServiceContainer.h"
 #include "core/resource/include/loader.h"
-#include "core/resource/include/loadingService.h"
+#include "core/resource/include/loader.h"
 #include "core/object/include/globalEventTable.h"
 
 BEGIN_BOOMER_NAMESPACE()
@@ -45,11 +45,7 @@ public:
 
     virtual bool handleInitialize()
     {
-        auto loadingService = GetService<LoadingService>();
-        if (!loadingService || !loadingService->loader())
-            return false;
-
-        if (auto key = loadingService->loader()->eventKey())
+        if (auto key = GetService<LoadingService>()->eventKey())
         {
             m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_LOADING) = [this](StringBuf data)
             {
@@ -72,7 +68,7 @@ public:
             m_events.bind(key, EVENT_RESOURCE_LOADER_FILE_LOADED) = [this](StringBuf data)
             {
                 auto lock = CreateLock(m_fileMapLock);
-                //updateStatusNoLock(data->key(), FileStatusMode::Loaded);
+                updateStatusNoLock(data, FileStatusMode::Loaded);
             };
         }
 

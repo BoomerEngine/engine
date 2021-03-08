@@ -12,8 +12,8 @@
 #include "asyncReference.h"
 #include "asyncReferenceType.h"
 
-#include "core/object/include/streamOpcodeReader.h"
-#include "core/object/include/streamOpcodeWriter.h"
+#include "core/object/include/serializationReader.h"
+#include "core/object/include/serializationWriter.h"
 
 #include "core/containers/include/stringBuilder.h"
 #include "core/containers/include/stringParser.h"
@@ -102,13 +102,13 @@ void ResourceAsyncRefType::destruct(void* object) const
     ((BaseAsyncReference*)object)->~BaseAsyncReference();
 }
 
-void ResourceAsyncRefType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
+void ResourceAsyncRefType::writeBinary(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData) const
 {
     const auto& ptr = *(const BaseAsyncReference*) data;
     file.writeResourceReference(ptr.id().guid(), m_resourceClass, true);
 }
 
-void ResourceAsyncRefType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
+void ResourceAsyncRefType::readBinary(TypeSerializationContext& typeContext, SerializationReader& file, void* data) const
 {
     ResourceID loadedKey;
 

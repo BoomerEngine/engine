@@ -76,6 +76,9 @@ public:
     // get node value as string, no default - an empty string will be returned; 
     StringBuf valueString() const;
 
+    // get node value as a BASE64 encoded buffer
+    Buffer valueBufferBase64() const;
+
     //--
 
     // get value for given attribute
@@ -97,6 +100,9 @@ public:
 
     // write node value
     void writeValue(StringView txt);
+
+    // write a BASE64 data
+    void writeBuffer(Buffer data);
 
     // add node attribute
     void writeAttribute(StringView name, StringView value);

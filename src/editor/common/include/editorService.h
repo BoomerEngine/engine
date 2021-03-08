@@ -95,50 +95,70 @@ public:
     void showAssetBrowser(bool focus=true);
 
     // get selected file
-    ManagedFile* selectedFile() const;
-
-    // get the active directory
-    ManagedDirectory* selectedDirectory() const;
+    StringBuf selectedFile() const;
 
     // show file in the asset browser
-    bool showFile(ManagedFile* filePtr);
+    bool showFile(StringView filePtr);
 
     // show directory in the depot tree and possible also as a file list
-    bool showDirectory(ManagedDirectory* dir, bool exploreContent);
+    bool showDirectory(StringView dir, bool exploreContent);
 
     //--
 
-    // check if given file can be opened
-    bool canOpenFile(ManagedFile* file) const;
-
     // check if file is edited
-    ResourceEditorPtr findFileEditor(ManagedFile* file) const;
+    ResourceEditorPtr findFileEditor(ManagedFile* file) const { return nullptr; }
 
     // show editor for given file, returns false if file is not edited
-    bool showFileEditor(ManagedFile* file) const;
+    bool showFileEditor(ManagedFile* file) const { return false; }
 
     // open file for edit
-    bool openFileEditor(ManagedFile* file, bool activate=true);
+    bool openFileEditor(ManagedFile* file, bool activate = true) { return false; }
 
     // close file editor
-    bool closeFileEditor(ManagedFile* file, bool force=false);
+    bool closeFileEditor(ManagedFile* file, bool force = false) { return false; }
 
     // save file in a file editor
-    bool saveFileEditor(ManagedFile* file, bool force = false);
+    bool saveFileEditor(ManagedFile* file, bool force = false) { return false; }
 
     // collect all opened files
-    void collectOpenedFiles(Array<ManagedFile*>& outOpenedFiles) const;
+    void collectOpenedFiles(Array<ManagedFile*>& outOpenedFiles) const { }
+
+    //--
+
+    struct OpenedFile
+    {
+        ResourcePtr data;
+        StringBuf depotPath;
+    };
+
+    // collect all opened root files
+    void collectOpenedFiles(Array<OpenedFile>& outOpenedFiles) const;
 
     // collect all resource editors
     void collectResourceEditors(Array<ResourceEditorPtr>& outResourceEditors) const;
 
+    // check if file is edited
+    ResourceEditorPtr findFileEditor(StringView depotPath) const;
+
+    // show editor for given file, returns false if file is not edited
+    bool showFileEditor(StringView depotPath) const;
+
+    // open file for edit
+    bool openFileEditor(StringView depotPath, bool activate = true);
+
+    // close file editor
+    bool closeFileEditor(StringView depotPath, bool force = false);
+
+    // save file in a file editor
+    bool saveFileEditor(StringView depotPath, bool force = false);
+
     //--
 
     // import files into asset depot
-    void importFiles(const ManagedDirectory* currentDirectory, TImportClass resourceClass, const Array<StringBuf>& selectedAssetPaths);
+    void importFiles(StringView directoryDepotPath, TImportClass resourceClass, const Array<StringBuf>& selectedAssetPaths);
 
     // reimport already imported files into the depot
-    void reimportFiles(const Array<ManagedFileNativeResource*>& files);
+    void reimportFiles(const Array<StringBuf>& fileDepotPaths);
 
     ///---
 

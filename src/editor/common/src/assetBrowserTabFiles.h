@@ -28,7 +28,7 @@ class AssetBrowserTabFiles : public ui::DockPanel
     RTTI_DECLARE_VIRTUAL_CLASS(AssetBrowserTabFiles, ui::DockPanel);
 
 public:
-    AssetBrowserTabFiles(ManagedDepot* depot, AssetBrowserContext env = AssetBrowserContext::DirectoryTab);
+    AssetBrowserTabFiles(AssetBrowserContext env = AssetBrowserContext::DirectoryTab);
     virtual ~AssetBrowserTabFiles();
 
     //--
@@ -38,47 +38,24 @@ public:
     INLINE bool list() const { return m_list; } // display items in a flat list
     INLINE bool flat() const { return m_flat; } // flat view (flatten subdirectories)
 
-    INLINE ManagedDepot* depot() const { return m_depot; }
-
-    INLINE ManagedDirectory* directory() const { return m_dir; }
-
-    INLINE const Array<const ManagedFileFormat*>& filterFormats() const { return m_filterFormats.keys(); }
+    INLINE const StringBuf& depotPath() const { return m_depotPath; }
     INLINE const StringBuf& filterName() const { return m_filterName; }
 
     //---
 
-    /// toggle the list flatten
     void flat(bool isFlattened);
-
-    /// toggle the list mode
     void list(bool isList);
 
-    /// set file format filter for resources
-    void filterFormat(const ManagedFileFormat* filterFormat, bool toggle);
-
-    /// change the name filter
+    void filterFormat(ClassType cls, bool toggle);
     void filterName(StringView txt);
 
-    /// set active directory
-    void directory(ManagedDirectory* dir, ManagedItem* autoSelectItem = nullptr);
+    void directory(StringView depotPath, StringView autoSelectName = "");
 
-    /// select item in the list
-    bool selectItem(ManagedItem* item);
+    bool selectItem(StringView depotPath);
 
-    /// select specific items
-    bool selectItems(const Array<ManagedItem*>& items);
+    StringBuf selectedFile() const;
 
-    /// get selected item (may be file/directory or something else)
-    ManagedItem* selectedItem() const;
-
-    /// get selected file
-    ManagedFile* selectedFile() const;
-
-    /// get all selected files
-    Array<ManagedFile*> selectedFiles() const;
-
-    /// get all selected items
-    Array<ManagedItem*> selectedItems() const;
+    void duplicateFile(StringView depotPath);
 
     //--
 
@@ -87,26 +64,20 @@ public:
 
     //--
 
-    void duplicateFile(ManagedFile* file);
-
 private:
     AssetBrowserContext m_context;
 
-    ManagedDepot* m_depot = nullptr;
-    ManagedDirectory* m_dir = nullptr;
+    StringBuf m_depotPath;
 
     bool m_flat = false;
     bool m_list = false;
     uint32_t m_iconSize = 128;
 
-    ui::ListView* m_files;
-    RefPtr<AssetBrowserDirContentModel> m_filesModel;
+    ui::ListViewExPtr m_files;
 
-    HashSet<const ManagedFileFormat*> m_filterFormats;
+    HashSet<ClassType> m_filterFormats;
     StringBuf m_filterName;
 
-    Array<ManagedFilePlaceholderPtr> m_filePlaceholders;
-    Array<ManagedDirectoryPlaceholderPtr> m_directoryPlaceholders;
     GlobalEventTable m_fileEvents;
 
     void updateTitle();
@@ -116,24 +87,21 @@ private:
     bool showGenericContextMenu();
     void iconSize(uint32_t size);
 
-    void createNewDirectory();
-    void createNewFile(const ManagedFileFormat* format);
+    void createNewDirectoryPlaceholder();
+    void createNewDirectory(StringView name);
+
+    void createNewFilePlaceholder(const ManagedFileFormat* format);
+    void createNewFile(StringView name, const ManagedFileFormat* format);
+
     bool importNewFile(const ManagedFileFormat* format);
 
-    void finishFileDuplicate(ManagedFilePlaceholderPtr ptr, const ManagedFile* sourceFile);
-
-    void finishFilePlaceholder(ManagedFilePlaceholderPtr ptr);
-    void cancelFilePlaceholder(ManagedFilePlaceholderPtr ptr);
-    void finishDirPlaceholder(ManagedDirectoryPlaceholderPtr ptr);
-    void cancelDirPlaceholder(ManagedDirectoryPlaceholderPtr ptr);
-
     void buildNewAssetMenu(ui::MenuButtonContainer* menu);
-    void buildImportAssetMenu(ui::MenuButtonContainer* menu);        
+    void buildImportAssetMenu(ui::MenuButtonContainer* menu);
 };
      
 //--
 
-extern bool ImportNewFiles(ui::IElement* owner, const ManagedFileFormat* format, ManagedDirectory* parentDir);
+extern bool ImportNewFiles(ui::IElement* owner, StringView depotPath, const ManagedFileFormat* format);
 
 //--
 

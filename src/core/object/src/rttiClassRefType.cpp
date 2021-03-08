@@ -11,8 +11,8 @@
 #include "rttiClassRef.h"
 #include "rttiClassRefType.h"
 
-#include "streamOpcodeWriter.h"
-#include "streamOpcodeReader.h"
+#include "serializationWriter.h"
+#include "serializationReader.h"
 #include "core/xml/include/xmlWrappers.h"
 
 BEGIN_BOOMER_NAMESPACE()
@@ -115,13 +115,13 @@ void ClassRefType::writeReferencedClass(void* data, ClassType newClassRef) const
         classRef = ClassType();
 }
 
-void ClassRefType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
+void ClassRefType::writeBinary(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData) const
 {
     auto& classRef = *static_cast<const ClassType*>(data);
     file.writeType(classRef.ptr());
 }
 
-void ClassRefType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
+void ClassRefType::readBinary(TypeSerializationContext& typeContext, SerializationReader& file, void* data) const
 {
     StringID typeName;
     auto typeRef = file.readType(typeName);

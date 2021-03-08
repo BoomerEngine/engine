@@ -9,7 +9,6 @@
 #include "build.h"
 #include "resource.h"
 #include "loader.h"
-#include "classLookup.h"
 #include "metadata.h"
 #include "tags.h"
 
@@ -42,6 +41,17 @@ void IResource::metadata(const ResourceMetadataPtr& data)
     m_metadata->parent(this);
 }
 
+void IResource::resourceModifiedFlag()
+{
+    if (m_modified)
+    {
+        m_modified = false;
+
+        auto selfRef = ResourcePtr(AddRef(this));
+        DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_MODIFIED, selfRef);
+    }
+}
+
 void IResource::markModified()
 {
     // invalidate runtime version of the resource, this may cause refresh of the preview panels or other cached data
@@ -51,7 +61,10 @@ void IResource::markModified()
     TBaseClass::markModified();
 
     // mark as modified only if we are standalone resource
+    if (!m_modified)
     {
+        m_modified = true;
+
         auto selfRef = ResourcePtr(AddRef(this));
         DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_MODIFIED, selfRef);
     }
@@ -63,28 +76,6 @@ void IResource::invalidateRuntimeVersion()
 }
 
 //--
-
-SpecificClassType<IResource> IResource::FindResourceClassByHash(ResourceClassHash hash)
-{
-    return prv::ResourceClassLookup::GetInstance().resolveResourceClassHash(hash);
-}
-
-SpecificClassType<IResource> IResource::FindResourceClassByExtension(StringView extension)
-{
-    return prv::ResourceClassLookup::GetInstance().resolveResourceExtension(extension);
-}
-
-SpecificClassType<IResource> IResource::FindResourceClassByPath(StringView path)
-{
-    if (path.empty())
-        return nullptr;
-
-    auto ext = path.afterFirst(".");
-    if (ext.empty())
-        return nullptr;
-
-    return FindResourceClassByExtension(ext);
-}
 
 StringBuf IResource::GetResourceDescriptionForClass(ClassType resourceClass)
 {
@@ -99,18 +90,6 @@ StringBuf IResource::GetResourceDescriptionForClass(ClassType resourceClass)
         return StringBuf(resourceClass->shortName().view());
 
     return StringBuf(resourceClass->name().view().afterLast("::"));
-}
-
-StringBuf IResource::GetResourceExtensionForClass(ClassType resourceClass)
-{
-    if (!resourceClass)
-        return StringBuf::EMPTY();
-
-    auto extMetaData = resourceClass->findMetadata<ResourceExtensionMetadata>();
-    if (extMetaData)
-        return StringBuf(extMetaData->extension());
-
-    return StringBuf::EMPTY();
 }
 
 void IResource::discardEditorData()

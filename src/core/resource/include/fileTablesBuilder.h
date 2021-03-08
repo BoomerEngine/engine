@@ -39,16 +39,30 @@ public:
     Array<FileTables::Property> propertyTable;
     Array<FileTables::Import> importTable;
     Array<FileTables::Export> exportTable;
+    Array<FileTables::Buffer> bufferTable;
 
     //--
 
     HashMap<FileTables::Type, uint32_t> typeMap;
     HashMap<FileTables::Property, uint32_t> propertyMap;
     HashMap<FileTables::Import, uint32_t> importMap;
-
+    
     HashMap<StringBuf, uint32_t> stringRawMap;
     HashMap<StringID, uint32_t> nameRawMap;
     HashMap<StringID, uint32_t> typeRawMap;
+    HashMap<uint64_t, uint32_t> bufferRawMap;
+
+    //--
+
+    struct BufferData
+    {
+        uint64_t crc = 0;
+        Buffer compressedData;
+        CompressionType compressionType = CompressionType::Uncompressed;
+        uint64_t uncompressedSize = 0;
+    };
+
+    Array<BufferData> bufferData;
 
     //--
 

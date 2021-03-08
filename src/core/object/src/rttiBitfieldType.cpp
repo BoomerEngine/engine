@@ -9,8 +9,8 @@
 #include "build.h"
 #include "rttiBitfieldType.h"
 
-#include "streamOpcodeWriter.h"
-#include "streamOpcodeReader.h"
+#include "serializationWriter.h"
+#include "serializationReader.h"
 #include "rttiDataView.h"
 #include "dataView.h"
 
@@ -108,7 +108,7 @@ void BitfieldType::copy(void* dest, const void* src) const
     writeUint64(dest, val);
 }
         
-void BitfieldType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
+void BitfieldType::writeBinary(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData) const
 {
     uint64_t val = 0;
     readUint64(data, val);
@@ -137,7 +137,7 @@ void BitfieldType::writeBinary(TypeSerializationContext& typeContext, stream::Op
     file.endArray();
 }
 
-void BitfieldType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
+void BitfieldType::readBinary(TypeSerializationContext& typeContext, SerializationReader& file, void* data) const
 {
     uint64_t val = 0;
 

@@ -64,16 +64,16 @@ TEST(XML, CreateManual)
         auto id  = doc->createNode(doc->root(), "node");
         ASSERT_TRUE(id != 0);
 
-        doc->nodeAttribute(id, "x", "a");
-        doc->nodeAttribute(id, "y", "b");
+        doc->writeNodeAttribute(id, "x", "a");
+        doc->writeNodeAttribute(id, "y", "b");
     }
 
     {
         auto id  = doc->createNode(doc->root(), "node");
         ASSERT_TRUE(id != 0);
 
-        doc->nodeAttribute(id, "x", "a");
-        doc->nodeAttribute(id, "y", "b");
+        doc->writeNodeAttribute(id, "x", "a");
+        doc->writeNodeAttribute(id, "y", "b");
     }
 
     ASSERT_TRUE(!!doc);

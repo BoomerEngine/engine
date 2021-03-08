@@ -57,7 +57,6 @@ RTTI_END_TYPE();
 ///---
 
 RTTI_BEGIN_TYPE_CLASS(MaterialInstance);
-    RTTI_METADATA(ResourceExtensionMetadata).extension("v4mi");
     RTTI_METADATA(ResourceDescriptionMetadata).description("Material Instance");
     RTTI_METADATA(ResourceTagColorMetadata).color(0x4c, 0x5b, 0x61);
     RTTI_PROPERTY(m_parameters);
@@ -493,7 +492,7 @@ bool MaterialInstance::onResourceReloading(IResource* currentResource, IResource
     if (currentResource->is<MaterialInstance>())
     {
         TRACE_INFO("SeenReloading at {}, cur base {} (reload {}->{}: {})", 
-            this, m_baseMaterial.load().get(), currentResource, newResource, newResource->path());
+            this, m_baseMaterial.resource(), currentResource, newResource, newResource->loadPath());
     }
 
     bool ret = TBaseClass::onResourceReloading(currentResource, newResource);

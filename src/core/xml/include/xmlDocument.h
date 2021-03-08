@@ -23,6 +23,8 @@ public:
 
     //---
 
+    static const char* HEADER_TEXT();
+
     static const NodeID INVALID_NODE_ID = 0;
     static const AttributeID INVALID_ATTRIBUTE_ID = 0;
 
@@ -57,6 +59,9 @@ public:
 
     // get node value
     virtual StringView nodeValue(NodeID id) const = 0;
+
+    // get node value as base64 buffer
+    virtual Buffer nodeValueBuffer(NodeID id) const = 0;
 
     // get node name
     virtual StringView nodeName(NodeID id) const = 0;
@@ -96,13 +101,16 @@ public:
     virtual void deleteNode(NodeID id) = 0;
 
     // set node value
-    virtual void nodeValue(NodeID id, StringView value) = 0;
+    virtual void writeNodeValue(NodeID id, StringView value) = 0;
+
+    // set node value as base64 buffer
+    virtual void writeNodeValue(NodeID id, Buffer data) = 0;
 
     // set node name
-    virtual void nodeName(NodeID id, StringView name) = 0;
+    virtual void writeNodeName(NodeID id, StringView name) = 0;
 
     // set node attribute
-    virtual void nodeAttribute(NodeID id, StringView name, StringView value) = 0;
+    virtual void writeNodeAttribute(NodeID id, StringView name, StringView value) = 0;
 
     // delete node attribute by name
     virtual void deleteNodeAttribute(NodeID id, StringView name) = 0;

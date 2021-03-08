@@ -45,8 +45,8 @@ public:
     //--
 
     // Custom type implementation requirements
-    void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& stream) const;
-    void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& stream);
+    void writeBinary(TypeSerializationContext& typeContext, SerializationWriter& stream) const;
+    void readBinary(TypeSerializationContext& typeContext, SerializationReader& stream);
 
     // Calculate hash of the data
     void calcHash(CRC64& crc) const;

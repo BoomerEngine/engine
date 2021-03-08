@@ -98,6 +98,34 @@ void DepotStructure::DirectoryInfo::link(FileInfo* file)
     LinkList(fileList, file);
 }
 
+const DepotStructure::FileInfo* DepotStructure::DirectoryInfo::findFile(StringView name) const
+{
+    const auto* cur = fileList;
+    while (cur)
+    {
+        if (0 == cur->name.caseCmp(name))
+            return cur;
+
+        cur = cur->next;
+    }
+
+    return nullptr;
+}
+
+const DepotStructure::DirectoryInfo* DepotStructure::DirectoryInfo::findDir(StringView name) const
+{
+    const auto* cur = dirList;
+    while (cur)
+    {
+        if (0 == cur->name.caseCmp(name))
+            return cur;
+
+        cur = cur->next;
+    }
+
+    return nullptr;
+}
+
 void DepotStructure::DirectoryInfo::unlink()
 {
     DEBUG_CHECK_RETURN_EX(parent != nullptr, "Not linked");
@@ -125,6 +153,7 @@ DepotStructure::DepotStructure(StringView depotRootPath, bool observerDynamicCha
     , m_stringHashPool(POOL_MANAGED_DEPOT, 4096)
 {
     memzero(m_stringHashBuckets, sizeof(m_stringHashBuckets));
+    memzero(m_resourceHashBuckets, sizeof(m_resourceHashBuckets));
 
     if (observerDynamicChanges)
         if (m_watcher = CreateDirectoryWatcher(depotRootPath))
@@ -144,12 +173,12 @@ void DepotStructure::scan(IDepotProblemReporter& err)
     TRACE_INFO("Scaning depot at '{}'...", m_rootPath);
 
     // create root directory
-    auto* dir = m_dirPool.create();
-    dir->localPath = "";
-    dir->parent = nullptr;
+    m_rootDir = m_dirPool.create();
+    m_rootDir->localPath = "";
+    m_rootDir->parent = nullptr;
 
     // scan content at root
-    scanDirContent(dir, err);
+    scanDirContent(m_rootDir, err);
 
     TRACE_INFO("Finished scanning in {}, found {} files, {} dirs and {} resources",
         timer, m_filePool.size(), m_dirPool.size(), m_resourcePool.size());
@@ -299,8 +328,8 @@ bool DepotStructure::scanFileResourcesInternal(FileInfo* file, StringView path)
 
 void DepotStructure::scanFileResources(FileInfo* file, IDepotProblemReporter& err)
 {
-    /*if (!file->name.endsWith(".xmeta"))
-        return;*/
+    if (!file->name.endsWith(".xmeta"))
+        return;
 
     if (!scanFileResourcesInternal(file, TempString("{}{}{}", m_rootPath, file->dir->localPath, file->name)))
     {
@@ -308,8 +337,95 @@ void DepotStructure::scanFileResources(FileInfo* file, IDepotProblemReporter& er
     }
 }
 
-bool DepotStructure::resolveID(const ResourceID& id, StringBuf& outRelativePath) const
+bool DepotStructure::resolvePathForID(const ResourceID& id, StringBuf& outRelativePath) const
 {
+    auto lock = CreateLock(m_globalLock); // TODO: RW lock
+
+    const auto hash = GUID::CalcHash(id.guid());
+    const auto bucketIndex = hash & NUM_ID_BUCKETS;
+
+    const auto* bucket = m_resourceHashBuckets[bucketIndex];
+    while (bucket)
+    {
+        if (bucket->id == id)
+        {
+            outRelativePath = TempString("{}{}", bucket->file->dir->localPath, bucket->file->name);
+            return true;
+        }
+
+        bucket = bucket->bucketNext;
+    }
+
+    return false;
+}
+
+const DepotStructure::DirectoryInfo* DepotStructure::findDir_NoLock(StringView path) const
+{
+    InplaceArray<StringView, 20> parts;
+    path.slice("/", false, parts);
+
+    const auto* dir = m_rootDir;
+    for (const auto part : parts)
+    {
+        if (part == ".")
+            continue;
+
+        if (part == "..")
+            dir = dir->parent;
+        else
+            dir = dir->findDir(part);
+
+        if (!dir)
+            break;
+    }
+
+    return dir;
+}
+
+static void SplitPathIntoParts(StringView path, StringView& outDirPath, StringView& outFileName)
+{
+    const auto pos = path.findLastChar('/');
+    if (pos != INDEX_NONE)
+    {
+        if (pos > 0)
+            outDirPath = path.leftPart(pos - 1);
+        if (pos < path.length())
+            outFileName = path.subString(pos + 1);
+    }
+    else
+    {
+        outFileName = path;
+    }
+}
+
+const DepotStructure::FileInfo* DepotStructure::findFile_NoLock(StringView path) const
+{
+    if (path.empty())
+        return nullptr;
+
+    StringView dirPath, fileName;
+    SplitPathIntoParts(path, dirPath, fileName);
+
+    const auto* dir = findDir_NoLock(dirPath);
+    if (!dir)
+        return nullptr;
+
+    return dir->findFile(fileName);
+}
+
+bool DepotStructure::resolveIDForPath(StringView path, ResourceID& outId) const
+{
+    auto lock = CreateLock(m_globalLock); // TODO: RW lock
+
+    if (const auto* file = findFile_NoLock(path))
+    {
+        if (file->resList)
+        {
+            outId = file->resList->id;
+            return true;
+        }
+    }
+
     return false;
 }
 
@@ -319,7 +435,7 @@ StringView DepotStructure::mapString_NoLock(StringView txt)
         return "";
 
     const auto hash = txt.calcCRC64();
-    const auto bucketIndex = hash % NUM_BUCKETS;
+    const auto bucketIndex = hash % NUM_STRING_BUCKETS;
 
     // search in the hash map
     auto*& bucketList = m_stringHashBuckets[bucketIndex];
@@ -339,6 +455,37 @@ StringView DepotStructure::mapString_NoLock(StringView txt)
     bucketList = entry;
 
     return entry->data;
+}
+
+void DepotStructure::enumDirectories(StringView path, const std::function<void(StringView)>& func) const
+{
+    auto lock = CreateLock(m_globalLock); // TODO: RW lock
+
+    if (const auto* dir = findDir_NoLock(path))
+    {
+        const auto* cur = dir->dirList;
+        while (cur)
+        {
+            func(cur->name);
+            cur = cur->next;
+        }
+    }
+}
+
+
+void DepotStructure::enumFiles(StringView path, const std::function<void(StringView)>& func) const
+{
+    auto lock = CreateLock(m_globalLock); // TODO: RW lock
+
+    if (const auto* dir = findDir_NoLock(path))
+    {
+        const auto* cur = dir->fileList;
+        while (cur)
+        {
+            func(cur->name);
+            cur = cur->next;
+        }
+    }
 }
 
 //--

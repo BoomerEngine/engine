@@ -14,8 +14,8 @@
 #include "core/containers/include/stringBuilder.h"
 #include "core/containers/include/stringParser.h"
 #include "core/containers/include/inplaceArray.h"
-#include "core/object/include/streamOpcodeWriter.h"
-#include "core/object/include/streamOpcodeReader.h"
+#include "core/object/include/serializationWriter.h"
+#include "core/object/include/serializationReader.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -142,7 +142,7 @@ bool TagList::containsNone(const TagList& other) const
     return true;
 }
 
-void TagList::writeBinary(stream::OpcodeWriter& stream) const
+void TagList::writeBinary(SerializationWriter& stream) const
 {
     stream.beginArray(m_tags.size());
     for (auto& tag : m_tags)
@@ -150,7 +150,7 @@ void TagList::writeBinary(stream::OpcodeWriter& stream) const
     stream.endArray();
 }
 
-void TagList::readBinary(stream::OpcodeReader& stream)
+void TagList::readBinary(SerializationReader& stream)
 {
     uint32_t count = 0;
     stream.enterArray(count);

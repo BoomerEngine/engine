@@ -35,6 +35,9 @@ public:
 
     //--
 
+    // get resource ID of existing depot file
+    virtual ResourceID queryResourceID(StringView depotPath) const = 0;
+
     /// get the path to the resource being imported, this is a depot path
     virtual const StringBuf& queryResourcePath() const = 0;
 
@@ -56,10 +59,10 @@ public:
     /// load content of a file to a buffer (can also open a memory mapped file for actual disk files, but it's going to be transparent any way)
     /// NOTE: we can open ANY source file here but usually we open the one we want to import ie. the queryImportPath()
     /// Good example of importer that may open another file is the .obj importer that can read materials from .mtl
-    virtual Buffer loadSourceFileContent(StringView assetImportPath) const = 0;
+    virtual Buffer loadSourceFileContent(StringView assetImportPath, bool reportAsDependency=true) = 0;
 
     /// load source asset of given type
-    virtual SourceAssetPtr loadSourceAsset(StringView assetImportPath) const = 0;
+    virtual SourceAssetPtr loadSourceAsset(StringView assetImportPath, bool reportAsDependency = true, bool allowCaching=true) = 0;
 
     //--
 
@@ -80,7 +83,7 @@ public:
     virtual bool findSourceFile(StringView assetImportPath, StringView inputPath, StringBuf& outImportPath, uint32_t maxScanDepth = 2) const = 0;
 
     // same as findSourceFile but finds files in depot
-    virtual bool findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, ResourceID& outID, uint32_t maxScanDepth = 2) const = 0;
+    virtual bool findDepotFile(StringView depotReferencePath, StringView depotSearchPath, StringView searchFileName, StringBuf& outDepotPath, ResourceID* outID = nullptr, uint32_t maxScanDepth = 2) const = 0;
 
     // check if depot file exists
     virtual bool checkDepotFile(StringView depotPath) const = 0;
@@ -91,7 +94,15 @@ public:
     //--
 
     /// report a follow up import (other asset that we should import automatically)
-    virtual ResourceID followupImport(StringView assetImportPath, StringView depotPath, const ResourceConfiguration* config = nullptr) = 0;
+    virtual ResourceID followupImport(StringView assetImportPath, StringView depotPath, ResourceClass cls, const ResourceConfiguration* config = nullptr) = 0;
+
+    /// report a follow up import and create a matching resource reference, allows for clear notation
+    template< typename T >
+    ResourceRef<T> followupImport(StringView assetImportPath, StringView depotPath, const ResourceConfiguration* config = nullptr)
+    {
+        const auto id = followupImport(assetImportPath, depotPath, T::GetStaticClass(), config);
+        return ResourceRef<T>(id);
+    }
 
     //--
 

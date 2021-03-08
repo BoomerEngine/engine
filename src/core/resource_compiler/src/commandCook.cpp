@@ -11,14 +11,12 @@
 #include "core/app/include/command.h"
 #include "core/app/include/commandline.h"
 #include "core/resource/include/id.h"
-#include "core/resource/include/loadingService.h"
+#include "core/resource/include/loader.h"
 #include "core/resource/include/metadata.h"
 #include "core/io/include/io.h"
 #include "core/io/include/fileHandle.h"
 #include "core/containers/include/stringBuilder.h"
 #include "core/resource/include/tags.h"
-
-#include "cookerSaveThread.h"
 
 #include "commandCook.h"
 #include "core/resource/include/fileLoader.h"
@@ -50,16 +48,6 @@ bool CommandCook::run(IProgressTracker* progress, const app::CommandLine& comman
 
     //--
 
-    auto loadingService = GetService<LoadingService>();
-    if (!loadingService || !loadingService->loader())
-    {
-        TRACE_ERROR("Resource loading service not started properly (incorrect depot mapping?), cooking won't be possible.");
-        return false;
-    }
-
-    m_loader = loadingService->loader();
-    m_saveThread.create();
-
     //--
 
     if (!collectSeedFiles())
@@ -84,20 +72,18 @@ void CommandCook::scanDepotDirectoryForSeedFiles(StringView depotPath, Array<Str
 
     auto depot = GetService<DepotService>();
 
-    depot->enumFilesAtPath(depotPath, [&depotPath, &outList](const DepotService::FileInfo& info)
+    depot->enumFilesAtPath(depotPath, [&depotPath, &outList](StringView name)
         {
             /*if (info.name.endsWith(seedFileExtension))
             {
                 const auto path = StringBuf(TempString("{}{}", depotPath, info.name));
                 outList.emplaceBack(path, SeedFile::GetStaticClass());
             }*/
-
-            return false;
         });
 
-    depot->enumDirectoriesAtPath(depotPath, [this, &depotPath, &outList, &outNumDirectoriesVisited](const DepotService::DirectoryInfo& info)
+    depot->enumDirectoriesAtPath(depotPath, [this, &depotPath, &outList, &outNumDirectoriesVisited](StringView name)
         {
-            const StringBuf path = TempString("{}{}/", depotPath, info.name);
+            const StringBuf path = TempString("{}{}/", depotPath, name);
             scanDepotDirectoryForSeedFiles(path, outList, outNumDirectoriesVisited);
             return false;
         });
@@ -180,7 +166,7 @@ bool CommandCook::processSeedFiles()
     TRACE_INFO("Finished processing {} seed files.", m_seedFiles.size());
     TRACE_INFO("Visited {} files, {} up to date, {} copied, {} cooked and {} failed", m_numTotalVisited, m_numTotalUpToDate, m_numTotalCopied, m_numTotalCooked, m_numTotalFailed);
 
-    m_saveThread->waitUntilDone();
+    //m_saveThread->waitUntilDone();
 
     return m_numTotalFailed == 0;
 }
@@ -287,7 +273,7 @@ bool CommandCook::checkDependenciesUpToDate(const ResourceMetadata& deps) const
     }*/
 
     // check file dependencies
-    for (const auto& dep : deps.sourceDependencies)
+    /*for (const auto& dep : deps.importDependencies)
     {
         TimeStamp timestamp;
         GetService<DepotService>()->queryFileTimestamp(dep.sourcePath, timestamp);
@@ -297,7 +283,7 @@ bool CommandCook::checkDependenciesUpToDate(const ResourceMetadata& deps) const
 
         TRACE_INFO("Dependency file '{}' has changed", dep.sourcePath);
         return false;
-    }
+    }*/
 
     return true;
 }
@@ -307,7 +293,7 @@ ResourceMetadataPtr CommandCook::loadFileMetadata(StringView cookedOutputPath) c
     if (auto fileReader = OpenForAsyncReading(cookedOutputPath))
     {
         FileLoadingContext context;
-        return LoadFileMetadata(fileReader, context);
+        return nullptr;// return LoadFileMetadata(fileReader, context);
     }
 
     return nullptr;
@@ -315,7 +301,7 @@ ResourceMetadataPtr CommandCook::loadFileMetadata(StringView cookedOutputPath) c
 
 bool CommandCook::assembleCookedOutputPath(const StringBuf& key, SpecificClassType<IResource> cookedClass, StringBuf& outPath) const
 {
-    const auto loadExtension = IResource::GetResourceExtensionForClass(cookedClass);
+    /*const auto loadExtension = IResource::GetResourceExtensionForClass(cookedClass);
     if (!loadExtension)
     {
         TRACE_ERROR("Resource class '{}' has no cooked extension. Cooking to that format will not be possible.", cookedClass);
@@ -329,7 +315,7 @@ bool CommandCook::assembleCookedOutputPath(const StringBuf& key, SpecificClassTy
     localPath << key.view().fileName();
     localPath << "." << loadExtension;
 
-    outPath = localPath.toString();
+    outPath = localPath.toString();*/
     return true;
 }
 
@@ -414,7 +400,7 @@ bool CommandCook::cookFile(const StringBuf& key, SpecificClassType<IResource> co
     queueDependencies(*cookedFile, outCookingQueue);
 
     // add to save queue
-    m_saveThread->scheduleSave(cookedFile, outPath);
+//    m_saveThread->scheduleSave(cookedFile, outPath);
     return true;
 }
 

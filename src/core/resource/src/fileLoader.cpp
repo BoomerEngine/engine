@@ -6,21 +6,21 @@
 * [#filter: resource\serialization #]
 ***/
 #include "build.h"
-#include "metadata.h"
+#include "resource.h"
 #include "fileTables.h"
 #include "fileLoader.h"
-#include "loader.h"
-#include "resource.h"
+#include "fileCustomLoader.h"
 
 #include "core/io/include/asyncFileHandle.h"
-#include "core/object/include/streamOpcodeReader.h"
+#include "core/object/include/serializationReader.h"
 #include "core/object/include/object.h"
+#include "core/xml/include/xmlDocument.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
 //--
 
-void ResolveStringIDs(const FileTables& tables, const FileLoadingContext& context, stream::OpcodeResolvedReferences& resolvedReferences)
+void ResolveStringIDs(const FileTables& tables, const FileLoadingContext& context, SerializationResolvedReferences& resolvedReferences)
 {
     const auto numStringIds = tables.chunkCount(FileTables::ChunkType::Names);
     resolvedReferences.stringIds.resize(numStringIds);
@@ -36,7 +36,7 @@ void ResolveStringIDs(const FileTables& tables, const FileLoadingContext& contex
     }
 }
 
-void ResolveTypes(const FileTables& tables, const FileLoadingContext& context, stream::OpcodeResolvedReferences& resolvedReferences)
+void ResolveTypes(const FileTables& tables, const FileLoadingContext& context, SerializationResolvedReferences& resolvedReferences)
 {
     const auto numTypes = tables.chunkCount(FileTables::ChunkType::Types);
     resolvedReferences.types.resize(numTypes);
@@ -63,7 +63,7 @@ void ResolveTypes(const FileTables& tables, const FileLoadingContext& context, s
     }
 }
 
-void ResolveProperties(const FileTables& tables, const FileLoadingContext& context, stream::OpcodeResolvedReferences& resolvedReferences)
+void ResolveProperties(const FileTables& tables, const FileLoadingContext& context, SerializationResolvedReferences& resolvedReferences)
 {
     const auto numProperties = tables.chunkCount(FileTables::ChunkType::Properties);
     resolvedReferences.properties.resize(numProperties);
@@ -90,7 +90,7 @@ void ResolveProperties(const FileTables& tables, const FileLoadingContext& conte
     }
 }
 
-void ResolveImports(const FileTables& tables, const FileLoadingContext& context, stream::OpcodeResolvedReferences& resolvedReferences)
+void ResolveImports(const FileTables& tables, const FileLoadingContext& context, SerializationResolvedReferences& resolvedReferences)
 {
     if (tables.header()->version < VER_NEW_RESOURCE_ID)
         return;
@@ -116,10 +116,9 @@ void ResolveImports(const FileTables& tables, const FileLoadingContext& context,
     }
 
     // load the imports
-    if (context.loadImports)
+    if (context.loadImports && !resourcesToLoad.empty())
     {
         auto allLoadedSignal = CreateFence("WaitForImports", resourcesToLoad.size());
-
         for (auto index : resourcesToLoad)
         {
             auto& entry = resolvedReferences.resources[index];
@@ -135,7 +134,7 @@ void ResolveImports(const FileTables& tables, const FileLoadingContext& context,
     }
 }
 
-void ResolveExports(const FileTables& tables, FileLoadingContext& context, stream::OpcodeResolvedReferences& resolvedReferences)
+void ResolveExports(const FileTables& tables, const FileLoadingContext& context, FileLoadingResult& outResult, SerializationResolvedReferences& resolvedReferences)
 {
     const auto numExports = tables.chunkCount(FileTables::ChunkType::Exports);
     resolvedReferences.objects.resize(numExports);
@@ -154,31 +153,11 @@ void ResolveExports(const FileTables& tables, FileLoadingContext& context, strea
             continue;
         }
 
-        if (i == 0 && context.mutatedRootClass)
-            classType = context.mutatedRootClass;
-
         ObjectPtr parentObject;
-        if (context.loadSpecificClass)
-        {
-            if (classType->is(context.loadSpecificClass))
-            {
-                parentObject = nullptr;
-            }
-            else if (ptr->parentIndex != 0)
-            {
-                parentObject = resolvedReferences.objects[ptr->parentIndex - 1];
-                if (!parentObject)
-                    continue;
-            }
-            else
-            {
-                continue;
-            }
-        }
-        else if (ptr->parentIndex != 0)
+        if (ptr->parentIndex != 0)
         {
             parentObject = resolvedReferences.objects[ptr->parentIndex - 1];
-            if (!parentObject)
+            if (!parentObject) // skip loading if parent object failed to load
                 continue;
         }
 
@@ -192,30 +171,29 @@ void ResolveExports(const FileTables& tables, FileLoadingContext& context, strea
         if (parentObject)
             obj->parent(parentObject);
         else
-            context.loadedRoots.pushBack(obj);
+            outResult.roots.pushBack(obj);
     }
 }
 
-void ResolveReferences(const FileTables& tables, FileLoadingContext& context, stream::OpcodeResolvedReferences& resolvedReferences)
+void ResolveReferences(const FileTables& tables, const FileLoadingContext& context, FileLoadingResult& outResult, SerializationResolvedReferences& resolvedReferences)
 {
     ResolveStringIDs(tables, context, resolvedReferences);
     ResolveTypes(tables, context, resolvedReferences);
     ResolveProperties(tables, context, resolvedReferences);
     ResolveImports(tables, context, resolvedReferences);
-    ResolveExports(tables, context, resolvedReferences);
+    ResolveExports(tables, context, outResult, resolvedReferences);
 }
 
 //--
 static const uint64_t DefaultLoadBufferSize = 8U << 20;
 static const uint64_t BlockSize = 4096;
 
-uint64_t DetermineLoadBufferSize(IAsyncFileHandle* file, const FileTables& tables, FileLoadingContext& context, const stream::OpcodeResolvedReferences& resolvedReferences)
+uint64_t DetermineLoadBufferSize(IAsyncFileHandle* file, const FileTables& tables, const FileLoadingContext& context, const SerializationResolvedReferences& resolvedReferences)
 {
     // whole file is smaller than the load buffer
     // NOTE: use this ONLY if we indeed want to load the whole file
-    if (!context.loadSpecificClass)
-        if (tables.header()->objectsEnd <= DefaultLoadBufferSize)
-            return tables.header()->objectsEnd;
+    if (tables.header()->objectsEnd <= DefaultLoadBufferSize)
+        return tables.header()->objectsEnd;
 
     // file is bigger than the load buffer - we can't load it all at once
     // we will load it in chunks but we can't have smaller chunk than the biggest object
@@ -239,15 +217,15 @@ uint64_t DetermineLoadBufferSize(IAsyncFileHandle* file, const FileTables& table
     return std::max<uint32_t>(maxObjectSize, DefaultLoadBufferSize);
 }
 
-bool LoadFileObjects(IAsyncFileHandle* file, const FileTables& tables, FileLoadingContext& context)
+bool LoadFileObjects(IAsyncFileHandle* file, const FileTables& tables, const FileLoadingContext& context, FileLoadingResult& outResult)
 {
     // do we have "safe layout" in the file ?
     const bool protectedFileLayout = 0 != (tables.header()->flags & FileTables::FileFlag_ProtectedLayout);
 
     // resolve all references
     // NOTE: this will also create all objects that we want to load
-    stream::OpcodeResolvedReferences resolvedReferences;
-    ResolveReferences(tables, context, resolvedReferences);
+    SerializationResolvedReferences resolvedReferences;
+    ResolveReferences(tables, context, outResult, resolvedReferences);
 
     // get the size of the load buffer and allocate it
     const auto loadBufferSize = DetermineLoadBufferSize(file, tables, context, resolvedReferences);
@@ -329,7 +307,7 @@ bool LoadFileObjects(IAsyncFileHandle* file, const FileTables& tables, FileLoadi
                 }
 
                 // read the crap
-                stream::OpcodeReader reader(resolvedReferences, objectData, objectDataSize, protectedFileLayout, tables.header()->version);
+                SerializationReader reader(resolvedReferences, objectData, objectDataSize, protectedFileLayout, tables.header()->version);
                 object->onReadBinary(reader);
             }
         }
@@ -346,7 +324,7 @@ bool LoadFileObjects(IAsyncFileHandle* file, const FileTables& tables, FileLoadi
     return true;
 }
 
-bool LoadFileTables(IAsyncFileHandle* file, Buffer& tablesData)
+bool LoadFileTables(IAsyncFileHandle* file, Buffer& tablesData, Array<uint8_t>* outFileHeader/*= nullptr*/)
 {
     // no file
     if (!file)
@@ -354,17 +332,20 @@ bool LoadFileTables(IAsyncFileHandle* file, Buffer& tablesData)
 
     // load the header's worth of data
     FileTables::Header header;
-    if (file->readAsync(0, sizeof(header), &header) != sizeof(header))
     {
-        TRACE_WARNING("LoadFile: Failed to load header");
-        return false;
-    }
+        const auto numRead = file->readAsync(0, sizeof(header), &header);
+        if (!FileTables::ValidateHeader(header, numRead))
+        {
+            // export the loaded data so we can detect other data formats
+            if (outFileHeader)
+            {
+                outFileHeader->resize(numRead);
+                memcpy(outFileHeader->data(), &header, numRead);
+            }
 
-    // check the header
-    if (!FileTables::ValidateHeader(header))
-    {
-        TRACE_WARNING("LoadFile: Failed to validate header");
-        return false;
+            TRACE_WARNING("LoadFile: Failed to validate header");
+            return false;
+        }
     }
 
     // REALLY big ?
@@ -402,19 +383,37 @@ bool LoadFileTables(IAsyncFileHandle* file, Buffer& tablesData)
     return true;
 }
 
-bool LoadFile(IAsyncFileHandle* file, FileLoadingContext& context)
+bool LoadFile(IAsyncFileHandle* file, const FileLoadingContext& context, FileLoadingResult& outResult)
 {
-    // load file tables
+    // try binary format first
     Buffer tablesData;
-    if (!LoadFileTables(file, tablesData))
-        return false;
-         
-    // load full file or just few objects
-    const auto& tables = *(FileTables*)tablesData.data();
-    if (!LoadFileObjects(file, tables, context))
-        return false;
+    InplaceArray<uint8_t, sizeof(FileTables::Header)> loadedHeader;
+    if (LoadFileTables(file, tablesData, &loadedHeader))
+    {
+        const auto& tables = *(FileTables*)tablesData.data();
+        return LoadFileObjects(file, tables, context, outResult);
+    }
 
-    return true;
+    // try the XML format
+    const auto maxCompare = std::min<uint32_t>(strlen(xml::IDocument::HEADER_TEXT()), sizeof(FileTables::Header));
+    if (loadedHeader.size() >= maxCompare)
+    {
+        // try to load from XML!
+    }
+
+    // if we are loading with known depot path then try the custom loader
+    if (context.resourceLoadPath)
+    {
+        const auto ext = context.resourceLoadPath.view().lastExtension();
+        if (const auto customLoaderClass = FindCustomLoaderForFileExtension(ext))
+        {
+            if (auto customLoader = customLoaderClass->create<ICustomFileLoader>())
+                return customLoader->loadContent(file, context, outResult);
+        }
+    }
+
+    // failed to load
+    return false;
 }
 
 //--
@@ -426,42 +425,48 @@ bool LoadFileDependencies(IAsyncFileHandle* file, const FileLoadingContext& cont
 {
     // load file tables
     Buffer tablesData;
-    if (!LoadFileTables(file, tablesData))
-        return false;
-
-    // resolve table data
-    const auto& tables = *(FileTables*)tablesData.data();
-    stream::OpcodeResolvedReferences resolvedReferences;
-    ResolveStringIDs(tables, context, resolvedReferences);
-    ResolveTypes(tables, context, resolvedReferences);
-    ResolveImports(tables, context, resolvedReferences);
-
-    // list imports
-    for (const auto& info : resolvedReferences.resources)
+    InplaceArray<uint8_t, sizeof(FileTables::Header)> loadedHeader;
+    if (LoadFileTables(file, tablesData, &loadedHeader))
     {
-        if (const auto resourceClass = info.type.cast<IResource>())
+        // resolve table data
+        const auto& tables = *(FileTables*)tablesData.data();
+        SerializationResolvedReferences resolvedReferences;
+        ResolveStringIDs(tables, context, resolvedReferences);
+        ResolveTypes(tables, context, resolvedReferences);
+        ResolveImports(tables, context, resolvedReferences);
+
+        // list imports
+        for (const auto& info : resolvedReferences.resources)
         {
-            auto& outEntry = outDependencies.emplaceBack();
-            outEntry.id = info.id;
-            outEntry.cls = info.type.cast<IResource>();
-            outEntry.loaded = info.loaded;
+            if (const auto resourceClass = info.type.cast<IResource>())
+            {
+                auto& outEntry = outDependencies.emplaceBack();
+                outEntry.id = info.id;
+                outEntry.cls = info.type.cast<IResource>();
+                outEntry.loaded = info.loaded;
+            }
+        }
+    }
+
+    // try the XML format
+    const auto maxCompare = std::min<uint32_t>(strlen(xml::IDocument::HEADER_TEXT()), sizeof(FileTables::Header));
+    if (loadedHeader.size() >= maxCompare)
+    {
+        // try to load from XML!
+    }
+
+    // if we are loading with known depot path then try the custom loader
+    if (context.resourceLoadPath)
+    {
+        const auto ext = context.resourceLoadPath.view().lastExtension();
+        if (const auto customLoaderClass = FindCustomLoaderForFileExtension(ext))
+        {
+            if (auto customLoader = customLoaderClass->create<ICustomFileLoader>())
+                return customLoader->loadDependencies(file, context, outDependencies);
         }
     }
 
     return true;
-}
-
-//--
-
-ResourceMetadataPtr LoadFileMetadata(IAsyncFileHandle* file, const FileLoadingContext& context)
-{
-    FileLoadingContext loadingContext;
-    loadingContext.loadSpecificClass = ResourceMetadata::GetStaticClass();
-
-    if (!LoadFile(file, loadingContext))
-        return nullptr;
-
-    return loadingContext.root<ResourceMetadata>();
 }
 
 //--

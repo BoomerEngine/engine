@@ -10,7 +10,8 @@
 
 #include "texture.h"
 #include "core/resource/include/resource.h"
-#include "core/resource/include/bufferAsync.h"
+#include "core/object/include/asyncBuffer.h"
+#include "core/object/include/compressedBuffer.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -41,14 +42,14 @@ class ENGINE_TEXTURE_API StaticTexture : public ITexture
 
 public:
     StaticTexture();
-    StaticTexture(Buffer&& data, AsyncBuffer&& asyncData, Array<StaticTextureMip>&& mips, const TextureInfo& info);
+    StaticTexture(CompressedBufer&& data, AsyncFileBuffer&& asyncData, Array<StaticTextureMip>&& mips, const TextureInfo& info);
     StaticTexture(const image::ImageView& image); // create a simple texture directly from image, no compression
     virtual ~StaticTexture();
 
     //--
 
     // get persistent block data
-    INLINE const Buffer& persistentData() const { return m_persistentPayload; }
+    INLINE const CompressedBufer& persistentData() const { return m_persistentPayload; }
 
     // get mipmaps
     INLINE const Array<StaticTextureMip>& mips() const { return m_mips; }
@@ -61,8 +62,8 @@ public:
     //--
 
 protected:
-    Buffer m_persistentPayload; // payload loaded with the resource, contains part of the texture we don't want to stream
-    AsyncBuffer m_streamingPayload; // additional data payloads for streaming data - high res data
+    CompressedBufer m_persistentPayload; // payload loaded with the resource, contains part of the texture we don't want to stream
+    AsyncFileBuffer m_streamingPayload; // additional data payloads for streaming data - high res data
     Array<StaticTextureMip> m_mips; // mip map data
 
     //--

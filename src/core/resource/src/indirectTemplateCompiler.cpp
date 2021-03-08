@@ -13,7 +13,6 @@
 #include "asyncReference.h"
 #include "reference.h"
 #include "loader.h"
-#include "loadingService.h"
 
 #include "core/object/include/rttiResourceReferenceType.h"
 

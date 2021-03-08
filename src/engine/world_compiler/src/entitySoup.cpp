@@ -33,22 +33,21 @@ struct SourceLayer
 void ExtractSourceLayersAtDirectory(StringView directoryPath, Array<SourceLayer*>& outLayers)
 {
     // scan the layers (they must come first so they can be loaded first)
-    GetService<DepotService>()->enumFilesAtPath(directoryPath, [&outLayers, directoryPath](const DepotService::FileInfo& file)
+    GetService<DepotService>()->enumFilesAtPath(directoryPath, [&outLayers, directoryPath](StringView name)
         {
-            static const auto rawLayerExtensions = IResource::GetResourceExtensionForClass(RawLayer::GetStaticClass());
-            if (file.name.endsWith(rawLayerExtensions))
+            if (name.endsWith(IResource::FILE_EXTENSION))
             {
                 auto* entry = new SourceLayer();
-                entry->path = StringBuf(TempString("{}{}", directoryPath, file.name));
+                entry->path = StringBuf(TempString("{}{}", directoryPath, name));
                 outLayers.pushBack(entry);
             }
             return false;
         });
 
     // scan the depot directories at path
-    GetService<DepotService>()->enumDirectoriesAtPath(directoryPath, [&outLayers, directoryPath](const DepotService::DirectoryInfo& dir)
+    GetService<DepotService>()->enumDirectoriesAtPath(directoryPath, [&outLayers, directoryPath](StringView name)
         {
-            ExtractSourceLayersAtDirectory(TempString("{}{}/", directoryPath, dir.name), outLayers);
+            ExtractSourceLayersAtDirectory(TempString("{}{}/", directoryPath, name), outLayers);
             return false;
         });
 }

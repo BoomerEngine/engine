@@ -290,7 +290,7 @@ EntityPtr World::createPrefabInstance(const AbsoluteTransform& placement, const 
     DEBUG_CHECK_RETURN_V(rootNode, nullptr);
 
     NodePathBuilder path;
-    if (const auto root = CompileEntityHierarchy(path, rootNode, &placement, GlobalLoader()))
+    if (const auto root = CompileEntityHierarchy(path, rootNode, &placement, true))
     {
         InplaceArray<EntityPtr, 10> allEntities;
         root->collectEntities(allEntities);

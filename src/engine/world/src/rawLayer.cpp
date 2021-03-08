@@ -19,7 +19,6 @@ BEGIN_BOOMER_NAMESPACE()
 ///----
 
 RTTI_BEGIN_TYPE_CLASS(RawLayer);
-    RTTI_METADATA(ResourceExtensionMetadata).extension("v4layer");
     RTTI_METADATA(ResourceDescriptionMetadata).description("Scene Layer");
     RTTI_METADATA(ResourceTagColorMetadata).color(0xe8, 0x5d, 0x04);
     RTTI_PROPERTY(m_nodes);

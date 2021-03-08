@@ -12,8 +12,8 @@
 #include "graphSocket.h"
 #include "graphConnection.h"
 #include "graphObserver.h"
-#include "core/object/include/streamOpcodeReader.h"
-#include "core/object/include/streamOpcodeWriter.h"
+#include "core/object/include/serializationReader.h"
+#include "core/object/include/serializationWriter.h"
 #include "core/reflection/include/reflectionTypeName.h"
 //#include "graphViewNative.h"
 
@@ -259,7 +259,7 @@ namespace helper
     }
 } //helper
 
-void Container::onReadBinary(stream::OpcodeReader& reader)
+void Container::onReadBinary(SerializationReader& reader)
 {
     TBaseClass::onReadBinary(reader);
 
@@ -267,13 +267,13 @@ void Container::onReadBinary(stream::OpcodeReader& reader)
         readPersistentConnections(reader);
 }
 
-void Container::onWriteBinary(stream::OpcodeWriter& writer) const
+void Container::onWriteBinary(SerializationWriter& writer) const
 {
     TBaseClass::onWriteBinary(writer);
     writePersistentConnections(writer);
 }
 
-void Container::readPersistentConnections(stream::OpcodeReader& reader)
+void Container::readPersistentConnections(SerializationReader& reader)
 {
     m_persistentConnections.reset();
 
@@ -282,7 +282,7 @@ void Container::readPersistentConnections(stream::OpcodeReader& reader)
     dataType->readBinary(context, reader, &m_persistentConnections);
 }
 
-void Container::writePersistentConnections(stream::OpcodeWriter& writer) const
+void Container::writePersistentConnections(SerializationWriter& writer) const
 {
     // prepare block mapping
     // NOTE: this must match the way the blocks are stored

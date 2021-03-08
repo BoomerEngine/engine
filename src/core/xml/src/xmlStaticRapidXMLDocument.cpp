@@ -192,6 +192,19 @@ StringView StaticRapidXMLDocument::nodeValue(NodeID id) const
     return StringView((const char*)node->value(), (uint32_t)node->value_size());
 }
 
+Buffer StaticRapidXMLDocument::nodeValueBuffer(NodeID id) const
+{
+    auto node = fromNodeId(id);
+    if (!node || !node->value_size())
+        return nullptr;
+
+    uint32_t decodedDataSize = 0;
+    if (auto* mem = DecodeBase64(node->value(), node->value() + node->value_size(), decodedDataSize, POOL_XML))
+        return Buffer::CreateFromAlreadyAllocatedMemory(POOL_XML, decodedDataSize, mem);
+
+    return nullptr;
+}
+
 StringView StaticRapidXMLDocument::nodeName(NodeID id) const
 {
     auto node  = fromNodeId(id);
@@ -280,17 +293,22 @@ void StaticRapidXMLDocument::deleteNode(NodeID id)
     readonlyError();
 }
 
-void StaticRapidXMLDocument::nodeValue(NodeID id, StringView value)
+void StaticRapidXMLDocument::writeNodeValue(NodeID id, StringView value)
 {
     readonlyError();
 }
 
-void StaticRapidXMLDocument::nodeName(NodeID id, StringView value)
+void StaticRapidXMLDocument::writeNodeName(NodeID id, StringView value)
 {
     readonlyError();
 }
 
-void StaticRapidXMLDocument::nodeAttribute(NodeID id, StringView name, StringView value)
+void StaticRapidXMLDocument::writeNodeAttribute(NodeID id, StringView name, StringView value)
+{
+    readonlyError();
+}
+
+void StaticRapidXMLDocument::writeNodeValue(NodeID id, Buffer value)
 {
     readonlyError();
 }

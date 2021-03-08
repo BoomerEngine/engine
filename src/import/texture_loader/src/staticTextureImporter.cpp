@@ -130,7 +130,7 @@ ResourcePtr StaticTextureFromImageImporter::importResource(IResourceImporterInte
     // TODO: split data into streamable/persistent part
 
     // create the static texture
-    AsyncBuffer streamingData;
+    AsyncFileBuffer streamingData;
     return RefNew<StaticTexture>(std::move(compressedData->data), std::move(streamingData), std::move(compressedData->mips), compressedData->info);
 }
 

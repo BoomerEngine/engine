@@ -26,9 +26,9 @@ BEGIN_BOOMER_NAMESPACE()
 
 //--
 
-ReadFileHandlePtr OpenForReading(StringView absoluteFilePath)
+ReadFileHandlePtr OpenForReading(StringView absoluteFilePath, TimeStamp* outTimestamp)
 {
-    return NativeHandlerClass::GetInstance().openForReading(absoluteFilePath);
+    return NativeHandlerClass::GetInstance().openForReading(absoluteFilePath, outTimestamp);
 }
 
 WriteFileHandlePtr OpenForWriting(StringView absoluteFilePath, FileWriteMode mode /*= FileWriteMode::StagedWrite*/)
@@ -36,9 +36,9 @@ WriteFileHandlePtr OpenForWriting(StringView absoluteFilePath, FileWriteMode mod
     return NativeHandlerClass::GetInstance().openForWriting(absoluteFilePath, mode);
 }
 
-AsyncFileHandlePtr OpenForAsyncReading(StringView absoluteFilePath)
+AsyncFileHandlePtr OpenForAsyncReading(StringView absoluteFilePath, TimeStamp* outTimestamp)
 {
-    return NativeHandlerClass::GetInstance().openForAsyncReading(absoluteFilePath);
+    return NativeHandlerClass::GetInstance().openForAsyncReading(absoluteFilePath, outTimestamp);
 }
 
 Buffer OpenMemoryMappedForReading(StringView absoluteFilePath)

@@ -54,22 +54,22 @@ void DockPanel::tabModified(bool flag)
     }
 }
 
-void DockPanel::tabTitle(const StringBuf& titleString)
+void DockPanel::tabTitle(StringView titleString)
 {
     if (m_title != titleString)
     {
-        m_title = titleString;
+        m_title = StringBuf(titleString);
 
         if (auto notebook = findParent<DockNotebook>())
             notebook->updateHeaderButtons();
     }
 }
 
-void DockPanel::tabIcon(const StringBuf& icon)
+void DockPanel::tabIcon(StringView icon)
 {
     if (m_icon != icon)
     {
-        m_icon = icon;
+        m_icon = StringBuf(icon);
 
         if (auto notebook = findParent<DockNotebook>())
             notebook->updateHeaderButtons();

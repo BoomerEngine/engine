@@ -9,8 +9,8 @@
 #include "build.h"
 #include "rttiCustomType.h"
 
-#include "streamOpcodeWriter.h"
-#include "streamOpcodeReader.h"
+#include "serializationWriter.h"
+#include "serializationReader.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -62,7 +62,7 @@ void CustomType::copy(void* dest, const void* src) const
         memcpy(dest, src, m_traits.size);
 }
 
-void CustomType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
+void CustomType::writeBinary(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData) const
 {
     if (funcWriteBinary)
     {
@@ -74,7 +74,7 @@ void CustomType::writeBinary(TypeSerializationContext& typeContext, stream::Opco
     }
 }
 
-void CustomType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
+void CustomType::readBinary(TypeSerializationContext& typeContext, SerializationReader& file, void* data) const
 {
     if (funcReadBinary)
     {

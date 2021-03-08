@@ -386,6 +386,31 @@ typedef RefPtr<TreeView> TreeViewPtr;
 class SimpleListView;
 typedef RefPtr<SimpleListView> SimpleListViewPtr;
 
+class ICollectionItem;
+typedef RefPtr<ICollectionItem> CollectionItemPtr;
+
+DECLARE_UI_EVENT(EVENT_ITEM_SELECTION_CHANGED)
+DECLARE_UI_EVENT(EVENT_ITEM_ACTIVATED, CollectionItemPtr)
+DECLARE_UI_EVENT(EVENT_ITEM_CONTEXT_MENU)
+
+class ICollectionView;
+typedef RefPtr<ICollectionView> CollectionViewPtr;
+typedef RefWeakPtr<ICollectionView> CollectionViewWeakPtr;
+
+class CollectionItems;
+
+class IListItem;
+typedef RefPtr<IListItem> ListItemPtr;
+
+class ListViewEx;
+typedef RefPtr<ListViewEx> ListViewExPtr;
+
+class ITreeItem;
+typedef RefPtr<ITreeItem> TreeItemPtr;
+
+class TreeViewEx;
+typedef RefPtr<TreeViewEx> TreeViewExPtr;
+
 //--
 
 /// how to iterate elements

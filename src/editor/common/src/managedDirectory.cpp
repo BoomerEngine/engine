@@ -16,7 +16,7 @@
 #include "core/io/include/io.h"
 #include "core/system/include/thread.h"
 #include "core/image/include/image.h"
-#include "managedFileFormat.h"
+#include "assetFormat.h"
 #include "core/io/include/fileHandle.h"
 #include "core/resource/include/fileSaver.h"
 #include "managedFileNativeResource.h"
@@ -116,16 +116,16 @@ void ManagedDirectory::refreshContent()
     // create files
     {
         HashSet<ManagedFile*> visitedFiles;
-        depot()->depot().enumFilesAtPath(depotPath(), [this, &visitedFiles](const DepotService::FileInfo& info)
+        depot()->depot().enumFilesAtPath(depotPath(), [this, &visitedFiles](StringView name)
             {
-                if (auto existingFile = file(info.name, true))
+                if (auto existingFile = file(name, true))
                 {
                     existingFile->deleted(false);
                     visitedFiles.insert(existingFile);
                 }
                 else
                 {
-                    if (auto fileWrapper = CreateManagedFile(depot(), this, info.name))
+                    if (auto fileWrapper = CreateManagedFile(depot(), this, name))
                     {
                         m_files.add(fileWrapper);
                         visitedFiles.insert(fileWrapper);
@@ -133,8 +133,6 @@ void ManagedDirectory::refreshContent()
                         DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_FILE_CREATED, fileWrapper);
                     }
                 }
-
-                return false;
             });
 
         for (auto& file : m_files.list())
@@ -146,16 +144,16 @@ void ManagedDirectory::refreshContent()
     Array<ManagedDirectory*> newDirectories;
     {
         HashSet<ManagedDirectory*> visitedDirs;
-        depot()->depot().enumDirectoriesAtPath(depotPath(), [this, &visitedDirs, &newDirectories](const DepotService::DirectoryInfo& info)
+        depot()->depot().enumDirectoriesAtPath(depotPath(), [this, &visitedDirs, &newDirectories](StringView name)
             {
-                if (auto existingDir = directory(info.name, true))
+                if (auto existingDir = directory(name, true))
                 {
                     existingDir->deleted(false);
                     visitedDirs.insert(existingDir);
                 }
                 else
                 {
-                    if (auto dirWrapper = RefNew<ManagedDirectory>(depot(), this, info.name, TempString("{}{}/", depotPath(), info.name)))
+                    if (auto dirWrapper = RefNew<ManagedDirectory>(depot(), this, name, TempString("{}{}/", depotPath(), name)))
                     {
                         m_directories.add(dirWrapper);
                         newDirectories.pushBack(dirWrapper);
@@ -164,7 +162,6 @@ void ManagedDirectory::refreshContent()
                         DispatchGlobalEvent(depot()->eventKey(), EVENT_MANAGED_DEPOT_DIRECTORY_CREATED, dirWrapper);
                     }
                 }
-                return false;
             });
 
         for (auto& dir : m_directories.list())

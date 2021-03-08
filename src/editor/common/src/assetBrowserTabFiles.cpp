@@ -9,23 +9,18 @@
 #include "build.h"
 
 #include "assetBrowserTabFiles.h"
-#include "assetFileListModel.h"
 #include "assetFileListVisualizations.h"
 #include "assetBrowser.h"
 #include "assetBrowserDialogs.h"
 
 #include "editorService.h"
-#include "managedDirectory.h"
-#include "managedFile.h"
-#include "managedFileFormat.h"
-#include "managedFilePlaceholder.h"
-#include "managedDirectoryPlaceholder.h"
+#include "assetFormat.h"
 
 #include "core/resource/include/factory.h"
 #include "core/io/include/io.h"
 #include "core/app/include/localServiceContainer.h"
 #include "core/image/include/image.h"
-#include "engine/ui/include/uiListView.h"
+#include "engine/ui/include/uiListViewEx.h"
 #include "engine/ui/include/uiTrackBar.h"
 #include "engine/ui/include/uiButton.h"
 #include "engine/ui/include/uiEditBox.h"
@@ -41,6 +36,8 @@
 #include "engine/ui/include/uiRenderer.h"
 #include "engine/ui/include/uiElementConfig.h"
 
+#pragma optimize("",off)
+
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
@@ -48,10 +45,9 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetBrowserTabFiles);
 RTTI_END_TYPE();
 
-AssetBrowserTabFiles::AssetBrowserTabFiles(ManagedDepot* depot, AssetBrowserContext env)
+AssetBrowserTabFiles::AssetBrowserTabFiles(AssetBrowserContext env)
     : ui::DockPanel()
     , m_context(env)
-    , m_depot(depot)
     , m_fileEvents(this)
 {
     layoutVertical();
@@ -86,10 +82,11 @@ AssetBrowserTabFiles::AssetBrowserTabFiles(ManagedDepot* depot, AssetBrowserCont
     auto filter = createChild<ui::SearchBar>();
 
     // file list
-    m_files = createChild<ui::ListView>();
-    m_files->columnCount(0);
+    m_files = createChild<ui::ListViewEx>();
+    m_files->layoutIcons();
+    //m_files->columnCount(0);
     m_files->expand();
-    filter->bindItemView(m_files);
+    //filter->bindItemView(m_files);
 
     actions().bindShortcut("AssetBrowserTab.Lock"_id, "Ctrl+L");
     actions().bindShortcut("AssetBrowserTab.List"_id, "Ctrl+K");
@@ -114,16 +111,16 @@ AssetBrowserTabFiles::AssetBrowserTabFiles(ManagedDepot* depot, AssetBrowserCont
 
     actions().bindCommand("AssetBrowserTab.Back"_id) = [this]()
     {
-        if (m_dir)
+        if (m_depotPath)
         {
-            if (auto parent = m_dir->parentDirectory())
-                directory(parent, m_dir);
+            if (auto parentDirectory = m_depotPath.view().parentDirectory())
+                directory(parentDirectory, m_depotPath.view().directoryName());
         }
     };
 
     actions().bindCommand("AssetBrowserTab.Delete"_id) = [this]()
     {
-        DeleteDepotItems(this, selectedItems());
+        //DeleteDepotItems(this, selectedItems());
     };
             
     actions().bindCommand("AssetBrowserTab.Navigate"_id) = [this]()
@@ -136,7 +133,7 @@ AssetBrowserTabFiles::AssetBrowserTabFiles(ManagedDepot* depot, AssetBrowserCont
 
     actions().bindCommand("AssetBrowserTab.Refresh"_id) = [this]()
     {
-        m_dir->populate();
+        //m_dir->populate();
     };
 
     //--
@@ -150,8 +147,8 @@ AssetBrowserTabFiles::AssetBrowserTabFiles(ManagedDepot* depot, AssetBrowserCont
 
     //--
 
-    actions().bindCommand("AssetBrowserTab.Bookmark"_id) = [this]() { m_dir->bookmark(!m_dir->isBookmarked()); };
-    actions().bindToggle("AssetBrowserTab.Bookmark"_id) = [this]() { return m_dir ? m_dir->isBookmarked() : false; };
+    //actions().bindCommand("AssetBrowserTab.Bookmark"_id) = [this]() { m_dir->bookmark(!m_dir->isBookmarked()); };
+    //actions().bindToggle("AssetBrowserTab.Bookmark"_id) = [this]() { return m_dir ? m_dir->isBookmarked() : false; };
 
     actions().bindCommand("AssetBrowserTab.Flatten"_id) = [this]() { flat(!flat()); };
     actions().bindToggle("AssetBrowserTab.Flatten"_id) = [this]() { return flat(); };
@@ -170,16 +167,16 @@ AssetBrowserTabFiles::AssetBrowserTabFiles(ManagedDepot* depot, AssetBrowserCont
 
     //--
 
-    m_files->bind(ui::EVENT_ITEM_ACTIVATED) = [this](ui::ModelIndex index)
+    m_files->bind(ui::EVENT_ITEM_ACTIVATED) = [this](ui::CollectionItemPtr item)
     {
-        if (auto dir = m_filesModel->directory(index))
+        if (auto dir = rtti_cast<AssetBrowserDirectoryVis>(item))
         {
-            directory(dir, m_dir);
+            directory(dir->depotPath(), dir->displayName());
             m_files->focus();
         }
-        else if (auto file = m_filesModel->file(index))
+        else if (auto file = rtti_cast<AssetBrowserFileVis>(item))
         {
-            if (!GetEditor()->openFileEditor(file))
+            if (!GetEditor()->openFileEditor(file->depotPath()))
                 ui::PostWindowMessage(this, ui::MessageType::Error, "EditAsset"_id, TempString("Failed to open '{}'", file->depotPath()));
         }
     };
@@ -194,34 +191,24 @@ AssetBrowserTabFiles::AssetBrowserTabFiles(ManagedDepot* depot, AssetBrowserCont
 
 AssetBrowserTabFiles::~AssetBrowserTabFiles()
 {
-    m_files->model(nullptr);
-    m_filesModel.reset();
 }
 
 void AssetBrowserTabFiles::updateTitle()
 {
-    tabTitle(m_dir ? m_dir->name() : "Tab");
+    if (m_depotPath)
+    {
+        const auto dirPath = m_depotPath.view().beforeLast("/").afterLast("/");
+        tabTitle(dirPath ? dirPath : "Tab");
+    }
+
     tabIcon("table");
 }
 
-ManagedItem* AssetBrowserTabFiles::selectedItem() const
+StringBuf AssetBrowserTabFiles::selectedFile() const
 {
-    return m_filesModel->item(m_files->current());
-}
-
-ManagedFile* AssetBrowserTabFiles::selectedFile() const
-{
-    return m_filesModel->file(m_files->current());
-}
-
-Array<ManagedFile*> AssetBrowserTabFiles::selectedFiles() const
-{
-    return m_filesModel->files(m_files->selection().keys());
-}
-
-Array<ManagedItem*> AssetBrowserTabFiles::selectedItems() const
-{
-    return m_filesModel->items(m_files->selection().keys());
+    if (const auto& file = m_files->current<AssetBrowserFileVis>())
+        return file->depotPath();
+    return "";
 }
 
 void AssetBrowserTabFiles::flat(bool isFlattened)
@@ -238,23 +225,24 @@ void AssetBrowserTabFiles::list(bool isList)
     if (m_list != isList)
     {
         m_list = isList;
-        m_files->columnCount(isList ? 0 : 1);
+        if (isList)
+            m_files->layoutVertical();
+        else
+            m_files->layoutIcons();
     }
 }
 
-void AssetBrowserTabFiles::filterFormat(const ManagedFileFormat* filterFormat, bool toggle)
+void AssetBrowserTabFiles::filterFormat(ClassType cls, bool toggle)
 {
-    DEBUG_CHECK(filterFormat);
-
-    if (filterFormat)
+    if (cls)
     {
-        if (toggle && !m_filterFormats.contains(filterFormat))
+        if (toggle && !m_filterFormats.contains(cls))
         {
-            m_filterFormats.insert(filterFormat);
+            m_filterFormats.insert(cls);
         }
-        else if (!toggle && m_filterFormats.contains(filterFormat))
+        else if (!toggle && m_filterFormats.contains(cls))
         {
-            m_filterFormats.remove(filterFormat);
+            m_filterFormats.remove(cls);
         }
     }
 }
@@ -267,19 +255,27 @@ void AssetBrowserTabFiles::filterName(StringView txt)
     }
 }
 
-void AssetBrowserTabFiles::directory(ManagedDirectory* dir, ManagedItem* autoSelectItem)
+void AssetBrowserTabFiles::directory(StringView depotPath, StringView autoSelectName)
 {
-    if (m_dir != dir)
+    if (m_depotPath != depotPath)
     {
-        m_dir = dir;
+        m_depotPath = StringBuf(depotPath);
         refreshFileList();
 
-        if (autoSelectItem)
-            selectItem(autoSelectItem);
+        if (autoSelectName)
+        {
+            auto* item = m_files->find<IAssetBrowserDepotVisItem>([autoSelectName](IAssetBrowserDepotVisItem* item)
+                {
+                    return item->displayName() == autoSelectName;
+                });
+
+            if (item)
+                m_files->select(item);
+        }
 
         // select first item if nothing else is selected
-        if (!m_files->current() && m_filesModel)
-            m_files->select(m_filesModel->first());
+        /*if (!m_files->current<IAssetBrowserVisItem>())
+            m_files->select(m_filesModel->first());*/
 
         updateTitle();
 
@@ -289,24 +285,44 @@ void AssetBrowserTabFiles::directory(ManagedDirectory* dir, ManagedItem* autoSel
 
 void AssetBrowserTabFiles::refreshFileList()
 {
-    m_filesModel = RefNew<AssetBrowserDirContentModel>(m_depot);
-    m_filesModel->initializeFromDir(m_dir, m_flat);
-        
-    m_files->sort(0);
-    m_files->model(m_filesModel);
+    m_files->clear();
+
+    if (m_depotPath)
+    {
+        // parent directory
+        if (const auto parentDir = m_depotPath.view().parentDirectory())
+        {
+            auto entry = RefNew<AssetBrowserDirectoryVis>(parentDir, true);
+            m_files->addItem(entry);
+        }
+
+        // local child directories
+        GetService<DepotService>()->enumDirectoriesAtPath(m_depotPath, [this](StringView name)
+            {
+                auto child = RefNew<AssetBrowserDirectoryVis>(TempString("{}{}/", m_depotPath, name), false);
+                m_files->addItem(child);
+            });
+
+        // local files
+        GetService<DepotService>()->enumFilesAtPath(m_depotPath, [this](StringView name)
+            {
+                auto child = RefNew<AssetBrowserFileVis>(TempString("{}{}", m_depotPath, name));
+                m_files->addItem(child);
+            });
+    }
 }
 
 void AssetBrowserTabFiles::duplicateTab()
 {
-    auto copyTab = RefNew<AssetBrowserTabFiles>(m_depot, m_context);
-    if (m_dir)
+    auto copyTab = RefNew<AssetBrowserTabFiles>(m_context);
+    if (m_depotPath)
     {
         copyTab->flat(flat());
         copyTab->list(list());
         copyTab->tabLocked(tabLocked());
 
-        copyTab->directory(m_dir);
-        copyTab->selectItems(selectedItems());
+        copyTab->directory(m_depotPath);
+        //copyTab->selectItems(selectedItems());
 
         if (auto notebook = findParent<ui::DockNotebook>())
         {
@@ -316,30 +332,16 @@ void AssetBrowserTabFiles::duplicateTab()
     }
 }
 
-bool AssetBrowserTabFiles::selectItem(ManagedItem* ptr)
+bool AssetBrowserTabFiles::selectItem(StringView depotPath)
 {
-    if (auto index = m_filesModel->index(ptr))
+    auto file = m_files->find<AssetBrowserFileVis>([depotPath](AssetBrowserFileVis* item)
+        {
+            return item->depotPath() == depotPath;
+        });
+
+    if (file)
     {
-        m_files->select(index);
-        m_files->ensureVisible(index);
-        return true;
-    }
-
-    return false;
-}
-
-bool AssetBrowserTabFiles::selectItems(const Array<ManagedItem*>& items)
-{
-    Array<ui::ModelIndex> indices;
-    indices.reserve(items.size());
-
-    for (const auto& item : items)
-        if (auto index = m_filesModel->index(item))
-            indices.pushBack(index);
-
-    if (!indices.empty())
-    {
-        m_files->select(indices);
+        m_files->select(file);
         return true;
     }
 
@@ -352,30 +354,21 @@ void AssetBrowserTabFiles::configSave(const ui::ConfigBlock& block) const
     block.write("Flat", m_flat);
     block.write("List", m_list);
 
-    auto parentDir = m_dir->parentDirectory();
+    block.write<StringBuf>("Path", m_depotPath);
 
-    {
-        StringBuf dirPath;
-        if (m_dir && !m_dir->isDeleted())
-            dirPath = m_dir->depotPath();
-        block.write<StringBuf>("Path", dirPath);
-    }
-
-    {
+    /*{
         StringBuf currentFilePath;
         if (auto file = selectedItem())
-            if (file != parentDir)
-                currentFilePath = file->name();
+            currentFilePath = file->name();
         block.write<StringBuf>("CurrentFile", currentFilePath);
     }
 
     {
         Array<StringBuf> selectedFiles;
         for (auto& file : selectedItems())
-            if (file != parentDir)
-                selectedFiles.pushBack(file->name());
+            selectedFiles.pushBack(file->name());
         block.write("SelectedFile", selectedFiles);
-    }
+    }*/
 }
 
 void AssetBrowserTabFiles::configLoad(const ui::ConfigBlock& block)
@@ -385,7 +378,7 @@ void AssetBrowserTabFiles::configLoad(const ui::ConfigBlock& block)
 
     list(block.readOrDefault("List", false));
 
-    if (m_dir)
+    /*if (m_dir)
     {
         {
             Array<ui::ModelIndex> indices;
@@ -415,7 +408,7 @@ void AssetBrowserTabFiles::configLoad(const ui::ConfigBlock& block)
 
         if (m_files->selection().empty() && m_filesModel)
             m_files->select(m_filesModel->first());
-    }
+    }*/
 
     tabLocked(locked);
     updateTitle();
@@ -427,7 +420,7 @@ void AssetBrowserTabFiles::buildNewAssetMenu(ui::MenuButtonContainer* menu)
 {
     menu->createCallback("New directory", "[img:folder_new]", "Ctrl+Shift+D") = [this]()
     {
-        createNewDirectory();
+        createNewDirectoryPlaceholder();
     };
 
     menu->createSeparator();
@@ -436,7 +429,7 @@ void AssetBrowserTabFiles::buildNewAssetMenu(ui::MenuButtonContainer* menu)
     {
         menu->createCallback(TempString("{}", format->description()), "[img:file_add]", "") = [this, format]()
         {
-            createNewFile(format);
+            createNewFilePlaceholder(format);
         };
     }
 }
@@ -457,7 +450,7 @@ bool AssetBrowserTabFiles::showGenericContextMenu()
     auto menu = RefNew<ui::MenuButtonContainer>();
 
     // new directory
-    if (m_dir)
+    if (m_depotPath)
     {
         // new asset sub menu
         {
@@ -484,77 +477,57 @@ void AssetBrowserTabFiles::iconSize(uint32_t size)
 {
     if (m_iconSize != size)
     {
-        m_filesModel->iconSize(m_iconSize);
-
         m_iconSize = size;
-        m_files->forEachVisualization<IAssetBrowserVisItem>([size](IAssetBrowserVisItem* item)
+        m_files->visit<IAssetBrowserVisItem>([size](IAssetBrowserVisItem* item)
             {
                 item->resizeIcon(size);
             });
     }
 }
 
-void AssetBrowserTabFiles::createNewDirectory()
+void AssetBrowserTabFiles::createNewDirectory(StringView name)
 {
-    if (m_dir)
+    
+}
+
+void AssetBrowserTabFiles::createNewFile(StringView name, const ManagedFileFormat* format)
+{
+
+}
+
+void AssetBrowserTabFiles::createNewDirectoryPlaceholder()
+{
+    if (m_depotPath)
     {
-        if (const auto addHocDir = RefNew<ManagedDirectoryPlaceholder>(depot(), m_dir, "New Directory"))
+        auto addHocDir = RefNew<AssetBrowserPlaceholderDirectoryVis>(m_depotPath, "New Directory");
+        m_files->addItem(addHocDir);
+        m_files->select(addHocDir);
+
+        m_fileEvents.bind(addHocDir->eventKey(), EVENT_ASSET_PLACEHOLDER_ACCEPTED) = [this](StringBuf name)
         {
-            if (auto index = m_filesModel->addAdHocElement(addHocDir))
-            {
-                selectItem(addHocDir);
-
-                auto addHocDirRef = addHocDir.weak();
-
-                m_directoryPlaceholders.pushBack(addHocDir);
-                m_fileEvents.bind(addHocDir->eventKey(), EVENT_MANAGED_PLACEHOLDER_ACCEPTED) = [this, addHocDirRef]()
-                {
-                    if (auto dir = addHocDirRef.lock())
-                        finishDirPlaceholder(dir);
-                };
-                m_fileEvents.bind(addHocDir->eventKey(), EVENT_MANAGED_PLACEHOLDER_DISCARDED) = [this, addHocDirRef]()
-                {
-                    if (auto dir = addHocDirRef.lock())
-                        cancelDirPlaceholder(dir);
-                };
-            }
-        }
+            createNewDirectory(name);
+        };
     }
 }
 
-void AssetBrowserTabFiles::createNewFile(const ManagedFileFormat* format)
+void AssetBrowserTabFiles::createNewFilePlaceholder(const ManagedFileFormat* format)
 {
-    if (m_dir)
+    if (m_depotPath)
     {
-        const auto initialFileName = m_dir->adjustFileName(TempString("New{}", format->description()));
-        if (const auto addHocFile = RefNew<ManagedFilePlaceholder>(depot(), m_dir, initialFileName, format))
+        auto addHocDir = RefNew<AssetBrowserPlaceholderFileVis>(format, m_depotPath, TempString("New{}", format->description()));
+        m_files->addItem(addHocDir);
+        m_files->select(addHocDir);
+
+        m_fileEvents.bind(addHocDir->eventKey(), EVENT_ASSET_PLACEHOLDER_ACCEPTED) = [this, format](StringBuf name)
         {
-            if (auto index = m_filesModel->addAdHocElement(addHocFile))
-            {
-                selectItem(addHocFile);
-
-                auto addHocFileRef = addHocFile.weak();
-
-                m_filePlaceholders.pushBack(addHocFile);
-                m_fileEvents.bind(addHocFile->eventKey(), EVENT_MANAGED_PLACEHOLDER_ACCEPTED) = [this, addHocFileRef]()
-                {
-                    if (auto file = addHocFileRef.lock())
-                        finishFilePlaceholder(file);
-                };
-                m_fileEvents.bind(addHocFile->eventKey(), EVENT_MANAGED_PLACEHOLDER_DISCARDED) = [this, addHocFileRef]()
-                {
-                    if (auto file = addHocFileRef.lock())
-                        cancelFilePlaceholder(file);
-                };
-            }
-        }
+            createNewFile(name, format);
+        };
     }
 }
 
-void AssetBrowserTabFiles::duplicateFile(ManagedFile* sourceFile)
+void AssetBrowserTabFiles::duplicateFile(StringView depotPath)
 {
-    DEBUG_CHECK_RETURN_EX(sourceFile != nullptr, "Nothing to duplicate")
-
+    /*
     const auto initialFileName = m_dir->adjustFileName(TempString("{}_copy", sourceFile->name().view().fileStem()));
     if (const auto addHocFile = RefNew<ManagedFilePlaceholder>(depot(), m_dir, initialFileName, &sourceFile->fileFormat()))
     {
@@ -576,71 +549,12 @@ void AssetBrowserTabFiles::duplicateFile(ManagedFile* sourceFile)
                     cancelFilePlaceholder(file);
             };
         }
-    }
-}
-
-void AssetBrowserTabFiles::finishFileDuplicate(ManagedFilePlaceholderPtr ptr, const ManagedFile* sourceFile)
-{
-    m_fileEvents.unbind(ptr->eventKey());
-    m_filesModel->removeAdHocElement(ptr);
-
-    if (m_filePlaceholders.remove(ptr))
-    {
-        const auto fileName = ptr->name();
-        if (auto file = m_dir->createFileCopy(fileName, sourceFile))
-        {
-            selectItem(file);
-        }
-    }
-}
-
-void AssetBrowserTabFiles::finishFilePlaceholder(ManagedFilePlaceholderPtr ptr)
-{
-    m_fileEvents.unbind(ptr->eventKey());
-    m_filesModel->removeAdHocElement(ptr);
-
-    if (m_filePlaceholders.remove(ptr))
-    {
-        const auto fileName = ptr->shortName();
-        if (auto file = m_dir->createFile(fileName, ptr->format()))
-        {
-            selectItem(file);
-        }
-    }
-}
-
-void AssetBrowserTabFiles::cancelFilePlaceholder(ManagedFilePlaceholderPtr ptr)
-{
-    m_fileEvents.unbind(ptr->eventKey());
-    m_filesModel->removeAdHocElement(ptr);
-    m_filePlaceholders.remove(ptr);
-}
-
-void AssetBrowserTabFiles::finishDirPlaceholder(ManagedDirectoryPlaceholderPtr ptr)
-{
-    m_fileEvents.unbind(ptr->eventKey());
-    m_filesModel->removeAdHocElement(ptr);
-
-    if (m_directoryPlaceholders.remove(ptr))
-    {
-        const auto dirName = ptr->name();
-        if (auto file = m_dir->createDirectory(dirName))
-        {
-            selectItem(file);
-        }
-    }
-}
-
-void AssetBrowserTabFiles::cancelDirPlaceholder(ManagedDirectoryPlaceholderPtr ptr)
-{
-    m_fileEvents.unbind(ptr->eventKey());
-    m_filesModel->removeAdHocElement(ptr);
-    m_directoryPlaceholders.remove(ptr);
+    }*/
 }
 
 static OpenSavePersistentData GImportFiles;
 
-bool ImportNewFiles(ui::IElement* owner, const ManagedFileFormat* format, ManagedDirectory* parentDir)
+bool ImportNewFiles(ui::IElement* owner, StringView depotPath, const ManagedFileFormat* format)
 {
     // get the native class to use for importing
     auto nativeClass = format ? format->nativeResourceClass() : IResource::GetStaticClass();
@@ -676,7 +590,7 @@ bool ImportNewFiles(ui::IElement* owner, const ManagedFileFormat* format, Manage
         assetPaths.reserve(importPaths.size());
         for (const auto& absolutePath : importPaths)
         {
-            const auto* fileService = GetService<ImportFileService>();
+            const auto* fileService = GetService<SourceAssetService>();
 
             StringBuf sourceAssetPath;
             if (fileService->translateAbsolutePath(absolutePath, sourceAssetPath))
@@ -701,13 +615,16 @@ bool ImportNewFiles(ui::IElement* owner, const ManagedFileFormat* format, Manage
         return false;
 
     // add to import window
-    GetEditor()->importFiles(parentDir, nativeClass, assetPaths);
+    GetEditor()->importFiles(depotPath, nativeClass, assetPaths);
     return true;
 }
 
 bool AssetBrowserTabFiles::importNewFile(const ManagedFileFormat* format)
 {
-    return ImportNewFiles(this, format, m_dir);
+    if (m_depotPath)
+        return ImportNewFiles(this, m_depotPath, format);
+    else
+        return false;
 }
 
 //--

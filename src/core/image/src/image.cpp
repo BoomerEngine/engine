@@ -42,8 +42,7 @@ RTTI_END_TYPE();
 //--
 
 RTTI_BEGIN_TYPE_CLASS(Image);
-    RTTI_METADATA(ResourceExtensionMetadata).extension("v4bitmap");
-    RTTI_METADATA(ResourceDescriptionMetadata).description("Bitmap Image");
+    RTTI_METADATA(ResourceDescriptionMetadata).description("Image");
     RTTI_PROPERTY(m_format);
     RTTI_PROPERTY(m_channels);
     RTTI_PROPERTY(m_width);

@@ -12,90 +12,141 @@
 #include "managedDepot.h"
 #include "managedDirectory.h"
 
+#include "engine/ui/include/uiTextLabel.h"
+
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
-AssetDepotTreeModel::AssetDepotTreeModel(ManagedDepot* depot)
-    : m_depot(depot)
-    , m_depotEvents(this)
+RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetDepotTreeDirectoryItem);
+RTTI_END_TYPE();
+
+AssetDepotTreeDirectoryItem::AssetDepotTreeDirectoryItem(StringView depotPath, StringView name)
+    : m_depotPath(depotPath)
+    , m_name(name)
 {
-    if (auto rootDirectory = depot->root())
-        addDirNode(ui::ModelIndex(), rootDirectory);
-
-    m_depotEvents.bind(depot->eventKey(), EVENT_MANAGED_DEPOT_DIRECTORY_CREATED) = [this](ManagedDirectoryPtr dir)
-    {
-        if (auto parentDir = dir->parentDirectory())
-            if (auto parentEntry = findNodeForData(parentDir))
-                addChildNode(parentEntry, dir);
-    };
-
-    m_depotEvents.bind(depot->eventKey(), EVENT_MANAGED_DEPOT_DIRECTORY_DELETED) = [this](ManagedDirectoryPtr dir)
-    {
-        if (auto dirEntry = findNodeForData(dir))
-            removeNode(dirEntry);
-    };
-
-    m_depotEvents.bind(depot->eventKey(), EVENT_MANAGED_DEPOT_DIRECTORY_BOOKMARKED) = [this](ManagedDirectoryPtr dir)
-    {
-        if (auto item = findNodeForData(dir))
-            requestItemUpdate(item);
-    };
-
-    m_depotEvents.bind(depot->eventKey(), EVENT_MANAGED_DEPOT_DIRECTORY_UNBOOKMARKED) = [this](ManagedDirectoryPtr dir)
-    {
-        if (auto item = findNodeForData(dir))
-            requestItemUpdate(item);
-    };
+    m_label = createChild<ui::TextLabel>(TempString("{}", m_name));
+    checkIfSubFoldersExist();
 }
 
-AssetDepotTreeModel::~AssetDepotTreeModel()
+AssetDepotTreeDirectoryItem* AssetDepotTreeDirectoryItem::findChild(StringView name, bool autoExpand /*= true*/)
+{
+    if (autoExpand)
+        expand();
+
+    for (const auto& child : children())
+        if (auto dir = rtti_cast<AssetDepotTreeDirectoryItem>(child))
+            if (dir->name() == name)
+                return dir;
+
+    return nullptr;
+}
+
+void AssetDepotTreeDirectoryItem::updateLabel()
+{
+    if (expanded())
+        m_label->text(TempString("[img:folder_open] {}", m_name));
+    else
+        m_label->text(TempString("[img:folder_closed] {}", m_name));
+}
+
+void AssetDepotTreeDirectoryItem::updateButtonState()
+{
+    updateLabel();
+    TBaseClass::updateButtonState();
+}
+
+StringBuf AssetDepotTreeDirectoryItem::queryTooltipString() const
+{
+    return m_depotPath;
+}
+
+ui::DragDropDataPtr AssetDepotTreeDirectoryItem::queryDragDropData(const input::BaseKeyFlags& keys, const ui::Position& position) const
+{
+    return nullptr;
+}
+
+ui::DragDropHandlerPtr AssetDepotTreeDirectoryItem::handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
+{
+    return nullptr;
+}
+
+void AssetDepotTreeDirectoryItem::handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
+{
+
+}
+
+bool AssetDepotTreeDirectoryItem::handleItemContextMenu(const ui::CollectionItems& items, ui::PopupPtr& outPopup) const
+{
+    return false;
+}
+
+bool AssetDepotTreeDirectoryItem::handleItemFilter(const ui::SearchPattern& filter) const
+{
+    return filter.testString(m_name);
+}
+
+bool AssetDepotTreeDirectoryItem::handleItemSort(const ui::ICollectionItem* other, int colIndex) const
+{
+    if (const auto* otherEx = rtti_cast<AssetDepotTreeDirectoryItem>(other))
+        return m_name < otherEx->m_name;
+    return TBaseClass::handleItemSort(other, colIndex);
+}
+
+void AssetDepotTreeDirectoryItem::checkIfSubFoldersExist()
+{
+    m_hasChildren = false;
+    GetService<DepotService>()->enumDirectoriesAtPath(m_depotPath, [this](StringView name)
+        {
+            m_hasChildren = true;
+        });
+}
+
+bool AssetDepotTreeDirectoryItem::handleItemCanExpand() const
+{
+    return m_hasChildren;
+}
+
+void AssetDepotTreeDirectoryItem::handleItemExpand()
+{
+    GetService<DepotService>()->enumDirectoriesAtPath(m_depotPath, [this](StringView name)
+        {
+            auto child = RefNew<AssetDepotTreeDirectoryItem>(TempString("{}{}/", m_depotPath, name), name);
+            addChild(child);
+        });
+}
+
+void AssetDepotTreeDirectoryItem::handleItemCollapse()
+{
+    removeAllChildren();
+}
+
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetDepotTreeEngineRoot);
+RTTI_END_TYPE();
+
+AssetDepotTreeEngineRoot::AssetDepotTreeEngineRoot()
+    : AssetDepotTreeDirectoryItem("/engine/", "<engine>")
 {}
 
-void AssetDepotTreeModel::addDirNode(const ui::ModelIndex& parentIndex, ManagedDirectory* dir)
+void AssetDepotTreeEngineRoot::updateLabel()
 {
-    auto nodeIndex = addChildNode(parentIndex, dir);
-
-    for (auto& childDir : dir->directories())
-        addDirNode(nodeIndex, childDir);
+    m_label->text(TempString("[img:database] Engine"));
 }
 
-bool AssetDepotTreeModel::compare(ManagedItem* a, ManagedItem* b, int colIndex) const
+//--
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetDepotTreeProjectRoot);
+RTTI_END_TYPE();
+
+AssetDepotTreeProjectRoot::AssetDepotTreeProjectRoot()
+    : AssetDepotTreeDirectoryItem("/project/", "<project>")
+{}
+
+void AssetDepotTreeProjectRoot::updateLabel()
 {
-    return a->name() < b->name();
-}
-
-bool AssetDepotTreeModel::filter(ManagedItem* data, const ui::SearchPattern& filter, int colIndex /*= 0*/) const
-{
-    return filter.testString(data->name());
-}
-
-StringBuf AssetDepotTreeModel::displayContent(ManagedItem* data, int colIndex /*= 0*/) const
-{
-    StringBuilder ret;
-
-    if (data->cls() == ManagedDirectory::GetStaticClass())
-    {
-        const auto* dir = static_cast<const ManagedDirectory*>(data);
-        if (data == m_depot->root())
-        {
-            ret << "[img:database]  <depot>";
-        }
-        /*else if (dir->isFileSystemRoot())
-        {
-            ret << "[img:package]  " << dir->name();
-        }*/
-        else
-        {
-            ret << "[img:folder]  " << dir->name();
-            ret.appendf(" [i][color:#888]({})[/color][/i]", dir->fileCount());
-        }
-
-        if (dir->isBookmarked())
-            ret.append("  [img:star]");
-    }
-
-    return ret.toString();
+    m_label->text(TempString("[img:database] Project"));
 }
 
 //---

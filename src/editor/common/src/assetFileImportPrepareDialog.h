@@ -12,6 +12,7 @@
 #include "engine/ui/include/uiSimpleTreeModel.h"
 #include "engine/ui/include/uiElement.h"
 #include "engine/ui/include/uiWindow.h"
+#include "engine/ui/include/uiListViewEx.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -39,27 +40,31 @@ enum class AssetImportCheckStatus : uint8_t
 //--
 
 // list model for displaying list of files to import
-class EDITOR_COMMON_API AssetImportListModel : public ui::IAbstractItemModel
+class EDITOR_COMMON_API AssetImportListEntry : public ui::IListItem
 {
 public:
-    AssetImportListModel();
-    virtual ~AssetImportListModel();
+    AssetImportListEntry();
+    virtual ~AssetImportListEntry();
 
     //--
 
-    // do we have files
-    bool hasFiles() const;
+    bool m_enabled = true;
 
-    // do we have importable files ?
-    bool hasImportableFiles() const;
+    StringBuf m_sourceAssetPath;
+    StringBuf m_targetDirectoryDepotPath;
+    StringBuf m_targetFileName;
+
+    TImportClass m_targetClass;
+
+    ResourceConfigurationPtr m_configuration; // user configuration
 
     //--
 
     // add new import file to the list
-    ui::ModelIndex addNewImportFile(const StringBuf& assetPath, TImportClass importClass, const StringBuf& fileName, const ManagedDirectory* directory, const ResourceConfigurationPtr& specificUserConfiguration = nullptr, bool enabled = true);
+    static RefPtr<AssetImportListEntry> CreateNewFileEntry(StringView sourceAssetFile, StringView depotDirectoryPath, TImportClass importClass, StringView fileName = "", const ResourceConfigurationPtr& specificUserConfiguration = nullptr, bool enabled = true);
 
-    // add new reimport file
-    ui::ModelIndex addReimportFile(ManagedFileNativeResource* file, const ResourceConfigurationPtr& specificUserConfiguration = nullptr);
+    // create entry for file reimport
+    ui::ModelIndex addReimportFile(StringView depotPath, const ResourceConfigurationPtr& specificUserConfiguration = nullptr);
 
     //--
 
@@ -150,13 +155,10 @@ public:
     //--
 
     // add new files to list
-    void addNewImportFiles(const ManagedDirectory* currentDirectory, TImportClass resourceClass, const Array<StringBuf>& selectedAssetPaths);
+    void addNewImportFiles(StringView directoryDepotPath, TImportClass resourceClass, const Array<StringBuf>& selectedAssetPaths);
 
     // add request to reimport files
-    void addReimportFiles(const Array<ManagedFileNativeResource*>& files);
-
-    // add request to reimport single file with new configuration
-    void addReimportFile(ManagedFileNativeResource* files, const ResourceConfigurationPtr& reimportConfiguration);
+    void addReimportFiles(const Array<StringBuf>& files);
 
     //--
 
@@ -177,8 +179,6 @@ public:
     void updateSelection();
 
     void addFilesFromList(const ImportList& list);
-
-    ManagedDirectory* contextDirectory();
 
     ImportListPtr compileResourceList() const;
 

@@ -12,7 +12,7 @@
 
 #include "managedDepot.h"
 #include "managedFile.h"
-#include "managedFileFormat.h"
+#include "assetFormat.h"
 #include "managedItem.h"
 #include "managedDirectory.h"
 
@@ -110,13 +110,11 @@ public:
 
             if (ValidateFileName(fileName))
             {
-                if (m_currentFile)
+                if (m_depotPath)
                 {
-                    auto dirPath = m_currentFile->parentDirectory()->depotPath();
-                    auto extension = m_currentFile->fileFormat().extension();
-
-                    if (auto* newFile = ed::GetEditor()->managedDepot().findManagedFile(TempString("{}{}.{}", dirPath, fileName, extension)))
-                        changeFile(newFile);
+                    auto dirPath = m_depotPath.view().baseDirectory();
+                    auto extension = m_depotPath.view().extensions();
+                    changeFile(TempString("{}{}.{}", dirPath, fileName, extension));
                 }
             }
         };
@@ -145,9 +143,8 @@ public:
 
     virtual void handleValueChange() override
     {
-        StringView fileName = "Invalid";
-        StringView filePath = "";
-        bool fileFound = false;
+        m_depotPath = "";
+        m_fileName = "";
 
         ResourceID id;
         DataViewResult ret;
@@ -165,67 +162,56 @@ public:
             id = data.id();
         }
 
-        StringBuf path;
-
-        if (ret.code == DataViewResultCode::OK)
-        {
-            auto managedFile = ed::GetEditor()->managedDepot().findManagedFile(path);
-            if (managedFile != m_currentFile)
-            {
-                if (managedFile)
-                    m_thumbnail->image(managedFile->typeThumbnail());
-                m_currentFile = managedFile;
-            }
-
-            // set file name
-            if (path)
-            {
-                fileName = path.view().fileStem();
-                fileFound = (managedFile != nullptr);
-            }
-            else
-            {
-                fileName = "None";
-                fileFound = true;
-            }
-
-            // update file name
-            m_name->text(fileName);
-            m_name->tooltip(filePath);
-            m_name->enable(true);
-
-            // show ui elements
-            m_buttonShowInBrowser->visibility(true);
-            m_buttonBar->visibility(true);
-            m_thumbnail->visibility(true);
-        }
-        else if (ret.code == DataViewResultCode::ErrorManyValues)
+        if (ret.code == DataViewResultCode::ErrorManyValues)
         {
             m_thumbnail->image(""_id);
             m_thumbnail->visibility(true);
 
             m_name->text("<multiple values>");
+            m_name->removeStyleClass("missing"_id);
             m_name->enable(false);
             m_name->tooltip("");
 
             m_buttonShowInBrowser->visibility(false);
             m_buttonBar->visibility(true);
         }
-        else
+        else if (ret.code != DataViewResultCode::OK)
         {
-            //m_name->text(TempString("[tag:#F00][img:error] {}[/tag]", ret));
             m_name->text("<error>");
+            m_name->removeStyleClass("missing"_id);
             m_name->enable(false);
             m_name->tooltip("");
 
             m_buttonBar->visibility(false);
             m_thumbnail->visibility(false);
         }
-
-        /*if (fileFound)
-            m_name->removeStyleClass("missing");
         else
-            m_name->addStyleClass("missing");*/
+        {
+            StringBuf path;
+            if (GetService<DepotService>()->resolvePathForID(id, path))
+            {
+                // update path info
+                m_depotPath = path;
+                m_fileName = StringBuf(path.view().fileStem());
+
+                // update file name
+                m_name->text(m_fileName);
+                m_name->tooltip(TempString("{}[br][b]{}[/b]", m_depotPath, id));
+                m_name->enable(true);
+
+                // show ui elements
+                m_buttonShowInBrowser->visibility(true);
+                m_buttonBar->visibility(true);
+                m_thumbnail->visibility(true);
+            }
+            else
+            {
+                m_name->text("<missing asset>");
+                m_name->enable(false);
+                m_name->tooltip(TempString("{}", id));
+                m_name->removeStyleClass("missing"_id);
+            }
+        }
     }
 
     virtual bool canExpandChildren() const override
@@ -246,8 +232,8 @@ public:
 
     virtual ui::DragDropDataPtr queryDragDropData(const input::BaseKeyFlags& keys, const ui::Position& position) const override
     {
-        if (m_currentFile)
-            return RefNew<ed::AssetBrowserFileDragDrop>(m_currentFile);
+        if (m_depotPath)
+            return RefNew<ed::AssetBrowserFileDragDrop>(m_depotPath);
         return nullptr;
     }
 
@@ -255,9 +241,9 @@ public:
     {
         // can we handle this data ?
         auto fileData = rtti_cast<ed::AssetBrowserFileDragDrop>(data);
-        if (fileData && fileData->file())
+        if (fileData && fileData->depotPath())
         {
-            if (fileData->file()->fileFormat().loadableAsType(m_resourceClass))
+            //if (fileData->file()->fileFormat().loadableAsType(m_resourceClass))
                 return RefNew<ui::DragDropHandlerGeneric>(data, this, entryPosition);
         }
 
@@ -269,61 +255,53 @@ public:
     {
         auto fileData = rtti_cast<ed::AssetBrowserFileDragDrop>(data);
         if (fileData)
-            changeFile(fileData->file());
+            changeFile(fileData->depotPath());
     }
 
     //--
 
-    void DataBoxResource::changeFile(ed::ManagedFile* newFile)
+    void DataBoxResource::changeFile(StringView depotPath)
     {
-        if (m_currentFile != newFile)
+        if (depotPath)
         {
-            // get depot path to the file
-            if (newFile)
+            // resolve the ID
+            ResourceID id;
+            if (GetService<DepotService>()->resolveIDForPath(depotPath, id))
             {
-                auto path = newFile->depotPath();
-                if (!path.empty())
-                {
-                    // resolve the ID
-                    ResourceID id;
-                    if (GetService<DepotService>()->resolveIDForPath(path, id))
-                    {
-                        // load the file
-                        if (m_async)
-                        {
-                            auto newRef = BaseAsyncReference(id);
-                            if (const auto ret = HasError(writeValue(&newRef, m_dataType)))
-                                ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
-                        }
-                        else
-                        {
-                            auto loadedResource = LoadResource(path);
-                            auto loadedResourceRef = BaseReference(id, loadedResource);
-
-                            if (const auto ret = HasError(writeValue(&loadedResourceRef, m_dataType)))
-                                ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
-                        }
-                    }
-                    else
-                    {
-                        ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Resource has no ID!"));
-                    }
-                }
-            }
-            else
-            {
+                // load the file
                 if (m_async)
                 {
-                    ResourceAsyncRef<IResource> emptyRef;
-                    if (const auto ret = HasError(writeValue(&emptyRef, m_dataType)))
+                    auto newRef = BaseAsyncReference(id);
+                    if (const auto ret = HasError(writeValue(&newRef, m_dataType)))
                         ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
                 }
                 else
                 {
-                    ResourceRef<IResource> emptyRef;
-                    if (const auto ret = HasError(writeValue(&emptyRef, m_dataType)))
+                    auto loadedResource = LoadResource(depotPath);
+                    auto loadedResourceRef = BaseReference(id, loadedResource);
+
+                    if (const auto ret = HasError(writeValue(&loadedResourceRef, m_dataType)))
                         ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
                 }
+            }
+            else
+            {
+                ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Resource has no ID!"));
+            }
+        }
+        else
+        {
+            if (m_async)
+            {
+                ResourceAsyncRef<IResource> emptyRef;
+                if (const auto ret = HasError(writeValue(&emptyRef, m_dataType)))
+                    ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
+            }
+            else
+            {
+                ResourceRef<IResource> emptyRef;
+                if (const auto ret = HasError(writeValue(&emptyRef, m_dataType)))
+                    ui::PostWindowMessage(this, MessageType::Warning, "DataInspector"_id, TempString("Error writing value: '{}'", ret));
             }
         }
     }
@@ -341,8 +319,7 @@ public:
 
     void cmdShowInAssetBrowser()
     {
-        if (m_currentFile)
-            ed::GetEditor()->showFile(m_currentFile);
+        ed::GetEditor()->showFile(m_depotPath);
     }
 
     //--
@@ -357,7 +334,8 @@ protected:
     Type m_dataType;
     bool m_async = false;
 
-    ed::ManagedFile* m_currentFile = nullptr;
+    StringBuf m_depotPath;
+    StringBuf m_fileName;
 };
 
 RTTI_BEGIN_TYPE_NATIVE_CLASS(DataBoxResource);

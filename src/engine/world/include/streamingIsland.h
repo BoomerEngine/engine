@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/resource/include/resource.h"
+#include "core/object/include/compressedBuffer.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -102,7 +103,7 @@ public:
     // NOTE: all files are loaded via specified loader to reuse/tracking
     // NOTE: all entities are created together and are linked using the links
     // NOTE: loaded entities are not yet linked to parent entities
-    CAN_YIELD StreamingIslandInstancePtr load(ResourceLoader* loader) const;
+    CAN_YIELD StreamingIslandInstancePtr load(bool loadImports=true) const;
 
     //--
 
@@ -114,8 +115,7 @@ private:
     bool m_alwaysLoaded = false; // this island should always be loaded (NOTE: still requires parent to be loaded)
 
     uint32_t m_entityCount = 0; // stats only
-    uint32_t m_entityUnpackedDataSize = 0; // decompressed data size
-    Buffer m_entityPackedData; // compressed buffer with entity data for this island
+    CompressedBufer m_entityPackedData; // compressed buffer with entity data for this island
 
     Array<StreamingIslandPtr> m_children; // child islands that can be loaded only after this one is
 };

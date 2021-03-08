@@ -10,9 +10,6 @@
 #include "editorService.h"
 #include "resourceEditor.h"
 
-#include "managedFileNativeResource.h"
-#include "managedDepotContextMenu.h"
-
 #include "engine/canvas/include/canvas.h"
 #include "core/app/include/launcherPlatform.h"
 #include "engine/ui/include/uiMenuBar.h"
@@ -39,11 +36,11 @@ IResourceEditorOpener::~IResourceEditorOpener()
 RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ResourceEditor);
 RTTI_END_TYPE();
 
-ResourceEditor::ResourceEditor(ManagedFile* file, ResourceEditorFeatureFlags flags, StringView defaultEditorTag)
+ResourceEditor::ResourceEditor(const ResourceEditorData& context, ResourceEditorFeatureFlags flags, StringView defaultEditorTag)
     : DockPanel("Editor")
     , m_features(flags)
     , m_containerTag(defaultEditorTag)
-    , m_file(file)
+    , m_context(context)
 {
     layoutVertical();
     createActions();
@@ -54,7 +51,7 @@ ResourceEditor::ResourceEditor(ManagedFile* file, ResourceEditorFeatureFlags fla
     // set title and stuff for the tab
     tabCloseButton(true);
     tabIcon("file_edit");
-    tabTitle(file->name());
+    tabTitle(m_context.displayName);
 
     // menu bar
     {
@@ -260,7 +257,7 @@ void ResourceEditor::update()
 
 bool ResourceEditor::modified() const
 {
-    return m_file->isModified();
+    return false;
 }
 
 //--
@@ -298,7 +295,7 @@ void ResourceEditor::destroyAspects()
 
 bool ResourceEditor::showTabContextMenu(const ui::Position& pos)
 {
-    InplaceArray<ManagedItem*, 1> depotItems;
+    /*InplaceArray<ManagedItem*, 1> depotItems;
     depotItems.pushBack(m_file);
 
     auto menu = RefNew<ui::MenuButtonContainer>();
@@ -321,14 +318,14 @@ bool ResourceEditor::showTabContextMenu(const ui::Position& pos)
 
     auto ret = RefNew<ui::PopupWindow>();
     ret->attachChild(menu);
-    ret->show(this, ui::PopupWindowSetup().autoClose().relativeToCursor().bottomLeft());
+    ret->show(this, ui::PopupWindowSetup().autoClose().relativeToCursor().bottomLeft());*/
 
     return true;
 }
 
 void ResourceEditor::close()
 {
-    GetEditor()->closeFileEditor(m_file); // NOTE: this may trigger save dialog popup
+    //GetEditor()->closeFileEditor(m_fileDepotPath); // NOTE: this may trigger save dialog popup
 }
 
 //---
@@ -348,7 +345,7 @@ void ResourceEditor::handleGeneralRedo()
 void ResourceEditor::handleGeneralSave()
 {
     if (!save())
-        ui::PostWindowMessage(this, ui::MessageType::Error, "Save"_id, TempString("Failed to save file '{}'", file()->depotPath()));
+        ui::PostWindowMessage(this, ui::MessageType::Error, "Save"_id, TempString("Failed to save file '{}'", context().physicalDepotPath));
 }
 
 void ResourceEditor::handleGeneralCopy()
@@ -378,13 +375,13 @@ void ResourceEditor::handleGeneralDuplicate()
 
 void ResourceEditor::handleGeneralReimport()
 {
-    if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file()))
+    /*if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file()))
     {
         InplaceArray<ManagedFileNativeResource*, 1> files;
         files.emplaceBack(nativeFile);
 
         GetEditor()->reimportFiles(files);
-    }
+    }*/
 }
 
 bool ResourceEditor::checkGeneralUndo() const

@@ -223,15 +223,13 @@ IGeneralMeshImporter::~IGeneralMeshImporter()
 
 StringBuf IGeneralMeshImporter::BuildMaterialFileName(StringView name, uint32_t materialIndex)
 {
-    static const auto ext = IResource::GetResourceExtensionForClass(MaterialInstance::GetStaticClass());
-
     StringBuf fileName;
     if (!MakeSafeFileName(name, fileName))
         fileName = TempString("Material{}", materialIndex);
 
     ASSERT(ValidateFileName(fileName));
 
-    return TempString("{}.{}", fileName, ext);
+    return TempString("{}.{}", fileName, IResource::FILE_EXTENSION);
 }
 
 void IGeneralMeshImporter::EmitDepotPath(const Array<StringView>& pathParts, IFormatStream& f)
@@ -329,7 +327,7 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(IResourceImporterInterf
 
         ResourceID materialDepotID;
         StringBuf materialDepotPath;
-        if (importer.findDepotFile(importer.queryResourcePath(), cfg.m_materialSearchPath, materialFileName, materialDepotPath, materialDepotID, cfg.m_depotSearchDepth))
+        if (importer.findDepotFile(importer.queryResourcePath(), cfg.m_materialSearchPath, materialFileName, materialDepotPath, &materialDepotID, cfg.m_depotSearchDepth))
         {
             TRACE_INFO("Existing material file found at '{}'", materialDepotPath);
             return MaterialRef(materialDepotID);
@@ -378,8 +376,7 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(IResourceImporterInterf
                 }
 
                 // emit the follow-up import, no extra config at the moment
-                if (const auto id = importer.followupImport(resolvedMaterialLibraryPath, depotPath, materialImportConfig))
-                    return MaterialRef(id);
+                return importer.followupImport<IMaterial>(resolvedMaterialLibraryPath, depotPath, materialImportConfig);
             }
         }
         else
@@ -397,8 +394,7 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(IResourceImporterInterf
             }
 
             // emit the follow-up import, no extra config at the moment
-            if (const auto id = importer.followupImport(importer.queryImportPath(), depotPath, materialImportConfig))
-                return MaterialRef(id);
+            return importer.followupImport<IMaterial>(importer.queryImportPath(), depotPath, materialImportConfig);
         }
     }
 

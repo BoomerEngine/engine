@@ -136,6 +136,19 @@ StringView DynamicDocument::nodeValue(NodeID id) const
     return node.value;
 }
 
+Buffer DynamicDocument::nodeValueBuffer(NodeID id) const
+{
+    ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
+
+    auto& node = m_nodes.typedData()[id];
+    ASSERT_EX(!node.value, "Invalid node ID");
+
+    if (node.bufferIndex == -1)
+        return nullptr;
+
+    return m_buffers[node.bufferIndex];
+}
+
 StringView DynamicDocument::nodeName(NodeID id) const
 {
     ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
@@ -383,7 +396,7 @@ void DynamicDocument::deleteNode(NodeID id)
     ASSERT_EX(found, "Child not found in it's parent node");
 }
 
-void DynamicDocument::nodeValue(NodeID id, StringView value)
+void DynamicDocument::writeNodeValue(NodeID id, StringView value)
 {
     ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
     ASSERT_EX(id > 1, "Cannot set name of the root node");
@@ -392,9 +405,31 @@ void DynamicDocument::nodeValue(NodeID id, StringView value)
     ASSERT_EX(node.valid(), "Invalid node ID");
 
     node.value = mapString(value);
+    node.bufferIndex = -1;
 }
 
-void DynamicDocument::nodeName(NodeID id, StringView name)
+void DynamicDocument::writeNodeValue(NodeID id, Buffer value)
+{
+    ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
+    ASSERT_EX(id > 1, "Cannot set name of the root node");
+
+    auto& node = m_nodes.typedData()[id];
+    ASSERT_EX(node.valid(), "Invalid node ID");
+
+    node.value = "";
+
+    if (value)
+    {
+        m_buffers.pushBack(value);
+        node.bufferIndex = m_buffers.lastValidIndex();
+    }
+    else
+    {
+        node.bufferIndex = -1;
+    }
+}
+
+void DynamicDocument::writeNodeName(NodeID id, StringView name)
 {
     ASSERT_EX(id < m_nodes.capacity(), "Node ID is out of range");
     ASSERT_EX(id > 1, "Cannot set name of the root node");
@@ -406,7 +441,7 @@ void DynamicDocument::nodeName(NodeID id, StringView name)
     node.name = mapString(name);
 }
 
-void DynamicDocument::nodeAttribute(NodeID nodeID, StringView name, StringView value)
+void DynamicDocument::writeNodeAttribute(NodeID nodeID, StringView name, StringView value)
 {
     ASSERT_EX(nodeID < m_nodes.capacity(), "Node ID is out of range");
     //ASSERT_EX(nodeID > 1, "Cannot set name of the root node");

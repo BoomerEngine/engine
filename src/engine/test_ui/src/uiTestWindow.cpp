@@ -22,11 +22,85 @@
 #include "engine/ui/include/uiToolBar.h"
 #include "engine/ui/include/uiMenuBar.h"
 #include "engine/ui/include/uiWindowPopup.h"
+#include "engine/ui/include/uiListViewEx.h"
+#include "engine/ui/include/uiTreeViewEx.h"
 #include "engine/canvas/include/atlas.h"
+#include "core/resource/include/depot.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
 
 //--
+
+class TestDepotFile : public ui::ITreeItem
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(TestDepotFile, ui::ITreeItem);
+
+public:
+    TestDepotFile(StringView name)
+    {
+        createChild<ui::TextLabel>(TempString("[img:page] {}", name));
+        tooltip(name);
+    }
+
+    bool handleItemCanExpand() const override
+    {
+        return false;
+    }
+
+    void handleItemExpand() override
+    {
+    }
+
+private:
+    StringBuf m_path;
+};
+
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(TestDepotFile);
+RTTI_END_TYPE();
+
+class TestDepotDirLazy : public ui::ITreeItem
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(TestDepotDirLazy, ui::ITreeItem);
+
+public:
+    TestDepotDirLazy(StringView path, StringView name)
+        : m_path(path)
+    {
+        createChild<ui::TextLabel>(TempString("[img:folder] {}", name));
+    }
+
+    bool handleItemCanExpand() const override
+    {
+        return true;
+    }
+
+    void handleItemExpand() override
+    {
+        GetService<DepotService>()->enumDirectoriesAtPath(m_path, [this](StringView name)
+            {
+                auto child = RefNew< TestDepotDirLazy>(TempString("{}{}/", m_path, name), name);
+                addChild(child);
+            });
+
+        GetService<DepotService>()->enumFilesAtPath(m_path, [this](StringView name)
+            {
+                auto child = RefNew<TestDepotFile>(name);
+                addChild(child);
+            });
+    }
+
+    void handleItemCollapse() override
+    {
+        removeAllChildren();
+    }
+
+private:
+    StringBuf m_path;
+};
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(TestDepotDirLazy);
+RTTI_END_TYPE();
 
 TestWindow::TestWindow()
     : ui::Window({ui::WindowFeatureFlagBit::DEFAULT_FRAME}, "Boomer Engine - Test UI")
@@ -342,7 +416,7 @@ TestWindow::TestWindow()
 
     {
         auto tabs = createChild<ui::Notebook>();
-        tabs->customMinSize(400, 150);
+        tabs->customMinSize(400, 250);
 
         for (int i = 0; i < 4; ++i)
         {
@@ -357,14 +431,27 @@ TestWindow::TestWindow()
             }
             else if (i == 2)
             {
-                elem->layoutIcons();
+                //elem->layoutIcons();
+
+                auto listElem = elem->createChild<ui::ListViewEx>();
+                listElem->layoutIcons();
+                listElem->expand();
 
                 for (int i=0; i<200; ++i)
                 {
-                    auto image = elem->createChild<ui::Image>();
+                    auto item = RefNew<ui::IListItem>();
+                    item->layoutVertical();
+
+                    auto image = item->createChild<ui::Image>();
                     image->styleType("TestCrap"_id);
                     image->hitTest(true);
                     image->customMaxSize(80, 80);
+
+                    auto box = item->createChild<ui::EditBox>();
+                    box->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+                    box->text("Ala ma kota");
+
+                    listElem->addItem(item);
                 }
             }
             else if (i == 3)
@@ -384,6 +471,26 @@ TestWindow::TestWindow()
                 image->customStyle<float>("font-size"_id, 30);
                 image->customForegroundColor(Color::YELLOW);
                 image->customBackgroundColor(Color::LIGHTCORAL);
+            }
+
+            tabs->attachChild(elem);
+        }
+
+        {
+            auto elem = RefNew<ui::IElement>();
+            elem->customStyle<StringBuf>("title"_id, TempString("[img:database] Tree"));
+
+            auto tree = elem->createChild<ui::TreeViewEx>();
+            tree->expand();
+
+            {
+                auto root = RefNew<TestDepotDirLazy>("/engine/", "<engine>");
+                tree->addRoot(root);
+            }
+
+            {
+                auto root = RefNew<TestDepotDirLazy>("/project/", "<project>");
+                tree->addRoot(root);
             }
 
             tabs->attachChild(elem);

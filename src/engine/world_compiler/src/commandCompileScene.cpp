@@ -14,7 +14,7 @@
 
 #include "core/app/include/command.h"
 #include "core/app/include/commandline.h"
-#include "core/resource/include/loadingService.h"
+#include "core/resource/include/loader.h"
 #include "core/resource/include/loader.h"
 #include "engine/world/include/rawScene.h"
 #include "engine/world/include/compiledScene.h"
@@ -59,8 +59,10 @@ static bool SaveFileToDepot(StringView path, IObject* data)
     }
 
     FileSavingContext context;
-    context.rootObject.pushBack(AddRef(data));
-    if (!SaveFile(file, context))
+    context.rootObjects.pushBack(data);
+
+    FileSavingResult result;
+    if (!SaveFile(file, context, result))
     {
         TRACE_ERROR("Unable to save '{}'", path);
         file->discardContent();
@@ -84,13 +86,6 @@ bool CommandCompileScene::run(IProgressTracker* progress, const app::CommandLine
 {
     ScopeTimer timer;
 
-    auto loadingService = GetService<LoadingService>();
-    if (!loadingService || !loadingService->loader())
-    {
-        TRACE_ERROR("Resource loading service not started properly (incorrect depot mapping?), cooking won't be possible.");
-        return false;
-    }
-
     const auto depotPath = commandline.singleValue("sceneDepotPath");
     if (depotPath.empty())
     {
@@ -101,8 +96,7 @@ bool CommandCompileScene::run(IProgressTracker* progress, const app::CommandLine
     StringBuf outputDepotPath = commandline.singleValue("outputDepotPath");
     if (outputDepotPath.empty())
     {
-        const auto extension = IResource::GetResourceExtensionForClass(CompiledScene::GetStaticClass());
-        outputDepotPath = TempString("{}.compiled/{}.{}", depotPath.view().baseDirectory(), depotPath.view().fileStem(), extension);
+        outputDepotPath = TempString("{}.compiled/{}.{}", depotPath.view().baseDirectory(), depotPath.view().fileStem(), IResource::FILE_EXTENSION);
         TRACE_INFO("No location for cooked scene specified, using the default '{}'", outputDepotPath);
     }
     else

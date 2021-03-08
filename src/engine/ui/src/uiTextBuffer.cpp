@@ -408,7 +408,7 @@ void TextBuffer::resetSelection()
     m_cachedSelectionGeometry.reset();
 }
 
-void TextBuffer::moveCursor(CursorNavigation pos, bool extendSelection)
+bool TextBuffer::moveCursor(CursorNavigation pos, bool extendSelection)
 {
     TRACE_INFO("Move cursor native: {}, last pos: {}", pos.m_char, m_lastPos);
 
@@ -425,6 +425,10 @@ void TextBuffer::moveCursor(CursorNavigation pos, bool extendSelection)
         validPos.m_pixelOffset = 0;
     }
 
+    // same position
+    if (validPos.m_char == m_cursorPos.m_char)
+        return false;
+
     // set new cursor position
     m_cursorPos = validPos;
 
@@ -435,6 +439,7 @@ void TextBuffer::moveCursor(CursorNavigation pos, bool extendSelection)
 
     // invalidate selection rendering
     m_cachedSelectionGeometry.reset();
+    return true;
 }
 
 void TextBuffer::deleteSelection()

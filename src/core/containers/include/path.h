@@ -62,6 +62,9 @@ extern CORE_CONTAINERS_API StringBuf ConformDepotFilePath(StringView path);
 // conform a path to depot directory path
 extern CORE_CONTAINERS_API StringBuf ConformDepotDirectoryPath(StringView path);
 
+// replace file extension
+extern CORE_CONTAINERS_API StringBuf ReplaceExtension(StringView path, StringView newExtension);
+
 //--
 
 END_BOOMER_NAMESPACE()

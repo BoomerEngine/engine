@@ -68,6 +68,14 @@ public:
 
     ///----
 
+    /// load data from depot
+    bool loadContent(StringView depotPath, ResourcePtr& outData) const;
+
+    /// store data to depot
+    bool storeContent(StringView depotPath, const IResource& data) const;
+
+    ///---
+
 private:
     // depot service
     DepotService* m_depot;

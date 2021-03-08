@@ -7,9 +7,7 @@
 ***/
 
 #include "build.h"
-#include "managedFile.h"
-#include "managedDirectory.h"
-#include "assetBrowser.h"
+#include "assetBrowserWindow.h"
 
 #include "engine/ui/include/uiTextLabel.h"
 
@@ -21,14 +19,14 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 class AssetBrowserItemPreview : public ui::IElement
 {
 public:
-    AssetBrowserItemPreview(ManagedItem* item)
+    AssetBrowserItemPreview(StringView depotPath)
     {
         /*m_thumbnail = RefNew<FileThumbnail>();
         m_thumbnail->name("ThumbnailIcon");
         m_thumbnail->file(file);
         attachChild(m_thumbnail);*/
 
-        auto caption = createChild<ui::TextLabel>(item->name());
+        auto caption = createChild<ui::TextLabel>(depotPath);
     }
 };
 
@@ -37,13 +35,13 @@ public:
 RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetBrowserFileDragDrop);
 RTTI_END_TYPE();
 
-AssetBrowserFileDragDrop::AssetBrowserFileDragDrop(ManagedFile* file)
-    : m_file(file)
+AssetBrowserFileDragDrop::AssetBrowserFileDragDrop(StringView depotPath)
+    : m_depotPath(depotPath)
 {}
 
 ui::ElementPtr AssetBrowserFileDragDrop::createPreview() const
 {
-    return RefNew<AssetBrowserItemPreview>(m_file);
+    return RefNew<AssetBrowserItemPreview>(m_depotPath);
 }
 
 //---
@@ -51,13 +49,13 @@ ui::ElementPtr AssetBrowserFileDragDrop::createPreview() const
 RTTI_BEGIN_TYPE_NATIVE_CLASS(AssetBrowserDirectoryDragDrop);
 RTTI_END_TYPE();
 
-AssetBrowserDirectoryDragDrop::AssetBrowserDirectoryDragDrop(ManagedDirectory* dir)
-    : m_dir(dir)
+AssetBrowserDirectoryDragDrop::AssetBrowserDirectoryDragDrop(StringView depotPath)
+    : m_depotPath(depotPath)
 {}
 
 ui::ElementPtr AssetBrowserDirectoryDragDrop::createPreview() const
 {
-    return RefNew<AssetBrowserItemPreview>(m_dir);
+    return RefNew<AssetBrowserItemPreview>(m_depotPath);
 }
 
 //---

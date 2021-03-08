@@ -134,7 +134,7 @@ void StreamingTask::process()
 
                 // load the island data
                 ScopeTimer islandLoadTimer;
-                if (const auto instance = islandInfo.data->load(GlobalLoader()))
+                if (const auto instance = islandInfo.data->load())
                 {
                     TRACE_INFO("Instanced island '{}', {} entitie(s) in {}", index, instance->size(), islandLoadTimer);
 

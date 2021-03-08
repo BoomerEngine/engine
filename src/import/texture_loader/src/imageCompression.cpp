@@ -463,8 +463,8 @@ static RefPtr<ImageCompressedResult> AssembleFinalResult(const Array<TempMip>& m
         totalDataSize = destMip.dataOffset + destMip.dataSize;
     }
 
-    ret->data = Buffer::Create(POOL_IMAGE, totalDataSize, 16);
-    if (!ret->data)
+    auto data = Buffer::Create(POOL_IMAGE, totalDataSize, 16);
+    if (!data)
         return nullptr;
 
     for (uint32_t i = 0; i < mips.size(); ++i)
@@ -472,8 +472,10 @@ static RefPtr<ImageCompressedResult> AssembleFinalResult(const Array<TempMip>& m
         const auto& sourceMip = mips[i];
         const auto& destMip = ret->mips[i];
 
-        memcpy(ret->data.data() + destMip.dataOffset, sourceMip.data.data(), destMip.dataSize);
+        memcpy(data.data() + destMip.dataOffset, sourceMip.data.data(), destMip.dataSize);
     }
+
+    ret->data.bind(data, CompressionType::LZ4HC);
 
     return ret;
 }

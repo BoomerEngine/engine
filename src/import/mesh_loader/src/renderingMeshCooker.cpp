@@ -15,7 +15,7 @@
 #include "engine/material/include/materialInstance.h"
 #include "engine/material/include/materialTemplate.h"
 #include "engine/texture/include/texture.h"
-#include "core/resource/include/loadingService.h"
+#include "core/resource/include/loader.h"
 
 #undef TRACE_INFO
 #define TRACE_INFO TRACE_WARNING
@@ -328,10 +328,10 @@ void ExportChunks(const BuildChunkRegistry& builder, Array<MeshChunk>& outChunks
         exportChunk.vertexCount = sourceChunk->m_finalVertexCount;
         exportChunk.materialIndex = sourceChunk->m_material;
         exportChunk.vertexFormat = sourceChunk->m_format;
-        exportChunk.packedVertexData = std::move(sourceChunk->m_packedVertexData);
-        exportChunk.packedIndexData = std::move(sourceChunk->m_packedIndexData);
         exportChunk.quantizationOffset = sourceChunk->m_quantizationOffset;
         exportChunk.quantizationScale = sourceChunk->m_quantizationScale;
+        exportChunk.packedVertexData.bind(sourceChunk->m_packedVertexData, CompressionType::LZ4HC);
+        exportChunk.packedIndexData.bind(sourceChunk->m_packedIndexData, CompressionType::LZ4HC);
         exportChunk.unpackedVertexSize = sourceChunk->m_unpackedVertexDataSize;
         exportChunk.unpackedIndexSize = sourceChunk->m_unpackedIndexDataSize;
     }

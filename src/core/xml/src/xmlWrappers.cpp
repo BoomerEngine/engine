@@ -112,12 +112,25 @@ StringBuf Node::valueString() const
     return StringBuf(value());
 }
 
+Buffer Node::valueBufferBase64() const
+{
+    if (m_document)
+        return m_document->nodeValueBuffer(m_id);
+    return nullptr;
+}
+
 //--
 
 void Node::writeValue(StringView txt)
 {
     if (m_document && m_id)
-        m_document->nodeValue(m_id, txt);
+        m_document->writeNodeValue(m_id, txt);
+}
+
+void Node::writeBuffer(Buffer data)
+{
+    if (m_document && m_id)
+        m_document->writeNodeValue(m_id, data);
 }
 
 void Node::writeAttribute(StringView name, StringView value)
@@ -125,7 +138,7 @@ void Node::writeAttribute(StringView name, StringView value)
     DEBUG_CHECK_EX(name, "Attribute name should be specified");
 
     if (m_document && name && m_id)
-        m_document->nodeAttribute(m_id, name, value);
+        m_document->writeNodeAttribute(m_id, name, value);
 }
         
 Node Node::writeChild(StringView childName)

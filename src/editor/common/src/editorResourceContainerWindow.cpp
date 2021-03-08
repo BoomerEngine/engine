@@ -17,7 +17,7 @@
 
 #include "resourceEditor.h"
 
-#include "managedFileFormat.h"
+#include "assetFormat.h"
 #include "managedFile.h"
 #include "managedDirectory.h"
 #include "managedItemCollection.h"
@@ -48,19 +48,19 @@ IBaseResourceContainerWindow::IBaseResourceContainerWindow(StringView tag, Strin
     customMinSize(1200, 900);
 
     auto showFileListFunc = [this]() {
-        ManagedFile* activeFile = nullptr;
-        m_dockArea->iterateSpecificPanels<ResourceEditor>([&activeFile](ResourceEditor* editor)
+        StringBuf activeDepotFilePath;
+        m_dockArea->iterateSpecificPanels<ResourceEditor>([&activeDepotFilePath](ResourceEditor* editor)
             {
-                if (editor->file())
+                if (editor->context().physicalDepotPath)
                 {
-                    activeFile = editor->file();
+                    activeDepotFilePath = editor->context().physicalDepotPath;
                     return true;
                 }
 
                 return false;
             }, ui::DockPanelIterationMode::ActiveOnly);
 
-        ShowOpenedFilesList(this, activeFile);
+        ShowOpenedFilesList(this, activeDepotFilePath);
     };
 
     m_dockArea = createChild<ui::DockContainer>();
@@ -168,19 +168,19 @@ bool IBaseResourceContainerWindow::selectEditor(ResourceEditor* editor)
 bool IBaseResourceContainerWindow::closeContainedFiles()
 {
     // collect modified files in this container
-    InplaceArray<ManagedFile*, 10> modifiedFiles;
+    InplaceArray<StringBuf, 10> modifiedFiles;
     InplaceArray<ResourceEditorPtr, 10> editors;
     iterateAllEditors([&modifiedFiles, &editors](ResourceEditor* editor) {
         editors.pushBack(AddRef(editor));
         if (editor->modified())
-            modifiedFiles.pushBack(editor->file());
+            modifiedFiles.pushBack(editor->context().physicalDepotPath);
         return false;
         });
 
     // if we have modified files make sure we have a chance to save them, this is also last change to cancel the close
-    if (!modifiedFiles.empty())
+    /*if (!modifiedFiles.empty())
         if (!SaveDepotFiles(this, modifiedFiles))
-            return false;
+            return false;*/
 
     // close all editors
     for (const auto& editor : editors)

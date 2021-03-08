@@ -107,7 +107,7 @@ StructurePoolBase::StructurePoolBase(PoolTag poolId, uint32_t elementSize, uint3
 
 StructurePoolBase::~StructurePoolBase()
 {
-    DEBUG_CHECK_EX(m_numElements == 0, "There are still some elements allocated from structure pool");
+    //DEBUG_CHECK_EX(m_numElements == 0, "There are still some elements allocated from structure pool");
 }
 
 void* StructurePoolBase::alloc()

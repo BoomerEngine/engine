@@ -59,6 +59,11 @@ public:
     template< typename FK >
     bool remove(const FK& key);
 
+    //! Remove key from set, preserve item order (SLOW)
+    //! NOTE: Returns true if key was removed to the set, false if it was not in the set
+    template< typename FK >
+    bool removeOrdered(const FK& key);
+
     //! Check if set contains given value
     template< typename FK >
     bool contains(const FK& key) const;

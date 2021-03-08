@@ -25,13 +25,8 @@ public:
 
     //--
 
-    /// get absolute path to engine depot directory
-    INLINE const StringBuf& engineDepotPath() const { return m_engineDepotPath; }
-
-    /// get absolute path to project depot directory
-    INLINE const StringBuf& projectDepotPath() const { return m_projectDepotPath; }
-
-    //--
+    /// get mount path for given depot, can be empty if depot was not mounted (especially project)
+    StringBuf queryDepotAbsolutePath(DepotType type) const;
 
     /// get the file information
     bool queryFileTimestamp(StringView depotPath, TimeStamp& outTimestamp) const;
@@ -46,7 +41,7 @@ public:
 
     /// create a reader for the file's content
     /// NOTE: creating a reader may take some time
-    ReadFileHandlePtr createFileReader(StringView depotPath) const;
+    ReadFileHandlePtr createFileReader(StringView depotPath, TimeStamp* outTimestamp=nullptr) const;
 
     /// create a writer for the file's content
     /// NOTE: fails if the file system was not writable
@@ -54,37 +49,16 @@ public:
 
     /// create an ASYNC reader for the file's content
     /// NOTE: creating a reader may take some time
-    AsyncFileHandlePtr createFileAsyncReader(StringView depotPath) const;
+    AsyncFileHandlePtr createFileAsyncReader(StringView depotPath, TimeStamp* outTimestamp = nullptr) const;
 
     //--
 
-    struct DirectoryInfo
-    {
-        StringView name;
-        bool fileSystemRoot = false;
-
-        INLINE bool operator<(const DirectoryInfo& other) const
-        {
-            return name < other.name;
-        }
-    };
-
     /// get child directories at given path
     /// NOTE: virtual directories for the mounted file systems are reported as well
-    bool enumDirectoriesAtPath(StringView rawDirectoryPath, const std::function<bool(const DirectoryInfo& info) >& enumFunc) const;
-
-    struct FileInfo
-    {
-        StringView name;
-
-        INLINE bool operator<(const FileInfo& other) const
-        {
-            return name < other.name;
-        }
-    };
+    void enumDirectoriesAtPath(StringView depotPath, const std::function<void(StringView) >& enumFunc) const;
 
     /// get files at given path (should be absolute depot DIRECTORY path)
-    bool enumFilesAtPath(StringView path, const std::function<bool(const FileInfo& info)>& enumFunc) const;
+    void enumFilesAtPath(StringView depotPath, const std::function<void(StringView)>& enumFunc) const;
 
     //--
 
@@ -99,6 +73,53 @@ public:
     // load file content to string
     bool loadFileToString(StringView depotPath, StringBuf& outContent, TimeStamp* timestamp = nullptr) const;
 
+    // load file to XML
+    bool loadFileToXML(StringView depotPath, xml::DocumentPtr& outContent, TimeStamp* timestamp = nullptr) const;
+
+    // load content directly (via simple XML serialization)
+    bool loadFileToXMLObject(StringView depotPath, ObjectPtr& outObject, ClassType expectedClass = nullptr, TimeStamp* timestamp = nullptr) const;
+
+    // load content directly (via simple XML serialization)
+    template< typename T >
+    INLINE bool loadFileToXMLObject(StringView depotPath, RefPtr<T>& outObject, TimeStamp* timestamp = nullptr) const
+    {
+        return loadFileToXMLObject(depotPath, *(ObjectPtr*) &outObject, T::GetStaticClass(), timestamp);
+    }
+
+    // load a resource directly (uncached)
+    bool loadFileToResource(StringView depotPath, ResourcePtr& outResource, ResourceClass expectedClass = nullptr, bool loadImports = true, TimeStamp* timestamp = nullptr) const;
+
+    // load a resource directly (uncached)
+    template< typename T >
+    INLINE bool loadFileToResource(StringView depotPath, RefPtr<T>& outObject, bool loadImports = true, TimeStamp* timestamp = nullptr) const
+    {
+        return loadFileToResource(depotPath, *(ResourcePtr*)&outObject, T::GetStaticClass(), loadImports, timestamp);
+    }
+
+    //--
+
+    // NOTE: all saving is done via temporary file: 
+    //  - first a temp file is created and content is written there
+    //  - then the file is closed, opened again and verified
+    //  - then old file is renamed to .bak
+    //  - then temp file is moved into new place (atomically)
+    //  - only after file was moved the original .bak file is deleted
+
+    // save buffer to file in the depot
+    bool saveFileFromBuffer(StringView depotPath, Buffer content, TimeStamp* manualTimestamp = nullptr) const;
+
+    // save string (assuming UTF8) to a file in the depot
+    bool saveFileFromString(StringView depotPath, StringView content, TimeStamp* manualTimestamp = nullptr) const;
+
+    // save XML to a file in the depot
+    bool saveFileFromXML(StringView depotPath, const xml::IDocument* doc, TimeStamp* manualTimestamp = nullptr) const;
+
+    // save object to an XML file (usually used for xmeta)
+    bool saveFileFromXMLObject(StringView depotPath, const IObject* data, TimeStamp* manualTimestamp = nullptr) const;
+
+    // save resource to a depot file
+    bool saveFileFromResource(StringView depotPath, const IResource* data, TimeStamp* manualTimestamp = nullptr) const;
+
     //--
 
     // find load path for given resource ID
@@ -110,11 +131,16 @@ public:
     //--
 
 private:
-    StringBuf m_engineDepotPath;
-    StringBuf m_projectDepotPath;
+    struct DepotInfo
+    {
+        StringBuf absolutePath; // path on disk, ends with "/"
+        StringBuf prefix; // "/engine/"
+        DepotStructure* structure = nullptr;
+    };
 
-    DepotStructure* m_engineDepotStructure = nullptr;
-    DepotStructure* m_projectDepotStructure = nullptr;
+    static const uint32_t MAX_DEPOTS = 2;
+
+    DepotInfo m_depots[MAX_DEPOTS];
 
     //--
 

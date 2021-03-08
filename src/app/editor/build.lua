@@ -9,5 +9,7 @@ Dependency("core_*")
 Dependency("gpu_*")
 Dependency("engine_*")
 Dependency("import_*")
-Dependency("editor_*")
+--Dependency("editor_*")
+Dependency("editor_common")
+Dependency("editor_viewport")
 

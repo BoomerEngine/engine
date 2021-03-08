@@ -77,6 +77,16 @@ void ManagedDepot::populate()
     TRACE_WARNING("Depot populated in {}", timer);
 }        
 
+bool ManagedDepot::loadContent(StringView depotPath, ResourcePtr& outData) const
+{
+    return false;
+}
+
+bool ManagedDepot::storeContent(StringView depotPath, const IResource& data) const
+{
+    return false;
+}
+
 ManagedDirectory* ManagedDepot::createPath(StringView depotPath, const char** leftOver)
 {
     // get the root path

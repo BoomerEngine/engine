@@ -36,7 +36,10 @@ extern CORE_XML_API DocumentPtr LoadDocument(ILoadingReporter& ctx, const char* 
 extern CORE_XML_API DocumentPtr LoadDocument(ILoadingReporter& ctx, const Buffer& mem);
 
 // save document to file on disk, document can be saved both in binary or text format
-extern CORE_XML_API bool SaveDocument(const IDocument& ptr, StringView absoluteFilePath, bool binaryFormat = false);
+extern CORE_XML_API bool SaveDocument(const IDocument* ptr, StringView absoluteFilePath, bool binaryFormat = false);
+
+// save document to file on disk without creating any in-memory representation, better for large XMLs
+extern CORE_XML_API bool SaveDocument(const IDocument* ptr, IWriteFileHandle* file, bool binaryFormat = false);
 
 // create an empty document that can be filled with data
 extern CORE_XML_API DocumentPtr CreateDocument(StringView rootNodeName);

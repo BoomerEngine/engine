@@ -17,8 +17,11 @@ const uint32_t FileTables::FILE_VERSION_MAX = VER_CURRENT;
 
 //---
 
-bool FileTables::ValidateHeader(const Header& header)
+bool FileTables::ValidateHeader(const Header& header, uint32_t sizeOfData)
 {
+    if (sizeOfData != sizeof(header))
+        return false;
+
     if (header.magic != FILE_MAGIC)
         return false;
 

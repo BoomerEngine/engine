@@ -28,12 +28,12 @@ public:
     AssetFileImportWidget();
     virtual ~AssetFileImportWidget();
 
-    void bindFile(ManagedFileNativeResource* file, const ResourceConfigurationPtr& config);
+    void bindFile(StringView depotPath, const ResourceConfigurationPtr& config);
 
 private:
-    ManagedFileNativeResource* m_file;
+    StringBuf m_depotPath;
 
-    ManagedFileImportStatusCheckPtr m_checker;
+    AssetImportStatusCheckPtr m_checker;
     ResourceConfigurationPtr m_config;
 
     GlobalEventTable m_events;

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "core/resource_compiler/include/importSourceAsset.h"
+#include "core/resource_compiler/include/sourceAsset.h"
 #include "engine/mesh/include/streamBuilder.h"
 #include "engine/mesh/include/streamData.h"
 #include "import/mesh_loader/include/renderingMeshImportConfig.h"

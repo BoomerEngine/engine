@@ -23,8 +23,7 @@ NodePathBuilder::NodePathBuilder(StringView layerDepotPath)
         auto filePath = layerDepotPath.afterFirst("/layers/");
         DEBUG_CHECK_RETURN_EX(filePath, "Layer path not inside layers folder");
 
-        static const auto layerExtension = IResource::GetResourceExtensionForClass(RawLayer::GetStaticClass());
-        filePath = filePath.beforeLast(TempString(".{}", layerExtension));
+        filePath = filePath.beforeLast(".");
         DEBUG_CHECK_RETURN_EX(filePath, "Layer file does not have layer extension");
 
         pushPath(layerDepotPath);

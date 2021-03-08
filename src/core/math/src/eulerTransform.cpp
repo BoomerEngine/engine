@@ -9,8 +9,8 @@
 #include "build.h"
 #include "core/containers/include/stringParser.h"
 #include "core/containers/include/stringBuilder.h"
-#include "core/object/include/streamOpcodeWriter.h"
-#include "core/object/include/streamOpcodeReader.h"
+#include "core/object/include/serializationWriter.h"
+#include "core/object/include/serializationReader.h"
 #include "core/system/include/format.h"
 
 BEGIN_BOOMER_NAMESPACE()
@@ -93,7 +93,7 @@ void EulerTransform::print(IFormatStream& f) const
 
 ///----
 
-/*void EulerTransform::writeBinary(stream::OpcodeWriter& stream) const
+/*void EulerTransform::writeBinary(SerializationWriter& stream) const
 {
     uint8_t flags = 0;
 
@@ -116,7 +116,7 @@ void EulerTransform::print(IFormatStream& f) const
         stream.writeTypedData(S);
 }
 
-void EulerTransform::readBinary(stream::OpcodeReader& stream)
+void EulerTransform::readBinary(SerializationReader& stream)
 {
     uint8_t flags = 0;
     stream.readTypedData(flags);

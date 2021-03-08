@@ -566,8 +566,8 @@ struct GPU_DEVICE_API GraphicsRenderStatesSetup
 	//--
 
 	// Custom type implementation requirements
-	void writeBinary(stream::OpcodeWriter& stream) const;
-	void readBinary(stream::OpcodeReader& stream);
+	void writeBinary(SerializationWriter& stream) const;
+	void readBinary(SerializationReader& stream);
 };
 
 END_BOOMER_NAMESPACE_EX(gpu)

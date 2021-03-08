@@ -13,7 +13,7 @@
 
 #include "gpu/device/include/deviceService.h"
 #include "engine/material/include/runtimeTechnique.h"
-#include "core/resource/include/loadingService.h"
+#include "core/resource/include/loader.h"
 #include "core/system/include/thread.h"
 
 BEGIN_BOOMER_NAMESPACE()

@@ -386,5 +386,18 @@ bool ScanRelativePaths(StringView contextPath, StringView pathPartsStr, uint32_t
 
 //--
 
+StringBuf ReplaceExtension(StringView path, StringView newExtension)
+{
+    auto corePath = path.baseDirectory();
+    auto coreName = path.fileStem();
+
+    if (newExtension)
+        return TempString("{}{}.{}", corePath, coreName, newExtension);
+    else
+        return TempString("{}{}", corePath, coreName);
+}
+
+//--
+
 END_BOOMER_NAMESPACE()
 

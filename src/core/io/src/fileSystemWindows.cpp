@@ -315,7 +315,7 @@ namespace prv
         m_asyncDispatcher = nullptr;
     }
 
-    ReadFileHandlePtr WinIOSystem::openForReading(StringView absoluteFilePath)
+    ReadFileHandlePtr WinIOSystem::openForReading(StringView absoluteFilePath, TimeStamp* outTimestamp)
     {
         TempPathStringBuffer str(absoluteFilePath);
 
@@ -325,6 +325,13 @@ namespace prv
         {
             TRACE_WARNING("WinIO: Failed to create reading handle for '{}', error 0x{}", absoluteFilePath, Hex(GetLastError()));
             return nullptr;
+        }
+
+        if (outTimestamp)
+        {
+            FILETIME fileTime;
+            ::GetFileTime(handle, NULL, NULL, &fileTime);
+            *outTimestamp = TimeStamp(*(const uint64_t*)&fileTime);
         }
 
         // Return file reader
@@ -419,7 +426,7 @@ namespace prv
         return openForWriting(str, mode == FileWriteMode::DirectAppend);
     }
 
-    AsyncFileHandlePtr WinIOSystem::openForAsyncReading(StringView absoluteFilePath)
+    AsyncFileHandlePtr WinIOSystem::openForAsyncReading(StringView absoluteFilePath, TimeStamp* outTimestamp)
     {
         TempPathStringBuffer str(absoluteFilePath);
 
@@ -437,6 +444,13 @@ namespace prv
             TRACE_WARNING("WinIO: Failed to get file size for '{}', error: 0x{}", str, Hex(GetLastError()));
             CloseHandle(handle);
             return 0;
+        }
+
+        if (outTimestamp)
+        {
+            FILETIME fileTime;
+            ::GetFileTime(handle, NULL, NULL, &fileTime);
+            *outTimestamp = TimeStamp(*(const uint64_t*)&fileTime);
         }
 
         // Return file reader

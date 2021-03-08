@@ -44,6 +44,11 @@ public:
     template< typename K, typename FK  >
     static bool Remove(HashBuckets* helper, const K* keys, const uint32_t keyCount, const FK& searchKey, uint32_t& outKeyIndex);
 
+    // remove element entry in an ordered way (all indices > element index will have to be rehashes)
+    // this is much slower then Remove but preserves order of entries
+    template< typename K, typename FK  >
+    static bool RemoveOrdered(HashBuckets* helper, const K* keys, const uint32_t keyCount, const FK& searchKey, uint32_t& outKeyIndex);
+
     //--
 
     template< typename K >

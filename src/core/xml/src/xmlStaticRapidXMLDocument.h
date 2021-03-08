@@ -45,6 +45,7 @@ public:
     //---
 
     virtual StringView nodeValue(NodeID id) const override final;
+    virtual Buffer nodeValueBuffer(NodeID id) const override final;
     virtual StringView nodeName(NodeID id) const override final;
     virtual StringView nodeAttributeOfDefault(NodeID id, StringView name, StringView defaultVal = StringView()) const override final;
     virtual AttributeID nodeFirstAttribute(NodeID id, StringView name = nullptr) const override final;
@@ -63,10 +64,12 @@ public:
 
     virtual NodeID createNode(NodeID parentNode, StringView name) override final;
     virtual void deleteNode(NodeID id) override final;
-    virtual void nodeValue(NodeID id, StringView value) override final;
-    virtual void nodeName(NodeID id, StringView name) override final;
-    virtual void nodeAttribute(NodeID id, StringView name, StringView value) override final;
     virtual void deleteNodeAttribute(NodeID id, StringView name) override final;
+
+    virtual void writeNodeValue(NodeID id, StringView value) override final;
+    virtual void writeNodeValue(NodeID id, Buffer value) override final;
+    virtual void writeNodeName(NodeID id, StringView name) override final;
+    virtual void writeNodeAttribute(NodeID id, StringView name, StringView value) override final;
 
 private:
     Buffer m_data;

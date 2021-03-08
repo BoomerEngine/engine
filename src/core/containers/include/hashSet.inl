@@ -136,6 +136,20 @@ bool HashSet<K>::remove(const FK& key)
 }
 
 template<typename K>
+template<typename FK >
+bool HashSet<K>::removeOrdered(const FK& key)
+{
+    uint32_t index = 0;
+    if (HashBuckets::RemoveOrdered(m_buckets, m_keys.typedData(), m_keys.size(), key, index))
+    {
+        m_keys.erase(index);
+        return true;
+    }
+
+    return false;
+}
+
+template<typename K>
 template< typename FK >
 bool HashSet<K>::contains(const FK& key) const
 {

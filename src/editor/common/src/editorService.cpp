@@ -16,13 +16,13 @@
 #include "assetBrowser.h"
 #include "managedDepot.h"
 #include "managedFile.h"
-#include "managedFileFormat.h"
+#include "assetFormat.h"
 #include "versionControl.h"
 #include "resourceEditor.h"
 
 #include "core/io/include/io.h"
 #include "core/app/include/commandline.h"
-#include "core/resource/include/loadingService.h"
+#include "core/resource/include/loader.h"
 #include "engine/ui/include/uiRenderer.h"
 #include "engine/ui/include/uiElementConfig.h"
 #include "core/xml/include/xmlUtils.h"
@@ -133,7 +133,7 @@ bool Editor::initialize(ui::Renderer* renderer, const app::CommandLine& cmdLine)
     renderer->attachWindow(m_mainWindow);
 
     // create asset browser
-    m_assetBrowser = RefNew<AssetBrowser>(m_managedDepot.get());
+    m_assetBrowser = RefNew<AssetBrowser>();
     m_assetBrowser->configLoad(m_configRootBlock->tag("AssetBrowser"));
     renderer->attachWindow(m_assetBrowser);
 
@@ -197,17 +197,12 @@ void Editor::showAssetBrowser(bool focus /*= true*/)
     m_assetBrowser->requestShow(focus);
 }
 
-ManagedFile* Editor::selectedFile() const
+StringBuf Editor::selectedFile() const
 {
     return m_assetBrowser->selectedFile();
 }
 
-ManagedDirectory* Editor::selectedDirectory() const
-{
-    return m_assetBrowser->selectedDirectory();
-}
-
-bool Editor::showFile(ManagedFile* filePtr)
+bool Editor::showFile(StringView filePtr)
 {
     if (m_assetBrowser->showFile(filePtr))
     {
@@ -218,7 +213,7 @@ bool Editor::showFile(ManagedFile* filePtr)
     return false;
 }
 
-bool Editor::showDirectory(ManagedDirectory* dir, bool exploreContent)
+bool Editor::showDirectory(StringView dir, bool exploreContent)
 {
     if (m_assetBrowser->showDirectory(dir, exploreContent))
     {
@@ -231,15 +226,15 @@ bool Editor::showDirectory(ManagedDirectory* dir, bool exploreContent)
 
 //--
 
-ResourceEditorPtr Editor::findFileEditor(ManagedFile* file) const
+ResourceEditorPtr Editor::findFileEditor(StringView depotPath) const
 {
     ResourceEditorPtr ret;
 
     for (const auto& window : m_resourceContainers)
     {
-        if (window->iterateEditors([file, &ret](ResourceEditor* editor)
+        if (window->iterateEditors([depotPath, &ret](ResourceEditor* editor)
             {
-                if (editor->file() == file)
+                if (editor->context().physicalDepotPath == depotPath)
                 {
                     ret = AddRef(editor);
                     return true;
@@ -249,19 +244,19 @@ ResourceEditorPtr Editor::findFileEditor(ManagedFile* file) const
             }))
         {
             return ret;
-        }            
+        }
     }
 
     return nullptr;
 }
 
-bool Editor::showFileEditor(ManagedFile* file) const
+bool Editor::showFileEditor(StringView depotPath) const
 {
     for (const auto& window : m_resourceContainers)
     {
-        if (window->iterateEditors([file, window](ResourceEditor* editor)
+        if (window->iterateEditors([depotPath, window](ResourceEditor* editor)
             {
-                if (editor->file() == file)
+                if (editor->context().physicalDepotPath == depotPath)
                 {
                     window->requestShow(true);
                     return window->selectEditor(editor);
@@ -295,20 +290,11 @@ namespace prv
                     m_openers.pushBack(opener);
         }
 
-        bool canOpenFile(const ManagedFile* file) const
+        ResourceEditorPtr createEditor(const ResourceEditorData& data) const
         {
             for (auto* opener : m_openers)
-                if (opener->canOpen(file->fileFormat()))
-                    return true;
-
-            return false;
-        }
-
-        ResourceEditorPtr createEditor(ManagedFile* file) const
-        {
-            for (auto* opener : m_openers)
-                if (opener->canOpen(file->fileFormat()))
-                    return opener->createEditor(file);
+                if (const auto editor = opener->createEditor(data))
+                    return editor;
 
             return nullptr;
         }
@@ -325,11 +311,6 @@ namespace prv
 } // prv
 
 //--
-
-bool Editor::canOpenFile(ManagedFile* file) const
-{
-    return prv::ManagedFileOpenerHelper::GetInstance().canOpenFile(file);
-}
 
 IBaseResourceContainerWindow* Editor::findResourceContainer(StringView text) const
 {
@@ -362,14 +343,19 @@ IBaseResourceContainerWindow* Editor::findOrCreateResourceContainer(StringView t
     return window;
 }
 
-bool Editor::openFileEditor(ManagedFile* file, bool activate /*= true*/)
+bool Editor::openFileEditor(StringView depotPath, bool activate)
 {
     // show current editor
-    if (showFileEditor(file))
+    if (showFileEditor(depotPath))
         return true;
 
+    // load resource
+    ResourceEditorData loadedData;
+
+    // TODO: load !
+
     // create best editor for this file
-    auto editor = prv::ManagedFileOpenerHelper::GetInstance().createEditor(file);
+    auto editor = prv::ManagedFileOpenerHelper::GetInstance().createEditor(loadedData);
     if (!editor)
         return false;
 
@@ -383,12 +369,12 @@ bool Editor::openFileEditor(ManagedFile* file, bool activate /*= true*/)
     // TODO: it's possible to move it to thread if needed
     if (!editor->initialize())
         return false;
-        
+
     // initialize the additional generic aspects once the normal editor was initialized
     editor->createAspects();
 
     // load the general editor config
-    const auto configBlock = GetEditor()->config().tag("Resources").tag(file->depotPath());
+    const auto configBlock = GetEditor()->config().tag("Resources").tag(loadedData.physicalDepotPath);
     editor->configLoad(configBlock);
 
     // load the name of the resource container tag 
@@ -407,14 +393,14 @@ bool Editor::openFileEditor(ManagedFile* file, bool activate /*= true*/)
     return true;
 }
 
-bool Editor::closeFileEditor(ManagedFile* file, bool force)
+bool Editor::closeFileEditor(StringView depotPath, bool force)
 {
-    if (auto editor = findFileEditor(file))
+    if (auto editor = findFileEditor(depotPath))
     {
         if (editor->modified() && !force)
         {
             StringBuilder txt;
-            txt.appendf("File '{}' is [b][color:#F00]modified[/color][/b].\n \nDo you want to save it or discard the changes?", file->depotPath());
+            txt.appendf("File '{}' is [b][color:#F00]modified[/color][/b].\n \nDo you want to save it or discard the changes?", editor->context().physicalDepotPath);
 
             ui::MessageBoxSetup setup;
             setup.title("Confirm closing editor");
@@ -430,7 +416,7 @@ bool Editor::closeFileEditor(ManagedFile* file, bool force)
             {
                 if (!editor->save())
                 {
-                    ui::PostWindowMessage(editor, ui::MessageType::Error, "FileSave"_id, TempString("Error saving file '{}'", file->depotPath()));
+                    ui::PostWindowMessage(editor, ui::MessageType::Error, "FileSave"_id, TempString("Error saving file '{}'", editor->context().physicalDepotPath));
                     return false;
                 }
             }
@@ -441,7 +427,7 @@ bool Editor::closeFileEditor(ManagedFile* file, bool force)
         }
 
         {
-            const auto configBlock = GetEditor()->config().tag("Resources").tag(file->depotPath());
+            const auto configBlock = GetEditor()->config().tag("Resources").tag(editor->context().physicalDepotPath);
             editor->configSave(configBlock);
         }
 
@@ -454,15 +440,15 @@ bool Editor::closeFileEditor(ManagedFile* file, bool force)
     return true;
 }
 
-bool Editor::saveFileEditor(ManagedFile* file, bool force /*= false*/)
+bool Editor::saveFileEditor(StringView depotPath, bool force /*= false*/)
 {
-    if (auto editor = findFileEditor(file))
+    if (auto editor = findFileEditor(depotPath))
     {
         if (editor->modified() || force)
         {
             if (!editor->save())
             {
-                ui::PostWindowMessage(editor, ui::MessageType::Error, "FileSave"_id, TempString("Error saving file '{}'", file->depotPath()));
+                ui::PostWindowMessage(editor, ui::MessageType::Error, "FileSave"_id, TempString("Error saving file '{}'", editor->context().physicalDepotPath));
                 return false;
             }
         }
@@ -477,17 +463,17 @@ bool Editor::saveFileEditor(ManagedFile* file, bool force /*= false*/)
 
 //--
 
-void Editor::importFiles(const ManagedDirectory* currentDirectory, TImportClass resourceClass, const Array<StringBuf>& selectedAssetPaths)
+void Editor::importFiles(StringView directoryDepotPath, TImportClass resourceClass, const Array<StringBuf>& selectedAssetPaths)
 {
     auto dlg = RefNew<AssetImportPrepareDialog>();
-    dlg->addNewImportFiles(currentDirectory, resourceClass, selectedAssetPaths);
+    dlg->addNewImportFiles(directoryDepotPath, resourceClass, selectedAssetPaths);
     dlg->runModal(m_mainWindow);
 }
 
-void Editor::reimportFiles(const Array<ManagedFileNativeResource*>& files)
+void Editor::reimportFiles(const Array<StringBuf>& fileDepotPaths)
 {
     auto dlg = RefNew<AssetImportPrepareDialog>();
-    dlg->addReimportFiles(files);
+    dlg->addReimportFiles(fileDepotPaths);
     dlg->runModal(m_mainWindow);
 }
 
@@ -812,12 +798,17 @@ void Editor::collectResourceEditors(Array<ResourceEditorPtr>& outResourceEditors
         window->iterateAllEditors([&outResourceEditors](ResourceEditor* editor) { outResourceEditors.pushBack(AddRef(editor)); });
 }
 
-void Editor::collectOpenedFiles(Array<ManagedFile*>& outOpenedFiles) const
+void Editor::collectOpenedFiles(Array<OpenedFile>& outOpenedFiles) const
 {
     for (const auto& window : m_resourceContainers)
         window->iterateAllEditors([&outOpenedFiles](ResourceEditor* editor) {
-            outOpenedFiles.pushBack(editor->file());
-            });
+         if (editor->context().physicalDepotPath)
+            {
+                auto& outEntry = outOpenedFiles.emplaceBack();
+                outEntry.data = editor->context().physicalResource;
+                outEntry.depotPath = editor->context().physicalDepotPath;
+            }
+        });
 }
 
 void Editor::saveOpenedFiles() const
@@ -827,25 +818,29 @@ void Editor::saveOpenedFiles() const
 
     // store list of opened files
     {
-        Array<StringBuf> openedFiles;
+        HashSet<StringBuf> openedFiles;
         openedFiles.reserve(editors.size());
 
         for (const auto& editor : editors)
-            openedFiles.pushBack(editor->file()->depotPath());
+            if (editor->context().physicalDepotPath)
+                openedFiles.insert(editor->context().physicalDepotPath);
 
-        m_configRootBlock->tag("Editor").write("OpenedFiles", openedFiles);
+        m_configRootBlock->tag("Editor").write("OpenedFiles", openedFiles.keys());
     }
 
     // store config for each editor
     for (const auto& editor : editors)
     {
-        const auto configBlock = m_configRootBlock->tag("Resources").tag(editor->file()->depotPath());
+        if (editor->context().physicalDepotPath)
+        {
+            const auto configBlock = m_configRootBlock->tag("Resources").tag(editor->context().physicalDepotPath);
 
-        // store where the resource is aligned to
-        if (auto* container = editor->findParent<IBaseResourceContainerWindow>())
-            configBlock.write("ContainerTag", container->tag());
+            // store where the resource is aligned to
+            if (auto* container = editor->findParent<IBaseResourceContainerWindow>())
+                configBlock.write("ContainerTag", container->tag());
 
-        editor->configSave(configBlock);
+            editor->configSave(configBlock);
+        }
     }
 
     // store each container window

@@ -17,8 +17,6 @@
 #include "core/app/include/commandline.h"
 #include "core/net/include/messageConnection.h"
 #include "core/resource/include/fileLoader.h"
-#include "core/resource/include/loadingService.h"
-#include "core/resource_compiler/include/importCommandHelper.h"
 #include "core/resource_compiler/include/importInterface.h"
 #include "core/resource_compiler/include/importFileList.h"
 

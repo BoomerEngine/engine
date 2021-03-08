@@ -9,7 +9,7 @@
 #include "build.h"
 #include "fileSaver.h"
 #include "fileLoader.h"
-#include "loadingService.h"
+#include "loader.h"
 
 #include "core/object/include/object.h"
 #include "core/io/include/fileHandleMemory.h"
@@ -22,58 +22,55 @@ Buffer SaveObjectToBuffer(const IObject* object)
         return Buffer();
 
     FileSavingContext context;
-    context.rootObject.pushBack(AddRef(object));
-    context.protectedStream = false;
+    context.rootObjects.pushBack(object);
+    context.format = FileSaveFormat::ProtectedBinaryStream;
 
     auto writer = RefNew<MemoryWriterFileHandle>();
 
-    if (SaveFile(writer, context))
+    FileSavingResult result;
+    if (SaveFile(writer, context, result))
         return writer->extract();
 
     return Buffer();
 }
 
-ObjectPtr LoadObjectFromBuffer(const void* data, uint64_t size, bool loadImports/*=false*/, SpecificClassType<IObject> mutatedClass /*= nullptr*/)
+ObjectPtr LoadObjectFromBuffer(const void* data, uint64_t size, bool loadImports/*=false*/)
 {
-    ASSERT_EX(mutatedClass == nullptr, "Not used");
-
     FileLoadingContext context;
     context.loadImports = loadImports;
 
     auto reader = RefNew<MemoryAsyncReaderFileHandle>(data, size);
 
-    if (LoadFile(reader, context))
-        return context.root<IObject>();
+    FileLoadingResult result;
+    if (!LoadFile(reader, context, result))
+        return nullptr;
 
-    return nullptr;
+    return result.root<IObject>();
 }
 
-ObjectPtr CloneObjectUntyped(const IObject* object, const IObject* newParent /*= nullptr*/, bool loadImports /*= true*/, SpecificClassType<IObject> mutatedClass /*= nullptr*/)
+ObjectPtr CloneObjectUntyped(const IObject* object)
 {
-    FileSavingContext saveContext;
-    saveContext.rootObject.pushBack(AddRef(object));
-    saveContext.protectedStream = false;
+    // BIG TODO: implement cloning that does NOT use serialization
 
+    FileSavingContext saveContext;
+    saveContext.rootObjects.pushBack(object);
+    saveContext.format = FileSaveFormat::ProtectedBinaryStream;
+
+    FileSavingResult saveResult;
     auto writer = RefNew<MemoryWriterFileHandle>();
-    if (SaveFile(writer, saveContext))
+    if (SaveFile(writer, saveContext, saveResult))
     {
         auto reader = RefNew<MemoryAsyncReaderFileHandle>(writer->extract());
 
         FileLoadingContext loadContext;
-        loadContext.loadImports = loadImports;
-        loadContext.mutatedRootClass = mutatedClass;
+        loadContext.loadImports = true;
 
         if (auto srcResource = rtti_cast<IResource>(object))
             loadContext.resourceLoadPath = srcResource->loadPath();
 
-        if (LoadFile(reader, loadContext))
-        {
-            if (auto loaded = loadContext.root<IObject>())
-            {
-                loaded->parent(newParent);
-                return loaded;
-            }
-        }
+        FileLoadingResult result;
+        if (LoadFile(reader, loadContext, result))
+            return result.root<IObject>();
     }
 
     return nullptr;

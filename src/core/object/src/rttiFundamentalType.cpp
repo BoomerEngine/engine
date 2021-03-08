@@ -10,8 +10,8 @@
 #include "rttiType.h"
 #include "rttiTypeSystem.h"
 
-#include "streamOpcodeWriter.h"
-#include "streamOpcodeReader.h"
+#include "serializationWriter.h"
+#include "serializationReader.h"
 #include "core/xml/include/xmlWrappers.h"
 
 BEGIN_BOOMER_NAMESPACE()
@@ -55,12 +55,12 @@ public:
         *(T*)dest = *(const T*)src;
     }
 
-    virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override
+    virtual void writeBinary(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData) const override
     {
         file.writeTypedData(*(const T*)data);
     }
 
-    virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override
+    virtual void readBinary(TypeSerializationContext& typeContext, SerializationReader& file, void* data) const override
     {
         file.readTypedData(*(T*)data);
     }
@@ -163,7 +163,7 @@ public:
         return  true;
     }
 
-    virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final
+    virtual void writeBinary(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData) const override final
     {
         const auto& str = *(const StringBuf*)data;
 
@@ -174,7 +174,7 @@ public:
             file.writeData(str.c_str(), length);
     }
 
-    virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final
+    virtual void readBinary(TypeSerializationContext& typeContext, SerializationReader& file, void* data) const override final
     {
         auto& str = *(StringBuf*)data;
 
@@ -245,13 +245,13 @@ public:
         return true;
     }
 
-    virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final
+    virtual void writeBinary(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData) const override final
     {
         const auto& str = *(const StringID*)data;
         file.writeStringID(str);;
     }
 
-    virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final
+    virtual void readBinary(TypeSerializationContext& typeContext, SerializationReader& file, void* data) const override final
     {
         const auto str = file.readStringID();
         *(StringID*)data = str;

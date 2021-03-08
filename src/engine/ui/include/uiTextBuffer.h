@@ -175,7 +175,7 @@ public:
     void insertCharacters(int pos, const StringBuf& txt);
 
     /// move cursor to given position
-    void moveCursor(CursorNavigation pos, bool extendSelection);
+    bool moveCursor(CursorNavigation pos, bool extendSelection);
 
     ///--
 

@@ -9,17 +9,12 @@
 #include "build.h"
 
 #include "commandImport.h"
-#include "importQueue.h"
+
 #include "importer.h"
-#include "importSaveThread.h"
-#include "importSourceAssetRepository.h"
-#include "importFileService.h"
-#include "importFileList.h"
-#include "importInterface.h"
 
 #include "core/app/include/command.h"
 #include "core/app/include/commandline.h"
-#include "core/resource/include/loadingService.h"
+#include "core/resource/include/loader.h"
 #include "core/resource/include/loader.h"
 #include "core/resource/include/fileLoader.h"
 #include "core/resource/include/fileSaver.h"
@@ -28,6 +23,7 @@
 #include "core/xml/include/xmlUtils.h"
 #include "core/net/include/messageConnection.h"
 #include "core/resource/include/depot.h"
+#include "core/containers/include/path.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -39,109 +35,79 @@ RTTI_END_TYPE();
 
 //--
 
-class ImportQueueProgressReporter : public IImportQueueCallbacks
+class ImportQueueProgressReporter : public IImportProgressTracker
 {
 public:
-    ImportQueueProgressReporter()
+    ImportQueueProgressReporter(IProgressTracker* progress)
+        : m_progress(progress)
     {}
 
-    ~ImportQueueProgressReporter()
-    {}
-
-    //--
-
-protected:
-    virtual void queueJobAdded(const ImportJobInfo& info) override
+    virtual void jobAdded(const ImportJobInfo& info) override
     {
     }
 
-    virtual void queueJobStarted(StringView depotPath) override
+    virtual void jobStarted(StringView depotPath) override
     {
     }
 
-    virtual void queueJobFinished(StringView depotPath, ImportStatus status, double timeTaken) override
+    virtual void jobFinished(StringView depotPath, ImportStatus status, double timeTaken) override
     {
     }
 
-    virtual void queueJobProgressUpdate(StringView depotPath, uint64_t currentCount, uint64_t totalCount, StringView text) override
+    virtual void jobProgressUpdate(StringView depotPath, uint64_t currentCount, uint64_t totalCount, StringView text) override
     {
     }
-};
 
-//--
-
-// depot based resource loader
-class LocalDepotBasedLoader : public IImportDepotLoader
-{
-public:
-    LocalDepotBasedLoader()
+    virtual bool checkCancelation() const override
     {
-        m_depot = GetService<DepotService>();
+        return m_progress ? m_progress->checkCancelation() : false;
     }
 
-    virtual ResourceMetadataPtr loadExistingMetadata(StringView depotPath) const override final
+    virtual void reportProgress(uint64_t currentCount, uint64_t totalCount, StringView text) override
     {
-        if (const auto fileReader = m_depot->createFileAsyncReader(depotPath))
-        {
-            FileLoadingContext context;
-            return LoadFileMetadata(fileReader, context);
-        }
-
-        return nullptr;
-    }
-
-    virtual ResourcePtr loadExistingResource(StringView depotPath) const override final
-    {
-        if (const auto fileReader = m_depot->createFileAsyncReader(depotPath))
-        {
-            FileLoadingContext context;
-            if (LoadFile(fileReader, context))
-            {
-                if (const auto ret = context.root<IResource>())
-                    return ret;
-            }
-        }
-
-        return nullptr;
-    }
-
-    virtual bool depotFileExists(StringView depotPath) const override final
-    {
-        TimeStamp timestamp;
-        return m_depot->queryFileTimestamp(depotPath, timestamp);
-    }
-
-    virtual bool depotFindFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath, ResourceID& outFoundResourceID) const override final
-    {
-        if (m_depot->findFile(depotPath, fileName, maxDepth, outFoundFileDepotPath))
-            if (m_depot->resolveIDForPath(outFoundFileDepotPath, outFoundResourceID))
-                return true;
-
-        return false;
+        if (m_progress)
+            m_progress->reportProgress(currentCount, totalCount, text);
     }
 
 private:
-    DepotService* m_depot = nullptr;
+    IProgressTracker* m_progress = nullptr;
 };
 
 //--
 
-static bool AddWorkToQueue(const app::CommandLine& commandline, ImportQueue& outQueue)
+static bool CollectImportJobs(const app::CommandLine& commandline, Array<ImportJobInfo>& outJobs)
 {
-    bool hasWork = false;
+    bool force = commandline.hasParam("force");
 
     const auto depotPath = commandline.singleValue("depotPath");
     const auto assetPath = commandline.singleValue("assetPath");
     if (depotPath && assetPath)
     {
-        ImportJobInfo info;
+        auto& info = outJobs.emplaceBack();
         info.assetFilePath = assetPath;
-        info.depotFilePath = depotPath;
-        outQueue.scheduleJob(info);
-        hasWork = true;
+        info.depotFilePath = ReplaceExtension(depotPath, IResource::FILE_EXTENSION);
+
+        const auto resourceClassText = commandline.singleValue("class");
+        if (!resourceClassText)
+        {
+            TRACE_ERROR("Resource class should be specified via '-class=' param");
+            return false;
+        }
+
+        info.resourceClass = RTTI::GetInstance().findClass(StringID(resourceClassText)).cast<IResource>();
+        if (!info.resourceClass)
+        {
+            TRACE_ERROR("Unknown resource class '{}'", resourceClassText);
+            return false;
+        }
+
+        info.force = force;
+
+        if (commandline.hasParam("autoId"))
+            info.id = ResourceID::Create();
     }
 
-    const auto importListPath = commandline.singleValue("assetListPath");
+    /*const auto importListPath = commandline.singleValue("assetListPath");
     if (!importListPath.empty())
     {
         if (const auto assetListDoc = xml::LoadDocument(xml::ILoadingReporter::GetDefault(), importListPath))
@@ -153,8 +119,11 @@ static bool AddWorkToQueue(const app::CommandLine& commandline, ImportQueue& out
                 {
                     ImportJobInfo info;
                     info.assetFilePath = file.assetPath;
-                    info.depotFilePath = file.depotPath;
+                    info.depotFilePath = ReplaceExtension(depotPath, ResourceMetadata::FILE_EXTENSION);
+                    info.resourceClass = file.resourceClass;
+                    info.id = file.id;
                     info.userConfig = CloneObject(file.userConfiguration);
+                    info.force = force;
                     outQueue.scheduleJob(info);
                     hasWork = true;
                 }
@@ -168,9 +137,9 @@ static bool AddWorkToQueue(const app::CommandLine& commandline, ImportQueue& out
         {
             TRACE_ERROR("Failed to load import list from XML '{}'", importListPath);
         }
-    }
+    }*/
 
-    return hasWork;
+    return true;
 }
 
 //--
@@ -187,55 +156,14 @@ CommandImport::~CommandImport()
 
 bool CommandImport::run(IProgressTracker* progress, const app::CommandLine& commandline)
 {
-    // find the source asset service - we need it to have access to source assets
-    auto assetSource = GetService<ImportFileService>();
-    if (!assetSource)
-    {
-        TRACE_ERROR("Source asset service not started, importing not possible");
+    // get the jobs
+    Array<ImportJobInfo> jobs;
+    if (!CollectImportJobs(commandline, jobs))
         return false;
-    }
 
-    // get the loading service and get depot
-    auto loadingService = GetService<LoadingService>();
-    if (!loadingService || !loadingService->loader())
-    {
-        TRACE_ERROR("Resource loading service not started properly (incorrect depot mapping?), cooking won't be possible.");
-        return false;
-    }
-
-    // protected region
-    // TODO: add "__try" "__expect" ?
-    {
-        // create the saving thread
-        ImportSaverThread saver;
-
-        // create loader
-        LocalDepotBasedLoader loader;
-
-        // create asset source cache
-        SourceAssetRepository repository(assetSource);
-
-        // create the import queue
-        ImportQueueProgressReporter reporter;
-        ImportQueue queue(&repository, &loader, &saver, &reporter);
-
-        // add work to queue
-        if (AddWorkToQueue(commandline, queue))
-        {
-            // process all the jobs
-            while (queue.processNextJob(progress))
-            {
-                // placeholder for optional work we may want to do BETWEEN JOBS
-            }
-        }
-        else
-        {
-            TRACE_INFO("No work specified for ")
-        }
-
-        // wait for saver to finish saving
-        saver.waitUntilDone();
-    }
+    // process the jobs
+    ImportQueueProgressReporter queueProgress(progress);
+    ImportResources(queueProgress, jobs);
 
     // we are done
     return true;

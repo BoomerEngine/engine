@@ -77,8 +77,8 @@ public:
     virtual bool compare(const void* data1, const void* data2) const override final;
     virtual void copy(void* dest, const void* src) const override final;
 
-    virtual void writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const override final;
-    virtual void readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const override final;
+    virtual void writeBinary(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData) const override final;
+    virtual void readBinary(TypeSerializationContext& typeContext, SerializationReader& file, void* data) const override final;
 
     virtual void writeXML(TypeSerializationContext& typeContext, xml::Node& node, const void* data, const void* defaultData) const override final;
     virtual void readXML(TypeSerializationContext& typeContext, const xml::Node& node, void* data) const override final;

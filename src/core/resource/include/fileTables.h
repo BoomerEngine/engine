@@ -24,6 +24,7 @@ public:
 
     static const uint16_t ImportFlag_Load = 1;
     static const uint16_t FileFlag_ProtectedLayout = 1;
+    static const uint16_t FileFlag_ExtractedBuffers = 2;
 
     enum class ChunkType : uint8_t
     {
@@ -62,7 +63,7 @@ public:
         Chunk chunks[(uint8_t)ChunkType::MAX]; // chunks
     };
 
-#pragma pack(push, 2)
+#pragma pack(push, 1)
     struct Name
     {
         uint32_t stringIndex = 0;
@@ -137,20 +138,21 @@ public:
 
     struct Buffer
     {
-        uint16_t name = 0;
-        uint16_t flags = 0;
-        uint64_t dataOffset = 0;
-        uint64_t dataSizeOnDisk = 0;
-        uint64_t dataSizeInMemory = 0;
         uint64_t crc = 0;
-    };                
+        uint64_t dataOffset = 0; // zero if extracted away
+        uint64_t uncompressedSize = 0;
+        uint64_t compressedSize : 56;
+        uint64_t compressionType : 8;
+    };
+
 #pragma pack(pop)
 
     static_assert(sizeof(Name) == 4, "Structure is read directly into memory. Size cannot be changed without an adapter.");
-    static_assert(sizeof(Type) == 4, "Structure is read directly into memory. Size cannot be changed without an adapter.");                
+    static_assert(sizeof(Type) == 4, "Structure is read directly into memory. Size cannot be changed without an adapter.");
     static_assert(sizeof(Import) == 20, "Structure is read directly into memory. Size cannot be changed without an adapter.");
     static_assert(sizeof(Export) == 22, "Structure is read directly into memory. Size cannot be changed without an adapter.");
     static_assert(sizeof(Property) == 4, "Structure is read directly into memory. Size cannot be changed without an adapter.");
+    static_assert(sizeof(Buffer) == 32, "Structure is read directly into memory. Size cannot be changed without an adapter.");
 
     //--
 
@@ -193,7 +195,7 @@ public:
     //--
             
     // validate the header only
-    static bool ValidateHeader(const Header& header);
+    static bool ValidateHeader(const Header& header, uint32_t sizeOfData);
 
     // calculate CRC for the header
     static CRCValue CalcHeaderCRC(const Header& header);

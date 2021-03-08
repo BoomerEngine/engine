@@ -34,16 +34,33 @@ public:
     DepotStructure(StringView depotRootPath, bool observerDynamicChanges=false);
     ~DepotStructure();
 
+    //--
+
     /// perform initial scan
     void scan(IDepotProblemReporter& err);
 
-    /// find load path (relative to the root) for given ID
-    bool resolveID(const ResourceID& id, StringBuf& outRelativePath) const;
+    //--
 
-    /// process any pending changes
+    /// find load path (relative to the root) for given ID
+    bool resolvePathForID(const ResourceID& id, StringBuf& outRelativePath) const;
+
+    /// collect resource IDs at given path
+    bool resolveIDForPath(StringView path, ResourceID& outId) const;
+
+    //--
+
+    // list directories at given path
+    void enumDirectories(StringView path, const std::function<void(StringView)>& func) const;
+
+    // list directories at given path
+    void enumFiles(StringView path, const std::function<void(StringView)>& func) const;
+
+    //--
 
 private:
     StringBuf m_rootPath;
+
+    Mutex m_globalLock;
 
     RefPtr<IDirectoryWatcher> m_watcher;
 
@@ -97,10 +114,15 @@ private:
         void link(DirectoryInfo* dir);
         void link(FileInfo* file);
 
+        const FileInfo* findFile(StringView name) const;
+        const DirectoryInfo* findDir(StringView name) const;
+
         void unlink();
     };
 
     StructurePool<DirectoryInfo> m_dirPool;
+
+    DirectoryInfo* m_rootDir = nullptr;
 
     SpinLock m_filePoolLock;
     StructurePool<FileInfo> m_filePool;
@@ -115,6 +137,14 @@ private:
     void scanFileResources(FileInfo* file, IDepotProblemReporter& err);
     bool scanFileResourcesInternal(FileInfo* file, StringView path);
 
+    const DirectoryInfo* findDir_NoLock(StringView path) const;
+    const FileInfo* findFile_NoLock(StringView path) const;
+
+    //--
+
+    static const uint32_t NUM_ID_BUCKETS = 65536;
+    ResourceInfo* m_resourceHashBuckets[NUM_ID_BUCKETS];
+
     //--
 
     struct StringHashEntry
@@ -127,8 +157,8 @@ private:
     LinearAllocator m_stringPool;
     StructurePool<StringHashEntry> m_stringHashPool;
 
-    static const uint32_t NUM_BUCKETS = 65536;
-    StringHashEntry* m_stringHashBuckets[NUM_BUCKETS];
+    static const uint32_t NUM_STRING_BUCKETS = 65536;
+    StringHashEntry* m_stringHashBuckets[NUM_STRING_BUCKETS];
 
     StringView mapString_NoLock(StringView txt);
 

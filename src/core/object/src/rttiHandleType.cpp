@@ -11,8 +11,8 @@
 #include "rttiClassType.h"
 #include "rttiDataView.h"
 
-#include "streamOpcodeWriter.h"
-#include "streamOpcodeReader.h"
+#include "serializationWriter.h"
+#include "serializationReader.h"
 
 #include "core/containers/include/inplaceArray.h"
 #include "dataView.h"
@@ -67,14 +67,14 @@ void IHandleType::printToText(IFormatStream& f, const void* data, uint32_t flags
     return IType::printToText(f, data, flags);
 }
         
-void IHandleType::writeBinary(TypeSerializationContext& typeContext, stream::OpcodeWriter& file, const void* data, const void* defaultData) const
+void IHandleType::writeBinary(TypeSerializationContext& typeContext, SerializationWriter& file, const void* data, const void* defaultData) const
 {
     ObjectPtr handle;
     readPointedObject(data, handle);
     file.writePointer(handle);
 }
 
-void IHandleType::readBinary(TypeSerializationContext& typeContext, stream::OpcodeReader& file, void* data) const
+void IHandleType::readBinary(TypeSerializationContext& typeContext, SerializationReader& file, void* data) const
 {
     ObjectPtr ptr;
     ptr = AddRef(file.readPointer());

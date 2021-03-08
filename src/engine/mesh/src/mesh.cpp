@@ -24,12 +24,12 @@ RTTI_BEGIN_TYPE_CLASS(MeshChunk);
     RTTI_PROPERTY(detailMask);
     RTTI_PROPERTY(indexCount);
     RTTI_PROPERTY(vertexCount);
-    RTTI_PROPERTY(unpackedVertexSize);
-    RTTI_PROPERTY(unpackedIndexSize);
     RTTI_PROPERTY(quantizationOffset);
     RTTI_PROPERTY(quantizationScale);
     RTTI_PROPERTY(packedVertexData);
     RTTI_PROPERTY(packedIndexData);
+    RTTI_PROPERTY(unpackedVertexSize);
+    RTTI_PROPERTY(unpackedIndexSize);
 RTTI_END_TYPE();
 
 ///---
@@ -51,7 +51,6 @@ RTTI_END_TYPE();
 ///---
 
 RTTI_BEGIN_TYPE_CLASS(Mesh);
-    RTTI_METADATA(ResourceExtensionMetadata).extension("v4mesh");
     RTTI_METADATA(ResourceDescriptionMetadata).description("Mesh");
     RTTI_METADATA(ResourceDataVersionMetadata).version(11);
     RTTI_METADATA(ResourceTagColorMetadata).color(0xed, 0x6b, 0x86);

@@ -15,7 +15,7 @@
 #include "core/containers/include/hashSet.h"
 #include "core/containers/include/stringBuilder.h"
 #include "core/resource/include/resource.h"
-#include "core/resource_compiler/include/importSourceAsset.h"
+#include "core/resource_compiler/include/sourceAsset.h"
 #include "core/resource/include/tags.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)

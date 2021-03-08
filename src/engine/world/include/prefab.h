@@ -67,7 +67,7 @@ public:
 
     void setup(NodeTemplate* root);
 
-    EntityPtr compile(StringID appearance, const AbsoluteTransform& placement, Array<EntityPtr>& outAllEntities) const;
+    EntityPtr compile(StringID appearance, const AbsoluteTransform& placement, Array<EntityPtr>& outAllEntities, bool loadImports) const;
 
 private:
     NodeTemplatePtr m_root;

@@ -36,28 +36,6 @@ private:
     uint32_t m_version;
 };
 
-//-----
-
-// Resource extension (class metadata)
-class CORE_RESOURCE_API ResourceExtensionMetadata : public IMetadata
-{
-    RTTI_DECLARE_VIRTUAL_CLASS(ResourceExtensionMetadata, IMetadata);
-
-public:
-    ResourceExtensionMetadata();
-
-    INLINE ResourceExtensionMetadata& extension(const char* ext)
-    {
-        m_ext = ext;
-        return *this;
-    }
-
-    INLINE const char* extension() const { return m_ext; }
-
-private:
-    const char* m_ext;
-};
-
 //------
 
 // Resource description (class metadata)

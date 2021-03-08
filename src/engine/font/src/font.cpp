@@ -40,7 +40,6 @@ uint32_t FontStyleParams::calcHash() const
 
 RTTI_BEGIN_TYPE_CLASS(Font);
     RTTI_PROPERTY(m_packedData);
-    RTTI_METADATA(ResourceExtensionMetadata).extension("v4font");
     RTTI_METADATA(ResourceDescriptionMetadata).description("Vector Font");
 RTTI_END_TYPE();
 

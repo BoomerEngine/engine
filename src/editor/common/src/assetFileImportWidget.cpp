@@ -9,8 +9,7 @@
 #include "build.h"
 #include "editorService.h"
 
-#include "managedFileNativeResource.h"
-#include "managedFileAssetChecks.h"
+#include "assetFileChecks.h"
 #include "assetFileImportWidget.h"
 
 #include "engine/ui/include/uiTextLabel.h"
@@ -95,20 +94,20 @@ AssetFileImportWidget::~AssetFileImportWidget()
     }
 }
 
-void AssetFileImportWidget::bindFile(ManagedFileNativeResource* file, const ResourceConfigurationPtr& config)
+void AssetFileImportWidget::bindFile(StringView depotPath, const ResourceConfigurationPtr& config)
 {
     m_config = config;
     m_events.clear();
 
-    if (m_file != file)
+    if (m_depotPath != depotPath)
     {
-        m_file = file;
+        m_depotPath = StringBuf(depotPath);
 
         m_buttonReimport->enable(false);
         m_buttonShowFileList->enable(false);
         m_buttonRecheck->enable(false);
 
-        if (m_file)
+        if (m_depotPath)
         {
             cmdRecheckeck();
         }
@@ -118,10 +117,9 @@ void AssetFileImportWidget::bindFile(ManagedFileNativeResource* file, const Reso
             m_statusText->text("[img:question_red] [b]Unknown");
         }
 
-        m_events.bind(file->eventKey(), EVENT_MANAGED_FILE_RELOADED) = [this]() {
+        /*m_events.bind(file->eventKey(), EVENT_MANAGED_FILE_RELOADED) = [this]() {
             cmdRecheckeck();
-        };
-
+        };*/
     }
 }
 
@@ -138,19 +136,17 @@ void AssetFileImportWidget::cmdRecheckeck()
         m_checker.reset();
     }
 
-    if (m_file)
+    if (m_depotPath)
     {
-        m_fileNameText->text(m_file->depotPath());
+        m_fileNameText->text(m_depotPath);
         m_statusText->text("[img:hourglass] Checking...");
 
-        m_checker = RefNew<ManagedFileImportStatusCheck>(m_file, this);
+        m_checker = RefNew<AssetImportStatusCheck>(m_depotPath, this);
     }
 }
 
 void AssetFileImportWidget::cmdReimport()
 {
-    DEBUG_CHECK_RETURN_EX(m_file, "No file to reimport");
-
     if (!m_checker || m_checker->status() == ImportStatus::Checking)
         return;
 

@@ -16,7 +16,7 @@
 #include "engine/world/include/prefab.h"
 #include "engine/world/include/rawScene.h"
 #include "engine/world/include/rawLayer.h"
-#include "editor/common/include/managedFileFormat.h"
+#include "editor/common/include/assetFormat.h"
 #include "editor/common/include/managedFile.h"
 #include "editor/common/include/managedFileNativeResource.h"
 #include "editor/common/include/managedItem.h"

@@ -42,7 +42,7 @@
 #include "editor/common/include/editorService.h"
 #include "editor/common/include/assetBrowser.h"
 #include "editor/common/include/managedFile.h"
-#include "editor/common/include/managedFileFormat.h"
+#include "editor/common/include/assetFormat.h"
 #include "editor/common/include/managedDepot.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)

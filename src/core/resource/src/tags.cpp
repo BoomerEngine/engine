@@ -20,15 +20,6 @@ ResourceDataVersionMetadata::ResourceDataVersionMetadata()
     : m_version(0)
 {}
 
-//----
-
-RTTI_BEGIN_TYPE_CLASS(ResourceExtensionMetadata);
-RTTI_END_TYPE();
-
-ResourceExtensionMetadata::ResourceExtensionMetadata()
-    : m_ext(nullptr)
-{}
-
 //---
 
 RTTI_BEGIN_TYPE_CLASS(ResourceDescriptionMetadata);

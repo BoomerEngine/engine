@@ -62,10 +62,7 @@ private:
 
     bool m_captureLogs = true;
     bool m_discardCookedLogs = true;
-
-    UniquePtr<CookerSaveThread> m_saveThread;
-    ResourceLoader* m_loader = nullptr;
-
+    
     //--
 };
 

@@ -25,6 +25,13 @@ IDocument::~IDocument()
 
 //----
 
+const char* IDocument::HEADER_TEXT()
+{
+    return "<?xml version=\"1.0\" standalone=\"yes\"?>\n";
+}
+
+//----
+
 DocumentPtr IDocument::createWritableCopy(NodeID id)
 {
     if (!id)

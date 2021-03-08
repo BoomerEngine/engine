@@ -319,6 +319,19 @@ Buffer Buffer::CreateExternal(PoolTag pool, uint64_t size, void* externalData, T
     return Buffer(BufferStorage::CreateExternal(pool, size, freeFunc, externalData));
 }
 
+static void LocalMemoryFreeFunc(PoolTag pool, void* memory, uint64_t size)
+{
+    FreeBlock(memory);
+}
+
+Buffer Buffer::CreateFromAlreadyAllocatedMemory(PoolTag pool, uint64_t size, void* data)
+{
+    if (!size || !data)
+        return Buffer();
+
+    return Buffer(BufferStorage::CreateExternal(pool, size, &LocalMemoryFreeFunc, data));
+}
+
 Buffer Buffer::CreateInSystemMemory(PoolTag pool, uint64_t size, const void* dataToCopy /*= nullptr*/, uint64_t dataSizeToCopy /*= INDEX_MAX64*/)
 {
     if (size == 0)

@@ -25,13 +25,13 @@ namespace prv
         //----
 
         // open physical file for reading
-        virtual ReadFileHandlePtr openForReading(StringView absoluteFilePath) = 0;
+        virtual ReadFileHandlePtr openForReading(StringView absoluteFilePath, TimeStamp* outTimestamp) = 0;
 
         // open physical file for writing
         virtual WriteFileHandlePtr openForWriting(StringView absoluteFilePath, FileWriteMode mode = FileWriteMode::StagedWrite) = 0;
 
         // open physical file for async reading
-        virtual AsyncFileHandlePtr openForAsyncReading(StringView absoluteFilePath) = 0;
+        virtual AsyncFileHandlePtr openForAsyncReading(StringView absoluteFilePath, TimeStamp* outTimestamp) = 0;
 
         // load file content into a buffer
         virtual Buffer loadIntoMemoryForReading(StringView absoluteFilePath) = 0;

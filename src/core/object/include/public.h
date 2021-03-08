@@ -40,6 +40,9 @@ class IObject;
 typedef RefPtr<IObject> ObjectPtr;
 typedef RefWeakPtr<IObject> ObjectWeakPtr;
 
+/// resource - file based object
+class IResource;
+
 /// observer of object's state
 class IObjectObserver;
 
@@ -70,50 +73,12 @@ typedef RefPtr<IGlobalEventListener> GlobalEventListenerPtr;
 class Selectable;
 struct EncodedSelectable;
 
-END_BOOMER_NAMESPACE()
+// async buffer
+class IAsyncFileBufferLoader;
+typedef RefPtr<IAsyncFileBufferLoader> AsyncFileBufferLoaderPtr;
 
 //--
 
-BEGIN_BOOMER_NAMESPACE_EX(stream)
-
-class OpcodeStream;
-class OpcodeIterator;
-class OpcodeReader;
-class OpcodeWriter;
-
-class LoadingResult;
-struct LoadingDependency;
-
-typedef uint16_t MappedNameIndex;
-typedef uint16_t MappedTypeIndex;
-typedef uint16_t MappedPropertyIndex;
-typedef uint16_t MappedPathIndex;
-typedef uint32_t MappedObjectIndex; // yup, it happened 64K+ objects in one files
-typedef uint16_t MappedBufferIndex;
-      
-
-class CORE_OBJECT_API IDataBufferLatentLoader : public IReferencable
-{
-public:
-    virtual ~IDataBufferLatentLoader() {};
-    virtual uint32_t size() const = 0;
-    virtual uint64_t crc() const = 0;
-    virtual Buffer loadAsync() const = 0;
-    virtual bool resident() const = 0;
-};
-
-typedef RefPtr< IDataBufferLatentLoader> DataBufferLatentLoaderPtr;
-
-END_BOOMER_NAMESPACE_EX(stream)
-
-BEGIN_BOOMER_NAMESPACE()
-
-class IResource;
-class ResourceLoader;
-
-END_BOOMER_NAMESPACE()
-
-BEGIN_BOOMER_NAMESPACE()
 
 /// Meta type (type of type)
 enum class MetaType
@@ -149,6 +114,11 @@ class IType;
 
 //--
 
+class SerializationReader;
+class SerializationWriter;
+
+//--
+
 struct TypeSerializationContext;
 
 //--
@@ -156,10 +126,6 @@ struct TypeSerializationContext;
 struct DataViewInfo;
 struct DataViewMemberInfo;
 struct DataViewOptionInfo;
-
-END_BOOMER_NAMESPACE()
-
-BEGIN_BOOMER_NAMESPACE()
 
 enum class DataViewResultCode : uint8_t
 {
