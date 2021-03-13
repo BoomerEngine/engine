@@ -45,7 +45,7 @@ public:
 	//--
 
 	// start device thread, initializes API
-	bool startThread(const app::CommandLine& cmdLine, DeviceCaps& outCaps);
+	bool startThread(const CommandLine& cmdLine, DeviceCaps& outCaps);
 
 	// finish device thread, closes API
 	void stopThread();
@@ -165,13 +165,13 @@ protected:
 
 	//--
 
-	virtual IBaseObjectCache* createOptimalObjectCache(const app::CommandLine& cmdLine) = 0;
+	virtual IBaseObjectCache* createOptimalObjectCache(const CommandLine& cmdLine) = 0;
 
-	virtual IBaseBackgroundQueue* createOptimalBackgroundQueue(const app::CommandLine& cmdLine) = 0;
+	virtual IBaseBackgroundQueue* createOptimalBackgroundQueue(const CommandLine& cmdLine) = 0;
 
-	virtual ObjectRegistry* createOptimalObjectRegistry(const app::CommandLine& cmdLine);
+	virtual ObjectRegistry* createOptimalObjectRegistry(const CommandLine& cmdLine);
 
-	virtual bool threadStartup(const app::CommandLine& cmdLine, DeviceCaps& outCaps); // called on thread to initialize API
+	virtual bool threadStartup(const CommandLine& cmdLine, DeviceCaps& outCaps); // called on thread to initialize API
 	virtual void threadFinish(); // called on thread to initialize API
 
 	void threadFunc();

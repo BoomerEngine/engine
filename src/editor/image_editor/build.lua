@@ -19,6 +19,7 @@ Dependency("core_net")
 Dependency("core_input")
 
 Dependency("editor_common")
+Dependency("editor_assets")
 Dependency("editor_viewport")
 
 Dependency("engine_ui")

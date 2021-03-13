@@ -78,6 +78,11 @@ public:
 
     //--
 
+    // make sure this panel is visible (switch notebook tab, activate the window etc)
+    void ensureVisible(bool activateWindow=true);
+
+    //--
+
 private:
     StringBuf m_id;
 

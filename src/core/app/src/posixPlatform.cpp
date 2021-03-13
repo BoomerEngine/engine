@@ -45,7 +45,7 @@ namespace base
                     log::IErrorHandler::BindListener(nullptr);
             }
 
-            ExitCode Platform::start(const app::CommandLine& cmdline)
+            ExitCode Platform::start(const CommandLine& cmdline)
             {
                 // register output handlers
                 m_hasLog = !cmdline.hasParam("silent") && !cmdline.hasParam("nolog");
@@ -75,7 +75,7 @@ namespace base
                 return protectedStart(cmdline);             
             }
 
-            ExitCode Platform::protectedStart(const app::CommandLine& cmdline)
+            ExitCode Platform::protectedStart(const CommandLine& cmdline)
             {
                 installSignalHandlers();
 

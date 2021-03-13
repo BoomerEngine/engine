@@ -16,7 +16,7 @@
 #include "winPlatform.h"
 #include "winOutput.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(platform)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace win
 {
@@ -36,7 +36,7 @@ namespace win
 			logging::IErrorHandler::BindListener(nullptr);
 	}
 
-    bool Platform::handleStart(const app::CommandLine& cmdline, app::IApplication* app)
+    bool Platform::handleStart(const CommandLine& cmdline, IApplication* app)
     {
         // register output handlers
         m_hasLog = !cmdline.hasParam("silent") && !cmdline.hasParam("nolog");
@@ -60,7 +60,7 @@ namespace win
         return protectedStart(cmdline, app);
     }
 
-    bool Platform::protectedStart(const app::CommandLine& cmdline, app::IApplication* app)
+    bool Platform::protectedStart(const CommandLine& cmdline, IApplication* app)
     {
         // start
         if (IsDebuggerPresent())
@@ -124,4 +124,4 @@ bool Platform::HasDebuggerAttached()
     return ::IsDebuggerPresent();
 }
 
-END_BOOMER_NAMESPACE_EX(platform)
+END_BOOMER_NAMESPACE()

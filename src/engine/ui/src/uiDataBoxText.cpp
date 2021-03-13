@@ -89,8 +89,10 @@ public:
     virtual DataViewResult readText(StringBuf& outText) override
     {
         StringID data;
-        if (const auto ret = HasError(readValue(data)))
-            return ret.result;
+
+        auto ret = readValue(data);
+        if (!ret.valid())
+            return ret;
 
         outText = data.c_str();
         return DataViewResultCode::OK;

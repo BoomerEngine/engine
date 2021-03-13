@@ -42,9 +42,9 @@ public:
 struct MaterialDataLayoutEntry;
 
 // service holding and managing all material parameters and templates
-class ENGINE_MATERIAL_API MaterialService : public app::ILocalService
+class ENGINE_MATERIAL_API MaterialService : public IService
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MaterialService, app::ILocalService);
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialService, IService);
 
 public:
     MaterialService();
@@ -86,7 +86,7 @@ public:
 	//--
 
 private:
-    virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
+    virtual bool onInitializeService(const CommandLine& cmdLine) override final;
     virtual void onShutdownService() override final;
     virtual void onSyncUpdate() override final;
 

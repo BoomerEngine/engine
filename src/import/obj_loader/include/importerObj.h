@@ -45,8 +45,7 @@ public:
     bool allowThreads = true;
 
     bool flipUV = true;
-
-    virtual void computeConfigurationKey(CRC64& crc) const override;
+    Vector2 uvScale = Vector2(1, 1);
 };
 
 //--

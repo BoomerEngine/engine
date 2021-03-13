@@ -72,10 +72,10 @@ public:
     ///--
 
     /// save value to storage entry
-    static void SaveToEntry(Type dataType, const void* data, const void* defaultData, config::Entry& outEntry);
+    static void SaveToEntry(Type dataType, const void* data, const void* defaultData, ConfigEntry& outEntry);
 
     /// load value from storage entry
-    static bool LoadFromEntry(Type dataType, void* data, const void* defaultData, const config::Entry& entry);
+    static bool LoadFromEntry(Type dataType, void* data, const void* defaultData, const ConfigEntry& entry);
 
     ///--
 

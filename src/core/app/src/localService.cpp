@@ -10,7 +10,7 @@
 #include "application.h"
 #include "localService.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(app)
+BEGIN_BOOMER_NAMESPACE()
 
 ///---
 
@@ -38,15 +38,15 @@ TickAfterMetadata::TickAfterMetadata()
 
 ///---
 
-RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ILocalService);
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IService);
 RTTI_END_TYPE();
 
-ILocalService::ILocalService()
+IService::IService()
 {}
 
-ILocalService::~ILocalService()
+IService::~IService()
 {}
 
 ///---
 
-END_BOOMER_NAMESPACE_EX(app)
+END_BOOMER_NAMESPACE()

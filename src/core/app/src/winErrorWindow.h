@@ -13,7 +13,7 @@
 
 #include "core/containers/include/stringBuilder.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(platform)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace win
 {
@@ -54,4 +54,4 @@ namespace win
 
 } // win
 
-END_BOOMER_NAMESPACE_EX(platform)
+END_BOOMER_NAMESPACE()

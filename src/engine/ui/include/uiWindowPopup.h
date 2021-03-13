@@ -68,9 +68,7 @@ protected:
 
     virtual bool queryResizableState() const override;
     virtual void queryInitialPlacementSetup(WindowInitialPlacementSetup& outSetup) const override;
-    virtual void handleExternalActivation(bool isActive) override;
-    virtual bool runAction(StringID name, IElement* source) override;
-    virtual ActionStatusFlags checkAction(StringID name) const override;
+    virtual void handleExternalActivation(bool isActive) override;    
 };
 
 //--

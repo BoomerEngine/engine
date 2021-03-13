@@ -90,6 +90,13 @@ bool FileTables::validate(uint64_t memorySize) const
         }
     }
 
+    // clear imports
+    if (headerData->version < VER_NEW_RESOURCE_ID)
+    {
+        auto& nonConstChunk = const_cast<Chunk&>(header()->chunks[(int)ChunkType::Imports]);
+        nonConstChunk.count = 0;
+    }
+
     // check all name entries
     {
         const auto count = chunkCount(ChunkType::Names);

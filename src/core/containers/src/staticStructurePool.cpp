@@ -53,7 +53,7 @@ void StaticStructurePoolBase::resize(uint32_t capacity)
 #endif
 
         m_elementBitMap = (uint64_t*)ResizeBlock(m_pool, m_elementBitMap, alignedCapacity / 8, 8, "StructurePool");
-        memset(m_elementBitMap + (m_maxAllocated / 8), 0, (alignedCapacity - m_maxAllocated) / 8);
+        memset((char*)m_elementBitMap + (m_maxAllocated / 8), 0, (alignedCapacity - m_maxAllocated) / 8);
         m_elementBitMapEnd = m_elementBitMap + (alignedCapacity / 64);
 
         m_maxAllocated = alignedCapacity;

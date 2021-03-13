@@ -134,7 +134,7 @@ bool DockLayoutNode::activatePanel(DockPanel* panel)
     if (m_notebook->tabs().contains(panel))
     {
         m_notebook->tab(panel);
-        return true;            
+        return true;
     }
 
     if (m_topNode && m_topNode->activatePanel(panel))
@@ -149,37 +149,46 @@ bool DockLayoutNode::activatePanel(DockPanel* panel)
     return false;
 }
 
-bool DockLayoutNode::iteratePanels(const std::function<bool(DockPanel*)>& enumFunc, DockPanelIterationMode mode) const
+void DockLayoutNode::iteratePanels(const std::function<void(DockPanel*)>& enumFunc, DockPanelIterationMode mode) const
+{
+    iteratePanelsEx([&enumFunc](DockPanel* panel)
+        {
+            enumFunc(panel);
+            return false;
+        }, mode);
+}
+
+bool DockLayoutNode::iteratePanelsEx(const std::function<bool(DockPanel*)>& enumFunc, DockPanelIterationMode mode) const
 {
     if (mode == DockPanelIterationMode::All)
     {
         for (const auto& panel : m_panels)
             if (enumFunc(panel))
-                return true;
+                return panel;
     }
     else if (mode == DockPanelIterationMode::VisibleOnly)
     {
         for (const auto& panel : m_panels)
             if (panel->tabVisibleInLayout() && enumFunc(panel))
-                return true;
+                return panel;
     }
     else if (mode == DockPanelIterationMode::ActiveOnly)
     {
         if (auto activeTab = m_notebook->activeTab())
             if (enumFunc(activeTab))
-                return true;
+                return AddRef(activeTab);
     }
 
-    if (m_leftNode && m_leftNode->iteratePanels(enumFunc, mode))
+    if (m_leftNode && m_leftNode->iteratePanelsEx(enumFunc, mode))
         return true;
 
-    if (m_rightNode && m_rightNode->iteratePanels(enumFunc, mode))
+    if (m_rightNode && m_rightNode->iteratePanelsEx(enumFunc, mode))
         return true;
 
-    if (m_topNode && m_topNode->iteratePanels(enumFunc, mode))
+    if (m_topNode && m_topNode->iteratePanelsEx(enumFunc, mode))
         return true;
 
-    if (m_bottomNode && m_bottomNode->iteratePanels(enumFunc, mode))
+    if (m_bottomNode && m_bottomNode->iteratePanelsEx(enumFunc, mode))
         return true;
 
     return false;

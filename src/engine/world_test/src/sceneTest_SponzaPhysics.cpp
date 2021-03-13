@@ -35,14 +35,14 @@ public:
 
     virtual void createWorldContent() override
     {
-        if (auto mesh = loadMesh("/engine/scene/sponza/meshes/sponza.v4mesh"))
+        if (auto mesh = loadMesh("/engine/scene/sponza/meshes/sponza.xfile"))
         {
             /*auto mc = RefNew<game::MeshEntity>();
             mc->mesh(mesh);
             m_world->attachEntity(mc);*/
         }
 
-        if (auto mesh = loadMesh("/engine/meshes/cube.v4mesh"))
+        if (auto mesh = loadMesh("/engine/meshes/cube.xfile"))
         {
             /*auto mc = RefNew<game::MeshEntity>();
             mc->mesh(mesh);

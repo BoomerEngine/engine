@@ -23,9 +23,9 @@ class ImportFingerprintCache;
 //--
 
 // a simple helper service that can compute fingerprints of files on disk
-class CORE_RESOURCE_COMPILER_API SourceAssetFingerprintService : public app::ILocalService
+class CORE_RESOURCE_COMPILER_API SourceAssetFingerprintService : public IService
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(SourceAssetFingerprintService, app::ILocalService);
+    RTTI_DECLARE_VIRTUAL_CLASS(SourceAssetFingerprintService, IService);
 
 public:
     SourceAssetFingerprintService();
@@ -69,7 +69,7 @@ private:
 
     //--
 
-    virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override;
+    virtual bool onInitializeService(const CommandLine& cmdLine) override;
     virtual void onShutdownService() override;
     virtual void onSyncUpdate() override;
 

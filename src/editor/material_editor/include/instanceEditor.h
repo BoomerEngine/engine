@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "editor/common/include/resourceEditorNativeFile.h"
+#include "editor/assets/include/resourceEditor.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -16,12 +16,12 @@ class MaterialPreviewPanel;
 class MaterialPreviewPanel;
 
 /// editor for meshes
-class EDITOR_MATERIAL_EDITOR_API MaterialInstanceEditor : public ResourceEditorNativeFile
+class EDITOR_MATERIAL_EDITOR_API MaterialInstanceEditor : public ResourceEditor
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MaterialInstanceEditor, ResourceEditorNativeFile);
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialInstanceEditor, ResourceEditor);
 
 public:
-    MaterialInstanceEditor(ManagedFileNativeResource* file);
+    MaterialInstanceEditor(const ResourceInfo& info);
     virtual ~MaterialInstanceEditor();
 
     //--
@@ -39,9 +39,6 @@ private:
     ui::DataInspectorPtr m_properties;
 
     void createInterface();
-
-    virtual bool initialize() override;
-    virtual bool save() override;
 };
 
 END_BOOMER_NAMESPACE_EX(ed)

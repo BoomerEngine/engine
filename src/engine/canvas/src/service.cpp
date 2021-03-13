@@ -30,8 +30,8 @@ ConfigProperty<uint32_t> cvCanvasGlyphCacheAtlasPageCount("Rendering.Canvas", "G
 //---
 		
 RTTI_BEGIN_TYPE_CLASS(CanvasService);
-	RTTI_METADATA(app::DependsOnServiceMetadata).dependsOn<gpu::DeviceService>();
-	RTTI_METADATA(app::DependsOnServiceMetadata).dependsOn<gpu::ShaderService>();	
+	RTTI_METADATA(DependsOnServiceMetadata).dependsOn<gpu::DeviceService>();
+	RTTI_METADATA(DependsOnServiceMetadata).dependsOn<gpu::ShaderService>();	
 RTTI_END_TYPE();
 
 //---
@@ -56,7 +56,7 @@ const ImageAtlasEntryInfo* CanvasService::findRenderDataForGlyph(const font::Gly
 
 //--
 
-app::ServiceInitializationResult CanvasService::onInitializeService(const app::CommandLine& cmdLine)
+bool CanvasService::onInitializeService(const CommandLine& cmdLine)
 {
 	memzero(m_atlasRegistry, sizeof(m_atlasRegistry));
 
@@ -66,7 +66,7 @@ app::ServiceInitializationResult CanvasService::onInitializeService(const app::C
 
 	m_renderer = new CanvasRenderer();
 
-	return app::ServiceInitializationResult::Finished;
+	return true;
 }
 
 void CanvasService::onShutdownService()

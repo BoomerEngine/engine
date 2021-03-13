@@ -24,6 +24,13 @@ class ENGINE_UI_API ICollectionItem : public IElement
 public:
     ICollectionItem();
 
+    struct SortingData
+    {
+        int type = 0;
+        int index = 0;
+        StringView caption;
+    };
+
     // internal index, globally unique and monotonic, allows to compare items for general age
     INLINE uint32_t uniqueIndex() const { return m_uniqueIndex; }
 
@@ -39,29 +46,29 @@ public:
     ///--
 
     /// check if item should be displayed under given filter
-    virtual bool handleItemFilter(const SearchPattern& filter) const;
+    virtual bool handleItemFilter(const ui::ICollectionView* view, const ui::SearchPattern& filter) const;
 
     /// check sorting relation with other item type
     /// NOTE: the item may be of different type
-    virtual bool handleItemSort(const ICollectionItem* other, int colIndex) const;
+    virtual void handleItemSort(const ui::ICollectionView* view, int colIndex, SortingData& outInfo) const;
 
     /// handle context menu on this item
-    virtual bool handleItemContextMenu(const CollectionItems& items, PopupPtr& outPopup) const;
+    virtual bool handleItemContextMenu(ui::ICollectionView* view, const ui::CollectionItems& items, const ui::Position& pos, input::KeyMask controlKeys);
 
     // called when this item gets selected
-    virtual bool handleItemSelected();
+    virtual bool handleItemSelected(ui::ICollectionView* view);
 
     // called when this item get's unselected
-    virtual void handleItemUnselected();
+    virtual void handleItemUnselected(ui::ICollectionView* view);
 
     // called when this item becomes the current one
-    virtual void handleItemFocused();
+    virtual void handleItemFocused(ui::ICollectionView* view);
 
     // called when this item stops being the current one
-    virtual void handleItemUnfocused();
+    virtual void handleItemUnfocused(ui::ICollectionView* view);
 
     // handle double click/enter
-    virtual bool handleItemActivate();
+    virtual bool handleItemActivate(ui::ICollectionView* view);
 
     //--
 
@@ -114,21 +121,33 @@ public:
     INLINE const HashSet<CollectionItemPtr>& items() const { return m_items; }
 
     template< typename T >
-    INLINE RefPtr<T> visit(const std::function<void(T*, bool&)>& func) const
+    INLINE RefPtr<T> first(const std::function<bool(T*)>& func = nullptr) const
     {
         for (const auto& item : m_items.keys())
-        {
             if (auto typedItem = rtti_cast<T>(item.get()))
-            {
-                bool done = false;
-                func(typedItem, done);
-
-                if (done)
+                if (!func || func(typedItem))
                     return RefPtr<T>(AddRef(typedItem));
-            }
-        }
 
         return nullptr;
+    }
+
+    template< typename T >
+    INLINE Array<RefPtr<T>> all(const std::function<bool(T*)>& func = nullptr) const
+    {
+        for (const auto& item : m_items.keys())
+            if (auto typedItem = rtti_cast<T>(item.get()))
+                if (!func || func(typedItem))
+                    return RefPtr<T>(AddRef(typedItem));
+
+        return nullptr;
+    }
+
+    template< typename T >
+    INLINE void visit(const std::function<void(T*)>& func) const
+    {
+        for (const auto& item : m_items.keys())
+            if (auto typedItem = rtti_cast<T>(item.get()))
+                func(typedItem);
     }
 
     ///---
@@ -151,6 +170,9 @@ public:
 
     // get all selected items
     INLINE const CollectionItems& selection() const { return m_selectionItems; }
+
+    // no items ?
+    INLINE bool empty() const { return m_viewItems.empty(); }
 
     //--
 
@@ -200,17 +222,17 @@ protected:
         ElementPtr staticElement;
         ElementArea unadjustedCachedArea;
 
-        bool select();
-        void unselect();
+        bool select(ICollectionView* view);
+        void unselect(ICollectionView* view);
 
-        void focus();
-        void unfocus();
+        void focus(ICollectionView* view);
+        void unfocus(ICollectionView* view);
     };
 
     StructurePool<ViewItem> m_viewItemsPool;
     HashSet<ViewItem*> m_viewItems; // all of them, unordered
 
-    void internalAddItem(ICollectionItem* item);
+    ViewItem* internalAddItem(ICollectionItem* item);
     void internalRemoveItem(ViewItem* item);
 
     virtual void internalAttachItem(ViewItem* item) = 0;

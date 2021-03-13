@@ -44,11 +44,6 @@ void DataViewResult::print(IFormatStream& f) const
     f.append(CodeName(code));
 }
 
-void DataViewErrorResult::print(IFormatStream& f) const
-{
-    f.append(CodeName(result.code));
-}
-
 //----
 
 IDataViewObserver::~IDataViewObserver()

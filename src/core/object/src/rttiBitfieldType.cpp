@@ -340,8 +340,11 @@ DataViewResult BitfieldType::writeDataView(StringView viewPath, void* viewData, 
                 static Type boolType = RTTI::GetInstance().findType("bool"_id);
 
                 bool bitFlag = false;
-                if (auto ret = HasError(boolType->writeDataView(viewPath, &bitFlag, sourceData, sourceType)))
-                    return ret;
+                {
+                    auto ret = boolType->writeDataView(viewPath, &bitFlag, sourceData, sourceType);
+                    if (!ret.valid())
+                        return ret;
+                }
 
                 uint64_t bitMask = 0;
                 readUint64(viewData, bitMask);
@@ -363,8 +366,11 @@ DataViewResult BitfieldType::writeDataView(StringView viewPath, void* viewData, 
                 uint64_t rawValue = 0;
 
                 static Type uint64Type = RTTI::GetInstance().findType("uint64_t"_id);
-                if (auto err = HasError(uint64Type->writeDataView(viewPath, &rawValue, sourceData, sourceType)))
-                    return err;
+                {
+                    auto ret = uint64Type->writeDataView(viewPath, &rawValue, sourceData, sourceType);
+                    if (!ret.valid())
+                        return ret;
+                }
 
                 writeUint64(viewData, rawValue);
                 return DataViewResultCode::OK;

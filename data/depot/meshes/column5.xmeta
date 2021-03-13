@@ -1,0 +1,28 @@
+<?xml version="1.0" standalone="yes"?>
+<object class="ResourceMetadata">
+  <ids>
+    <element>{847994B1-DE8D-4D2A-EBB4-7604ED06648B}</element>
+  </ids>
+  <importDependencies>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/meshes/column5.obj</importPath>
+      <crc>2220567023</crc>
+    </element>
+  </importDependencies>
+  <resourceClassType>Mesh</resourceClassType>
+  <resourceClassVersion>11</resourceClassVersion>
+  <importerClassType>assets::OBJMeshImporter</importerClassType>
+  <importerClassVersion>3</importerClassVersion>
+  <importBaseConfiguration class="assets::OBJMeshImportConfig">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600383922220000</sourceImportedOn>
+  </importBaseConfiguration>
+  <importUserConfiguration class="assets::OBJMeshImportConfig"/>
+  <importFullConfiguration class="assets::OBJMeshImportConfig">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600383922220000</sourceImportedOn>
+  </importFullConfiguration>
+  <internalRevision>1</internalRevision>
+</object>

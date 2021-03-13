@@ -78,6 +78,7 @@ struct IMPORT_FBX_LOADER_API DataMeshExportSetup
     bool forceSkinToNode = false;
     bool flipUV = false;
     bool flipFace = false;
+    Vector2 uvScale = Vector2(1, 1);
 };
 
 //  extractable node

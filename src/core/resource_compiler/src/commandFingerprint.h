@@ -14,12 +14,12 @@ BEGIN_BOOMER_NAMESPACE()
 
 //--
 
-class CommandFingerprint : public app::ICommand
+class CommandFingerprint : public ICommand
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CommandFingerprint, app::ICommand);
+    RTTI_DECLARE_VIRTUAL_CLASS(CommandFingerprint, ICommand);
 
 public:
-    virtual bool run(IProgressTracker* progress, const app::CommandLine& commandline) override final;
+    virtual bool run(IProgressTracker* progress, const CommandLine& commandline) override final;
 };
 
 //--

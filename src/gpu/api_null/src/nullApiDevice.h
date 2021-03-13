@@ -28,7 +28,7 @@ public:
 	//--
 
 private:
-	virtual IBaseThread* createOptimalThread(const app::CommandLine& cmdLine) override final;
+	virtual IBaseThread* createOptimalThread(const CommandLine& cmdLine) override final;
 };
 
 //--

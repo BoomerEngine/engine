@@ -31,19 +31,10 @@ ResourceDescriptionMetadata::ResourceDescriptionMetadata()
 
 //--
 
-RTTI_BEGIN_TYPE_CLASS(ResourceTagColorMetadata);
+RTTI_BEGIN_TYPE_CLASS(ResourceImportedClassMetadata);
 RTTI_END_TYPE();
 
-ResourceTagColorMetadata::ResourceTagColorMetadata()
-    : m_color(0, 0, 0, 0)
-{}
-
-//--
-
-RTTI_BEGIN_TYPE_CLASS(ResourceCookedClassMetadata);
-RTTI_END_TYPE();
-
-ResourceCookedClassMetadata::ResourceCookedClassMetadata()
+ResourceImportedClassMetadata::ResourceImportedClassMetadata()
 {}
 
 //--

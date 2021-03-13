@@ -546,8 +546,11 @@ ResolvedImageView ImageAnyView::resolve()
 
 static bool IsMainView(const ImageAnyView::Setup& setup, const ImageCreationInfo& image)
 {
+    if (setup.viewType != image.view)
+        return false;
+
 	if (setup.firstMip == 0 && setup.firstSlice == 0 &&
-		setup.numMips == image.numMips && setup.numSlices && image.numSlices)
+		setup.numMips == image.numMips && setup.numSlices == image.numSlices)
 		return true;
 				
 	return false;

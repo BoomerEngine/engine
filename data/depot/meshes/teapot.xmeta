@@ -1,0 +1,43 @@
+<?xml version="1.0" standalone="yes"?>
+<object class="ResourceMetadata">
+  <ids>
+    <element>{95552D13-0615-48E6-2AA2-BC9B9996C947}</element>
+  </ids>
+  <importDependencies>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/meshes/teapot.obj</importPath>
+      <crc>995788537</crc>
+    </element>
+  </importDependencies>
+  <resourceClassType>Mesh</resourceClassType>
+  <resourceClassVersion>11</resourceClassVersion>
+  <importerClassType>assets::OBJMeshImporter</importerClassType>
+  <importerClassVersion>3</importerClassVersion>
+  <importBaseConfiguration class="assets::OBJMeshImportConfig">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600383922380000</sourceImportedOn>
+  </importBaseConfiguration>
+  <importUserConfiguration class="assets::OBJMeshImportConfig">
+    <flipFaces>true</flipFaces>
+    <globalScale>0.010000</globalScale>
+    <flipNormals>true</flipNormals>
+    <uvScale>
+      <x>3.000000</x>
+      <y>3.000000</y>
+    </uvScale>
+  </importUserConfiguration>
+  <importFullConfiguration class="assets::OBJMeshImportConfig">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600383922380000</sourceImportedOn>
+    <flipFaces>true</flipFaces>
+    <globalScale>0.010000</globalScale>
+    <flipNormals>true</flipNormals>
+    <uvScale>
+      <x>3.000000</x>
+      <y>3.000000</y>
+    </uvScale>
+  </importFullConfiguration>
+  <internalRevision>11</internalRevision>
+</object>

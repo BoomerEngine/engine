@@ -11,12 +11,12 @@
 BEGIN_BOOMER_NAMESPACE()
 
 // game launcher application
-class LauncherApp : public app::IApplication
+class LauncherApp : public IApplication
 {
 public:
     LauncherApp(StringView title = "");
 
-    virtual bool initialize(const app::CommandLine& commandline) override final;
+    virtual bool initialize(const CommandLine& commandline) override final;
     virtual void cleanup() override final;
     virtual void update() override final;
 
@@ -35,8 +35,8 @@ private:
 
     //--
 
-    bool createWindow(const app::CommandLine& commandline);
-    bool createGame(const app::CommandLine& commandline);
+    bool createWindow(const CommandLine& commandline);
+    bool createGame(const CommandLine& commandline);
 
     void updateWindow();
     void updateGame(double dt);

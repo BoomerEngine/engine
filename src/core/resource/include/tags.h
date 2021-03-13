@@ -58,46 +58,18 @@ private:
     const char* m_desc;
 };
 
-//------
-
-// Resource editor color
-class CORE_RESOURCE_API ResourceTagColorMetadata : public IMetadata
-{
-    RTTI_DECLARE_VIRTUAL_CLASS(ResourceTagColorMetadata, IMetadata);
-
-public:
-    ResourceTagColorMetadata();
-
-    INLINE ResourceTagColorMetadata& color(Color color)
-    {
-        m_color = color;
-        return *this;
-    }
-
-    INLINE ResourceTagColorMetadata& color(uint8_t r, uint8_t g, uint8_t b)
-    {
-        m_color = Color(r,g,b);
-        return *this;
-    }
-
-    INLINE Color color() const { return m_color; }
-
-private:
-    Color m_color;
-};
-
 //--
 
 /// metadata for raw resource to specify the target (imported) class
-class CORE_RESOURCE_API ResourceCookedClassMetadata : public IMetadata
+class CORE_RESOURCE_API ResourceImportedClassMetadata : public IMetadata
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ResourceCookedClassMetadata, IMetadata);
+    RTTI_DECLARE_VIRTUAL_CLASS(ResourceImportedClassMetadata, IMetadata);
 
 public:
-    ResourceCookedClassMetadata();
+    ResourceImportedClassMetadata();
 
     template< typename T >
-    INLINE ResourceCookedClassMetadata& addClass()
+    INLINE ResourceImportedClassMetadata& addClass()
     {
         static_assert(std::is_base_of< IResource, T >::value, "Only resource classes can be specified here");
         m_classes.pushBackUnique(T::GetStaticClass());

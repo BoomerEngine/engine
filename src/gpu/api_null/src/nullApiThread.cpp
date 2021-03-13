@@ -109,17 +109,17 @@ IBaseShaders* Thread::createOptimalShaders(const ShaderData* data)
 	return new Shaders(this, data);
 }
 
-ObjectRegistry* Thread::createOptimalObjectRegistry(const app::CommandLine& cmdLine)
+ObjectRegistry* Thread::createOptimalObjectRegistry(const CommandLine& cmdLine)
 {
 	return new ObjectRegistry(this);
 }
 
-IBaseObjectCache* Thread::createOptimalObjectCache(const app::CommandLine& cmdLine)
+IBaseObjectCache* Thread::createOptimalObjectCache(const CommandLine& cmdLine)
 {
 	return new ObjectCache(this);
 }
 
-IBaseBackgroundQueue* Thread::createOptimalBackgroundQueue(const app::CommandLine& cmdLine)
+IBaseBackgroundQueue* Thread::createOptimalBackgroundQueue(const CommandLine& cmdLine)
 {
 	return new BackgroundQueue();
 }

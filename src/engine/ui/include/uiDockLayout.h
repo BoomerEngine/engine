@@ -85,14 +85,159 @@ public:
     // remove panel from this layout node
     void detachPanel(DockPanel* panel);
 
-    // iterate over panels
-    bool iteratePanels(const std::function<bool(DockPanel*)>& enumFunc, DockPanelIterationMode mode) const;
+    // iterate over all panels
+    void iteratePanels(const std::function<void(DockPanel*)>& enumFunc, DockPanelIterationMode mode = ui::DockPanelIterationMode::All) const;
+
+    // iterate over all panels, allows faster exit
+    bool iteratePanelsEx(const std::function<bool(DockPanel*)>& enumFunc, DockPanelIterationMode mode = ui::DockPanelIterationMode::All) const;
 
     // activate specific panel
     bool activatePanel(DockPanel* panel);
 
     // show/hide panel without deleting it
     bool showPanel(DockPanel* panel, bool visible);
+
+    //--
+
+    // get active panel that matches predicate
+    template< typename T >
+    INLINE RefPtr<T> activePanel(bool focusedOnly = false, const std::function<bool(T*)>& enumFunc = nullptr) const
+    {
+        RefPtr<T> ret;
+        iteratePanelsEx([&enumFunc, &ret](DockPanel* panel)
+            {
+                if (auto specificPanel = rtti_cast<T>(panel))
+                {
+                    if (!enumFunc || enumFunc)
+                    {
+                        ret = AddRef(specificPanel);
+                        return true;
+                    }
+                }
+                return false;
+            }, DockPanelIterationMode::ActiveOnly);
+
+        return ret;
+    }
+
+    // find first panel matching predicate
+    template< typename T >
+    INLINE RefPtr<T> findPanel(bool visibleOnly = true, const std::function<bool(T*)>& enumFunc = nullptr) const
+    {
+        RefPtr<T> ret;
+        iteratePanelsEx([&ret, &enumFunc](DockPanel* panel)
+            {
+                if (auto specificPanel = rtti_cast<T>(panel))
+                {
+                    if (!enumFunc || enumFunc)
+                    {
+                        ret = AddRef(specificPanel);
+                        return true;
+                    }
+                }
+                return false;
+            }, visibleOnly ? DockPanelIterationMode::VisibleOnly : DockPanelIterationMode::All);
+
+        return ret;
+    }
+
+    // iterate over all panels
+    template< typename T >
+    INLINE void iterateAllPanels(const std::function<void(T* panel)>& enumFunc) const
+    {
+        iteratePanels([&enumFunc](DockPanel* panel)
+            {
+                if (auto specificPanel = rtti_cast<T>(panel))
+                    enumFunc(specificPanel);
+            }, DockPanelIterationMode::All);
+    }
+
+    // iterate over all visible panels (each notebook has one)
+    template< typename T >
+    INLINE void iterateVisiblePanels(const std::function<void(T* panel)>& enumFunc) const
+    {
+        iteratePanels([&enumFunc](DockPanel* panel)
+            {
+                if (auto specificPanel = rtti_cast<T>(panel))
+                    enumFunc(specificPanel);
+            }, DockPanelIterationMode::VisibleOnly);
+    }
+
+    // get active panel
+    template< typename T >
+    INLINE void iterateActivePanels(const std::function<void(T* panel)>& enumFunc) const
+    {
+        iteratePanels([&enumFunc](DockPanel* panel)
+            {
+                if (auto specificPanel = rtti_cast<T>(panel))
+                    enumFunc(specificPanel);
+            }, DockPanelIterationMode::ActiveOnly);
+    }
+
+    // find active panel
+    template< typename T >
+    INLINE RefPtr<T> findActivePanel(const std::function<bool(T* panel)>& enumFunc = nullptr) const
+    {
+        RefPtr<T> ret;
+        iteratePanelsEx([&enumFunc, &ret](DockPanel* panel)
+            {
+                if (auto specificPanel = rtti_cast<T>(panel))
+                {
+                    if (!enumFunc || enumFunc(specificPanel))
+                    {
+                        ret = AddRef(specificPanel);
+                        return true;
+                    }
+                }
+                return false;
+            }, DockPanelIterationMode::ActiveOnly);
+
+        return ret;
+    }
+
+    // check if we have visible panels
+    template< typename T >
+    INLINE bool hasPanels(const std::function<bool(T* panel)>& enumFunc = nullptr) const
+    {
+        return iteratePanelsEx([&enumFunc](DockPanel* panel) {
+                if (auto specificPanel = rtti_cast<T>(panel))
+                    if (!enumFunc || enumFunc(specificPanel))
+                        return true;
+                return false;
+            }, DockPanelIterationMode::All);
+    }
+
+    // collect panels of given type
+    template< typename T >
+    INLINE Array<RefPtr<T>> collectPanels(const std::function<bool(T* panel)>& enumFunc = nullptr) const
+    {
+        Array<RefPtr<T>> ret;
+        iteratePanels([&enumFunc, &ret](DockPanel* panel)
+            {
+                if (auto specificPanel = rtti_cast<T>(panel))
+                    if (!enumFunc || enumFunc(specificPanel))
+                        ret.pushBack(AddRef(specificPanel));
+            }, DockPanelIterationMode::All);
+
+        return ret;
+    }
+
+    // collect active panels of given type
+    template< typename T >
+    INLINE Array<RefPtr<T>> collectActivePanels(const std::function<bool(T* panel)>& enumFunc = nullptr) const
+    {
+        Array<RefPtr<T>> ret;
+        iteratePanels([&enumFunc, &ret](DockPanel* panel)
+            {
+                if (auto specificPanel = rtti_cast<T>(panel))
+                    if (!enumFunc || enumFunc(specificPanel))
+                        ret.pushBack(AddRef(specificPanel));
+            }, DockPanelIterationMode::ActiveOnly);
+
+        return ret;
+    }
+
+    //--
 
 protected:
     DockContainer* m_container = nullptr;

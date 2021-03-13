@@ -14,9 +14,9 @@ class ITexture;
 typedef RefPtr<ITexture> TexturePtr;
 typedef ResourceRef<ITexture> TextureRef;
 
-class StaticTexture;
-typedef RefPtr<StaticTexture> StaticTexturePtr;
-typedef ResourceRef<StaticTexture> StaticTextureRef;
+class IStaticTexture;
+typedef RefPtr<IStaticTexture> StaticTexturePtr;
+typedef ResourceRef<IStaticTexture> StaticTextureRef;
 
 END_BOOMER_NAMESPACE()
 

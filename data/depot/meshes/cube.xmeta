@@ -1,0 +1,31 @@
+<?xml version="1.0" standalone="yes"?>
+<object class="ResourceMetadata">
+  <ids>
+    <element>{EFDD4282-334B-425F-23B8-40A1D217E36E}</element>
+  </ids>
+  <importDependencies>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/meshes/cube.obj</importPath>
+      <crc>237519000</crc>
+    </element>
+  </importDependencies>
+  <resourceClassType>Mesh</resourceClassType>
+  <resourceClassVersion>11</resourceClassVersion>
+  <importerClassType>assets::OBJMeshImporter</importerClassType>
+  <importerClassVersion>3</importerClassVersion>
+  <importBaseConfiguration class="assets::OBJMeshImportConfig">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600383922270000</sourceImportedOn>
+  </importBaseConfiguration>
+  <importUserConfiguration class="assets::OBJMeshImportConfig">
+    <flipFaces>true</flipFaces>
+  </importUserConfiguration>
+  <importFullConfiguration class="assets::OBJMeshImportConfig">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600383922270000</sourceImportedOn>
+    <flipFaces>true</flipFaces>
+  </importFullConfiguration>
+  <internalRevision>3</internalRevision>
+</object>

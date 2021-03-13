@@ -15,6 +15,7 @@
 
 #include "core/io/include/timestamp.h"
 #include "core/object/include/objectGlobalRegistry.h"
+#include "core/containers/include/path.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -34,11 +35,11 @@ LoadingServiceImpl::~LoadingServiceImpl()
 {
 }
 
-app::ServiceInitializationResult LoadingServiceImpl::onInitializeService(const app::CommandLine& cmdLine)
+bool LoadingServiceImpl::onInitializeService(const CommandLine& cmdLine)
 {
     // TODO: resource preload ?
 
-    return app::ServiceInitializationResult::Finished;
+    return true;
 }
 
 void LoadingServiceImpl::onShutdownService()
@@ -209,7 +210,9 @@ ResourcePtr LoadingServiceImpl::loadResource(const ResourceID& id, ClassType exp
         return nullptr;
     }
 
-    return loadResource(loadPath, expectedClassType);
+    auto depotPath = ReplaceExtension(loadPath, IResource::FILE_EXTENSION); // tempshit
+
+    return loadResource(depotPath, expectedClassType);
 }
 
 #if 0

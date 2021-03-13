@@ -14,7 +14,7 @@
 #include "core/net/include/messageConnection.h"
 #include "core/net/include/messagePool.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(app)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -39,4 +39,4 @@ ICommand::~ICommand()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(app)
+END_BOOMER_NAMESPACE()

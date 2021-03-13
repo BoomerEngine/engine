@@ -12,22 +12,24 @@ ProgressBar
 	background: #30303080;
     border-width: 1em;
 	border-color: #202020;
-	
-	ProgressBarArea
-	{
-		background: image("images/diagonals_bleak.png", wrap, #007ACC);
-		shadow-padding: 10em;
-        shadow-margin: 10em;
-        shadow: box(100%, 100%, 10em, 10em, #00000060, #00000000);    
-	}
-
-	TextLabel
-	{
-		font-size: 18em;
-		color: #FFF;
-		margin: 5em 0em 5em 0em;
-		vertical-align: middle;
-		horizontal-align: center;
-		//proportion: 100%;
-	}
 }
+
+ProgressCaption
+{
+	font-size: 18em;
+	color: #FFF;
+	margin: 5em 0em 5em 0em;
+	vertical-align: middle;
+	horizontal-align: center;
+	//proportion: 100%;
+}
+
+ProgressBarArea
+{
+	//background: image("images/diagonals_bleak.png", wrap, #007ACC);
+	background: #007ACC;
+	shadow-padding: 10em;
+    shadow-margin: 10em;
+    shadow: box(100%, 100%, 10em, 10em, #00000060, #00000000);    
+}
+

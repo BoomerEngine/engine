@@ -192,14 +192,14 @@ void NativeWindowRenderer::windowSetPos(NativeWindowID id, const Position& pos)
 {
     if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
     {
-        auto size = window->output->window()->windowGetClientSize();
+        auto size = window->output->window()->windowGetWindowSize();
 
         Rect rect;
         rect.min.x = (int)pos.x;
         rect.min.y = (int)pos.y;
         rect.max.x = rect.min.x + size.x;
         rect.max.y = rect.min.y + size.y;
-        window->output->window()->windowAdjustClientPlacement(rect);
+        window->output->window()->windowAdjustWindowPlacement(rect);
     }
 }
 
@@ -207,14 +207,14 @@ void NativeWindowRenderer::windowSetSize(NativeWindowID id, const Size& size)
 {
     if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
     {
-        auto pos = window->output->window()->windowGetClientPlacement();
+        auto pos = window->output->window()->windowGetWindowPlacement();
 
         Rect rect;
         rect.min.x = pos.x;
         rect.min.y = pos.y;
         rect.max.x = rect.min.x + size.x;
         rect.max.y = rect.min.y + size.y;
-        window->output->window()->windowAdjustClientPlacement(rect);
+        window->output->window()->windowAdjustWindowPlacement(rect);
     }
 }
 
@@ -227,7 +227,7 @@ void NativeWindowRenderer::windowSetPlacement(NativeWindowID id, const Position&
         rect.min.y = pos.y;
         rect.max.x = rect.min.x + size.x;
         rect.max.y = rect.min.y + size.y;
-        window->output->window()->windowAdjustClientPlacement(rect);
+        window->output->window()->windowAdjustWindowPlacement(rect);
     }
 }
 

@@ -360,7 +360,7 @@ void EditBox::cmdCopySelection()
 {
     if (m_textBuffer->hasSelection())
     {
-        renderer()->storeTextToClipboard(selectedText());
+        clipboard().storeText(selectedText());
     }
 }
 
@@ -370,7 +370,7 @@ void EditBox::cmdCutSelection()
     {
         if (m_textBuffer->hasSelection())
         {
-            renderer()->storeTextToClipboard(selectedText());
+            clipboard().storeText(selectedText());
 
             m_textBuffer->deleteSelection();
             textModified();
@@ -385,7 +385,7 @@ void EditBox::cmdPasteSelection()
     if (canModify())
     {
         StringBuf text;
-        if (renderer()->loadStringFromClipboard(text))
+        if (clipboard().loadText(text))
         {
             // replace existing text
             if (m_textBuffer->hasSelection())
@@ -420,42 +420,28 @@ void EditBox::cmdSelectAll()
 
 void EditBox::bindCommands()
 {
-    actions().bindCommand("TextEdit.Copy"_id) = [](EditBox* box) { box->cmdCopySelection(); };
-    actions().bindCommand("TextEdit.Cut"_id) = [](EditBox* box) { box->cmdCutSelection(); };
-    actions().bindCommand("TextEdit.Delete"_id) = [](EditBox* box) { box->cmdDeleteSelection(); };
-    actions().bindCommand("TextEdit.SelectAll"_id) = [](EditBox* box) { box->cmdSelectAll(); };
-    actions().bindCommand("TextEdit.Undo"_id) = [](EditBox* box) { };
-    actions().bindCommand("TextEdit.Redo"_id) = [](EditBox* box) { };
-
-    auto hasSelectionFunc = [](EditBox* box) { return box->m_textBuffer->hasSelection(); };
-    auto hasClipbordData = [](EditBox* box) { return true; };
-
-    actions().bindFilter("TextEdit.Copy"_id) = hasSelectionFunc;
-    actions().bindFilter("TextEdit.Cut"_id) = hasSelectionFunc;
-    actions().bindFilter("TextEdit.Delete"_id) = hasSelectionFunc;
-    actions().bindFilter("TextEdit.Paste"_id) = hasClipbordData;
-
-    actions().bindShortcut("TextEdit.Copy"_id, "Ctrl+C");
-    actions().bindShortcut("TextEdit.Cut"_id, "Ctrl+X");
-    actions().bindShortcut("TextEdit.Paste"_id, "Ctrl+V"); 
-    actions().bindShortcut("TextEdit.SelectAll"_id, "Ctrl+A");
-    actions().bindShortcut("TextEdit.Undo"_id, "Ctrl+Z");
-    actions().bindShortcut("TextEdit.Redo"_id, "Ctrl+Y");
+    bindShortcut("Ctrl+C") = [this]() { cmdCopySelection(); };
+    bindShortcut("Ctrl+X") = [this]() { cmdCutSelection(); };
+    bindShortcut("Ctrl+V") = [this]() { cmdPasteSelection(); };
+    bindShortcut("Ctrl+A") = [this]() { cmdSelectAll(); };
+    bindShortcut("Ctrl+Z") = [this]() { };
+    bindShortcut("Ctrl+Y") = [this]() { };
 }
 
 bool EditBox::handleContextMenu(const ElementArea& area, const Position& absolutePosition, input::KeyMask controlKeys)
 {
     auto ret = RefNew<MenuButtonContainer>();
-    ret->createAction("TextEdit.Undo"_id, "Undo", "[img:undo]");
-    ret->createAction("TextEdit.Redo"_id, "Redo", "[img:redo]");
+    ret->createCallback("Undo", "[img:undo]", "Ctrl+Z") = [this]() {};
+    ret->createCallback("Redo", "[img:redo]", "Ctrl+Y") = [this]() {};
     ret->createSeparator();
-    ret->createAction("TextEdit.Copy"_id, "Copy", "[img:copy]");
-    ret->createAction("TextEdit.Cut"_id, "Cut", "[img:cut]");
-    ret->createAction("TextEdit.Paste"_id, "Cut", "[img:paste]");
-    ret->createAction("TextEdit.Delete"_id, "Delete", "[img:cross]");
+    ret->createCallback("Copy", "[img:copy]", "Ctrl+Z") = [this]() { cmdCopySelection(); };
+    ret->createCallback("Cut", "[img:cut]", "Ctrl+X") = [this]() { cmdCopySelection(); };
+    ret->createCallback("Paste", "[img:paste]", "Ctrl+V") = [this]() { cmdPasteSelection(); };
+    ret->createCallback("Delete", "[img:cross]", "Delete") = [this]() { cmdDeleteSelection(); };
     ret->createSeparator();
-    ret->createAction("TextEdit.SelectAll"_id, "Select all", "[img:selection_area]");
+    ret->createCallback("Select all", "", "Ctrl+A") = [this]() { cmdSelectAll(); };
     ret->show(this);
+
     return true;
 }
 
@@ -551,7 +537,7 @@ public:
             {
                 m_editBox->handleKeyEvent(evt);
                 return InputActionResult();
-            }
+            } 473823
             else if (evt.keyCode() == input::KeyCode::KEY_X && evt.isCtrlDown())
             {
                 return InputActionResult();

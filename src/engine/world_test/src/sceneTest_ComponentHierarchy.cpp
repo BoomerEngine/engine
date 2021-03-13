@@ -81,13 +81,13 @@ public:
     virtual void createWorldContent() override
     {
         MeshRef meshes[3];
-        meshes[0] = loadMesh("/engine/meshes/cube.v4mesh");
-        meshes[1] = loadMesh("/engine/meshes/cylinder.v4mesh");
-        meshes[2] = loadMesh("/engine/meshes/sphere.v4mesh");
+        meshes[0] = loadMesh("/engine/meshes/cube.xfile");
+        meshes[1] = loadMesh("/engine/meshes/cylinder.xfile");
+        meshes[2] = loadMesh("/engine/meshes/sphere.xfile");
 
         m_meshes.reset();
 
-        PlaneGround groundPlane(m_world, loadMesh("/engine/meshes/plane.v4mesh"));
+        PlaneGround groundPlane(m_world, loadMesh("/engine/meshes/plane.xfile"));
 
         MTRandState rng;
 

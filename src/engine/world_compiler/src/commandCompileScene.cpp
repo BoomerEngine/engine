@@ -27,18 +27,18 @@ BEGIN_BOOMER_NAMESPACE()
 
 //---
 
-class CommandCompileScene : public app::ICommand
+class CommandCompileScene : public ICommand
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CommandCompileScene, app::ICommand);
+    RTTI_DECLARE_VIRTUAL_CLASS(CommandCompileScene, ICommand);
 
 public:
-    virtual bool run(IProgressTracker* progress, const app::CommandLine& commandline) override final;
+    virtual bool run(IProgressTracker* progress, const CommandLine& commandline) override final;
 };
 
 //---
 
 RTTI_BEGIN_TYPE_CLASS(CommandCompileScene);
-    RTTI_METADATA(app::CommandNameMetadata).name("compileScene");
+    RTTI_METADATA(CommandNameMetadata).name("compileScene");
 RTTI_END_TYPE();
 
 static void DistributeIslandsIntoGrid(const SourceIslands& islands, SourceStreamingGrid& outGrid)
@@ -82,7 +82,7 @@ static bool SaveFileToDepot(StringView path, IObject* data)
         extension));
 }*/
 
-bool CommandCompileScene::run(IProgressTracker* progress, const app::CommandLine& commandline)
+bool CommandCompileScene::run(IProgressTracker* progress, const CommandLine& commandline)
 {
     ScopeTimer timer;
 

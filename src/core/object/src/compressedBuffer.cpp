@@ -134,6 +134,11 @@ void CompressedBufer::bind(Buffer uncompressedData, CompressionType compression)
                 compression = CompressionType::Uncompressed;
             }
         }
+        else
+        {
+            // use uncompressed data
+            compressedData = uncompressedData;
+        }
 
         // initialize
         m_crc = crc;

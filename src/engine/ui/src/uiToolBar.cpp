@@ -8,10 +8,57 @@
 
 #include "build.h"
 #include "uiToolBar.h"
-#include "uiButton.h"
 #include "uiTextLabel.h"
+#include "uiButton.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
+
+//---
+
+ToolBarButtonInfo::ToolBarButtonInfo(StringID id)
+    : m_id(id)
+{}
+
+ToolBarButtonInfo::ToolBarButtonInfo(const ToolBarButtonInfo& other) = default;
+ToolBarButtonInfo& ToolBarButtonInfo::operator=(const ToolBarButtonInfo& other) = default;
+
+StringBuf ToolBarButtonInfo::MakeIconWithSmallTextCaption(StringView icon, StringView text)
+{
+    if (text && icon)
+        return TempString("[center][img:{}][br][size:-]{}", icon, text);
+    else if (text)
+        return StringBuf(text);
+    else if (icon)
+        return TempString("[img:{}]", icon);
+    else
+        return "Tool";
+}
+
+StringBuf ToolBarButtonInfo::MakeIconWithTextCaption(StringView icon, StringView text)
+{
+    if (text && icon)
+        return TempString("[img:{}] {}", icon, text);
+    else if (text)
+        return StringBuf(text);
+    else if (icon)
+        return TempString("[img:{}]", icon);
+    else
+        return "Tool";
+}
+
+ButtonPtr ToolBarButtonInfo::create() const
+{
+    DEBUG_CHECK_RETURN_EX_V(m_caption, "Empty button caption", nullptr);
+
+    auto but = RefNew<Button>(m_caption);
+    but->styleType("ToolbarButton"_id);
+    but->tooltip(m_tooltip);
+    but->name(m_id);
+    but->enable(m_enabled);
+    but->toggle(m_toggled);
+
+    return but;
+}
 
 //---
 
@@ -20,126 +67,77 @@ RTTI_BEGIN_TYPE_CLASS(ToolBar);
 RTTI_END_TYPE();
 
 ToolBar::ToolBar()
-    : m_timerUpdateState(this)
 {
     layoutHorizontal();
     enableAutoExpand(true, false);
+}
 
-    m_timerUpdateState.startRepeated(0.1f);
-    m_timerUpdateState = [this]() { updateButtonState(); };
+ToolBar::~ToolBar()
+{
 }
 
 void ToolBar::createSeparator()
 {
     createChildWithType<IElement>("ToolbarSeparator"_id);
 }
-    
-static StringBuf RenderToolbarCaption(const ToolbarButtonSetup& setup)
+
+EventFunctionBinder ToolBar::createButton(const ToolBarButtonInfo& info)
 {
-    // 
-    if (setup.m_caption && setup.m_icon)
+    if (auto button = info.create())
     {
-        return TempString("[center][img:{}][br][size:-]{}", setup.m_icon, setup.m_caption);
+        attachChild(button);
+        return button->bind(EVENT_CLICKED);
     }
-    else if (setup.m_caption)
-    {
-        return TempString("{}", setup.m_caption);
-    }
-    else if (setup.m_icon)
-    {
-        return TempString("[img:{}]", setup.m_icon);
-    }
-    else
-    {
-        return TempString("Tool");
-    }
-}
-        
 
-void ToolBar::createButton(StringID action, const ToolbarButtonSetup& setup)
-{
-    if (action)
-    {
-        const auto captionString = RenderToolbarCaption(setup);
-        auto but = createChildWithType<Button>("ToolbarButton"_id, captionString);
-
-        if (setup.m_tooltip)
-            but->tooltip(setup.m_tooltip);
-
-        but->bind(EVENT_CLICKED, this) = action;
-        but->customStyle("action"_id, action);
-
-        m_actionButtons[action] = but;
-    }
+    return nullptr;
 }
 
-void ToolBar::updateButtonCaption(StringID action, const ToolbarButtonSetup& setup)
+void ToolBar::updateButtonCaption(StringID id, StringView caption)
 {
-    ButtonPtr button;
-    m_actionButtons.find(action, button);
-
-    if (button)
+    for (auto it = childrenList(); it; ++it)
     {
-        if (const auto caption = rtti_cast<TextLabel>(*button->childrenList()))
+        if (it->name() == id)
         {
-            const auto captionString = RenderToolbarCaption(setup);
-            caption->text(captionString);
-        }
-    }
-}
-
-EventFunctionBinder ToolBar::createCallback(const ToolbarButtonSetup& setup)
-{
-    const auto captionString = RenderToolbarCaption(setup);
-    auto but = createChildWithType<Button>("ToolbarButton"_id, captionString);
-
-    if (setup.m_tooltip)
-        but->tooltip(setup.m_tooltip);
-
-    return but->bind(EVENT_CLICKED);
-}
-
-void ToolBar::attachChild(IElement* childElement)
-{
-    TBaseClass::attachChild(childElement);
-}
-
-void ToolBar::detachChild(IElement* childElement)
-{
-    TBaseClass::detachChild(childElement);
-}
-
-void ToolBar::updateButtonState()
-{
-    bool separatorAllowed = false;
-    for (ElementChildIterator it(childrenList()); it; ++it)
-    {
-        if (it->styleType() == "ToolbarSeparator"_id)
-        {
-            it->visibility(separatorAllowed);
-            separatorAllowed = false;
-        }
-        else if (it->is<Button>())
-        {
-            if (const auto actionName = it->evalStyleValue<StringID>("action"_id))
+            if (auto button = rtti_cast<Button>(*it))
             {
-                auto actionState = checkAction(actionName);
-                bool visible = actionState.test(ActionStatusBit::Defined);
-                it->visibility(visible);
-
-                if (visible)
-                {
-                    it->enable(actionState.test(ActionStatusBit::Enabled));
-                    separatorAllowed = true;
-
-                    if (auto button = rtti_cast<Button>(*it))
-                        button->toggle(actionState.test(ActionStatusBit::Toggled));
-                }
+                button->text(caption);
+                break;
             }
-            else
+        }
+    }
+}
+
+void ToolBar::updateButtonCaption(StringID id, StringView caption, StringView icon)
+{
+    const auto txt = ToolBarButtonInfo::MakeIconWithSmallTextCaption(icon, caption);
+    updateButtonCaption(id, txt);
+}
+
+void ToolBar::enableButton(StringID id, bool state)
+{
+    for (auto it = childrenList(); it; ++it)
+    {
+        if (it->name() == id)
+        {
+            if (auto button = rtti_cast<Button>(*it))
             {
-                it->visibility(true);
-                separatorAllowed = true;
+                button->enable(state);
+                break;
+            }
+        }
+    }
+}
+
+void ToolBar::toggleButton(StringID id, bool state)
+{
+    for (auto it = childrenList(); it; ++it)
+    {
+        if (it->name() == id)
+        {
+            if (auto button = rtti_cast<Button>(*it))
+            {
+                button->toggle(state);
+                break;
             }
         }
     }

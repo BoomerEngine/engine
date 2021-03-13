@@ -249,13 +249,11 @@ const ImageAtlasEntryInfo* DynamicAtlas::findRenderDataForAtlasEntry(ImageEntryI
 
 void DynamicAtlas::flush(gpu::CommandWriter& cmd)
 {
-	if (!m_dirty)
-		return;
-
 	if (m_dirtyEntryInfoMax > m_dirtyEntryInfoMin)
 	{
         cmd.opTransitionLayout(m_infoBuffer, gpu::ResourceLayout::ShaderResource, gpu::ResourceLayout::CopyDest);
 
+		m_dirtyEntryInfoMin = 0;
         auto* writePtr = cmd.opUpdateDynamicBufferPtrN<GPUCanvasImageInfo>(m_infoBuffer, m_dirtyEntryInfoMin, m_dirtyEntryInfoMax - m_dirtyEntryInfoMin);
 
         const auto* readPtr = m_placements.typedData() + m_dirtyEntryInfoMin;

@@ -11,7 +11,7 @@
 #include "core/system/include/timing.h"
 #include "localServiceContainer.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(app)
+BEGIN_BOOMER_NAMESPACE()
 
 // the main root application like object that controls the main flow of the system
 // the main role of the App object is to hold on to global singleton-like object called "services"
@@ -22,7 +22,7 @@ public:
     virtual ~IApplication();
 
     /// called after all local services were initialized
-    virtual bool initialize(const app::CommandLine& commandline);
+    virtual bool initialize(const CommandLine& commandline);
 
     /// cleanup, called before local services are closed
     virtual void cleanup();
@@ -31,4 +31,4 @@ public:
     virtual void update();
 };
 
-END_BOOMER_NAMESPACE_EX(app)
+END_BOOMER_NAMESPACE()

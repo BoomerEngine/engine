@@ -35,7 +35,7 @@ public:
 
 	virtual Point maxRenderTargetSize() const override;
 
-	virtual bool initialize(const app::CommandLine& cmdLine, DeviceCaps& outCaps) override;
+	virtual bool initialize(const CommandLine& cmdLine, DeviceCaps& outCaps) override;
 	virtual void shutdown() override;
 	virtual void sync(bool flush) override;
 
@@ -57,13 +57,13 @@ public:
 
 	//--
 
-	virtual IBaseThread* createOptimalThread(const app::CommandLine& cmdLine) = 0;
-	virtual WindowManager* createOptimalWindowManager(const app::CommandLine& cmdLine);
+	virtual IBaseThread* createOptimalThread(const CommandLine& cmdLine) = 0;
+	virtual WindowManager* createOptimalWindowManager(const CommandLine& cmdLine);
 
 	//--
 
 	// create best window manager for the current platform
-	WindowManager* createDefaultPlatformWindowManager(const app::CommandLine& cmdLine);
+	WindowManager* createDefaultPlatformWindowManager(const CommandLine& cmdLine);
 
 	//--
 

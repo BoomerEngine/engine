@@ -8,22 +8,22 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(config)
+BEGIN_BOOMER_NAMESPACE()
 
 ///----
 
 /// storage entry for configuration values
 /// NOTE: once created exists till deletion of the ConfigStorage (but may be empty)
 /// NOTE: the ConfigStorageEntry objects owned by the config system are ETERNAL can be held onto by a pointer
-class CORE_CONFIG_API Entry : public NoCopy
+class CORE_CONFIG_API ConfigEntry : public NoCopy
 {
     RTTI_DECLARE_POOL(POOL_CONFIG)
 
 public:
-    Entry(Group* group, const StringBuf& name);
+    ConfigEntry(ConfigGroup* group, const StringBuf& name);
 
     /// get the parent group
-    INLINE Group* group() const { return m_group;}
+    INLINE ConfigGroup* group() const { return m_group;}
 
     /// get SHORT name of the entry (within a group)
     INLINE const StringBuf& name() const { return m_name; }
@@ -62,16 +62,16 @@ public:
     //--
 
     /// compare if two entries are equal
-    static bool Equal(const Entry& a, const Entry& b);
+    static bool Equal(const ConfigEntry& a, const ConfigEntry& b);
 
     /// print difference between two entries
-    static void PrintDiff(IFormatStream& f, const Entry& val, const Entry& base);
+    static void PrintDiff(IFormatStream& f, const ConfigEntry& val, const ConfigEntry& base);
 
     /// print content of the entry
-    static void Print(IFormatStream& f, const Entry& val);
+    static void Print(IFormatStream& f, const ConfigEntry& val);
 
 private:
-    Group* m_group;
+    ConfigGroup* m_group;
     StringBuf m_name;
     Array<StringBuf> m_values;
     SpinLock m_lock;
@@ -81,4 +81,4 @@ private:
 
 ///----
 
-END_BOOMER_NAMESPACE_EX(config)
+END_BOOMER_NAMESPACE()

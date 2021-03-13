@@ -35,15 +35,10 @@ GraphEditor::GraphEditor()
     hitTest(HitTestState::Enabled);
     allowFocusFromKeyboard(true);
 
-    actions().bindCommand("GraphEditor.CopySelection"_id) = [this]() { actionCopySelection(); };
-    actions().bindCommand("GraphEditor.CutSelection"_id) = [this]() { actionCutSelection(); };
-    actions().bindCommand("GraphEditor.PasteSelection"_id) = [this]() { actionPasteSelection(false, VirtualPosition(16,16)); };
-    actions().bindCommand("GraphEditor.DeleteSelection"_id) = [this]() { actionDeleteSelection(); };
-
-    actions().bindShortcut("GraphEditor.CopySelection"_id, "Ctrl+C");
-    actions().bindShortcut("GraphEditor.CutSelection"_id, "Ctrl+X");
-    actions().bindShortcut("GraphEditor.PasteSelection"_id, "Ctrl+V");
-    actions().bindShortcut("GraphEditor.DeleteSelection"_id, "Delete");
+    bindShortcut("Ctrl+C") = [this]() { actionCopySelection(); };
+    bindShortcut("Ctrl+X") = [this]() { actionCutSelection(); };
+    bindShortcut("Ctrl+V") = [this]() { actionPasteSelection(false, VirtualPosition(16, 16)); };
+    bindShortcut("Delete") = [this]() { actionDeleteSelection(); };
 }
 
 GraphEditor::~GraphEditor()

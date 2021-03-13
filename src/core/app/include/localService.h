@@ -10,24 +10,9 @@
 
 #include "core/object/include/rttiMetadata.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(app)
+BEGIN_BOOMER_NAMESPACE()
 
 class App;
-struct AppInitContext;
-
-// Results for service initialization
-enum class ServiceInitializationResult
-{
-    // module finished initialization, no more work for us
-    Finished = 0,
-
-    // module failed initialization and the app cannot continue
-    FatalError = 1,
-
-    // module failed initialization but the app can continue
-    // service will be unavailable
-    Silenced = 2,
-};
 
 //--
 
@@ -124,17 +109,17 @@ private:
 // NOTE: services may have dependencies on each other but this does not determine update order or anything (usually it does not have to)
 // NOTE: services are object in order to be passable to scripts
 // NOTE: services are very long lived objects
-class CORE_APP_API ILocalService : public IObject
+class CORE_APP_API IService : public IObject
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ILocalService, IObject);
+    RTTI_DECLARE_VIRTUAL_CLASS(IService, IObject);
 
 public:
-    ILocalService();
-    virtual ~ILocalService();
+    IService();
+    virtual ~IService();
 
     /// application is initializing, service can perform a self contained initialization that does not depend on any other service
     /// service can emit background initialization jobs (like connecting to remote server) that can continue once we enter next application state
-    virtual ServiceInitializationResult onInitializeService(const CommandLine& cmdLine) = 0;
+    virtual bool onInitializeService(const CommandLine& cmdLine) = 0;
 
     /// application is shutting down, last chance for cleanup
     /// this method is called in order determined by the resolve steps based on OnResolveShutdownDependency
@@ -147,4 +132,4 @@ public:
     virtual void onSyncUpdate() = 0;
 };
 
-END_BOOMER_NAMESPACE_EX(app)
+END_BOOMER_NAMESPACE()

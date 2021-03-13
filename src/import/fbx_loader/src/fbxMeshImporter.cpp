@@ -37,6 +37,7 @@ RTTI_BEGIN_TYPE_CLASS(FBXMeshImportConfig);
     RTTI_PROPERTY(m_importAtRootSpace).editable("Apply the inital transform of the root's chilren nodes").overriddable();
     RTTI_PROPERTY(m_forceNodeSkin).editable("Skin all meshes to parent nodes").overriddable();
     RTTI_PROPERTY(m_flipUV).editable("Flip V channel of the UVs").overriddable();
+    RTTI_PROPERTY(m_uvScale).editable("Extra UV scale to apply (mostly for simple meshes)").overriddable();
 RTTI_END_TYPE();
 
 FBXMeshImportConfig::FBXMeshImportConfig()
@@ -46,7 +47,7 @@ FBXMeshImportConfig::FBXMeshImportConfig()
 //--
 
 RTTI_BEGIN_TYPE_CLASS(MeshImporter);
-    RTTI_METADATA(ResourceCookedClassMetadata).addClass<Mesh>();
+    RTTI_METADATA(ResourceImportedClassMetadata).addClass<Mesh>();
     RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtension("fbx").addSourceExtension("FBX");
     RTTI_METADATA(ResourceCookerVersionMetadata).version(0);
     RTTI_METADATA(ResourceImporterConfigurationClassMetadata).configurationClass<FBXMeshImportConfig>();
@@ -114,6 +115,7 @@ ResourcePtr MeshImporter::importResource(IResourceImporterInterface& importer) c
     meshExportConfig.applyRootTransform = importConfig->m_importAtRootSpace;
     meshExportConfig.flipFace = importConfig->flipFaces;
     meshExportConfig.flipUV = importConfig->m_flipUV;
+    meshExportConfig.uvScale = importConfig->m_uvScale;
     meshExportConfig.forceSkinToNode = importConfig->m_forceNodeSkin;
 
     SkeletonBuilder skeleton;

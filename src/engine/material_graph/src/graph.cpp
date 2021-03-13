@@ -80,7 +80,6 @@ void MaterialGraphContainer::onPostLoad()
 
 RTTI_BEGIN_TYPE_CLASS(MaterialGraph);
     RTTI_METADATA(ResourceDescriptionMetadata).description("Material Graph");
-    RTTI_METADATA(ResourceTagColorMetadata).color(0xFF, 0xA6, 0x30);
     RTTI_PROPERTY(m_graph);
 RTTI_END_TYPE();
 
@@ -116,7 +115,7 @@ bool MaterialGraph::detachParameter(IMaterialTemplateParam* param)
     DEBUG_CHECK_RETURN_EX_V(m_parameters.contains(param), "Parameter should be on the list", false);
     DEBUG_CHECK_RETURN_EX_V(!checkParameterUsed(param), "Cannot detach used parameters", false);
 
-    m_parameters.pushBack(AddRef(param));
+    m_parameters.remove(param);
     param->parent(nullptr);
 
     onPropertyChanged("parameters");

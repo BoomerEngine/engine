@@ -46,7 +46,7 @@ void CanvasTestProject::cleanup()
     m_renderingOutput.reset();
 }
 
-bool CanvasTestProject::initialize(const app::CommandLine& cmdLine)
+bool CanvasTestProject::initialize(const CommandLine& cmdLine)
 {
     // list all test classes
     InplaceArray<ClassType, 100> testClasses;
@@ -304,7 +304,7 @@ void CanvasTestProject::update()
 
 END_BOOMER_NAMESPACE_EX(test)
 
-boomer::app::IApplication& GetApplicationInstance()
+boomer::IApplication& GetApplicationInstance()
 {
     static boomer::test::CanvasTestProject theApp;
     return theApp;

@@ -303,7 +303,7 @@ INLINE uint64_t SerializationReader::readCompressedNumber()
     {
         ASSERT_EX(m_cur < m_end, "Reading past the end of the stream");
         singleByte = *m_cur++;
-        ret |= (singleByte & 0x7F) << offset;
+        ret |= ((uint64_t)(singleByte & 0x7F)) << offset;
         offset += 7;
     }
 

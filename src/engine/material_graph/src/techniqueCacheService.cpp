@@ -29,9 +29,9 @@ MaterialTechniqueCacheService::MaterialTechniqueCacheService()
 MaterialTechniqueCacheService::~MaterialTechniqueCacheService()
 {}
 
-app::ServiceInitializationResult MaterialTechniqueCacheService::onInitializeService(const app::CommandLine& cmdLine)
+bool MaterialTechniqueCacheService::onInitializeService(const CommandLine& cmdLine)
 {
-    return app::ServiceInitializationResult::Finished;
+    return true;
 }
 
 MaterialTechniqueCacheService::TechniqueInfo::~TechniqueInfo()

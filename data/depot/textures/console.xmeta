@@ -1,0 +1,27 @@
+<?xml version="1.0" standalone="yes"?>
+<object class="ResourceMetadata">
+  <ids>
+    <element>{EE291CA5-F875-467C-FABB-2AC18E535544}</element>
+  </ids>
+  <importDependencies>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/textures/console.jpg</importPath>
+      <crc>244338271</crc>
+    </element>
+  </importDependencies>
+  <resourceClassType>StaticTexture2D</resourceClassType>
+  <importerClassType>assets::StaticTextureFromImageImporter</importerClassType>
+  <importerClassVersion>1</importerClassVersion>
+  <importBaseConfiguration class="assets::StaticTextureCompressionConfiguration">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600374822380000</sourceImportedOn>
+  </importBaseConfiguration>
+  <importUserConfiguration class="assets::StaticTextureCompressionConfiguration"/>
+  <importFullConfiguration class="assets::StaticTextureCompressionConfiguration">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600374822380000</sourceImportedOn>
+  </importFullConfiguration>
+  <internalRevision>1</internalRevision>
+</object>

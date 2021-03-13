@@ -36,15 +36,22 @@ public:
 };
 
 /// static texture, does not change much (usually baked) but can be streamed
-class ENGINE_TEXTURE_API StaticTexture : public ITexture
+class ENGINE_TEXTURE_API IStaticTexture : public ITexture
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(StaticTexture, ITexture);
+    RTTI_DECLARE_VIRTUAL_CLASS(IStaticTexture, ITexture);
 
 public:
-    StaticTexture();
-    StaticTexture(CompressedBufer&& data, AsyncFileBuffer&& asyncData, Array<StaticTextureMip>&& mips, const TextureInfo& info);
-    StaticTexture(const image::ImageView& image); // create a simple texture directly from image, no compression
-    virtual ~StaticTexture();
+    struct Setup
+    {
+        CompressedBufer data;
+        AsyncFileBuffer asyncData;
+        Array<StaticTextureMip> mips;
+        TextureInfo info;
+    };
+
+    IStaticTexture();
+    IStaticTexture(Setup&& setup);
+    virtual ~IStaticTexture();
 
     //--
 

@@ -89,7 +89,7 @@ PhysicsService::PhysicsService()
 static EngineErrorCallback theErrorCallback;
 static EngineAllocatorCallback theAllocatorCallback;
 
-app::ServiceInitializationResult PhysicsService::onInitializeService(const app::CommandLine& cmdLine)
+bool PhysicsService::onInitializeService(const CommandLine& cmdLine)
 {
     // create the PhysX foundation
     TRACE_INFO("Compiled with PhysX version {}.{}.{}", PX_PHYSICS_VERSION_MAJOR, PX_PHYSICS_VERSION_MINOR, PX_PHYSICS_VERSION_BUGFIX);
@@ -97,7 +97,7 @@ app::ServiceInitializationResult PhysicsService::onInitializeService(const app::
     if (!m_foundation)
     {
         TRACE_ERROR("Failed to create PhysX Foundation class!");
-        return app::ServiceInitializationResult::FatalError;
+        return false;
     }
 
     // create the PVD interface
@@ -135,11 +135,11 @@ app::ServiceInitializationResult PhysicsService::onInitializeService(const app::
     if (!m_physics)
     {
         TRACE_ERROR("Failed to create PhysX Physics interface");
-        return app::ServiceInitializationResult::FatalError;
+        return false;
     }
 
     // PhysX initialized
-    return app::ServiceInitializationResult::Finished;
+    return true;
 }
 
 void PhysicsService::onShutdownService()

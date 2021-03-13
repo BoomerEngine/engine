@@ -73,6 +73,17 @@ public:
         
     ///---
 
+    /// remove a "filter" function that will be called periodically to check if the button should be enabled
+    void removeFilter();
+
+    /// create a filter
+    EventFunctionBinder bindFilter();
+
+    ///---
+
+    /// change button caption
+    void text(StringView text);
+
 protected:
     // IElement
     virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
@@ -81,6 +92,8 @@ protected:
     ButtonMode m_mode;
     bool m_pressed = false;
     bool m_toggled = false;
+
+    TEventFunction m_filterFunction;
         
     void pressedState(bool isPressed);
     void inputActionFinished();

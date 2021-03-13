@@ -12,14 +12,14 @@
 #include "core/system/include/timing.h"
 #include "core/system/include/singleton.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(app)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
 // container for all LOCAL services in this process
-class CORE_APP_API LocalServiceContainer : public ISingleton
+class CORE_APP_API ServiceContainer : public ISingleton
 {
-    DECLARE_SINGLETON(LocalServiceContainer);
+    DECLARE_SINGLETON(ServiceContainer);
 
 public:
     ///--
@@ -61,26 +61,26 @@ public:
 
 protected:
     static const uint32_t MAX_SERVICE = 128;
-    InplaceArray<ILocalService*, MAX_SERVICE> m_serviceMap; // index -> service pointer
+    InplaceArray<IService*, MAX_SERVICE> m_serviceMap; // index -> service pointer
 
-    typedef Array< RefPtr<ILocalService> > TServices;
+    typedef Array< RefPtr<IService> > TServices;
     TServices m_services; // all services registered in the app
 
-    typedef Array<ILocalService*> TRawServices;
+    typedef Array<IService*> TRawServices;
     TRawServices m_tickList; // list of services to tick (in the order of the updates)
 
     //---
 
-    LocalServiceContainer();
+    ServiceContainer();
 
     virtual void deinit() override final;
 
     //---
 
     /// attach service to the application
-    void attachService(const RefPtr<ILocalService>& service);
+    void attachService(const RefPtr<IService>& service);
 };
 
 //---
 
-END_BOOMER_NAMESPACE_EX(app)
+END_BOOMER_NAMESPACE()

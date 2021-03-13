@@ -143,4 +143,12 @@ namespace prv
 
 } // prv
 
+void YieldThread(uint32_t time)
+{
+    if (time == 0)
+        ::Sleep(0);
+    else
+        ::Sleep(time);
+}
+
 END_BOOMER_NAMESPACE()

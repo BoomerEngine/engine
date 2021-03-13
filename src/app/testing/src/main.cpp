@@ -87,7 +87,7 @@ int main(int argc, char **argv)
 {
     InitializeStaticDependencies();
 
-    boomer::InitializeFibers(boomer::app::CommandLine());
+    boomer::InitializeFibers(boomer::CommandLine());
     boomer::profiler::Block::InitializeDisabled();
 	boomer::socket::Initialize();
 

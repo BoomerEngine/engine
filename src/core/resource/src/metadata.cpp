@@ -70,13 +70,6 @@ void ResourceConfiguration::setupDefaultImportMetadata()
     changeImportMetadata(GetUserName(), GetHostName(), TimeStamp::GetNow());
 }
 
-void ResourceConfiguration::computeConfigurationKey(CRC64& crc) const
-{
-    // ignore most of the "source" settings
-    crc << m_sourceAuthor;
-    crc << m_sourceLicense;
-}
-
 //--
 
 RTTI_BEGIN_TYPE_STRUCT(ResourceImportDependency);
@@ -91,6 +84,7 @@ RTTI_END_TYPE();
 RTTI_BEGIN_TYPE_CLASS(ResourceMetadata);
     RTTI_OLD_NAME("res::Metadata");
     RTTI_PROPERTY(ids);
+    RTTI_PROPERTY(loadExtension);
     RTTI_PROPERTY(importDependencies);
     RTTI_PROPERTY(resourceClassType);
     RTTI_PROPERTY(resourceClassVersion);
@@ -103,6 +97,7 @@ RTTI_BEGIN_TYPE_CLASS(ResourceMetadata);
 RTTI_END_TYPE();
 
 ResourceMetadata::ResourceMetadata()
+    : loadExtension(IResource::FILE_EXTENSION)
 {}
 
 //--

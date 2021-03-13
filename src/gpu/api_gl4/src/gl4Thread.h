@@ -36,7 +36,7 @@ public:
 	virtual void insertGpuFrameFence_Thread(uint64_t frameIndex) override final;
 	virtual bool checkGpuFrameFence_Thread(uint64_t& outCompletedFrameIndex) override final;
 
-	virtual bool threadStartup(const app::CommandLine& cmdLine, DeviceCaps& outCaps) override; // called on thread to initialize API
+	virtual bool threadStartup(const CommandLine& cmdLine, DeviceCaps& outCaps) override; // called on thread to initialize API
 	virtual void threadFinish() override; // called on thread to initialize API
 
 	//--
@@ -46,10 +46,10 @@ public:
 	virtual IBaseSampler* createOptimalSampler(const SamplerState& state) override final;
 	virtual IBaseShaders* createOptimalShaders(const ShaderData* data) override final;
 
-	virtual IBaseObjectCache* createOptimalObjectCache(const app::CommandLine& cmdLine) override final;
+	virtual IBaseObjectCache* createOptimalObjectCache(const CommandLine& cmdLine) override final;
 
 
-	virtual ObjectRegistry* createOptimalObjectRegistry(const app::CommandLine& cmdLine) override final;
+	virtual ObjectRegistry* createOptimalObjectRegistry(const CommandLine& cmdLine) override final;
 
 	//--
 

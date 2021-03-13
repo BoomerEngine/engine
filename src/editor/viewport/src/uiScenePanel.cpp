@@ -337,7 +337,7 @@ void RenderingScenePanel::panelSettings(const RenderingScenePanelSettings& setti
 
     if (settings.renderMode != oldMode)
     {
-        toolbar()->updateButtonCaption("PreviewPanel.ChangeRenderMode"_id, ui::ToolbarButtonSetup().caption(RenderModeString(settings.renderMode)));
+        toolbar()->updateButtonCaption("RenderMode"_id, RenderModeString(settings.renderMode));
     }
 }
 
@@ -349,7 +349,7 @@ void RenderingScenePanel::cameraSettings(const ViewportCameraControllerSettings&
 
     if (settings.mode != oldMode)
     {
-        toolbar()->updateButtonCaption("PreviewPanel.ChangeCameraMode"_id, ui::ToolbarButtonSetup().caption(CameraModeString(settings.mode)));
+        toolbar()->updateButtonCaption("CameraMode"_id, CameraModeString(settings.mode));
     }
 }
 
@@ -1359,40 +1359,27 @@ void RenderingScenePanel::renderContent(const ViewportParams& viewport, Camera* 
 
 void RenderingScenePanel::createToolbarItems()
 {
-    actions().bindCommand("PreviewPanel.ChangeRenderMode"_id) = [this](ui::Button* button)
-    {
-        if (button)
-        {
+    toolbar()->createButton(ui::ToolBarButtonInfo("ChangeFilters"_id).caption("[img:eye] Filters")) = 
+        [this](ui::Button* button) {
             auto menu = RefNew<MenuButtonContainer>();
             buildRenderModePopup(menu);
             menu->showAsDropdown(button);
-        }
-    };
+        };
 
-    actions().bindCommand("PreviewPanel.ChangeFilters"_id) = [this](ui::Button* button)
-    {
-        if (button)
+    toolbar()->createButton(ui::ToolBarButtonInfo("RenderMode"_id).caption(RenderModeString(m_panelSettings.renderMode))) =
+        [this](ui::Button* button)
         {
             auto menu = RefNew<MenuButtonContainer>();
             buildFilterPopup(menu);
             menu->showAsDropdown(button);
-        }
-    };
+        };
 
-    actions().bindCommand("PreviewPanel.ChangeCameraMode"_id) = [this](ui::Button* button)
-    {
-        if (button)
-        {
+    toolbar()->createButton(ui::ToolBarButtonInfo("CameraMode"_id).caption(CameraModeString(m_cameraController.settings().mode))) =
+        [this](ui::Button* button) {
             auto menu = RefNew<MenuButtonContainer>();
             buildCameraPopup(menu);
             menu->showAsDropdown(button);
-        }
-    };
-
-    toolbar()->createButton("PreviewPanel.ChangeFilters"_id, ui::ToolbarButtonSetup().caption("[img:eye] Filters"));
-    toolbar()->createButton("PreviewPanel.ChangeRenderMode"_id, ui::ToolbarButtonSetup().caption(RenderModeString(m_panelSettings.renderMode)));
-    toolbar()->createButton("PreviewPanel.ChangeCameraMode"_id, ui::ToolbarButtonSetup().caption(CameraModeString(m_cameraController.settings().mode)));
-    toolbar()->createSeparator();
+        };
 }
 
 static const rendering::FrameRenderMode USER_SELECTABLE_RENDER_MODES[] = {
@@ -1416,7 +1403,7 @@ void RenderingScenePanel::buildRenderModePopup(ui::MenuButtonContainer* menu)
         if (auto title = RenderModeString(mode))
             menu->createCallback(title) = [this, mode, title]() {
                 m_panelSettings.renderMode = mode;
-                toolbar()->updateButtonCaption("PreviewPanel.ChangeRenderMode"_id, ui::ToolbarButtonSetup().caption(title));
+                toolbar()->updateButtonCaption("RenderMode"_id, title);
             };
     }
 
@@ -1544,7 +1531,7 @@ void RenderingScenePanel::buildCameraPopup(MenuButtonContainer* menu)
             camera.mode = newMode;
             cameraSettings(camera);
 
-            toolbar()->updateButtonCaption("PreviewPanel.ChangeCameraMode"_id, ui::ToolbarButtonSetup().caption(title));
+            toolbar()->updateButtonCaption("CameraMode"_id, title);
         };
     }
 

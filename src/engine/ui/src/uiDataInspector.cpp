@@ -22,6 +22,7 @@
 
 #include "core/input/include/inputStructures.h"
 #include "core/object/include/rttiDataView.h"
+#include "core/object/include/dataViewMulti.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 
@@ -90,6 +91,7 @@ DataInspector::DataInspector()
     enableAutoExpand(true, true);
     allowFocusFromKeyboard(true);
     layoutVertical();
+    customInitialSize(450, 700);
 
     m_columnHeader = createInternalChild<DataInspectorColumnHeader>();
 }
@@ -219,28 +221,21 @@ void DataInspector::bindActionHistory(ActionHistory* ah)
     m_actionHistory = AddRef(ah);
 }
 
-void DataInspector::bindNull()
+void DataInspector::bindViews(IDataView** views, uint32_t numViews, bool readOnly)
 {
     destroyItems();
     detachData();
-    m_readOnly = false;
-    m_data.reset();
-}
 
-void DataInspector::bindData(IDataView* data, bool readOnly)
-{
-    destroyItems();
-    detachData();
     m_readOnly = readOnly;
-    m_data = AddRef(data);
+    m_data.reset();
+
+    if (numViews == 1)
+        m_data = AddRef(views[0]);
+    else if (numViews > 1)
+        m_data = RefNew<DataViewMulti>(views, numViews);
+
     attachData();
     createItems();
-}
-
-void DataInspector::bindObject(IObject* obj, bool readOnly)
-{
-    auto view = obj ? obj->createDataView() : nullptr;
-    bindData(view, readOnly);
 }
 
 void DataInspector::select(DataInspectorNavigationItem* item, bool focus)

@@ -30,7 +30,7 @@ public:
 	///--
 
 	/// initialize, may fail for some crazy reason
-	bool initialize(const app::CommandLine& cmdLine);
+	bool initialize(const CommandLine& cmdLine);
 
 	/// device output/display discovery interface
 	void enumMonitorAreas(Array<Rect>& outMonitorAreas) const;
@@ -54,7 +54,7 @@ private:
 	Array<CachedDisplay> m_cachedDisplays;
 	Array<Rect> m_cachedMonitors;
 
-	bool initializeAdapter(const app::CommandLine& cmdLine);
+	bool initializeAdapter(const CommandLine& cmdLine);
 	void enumerateAdapters();
 	void enumerateDisplayModes(CachedDisplay& display);
 

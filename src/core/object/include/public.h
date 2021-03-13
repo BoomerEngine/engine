@@ -139,6 +139,7 @@ enum class DataViewResultCode : uint8_t
     ErrorNullObject, // trying to access null object
     ErrorIndexOutOfRange, // trying to access array's index that is out of range
     ErrorInvalidValid, // value to write is invalid
+    ErrorIncompatibleMultiView, // field with the same name in different views in a multi view is something completly different 
 };
 
 struct CORE_OBJECT_API DataViewResult
@@ -179,35 +180,11 @@ END_BOOMER_NAMESPACE()
 BEGIN_BOOMER_NAMESPACE()
 
 INLINE DataViewResult::DataViewResult() = default;
-INLINE DataViewResult::DataViewResult(const DataViewResult& other) = default;
-INLINE DataViewResult::DataViewResult(DataViewResult&& other) = default;
+INLINE DataViewResult::DataViewResult(const DataViewResult & other) = default;
+INLINE DataViewResult::DataViewResult(DataViewResult && other) = default;
 INLINE DataViewResult::~DataViewResult() = default;
-INLINE DataViewResult& DataViewResult::operator=(const DataViewResult& other) = default;
+INLINE DataViewResult& DataViewResult::operator=(const DataViewResult & other) = default;
 INLINE DataViewResult& DataViewResult::operator=(DataViewResult && other) = default;
-
-struct CORE_OBJECT_API DataViewErrorResult
-{
-    DataViewResult result;
-
-    INLINE DataViewErrorResult() {};
-    INLINE DataViewErrorResult(const DataViewErrorResult& other) = default;
-    INLINE DataViewErrorResult(DataViewErrorResult&& other) = default;
-    INLINE DataViewErrorResult& operator=(const DataViewErrorResult& other) = default;
-    INLINE DataViewErrorResult& operator=(DataViewErrorResult&& other) = default;
-
-    INLINE DataViewErrorResult(DataViewResult&& other) : result(std::move(other)) {};
-    INLINE DataViewErrorResult(const DataViewResult& other) : result(other) {};
-
-    INLINE DataViewErrorResult& operator=(DataViewResult&& other) { result = std::move(other); return *this; }
-    INLINE DataViewErrorResult& operator=(const DataViewResult& other) { result = other; return *this; }
-
-    // NOTE: true only if we have error
-    INLINE operator bool() const { return result.code != DataViewResultCode::OK; }
-
-    INLINE operator DataViewResult() const { return result; }
-
-    void print(IFormatStream& f) const;
-};
 
 //---
 
@@ -231,18 +208,6 @@ template< typename T >
 INLINE RefPtr<T> LoadObjectFromXML(const xml::IDocument* doc)
 {
     return rtti_cast<T>(LoadObjectFromXML(doc, T::GetStaticClass()));
-}
-
-//---
-
-static INLINE DataViewErrorResult HasError(DataViewResult&& result)
-{
-    return DataViewErrorResult(std::move(result));
-}
-
-static INLINE DataViewErrorResult HasError(const DataViewResult& result)
-{
-    return DataViewErrorResult(std::move(result));
 }
 
 //---

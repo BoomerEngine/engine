@@ -1,0 +1,8 @@
+<?xml version="1.0" standalone="yes"?>
+<object class="ResourceMetadata">
+  <ids>
+    <element>{a1258046-6b46-407c-b4fb-eebc0379e3f5}</element>
+  </ids>
+  <resourceClassType>MaterialGraph</resourceClassType>
+  <internalRevision>15</internalRevision>
+</object>

@@ -45,13 +45,13 @@ typedef BitFlags<CameraButtonBit> CameraButtonMask;
 
 // command to spawn a test window with basic rendering/GPU testes
 // running this command with different rendering drivers and on different platforms should produce the same results which can be easily and automatically verified (by taking screenshots)
-class TestRenderingFramework : public app::IApplication
+class TestRenderingFramework : public IApplication
 {
 public:
     TestRenderingFramework();
     virtual ~TestRenderingFramework();
 
-    virtual bool initialize(const app::CommandLine& commandline) override final;
+    virtual bool initialize(const CommandLine& commandline) override final;
     virtual void update() override final;
     virtual void cleanup() override final;
 
@@ -146,7 +146,7 @@ RefPtr<IRenderingTest> TestRenderingFramework::initializeTest(uint32_t testIndex
     return nullptr;
 }
 
-bool TestRenderingFramework::initialize(const app::CommandLine& cmdLine)
+bool TestRenderingFramework::initialize(const CommandLine& cmdLine)
 {
     // list all test classes
     InplaceArray<ClassType, 100> testClasses;
@@ -461,7 +461,7 @@ void TestRenderingFramework::update()
 
 END_BOOMER_NAMESPACE_EX(gpu::test)
 
-boomer::app::IApplication& GetApplicationInstance()
+boomer::IApplication& GetApplicationInstance()
 {
     static boomer::gpu::test::TestRenderingFramework theApp;
     return theApp;

@@ -307,7 +307,7 @@ SourceAssetPtr SourceAssetService::loadAssetCached(StringView assetImportPath, T
 
 //--
 
-app::ServiceInitializationResult SourceAssetService::onInitializeService(const app::CommandLine& cmdLine)
+bool SourceAssetService::onInitializeService(const CommandLine& cmdLine)
 {
     createFileSystems();
 
@@ -315,7 +315,7 @@ app::ServiceInitializationResult SourceAssetService::onInitializeService(const a
 
     m_nextSystemUpdate = NativeTimePoint::Now() + cvSystemTickTime.get();
 
-    return app::ServiceInitializationResult::Finished;
+    return true;
 }
 
 void SourceAssetService::onShutdownService()

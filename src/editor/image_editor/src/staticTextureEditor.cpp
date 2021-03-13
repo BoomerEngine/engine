@@ -9,11 +9,10 @@
 #include "build.h"
 #include "staticTextureEditor.h"
 #include "imagePreviewPanel.h"
+#include "imageCubePreviewPanel.h"
 #include "imageHistogramWidget.h"
 #include "imageHistogramCalculation.h"
 
-#include "editor/common/include/managedFile.h"
-#include "editor/common/include/assetFormat.h"
 #include "engine/ui/include/uiDockLayout.h"
 #include "engine/ui/include/uiDockPanel.h"
 #include "engine/ui/include/uiDataInspector.h"
@@ -29,23 +28,45 @@
 #include "engine/texture/include/staticTexture.h"
 #include "engine/texture/include/texture.h"
 #include "gpu/device/include/image.h"
-#include "editor/common/include/managedFileNativeResource.h"
+#include "engine/texture/include/staticTextureCube.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
+
+static assets::ImageContentColorSpace ConvertColorSpace(image::ColorSpace space)
+{
+    switch (space)
+    {
+        case image::ColorSpace::SRGB: return assets::ImageContentColorSpace::SRGB;
+        case image::ColorSpace::Linear: return assets::ImageContentColorSpace::Linear;
+        case image::ColorSpace::Normals: return assets::ImageContentColorSpace::Normals;
+        case image::ColorSpace::HDR: return assets::ImageContentColorSpace::HDR;
+    }
+
+    return assets::ImageContentColorSpace::Linear;
+}
 
 //---
 
 RTTI_BEGIN_TYPE_NATIVE_CLASS(StaticTextureEditor);
 RTTI_END_TYPE();
 
-StaticTextureEditor::StaticTextureEditor(ManagedFileNativeResource* file)
-    : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::Imported })
+StaticTextureEditor::StaticTextureEditor(const ResourceInfo& info, IStaticTexture* texture)
+    : ResourceEditor(info, { ResourceEditorFeatureBit::Save })
     , m_histogramCheckTimer(this, "HistogramCheckTimer"_id)
+    , m_texture(AddRef(texture))
 {
     createInterface();
 
     m_histogramCheckTimer = [this]() { checkHistograms(); };
     m_histogramCheckTimer.startRepeated(0.1f);
+
+    updateHistogram();
+    updateImageInfoText();
+
+    m_previewPanel->bindImageView(m_texture->view(), ConvertColorSpace(m_texture->info().colorSpace));
+
+    if (m_cubePreviewPanel)
+        m_cubePreviewPanel->bindImageView(m_texture->view(), ConvertColorSpace(m_texture->info().colorSpace));
 }
 
 StaticTextureEditor::~StaticTextureEditor()
@@ -55,13 +76,24 @@ void StaticTextureEditor::createInterface()
 {
     {
         auto tab = RefNew<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
-        m_previewTab = tab;
-        m_previewTab->layoutVertical();
+        tab->layoutVertical();
 
-        m_previewPanel = m_previewTab->createChild<ImagePreviewPanelWithToolbar>();
+        m_previewPanel = tab->createChild<ImagePreviewPanelWithToolbar>();
         m_previewPanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
         m_previewPanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
             
+        dockLayout().attachPanel(tab);
+    }
+
+    if (m_texture->is<StaticTextureCube>())
+    {
+        auto tab = RefNew<ui::DockPanel>("[img:cube] Cube", "CubePreviewPanel");
+        tab->layoutVertical();
+
+        m_cubePreviewPanel = tab->createChild<ImageCubePreviewPanelWithToolbar>();
+        m_cubePreviewPanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+        m_cubePreviewPanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
+
         dockLayout().attachPanel(tab);
     }
 
@@ -225,50 +257,22 @@ void StaticTextureEditor::updateImageInfoText()
     updateImageInfoText();
 }*/
 
-static assets::ImageContentColorSpace ConvertColorSpace(image::ColorSpace space)
+void StaticTextureEditor::reimported(ResourcePtr resource, ResourceMetadataPtr metadata)
 {
-    switch (space)
-    {
-    case image::ColorSpace::SRGB: return assets::ImageContentColorSpace::SRGB;
-    case image::ColorSpace::Linear: return assets::ImageContentColorSpace::Linear;
-    case image::ColorSpace::Normals: return assets::ImageContentColorSpace::Normals;
-    case image::ColorSpace::HDR: return assets::ImageContentColorSpace::HDR;
-    }
-
-    return assets::ImageContentColorSpace::Linear;
-}
-
-bool StaticTextureEditor::initialize()
-{
-    if (!TBaseClass::initialize())
-        return false;
-
-    m_texture = rtti_cast<StaticTexture>(resource());
-    if (!m_texture)
-        return false;
-
-    updateHistogram();
-    updateImageInfoText();
-
-    if (auto data = texture())
-        m_previewPanel->bindImageView(data->view(), ConvertColorSpace(data->info().colorSpace));
-
-    return true;
-}
-
-void StaticTextureEditor::handleLocalReimport(const ResourcePtr& ptr)
-{
-    if (auto newTexture = rtti_cast<StaticTexture>(ptr))
+    if (auto newTexture = rtti_cast<IStaticTexture>(resource))
     {
         m_texture = newTexture;
+
+        TBaseClass::reimported(resource, metadata);
 
         updateHistogram();
         updateImageInfoText();
 
         m_previewPanel->bindImageView(newTexture->view(), ConvertColorSpace(newTexture->info().colorSpace));
 
-            
-    }     
+        if (m_cubePreviewPanel)
+            m_cubePreviewPanel->bindImageView(newTexture->view(), ConvertColorSpace(newTexture->info().colorSpace));
+    }
 }
 
 //---
@@ -278,17 +282,15 @@ class StaticTextureResourceEditorOpener : public IResourceEditorOpener
     RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureResourceEditorOpener, IResourceEditorOpener);
 
 public:
-    virtual bool canOpen(const ManagedFileFormat& format) const override
+    virtual bool createEditor(ui::IElement* owner, const ResourceInfo& context, ResourceEditorPtr& outEditor) const override final
     {
-        return format.nativeResourceClass() == StaticTexture::GetStaticClass();
-    }
+        if (auto texture = rtti_cast<IStaticTexture>(context.resource))
+        {
+            outEditor = RefNew<StaticTextureEditor>(context, texture);
+            return true;
+        }
 
-    virtual RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
-    {
-        if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-            return RefNew<StaticTextureEditor>(nativeFile);
-
-        return nullptr;
+        return false;
     }
 };
 

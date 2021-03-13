@@ -24,9 +24,9 @@ DECLARE_GLOBAL_EVENT(EVENT_RESOURCE_RELOADED) // old resource + new resource
 //---
 
 // resource loading service
-class CORE_RESOURCE_API LoadingService : public app::ILocalService
+class CORE_RESOURCE_API LoadingService : public IService
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(LoadingService, app::ILocalService);
+    RTTI_DECLARE_VIRTUAL_CLASS(LoadingService, IService);
 
 public:
     LoadingService();

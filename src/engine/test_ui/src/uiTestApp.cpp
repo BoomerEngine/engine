@@ -37,7 +37,7 @@ UIApp::~UIApp()
 {
 }
 
-bool UIApp::initialize(const app::CommandLine& commandline)
+bool UIApp::initialize(const CommandLine& commandline)
 {
 	auto dev = GetService<DeviceService>();
 	if (!dev)
@@ -74,7 +74,7 @@ void UIApp::update()
 
 END_BOOMER_NAMESPACE_EX(test)
 
-boomer::app::IApplication& GetApplicationInstance()
+boomer::IApplication& GetApplicationInstance()
 {
     static boomer::test::UIApp theApp;
     return theApp;

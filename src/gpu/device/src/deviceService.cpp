@@ -53,7 +53,7 @@ static SpecificClassType<IDevice> FindDeviceClass(StringView name)
 	return nullptr;
 }
 
-app::ServiceInitializationResult DeviceService::onInitializeService(const app::CommandLine &cmdLine)
+bool DeviceService::onInitializeService(const CommandLine &cmdLine)
 {
     // read the name of the device from config
     auto deviceToInitializeName = cvDeviceName.get();
@@ -71,7 +71,7 @@ app::ServiceInitializationResult DeviceService::onInitializeService(const app::C
 	if (!deviceClass)
 	{
 		TRACE_ERROR("Unknown device class '{}'", deviceToInitializeName);
-		return app::ServiceInitializationResult::FatalError;
+		return false;
 	}
 
 	// initialize the device
@@ -82,7 +82,7 @@ app::ServiceInitializationResult DeviceService::onInitializeService(const app::C
 		device->shutdown();
 		delete device;
 
-		return app::ServiceInitializationResult::FatalError;
+		return false;
 	}
 
 	// print caps
@@ -97,7 +97,7 @@ app::ServiceInitializationResult DeviceService::onInitializeService(const app::C
 	m_globals = new DeviceGlobalObjects(m_device);
 
     // canvas renderer initialized
-    return app::ServiceInitializationResult::Finished;
+    return true;
 }
 
 void DeviceService::onShutdownService()

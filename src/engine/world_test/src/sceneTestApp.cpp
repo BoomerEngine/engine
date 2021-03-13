@@ -48,7 +48,7 @@ void SceneTestProject::cleanup()
 	m_renderingOutput.reset();
 }
 
-bool SceneTestProject::initialize(const app::CommandLine& cmdLine)
+bool SceneTestProject::initialize(const CommandLine& cmdLine)
 {
     // list all test classes
     InplaceArray<ClassType, 100> testClasses;
@@ -462,7 +462,7 @@ void SceneTestProject::renderCanvas(canvas::Canvas& canvas)
 
 END_BOOMER_NAMESPACE_EX(test)
 
-boomer::app::IApplication& GetApplicationInstance()
+boomer::IApplication& GetApplicationInstance()
 {
     static boomer::test::SceneTestProject theApp;
     return theApp;

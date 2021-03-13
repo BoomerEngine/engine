@@ -36,7 +36,6 @@ RTTI_END_TYPE();
 
 RTTI_BEGIN_TYPE_CLASS(RawScene);
     RTTI_METADATA(ResourceDescriptionMetadata).description("Scene");
-    RTTI_METADATA(ResourceTagColorMetadata).color(0x9d, 0x02, 0x08);
     //RTTI_PROPERTY(m_allLayers)
 RTTI_END_TYPE();
 

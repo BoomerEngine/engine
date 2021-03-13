@@ -36,7 +36,7 @@ public:
 };
 
 RTTI_BEGIN_TYPE_CLASS(BitmapFontCooker);
-    RTTI_METADATA(ResourceCookedClassMetadata).addClass<BitmapFont>();
+    RTTI_METADATA(ResourceImportedClassMetadata).addClass<BitmapFont>();
     RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtension("ttf").addSourceExtension("otf");
     RTTI_METADATA(ResourceCookerBakingOnlyMetadata);
 RTTI_END_TYPE();

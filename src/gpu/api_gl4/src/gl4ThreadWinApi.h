@@ -51,7 +51,7 @@ public:
 	//--
 
 	virtual IBaseSwapchain* createOptimalSwapchain(const OutputInitInfo& info) override final;
-	virtual IBaseBackgroundQueue* createOptimalBackgroundQueue(const app::CommandLine& cmdLine) override final;
+	virtual IBaseBackgroundQueue* createOptimalBackgroundQueue(const CommandLine& cmdLine) override final;
 
 	//--
 
@@ -65,7 +65,7 @@ private:
 	HWND m_hFakeHWND = NULL;
 	HDC m_hActiveDC = NULL;
 
-	virtual bool threadStartup(const app::CommandLine& cmdLine, DeviceCaps& outCaps) override final;
+	virtual bool threadStartup(const CommandLine& cmdLine, DeviceCaps& outCaps) override final;
 	virtual void threadFinish() override final;
 };
 

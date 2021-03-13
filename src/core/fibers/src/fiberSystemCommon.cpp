@@ -188,7 +188,11 @@ namespace prv
     {
         // get active thread
         auto currentThread = currentThreadState();
-        ASSERT(currentThread != nullptr);
+        if (currentThread == nullptr)
+        {
+            YieldThread();
+            return;
+        }
 
         // get active fiber on thread
         auto currentFiber = currentThread->attachedFiber.load();

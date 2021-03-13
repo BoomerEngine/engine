@@ -149,13 +149,9 @@ RTTI_BEGIN_TYPE_CLASS(MenuButtonContainer);
 RTTI_END_TYPE();
 
 MenuButtonContainer::MenuButtonContainer()
-    : m_timerUpdateState(this)
 {
     layoutVertical();
     enableAutoExpand(true, false);
-
-    m_timerUpdateState = [this]() { updateButtonState(); };
-    m_timerUpdateState.startOneShot(0.0001f);
 }
 
 PopupPtr MenuButtonContainer::convertToPopup()
@@ -192,14 +188,9 @@ void MenuButtonContainer::showAsDropdown(IElement* owner)
         popup->show(owner, PopupWindowSetup().autoClose().bottomLeft());
 }
 
-void MenuButtonContainer::createAction(StringID action, StringView text, StringView icon /*= ""*/)
-{
-    createChild<MenuButton>(action, text, icon);
-}
-
 EventFunctionBinder MenuButtonContainer::createCallback(StringView text, StringView icon /*= ""*/, StringView shortcut /*= ""*/, bool enabled /*= true*/)
 {
-    auto button = createChild<MenuButton>(StringID(), text, icon, shortcut);
+    auto button = createChild<MenuButton>(text, icon, shortcut);
     button->enable(enabled);
     return button->bind(EVENT_MENU_ITEM_CLICKED);
 }
@@ -217,53 +208,12 @@ void MenuButtonContainer::createSubMenu(const PopupPtr& popup, StringView text, 
 
 void MenuButtonContainer::createSeparator()
 {
-    createChildWithType<IElement>("MenuSeparator"_id);
-}
+    bool separator = false;
+    for (auto it = childrenList(); it; ++it)
+        separator = (it->styleType() == "MenuSeparator"_id);
 
-void MenuButtonContainer::updateButtonState()
-{
-    bool separatorAllowed = false;
-    for (ElementChildIterator it(childrenList()); it; ++it)
-    {
-        if (const auto actionName = it->evalStyleValue<StringID>("action"_id))
-        {
-            auto actionState = checkAction(actionName);
-
-            bool enabled = actionState.test(ActionStatusBit::Defined) && actionState.test(ActionStatusBit::Enabled);
-            it->enable(enabled);
-
-            if (auto button = rtti_cast<Button>(*it))
-                button->toggle(actionState.test(ActionStatusBit::Toggled));
-        }
-
-        /*if (it->styleType() == "MenuSeparator"_id)
-        {
-            it->visibility(separatorAllowed);
-            separatorAllowed = false;
-        }
-        else
-        {
-            if (const auto actionName = it->evalStyleValue<StringID>("action"_id))
-            {
-                auto actionState = checkAction(actionName);
-                bool visible = actionState.test(ActionStatusBit::Defined);
-                it->visibility(visible);
-
-                if (visible)
-                {
-                    it->enable(actionState.test(ActionStatusBit::Enabled));
-
-                    if (auto button = rtti_cast<Button>(*it))
-                        button->toggle(actionState.test(ActionStatusBit::Toggled));
-                }
-            }
-            else
-            {
-                it->visibility(true);
-                separatorAllowed = true;
-            }
-        }*/
-    }
+    if (!separator)
+        createChildWithType<IElement>("MenuSeparator"_id);
 }
 
 //---
@@ -313,7 +263,7 @@ MenuButton::MenuButton()
     : Button({ ButtonModeBit::EventOnClickRelease, ButtonModeBit::NoFocus })
 {}
 
-MenuButton::MenuButton(StringID action /*= StringID()*/, StringView text /*= ""*/, StringView icon /*= ""*/, StringView shortcut /*= ""*/)
+MenuButton::MenuButton(StringView text /*= ""*/, StringView icon /*= ""*/, StringView shortcut /*= ""*/)
     : Button({ ButtonModeBit::EventOnClickRelease, ButtonModeBit::NoFocus })
 {
     if (icon.empty() && text.beginsWith("[img:"))
@@ -327,56 +277,28 @@ MenuButton::MenuButton(StringID action /*= StringID()*/, StringView text /*= ""*
     }
 
     createInternalNamedChild<TextLabel>("MenuIcon"_id, icon);
-    createInternalNamedChild<TextLabel>("MenuCaption"_id, text ? text : action.view());
+    createInternalNamedChild<TextLabel>("MenuCaption"_id, text);
     createInternalNamedChild<TextLabel>("MenuShortcut"_id, shortcut);
 
     if (auto* parentPopup = FindRootPopupWindow(this))
         parentPopup->requestClose();
 
-    if (action)
-    {
-        customStyle("action"_id, action);
+    bind(EVENT_CLICKED) = [this]() {
 
-        bind(EVENT_CLICKED) = [this]() {
+        if (auto* parentPopup = FindRootPopupWindow(this))
+            parentPopup->requestClose();
 
+        if (auto* parentWindow = FindRootWindow(this))
+        {
+            parentWindow->requestActivate();
 
-            if (auto* parentWindow = FindRootWindow(this))
+            auto buttonRef = RefPtr<MenuButton>(AddRef(this));
+            RunSync("MenuCommand") << [buttonRef](FIBER_FUNC)
             {
-                parentWindow->requestActivate();
-
-                if (auto action = evalStyleValue<StringID>("action"_id))
-                {
-                    auto windowRef = RefWeakPtr<Window>(parentWindow);
-                    auto buttonRef = RefPtr<MenuButton>(AddRef(this));
-
-                    RunSync("MenuCommand") << [windowRef, buttonRef, action](FIBER_FUNC)
-                    {
-                        if (auto window = windowRef.lock())
-                            window->runAction(action, buttonRef);
-                    };
-                }
-            }
-        };
-    }
-    else
-    {
-        bind(EVENT_CLICKED) = [this]() {
-
-            if (auto* parentPopup = FindRootPopupWindow(this))
-                parentPopup->requestClose();
-
-            if (auto* parentWindow = FindRootWindow(this))
-            {
-                parentWindow->requestActivate();
-
-                auto buttonRef = RefPtr<MenuButton>(AddRef(this));
-                RunSync("MenuCommand") << [buttonRef](FIBER_FUNC)
-                {
-                    buttonRef->call(EVENT_MENU_ITEM_CLICKED);
-                };
-            }
-        };
-    }
+                buttonRef->call(EVENT_MENU_ITEM_CLICKED);
+            };
+        }
+    };
 }
 
 MenuButton::MenuButton(const TPopupFunc& func, StringView text, StringView icon)

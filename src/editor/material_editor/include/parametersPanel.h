@@ -9,15 +9,16 @@
 #pragma once
 
 #include "engine/ui/include/uiSimpleListView.h"
+#include "engine/ui/include/uiListViewEx.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 class MaterialParametersPanel;
 
 /// preview item for the parameter
-class EDITOR_MATERIAL_EDITOR_API MaterialParametersPanel_ParameterElement : public ui::ISimpleListViewElement
+class EDITOR_MATERIAL_EDITOR_API MaterialParametersPanel_ParameterElement : public ui::IListItem
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MaterialParametersPanel_ParameterElement, ui::ISimpleListViewElement);
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialParametersPanel_ParameterElement, ui::IListItem);
 
 public:
     MaterialParametersPanel_ParameterElement(IMaterialTemplateParam* param, ActionHistory* ah, bool initiallyExpaned = false);
@@ -34,6 +35,9 @@ private:
 
     void cmdRemove();
     void cmdTryRename();
+
+    virtual bool handleItemFilter(const ui::ICollectionView* view, const ui::SearchPattern& filter) const override final;
+    virtual void handleItemSort(const ui::ICollectionView* view, int colIndex, SortingData& outInfo) const override final;
 };
 
 //--
@@ -65,7 +69,7 @@ private:
 
     //--
 
-    ui::SimpleListViewPtr m_list;
+    ui::ListViewExPtr m_list;
 
     //--
 

@@ -152,7 +152,7 @@ void ShaderSelector::set(StringID key, int value)
 {
 	DEBUG_CHECK_RETURN_EX(key, "Cannot assign any value to empty key");
 
-	if (value == 0)
+	if (value)
 	{
 		if (setNoSort(key, value))
 			sort();

@@ -53,8 +53,10 @@ MenuButtonContainer {
     MenuSeparator {
         min-height: 1em;
         height: 1em;
+        horizontal-align: expand;
         background: #333337;
         padding: 35em 0em 0em 0em;
+        border: 0em;
         margin-top: 1em;
         margin-bottom: 1em;
     }

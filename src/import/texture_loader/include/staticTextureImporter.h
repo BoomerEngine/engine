@@ -34,8 +34,6 @@ public:
     ImageValidPixelsMaskingMode m_compressionMasking = ImageValidPixelsMaskingMode::Auto;
     ImageCompressionQuality m_compressionQuality = ImageCompressionQuality::Normal;
 
-    virtual void computeConfigurationKey(CRC64& crc) const override;
-
     ImageCompressionSettings loadSettings() const;
 };
 

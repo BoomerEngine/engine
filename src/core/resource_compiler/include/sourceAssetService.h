@@ -16,9 +16,9 @@ struct SourceAssetCache;
 
 /// service that hosts all source asset file systems that can be used to import resources
 /// NOTE: this is global/shared service
-class CORE_RESOURCE_COMPILER_API SourceAssetService : public app::ILocalService
+class CORE_RESOURCE_COMPILER_API SourceAssetService : public IService
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(SourceAssetService, app::ILocalService);
+    RTTI_DECLARE_VIRTUAL_CLASS(SourceAssetService, IService);
 
 public:
     SourceAssetService();
@@ -78,7 +78,7 @@ public:
     //--
 
 protected:
-    virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
+    virtual bool onInitializeService(const CommandLine& cmdLine) override final;
     virtual void onShutdownService() override final;
     virtual void onSyncUpdate() override final;
 

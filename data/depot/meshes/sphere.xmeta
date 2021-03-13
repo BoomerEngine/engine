@@ -1,0 +1,31 @@
+<?xml version="1.0" standalone="yes"?>
+<object class="ResourceMetadata">
+  <ids>
+    <element>{D70BC503-723E-4932-CBA2-C556C565222D}</element>
+  </ids>
+  <importDependencies>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/meshes/sphere.obj</importPath>
+      <crc>1806381001</crc>
+    </element>
+  </importDependencies>
+  <resourceClassType>Mesh</resourceClassType>
+  <resourceClassVersion>11</resourceClassVersion>
+  <importerClassType>assets::OBJMeshImporter</importerClassType>
+  <importerClassVersion>3</importerClassVersion>
+  <importBaseConfiguration class="assets::OBJMeshImportConfig">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600383922370000</sourceImportedOn>
+  </importBaseConfiguration>
+  <importUserConfiguration class="assets::OBJMeshImportConfig">
+    <space>LeftHandZUp</space>
+  </importUserConfiguration>
+  <importFullConfiguration class="assets::OBJMeshImportConfig">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600383922370000</sourceImportedOn>
+    <space>LeftHandZUp</space>
+  </importFullConfiguration>
+  <internalRevision>3</internalRevision>
+</object>

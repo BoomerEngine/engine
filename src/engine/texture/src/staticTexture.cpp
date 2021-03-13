@@ -33,40 +33,31 @@ RTTI_BEGIN_TYPE_STRUCT(StaticTextureMip)
 
 //---
 
-RTTI_BEGIN_TYPE_CLASS(StaticTexture);
-    RTTI_METADATA(ResourceDescriptionMetadata).description("Static Texture");
-    RTTI_METADATA(ResourceTagColorMetadata).color(0xa8, 0xd6, 0xe2);
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IStaticTexture);
     RTTI_PROPERTY(m_persistentPayload);
     RTTI_PROPERTY(m_streamingPayload);
     RTTI_PROPERTY(m_mips);
 RTTI_END_TYPE();
 
-StaticTexture::StaticTexture()
+IStaticTexture::IStaticTexture()
     : ITexture(TextureInfo())
-{
-}
+{}
 
-StaticTexture::StaticTexture(CompressedBufer&& data, AsyncFileBuffer&& asyncData, Array<StaticTextureMip>&& mips, const TextureInfo& info)
-    : ITexture(info)
-    , m_persistentPayload(std::move(data))
-    , m_streamingPayload(std::move(asyncData))
-    , m_mips(std::move(mips))
+IStaticTexture::IStaticTexture(Setup&& setup)
+    : ITexture(setup.info)
+    , m_persistentPayload(std::move(setup.data))
+    , m_streamingPayload(std::move(setup.asyncData))
+    , m_mips(std::move(setup.mips))
 {
     createDeviceResources();
 }
 
-StaticTexture::StaticTexture(const image::ImageView& image)
-    : ITexture(TextureInfo())
-{
-    DEBUG_CHECK(!"Not implemented yet");
-}
-
-StaticTexture::~StaticTexture()
+IStaticTexture::~IStaticTexture()
 {
     destroyDeviceResources();
 }
 
-void StaticTexture::onPostLoad()
+void IStaticTexture::onPostLoad()
 {
     TBaseClass::onPostLoad();
 
@@ -86,7 +77,7 @@ void StaticTexture::onPostLoad()
     createDeviceResources();
 }
 
-gpu::ImageSampledViewPtr StaticTexture::view() const
+gpu::ImageSampledViewPtr IStaticTexture::view() const
 {
     return m_mainView ? m_mainView : gpu::Globals().TextureGray;
 }
@@ -106,7 +97,7 @@ public:
 
 	virtual void print(IFormatStream& f) const override final
 	{
-		f.appendf("StaticTexture '{}'", m_path);
+		f.appendf("IStaticTexture '{}'", m_path);
 	}
 
     virtual CAN_YIELD void fetchSourceData(Array<SourceAtom>& outAtoms) const override final
@@ -137,7 +128,7 @@ private:
 	FiberSemaphore m_fence;
 };
 
-void StaticTexture::createDeviceResources()
+void IStaticTexture::createDeviceResources()
 {
     DEBUG_CHECK_RETURN_EX(m_info.slices * m_info.mips == m_mips.size(), "Slice/Mip count mismatch");
 
@@ -166,7 +157,7 @@ void StaticTexture::createDeviceResources()
     }
 }
 
-void StaticTexture::destroyDeviceResources()
+void IStaticTexture::destroyDeviceResources()
 {
     m_object.reset();
 	m_mainView.reset();

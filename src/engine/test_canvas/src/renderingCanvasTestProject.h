@@ -16,13 +16,13 @@ class ICanvasTest;
         
 /// boilerplate for rendering scene test
 /// contains basic scene initialization and other shit
-class CanvasTestProject : public app::IApplication
+class CanvasTestProject : public IApplication
 {
 public:
     CanvasTestProject();
 
 protected:
-    virtual bool initialize(const app::CommandLine& commandline) override;
+    virtual bool initialize(const CommandLine& commandline) override;
     virtual void cleanup() override;
     virtual void update() override;
 

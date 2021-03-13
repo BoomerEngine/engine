@@ -601,35 +601,30 @@ bool GraphEditor::actionDeleteSelection()
 
 bool GraphEditor::actionCutSelection()
 {
-    if (!renderer())
-        return false;
+    if (!m_selection.empty())
+    {
+        if (auto subGraph = m_graph->extractSubGraph(currentSelection()))
+        {
+            clipboard().storeObject(subGraph);
+            return actionRemoveBlocks(currentSelection(), "Cut selection");
+        }
+    }
 
-    auto subGraph = m_graph->extractSubGraph(currentSelection());
-    if (!subGraph)
-        return false;
-
-    if (!renderer()->storeObjectToClipboard(subGraph))
-        return false;
-
-    if (m_selection.empty())
-        return true;
-
-    return actionRemoveBlocks(currentSelection(), "Cut selection");
+    return false;
 }
 
 bool GraphEditor::actionCopySelection()
 {
-    if (m_selection.empty())
-        return true;
+    if (!m_selection.empty())
+    {
+        if (auto subGraph = m_graph->extractSubGraph(currentSelection()))
+        {
+            clipboard().storeObject(subGraph);
+            return true;
+        }
+    }
 
-    if (!renderer())
-        return false;
-
-    auto subGraph = m_graph->extractSubGraph(currentSelection());
-    if (!subGraph)
-        return false;
-
-    return renderer()->storeObjectToClipboard(subGraph);
+    return false;
 }
 
 //--
@@ -708,29 +703,24 @@ private:
 
 bool GraphEditor::actionPasteSelection(bool useSpecificVirtualPos, const VirtualPosition& virtualPos)
 {
-    if (!renderer())
-        return false;
+    if (auto graph = clipboard().loadObject<graph::Container>())
+    {
+        InplaceArray<graph::BlockPtr, 256> pastedBlocks;
+        InplaceArray<GraphConnection, 512> pastedConnections;
+        DisassembleContainer(*graph, pastedBlocks, pastedConnections);
+        TRACE_INFO("Extracted '{}' blocks and '{}' connections from clipboard data", pastedBlocks.size(), pastedConnections.size());
 
-    ObjectPtr data;
-    if (!renderer()->loadObjectFromClipboard(m_graph->cls(), data))
-        return false;
+        if (!pastedBlocks.empty())
+        {
+            auto oldSelection = currentSelection();
 
-    auto graph = rtti_cast<graph::Container>(data);
-    if (!graph)
-        return false;
+            auto desc = StringBuf(TempString("Paste {} block(s)", pastedBlocks.size()));
+            auto action = RefNew<GraphEditorPasteBlocks>(this, oldSelection, pastedBlocks, pastedConnections, desc);
+            return actionHistory()->execute(action);
+        }
+    }
 
-    InplaceArray<graph::BlockPtr, 256> pastedBlocks;
-    InplaceArray<GraphConnection, 512> pastedConnections;
-    DisassembleContainer(*graph, pastedBlocks, pastedConnections);
-    TRACE_INFO("Extracted '{}' blocks and '{}' connections from clipboard data", pastedBlocks.size(), pastedConnections.size());
-    if (pastedBlocks.empty())
-        return true;
-
-    auto oldSelection = currentSelection();
-
-    auto desc = StringBuf(TempString("Paste {} block(s)", pastedBlocks.size()));
-    auto action = RefNew<GraphEditorPasteBlocks>(this, oldSelection, pastedBlocks, pastedConnections, desc);
-    return actionHistory()->execute(action);
+    return false;
 }
 
 //--

@@ -112,8 +112,9 @@ DataViewResult IDataBox::readValue(void* data, const Type dataType)
     if (!m_data)
         return DataViewResultCode::ErrorIllegalOperation;
 
-    if (auto err = HasError(m_data->readDataView(m_path, data, dataType)))
-        return err;
+    auto ret = m_data->readDataView(m_path, data, dataType);
+    if (!ret.valid())
+        return ret;
 
     return DataViewResultCode::OK;
 }

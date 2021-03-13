@@ -55,7 +55,7 @@ public:
     virtual void markModified() override;
 
     // reset resource modified flag
-    void resourceModifiedFlag();
+    void resetModifiedFlag();
 
     // invalidate runtime version of the resource, may force users to refresh preview
     void invalidateRuntimeVersion();

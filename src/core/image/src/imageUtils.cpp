@@ -15,8 +15,6 @@
 
 BEGIN_BOOMER_NAMESPACE_EX(image)
 
-#pragma optimize("",off)
-
 //--
 
 template< typename T >
@@ -479,14 +477,158 @@ void Copy(const ImageView& src, const ImageView& dest)
 
 //---
 
+
+template< typename T >
+static void FlipXLine(T* mem, uint8_t numChannels, uint32_t width)
+{
+    auto* memEnd = mem + (numChannels * (width - 1));
+
+    if (numChannels == 1)
+    {
+        while (mem < memEnd)
+        {
+            std::swap(mem[0], memEnd[0]);
+            memEnd -= 1;
+            mem += 1;
+        }
+    }
+    else if (numChannels == 2)
+    {
+        while (mem < memEnd)
+        {
+            std::swap(mem[0], memEnd[0]);
+            std::swap(mem[1], memEnd[1]);
+            memEnd -= 2;
+            mem += 2;
+        }
+    }
+    else if (numChannels == 3)
+    {
+        while (mem < memEnd)
+        {
+            std::swap(mem[0], memEnd[0]);
+            std::swap(mem[1], memEnd[1]);
+            std::swap(mem[2], memEnd[2]);
+            memEnd -= 3;
+            mem += 3;
+        }
+    }
+    else if (numChannels == 4)
+    {
+        while (mem < memEnd)
+        {
+            std::swap(mem[0], memEnd[0]);
+            std::swap(mem[1], memEnd[1]);
+            std::swap(mem[2], memEnd[2]);
+            std::swap(mem[3], memEnd[3]);
+            memEnd -= 4;
+            mem += 4;
+        }
+    }
+}
+
+void FlipXLine(PixelFormat format, void* mem, uint8_t numChannels, uint32_t width)
+{
+    if (format == PixelFormat::Uint8_Norm)
+        FlipXLine<uint8_t>((uint8_t*)mem,  numChannels, width);
+    else if (format == PixelFormat::Uint16_Norm)
+        FlipXLine<uint16_t>((uint16_t*)mem, numChannels, width);
+    else if (format == PixelFormat::Float16_Raw)
+        FlipXLine<uint16_t>((uint16_t*)mem, numChannels, width);
+    else if (format == PixelFormat::Float32_Raw)
+        FlipXLine<uint32_t>((uint32_t*)mem, numChannels, width);
+}
+
 void FlipX(const ImageView& dest)
 {
+    PC_SCOPE_LVL2(FlipX);
 
+    auto writePtr = (uint8_t*)dest.data();
+    for (uint32_t z = 0; z < dest.depth(); ++z)
+    {
+        auto sliceWritePtr = writePtr;
+
+        for (uint32_t y = 0; y < dest.height(); ++y)
+        {
+            FlipXLine(dest.format(), writePtr, dest.channels(), dest.width());
+            writePtr += dest.rowPitch();
+        }
+
+        writePtr = sliceWritePtr + dest.slicePitch();
+    }
 }
+
+///----------------------------
 
 void FlipY(const ImageView& dest)
 {
+    PC_SCOPE_LVL2(FlipY);
 
+    auto writePtr = (uint8_t*)dest.data();
+    for (uint32_t z = 0; z < dest.depth(); ++z)
+    {
+        auto sliceWritePtr = writePtr;
+        auto sliceEndWritePtr = writePtr + dest.rowPitch() * (dest.height() - 1);
+
+        while (writePtr < sliceEndWritePtr)
+        {
+            auto* rowAPtr = writePtr;
+            auto* rowAEndPtr = writePtr + dest.rowPitch();
+            auto* rowBPtr = sliceEndWritePtr;
+
+            while (rowAPtr < rowAEndPtr)
+                std::swap(*rowAPtr++, *rowBPtr++);
+
+            writePtr += dest.rowPitch();
+            sliceEndWritePtr -= dest.rowPitch();
+        }
+
+        writePtr = sliceWritePtr + dest.slicePitch();
+    }
+}
+
+///----------------------------
+
+void SwapXY(const ImageView& dest)
+{
+    PC_SCOPE_LVL2(SwapXY);
+
+    DEBUG_CHECK_RETURN_EX(dest.width() == dest.height(), "Only square images can be XY flipped");
+
+    auto writePtr = (uint8_t*)dest.data();
+    for (uint32_t z = 0; z < dest.depth(); ++z)
+    {
+        auto sliceWritePtr = writePtr;
+        auto sliceEndWritePtr = writePtr + dest.rowPitch() * (dest.height() - 1);
+
+        uint32_t rowIndex = 0;
+
+        while (writePtr < sliceEndWritePtr)
+        {
+            auto* colPtr = sliceWritePtr + (rowIndex * dest.pixelPitch());
+
+            auto* rowPtr = writePtr;
+            auto* rowEndPtr = rowPtr + dest.rowPitch();
+
+            // skip lower part (only half of the triangle has to be swapped)
+            rowPtr += dest.pixelPitch() * (rowIndex + 1);
+            colPtr += dest.rowPitch() * (rowIndex + 1);
+
+            while (rowPtr < rowEndPtr)
+            {
+                for (uint32_t i = 0; i < dest.pixelPitch(); ++i)
+                    std::swap(rowPtr[i], colPtr[i]);
+
+                rowPtr += dest.pixelPitch();
+                colPtr += dest.rowPitch();
+            }
+
+            writePtr += dest.rowPitch();
+            rowIndex += 1;
+        }
+
+        writePtr = sliceWritePtr + dest.slicePitch();
+    }
 }
 
 ///----------------------------

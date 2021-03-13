@@ -44,14 +44,14 @@ public:
 
     virtual void createWorldContent() override
     {
-        /*if (auto mesh = loadMesh("/engine/meshes/plane.v4mesh"))
+        /*if (auto mesh = loadMesh("/engine/meshes/plane.xfile"))
         {
             auto mc = RefNew<game::MeshEntity>();
             mc->mesh(mesh);
             m_world->attachEntity(mc);
         }
 
-        if (auto mesh = loadMesh("/engine/meshes/cube.v4mesh"))
+        if (auto mesh = loadMesh("/engine/meshes/cube.xfile"))
         {
             auto mc = RefNew<game::MeshEntity>();
             mc->requestMove(Vector3(0, 0, 0.5f));

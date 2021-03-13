@@ -573,7 +573,7 @@ bool CodeGenerator::generateProjectAutoMainFile(const GeneratedProject* project,
 
     //if (!noApp) {
         writeln(f, "");
-        writeln(f, "extern boomer::app::IApplication& GetApplicationInstance();");
+        writeln(f, "extern boomer::IApplication& GetApplicationInstance();");
         writeln(f, "");
     //}
 
@@ -588,7 +588,7 @@ bool CodeGenerator::generateProjectAutoMainFile(const GeneratedProject* project,
     writeln(f, "      InitializeStaticDependencies();");
     writeln(f, "");
     writeln(f, "      // parse system command line");
-    writeln(f, "      boomer::app::CommandLine cmdline;");
+    writeln(f, "      boomer::CommandLine cmdline;");
     writeln(f, "      if (!LAUNCHER_PARSE_CMDLINE())");
     writeln(f, "        return -1;");
     writeln(f, "");
@@ -613,7 +613,7 @@ bool CodeGenerator::generateProjectAutoMainFile(const GeneratedProject* project,
     //writeln(f, "      return app.run(cmdline);");
 
     writeln(f, "      // initialize app");
-    writeln(f, "      auto& platform = boomer::platform::GetLaunchPlatform();");
+    writeln(f, "      auto& platform = boomer::GetLaunchPlatform();");
     /*if (noApp)
         writeln(f, "      if (!platform.platformStart(cmdline, nullptr))");
     else*/
@@ -628,7 +628,7 @@ bool CodeGenerator::generateProjectAutoMainFile(const GeneratedProject* project,
     }
 
     writeln(f, "      // cleanup");
-    writeln(f, "      cmdline = boomer::app::CommandLine(); // prevent leaks past app.cleanup()");
+    writeln(f, "      cmdline = boomer::CommandLine(); // prevent leaks past app.cleanup()");
     writeln(f, "      platform.platformCleanup();");
 
     writeln(f, "      return 0;");

@@ -7,26 +7,22 @@
 #pragma once
 
 #include "core/app/include/application.h"
-#include "editor/common/include/editorService.h"
+#include "editor/common/include/service.h"
 #include "gpu/device/include/output.h"
 #include "engine/ui/include/nativeWindowRenderer.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
 // editor application
-class EditorApp : public app::IApplication
+class EditorApp : public IApplication
 {
 public:
     virtual void cleanup() override final;
-    virtual bool initialize(const app::CommandLine& commandline) override final;
+    virtual bool initialize(const CommandLine& commandline) override final;
     virtual void update() override final;
 
 private:
-    UniquePtr<ui::Renderer> m_renderer;
-    RefPtr<ui::DataStash> m_dataStash;
-    UniquePtr<ui::NativeWindowRenderer> m_nativeRenderer;
     NativeTimePoint m_lastUpdateTime;
-    UniquePtr<ed::Editor> m_editor;
 };
 
 END_BOOMER_NAMESPACE()

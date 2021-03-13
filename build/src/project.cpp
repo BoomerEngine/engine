@@ -293,7 +293,7 @@ void ProjectStructure::ProjectInfo::internalRegisterFunctions(lua_State* L)
 template< typename T >
 static void ExportEnumToLUA(lua_State* L, const char* name, T val)
 {
-    lua_pushstring(L, NameEnumOption(val));
+    lua_pushstring(L, std::string(NameEnumOption(val)).c_str());
     lua_setglobal(L, name);
 }
 

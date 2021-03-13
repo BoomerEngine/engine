@@ -11,16 +11,16 @@
 #include "group.h"
 #include "core/containers/include/hashSet.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(config)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
-Entry::Entry(Group* group, const StringBuf& name)
+ConfigEntry::ConfigEntry(ConfigGroup* group, const StringBuf& name)
     : m_name(name)
     , m_group(group)
 {}
 
-bool Entry::clear()
+bool ConfigEntry::clear()
 {
     auto lock  = CreateLock(m_lock);
 
@@ -32,7 +32,7 @@ bool Entry::clear()
     return true;
 }
 
-bool Entry::value(const StringBuf& value)
+bool ConfigEntry::value(const StringBuf& value)
 {
     auto lock  = CreateLock(m_lock);
 
@@ -51,7 +51,7 @@ bool Entry::value(const StringBuf& value)
     return true;
 }
 
-bool Entry::appendValue(const StringBuf& value, bool onlyIfUnique/*=true*/)
+bool ConfigEntry::appendValue(const StringBuf& value, bool onlyIfUnique/*=true*/)
 {
     auto lock  = CreateLock(m_lock);
 
@@ -69,7 +69,7 @@ bool Entry::appendValue(const StringBuf& value, bool onlyIfUnique/*=true*/)
     return true;
 }
 
-bool Entry::removeValue(const StringBuf& value)
+bool ConfigEntry::removeValue(const StringBuf& value)
 {
     auto lock  = CreateLock(m_lock);
 
@@ -80,19 +80,19 @@ bool Entry::removeValue(const StringBuf& value)
     return true;
 }
 
-StringBuf Entry::value() const
+StringBuf ConfigEntry::value() const
 {
     auto lock  = CreateLock(m_lock);
     return m_values.empty() ? StringBuf::EMPTY() : m_values.back();
 }
 
-const Array<StringBuf> Entry::values() const
+const Array<StringBuf> ConfigEntry::values() const
 {
     auto lock  = CreateLock(m_lock);
     return m_values;
 }
 
-int Entry::valueInt(const int defaultValue/* = 0*/) const
+int ConfigEntry::valueInt(const int defaultValue/* = 0*/) const
 {
     auto lock  = CreateLock(m_lock);
 
@@ -106,7 +106,7 @@ int Entry::valueInt(const int defaultValue/* = 0*/) const
     return defaultValue;
 }
 
-float Entry::valueFloat(float defaultValue /*= 0*/) const
+float ConfigEntry::valueFloat(float defaultValue /*= 0*/) const
 {
     auto lock  = CreateLock(m_lock);
 
@@ -120,7 +120,7 @@ float Entry::valueFloat(float defaultValue /*= 0*/) const
     return defaultValue;
 }
 
-bool Entry::valueBool(bool defaultValue /*= 0*/) const
+bool ConfigEntry::valueBool(bool defaultValue /*= 0*/) const
 {
     auto lock  = CreateLock(m_lock);
 
@@ -134,12 +134,12 @@ bool Entry::valueBool(bool defaultValue /*= 0*/) const
     return defaultValue;
 }
 
-void Entry::modified()
+void ConfigEntry::modified()
 {
     m_group->modified();
 }
 
-bool Entry::Equal(const Entry& a, const Entry& b)
+bool ConfigEntry::Equal(const ConfigEntry& a, const ConfigEntry& b)
 {
     // NOTE: potential deadlock if we do Equal(a,b) and Equal(b,a)
     auto lockA  = CreateLock(a.m_lock);
@@ -191,7 +191,7 @@ static void WriteEscapedConfigString(IFormatStream& f, StringView str)
     }
 }
 
-void Entry::PrintDiff(IFormatStream& f, const Entry& cur, const Entry& base)
+void ConfigEntry::PrintDiff(IFormatStream& f, const ConfigEntry& cur, const ConfigEntry& base)
 {
     // NOTE: potential dead lock
     auto lockA  = CreateLock(cur.m_lock);
@@ -262,7 +262,7 @@ void Entry::PrintDiff(IFormatStream& f, const Entry& cur, const Entry& base)
     }
 }
 
-void Entry::Print(IFormatStream& f, const Entry& cur)
+void ConfigEntry::Print(IFormatStream& f, const ConfigEntry& cur)
 {
     bool hasDeltaValue = false;
     for (auto& it : cur.m_values)
@@ -281,4 +281,4 @@ void Entry::Print(IFormatStream& f, const Entry& cur)
 
 //---
 
-END_BOOMER_NAMESPACE_EX(config)
+END_BOOMER_NAMESPACE()

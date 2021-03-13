@@ -1,0 +1,35 @@
+<?xml version="1.0" standalone="yes"?>
+<object class="ResourceMetadata">
+  <ids>
+    <element>{9D5E3B50-077E-4501-CC80-08D1B1892A98}</element>
+  </ids>
+  <importDependencies>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/meshes/skydome.obj</importPath>
+      <crc>2299261152</crc>
+    </element>
+  </importDependencies>
+  <resourceClassType>Mesh</resourceClassType>
+  <resourceClassVersion>11</resourceClassVersion>
+  <importerClassType>assets::OBJMeshImporter</importerClassType>
+  <importerClassVersion>3</importerClassVersion>
+  <importBaseConfiguration class="assets::OBJMeshImportConfig">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600383922360000</sourceImportedOn>
+  </importBaseConfiguration>
+  <importUserConfiguration class="assets::OBJMeshImportConfig">
+    <space>LeftHandZUp</space>
+    <flipFaces>false</flipFaces>
+    <globalScale>1000.000000</globalScale>
+  </importUserConfiguration>
+  <importFullConfiguration class="assets::OBJMeshImportConfig">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600383922360000</sourceImportedOn>
+    <space>LeftHandZUp</space>
+    <flipFaces>false</flipFaces>
+    <globalScale>1000.000000</globalScale>
+  </importFullConfiguration>
+  <internalRevision>11</internalRevision>
+</object>

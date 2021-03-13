@@ -27,18 +27,18 @@ public:
     virtual void SetUp() override
     {
         m_service.create();
-        auto service = static_cast<app::ILocalService*>(m_service.get());
+        auto service = static_cast<IService*>(m_service.get());
 
-        app::CommandLine cmdLine;
+        CommandLine cmdLine;
         cmdLine.param("noRequestServer", "");
 
         auto ret = service->onInitializeService(cmdLine);
-        ASSERT_EQ(app::ServiceInitializationResult::Finished, ret);
+        ASSERT_EQ(true, ret);
     }
 
     virtual void TearDown() override
     {
-        auto service = static_cast<app::ILocalService*>(m_service.get());
+        auto service = static_cast<IService*>(m_service.get());
         service->onShutdownService();
         m_service.reset();
     }

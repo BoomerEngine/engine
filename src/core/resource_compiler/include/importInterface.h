@@ -98,9 +98,10 @@ public:
 
     /// report a follow up import and create a matching resource reference, allows for clear notation
     template< typename T >
-    ResourceRef<T> followupImport(StringView assetImportPath, StringView depotPath, const ResourceConfiguration* config = nullptr)
+    ResourceRef<T> followupImport(StringView assetImportPath, StringView depotPath, ResourceClass cls, const ResourceConfiguration* config = nullptr)
     {
-        const auto id = followupImport(assetImportPath, depotPath, T::GetStaticClass(), config);
+        ASSERT_EX(cls->is<T>(), "Trying to import incompatible type");
+        const auto id = followupImport(assetImportPath, depotPath, cls, config);
         return ResourceRef<T>(id);
     }
 

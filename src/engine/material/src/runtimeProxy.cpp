@@ -102,9 +102,10 @@ MaterialDataDescriptor* MaterialDataDescriptor::Create(const MaterialDataLayoutD
 
 			if (!textureView)
 				textureView = gpu::Globals().TextureWhite;
+			else
+				ret->textureViews.pushBack(textureView);
 
 			ret->descriptorData[entry.descriptorEntryIndex] = textureView.get();
-
 		}
 		else
 		{

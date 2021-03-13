@@ -10,27 +10,27 @@
 #include "previewPanel.h"
 #include "materialsPanel.h"
 
+#include "editor/assets/include/browserService.h"
+#include "editor/common/include/utils.h"
+
 #include "engine/mesh/include/mesh.h"
 #include "engine/material/include/materialInstance.h"
 #include "engine/material/include/materialTemplate.h"
 
-#include "editor/common/include/assetBrowser.h"
-#include "editor/common/include/managedFile.h"
-#include "editor/common/include/assetFormat.h"
-
 #include "engine/ui/include/uiDataInspector.h"
 #include "engine/ui/include/uiDockLayout.h"
 #include "engine/ui/include/uiSplitter.h"
-#include "engine/ui/include/uiListView.h"
+#include "engine/ui/include/uiListViewEx.h"
 #include "engine/ui/include/uiSearchBar.h"
 #include "engine/ui/include/uiDragDrop.h"
+#include "engine/ui/include/uiTextLabel.h"
 #include "engine/ui/include/uiCheckBox.h"
+#include "engine/ui/include/uiToolBar.h"
 
 #include "core/resource/include/loader.h"
 #include "core/resource/include/depot.h"
 #include "core/object/include/dataViewNative.h"
 #include "core/object/include/rttiDataView.h"
-#include "engine/ui/include/uiToolBar.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -42,11 +42,24 @@ RTTI_END_TYPE();
 MeshMaterialParameters::MeshMaterialParameters(MaterialInstance* data, StringID name)
     : m_name(name)
     , m_data(AddRef(data))
+    , m_events(this)
 {
+    layoutHorizontal();
+
+    {
+        m_label = createChild<ui::TextLabel>();
+        m_label->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+    }
+
+    m_events.bind(m_data->eventKey(), EVENT_RESOURCE_MODIFIED) = [this]()
+    {
+        updateDisplayString();
+    };
+
     updateDisplayString();
 }
 
-bool MeshMaterialParameters::updateDisplayString()
+void MeshMaterialParameters::updateDisplayString()
 {
     StringBuilder txt;
 
@@ -88,103 +101,58 @@ bool MeshMaterialParameters::updateDisplayString()
         }
     }
 
-    auto newCaption = txt.toString();
-    if (newCaption != m_displayString)
-    {
-        m_displayString = newCaption;
-        return true;
-    }
-
-    return false;
+    m_label->text(txt.view());
 }
 
-bool MeshMaterialParameters::baseMaterial(const MaterialRef& material)
+void MeshMaterialParameters::baseMaterial(const MaterialRef& material)
 {
     if (m_data)
     {
         m_data->baseMaterial(material);
-        return true;
+        updateDisplayString();
     }
+}
 
+bool MeshMaterialParameters::handleItemFilter(const ui::ICollectionView* view, const ui::SearchPattern& filter) const
+{
+    return filter.testString(m_name.view());
+}
+
+void MeshMaterialParameters::handleItemSort(const ui::ICollectionView* view, int colIndex, SortingData& outInfo) const
+{
+    outInfo.index = uniqueIndex();
+    outInfo.caption = m_name.view();
+}
+
+bool MeshMaterialParameters::handleItemContextMenu(ui::ICollectionView* view, const ui::CollectionItems& items, const ui::Position& pos, input::KeyMask controlKeys)
+{
     return false;
 }
 
-//---
-
-MeshMaterialListModel::MeshMaterialListModel()
-{}
-
-StringID MeshMaterialListModel::materialName(const ui::ModelIndex& index) const
+bool MeshMaterialParameters::handleItemActivate(ui::ICollectionView* view)
 {
-    if (auto elem = data(index))
-        return elem->name();
-    return StringID::EMPTY();
-}
-
-ui::ModelIndex MeshMaterialListModel::findMaterial(StringID name) const
-{
-    for (uint32_t i = 0; i < size(); ++i)
+    if (m_data)
     {
-        const auto& elem = at(i);
-        if (elem->name() == name)
-            return index(elem);
+
     }
 
-    return ui::ModelIndex();
+    return true;
 }
 
-bool MeshMaterialListModel::compare(const RefPtr<MeshMaterialParameters>& a, const RefPtr<MeshMaterialParameters>& b, int colIndex) const
+ui::DragDropHandlerPtr MeshMaterialParameters::handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
 {
-    return a->name().view() < b->name().view();
-}
+    if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
+        if (CanLoadAsClass<IMaterial>(fileData->depotPath()))
+            return RefNew<ui::DragDropHandlerGeneric>(fileData, this, entryPosition);
 
-bool MeshMaterialListModel::filter(const RefPtr<MeshMaterialParameters>& data, const ui::SearchPattern& filter, int colIndex /*= 0*/) const
-{
-    return filter.testString(data->name().view());
-}
-
-StringBuf MeshMaterialListModel::content(const RefPtr<MeshMaterialParameters>& data, int colIndex /*= 0*/) const
-{
-    return data->displayString();
-}
-
-ui::DragDropHandlerPtr MeshMaterialListModel::handleDragDropData(ui::AbstractItemView* view, const ui::ModelIndex& item, const ui::DragDropDataPtr& dragData, const ui::Position& pos)
-{
-    if (auto elem = data(item))
-    {
-        // can we handle this data ?
-        auto fileData = rtti_cast<ed::AssetBrowserFileDragDrop>(dragData);
-        if (fileData && fileData->file())
-        {
-            if (fileData->file()->fileFormat().loadableAsType(IMaterial::GetStaticClass()))
-                return RefNew<ui::DragDropHandlerGeneric>(dragData, view, pos);
-        }
-    }
-
-    // not handled
     return nullptr;
 }
 
-bool MeshMaterialListModel::handleDragDropCompletion(ui::AbstractItemView* view, const ui::ModelIndex& item, const ui::DragDropDataPtr& dragData)
+void MeshMaterialParameters::handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
 {
-    if (auto elem = data(item))
-    {
-        auto fileData = rtti_cast<ed::AssetBrowserFileDragDrop>(dragData);
-        if (fileData && fileData->file())
-        {
-            const auto path = fileData->file()->depotPath();
-
-            ResourceID id;
-            if (GetService<DepotService>()->resolveIDForPath(path, id))
-            {
-                const auto loadedMaterial = LoadResource<IMaterial>(path);
-                const auto materialRef = MaterialRef(id, loadedMaterial);
-                return elem->baseMaterial(materialRef);
-            }
-        }
-    }
-
-    return false;
+    if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
+        if (auto ref = LoadResourceRef<IMaterial>(fileData->depotPath()))
+            baseMaterial(ref);
 }
 
 //---
@@ -193,46 +161,37 @@ RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshMaterialsPanel);
 RTTI_END_TYPE();
 
 MeshMaterialsPanel::MeshMaterialsPanel(ActionHistory* actionHistory)
-    : m_captionsRefreshTimer(this, "UpdateCaptions"_id)
 {
     layoutVertical();
 
     auto splitter = createChild<ui::Splitter>(ui::Direction::Horizontal, 0.4f);
 
     {
-        actions().bindCommand("MaterialList.Highlight"_id) = [this]() {
-            m_settings.highlight = !m_settings.highlight;
-            call(EVENT_MATERIAL_SELECTION_CHANGED);
-        };
-
-        actions().bindCommand("MaterialList.Isolate"_id) = [this]() {
-            m_settings.isolate = !m_settings.isolate;
-            call(EVENT_MATERIAL_SELECTION_CHANGED);
-        };
-
-        actions().bindToggle("MaterialList.Highlight"_id) = [this]() { return m_settings.highlight; };
-        actions().bindToggle("MaterialList.Isolate"_id) = [this]() { return m_settings.isolate; };
-
-    }
-
-    {
         auto panel = splitter->createChild<ui::IElement>();
         panel->expand();
         panel->layoutVertical();
 
-        auto toolbar = panel->createChild<ui::ToolBar>();
-        toolbar->createButton("MaterialList.Highlight"_id, ui::ToolbarButtonSetup().caption("Highlight"));
-        toolbar->createButton("MaterialList.Isolate"_id, ui::ToolbarButtonSetup().caption("Isolate"));
+        m_toolbar = panel->createChild<ui::ToolBar>();
+        m_toolbar->createButton(ui::ToolBarButtonInfo("Highlight"_id).caption("Highlight", "highlight")) = [this]()
+        {
+            m_settings.highlight = !m_settings.highlight;
+            updateToolbar();
+            call(EVENT_MATERIAL_SELECTION_CHANGED);
+        };
+
+        m_toolbar->createButton(ui::ToolBarButtonInfo("Isolate"_id).caption("Isolate", "html")) = [this]()
+        {
+            m_settings.isolate = !m_settings.isolate;
+            updateToolbar();
+            call(EVENT_MATERIAL_SELECTION_CHANGED);
+        };
 
         auto searchBar = panel->createChild<ui::SearchBar>(false);
 
-        m_list = panel->createChild<ui::ListView>();
+        m_list = panel->createChild<ui::ListViewEx>();
         m_list->expand();
 
         searchBar->bindItemView(m_list);
-
-        m_listModel = RefNew<MeshMaterialListModel>();
-        m_list->model(m_listModel);
     }
 
     {
@@ -249,10 +208,8 @@ MeshMaterialsPanel::MeshMaterialsPanel(ActionHistory* actionHistory)
         };
     }
 
-    m_captionsRefreshTimer = [this]() { updateCaptions(); };
-    m_captionsRefreshTimer.startRepeated(0.05f);
-
     refreshMaterialList();
+    updateToolbar();
 }
 
 void MeshMaterialsPanel::bindResource(const MeshPtr& mesh)
@@ -267,14 +224,15 @@ void MeshMaterialsPanel::bindResource(const MeshPtr& mesh)
 
 void MeshMaterialsPanel::collectSelectedMaterialNames(HashSet<StringID>& outNames) const
 {
-    for (const auto& id : m_list->selection().keys())
-        if (auto name = m_listModel->materialName(id))
-            outNames.insert(name);
+    m_list->selection().visit<MeshMaterialParameters>([&outNames](MeshMaterialParameters* param)
+        {
+            outNames.insert(param->name());
+        });
 }
 
 void MeshMaterialsPanel::showMaterials(const Array<StringID>& names)
 {
-    Array<ui::ModelIndex> selection;
+    /*Array<ui::ModelIndex> selection;
 
     for (auto name : names)
         if (auto index = m_listModel->findMaterial(name))
@@ -283,26 +241,34 @@ void MeshMaterialsPanel::showMaterials(const Array<StringID>& names)
     m_list->select(selection);
 
     if (!selection.empty())
-        m_list->ensureVisible(selection[0]);
+        m_list->ensureVisible(selection[0]);*/
 }
 
 void MeshMaterialsPanel::refreshMaterialProperties()
 {
-    auto material = m_listModel->data(m_list->selectionRoot());
-    m_properties->bindObject(material ? material->data() : nullptr);
+    Array<MaterialInstancePtr> objects;
+
+    m_list->selection().visit<MeshMaterialParameters>([&objects](MeshMaterialParameters* param)
+        {
+            if (auto data = param->data())
+                objects.pushBack(data);
+        });
+
+    m_properties->bindObjects(objects);
+}
+
+StringID MeshMaterialsPanel::selectedMaterial() const
+{
+    if (auto mat = m_list->selection().first<MeshMaterialParameters>())
+        return mat->name();
+    return StringID();
 }
 
 void MeshMaterialsPanel::refreshMaterialList()
 {
-    StringID selectedMaterialName;
+    auto selected = selectedMaterial();
 
-    if (m_list->selectionRoot())
-    {
-        auto material = m_listModel->data(m_list->selectionRoot());
-        selectedMaterialName = material->name();
-    }
-
-    m_listModel->clear();
+    m_list->clear();
 
     RefPtr<MeshMaterialParameters> materialToSelect;
     if (m_mesh)
@@ -310,28 +276,18 @@ void MeshMaterialsPanel::refreshMaterialList()
         for (const auto& mat : m_mesh->materials())
         {
             auto entry = RefNew<MeshMaterialParameters>(mat.material, mat.name);
-            m_listModel->add(entry);
+            m_list->addItem(entry);
 
-            if (entry->name() == selectedMaterialName)
-                materialToSelect = entry;
+            if (entry->name() == selected)
+                m_list->select(entry);
         }
     }
-
-    if (auto index = m_listModel->index(materialToSelect))
-        m_list->select(index);
 }
     
-void MeshMaterialsPanel::updateCaptions()
+void MeshMaterialsPanel::updateToolbar()
 {
-    for (uint32_t i=0; i<m_listModel->size(); ++i)
-    {
-        const auto& elem = m_listModel->at(i);
-        if (elem->updateDisplayString())
-        {
-            if (auto index = m_listModel->index(elem))
-                m_listModel->requestItemUpdate(index);
-        }
-    }
+    m_toolbar->toggleButton("Highlight"_id, m_settings.highlight);
+    m_toolbar->toggleButton("Isolate"_id, m_settings.isolate);
 }
 
 //---

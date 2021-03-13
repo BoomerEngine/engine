@@ -170,7 +170,7 @@ public:
 };
 
 /// UI renderer, responsible for managing all created windows and rendering them into "viewports" that are created on demand
-class ENGINE_UI_API Renderer : public INativeWindowCallback
+class ENGINE_UI_API Renderer : public INativeWindowCallback, public IClipboard
 {
 public:
     Renderer(DataStash* dataStash, IRendererNative* nativeRenderer);
@@ -233,40 +233,7 @@ public:
 
     /// get the native window handle of this window, HWND, etc
     uint64_t queryWindowNativeHandle(const Window* window) const;
-
-    //---
-
-    /// store clipboard data
-    bool storeDataToClipboard(StringView format, const void* data, uint32_t size);
-
-    /// store text (UTF8)
-    bool storeTextToClipboard(StringView text); // format: Text
-
-    /// store text (UTF16)
-    bool storeTextToClipboard(BaseStringView<wchar_t> text); // format: UniText
-
-    /// store (serialize) object into the clipboard, the object's class is the format
-    bool storeObjectToClipboard(const ObjectPtr& data);
-
-    /// load string form clipboard
-    bool loadStringFromClipboard(StringBuf& outText) const;
-
-    /// load object from clipboard
-    bool loadObjectFromClipboard(ClassType expectedClass, ObjectPtr& outObject) const;
-
-    /// load object from clipboard
-    template< typename T >
-    INLINE bool loadObjectFromClipboard(RefPtr<T>& outObject) const
-    {
-        return loadObjectFromClipboard(T::GetStaticClass(), *(ObjectPtr*) & outObject);
-    }
-
-    /// check if clipboard has text data
-    bool checkClipboardHasText() const;
-
-    /// check if clipboard has data of given class
-    bool checkClipboardHasData(ClassType expectedClass) const;
-
+     
     //--
 
     /// play nice sound
@@ -394,6 +361,14 @@ protected:
     StructurePool<TimerEntry> m_timerEntryPool;
 
     void processTimers();
+
+    //--
+
+    virtual void storeText(StringView text) override final;
+    virtual bool loadText(StringBuf& outText) const override final;
+
+    virtual void storeData(StringView format, const void* data, uint32_t size) override final;
+    virtual bool loadData(StringView format, Buffer& outData) const override final;
 
     //--
 

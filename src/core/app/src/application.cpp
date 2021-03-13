@@ -17,7 +17,7 @@
 
 static bool GReportMemoryUsage = false;
 
-BEGIN_BOOMER_NAMESPACE_EX(app)
+BEGIN_BOOMER_NAMESPACE()
 
 //-----
 
@@ -42,4 +42,4 @@ void IApplication::update()
 
 //---
 
-END_BOOMER_NAMESPACE_EX(app)
+END_BOOMER_NAMESPACE()

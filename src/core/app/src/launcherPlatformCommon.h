@@ -11,7 +11,7 @@
 #include "launcherPlatform.h"
 #include "core/system/include/timing.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(platform)
+BEGIN_BOOMER_NAMESPACE()
 
 /// common launcher implementation
 /// this class is usually wrapper by platform specific one
@@ -21,9 +21,9 @@ public:
     CommonPlatform();
     virtual ~CommonPlatform();
 
-    virtual bool handleStart(const app::CommandLine& cmdline, app::IApplication* app) override;
+    virtual bool handleStart(const CommandLine& cmdline, IApplication* app) override;
     virtual void handleUpdate() override;
     virtual void handleCleanup() override;
 };
 
-END_BOOMER_NAMESPACE_EX(platform)
+END_BOOMER_NAMESPACE()

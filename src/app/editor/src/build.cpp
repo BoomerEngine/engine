@@ -14,7 +14,7 @@ DECLARE_MODULE(PROJECT_NAME)
     // custom module initialization code
 }
 
-boomer::app::IApplication& GetApplicationInstance()
+boomer::IApplication& GetApplicationInstance()
 {
     static boomer::EditorApp theApp;
     return theApp;

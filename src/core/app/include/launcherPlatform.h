@@ -8,14 +8,14 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(app)
+BEGIN_BOOMER_NAMESPACE()
 
 class IApplication;
 class CommandLine;
 
-END_BOOMER_NAMESPACE_EX(app);
+END_BOOMER_NAMESPACE();
 
-BEGIN_BOOMER_NAMESPACE_EX(platform)
+BEGIN_BOOMER_NAMESPACE()
 
 // platform helper object - deals with initialization, ticking and everything else
 class CORE_APP_API Platform
@@ -25,7 +25,7 @@ public:
 
     /// start application, returns true if application was initialized or false if it failed
     /// if application is start than the update can be started
-    bool platformStart(const app::CommandLine& cmdline, app::IApplication* localApplication);
+    bool platformStart(const CommandLine& cmdline, IApplication* localApplication);
 
     /// perform a single step of application update
     /// will return false if application or anybody else requested exit via requestExit function
@@ -46,9 +46,9 @@ public:
     //--
 
     /// get the application we are running
-    /// NOTE: can be used to access the "App Singleton":  (MyApp*)platform::GetLaunchPlatform().application()
+    /// NOTE: can be used to access the "App Singleton":  (MyApp*)GetLaunchPlatform().application()
     /// NOTE: this MAY be null when running in a "service only" mode
-    INLINE app::IApplication* application() const { return m_application; }
+    INLINE IApplication* application() const { return m_application; }
 
     ///--
 
@@ -59,15 +59,15 @@ protected:
     virtual ~Platform(); // NEVER CALLED!
     Platform();
 
-    virtual bool handleStart(const app::CommandLine& cmdline, app::IApplication* localApplication) = 0;
+    virtual bool handleStart(const CommandLine& cmdline, IApplication* localApplication) = 0;
     virtual void handleUpdate() = 0;
     virtual void handleCleanup() = 0;
 
     std::atomic<uint32_t> m_exitRequestsed;
-    app::IApplication* m_application;
+    IApplication* m_application;
 };
 
 // get the platform launcher object, there's only one per-platform so there's no point in dynamically instancing it
 extern CORE_APP_API Platform& GetLaunchPlatform();
 
-END_BOOMER_NAMESPACE_EX(platform);
+END_BOOMER_NAMESPACE();

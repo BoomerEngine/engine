@@ -84,6 +84,23 @@ Button::Button(StringView txt, ButtonMode m)
     mode(m);
 }
 
+void Button::removeFilter()
+{
+    m_filterFunction = TEventFunction();
+}
+
+EventFunctionBinder Button::bindFilter()
+{
+    return EventFunctionBinder(&m_filterFunction);
+}
+
+void Button::text(StringView text)
+{
+    if (auto firstChild = childrenList())
+        if (auto label = rtti_cast<TextLabel>(*firstChild))
+            label->text(text);
+}
+
 void Button::toggle(bool flag)
 {
     if (flag != m_toggled)

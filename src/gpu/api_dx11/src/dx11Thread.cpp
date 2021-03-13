@@ -44,7 +44,7 @@ Thread::~Thread()
 
 //--
 
-bool Thread::threadStartup(const app::CommandLine& cmdLine, DeviceCaps& outCaps)
+bool Thread::threadStartup(const CommandLine& cmdLine, DeviceCaps& outCaps)
 {
 	// determine device type
 	D3D_DRIVER_TYPE deviceType = D3D_DRIVER_TYPE_HARDWARE;
@@ -324,17 +324,17 @@ DX_PROTECT(m_dxDevice->CreateQuery(&desc, &dxQuery));*/
 
 //--
 
-ObjectRegistry* Thread::createOptimalObjectRegistry(const app::CommandLine& cmdLine)
+ObjectRegistry* Thread::createOptimalObjectRegistry(const CommandLine& cmdLine)
 {
 	return new ObjectRegistry(this);
 }
 
-IBaseObjectCache* Thread::createOptimalObjectCache(const app::CommandLine& cmdLine)
+IBaseObjectCache* Thread::createOptimalObjectCache(const CommandLine& cmdLine)
 {
 	return new ObjectCache(this);
 }
 
-IBaseBackgroundQueue* Thread::createOptimalBackgroundQueue(const app::CommandLine& cmdLine)
+IBaseBackgroundQueue* Thread::createOptimalBackgroundQueue(const CommandLine& cmdLine)
 {
 	return new BackgroundQueue(this);
 }

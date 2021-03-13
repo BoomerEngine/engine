@@ -41,7 +41,7 @@ RTTI_END_TYPE();
 ShaderService::ShaderService()
 {}
 
-app::ServiceInitializationResult ShaderService::onInitializeService(const app::CommandLine& cmdLine)
+bool ShaderService::onInitializeService(const CommandLine& cmdLine)
 {
     // find runtime compiler
     if (const auto runtimeCompilerClass = RTTI::GetInstance().findClass("gpu::compiler::ShaderCompiler"_id))
@@ -57,7 +57,7 @@ app::ServiceInitializationResult ShaderService::onInitializeService(const app::C
     // TODO: load global shader cache
     // TODO: load local shader cache
 
-    return app::ServiceInitializationResult::Finished;
+    return true;
 }
 
 void ShaderService::onShutdownService()
@@ -184,7 +184,7 @@ ShaderObjectPtr LoadStaticShaderDeviceObject(StringView path)
 ShaderObjectPtr LoadStaticShaderDeviceObject(StringView path, const ShaderSelector& selectors)
 {
     if (auto service = GetService<ShaderService>())
-        if (auto data = service->loadSystemShader(path))
+        if (auto data = service->loadSystemShader(path, selectors))
             if (data->deviceShader())
                 return data->deviceShader();
 

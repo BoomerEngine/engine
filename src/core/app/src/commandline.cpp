@@ -13,7 +13,7 @@
 #include "core/containers/include/stringBuilder.h"
 #include "core/io/include/io.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(app)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -537,4 +537,4 @@ CommandLineUnpackedAnsi::~CommandLineUnpackedAnsi()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(app)
+END_BOOMER_NAMESPACE()

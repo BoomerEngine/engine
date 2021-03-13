@@ -251,7 +251,7 @@ static void ExtractStreamData(const T* stream, const Matrix& localToWorld, uint3
 }
 
 template< typename T, typename DataType >
-static void ExtractStreamDataUV(const T* stream, const Matrix& localToWorld, uint32_t vertexIndex, DataType& writeTo, bool flipUV)
+static void ExtractStreamDataUV(const T* stream, const Matrix& localToWorld, uint32_t vertexIndex, DataType& writeTo, bool flipUV, const Vector2& uvScale)
 {
     if (stream)
     {
@@ -259,6 +259,9 @@ static void ExtractStreamDataUV(const T* stream, const Matrix& localToWorld, uin
 
         if (flipUV)
             writeTo.y = 1.0f - writeTo.y;
+
+        writeTo.x *= uvScale.x;
+        writeTo.y *= uvScale.y;
     }
 }
 
@@ -278,6 +281,7 @@ struct FBXMeshStreams : public NoCopy
     MeshStreamMask streamMask = 0;
 
     bool flipUV = true;
+    Vector2 uvScale = Vector2(1, 1);
 
     const ofbx::Geometry* geometry = nullptr;
 
@@ -422,8 +426,8 @@ static void ExtractFace(const FBXMeshStreams& streams, const Matrix& localToWorl
         ExtractStreamData(streams.bitangents, localToWorld, di, outWriter.writeBitangent[i]);
         ExtractStreamData(streams.color0, localToWorld, di, outWriter.writeColor0[i]);
         ExtractStreamData(streams.color1, localToWorld, di, outWriter.writeColor1[i]);
-        ExtractStreamDataUV(streams.uv0, localToWorld, di, outWriter.writeUV0[i], streams.flipUV);
-        ExtractStreamDataUV(streams.uv1, localToWorld, di, outWriter.writeUV1[i], streams.flipUV);
+        ExtractStreamDataUV(streams.uv0, localToWorld, di, outWriter.writeUV0[i], streams.flipUV, streams.uvScale);
+        ExtractStreamDataUV(streams.uv1, localToWorld, di, outWriter.writeUV1[i], streams.flipUV, streams.uvScale);
 
         if (streams.skinInfluences)
         {
@@ -731,6 +735,7 @@ void DataNode::exportToMeshModel(IProgressTracker& progress, const FBXFile& owne
     // source stream data
     FBXMeshStreams sourceStreams(geom, skinInfluences);
     sourceStreams.flipUV = config.flipUV;
+    sourceStreams.uvScale = config.uvScale;
 
     // process chunk data
     // TODO: run on fibers

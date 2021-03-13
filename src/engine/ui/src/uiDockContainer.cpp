@@ -39,11 +39,6 @@ DockContainer::DockContainer()
         m_rootLayoutNode = RefNew<DockLayoutNode>(this, nullptr);
 }
 
-bool DockContainer::iteratePanels(const std::function<bool(DockPanel*)>& enumFunc, DockPanelIterationMode mode) const
-{
-    return m_rootLayoutNode->iteratePanels(enumFunc, mode);
-}
-
 bool DockContainer::activatePanel(DockPanel* panel)
 {
     return m_rootLayoutNode->activatePanel(panel);

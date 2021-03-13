@@ -77,14 +77,17 @@ void DataStash::conditionalRebuildAtlases()
 
 canvas::ImageEntry DataStash::cacheImage(const image::Image* img, bool supportWrapping /*= false*/, uint8_t additionalPadding /*= 0*/)
 {
-	if (const auto* ret = m_imagePtrMap.find(img))
+	if (!img)
+		return canvas::ImageEntry();
+
+	if (const auto* ret = m_imagePtrMap.find(img->runtimeUniqueId()))
 		return *ret;
 
 	if (img)
 	{
 		if (auto entry = m_mainIconAtlas->registerImage(img, supportWrapping, additionalPadding))
 		{
-			m_imagePtrMap[img] = entry;
+			m_imagePtrMap[img->runtimeUniqueId()] = entry;
 			return entry;
 		}
 	}

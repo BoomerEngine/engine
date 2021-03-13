@@ -77,7 +77,7 @@ public:
 
 	//--
 
-	bool initialize(const app::CommandLine& cmdLine);
+	bool initialize(const CommandLine& cmdLine);
 	void stop();
 	void update();
 

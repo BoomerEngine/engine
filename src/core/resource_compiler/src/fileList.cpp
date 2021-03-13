@@ -28,7 +28,6 @@ RTTI_END_TYPE();
 
 RTTI_BEGIN_TYPE_CLASS(ImportList);
     RTTI_METADATA(ResourceDescriptionMetadata).description("Import List");
-    RTTI_METADATA(ResourceTagColorMetadata).color(0xe2, 0xd6, 0xa8);
     RTTI_PROPERTY(m_files);
 RTTI_END_TYPE();
 

@@ -14,7 +14,7 @@
 #include "core/net/include/tcpMessageClient.h"
 #include "core/socket/include/address.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(app)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -23,13 +23,13 @@ struct CommandInfo
 {
     StringView name;
     StringView desc;
-    SpecificClassType<app::ICommand> cls;
+    SpecificClassType<ICommand> cls;
 };
 
-SpecificClassType<app::ICommand> FindCommandClass(StringView name)
+SpecificClassType<ICommand> FindCommandClass(StringView name)
 {
     // list all command classes
-    InplaceArray<SpecificClassType<app::ICommand>, 100> commandClasses;
+    InplaceArray<SpecificClassType<ICommand>, 100> commandClasses;
     RTTI::GetInstance().enumClasses(commandClasses);
 
     // find command by name
@@ -41,7 +41,7 @@ SpecificClassType<app::ICommand> FindCommandClass(StringView name)
             return cls;
 
         // check the name from the metadata
-        if (const auto* nameMetadata = cls->findMetadata<app::CommandNameMetadata>())
+        if (const auto* nameMetadata = cls->findMetadata<CommandNameMetadata>())
         {
             if (nameMetadata->name() == name)
                 return cls;
@@ -169,4 +169,4 @@ bool CommandHost::update()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(app)
+END_BOOMER_NAMESPACE()

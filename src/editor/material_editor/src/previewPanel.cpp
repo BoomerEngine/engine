@@ -9,9 +9,8 @@
 #include "build.h"
 #include "previewPanel.h"
 
-#include "editor/common/include/assetBrowser.h"
-#include "editor/common/include/managedFile.h"
-#include "editor/common/include/assetFormat.h"
+#include "editor/common/include/utils.h"
+#include "editor/assets/include/browserService.h"
 
 #include "engine/ui/include/uiMenuBar.h"
 #include "engine/ui/include/uiToolBar.h"
@@ -26,7 +25,7 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
-static StaticResource<Mesh> resDefaultCustomMesh("/engine/meshes/teapot.v4mesh");
+static StaticResource<Mesh> resDefaultCustomMesh("/engine/meshes/teapot.xfile");
 
 MaterialPreviewPanelSettings::MaterialPreviewPanelSettings()
 {
@@ -107,8 +106,8 @@ void MaterialPreviewPanel::destroyVisualization()
 ui::DragDropHandlerPtr MaterialPreviewPanel::handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
 {
     if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
-        if (auto file = fileData->file())
-            if (file->fileFormat().loadableAsType(Mesh::GetStaticClass()))
+        if (auto file = fileData->depotPath())
+            if (CanLoadAsClass<Mesh>(file))
                 return RefNew<ui::DragDropHandlerGeneric>(data, this, entryPosition);
 
     return TBaseClass::handleDragDrop(data, entryPosition);
@@ -118,14 +117,14 @@ void MaterialPreviewPanel::handleDragDropGenericCompletion(const ui::DragDropDat
 {
     if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
     {
-        if (auto file = fileData->file())
+        if (auto file = fileData->depotPath())
         {
-            if (file->fileFormat().loadableAsType(Mesh::GetStaticClass()))
+            if (CanLoadAsClass<Mesh>(file))
             {
                 auto settings = previewSettings();
 
                 // TODO: async
-                if (auto loadedMash = LoadResource<Mesh>(file->depotPath()))
+                if (auto loadedMash = LoadResource<Mesh>(file))
                 {
                     settings.customMesh = loadedMash;
                     settings.shape = MaterialPreviewShape::Custom;
@@ -136,11 +135,11 @@ void MaterialPreviewPanel::handleDragDropGenericCompletion(const ui::DragDropDat
     }
 }
 
-StaticResource<Mesh> resBoxMesh("/engine/meshes/cube.v4mesh");
-StaticResource<Mesh> resBoxSphere("/engine/meshes/sphere.v4mesh");
-StaticResource<Mesh> resBoxCylinder("/engine/meshes/cylinder.v4mesh");
-//StaticResource<Mesh> resBoxQuad("/engine/meshes/quad.v4mesh");
-StaticResource<Mesh> resBoxQuad("/engine/meshes/plane.v4mesh");
+StaticResource<Mesh> resBoxMesh("/engine/meshes/cube.xfile");
+StaticResource<Mesh> resBoxSphere("/engine/meshes/sphere.xfile");
+StaticResource<Mesh> resBoxCylinder("/engine/meshes/cylinder.xfile");
+//StaticResource<Mesh> resBoxQuad("/engine/meshes/quad.xfile");
+StaticResource<Mesh> resBoxQuad("/engine/meshes/plane.xfile");
 
 void MaterialPreviewPanel::createVisualization()
 {
@@ -200,17 +199,12 @@ void MaterialPreviewPanel::buildShapePopup(ui::MenuButtonContainer* menu)
 
 void MaterialPreviewPanel::createToolbarItems()
 {
-    actions().bindCommand("MaterialPreviewPanel.Shape"_id) = [this](ui::Button* button)
-    {
-        if (button)
-        {
+    toolbar()->createButton(ui::ToolBarButtonInfo("Shape"_id).caption("[img:cube] Shape")) = 
+        [this](ui::Button* button) {
             auto menu = RefNew<ui::MenuButtonContainer>();
             buildShapePopup(menu);
             menu->showAsDropdown(button);
-        }
-    };
-
-    toolbar()->createButton("MaterialPreviewPanel.Shape"_id, ui::ToolbarButtonSetup().caption("[img:cube] Shape"));
+        };
     toolbar()->createSeparator();
 }
 

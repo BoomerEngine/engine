@@ -214,24 +214,20 @@ static StringView NodeTypeName(SceneContentNodeType type)
 
 void SceneEditMode_Default::processObjectCopy(const Array<SceneContentNodePtr>& selection)
 {
-    if (!m_panel->renderer())
-        return;
-
-    if (selection.empty())
-        return;
-
-    const auto clipBoardData = BuildClipboardDataFromNodes(selection);
-    if (clipBoardData)
+    if (!selection.empty())
     {
-        ui::PostWindowMessage(m_panel, ui::MessageType::Info, "CopyPaste"_id,
-            TempString("Copied {} {}{}", clipBoardData->data.size(), NodeTypeName(clipBoardData->type),
-                clipBoardData->data.size() == 1 ? "" : "s"));
+        if (const auto clipBoardData = BuildClipboardDataFromNodes(selection))
+        {
+            ui::PostWindowMessage(m_panel, ui::MessageType::Info, "CopyPaste"_id,
+                TempString("Copied {} {}{}", clipBoardData->data.size(), NodeTypeName(clipBoardData->type),
+                    clipBoardData->data.size() == 1 ? "" : "s"));
 
-        m_panel->renderer()->storeObjectToClipboard(clipBoardData);
-    }
-    else
-    {
-        ui::PostWindowMessage(m_panel, ui::MessageType::Error, "CopyPaste"_id, "Unable to copy selected objects to clipboard");
+            m_panel->clipboard().storeObject(clipBoardData);
+        }
+        else
+        {
+            ui::PostWindowMessage(m_panel, ui::MessageType::Error, "CopyPaste"_id, "Unable to copy selected objects to clipboard");
+        }
     }
 }
 
@@ -739,28 +735,23 @@ void SceneEditMode_Default::processReplaceWithClipboard(const Array<SceneContent
 
 void SceneEditMode_Default::processObjectCut(const Array<SceneContentNodePtr>& selection)
 {
-    if (!m_panel->renderer())
-        return;
-
-    if (selection.empty())
-        return;
-
-    const auto clipBoardData = BuildClipboardDataFromNodes(selection);
-    if (clipBoardData)
+    if (!selection.empty())
     {
-        ui::PostWindowMessage(m_panel, ui::MessageType::Info, "CopyPaste"_id,
-            TempString("Cut {} {}{}", clipBoardData->data.size(), NodeTypeName(clipBoardData->type),
-                clipBoardData->data.size() == 1 ? "" : "s"));
+        if (const auto clipBoardData = BuildClipboardDataFromNodes(selection))
+        {
+            ui::PostWindowMessage(m_panel, ui::MessageType::Info, "CopyPaste"_id,
+                TempString("Cut {} {}{}", clipBoardData->data.size(), NodeTypeName(clipBoardData->type),
+                    clipBoardData->data.size() == 1 ? "" : "s"));
 
-        m_panel->renderer()->storeObjectToClipboard(clipBoardData);
-    }
-    else
-    {
-        ui::PostWindowMessage(m_panel, ui::MessageType::Error, "CopyPaste"_id, "Unable to copy selected objects to clipboard");
-        return;
-    }
+            m_panel->clipboard().storeObject(clipBoardData);
 
-    processObjectDeletion(selection);
+            processObjectDeletion(selection);
+        }
+        else
+        {
+            ui::PostWindowMessage(m_panel, ui::MessageType::Error, "CopyPaste"_id, "Unable to copy selected objects to clipboard");
+        }
+    }
 }
 
 //--
@@ -1190,16 +1181,12 @@ void SceneEditMode_Default::handleGeneralCut()
 
 void SceneEditMode_Default::handleGeneralPaste()
 {
-    auto context = m_activeNode.lock();
-    if (!context)
-        return;
-
-    SceneContentClipboardDataPtr data;
-    m_panel->renderer()->loadObjectFromClipboard(data);
-    if (!data || data->data.empty() || !context->canAttach(data->type))
-        return;
-
-    processObjectPaste(context, data, SceneContentNodePasteMode::Absolute);
+    if (auto context = m_activeNode.lock())
+    {
+        if (auto data = m_panel->clipboard().loadObject<SceneContentClipboardData>())
+            if (!data->data.empty() && context->canAttach(data->type))
+                processObjectPaste(context, data, SceneContentNodePasteMode::Absolute);
+    }
 }
 
 void SceneEditMode_Default::handleGeneralDelete()
@@ -1224,11 +1211,7 @@ bool SceneEditMode_Default::checkGeneralCut() const
 
 bool SceneEditMode_Default::checkGeneralPaste() const
 {
-    if (!m_panel->renderer())
-        return false;
-
-    const auto hasData = m_panel->renderer()->checkClipboardHasData(SceneContentClipboardData::GetStaticClass());
-    return m_activeNode.lock() && hasData;
+    return m_activeNode.lock();
 }
 
 bool SceneEditMode_Default::checkGeneralDelete() const

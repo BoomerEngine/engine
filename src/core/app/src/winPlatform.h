@@ -10,7 +10,7 @@
 
 #include "launcherPlatformCommon.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(platform)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace win
 {
@@ -23,7 +23,7 @@ namespace win
         Platform();
         virtual ~Platform();
 
-        virtual bool handleStart(const app::CommandLine& cmdline, app::IApplication* app) override;
+        virtual bool handleStart(const CommandLine& cmdline, IApplication* app) override;
         virtual void handleUpdate() override;
         virtual void handleCleanup() override;
 
@@ -33,9 +33,9 @@ namespace win
 
         UniquePtr<GenericOutput> m_output;
 
-        bool protectedStart(const app::CommandLine& cmdline, app::IApplication* app);
+        bool protectedStart(const CommandLine& cmdline, IApplication* app);
     };
 
 } // win
 
-END_BOOMER_NAMESPACE_EX(platform)
+END_BOOMER_NAMESPACE()

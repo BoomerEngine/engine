@@ -81,7 +81,7 @@ private:
 
     //--
 
-    SpinLock m_loadedOriginalDataLock;
+    Mutex m_loadedOriginalDataLock;
     mutable ResourcePtr m_loadedOriginalData;
 
     //--

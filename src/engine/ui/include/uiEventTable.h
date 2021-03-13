@@ -58,7 +58,6 @@ public:
     //---
 
 private:
-
     struct Entry : public IReferencable
     {
         ElementWeakPtr owner;

@@ -39,19 +39,15 @@ class EDITOR_IMAGE_EDITOR_API ImagePreviewElement : public IImagePreviewElement
     RTTI_DECLARE_VIRTUAL_CLASS(ImagePreviewElement, IImagePreviewElement);
 
 public:
-    ImagePreviewElement(const gpu::ImageSampledView* view, const gpu::ImageSampledView* sourceView);
-    ImagePreviewElement(const gpu::ImageSampledView* view, int mipIndex=0, int sliceIndex=0);
+    ImagePreviewElement(const gpu::ImageSampledView* view, int mipIndex, int sliceIndex);
     ~ImagePreviewElement();
 
     virtual void configure(const ImagePreviewPanelSettings& settings) override;
     virtual void prepareGeometry(ui::CanvasArea* owner, float sx, float sy, ui::Size& outCanvasSizeAtCurrentScale) override;
     virtual void render(ui::CanvasArea* owner, float x, float y, float sx, float sy, canvas::Canvas& canvas, float mergedOpacity)  override;
 
-    void mip(int mip);
-
 protected:
     gpu::ImageSampledViewPtr m_view;
-    gpu::ImageSampledViewPtr m_sourceView;
 
     int m_mipIndex = 0;
     int m_sliceIndex = 0;

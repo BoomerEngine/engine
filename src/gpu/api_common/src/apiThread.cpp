@@ -82,7 +82,7 @@ void IBaseThread::stopThread()
     TRACE_INFO("Device thread closed");
 }        
 
-bool IBaseThread::startThread(const app::CommandLine& cmdLine, DeviceCaps& outCaps)
+bool IBaseThread::startThread(const CommandLine& cmdLine, DeviceCaps& outCaps)
 {
 	ThreadSetup setup;
 	setup.m_priority = ThreadPriority::AboveNormal;
@@ -101,12 +101,12 @@ bool IBaseThread::startThread(const app::CommandLine& cmdLine, DeviceCaps& outCa
 	return status;			
 }
 
-ObjectRegistry* IBaseThread::createOptimalObjectRegistry(const app::CommandLine& cmdLine)
+ObjectRegistry* IBaseThread::createOptimalObjectRegistry(const CommandLine& cmdLine)
 {
 	return new ObjectRegistry(this);
 }
 
-bool IBaseThread::threadStartup(const app::CommandLine& cmdLine, DeviceCaps& outCaps)
+bool IBaseThread::threadStartup(const CommandLine& cmdLine, DeviceCaps& outCaps)
 {
 	DEBUG_CHECK_EX(GetCurrentThreadID() == m_threadId, "This function should be called on rendering thread");
 

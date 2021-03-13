@@ -17,9 +17,9 @@ BEGIN_BOOMER_NAMESPACE_EX(script)
 class Environment;
 
 // top level scripting service, manages all live scripting threads and objects, con
-class CORE_SCRIPT_API ScriptService : public app::ILocalService
+class CORE_SCRIPT_API ScriptService : public IService
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ScriptService, app::ILocalService);
+    RTTI_DECLARE_VIRTUAL_CLASS(ScriptService, IService);
 
 public:
     ScriptService();
@@ -43,8 +43,8 @@ private:
 
     //--
 
-    // ILocalService
-    virtual app::ServiceInitializationResult onInitializeService( const app::CommandLine& cmdLine) override final;
+    // IService
+    virtual bool onInitializeService( const CommandLine& cmdLine) override final;
     virtual void onShutdownService() override final;
     virtual void onSyncUpdate() override final;
 };

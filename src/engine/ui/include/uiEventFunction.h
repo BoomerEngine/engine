@@ -395,17 +395,14 @@ public:
             *m_function = EventFunctionBinderHelper<decltype(&F::operator())>::bind(func);
     }
 
-    INLINE void operator=(StringID actionName)
+    INLINE void operator=(const TEventFunction& func)
     {
         if (m_function)
-            *m_function = [actionName](UI_EVENT_FUNC) { return RunAction(owner, source, actionName); };
+            *m_function = func;
     }
 
-        
 private:
     TEventFunction* m_function;
-
-    static bool RunAction(IElement* element, IElement* source, StringID action);
 };
 
 ///---

@@ -42,7 +42,7 @@ StringBuf Device::name() const
 	return "GL4";
 }
 
-IBaseThread* Device::createOptimalThread(const app::CommandLine& cmdLine)
+IBaseThread* Device::createOptimalThread(const CommandLine& cmdLine)
 {
 	return new ThreadClass(this, windows());
 }

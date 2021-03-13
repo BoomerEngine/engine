@@ -24,9 +24,9 @@ class MeshChunkSharedStorage;
 //---
 
 // service for managing mesh data buffers
-class ENGINE_MESH_API MeshService : public app::ILocalService
+class ENGINE_MESH_API MeshService : public IService
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MeshService, app::ILocalService);
+    RTTI_DECLARE_VIRTUAL_CLASS(MeshService, IService);
 
 public:
     MeshService();
@@ -47,7 +47,7 @@ public:
     //--
 
 private:
-    virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
+    virtual bool onInitializeService(const CommandLine& cmdLine) override final;
     virtual void onShutdownService() override final;
     virtual void onSyncUpdate() override final;
 

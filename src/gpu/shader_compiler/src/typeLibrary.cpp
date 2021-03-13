@@ -801,7 +801,8 @@ void TypeLibrary::createDefaultTypes()
 
 bool TypeLibrary::calculateCompositeLayouts(parser::IErrorReporter& err)
 {
-    while (1)
+    uint32_t passes = 10;
+    while (passes--)
     {
         bool somethingUpdated = false;
         bool needsPass = false;
@@ -819,7 +820,7 @@ bool TypeLibrary::calculateCompositeLayouts(parser::IErrorReporter& err)
         break;
     }
 
-    return true;
+    return passes > 0;
 }
 
 static uint64_t CalcResourceTypeHash(StringID typeName, const AttributeList& attributes)

@@ -170,6 +170,8 @@ bool DataViewNative::checkIfCurrentlyADefaultValue(StringView viewPath) const
     return false;
 }
 
+#define RUN_SAFE(x) { auto ret = x; if (!ret.valid()) return ret; }
+
 DataViewActionResult DataViewNative::actionValueWrite(StringView viewPath, const void* sourceData, Type sourceType) const
 {
     // protect read only objects
@@ -179,8 +181,7 @@ DataViewActionResult DataViewNative::actionValueWrite(StringView viewPath, const
     // describe the data view to know is the value is not read only
     DataViewInfo info;
     info.requestFlags |= DataViewRequestFlagBit::CheckIfResetable;
-    if (auto err = HasError(describeDataView(viewPath, info)))
-        return err;
+    RUN_SAFE(describeDataView(viewPath, info));
 
     // oh well
     if (info.flags.test(DataViewInfoFlagBit::ReadOnly))
@@ -189,8 +190,7 @@ DataViewActionResult DataViewNative::actionValueWrite(StringView viewPath, const
     // read the current value first - that's the value we will restore to in case of undo
     // NOTE: any failure here usually means that we can't write to this value either
     DataHolder currentValue(sourceType);
-    if (auto ret = HasError(readDataViewSimple(viewPath, currentValue)))
-        return ret;
+    RUN_SAFE(readDataViewSimple(viewPath, currentValue));
 
     // if the current value is the "default
     const auto currentValueIsDefaultValue = checkIfCurrentlyADefaultValue(viewPath);
@@ -211,8 +211,7 @@ DataViewActionResult DataViewNative::actionValueReset(StringView viewPath) const
     // describe the data view to know the type and if it even can be reset
     DataViewInfo info;
     info.requestFlags |= DataViewRequestFlagBit::CheckIfResetable;
-    if (auto err = HasError(describeDataView(viewPath, info)))
-        return err;
+    RUN_SAFE(describeDataView(viewPath, info));
 
     // oh well
     if (info.flags.test(DataViewInfoFlagBit::ReadOnly))
@@ -224,14 +223,12 @@ DataViewActionResult DataViewNative::actionValueReset(StringView viewPath) const
 
     // read the default value from the CLASS, this will only work for simple 
     DataHolder defaultValue(info.dataType);
-    if (auto err = HasError(readDefaultDataView(viewPath, defaultValue.data(), defaultValue.type())))
-        return err;
+    RUN_SAFE(readDefaultDataView(viewPath, defaultValue.data(), defaultValue.type()));
 
     // read the current value first - that's the value we will restore to in case of undo
     // NOTE: any failure here usually means that we can't write to this value either
     DataHolder currentValue(info.dataType);
-    if (auto err = HasError(readDataViewSimple(viewPath, currentValue)))
-        return err;
+    RUN_SAFE(readDataViewSimple(viewPath, currentValue));
 
     // if the current value is the "default
     const auto currentValueIsDefaultValue = checkIfCurrentlyADefaultValue(viewPath);
@@ -246,8 +243,7 @@ DataViewActionResult DataViewNative::actionArrayClear(StringView viewPath) const
 
     // describe the data view to know the type and if it even can be reset
     DataViewInfo info;
-    if (auto ret = HasError(describeDataView(viewPath, info)))
-        return ret;
+    RUN_SAFE(describeDataView(viewPath, info));
 
     // oh well
     if (info.flags.test(DataViewInfoFlagBit::ReadOnly))
@@ -259,8 +255,7 @@ DataViewActionResult DataViewNative::actionArrayClear(StringView viewPath) const
 
     // read current array content
     DataHolder currentValue(info.dataType);
-    if (auto ret = HasError(readDataViewSimple(viewPath, currentValue)))
-        return ret;
+    RUN_SAFE(readDataViewSimple(viewPath, currentValue));
 
     // write empty data (empty array)
     DataHolder newValue(info.dataType);
@@ -269,16 +264,19 @@ DataViewActionResult DataViewNative::actionArrayClear(StringView viewPath) const
 
 DataViewActionResult DataViewNative::actionArrayInsertElement(StringView viewPath, uint32_t index) const
 {
+    // TODO
     return DataViewResultCode::ErrorIllegalOperation;
 }
 
 DataViewActionResult DataViewNative::actionArrayRemoveElement(StringView viewPath, uint32_t index) const
 {
+    // TODO
     return DataViewResultCode::ErrorIllegalOperation;
 }
 
 DataViewActionResult DataViewNative::actionArrayNewElement(StringView viewPath) const
 {
+    // TODO
     return DataViewResultCode::ErrorIllegalOperation;
 }
     
@@ -288,8 +286,7 @@ DataViewActionResult DataViewNative::actionObjectClear(StringView viewPath) cons
 {
     // describe the data view to know the type and if it even can be reset
     DataViewInfo info;
-    if (auto ret = HasError(describeDataView(viewPath, info)))
-        return ret;
+    RUN_SAFE(describeDataView(viewPath, info));
 
     // oh well
     if (info.flags.test(DataViewInfoFlagBit::ReadOnly))
@@ -309,8 +306,7 @@ DataViewActionResult DataViewNative::actionObjectClear(StringView viewPath) cons
 
     // read current array content
     DataHolder currentValue(info.dataType);
-    if (auto ret = HasError(readDataViewSimple(viewPath, currentValue)))
-        return ret;
+    RUN_SAFE(readDataViewSimple(viewPath, currentValue));
 
     // read the current object pointer
     ObjectPtr objectPtr;
@@ -332,8 +328,7 @@ DataViewActionResult DataViewNative::actionObjectNew(StringView viewPath, ClassT
 {
     // describe the data view to know the type and if it even can be reset
     DataViewInfo info;
-    if (auto ret = HasError(describeDataView(viewPath, info)))
-        return ret;
+    RUN_SAFE(describeDataView(viewPath, info));
 
     // oh well
     if (info.flags.test(DataViewInfoFlagBit::ReadOnly))
@@ -362,15 +357,14 @@ DataViewActionResult DataViewNative::actionObjectNew(StringView viewPath, ClassT
 
     // read current array content
     DataHolder currentValue(info.dataType);
-    if (auto ret = HasError(readDataViewSimple(viewPath, currentValue)))
-        return ret;
+    RUN_SAFE(readDataViewSimple(viewPath, currentValue));
 
     // create new object of given class
     ObjectPtr objectPtr = objectClass.create<IObject>();
     if (!objectPtr)
         return DataViewResultCode::ErrorIllegalOperation;
 
-    // parent the object! this is crucial and belive me, it's crazy to find a good place for this call
+    // parent the object! this is crucial and believe me, it's crazy to find a good place for this call
     objectPtr->parent(m_object);
 
     // store as a new pointer

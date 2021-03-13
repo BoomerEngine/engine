@@ -14,14 +14,14 @@ BEGIN_BOOMER_NAMESPACE_EX(test)
 
 /// boilerplate for test app
 /// contains basic scene initialization and other shit
-class UIApp : public app::IApplication
+class UIApp : public IApplication
 {
 public:
     UIApp();
     virtual ~UIApp();
 
 protected:
-    virtual bool initialize(const app::CommandLine& commandline) override;
+    virtual bool initialize(const CommandLine& commandline) override;
     virtual void update() override;
     virtual void cleanup() override;
 

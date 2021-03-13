@@ -63,7 +63,7 @@ ImageObjectProxy::ImageObjectProxy(ObjectID id, IDeviceObjectHandler* impl, cons
 ImageSampledViewPtr ImageObjectProxy::createSampledView(uint32_t firstMip /*= 0*/, uint32_t firstSlice /*= 0*/)
 {
 	gpu::ImageSampledView::Setup setup;
-	if (!validateSampledView(firstMip, INDEX_MAX, firstSlice, INDEX_MAX, setup))
+	if (!validateSampledView(type(), firstMip, INDEX_MAX, firstSlice, INDEX_MAX, setup))
 		return nullptr;
 
 	if (auto* obj = resolveInternalApiObject<IBaseImage>())
@@ -73,6 +73,7 @@ ImageSampledViewPtr ImageObjectProxy::createSampledView(uint32_t firstMip /*= 0*
 		localSetup.firstSlice = setup.firstSlice;
 		localSetup.numMips = setup.numMips;
 		localSetup.numSlices = setup.numSlices;
+        localSetup.viewType = obj->setup().view;
 		localSetup.format = obj->setup().format;
 
 		if (auto* view = obj->createSampledView_ClientApi(localSetup))
@@ -82,10 +83,10 @@ ImageSampledViewPtr ImageObjectProxy::createSampledView(uint32_t firstMip /*= 0*
 	return nullptr;
 }
 
-ImageSampledViewPtr ImageObjectProxy::createSampledViewEx(uint32_t firstMip, uint32_t firstSlice, uint32_t numMips, uint32_t numSlices)
+ImageSampledViewPtr ImageObjectProxy::createSampledViewEx(ImageViewType viewType, uint32_t firstMip, uint32_t firstSlice, uint32_t numMips, uint32_t numSlices)
 {
 	gpu::ImageSampledView::Setup setup;
-	if (!validateSampledView(firstMip, numMips, firstSlice, numSlices, setup))
+	if (!validateSampledView(viewType, firstMip, numMips, firstSlice, numSlices, setup))
 		return nullptr;
 
 	if (auto* obj = resolveInternalApiObject<IBaseImage>())
@@ -95,6 +96,7 @@ ImageSampledViewPtr ImageObjectProxy::createSampledViewEx(uint32_t firstMip, uin
 		localSetup.firstSlice = setup.firstSlice;
 		localSetup.numMips = setup.numMips;
 		localSetup.numSlices = setup.numSlices;
+        localSetup.viewType = viewType;
 		localSetup.format = obj->setup().format;
 
 		if (auto* view = obj->createSampledView_ClientApi(localSetup))

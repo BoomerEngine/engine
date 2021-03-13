@@ -1331,8 +1331,8 @@ bool CommandWriter::validateParameterBindings(const ShaderMetadata* meta)
 					const auto* view = rtti_cast<ImageSampledView>(descriptorEntry.viewPtr);
 					DEBUG_CHECK_RETURN_V(view != nullptr, false);
 
-					DEBUG_CHECK_RETURN_EX_V(expectedElem.viewType == view->image()->type(), TempString("Image view '{}' in descriptor '{}' is expected to be '{}' but '{}' is bound.",
-						expectedElem.name, desc.name, expectedElem.viewType, view->image()->type()), false);
+					DEBUG_CHECK_RETURN_EX_V(expectedElem.viewType == view->imageViewType(), TempString("Image view '{}' in descriptor '{}' is expected to be '{}' but '{}' is bound.",
+						expectedElem.name, desc.name, expectedElem.viewType, view->imageViewType()), false);
 
 #ifdef VALIDATE_RESOURCE_LAYOUTS
 					SubImageRegion region;

@@ -46,38 +46,6 @@ public:
 
     //--
 
-    // iterate over panels
-    bool iteratePanels(const std::function<bool(DockPanel*)>& enumFunc, DockPanelIterationMode mode = DockPanelIterationMode::VisibleOnly) const;
-
-    // iterate over panels
-    template< typename T >
-    INLINE bool iterateSpecificPanels(const std::function<bool(T * panel)>& enumFunc, DockPanelIterationMode mode = DockPanelIterationMode::VisibleOnly) const
-    {
-        return iteratePanels([enumFunc](DockPanel* panel)
-            {
-                if (auto specificPanel = rtti_cast<T>(panel))
-                    return enumFunc(specificPanel);
-                return false;
-            }, mode);
-    }
-
-    // collect specific panels
-    template< typename T >
-    INLINE bool collectSpecificPanels(Array<T*>& outTabs, DockPanelIterationMode mode = DockPanelIterationMode::VisibleOnly) const
-    {
-        return iteratePanels([&outTabs](DockPanel* panel)
-            {
-                if (auto specificPanel = rtti_cast<T>(panel))
-                    outTabs.pushBack(specificPanel);
-                return false;
-            }, mode);
-    }
-
-    // make sure given panel is visible (activate tab, window, etc)
-    bool activatePanel(DockPanel* panel);
-
-    //--
-
     // reapply layout
     void applyLayout();
 
@@ -91,6 +59,9 @@ public:
     void loadLayout(const DockPersistentLayoutInfo& layout);
 
     //--
+
+    // make sure given panel is visible (activate tab, window, etc)
+    bool activatePanel(DockPanel* panel);
 
 private:
     DockLayoutNodePtr m_rootLayoutNode;

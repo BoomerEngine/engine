@@ -15,13 +15,6 @@ BEGIN_BOOMER_NAMESPACE_EX(ui)
 
 //----
 
-bool EventFunctionBinder::RunAction(IElement* element, IElement* source, StringID action)
-{
-    return element ? element->runAction(action, source) : false;
-}
-
-//----
-
 EventTable::EventTable()
 {
     m_entries.reserve(4);

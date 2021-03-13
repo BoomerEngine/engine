@@ -24,8 +24,6 @@ public:
     MTLMaterialImportConfig();
 
     StringBuf m_materialName; // name of the material to import from MTL file
-
-    virtual void computeConfigurationKey(CRC64& crc) const override;
 };
 
 //--

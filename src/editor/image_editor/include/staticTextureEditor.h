@@ -8,8 +8,7 @@
 
 #pragma once
 
-#include "editor/common/include/resourceEditor.h"
-#include "editor/common/include/resourceEditorNativeFile.h"
+#include "editor/assets/include/resourceEditor.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -17,15 +16,16 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 class ImageHistogramWidget;
 class ImagePreviewPanelWithToolbar;
+class ImageCubePreviewPanelWithToolbar;
 class ImageHistogramPendingData;
 
 /// editor for static textures (baked)
-class StaticTextureEditor : public ResourceEditorNativeFile
+class StaticTextureEditor : public ResourceEditor
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureEditor, ResourceEditorNativeFile);
+    RTTI_DECLARE_VIRTUAL_CLASS(StaticTextureEditor, ResourceEditor);
 
 public:
-    StaticTextureEditor(ManagedFileNativeResource* file);
+    StaticTextureEditor(const ResourceInfo& info, IStaticTexture* texture);
     virtual ~StaticTextureEditor();
 
     INLINE ImagePreviewPanelWithToolbar* previewPanel() const { return m_previewPanel; }
@@ -34,17 +34,16 @@ public:
 
     //--
 
-    virtual bool initialize() override;
-    virtual void handleLocalReimport(const ResourcePtr& ptr) override;
+    virtual void reimported(ResourcePtr resource, ResourceMetadataPtr metadata) override;
 
 private:
     StaticTexturePtr m_texture;
 
-    ImageHistogramWidget* m_colorHistogram;
-    ImageHistogramWidget* m_lumHistogram;
+    ImageHistogramWidget* m_colorHistogram = nullptr;
+    ImageHistogramWidget* m_lumHistogram = nullptr;
 
-    ui::DockPanel* m_previewTab;
-    ImagePreviewPanelWithToolbar* m_previewPanel;
+    ImagePreviewPanelWithToolbar* m_previewPanel = nullptr;
+    ImageCubePreviewPanelWithToolbar* m_cubePreviewPanel = nullptr;
 
     ui::TextLabel* m_imageInfoLabel;
 

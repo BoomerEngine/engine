@@ -1,0 +1,27 @@
+<?xml version="1.0" standalone="yes"?>
+<object class="ResourceMetadata">
+  <ids>
+    <element>{A2DC8D5C-6350-472D-698A-B85EA2D7D66F}</element>
+  </ids>
+  <importDependencies>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/textures/checker_n.png</importPath>
+      <crc>4202980011</crc>
+    </element>
+  </importDependencies>
+  <resourceClassType>StaticTexture2D</resourceClassType>
+  <importerClassType>assets::StaticTextureFromImageImporter</importerClassType>
+  <importerClassVersion>1</importerClassVersion>
+  <importBaseConfiguration class="assets::StaticTextureCompressionConfiguration">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600374822360000</sourceImportedOn>
+  </importBaseConfiguration>
+  <importUserConfiguration class="assets::StaticTextureCompressionConfiguration"/>
+  <importFullConfiguration class="assets::StaticTextureCompressionConfiguration">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600374822360000</sourceImportedOn>
+  </importFullConfiguration>
+  <internalRevision>1</internalRevision>
+</object>

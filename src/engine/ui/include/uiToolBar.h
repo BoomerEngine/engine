@@ -12,21 +12,47 @@
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 
-//--
+//------
 
-/// toolbar button
-struct ToolbarButtonSetup
+/// toolbar button creation info
+struct ENGINE_UI_API ToolBarButtonInfo
 {
-    StringView m_icon;
-    StringView m_caption;
-    StringView m_tooltip;
+    ToolBarButtonInfo(StringID id = StringID());
+    ToolBarButtonInfo(const ToolBarButtonInfo& other);
+    ToolBarButtonInfo& operator=(const ToolBarButtonInfo& other);
 
-    INLINE bool valid() const { return m_icon || m_caption; }
+    //-
 
-    INLINE ToolbarButtonSetup() {}
-    INLINE ToolbarButtonSetup& icon(StringView txt) { m_icon = txt; return *this; };
-    INLINE ToolbarButtonSetup& caption(StringView txt) { m_caption = txt; return *this; };
-    INLINE ToolbarButtonSetup& tooltip(StringView txt) { m_tooltip = txt; return *this; };
+    bool m_enabled = true; // initially enabled
+    bool m_toggled = false; // initially toggled
+    StringID m_id; // only if we want to find it
+    StringBuf m_caption; // caption
+    StringBuf m_tooltip; // tooltip to display
+    KeyShortcut m_shortcut; // automatically bind a shortcut
+
+    //--
+
+    // constructs icon + text on the side caption
+    static StringBuf MakeIconWithTextCaption(StringView icon, StringView text);
+
+    // constructs the icon + text on the bottom caption
+    static StringBuf MakeIconWithSmallTextCaption(StringView icon, StringView text);
+
+    //--
+
+    // compile a toolbar button, can be added to a toolbar ;)
+    ButtonPtr create() const;
+
+    //--
+
+    ToolBarButtonInfo& separator() { m_caption = "|"; return *this; }
+    ToolBarButtonInfo& disabled() { m_enabled = false; return *this; }
+    ToolBarButtonInfo& enabled(bool flag) { m_enabled = flag; return *this; }
+    ToolBarButtonInfo& toggled(bool flag) { m_toggled = flag;  return *this; }
+    ToolBarButtonInfo& shortcut(KeyShortcut key) { m_shortcut = key; return *this; }
+    ToolBarButtonInfo& caption(StringView txt) { m_caption = StringBuf(txt); return *this; }
+    ToolBarButtonInfo& caption(StringView txt, StringView icon) { m_caption = MakeIconWithSmallTextCaption(icon, txt); return *this; }
+    ToolBarButtonInfo& tooltip(StringView txt) { m_tooltip = StringBuf(txt); return *this; }
 };
 
 //--
@@ -38,28 +64,29 @@ class ENGINE_UI_API ToolBar : public IElement
 
 public:
     ToolBar();
+    virtual ~ToolBar();
 
-    // add a vertical separator to the toolbar
+    //--
+
+    // add button, allows to bind function
+    EventFunctionBinder createButton(const ToolBarButtonInfo& info);
+
+    // add a vertical separator
     void createSeparator();
 
-    // add a simple tool button
-    void createButton(StringID action, const ToolbarButtonSetup& setup);
+    //--
 
-    // add a simple tool button with direct action
-    EventFunctionBinder createCallback(const ToolbarButtonSetup& setup);
+    // update caption of a button (should have ID)
+    void updateButtonCaption(StringID id, StringView caption);
+    void updateButtonCaption(StringID id, StringView caption, StringView icon);
 
-    // update caption on a button
-    void updateButtonCaption(StringID action, const ToolbarButtonSetup& setup);
+    // toggle button state
+    void toggleButton(StringID id, bool state);
 
-protected:
-    Timer m_timerUpdateState;
+    // enable disable button
+    void enableButton(StringID id, bool state);
 
-    HashMap<StringID, ButtonPtr> m_actionButtons;
-
-    void updateButtonState();
-
-    virtual void attachChild(IElement* childElement) override;
-    virtual void detachChild(IElement* childElement) override;
+    //-
 };
 
 //--

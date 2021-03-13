@@ -19,6 +19,7 @@
 #include "core/image/include/imageView.h"
 #include "core/image/include/freeImageLoader.h"
 #include "core/resource/include/tags.h"
+#include "engine/texture/include/staticTexture2D.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(assets)
 
@@ -56,24 +57,11 @@ ImageCompressionSettings StaticTextureCompressionConfiguration::loadSettings() c
     return ret;
 }
 
-void StaticTextureCompressionConfiguration::computeConfigurationKey(CRC64& crc) const
-{
-    TBaseClass::computeConfigurationKey(crc);
-
-    crc << (int)m_compressionMasking;
-    crc << (int)m_compressionMode;
-    crc << (int)m_compressionQuality;
-    crc << (int)m_contentAlphaMode;
-    crc << (int)m_contentColorSpace;
-    crc << (int)m_mipmapMode;
-    crc << (int)m_contentType;
-}
-
 //---
 
 RTTI_BEGIN_TYPE_CLASS(StaticTextureFromImageImporter);
     RTTI_OLD_NAME("rendering::StaticTextureFromImageImporter");
-    RTTI_METADATA(ResourceCookedClassMetadata).addClass<StaticTexture>();
+    RTTI_METADATA(ResourceImportedClassMetadata).addClass<StaticTexture2D>();
     RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtensions("bmp;dds;png;jpg;jpeg;jp2;jpx;tga;tif;tiff;hdr;exr;ppm;pbm;psd;xbm;nef;xpm;gif;webp");
     RTTI_METADATA(ResourceImporterConfigurationClassMetadata).configurationClass<StaticTextureCompressionConfiguration>();
 RTTI_END_TYPE();
@@ -128,10 +116,12 @@ ResourcePtr StaticTextureFromImageImporter::importResource(IResourceImporterInte
     }
 
     // TODO: split data into streamable/persistent part
+    IStaticTexture::Setup setup;
+    setup.data = std::move(compressedData->data);
+    setup.mips = std::move(compressedData->mips);
+    setup.info = compressedData->info;
 
-    // create the static texture
-    AsyncFileBuffer streamingData;
-    return RefNew<StaticTexture>(std::move(compressedData->data), std::move(streamingData), std::move(compressedData->mips), compressedData->info);
+    return RefNew<StaticTexture2D>(std::move(setup));
 }
 
 //---

@@ -150,10 +150,6 @@ public:
     // calculate the space conversion matrix for given content type
     // NOTE: includes custom transformation specified in the manifest itself
     Matrix calcAssetToEngineConversionMatrix(float defaultAssetUnits, MeshImportSpace defaultAssetSpace) const;
-
-    //--
-
-    virtual void computeConfigurationKey(CRC64& crc) const override;
 };
 
 //---

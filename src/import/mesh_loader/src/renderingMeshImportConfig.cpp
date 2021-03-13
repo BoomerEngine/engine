@@ -167,53 +167,6 @@ Matrix MeshImportConfig::calcAssetToEngineConversionMatrix(float defaultAssetUni
 
 //--
 
-void MeshImportConfig::computeConfigurationKey(CRC64& crc) const
-{
-    TBaseClass::computeConfigurationKey(crc);
-
-    crc << (char)units;
-    crc << (char)space;
-    crc << globalTranslation.x;
-    crc << globalTranslation.y;
-    crc << globalTranslation.z;
-    crc << globalRotation.pitch;
-    crc << globalRotation.yaw;
-    crc << globalRotation.roll;
-    crc << globalScale;
-    crc << flipFaces;
-
-    //--
-
-    crc << m_importMaterials;
-    crc << m_materialSearchPath.view();
-    crc << m_materialImportPath.view();
-
-    // texture import
-    crc << m_importTextures;
-    crc << m_textureSearchPath.view();
-    crc << m_textureImportPath.view();
-
-    crc << m_depotSearchDepth;
-    crc << m_sourceAssetsSearchDepth;
-
-    //--
-
-    crc << (char)m_normalRecalculation;
-    crc << (char)m_normalComputationMode;
-    crc << m_normalAngularThreshold;
-    crc << m_useFaceSmoothGroups;
-    crc << m_flipNormals;
-
-    //--
-
-    crc << (char)m_tangentsRecalculation;
-    crc << m_tangentsAngularThreshold;
-    crc << m_flipTangent;
-    crc << m_flipBitangent;
-}
-
-//--
-
 RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IGeneralMeshImporter);
 RTTI_END_TYPE();
 
@@ -376,7 +329,7 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(IResourceImporterInterf
                 }
 
                 // emit the follow-up import, no extra config at the moment
-                return importer.followupImport<IMaterial>(resolvedMaterialLibraryPath, depotPath, materialImportConfig);
+                return importer.followupImport<IMaterial>(resolvedMaterialLibraryPath, depotPath, MaterialInstance::GetStaticClass(), materialImportConfig);
             }
         }
         else
@@ -394,7 +347,7 @@ MaterialRef IGeneralMeshImporter::buildSingleMaterialRef(IResourceImporterInterf
             }
 
             // emit the follow-up import, no extra config at the moment
-            return importer.followupImport<IMaterial>(importer.queryImportPath(), depotPath, materialImportConfig);
+            return importer.followupImport<IMaterial>(importer.queryImportPath(), depotPath, MaterialInstance::GetStaticClass(), materialImportConfig);
         }
     }
 

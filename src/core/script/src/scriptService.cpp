@@ -19,7 +19,7 @@ BEGIN_BOOMER_NAMESPACE_EX(script)
 //---
 
 RTTI_BEGIN_TYPE_CLASS(ScriptService);
-    RTTI_METADATA(app::DependsOnServiceMetadata).dependsOn<config::ConfigService>();
+    RTTI_METADATA(DependsOnServiceMetadata).dependsOn<ConfigService>();
 RTTI_END_TYPE();
 
 ScriptService::ScriptService()
@@ -27,7 +27,7 @@ ScriptService::ScriptService()
 {}
 
 
-app::ServiceInitializationResult ScriptService::onInitializeService( const app::CommandLine& cmdLine)
+bool ScriptService::onInitializeService( const CommandLine& cmdLine)
 {
     // create script env
     m_env.create();
@@ -37,11 +37,11 @@ app::ServiceInitializationResult ScriptService::onInitializeService( const app::
     {
         TRACE_WARNING("Scripts are disabled via commandline and will not be loaded");
         m_scriptsDisabled = true;
-        return app::ServiceInitializationResult::Finished;
+        return true;
     }
 
     // scripts initialized
-    return app::ServiceInitializationResult::Finished;
+    return true;
 }
 
 void ScriptService::onShutdownService()

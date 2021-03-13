@@ -66,7 +66,6 @@ class ENGINE_UI_API MenuButtonContainer : public IElement
 public:
     MenuButtonContainer();
 
-    void createAction(StringID action, StringView text, StringView icon = "");
     void createSubMenu(const TPopupFunc& func, StringView text, StringView icon = "");
     void createSubMenu(const PopupPtr& popup, StringView text, StringView icon = "");
     void createSeparator();
@@ -77,11 +76,6 @@ public:
     void showAsDropdown(IElement* owner);
 
     PopupPtr convertToPopup();
-
-private:
-    Timer m_timerUpdateState;
-
-    void updateButtonState();
 };
 
 //--
@@ -93,7 +87,7 @@ class ENGINE_UI_API MenuButton : public Button
 
 public:
     MenuButton();
-    MenuButton(StringID, StringView text, StringView icon, StringView shortcut="");
+    MenuButton(StringView text, StringView icon, StringView shortcut="");
     MenuButton(const TPopupFunc& func, StringView text, StringView icon);
 
 private:

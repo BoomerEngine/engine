@@ -142,6 +142,25 @@ ResourceID LocalImporterInterface::followupImport(StringView assetImportPath, St
     if (m_followupImportsSet.find(depotKey, id))
         return id;
 
+    // find the actual importable class
+    {
+        InplaceArray<ResourceClass, 10> importableClasses;
+        IResourceImporter::ListImportableResourceClassesForExtension(assetImportPath.extensions(), importableClasses);
+        if (importableClasses.empty())
+        {
+            TRACE_INFO("Followup import '{}' cannot be created because there are no importers for '{}'", depotPath, assetImportPath);
+            return ResourceID();
+        }
+
+        // if we don't have our class specified directly find class that actually matches us best
+        // NOTE: may be problematic
+        if (!importableClasses.contains(cls))
+        {
+            TRACE_INFO("Followup import '{}' cannot be created because there are no importers for '{}' that can import into '{}' directly", depotPath, assetImportPath, cls);
+            return ResourceID();
+        }
+    }
+
     // try to use existing resource key
     const auto metadataPath = ReplaceExtension(depotPath, ResourceMetadata::FILE_EXTENSION);
     if (const auto metadata = m_depot->loadExistingMetadata(metadataPath))

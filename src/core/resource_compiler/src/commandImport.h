@@ -18,15 +18,15 @@ struct ImportQueueFileCancel;
 
 //--
 
-class CommandImport : public app::ICommand
+class CommandImport : public ICommand
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CommandImport, app::ICommand);
+    RTTI_DECLARE_VIRTUAL_CLASS(CommandImport, ICommand);
 
 public:
     CommandImport();
     virtual ~CommandImport();
 
-    virtual bool run(IProgressTracker* progress, const app::CommandLine& commandline) override final;
+    virtual bool run(IProgressTracker* progress, const CommandLine& commandline) override final;
 };
 
 //--

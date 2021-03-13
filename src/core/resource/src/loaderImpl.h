@@ -39,7 +39,7 @@ public:
     //--
 
 protected:
-    virtual app::ServiceInitializationResult onInitializeService( const app::CommandLine& cmdLine) override final;
+    virtual bool onInitializeService( const CommandLine& cmdLine) override final;
     virtual void onShutdownService() override final;
     virtual void onSyncUpdate() override final;
 

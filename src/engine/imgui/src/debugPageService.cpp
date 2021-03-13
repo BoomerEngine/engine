@@ -35,10 +35,10 @@ DebugPageService::~DebugPageService()
 {
 }
 
-app::ServiceInitializationResult DebugPageService::onInitializeService(const app::CommandLine& cmdLine)
+bool DebugPageService::onInitializeService(const CommandLine& cmdLine)
 {
     m_lastTickTime.resetToNow();
-    return app::ServiceInitializationResult::Finished;
+    return true;
 }
 
 void DebugPageService::onShutdownService()
@@ -139,10 +139,10 @@ void DebugPageService::RenderEntry(const MenuEntry& entry)
 {
     if (entry.children.empty())
     {
-        bool flag = config::ValueBool(entry.configGroupName, "IsVisible", false);
+        bool flag = ConfigValueBool(entry.configGroupName, "IsVisible", false);
         if (ImGui::MenuItem(entry.name.c_str(), "", &flag, true))
         {
-            config::WriteBool(entry.configGroupName, "IsVisible", flag);
+            ConfigWriteBool(entry.configGroupName, "IsVisible", flag);
             ConfigPropertyBase::RefreshPropertyValue(entry.configGroupName, "IsVisible");
         }
     }

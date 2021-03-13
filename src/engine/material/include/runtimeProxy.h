@@ -31,6 +31,8 @@ public:
 	gpu::DescriptorEntry* descriptorData = nullptr; // resource views (we reference)
 	uint32_t descriptorCount = 0;
 
+    Array<gpu::ImageSampledViewPtr> textureViews;
+
 	static MaterialDataDescriptor* Create(const MaterialDataLayoutDescriptor& layout, const IMaterial& source);
 };
 
@@ -105,8 +107,6 @@ private:
 	uint32_t m_staticSwitchMask = 0;
 	MaterialDataBindless* m_bindlessData = nullptr;
 	MaterialDataDescriptor* m_descriptorData = nullptr;
-
-	//--
 };
 
 //---

@@ -35,7 +35,7 @@ StringBuf Device::name() const
 	return "DX11";
 }
 
-bool Device::initialize(const app::CommandLine& cmdLine, DeviceCaps& outCaps)
+bool Device::initialize(const CommandLine& cmdLine, DeviceCaps& outCaps)
 {
 	m_dxgi = new DXGIHelper();
 	if (!m_dxgi->initialize(cmdLine))
@@ -55,7 +55,7 @@ void Device::shutdown()
 	m_dxgi = nullptr;
 }
 
-IBaseThread* Device::createOptimalThread(const app::CommandLine& cmdLine)
+IBaseThread* Device::createOptimalThread(const CommandLine& cmdLine)
 {
 	return new Thread(this, windows(), m_dxgi);
 }

@@ -30,7 +30,7 @@ BEGIN_BOOMER_NAMESPACE()
 //--
 
 RTTI_BEGIN_TYPE_CLASS(CommandImport);
-    RTTI_METADATA(app::CommandNameMetadata).name("import");
+    RTTI_METADATA(CommandNameMetadata).name("import");
 RTTI_END_TYPE();
 
 //--
@@ -75,7 +75,7 @@ private:
 
 //--
 
-static bool CollectImportJobs(const app::CommandLine& commandline, Array<ImportJobInfo>& outJobs)
+static bool CollectImportJobs(const CommandLine& commandline, Array<ImportJobInfo>& outJobs)
 {
     bool force = commandline.hasParam("force");
 
@@ -154,7 +154,7 @@ CommandImport::~CommandImport()
 
 //--
 
-bool CommandImport::run(IProgressTracker* progress, const app::CommandLine& commandline)
+bool CommandImport::run(IProgressTracker* progress, const CommandLine& commandline)
 {
     // get the jobs
     Array<ImportJobInfo> jobs;

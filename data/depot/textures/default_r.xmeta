@@ -1,0 +1,27 @@
+<?xml version="1.0" standalone="yes"?>
+<object class="ResourceMetadata">
+  <ids>
+    <element>{E3575A1A-5751-49D1-5C8E-B1DAD23398D8}</element>
+  </ids>
+  <importDependencies>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/textures/default_r.png</importPath>
+      <crc>2307168012</crc>
+    </element>
+  </importDependencies>
+  <resourceClassType>StaticTexture2D</resourceClassType>
+  <importerClassType>assets::StaticTextureFromImageImporter</importerClassType>
+  <importerClassVersion>1</importerClassVersion>
+  <importBaseConfiguration class="assets::StaticTextureCompressionConfiguration">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600374822440000</sourceImportedOn>
+  </importBaseConfiguration>
+  <importUserConfiguration class="assets::StaticTextureCompressionConfiguration"/>
+  <importFullConfiguration class="assets::StaticTextureCompressionConfiguration">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600374822440000</sourceImportedOn>
+  </importFullConfiguration>
+  <internalRevision>1</internalRevision>
+</object>

@@ -135,11 +135,6 @@ void YieldFiber()
     GFibers->yieldCurrentJob();
 }
 
-void YieldThread()
-{
-
-}
-
 void WaitForFence(const FiberSemaphore& counter)
 {
     DEBUG_CHECK_RETURN_EX(GFibers, "Fibers not initialized");

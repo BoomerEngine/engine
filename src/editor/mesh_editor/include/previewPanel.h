@@ -16,22 +16,6 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 DECLARE_UI_EVENT(EVENT_MATERIAL_CLICKED);
 
-class  MeshPreview;
-
-struct MeshPreviewPanelSettings
-{
-    int forceLod = -1;
-
-    bool showBounds = false;
-    bool showSkeleton = false;
-    bool showBoneNames = false;
-    bool showBoneAxes = false;
-
-    bool isolateMaterials = false;
-    bool highlightMaterials = false;
-    HashSet<StringID> selectedMaterials;
-};
-
 //--
 
 // a preview panel for an image

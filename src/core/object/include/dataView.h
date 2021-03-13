@@ -42,9 +42,7 @@ struct CORE_OBJECT_API DataViewActionResult
 
     INLINE DataViewActionResult(const ActionPtr& action_) : action(action_) {};
     INLINE DataViewActionResult(const DataViewResult& result_) : result(result_) {};
-    INLINE DataViewActionResult(const DataViewErrorResult& result_) : result(result_.result) {};
     INLINE DataViewActionResult(DataViewResult&& result_) : result(std::move(result_)) {};
-    INLINE DataViewActionResult(DataViewErrorResult&& result_) : result(std::move(result_.result)) {};
 
     INLINE operator bool() const { return action != nullptr; }
 

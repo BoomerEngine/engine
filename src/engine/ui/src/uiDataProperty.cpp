@@ -440,7 +440,7 @@ void DataProperty::createChildren(Array<RefPtr<DataInspectorNavigationItem>>& ou
             childInfo.requestFlags |= DataViewRequestFlagBit::MemberList;
             childInfo.requestFlags |= DataViewRequestFlagBit::CheckIfResetable;
 
-            if (inspector()->describeDataView(childPath, childInfo).valid())
+            if (inspector()->data()->describeDataView(childPath, childInfo).valid())
             {
                 const auto caption = StringBuf(TempString("[{}]", i));
                 const auto item = RefNew<DataProperty>(inspector(), this, m_indent + 1, childPath, caption, childInfo, localReadOnly, i);
@@ -467,7 +467,7 @@ void DataProperty::createChildren(Array<RefPtr<DataInspectorNavigationItem>>& ou
             childInfo.requestFlags |= DataViewRequestFlagBit::MemberList;
             childInfo.requestFlags |= DataViewRequestFlagBit::CheckIfResetable;
 
-            if (inspector()->describeDataView(childPath, childInfo).valid())
+            if (inspector()->data()->describeDataView(childPath, childInfo).valid())
             {
                 const auto item = RefNew<DataProperty>(inspector(), this, m_indent + 1, childPath, StringBuf(childName.view()), childInfo, localReadOnly);
                 outCreatedChildren.pushBack(item);

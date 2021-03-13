@@ -60,10 +60,10 @@ public:
     static void GetAllFactories(Array<ClassType>& outFactories);
 
     // get all resource classes creatable via factories
-    static void GetAllResourceClasses(Array<ClassType>& outResourceClasses);
+    static void GetAllResourceClasses(Array<ResourceClass>& outResourceClasses);
 
     // create a factory for given resource class
-    static FactoryPtr CreateFactoryForResource(ClassType resourceClass);
+    static FactoryPtr CreateFactoryForResource(ResourceClass resourceClass);
 
 protected:
     StringBuf m_author;

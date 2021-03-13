@@ -13,14 +13,14 @@
 #include "core/io/include/directoryWatcher.h"
 #include "core/system/include/timing.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(config)
+BEGIN_BOOMER_NAMESPACE()
 
 //----
 
 // config service - manages loading/saving configuration
-class CORE_APP_API ConfigService : public app::ILocalService, public IDirectoryWatcherListener
+class CORE_APP_API ConfigService : public IService, public IDirectoryWatcherListener
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ConfigService, app::ILocalService);
+    RTTI_DECLARE_VIRTUAL_CLASS(ConfigService, IService);
 
 public:
     ConfigService();
@@ -39,7 +39,7 @@ public:
     ///--
 
 protected:
-    virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
+    virtual bool onInitializeService(const CommandLine& cmdLine) override final;
     virtual void onShutdownService() override final;
     virtual void onSyncUpdate() override final;
 
@@ -48,7 +48,7 @@ protected:
     DirectoryWatcherPtr m_engineConfigWatcher;
     DirectoryWatcherPtr m_projectConfigWatcher;
 
-    UniquePtr<config::Storage> m_baseConfig;
+    UniquePtr<ConfigStorage> m_baseConfig;
     bool m_hasValidBase;
 
     NativeTimePoint m_reloadTime;
@@ -58,15 +58,13 @@ protected:
     void saveUserConfig();
     void dumpConfig();
 
-    bool loadBaseConfig(config::Storage& outStorage) const;
-    bool loadDirConfig(StringView path, config::Storage& outStorage) const;
-    bool loadFileConfig(StringView path, config::Storage& outStorage) const;
+    bool loadBaseConfig(ConfigStorage& outStorage) const;
+    bool loadDirConfig(StringView path, ConfigStorage& outStorage) const;
+    bool loadFileConfig(StringView path, ConfigStorage& outStorage) const;
 
     virtual void handleEvent(const DirectoryWatcherEvent& evt) override final;
 };
 
 //----
 
-END_BOOMER_NAMESPACE_EX(app)
-
-typedef boomer::config::ConfigService ConfigService;
+END_BOOMER_NAMESPACE()

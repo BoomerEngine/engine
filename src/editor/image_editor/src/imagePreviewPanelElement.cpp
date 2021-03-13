@@ -24,6 +24,7 @@
 #include "engine/ui/include/uiTextLabel.h"
 
 #include "core/image/include/imageView.h"
+#include "gpu/device/include/shaderSelector.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -78,9 +79,9 @@ RTTI_END_TYPE();*/
 //--
 
 /// custom rendering handler
-class CanvasImagePreviewHandler : public canvas::ICanvasSimpleBatchRenderer
+class ICanvasImagePreviewHandler : public canvas::ICanvasSimpleBatchRenderer
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CanvasImagePreviewHandler, canvas::ICanvasSimpleBatchRenderer);
+    RTTI_DECLARE_VIRTUAL_CLASS(ICanvasImagePreviewHandler, canvas::ICanvasSimpleBatchRenderer);
 
 public:
     struct PrivateData
@@ -98,11 +99,6 @@ public:
         int toneMapMode = 0;
     };
 
-    virtual gpu::ShaderObjectPtr loadMainShaderFile() override final
-    {
-        return gpu::LoadStaticShaderDeviceObject("editor/canvas_image_preview.fx");
-    }
-
     virtual void render(gpu::CommandWriter& cmd, const RenderData& data, uint32_t firstVertex, uint32_t numVertices) const override
     {
         const auto& srcData = *(const PrivateData*)data.customData;
@@ -111,6 +107,7 @@ public:
         {
             Vector4 colorSelector;
             int mip = 0;
+            int slice = 0;
             int colorSpace = 0; // 0-texture is in sRGB mode - output directly, 1-texture is linear, take gamma, 2-HDR with no tone mapping, 3-HDR with tonemapping
             float colorSpaceScale = 1.0f;
             int toneMapMode = 0;
@@ -121,6 +118,7 @@ public:
         constants.colorSelector.z = srcData.showBlue ? 1.0f : 0.0f;
         constants.colorSelector.w = srcData.showAlpha ? 1.0f : 0.0f;
         constants.mip = srcData.mip;
+        constants.slice = srcData.slice;
         constants.colorSpace = srcData.colorSpace;
         constants.colorSpaceScale = srcData.colorSpaceScale;
         constants.toneMapMode = srcData.toneMapMode;
@@ -136,7 +134,45 @@ public:
     }
 };
 
-RTTI_BEGIN_TYPE_CLASS(CanvasImagePreviewHandler);
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ICanvasImagePreviewHandler);
+RTTI_END_TYPE();
+
+//--
+
+/// custom rendering handler
+class CanvasImagePreviewHandler2D : public ICanvasImagePreviewHandler
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(CanvasImagePreviewHandler2D, ICanvasImagePreviewHandler);
+
+public:
+    virtual gpu::ShaderObjectPtr loadMainShaderFile() override final
+    {
+        gpu::ShaderSelector selector;
+        selector.set("USE_TEXTURE_2D"_id, 1);
+        return gpu::LoadStaticShaderDeviceObject("editor/canvas_image_preview.fx", selector);
+    }
+};
+
+RTTI_BEGIN_TYPE_CLASS(CanvasImagePreviewHandler2D);
+RTTI_END_TYPE();
+
+//--
+
+/// custom rendering handler
+class CanvasImagePreviewHandlerCube : public ICanvasImagePreviewHandler
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(CanvasImagePreviewHandlerCube, ICanvasImagePreviewHandler);
+
+public:
+    virtual gpu::ShaderObjectPtr loadMainShaderFile() override final
+    {
+        gpu::ShaderSelector selector;
+        selector.set("USE_TEXTURE_ARRAY"_id, 1);
+        return gpu::LoadStaticShaderDeviceObject("editor/canvas_image_preview.fx", selector);
+    }
+};
+
+RTTI_BEGIN_TYPE_CLASS(CanvasImagePreviewHandlerCube);
 RTTI_END_TYPE();
 
 //--
@@ -309,17 +345,13 @@ bool IImagePreviewElement::queryColor(float x, float y, ImagePreviewPixel& outPi
 RTTI_BEGIN_TYPE_NATIVE_CLASS(ImagePreviewElement);
 RTTI_END_TYPE();
 
-ImagePreviewElement::ImagePreviewElement(const gpu::ImageSampledView* view, const gpu::ImageSampledView* sourceView)
-    : m_view(AddRef(view))
-    , m_sourceView(AddRef(sourceView))
-{}
-
 ImagePreviewElement::ImagePreviewElement(const gpu::ImageSampledView* view, int mipIndex /*= 0*/, int sliceIndex /*= 0*/)
     : m_view(AddRef(view))
-    , m_sourceView(AddRef(view))
     , m_mipIndex(mipIndex)
     , m_sliceIndex(sliceIndex)
-{}    
+{
+    DEBUG_CHECK(view);
+}    
 
 ImagePreviewElement::~ImagePreviewElement()
 {
@@ -343,9 +375,6 @@ void ImagePreviewElement::configure(const ImagePreviewPanelSettings& settings)
 
 void ImagePreviewElement::render(ui::CanvasArea* owner, float x, float y, float sx, float sy, canvas::Canvas& canvas, float mergedOpacity)
 {
-    if (!m_settings || !m_view)
-        return;
-
     //auto width = std::max<uint32_t>(1, m_view.width() >> m_mip);
     //auto height = std::max<uint32_t>(1, m_view.height() >> m_mip);
     auto width = m_view->width();
@@ -357,7 +386,7 @@ void ImagePreviewElement::render(ui::CanvasArea* owner, float x, float y, float 
     quad.op = m_settings->premultiply ? canvas::BlendOp::AlphaPremultiplied : canvas::BlendOp::AlphaBlend;
     quad.wrap = false;
 
-    CanvasImagePreviewHandler::PrivateData setup;
+    ICanvasImagePreviewHandler::PrivateData setup;
     setup.texture = m_view;
     setup.pointFilter = m_settings->pointFilter;
     setup.showRed = m_settings->showRed;
@@ -384,7 +413,10 @@ void ImagePreviewElement::render(ui::CanvasArea* owner, float x, float y, float 
         setup.colorSpaceScale = m_settings->exposureAdj;
     }
 
-    canvas.quadEx<CanvasImagePreviewHandler>(canvas::Placement(x, y), quad, setup);
+    if (m_view->imageViewType() == ImageViewType::View2D)
+        canvas.quadEx<CanvasImagePreviewHandler2D>(canvas::Placement(x, y), quad, setup);
+    else if (m_view->imageViewType() == ImageViewType::View2DArray)
+        canvas.quadEx<CanvasImagePreviewHandlerCube>(canvas::Placement(x, y), quad, setup);
 }
 
 //--

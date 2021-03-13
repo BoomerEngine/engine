@@ -11,13 +11,13 @@
 
 //--
 
-BEGIN_BOOMER_NAMESPACE_EX(app)
+BEGIN_BOOMER_NAMESPACE()
 
-class ILocalService;
+class IService;
 class IRemoteService;
 
 class App;
-class LocalServiceContainer;
+class ServiceContainer;
 
 class IFramework;
 
@@ -29,7 +29,7 @@ typedef RefPtr<ICommand> CommandPtr;
 class CommandHost;
 typedef RefPtr<CommandHost> CommandHostPtr;
 
-END_BOOMER_NAMESPACE_EX(app);
+END_BOOMER_NAMESPACE();
 
 //--
 

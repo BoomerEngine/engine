@@ -104,6 +104,8 @@ public:
     ImageCompressionFormat m_compressionMode = ImageCompressionFormat::Auto;
     ImageValidPixelsMaskingMode m_compressionMasking = ImageValidPixelsMaskingMode::Auto;
     ImageCompressionQuality m_compressionQuality = ImageCompressionQuality::Normal;
+
+    bool m_compressDataBuffer = true;
 };
 
 //--
@@ -124,6 +126,9 @@ extern IMPORT_TEXTURE_LOADER_API uint32_t CalcCompressedImageDataSize(const imag
 
 /// bake data for compressed texture (single slice)
 extern IMPORT_TEXTURE_LOADER_API RefPtr<ImageCompressedResult> CompressImage(const image::ImageView& data, const ImageCompressionSettings& settings, IProgressTracker& progress);
+
+/// merge multiple compressed slices 
+extern IMPORT_TEXTURE_LOADER_API RefPtr<ImageCompressedResult> MergeCompressedImages(const Array<RefPtr<ImageCompressedResult>>& slices, ImageViewType viewType, bool compressFinalDataBuffer);
 
 //--
 

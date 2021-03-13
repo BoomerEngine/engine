@@ -129,8 +129,11 @@ DataViewResult IHandleType::describeDataView(StringView viewPath, const void* vi
         readPointedObject(viewData, object);
 
         if (object)
-            if (auto ret = HasError(object->describeDataView(viewPath, outInfo)))
+        {
+            auto ret = object->describeDataView(viewPath, outInfo);
+            if (!ret.valid())
                 return ret;
+        }
                     
         outInfo.dataPtr = viewData;
         outInfo.dataType = this; // we can only get ourselves as handle

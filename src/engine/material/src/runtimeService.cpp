@@ -42,7 +42,7 @@ bool IMaterialDataProxyListener::PatchMaterialProxy(MaterialDataProxyPtr& curren
 ///---
 
 RTTI_BEGIN_TYPE_CLASS(MaterialService);
-    RTTI_METADATA(app::DependsOnServiceMetadata).dependsOn<gpu::DeviceService>();
+    RTTI_METADATA(DependsOnServiceMetadata).dependsOn<gpu::DeviceService>();
 RTTI_END_TYPE();
 
 ///----
@@ -50,11 +50,11 @@ RTTI_END_TYPE();
 MaterialService::MaterialService()
 {}
 
-app::ServiceInitializationResult MaterialService::onInitializeService(const app::CommandLine& cmdLine)
+bool MaterialService::onInitializeService(const CommandLine& cmdLine)
 {
     auto deviceService = GetService<DeviceService>();
     if (!deviceService)
-        app::ServiceInitializationResult::FatalError;
+        false;
 
     auto device = deviceService->device();
 
@@ -66,7 +66,7 @@ app::ServiceInitializationResult MaterialService::onInitializeService(const app:
         registerDataLayout(std::move(emptyLayout));
     }
         
-    return app::ServiceInitializationResult::Finished;
+    return true;
 }
 
 void MaterialService::onShutdownService()

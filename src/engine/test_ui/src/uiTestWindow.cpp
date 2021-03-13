@@ -118,26 +118,26 @@ TestWindow::TestWindow()
         {
             auto wnd2 = RefNew<ui::PopupWindow>();
             auto cnt2 = wnd2->createChild<ui::MenuButtonContainer>();
-            cnt2->createChild<ui::MenuButton>("Edit.Undo"_id, "Undo", "[img:undo]");
-            cnt2->createChild<ui::MenuButton>("Edit.Redo"_id, "Redo", "[img:redo]");
+            cnt2->createChild<ui::MenuButton>("Undo", "[img:undo]");
+            cnt2->createChild<ui::MenuButton>("Redo", "[img:redo]");
             menuBar->createMenu("File", wnd2);
         }
 
         {
             auto wnd2 = RefNew<ui::PopupWindow>();
             auto cnt2 = wnd2->createChild<ui::MenuButtonContainer>();
-            cnt2->createChild<ui::MenuButton>("Edit.Undo"_id, "Undo", "[img:undo]");
-            cnt2->createChild<ui::MenuButton>("Edit.Redo"_id, "Redo", "[img:redo]");
+            cnt2->createChild<ui::MenuButton>("Undo", "[img:undo]");
+            cnt2->createChild<ui::MenuButton>("Redo", "[img:redo]");
 
             auto wnd = RefNew<ui::PopupWindow>();
             auto cnt = wnd->createChild<ui::MenuButtonContainer>();
-            cnt->createChild<ui::MenuButton>("Edit.Undo"_id, "Undo", "[img:undo]");
-            cnt->createChild<ui::MenuButton>("Edit.Redo"_id, "Redo", "[img:redo]");
+            cnt->createChild<ui::MenuButton>("Undo", "[img:undo]");
+            cnt->createChild<ui::MenuButton>("Redo", "[img:redo]");
             cnt->createSeparator();
-            cnt->createChild<ui::MenuButton>("Edit.Copy"_id, "Copy", "[img:copy]");
-            cnt->createChild<ui::MenuButton>("Edit.Cut"_id, "Cut", "[img:cut]");
-            cnt->createChild<ui::MenuButton>("Edit.Paste"_id, "Paste", "[img:paste]");
-            cnt->createChild<ui::MenuButton>("Edit.Delete"_id, "Delete", "[img:delete]");
+            cnt->createChild<ui::MenuButton>("Copy", "[img:copy]");
+            cnt->createChild<ui::MenuButton>("Cut", "[img:cut]");
+            cnt->createChild<ui::MenuButton>("Paste", "[img:paste]");
+            cnt->createChild<ui::MenuButton>("Delete", "[img:delete]");
             cnt->createSeparator();
             cnt->createSubMenu(wnd2, "Depot", "[img:database]");
                     
@@ -151,7 +151,7 @@ TestWindow::TestWindow()
         //toolbar->createButton("Edit.Redo"_id, "[center][img:arrow_redo][br][center][size:-][color:#AAA]Redo", "Redo last operation");
     }
 
-    actions().bindCommand("Edit.Undo"_id) = [](TestWindow* a)
+/*    actions().bindCommand("Edit.Undo"_id) = [](TestWindow* a)
     {
 
     };
@@ -162,7 +162,7 @@ TestWindow::TestWindow()
     };
 
     actions().bindToggle("Edit.Redo"_id) = [](TestWindow* a) { return canEdit; };
-    actions().bindFilter("Edit.Undo"_id) = [](TestWindow* a) { return canEdit; };
+    actions().bindFilter("Edit.Undo"_id) = [](TestWindow* a) { return canEdit; };*/
 
     /*{
         auto box = RefNew<ui::TextLabel>();
@@ -272,22 +272,22 @@ TestWindow::TestWindow()
 
             auto wnd2 = RefNew<ui::PopupWindow>();
             auto cnt2 = wnd2->createChild<ui::MenuButtonContainer>();
-            cnt2->createChild<ui::MenuButton>("Edit.Undo"_id, "Undo", "[img:arrow_undo]");
-            cnt2->createChild<ui::MenuButton>("Edit.Redo"_id, "Redo", "[img:arrow_redo]");
+            cnt2->createChild<ui::MenuButton>("Undo", "[img:arrow_undo]");
+            cnt2->createChild<ui::MenuButton>("Redo", "[img:arrow_redo]");
 
             auto wnd3 = RefNew<ui::PopupWindow>();
             auto cnt3 = wnd3->createChild<ui::MenuButtonContainer>();
-            cnt3->createChild<ui::MenuButton>("Edit.Undo"_id, "Undo", "[img:arrow_undo]");
-            cnt3->createChild<ui::MenuButton>("Edit.Redo"_id, "Redo", "[img:arrow_redo]");
+            cnt3->createChild<ui::MenuButton>("Undo", "[img:arrow_undo]");
+            cnt3->createChild<ui::MenuButton>("Redo", "[img:arrow_redo]");
 
             auto cnt = wnd->createChild<ui::MenuButtonContainer>();
-            cnt->createChild<ui::MenuButton>("Edit.Undo"_id, "Undo", "[img:arrow_undo]");
-            cnt->createChild<ui::MenuButton>("Edit.Redo"_id, "Redo", "[img:arrow_redo]");
+            cnt->createChild<ui::MenuButton>("Undo", "[img:arrow_undo]");
+            cnt->createChild<ui::MenuButton>("Redo", "[img:arrow_redo]");
             cnt->createSeparator();
-            cnt->createChild<ui::MenuButton>("Edit.Copy"_id, "Copy", "[img:page_copy]");
-            cnt->createChild<ui::MenuButton>("Edit.Cut"_id, "Cut", "[img:cut_red]");
-            cnt->createChild<ui::MenuButton>("Edit.Paste"_id, "Paste", "[img:paste_plain]");
-            cnt->createChild<ui::MenuButton>("Edit.Delete"_id, "Delete", "[img:cross]");
+            cnt->createChild<ui::MenuButton>("Copy", "[img:page_copy]");
+            cnt->createChild<ui::MenuButton>("Cut", "[img:cut_red]");
+            cnt->createChild<ui::MenuButton>("Paste", "[img:paste_plain]");
+            cnt->createChild<ui::MenuButton>("Delete", "[img:cross]");
             cnt->createSeparator();
             cnt->createSubMenu(wnd2, "Depot", "[img:database]");
             cnt->createSubMenu(wnd3, "Package", "[img:package]");

@@ -17,14 +17,14 @@
 #include "core/containers/include/queue.h"
 #include "core/memory/include/poolStats.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(app)
+BEGIN_BOOMER_NAMESPACE()
 
 //-----
 
-LocalServiceContainer::LocalServiceContainer()
+ServiceContainer::ServiceContainer()
 {}
 
-void LocalServiceContainer::attachService(const RefPtr<ILocalService>& service)
+void ServiceContainer::attachService(const RefPtr<IService>& service)
 {
     ASSERT(service.get() != nullptr);
 
@@ -32,7 +32,7 @@ void LocalServiceContainer::attachService(const RefPtr<ILocalService>& service)
     m_services.pushBack(service);
 
     // map (can be at multiple slots)
-    auto rootServiceClass = ILocalService::GetStaticClass();
+    auto rootServiceClass = IService::GetStaticClass();
     auto serviceClass = service->cls();
     while (serviceClass != rootServiceClass)
     {
@@ -46,12 +46,12 @@ void LocalServiceContainer::attachService(const RefPtr<ILocalService>& service)
     }
 }
 
-void LocalServiceContainer::deinit()
+void ServiceContainer::deinit()
 {
     ASSERT_EX(m_services.empty(), "Local services not shutdown properly");
 }
 
-void LocalServiceContainer::shutdown()
+void ServiceContainer::shutdown()
 {
     // shutdown service in the reverse order they were initialized
     if (!m_services.empty())
@@ -60,7 +60,7 @@ void LocalServiceContainer::shutdown()
         TRACE_INFO("Closing services");
 
         // close each service in reverse order they were created
-        Array<RefWeakPtr<ILocalService>> tempServicePtrs;
+        Array<RefWeakPtr<IService>> tempServicePtrs;
         for (int i = (int)(m_services.size()) - 1; i >= 0; --i)
         {
             auto& service = m_services[i];
@@ -93,9 +93,9 @@ void LocalServiceContainer::shutdown()
 
 }
 
-void LocalServiceContainer::update()
+void ServiceContainer::update()
 {
-    PC_SCOPE_LVL1(UpdateLocalServices);
+    PC_SCOPE_LVL1(UpdateServices);
 
     // make sure sync jobs are done
     RunSyncJobs();
@@ -125,7 +125,7 @@ namespace helper
 
         Array<ServiceInfo*> m_adj; // temp
                 
-        RefPtr<ILocalService> m_service;
+        RefPtr<IService> m_service;
 
         int m_depth;
 
@@ -139,6 +139,8 @@ namespace helper
 
     static ServiceInfo* CreateClassEntry(ClassType classType, ServicesGraph& table)
     {
+        ASSERT(!classType->isAbstract());
+
         ServiceInfo* info = nullptr;
         if (table.find(classType, info))
             return info;
@@ -153,7 +155,13 @@ namespace helper
         if (classList)
         {
             for (auto refClassType : classList->classes())
-                info->m_dependsOnInit.pushBack(CreateClassEntry(refClassType, table));
+            {
+                InplaceArray<ClassType, 10> serviceClases;
+                RTTI::GetInstance().enumClasses(refClassType, serviceClases);
+
+                for (const auto realClassType : serviceClases)
+                    info->m_dependsOnInit.pushBack(CreateClassEntry(realClassType, table));
+            }
         }
 
         // TODO: extract other types of dependencies
@@ -165,7 +173,7 @@ namespace helper
     {
         // enumerate service classes
         Array<ClassType> serviceClasses;
-        TypeSystem::GetInstance().enumClasses(ILocalService::GetStaticClass(), serviceClasses);
+        TypeSystem::GetInstance().enumClasses(IService::GetStaticClass(), serviceClasses);
         TRACE_INFO("Found {} services linked with executable", serviceClasses.size());
 
         // create entries
@@ -295,7 +303,7 @@ namespace helper
 
 } // helper
 
-bool LocalServiceContainer::init(const CommandLine& commandline)
+bool ServiceContainer::init(const CommandLine& commandline)
 {
     ScopeTimer initTimer;
 
@@ -306,7 +314,7 @@ bool LocalServiceContainer::init(const CommandLine& commandline)
         auto serviceClasses = commandline.allValues("singleService");
         for (auto& name : serviceClasses)
         {
-            auto serviceClass = RTTI::GetInstance().findFactoryClass(StringID(name), ILocalService::GetStaticClass());
+            auto serviceClass = RTTI::GetInstance().findFactoryClass(StringID(name), IService::GetStaticClass());
             if (!serviceClass)
             {
                 TRACE_ERROR("Single service '{}' not found", name);
@@ -346,23 +354,17 @@ bool LocalServiceContainer::init(const CommandLine& commandline)
             ScopeTimer initTime;
 
             // create service
-            auto servicePtr = info->m_class.create<ILocalService>();
+            auto servicePtr = info->m_class.create<IService>();
             ASSERT(servicePtr);
             attachService(servicePtr);
 
             // initialize
-            auto ret = servicePtr->onInitializeService(commandline);
-            if (ret == ServiceInitializationResult::Finished)
+            if (servicePtr->onInitializeService(commandline))
             {
                 TRACE_INFO("Service '{}' initialized in {}", info->m_class->name(), TimeInterval(initTime.timeElapsed()));
                 info->m_service = servicePtr;
             }
-            else if (ret == ServiceInitializationResult::Silenced)
-            {
-                servicePtr->onShutdownService();
-                TRACE_INFO("Service '{}' failed to initialize and will be disabled", info->m_class->name());
-            }
-            else if (ret == ServiceInitializationResult::FatalError)
+            else
             {
                 servicePtr->onShutdownService();
                 TRACE_ERROR("Service '{}' failed to initialize", info->m_class->name());
@@ -388,7 +390,7 @@ bool LocalServiceContainer::init(const CommandLine& commandline)
 
 //---
 
-END_BOOMER_NAMESPACE_EX(app)
+END_BOOMER_NAMESPACE()
 
 //---
 
@@ -396,7 +398,7 @@ BEGIN_BOOMER_NAMESPACE()
 
 void* GetServicePtr(int serviceIndex)
 {
-    return app::LocalServiceContainer::GetInstance().serviceByIndex(serviceIndex);
+    return ServiceContainer::GetInstance().serviceByIndex(serviceIndex);
 }
 
 END_BOOMER_NAMESPACE()

@@ -113,7 +113,7 @@ public:
 
     /// check if given resource is up to date
     /// NOTE: we need the metadata loaded to check this
-    bool checkStatus(ImportExtendedStatusFlags& outStatusFlags, const ResourceMetadata* metadata, const ResourceConfiguration* newUserConfiguration = nullptr, IProgressTracker* progress = nullptr) const;
+    void checkStatus(ImportExtendedStatusFlags& outStatusFlags, const ResourceMetadata* metadata, const ResourceConfiguration* newUserConfiguration = nullptr, IProgressTracker* progress = nullptr) const;
 
     /// import single resource, produces imported resource (with meta data)
     bool importResource(const ImportJobInfo& info, ImportJobResult& outResult, IProgressTracker* progress=nullptr) const;
@@ -153,7 +153,7 @@ private:
 
     //--
 
-    bool import_checkUpToDate(const ImportJobInfo& info, ImportJobResult& outResult, IProgressTracker* progress) const;
+    bool import_checkUpToDate(const ImportJobInfo& info, ImportJobResult& outResult, IProgressTracker* progress, bool& outUpToDate) const;
     bool import_assignID(const ImportJobInfo& info, ImportJobResult& outResult, IProgressTracker* progress) const;
     bool import_findImporter(const ImportJobInfo& info, ImportJobResult& outResult, IProgressTracker* progress) const;
     bool import_updateConfig(const ImportJobInfo& info, ImportJobResult& outResult, IProgressTracker* progress) const;

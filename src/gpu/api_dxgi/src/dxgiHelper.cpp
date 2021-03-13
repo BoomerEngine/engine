@@ -29,7 +29,7 @@ DXGIHelper::~DXGIHelper()
 	TRACE_INFO("DXGI shut down");
 }
 
-bool DXGIHelper::initialize(const app::CommandLine& cmdLine)
+bool DXGIHelper::initialize(const CommandLine& cmdLine)
 {
 	// create factory
 	IDXGIFactory1* pFactory = nullptr;
@@ -72,7 +72,7 @@ void DXGIHelper::enumResolutions(uint32_t displayIndex, Array<ResolutionInfo>& o
 		
 ///--
 
-bool DXGIHelper::initializeAdapter(const app::CommandLine& cmdLine)
+bool DXGIHelper::initializeAdapter(const CommandLine& cmdLine)
 {
 	auto adapterIndex = cmdLine.singleValueInt("dxAdapter", 0);
 

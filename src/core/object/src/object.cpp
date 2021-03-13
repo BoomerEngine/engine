@@ -292,7 +292,8 @@ DataViewResult IObject::writeDataView(StringView viewPath, const void* sourceDat
     if (!onPropertyChanging(viewPath, sourceData, sourceType))
         return DataViewResultCode::ErrorIllegalOperation;
 
-    if (auto ret = HasError(cls()->writeDataView(viewPath, this, sourceData, sourceType.ptr())))
+    auto ret = cls()->writeDataView(viewPath, this, sourceData, sourceType.ptr());
+    if (!ret.valid())
         return ret;
 
     onPropertyChanged(viewPath);

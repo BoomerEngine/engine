@@ -32,7 +32,7 @@ LauncherApp::LauncherApp(StringView title)
     : m_title(title)
 {}
     
-bool LauncherApp::initialize(const app::CommandLine& commandline)
+bool LauncherApp::initialize(const CommandLine& commandline)
 {
     if (!createWindow(commandline))
         return false;
@@ -74,7 +74,7 @@ void LauncherApp::update()
 
 //--
 
-bool LauncherApp::createWindow(const app::CommandLine& commandline)
+bool LauncherApp::createWindow(const CommandLine& commandline)
 {
     // we need the rendering service for any of stuff to work, get the current instance of the rendering service from local service container
     auto renderingService = GetService<DeviceService>();
@@ -127,7 +127,7 @@ bool LauncherApp::createWindow(const app::CommandLine& commandline)
     return true;
 }
 
-bool ParseGameStartInfo(const app::CommandLine& commandline, GameStartInfo& outData)
+bool ParseGameStartInfo(const CommandLine& commandline, GameStartInfo& outData)
 {
     bool validInfo = false;
 
@@ -144,7 +144,7 @@ bool ParseGameStartInfo(const app::CommandLine& commandline, GameStartInfo& outD
     return validInfo;
 }
 
-bool LauncherApp::createGame(const app::CommandLine& commandline)
+bool LauncherApp::createGame(const CommandLine& commandline)
 {
     // create the game host with the created game
     const auto game = RefNew<Game>();

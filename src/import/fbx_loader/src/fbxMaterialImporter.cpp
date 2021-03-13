@@ -27,19 +27,13 @@ RTTI_BEGIN_TYPE_CLASS(FBXMaterialImportConfig);
 RTTI_END_TYPE();
 
 FBXMaterialImportConfig::FBXMaterialImportConfig()
-{        
-}
-
-void FBXMaterialImportConfig::computeConfigurationKey(CRC64& crc) const
 {
-    TBaseClass::computeConfigurationKey(crc);
-    crc << m_materialName.view();
 }
 
 //--
 
 RTTI_BEGIN_TYPE_CLASS(MaterialImporter);
-    RTTI_METADATA(ResourceCookedClassMetadata).addClass<MaterialInstance>();
+    RTTI_METADATA(ResourceImportedClassMetadata).addClass<MaterialInstance>();
     RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtension("fbx").addSourceExtension("FBX");
     RTTI_METADATA(ResourceCookerVersionMetadata).version(0);
     RTTI_METADATA(ResourceImporterConfigurationClassMetadata).configurationClass<FBXMaterialImportConfig>();

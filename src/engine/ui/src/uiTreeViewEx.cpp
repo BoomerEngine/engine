@@ -132,6 +132,8 @@ void ITreeItem::addChild(ITreeItem* child)
 
     child->updateButtonState();
     child->updateDisplayDepth(m_displayDepth + 1);
+    child->m_parent = this;
+
     m_children.emplaceBack(AddRef(child));
 
     internalCreateChildViewItem(child);
@@ -146,6 +148,7 @@ void ITreeItem::removeChild(ITreeItem* child)
     auto index = m_children.find(child);
     DEBUG_CHECK_RETURN_EX(index != INDEX_NONE, "Child not in parent");
 
+    child->m_parent = nullptr;
     child->internalDestroyViewItem();
     m_children.erase(index);
     invalidateDisplayList();
@@ -263,6 +266,41 @@ void TreeViewEx::removeRoot(ITreeItem* item)
     m_roots.remove(viewItem);
 
     invalidateDisplayList();
+}
+
+void TreeViewEx::remove(ITreeItem* item)
+{
+    DEBUG_CHECK_RETURN_EX(item, "Invalid item");
+    DEBUG_CHECK_RETURN_EX(item->view() == this, "Item not in a list");
+    DEBUG_CHECK_RETURN_EX(item->viewItem() != nullptr, "Item not in this list");
+
+    auto* viewItem = (ViewItem*)item->viewItem();
+    if (m_roots.contains(viewItem))
+    {
+        removeRoot(item);
+    }
+    else
+    {
+        for (auto* root : m_roots)
+            if (auto rootItem = rtti_cast<ITreeItem>(root->item))
+                if (removeParticularViewItemRecursive(rootItem, nullptr, item))
+                    break;
+    }
+}
+
+bool TreeViewEx::removeParticularViewItemRecursive(ITreeItem* cur, ITreeItem* parent, ITreeItem* itemToRemove)
+{
+    if (cur == itemToRemove)
+    {
+        parent->removeChild(itemToRemove);
+        return true;
+    }
+
+    for (const auto& child : cur->children())
+        if (removeParticularViewItemRecursive(child, cur, itemToRemove))
+            return true;
+
+    return false;
 }
 
 //---

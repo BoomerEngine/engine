@@ -72,6 +72,7 @@ public:
 		uint8_t numMips = 0;
 		uint32_t firstSlice = 0;
 		uint32_t numSlices = 0;
+        ImageViewType viewType = ImageViewType::View2D; // NOTE: may be slightly different than original image, ie TextureCube -> Texture2DArray
 	};
 
 	ImageSampledView(ObjectID viewId, ImageObject* img, IDeviceObjectHandler* impl, const Setup& setup);
@@ -101,11 +102,15 @@ public:
 	// get depth of the top mip in the view
 	INLINE uint32_t depth() const { return m_depth; }
 
+    // get view type
+    INLINE ImageViewType imageViewType() const { return m_imageViewType; }
+
 private:
 	uint8_t m_firstMip = 0;
 	uint8_t m_numMips = 0;
 	uint32_t m_firstSlice = 0;
 	uint32_t m_numSlices = 0;
+    ImageViewType m_imageViewType;
 
 	uint32_t m_width = 0;
 	uint32_t m_height = 0;
@@ -373,7 +378,7 @@ public:
     virtual ImageSampledViewPtr createSampledView(uint32_t firstMip = 0, uint32_t firstSlice = 0) = 0;
 
 	/// create read-only image view usable as samplable texture, more advanced function version
-	virtual ImageSampledViewPtr createSampledViewEx(uint32_t firstMip, uint32_t firstSlice, uint32_t numMips=INDEX_MAX, uint32_t numSlices=INDEX_MAX) = 0;
+	virtual ImageSampledViewPtr createSampledViewEx(ImageViewType viewType, uint32_t firstMip, uint32_t firstSlice, uint32_t numMips=INDEX_MAX, uint32_t numSlices=INDEX_MAX) = 0;
 
 	/// create read-only view of a single slice (usable as image in shaders, not usable as sampled texture)
 	virtual ImageReadOnlyViewPtr createReadOnlyView(uint32_t mip = 0, uint32_t slice = 0) = 0;
@@ -385,7 +390,7 @@ public:
     virtual RenderTargetViewPtr createRenderTargetView(uint32_t mip = 0, uint32_t firstSlice = 0, uint32_t numSlices = 1) = 0;
 
 protected:
-    bool validateSampledView(uint32_t firstMip, uint32_t numMips, uint32_t firstSlice, uint32_t numSlices, ImageSampledView::Setup& outSetup) const;
+    bool validateSampledView(ImageViewType viewType, uint32_t firstMip, uint32_t numMips, uint32_t firstSlice, uint32_t numSlices, ImageSampledView::Setup& outSetup) const;
 	bool validateReadOnlyView(uint32_t mip, uint32_t slice, ImageReadOnlyView::Setup& outSetup) const;
     bool validateWritableView(uint32_t mip, uint32_t slice, ImageWritableView::Setup& outSetup) const;
     bool validateRenderTargetView(uint32_t mip, uint32_t firstSlice, uint32_t numSlices, RenderTargetView::Setup& outSetup) const;

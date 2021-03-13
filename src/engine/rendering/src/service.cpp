@@ -44,8 +44,8 @@ float FrameCompositionTarget::aspectRatio() const
 //--
 
 RTTI_BEGIN_TYPE_CLASS(FrameRenderingService);
-    //RTTI_METADATA(app::DependsOnServiceMetadata).dependsOn<LoadingService>();
-    RTTI_METADATA(app::DependsOnServiceMetadata).dependsOn<DeviceService>();
+    //RTTI_METADATA(DependsOnServiceMetadata).dependsOn<LoadingService>();
+    RTTI_METADATA(DependsOnServiceMetadata).dependsOn<DeviceService>();
 RTTI_END_TYPE();
 
 FrameRenderingService::FrameRenderingService()
@@ -63,7 +63,7 @@ void FrameRenderingService::recreateHelpers()
     m_sharedHelpers = new FrameHelper(device);
 }
 
-app::ServiceInitializationResult FrameRenderingService::onInitializeService(const app::CommandLine& cmdLine)
+bool FrameRenderingService::onInitializeService(const CommandLine& cmdLine)
 {
     auto device = GetService<DeviceService>()->device();
 
@@ -72,7 +72,7 @@ app::ServiceInitializationResult FrameRenderingService::onInitializeService(cons
 
     m_reloadNotifier = [this]() { recreateHelpers(); };
 
-    return app::ServiceInitializationResult::Finished;
+    return true;
 }
 
 void FrameRenderingService::onShutdownService()
@@ -177,8 +177,13 @@ gpu::CommandBuffer* FrameRenderingService::render(const FrameParams& frame, cons
         outStats.totals.merge(outStats.globalShadowView);
         outStats.totals.merge(outStats.localShadowView);
         outStats.totalTime = timer.timeElapsed();
+
+        // release scene render lock
+        if (scene)
+            scene->renderUnlock();
+
         return cmd.release();
-    }
+    }    
 }
 
 //--

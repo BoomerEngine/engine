@@ -43,6 +43,8 @@ MaterialParametersPanel_ParameterElement::MaterialParametersPanel_ParameterEleme
 {
     layoutVertical();
 
+    customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+
     auto group = createChild<ui::ExpandableContainer>(initiallyExpaned);
     group->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
     group->body()->addStyleClass("opaque"_id);
@@ -98,6 +100,7 @@ MaterialParametersPanel_ParameterElement::MaterialParametersPanel_ParameterEleme
 void MaterialParametersPanel_ParameterElement::applyName(StringView name)
 {
     m_name->text(name);
+    invalidateDisplayList();
 }
 
 void MaterialParametersPanel_ParameterElement::cmdTryRename()
@@ -109,6 +112,17 @@ void MaterialParametersPanel_ParameterElement::cmdTryRename()
 void MaterialParametersPanel_ParameterElement::cmdRemove()
 {
     call(EVENT_MATERIAL_PARAM_DELETE_REQUEST);
+}
+
+bool MaterialParametersPanel_ParameterElement::handleItemFilter(const ui::ICollectionView* view, const ui::SearchPattern& filter) const
+{
+    return filter.testString(m_param->name().view());
+}
+
+void MaterialParametersPanel_ParameterElement::handleItemSort(const ui::ICollectionView* view, int colIndex, SortingData& outInfo) const
+{
+    outInfo.index = uniqueIndex();
+    outInfo.caption = m_param->name().view();
 }
 
 //--
@@ -124,10 +138,11 @@ MaterialParametersPanel::MaterialParametersPanel(const ActionHistoryPtr& actions
     auto box = createChild<ui::SearchBar>();
     box->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
 
-    m_list = createChild<ui::SimpleListView>();
+    m_list = createChild<ui::ListViewEx>();
     m_list->expand();
+    m_list->sort(0);
 
-    box->bindItemView(m_list);
+    //box->bindItemView(m_list);
 
     {
         auto panel = RefNew<ui::IElement>();
@@ -163,7 +178,7 @@ MaterialParametersPanel::MaterialParametersPanel(const ActionHistoryPtr& actions
             popup->showAsDropdown(buttonPtr);
         };
 
-        m_list->attachStaticElement(panel);
+        //m_list->attachStaticElement(panel);
     }    
 }
 
@@ -178,12 +193,10 @@ void MaterialParametersPanel::bindGraph(const MaterialGraphPtr& graph)
 
 RefPtr<MaterialParametersPanel_ParameterElement> MaterialParametersPanel::findUI(IMaterialTemplateParam* param) const
 {
-    for (const auto& elem : m_list->elements())
-        if (auto paramElement = rtti_cast<MaterialParametersPanel_ParameterElement>(elem))
-            if (paramElement->param() == param)
-                return paramElement;
-
-    return nullptr;
+    return AddRef(m_list->find<MaterialParametersPanel_ParameterElement>([param](MaterialParametersPanel_ParameterElement* elem)
+        {
+            return elem->param() == param;
+        }));
 }
 
 RefPtr<MaterialParametersPanel_ParameterElement> MaterialParametersPanel::createUI(IMaterialTemplateParam* param, bool expanded)
@@ -208,7 +221,7 @@ void MaterialParametersPanel::rebuildParameterList()
     m_list->clear();
 
     for (const auto& param : m_graph->parameters())
-        m_list->add(createUI(param, false));
+        m_list->addItem(createUI(param, false));
 }
 
 bool MaterialParametersPanel::removeParameter(IMaterialTemplateParam* param)
@@ -227,13 +240,13 @@ bool MaterialParametersPanel::removeParameter(IMaterialTemplateParam* param)
 
         action->doFunc = [this, obj, ui]() {
             m_graph->detachParameter(obj);
-            m_list->remove(ui);
+            m_list->removeItem(ui);
             return true;
         };
 
         action->undoFunc = [this, obj, ui]() {
             m_graph->attachParameter(obj);
-            m_list->add(ui);
+            m_list->addItem(ui);
             return true;
         };
 
@@ -329,20 +342,20 @@ void MaterialParametersPanel::addParameter(SpecificClassType<IMaterialTemplatePa
 
     action->doFunc = [this, obj, ui]() {
         m_graph->attachParameter(obj);
-        m_list->add(ui);
+        m_list->addItem(ui);
         return true;
     };
 
     action->undoFunc = [this, obj, ui]() {
         m_graph->detachParameter(obj);
-        m_list->remove(ui);
+        m_list->removeItem(ui);
         return true;
     };
 
     if (m_actionHistrory->execute(action))
     {
         m_list->select(ui);
-        m_list->ensureVisible(ui->index());
+        m_list->ensureVisible(ui);
     }
 }
 

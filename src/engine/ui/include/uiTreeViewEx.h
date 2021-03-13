@@ -29,6 +29,8 @@ public:
 
     INLINE const Array<TreeItemPtr>& children() const { return m_children; }
 
+    INLINE RefWeakPtr<ITreeItem> parent() const { return m_parent; }
+
     void toggleExpand();
 
     void expand();
@@ -54,11 +56,38 @@ public:
 
     //--
 
+    template< typename T >
+    INLINE void visit(const std::function<void(T*)>& func)
+    {
+        if (auto item = rtti_cast<T>(this))
+            func(item);
+
+        if (m_expanded)
+            for (const auto& child : m_children)
+                child->visit(func);
+    }
+
+    /// find first item matching given predicate
+    template< typename T >
+    INLINE RefPtr<T> find(const std::function<bool(T*)>& func) const
+    {
+        if (auto item = rtti_cast<T>(this))
+            if (!func || func((T*)item))
+                return AddRef(item);
+
+        for (const auto& child : m_children)
+            if (auto ret = child->find(func))
+                return ret;
+
+        return nullptr;
+    }
+
 private:
     bool m_expanded = false;
     ButtonPtr m_expandButton;
 
     Array<TreeItemPtr> m_children;
+    RefWeakPtr<ITreeItem> m_parent;
 
     int m_displayDepth = 0;
 
@@ -91,6 +120,30 @@ public:
     /// remove root item
     void removeRoot(ITreeItem* root);
 
+    /// remove particular item
+    void remove(ITreeItem* item);
+
+    ///---
+
+    /// find first item matching given predicate
+    template< typename T >
+    INLINE RefPtr<T> find(const std::function<bool(T*)>& func) const
+    {
+        for (const auto* root : m_roots)
+            if (auto ret = static_cast<ITreeItem*>(root->item.get())->find<T>(func))
+                return ret;
+
+        return nullptr;
+    }
+    
+    /// visit (pre order) all expended items
+    template< typename T >
+    INLINE void visit(const std::function<void(T*)>& func) const
+    {
+        for (const auto* root : m_roots)
+            static_cast< ITreeItem*>(root->item.get())->visit<T>(func);
+    }
+
     ///---
 
 private:
@@ -104,6 +157,8 @@ private:
     virtual void rebuildDisplayList() override;
 
     virtual bool processActivation() override;
+
+    bool removeParticularViewItemRecursive(ITreeItem* cur, ITreeItem* parent, ITreeItem* itemToRemove);
 
     void collectViewItems(ViewItem* item, int depth, Array<ViewItem*>& outItems);
 };

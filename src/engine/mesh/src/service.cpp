@@ -26,7 +26,7 @@ static ConfigProperty<uint32_t> cvMaxMeshletDataSizeKB("Rendering.Mesh", "MaxMes
 ///---
 
 RTTI_BEGIN_TYPE_CLASS(MeshService);
-	RTTI_METADATA(app::DependsOnServiceMetadata).dependsOn<gpu::DeviceService>();
+	RTTI_METADATA(DependsOnServiceMetadata).dependsOn<gpu::DeviceService>();
 RTTI_END_TYPE();
 
 ///----
@@ -34,11 +34,11 @@ RTTI_END_TYPE();
 MeshService::MeshService()
 {}
 
-app::ServiceInitializationResult MeshService::onInitializeService(const app::CommandLine& cmdLine)
+bool MeshService::onInitializeService(const CommandLine& cmdLine)
 {
 	auto deviceService = GetService<DeviceService>();
 	if (!deviceService)
-		app::ServiceInitializationResult::FatalError;
+		false;
 
 	m_freeMeshChunkIDs.resize(65536);
 	for (uint32_t i = 0; i < m_freeMeshChunkIDs.size(); ++i)
@@ -47,7 +47,7 @@ app::ServiceInitializationResult MeshService::onInitializeService(const app::Com
 	m_device = deviceService->device();
 
 	m_meshletStorage = RefNew<MeshChunkSharedStorage>(m_device);
-	return app::ServiceInitializationResult::Finished;
+	return true;
 }
 
 void MeshService::onShutdownService()

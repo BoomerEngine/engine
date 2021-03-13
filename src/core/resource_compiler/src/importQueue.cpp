@@ -82,7 +82,7 @@ public:
             if (!job.assetFilePath && !metadata->importDependencies.empty())
                 job.assetFilePath = metadata->importDependencies[0].importPath;
 
-            if (!job.id && metadata->ids.empty())
+            if (!job.id && !metadata->ids.empty())
                 job.id = metadata->ids[0];
         }
 
@@ -142,6 +142,7 @@ public:
         if (m_scheduledDepotFiles.insert(key))
         {
             auto& job = outStack.emplaceBack();
+            job.id = followup.id;
             job.assetFilePath = followup.assetFilePath;
             job.depotFilePath = followup.depotFilePath;
             job.baseConfig = followup.externalConfig;
@@ -155,6 +156,8 @@ public:
                 TRACE_ERROR("Failed to save initial metadata for '{}', skipping file import", job.depotFilePath);
                 outStack.popBack();
             }
+
+            m_progress.jobAdded(job);
         }
     }
 
@@ -165,6 +168,10 @@ public:
         // make sure all data we got make sense
         InplaceArray<ImportJobInfo, 256> jobStack;
         prepareJobs(jobs, jobStack);
+
+        // notify about all initial jobs
+        for (const auto& job : jobStack)
+            m_progress.jobAdded(job);
 
         // process the stack of jobs
         bool canceled = false;
@@ -200,40 +207,55 @@ public:
                     {
                         m_progress.jobFinished(job.depotFilePath, ImportStatus::FinishedNewContent, timer.timeElapsed());
                         m_numImported += 1;
+
+                        if (job.recurse)
+                            for (const auto& followup : result.followupImports)
+                                createAdditionalJob(job, followup, jobStack);
                     }
                     else
                     {
                         m_progress.jobFinished(job.depotFilePath, ImportStatus::FinishedUpTodate, timer.timeElapsed());
                         m_numUpToDate += 1;
+
+                        if (job.recurse)
+                        {
+                            // TODO: load existing
+                        }
                     }
                 }
                 else
                 {
-                    m_progress.jobFinished(job.depotFilePath, ImportStatus::Failed, timer.timeElapsed());
-                    m_numFailed += 1;
+                    if (result.extendedStatusFlags.test(ImportExtendedStatusBit::Canceled))
+                    {
+                        m_progress.jobFinished(job.depotFilePath, ImportStatus::Canceled, timer.timeElapsed());
+                        m_numFailed += 1;
+                    }
+                    else
+                    {
+                        m_progress.jobFinished(job.depotFilePath, ImportStatus::Failed, timer.timeElapsed());
+                        m_numFailed += 1;
+                    }
                 }
 
                 m_numJobs += 1;
                 processResult(result);
             }
-
-            // insert followup jobs
-            if (job.recurse)
-            {
-                for (const auto& followup : result.followupImports)
-                    createAdditionalJob(job, followup, jobStack);
-            }
         }
 
         // if we were canceled then mark all non processed jobs as canceled
         if (canceled)
+        {
             for (const auto& job : jobStack)
+            {
                 m_progress.jobFinished(job.depotFilePath, ImportStatus::Canceled, 0.0f);
+                m_numFailed += 1;
+            }
+        }
     }
 
     virtual void processResult(const ImportJobResult& result) = 0;
 
-private:
+protected:
     IImportProgressTracker& m_progress;
     const IImportDepotLoader* m_loader = nullptr;
 
@@ -354,7 +376,11 @@ public:
         {
             metadata->importBaseConfiguration = CloneObject(job.baseConfig);
             if (metadata->importBaseConfiguration)
+            {
+                if (metadata->importBaseConfiguration->sourceImportedBy().empty())
+                    metadata->importBaseConfiguration->setupDefaultImportMetadata();
                 metadata->importBaseConfiguration->parent(metadata);
+            }
         }
 
         // save metadata
@@ -377,7 +403,6 @@ public:
     }
 
 private:
-    const IImportDepotLoader* m_loader = nullptr;
     IImportDepotSaver* m_saver = nullptr;
 };
 
@@ -404,7 +429,7 @@ public:
 
     virtual ResourceID queryResourceID(StringView depotPath) const override
     {
-        if (0 == m_existingResourcePath.compareWithNoCase(depotPath))
+        if (m_existingResourcePath == depotPath)
             return m_existingMetadata->ids.front();
 
         return m_baseLoader->queryResourceID(depotPath);
@@ -412,7 +437,7 @@ public:
 
     virtual ResourceMetadataPtr loadExistingMetadata(StringView depotPath) const override
     {
-        if (0 == m_existingMetadataPath.compareWithNoCase(depotPath))
+        if (m_existingMetadataPath == depotPath)
             return m_existingMetadata;
 
         return m_baseLoader->loadExistingMetadata(depotPath);
@@ -420,7 +445,7 @@ public:
 
     virtual ResourcePtr loadExistingResource(StringView depotPath) const override
     {
-        if (0 == m_existingResourcePath.compareWithNoCase(depotPath))
+        if (m_existingResourcePath == depotPath)
             return m_existingResource;
 
         return m_baseLoader->loadExistingResource(depotPath);
@@ -461,7 +486,7 @@ public:
 
     virtual bool saveMetadata(StringView depotPath, const ResourceMetadata* metadata) override
     {
-        if (m_existingMetadataPath.compareWithNoCase(depotPath))
+        if (m_existingMetadataPath == depotPath)
         {
             m_savedMetadata = AddRef(metadata);
             return true;
@@ -472,7 +497,7 @@ public:
 
     virtual bool saveResource(StringView depotPath, const IResource* data) override
     {
-        if (m_existingResourcePath.compareWithNoCase(depotPath))
+        if (m_existingResourcePath == depotPath)
         {
             m_savedResource = AddRef(data);
             return true;
@@ -500,7 +525,7 @@ public:
 
     virtual void jobProgressUpdate(StringView depotPath, uint64_t currentCount, uint64_t totalCount, StringView text) override final
     {
-        if (m_localProgress && m_depotPath.compareWithNoCase(depotPath))
+        if (m_localProgress && (m_depotPath == depotPath))
             m_localProgress->reportProgress(currentCount, totalCount, text);
     }
 
@@ -525,7 +550,7 @@ bool ReimportResource(StringView depotPath, const IResource* existingResource, c
     DEBUG_CHECK_RETURN_EX_V(existingResource, "Nothing to import", false);
     DEBUG_CHECK_RETURN_EX_V(existingMetadata, "Missing metadata", false);
     DEBUG_CHECK_RETURN_EX_V(!existingMetadata->importDependencies.empty(), "File not imported", false);
-    DEBUG_CHECK_RETURN_EX_V(!existingMetadata->resourceClassType, "File not imported", false);
+    DEBUG_CHECK_RETURN_EX_V(existingMetadata->resourceClassType, "File not imported", false);
 
     const auto& baseLoader = IImportDepotLoader::GetGlobalDepotLoader();
 
@@ -540,7 +565,6 @@ bool ReimportResource(StringView depotPath, const IResource* existingResource, c
         job.depotFilePath = StringBuf(depotPath);
         job.assetFilePath = existingMetadata->importDependencies[0].importPath;
         job.resourceClass = existingMetadata->resourceClassType;
-        //job.userConfig = 
         job.force = true;
         job.recurse = false;
 
@@ -548,10 +572,16 @@ bool ReimportResource(StringView depotPath, const IResource* existingResource, c
         stack.process(jobs);
     }
 
-    if (!singleSaver.m_savedResource)
-        return false;
+    if (singleSaver.m_savedResource)
+    {
+        // iron out any BS by making a local copy of the object before returning
+        // NOTE: highly memory inefficient
+        outMetadata = CloneObject(singleSaver.m_savedMetadata);
+        outResource = CloneObject(singleSaver.m_savedResource);
+        return true;
+    }
 
-    return true;
+    return false;
 }
 
 //--

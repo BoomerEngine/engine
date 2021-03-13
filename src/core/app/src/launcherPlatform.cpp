@@ -19,7 +19,7 @@
 
 #include "application.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(platform)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -33,7 +33,7 @@ Platform::~Platform()
 {
 }
 
-bool Platform::platformStart(const app::CommandLine& cmdline, app::IApplication* localApplication)
+bool Platform::platformStart(const CommandLine& cmdline, IApplication* localApplication)
 {
     ScopeTimer timer;
 
@@ -91,4 +91,4 @@ Platform& GetLaunchPlatform()
     return *thePlatform;
 }
 
-END_BOOMER_NAMESPACE_EX(platform)
+END_BOOMER_NAMESPACE()

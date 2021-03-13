@@ -31,10 +31,10 @@ public:
 	//--
 
 private:
-	virtual bool initialize(const app::CommandLine& cmdLine, DeviceCaps& outCaps) override final;
+	virtual bool initialize(const CommandLine& cmdLine, DeviceCaps& outCaps) override final;
 	virtual void shutdown() override final;
 
-	virtual IBaseThread* createOptimalThread(const app::CommandLine& cmdLine) override final;
+	virtual IBaseThread* createOptimalThread(const CommandLine& cmdLine) override final;
 
 	DXGIHelper* m_dxgi = nullptr;
 	uint32_t m_adapterIndex = 0;

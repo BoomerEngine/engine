@@ -327,83 +327,66 @@ ImagePreviewPanelWithToolbar::ImagePreviewPanelWithToolbar()
     // basic toolbar
     {
         m_previewToolbar->createSeparator();
-        m_previewToolbar->createButton("ImagePreviewPanel.ToggleRedChannel"_id, ui::ToolbarButtonSetup().icon("channel_red").caption("Red").tooltip("Toggle display of the [b][color:#F00]RED[/color][/b] channel"));
-        m_previewToolbar->createButton("ImagePreviewPanel.ToggleGreenChannel"_id, ui::ToolbarButtonSetup().icon("channel_green").caption("Green").tooltip("Toggle display of the [b][color:#0F0]GREEN[/color][/b] channel"));
-        m_previewToolbar->createButton("ImagePreviewPanel.ToggleBlueChannel"_id, ui::ToolbarButtonSetup().icon("channel_blue").caption("Blue").tooltip("Toggle display of the [b][color:#00F]BLUE[/color][/b] channel"));
-        m_previewToolbar->createButton("ImagePreviewPanel.ToggleAlphaChannel"_id, ui::ToolbarButtonSetup().icon("channel_alpha").caption("Alpha").tooltip("Toggle display of the [b][color:#FFF]ALPHA[/color][/b] channel"));
-        m_previewToolbar->createSeparator();
-        m_previewToolbar->createButton("ImagePreviewPanel.TogglePointFilter"_id, ui::ToolbarButtonSetup().icon("plane").caption("Point filter").tooltip("Toggle point filtering of texture"));
-        m_previewToolbar->createButton("ImagePreviewPanel.TogglePremultiply"_id, ui::ToolbarButtonSetup().icon("blend").caption("Alpha premultiply").tooltip("Toggle premultiplied blending"));
-        m_previewToolbar->createButton("ImagePreviewPanel.ToggleCheckers"_id, ui::ToolbarButtonSetup().icon("background").caption("Background").tooltip("Toggle checked background"));
-        m_previewToolbar->createSeparator();
-        m_previewToolbar->createButton("ImagePreviewPanel.TogglePixelGrid"_id, ui::ToolbarButtonSetup().icon("grid").caption("Pixel grid").tooltip("Toggle pixel grid overlay"));
-        m_previewToolbar->createSeparator();
-        m_previewToolbar->createButton("ImagePreviewPanel.FitZoom"_id, ui::ToolbarButtonSetup().icon("zoom").caption("Fit").tooltip("Show all content"));
-        m_previewToolbar->createButton("ImagePreviewPanel.FillZoom"_id, ui::ToolbarButtonSetup().icon("arrow_inout").caption("Fill").tooltip("Fill window with content"));
-        m_previewToolbar->createButton("ImagePreviewPanel.ResetZoom"_id, ui::ToolbarButtonSetup().icon("1to1").caption("Reset").tooltip("Reset zoom to 1:1"));
 
-        //--
-
-        actions().bindToggle("ImagePreviewPanel.ToggleRedChannel"_id) = [this] { return m_previewPanel->previewSettings().showRed; };
-        actions().bindToggle("ImagePreviewPanel.ToggleGreenChannel"_id) = [this] { return m_previewPanel->previewSettings().showGreen; };
-        actions().bindToggle("ImagePreviewPanel.ToggleBlueChannel"_id) = [this] { return m_previewPanel->previewSettings().showBlue; };
-        actions().bindToggle("ImagePreviewPanel.ToggleAlphaChannel"_id) = [this] { return m_previewPanel->previewSettings().showAlpha; };
-        actions().bindToggle("ImagePreviewPanel.TogglePointFilter"_id) = [this] { return m_previewPanel->previewSettings().pointFilter; };
-        actions().bindToggle("ImagePreviewPanel.TogglePremultiply"_id) = [this] { return m_previewPanel->previewSettings().premultiply; };
-        actions().bindToggle("ImagePreviewPanel.ToggleCheckers"_id) = [this] { return m_previewPanel->previewSettings().showCheckers; };
-        actions().bindToggle("ImagePreviewPanel.TogglePixelGrid"_id) = [this] { return m_previewPanel->previewSettings().showGrid; };
-
-        actions().bindCommand("ImagePreviewPanel.FitZoom"_id) = [this] {  m_previewPanel->zoomToFit(); };
-        actions().bindCommand("ImagePreviewPanel.FillZoom"_id) = [this] {  m_previewPanel->zoomToFill(); };
-        actions().bindCommand("ImagePreviewPanel.ResetZoom"_id) = [this] { m_previewPanel->resetZoomToOne(); };
-
-        actions().bindCommand("ImagePreviewPanel.ToggleRedChannel"_id) = [this] {
+        m_previewToolbar->createButton(ui::ToolBarButtonInfo("RedChannel"_id).caption("Red", "channel_red").tooltip("Toggle display of the [b][color:#F00]RED[/color][/b] channel")) = [this] {
             auto settings = previewSettings();
             settings.showRed = !settings.showRed;
             previewSettings(settings);
         };
 
-        actions().bindCommand("ImagePreviewPanel.ToggleGreenChannel"_id) = [this] {
+        m_previewToolbar->createButton(ui::ToolBarButtonInfo("GreenChannel"_id).caption("Green", "channel_green").tooltip("Toggle display of the [b][color:#0F0]GREEN[/color][/b] channel")) = [this] {
             auto settings = previewSettings();
             settings.showGreen = !settings.showGreen;
             previewSettings(settings);
         };
 
-        actions().bindCommand("ImagePreviewPanel.ToggleBlueChannel"_id) = [this] {
+        m_previewToolbar->createButton(ui::ToolBarButtonInfo("BlueChannel"_id).caption("Blue", "channel_blue").tooltip("Toggle display of the [b][color:#00F]BLUE[/color][/b] channel")) = [this] {
             auto settings = previewSettings();
             settings.showBlue = !settings.showBlue;
             previewSettings(settings);
         };
 
-        actions().bindCommand("ImagePreviewPanel.ToggleAlphaChannel"_id) = [this] {
+        m_previewToolbar->createButton(ui::ToolBarButtonInfo("AlphaChannel"_id).caption("Blue", "channel_alpha").tooltip("Toggle display of the [b][color:#FFF]ALPHA[/color][/b] channel")) = [this] {
             auto settings = previewSettings();
             settings.showAlpha = !settings.showAlpha;
             previewSettings(settings);
         };
 
-        actions().bindCommand("ImagePreviewPanel.TogglePointFilter"_id) = [this] {
+        m_previewToolbar->createSeparator();
+
+        m_previewToolbar->createButton(ui::ToolBarButtonInfo("PointFilter"_id).caption("Point filter", "plane").tooltip("Toggle point filtering of texture")) = [this] {
             auto settings = previewSettings();
             settings.pointFilter = !settings.pointFilter;
             previewSettings(settings);
         };
 
-        actions().bindCommand("ImagePreviewPanel.ToggleCheckers"_id) = [this] {
-            auto settings = previewSettings();
-            settings.showCheckers = !settings.showCheckers;
-            previewSettings(settings);
-        };
-
-        actions().bindCommand("ImagePreviewPanel.TogglePremultiply"_id) = [this] {
+        m_previewToolbar->createButton(ui::ToolBarButtonInfo("Premultiply"_id).caption("Alpha premultiply", "blend").tooltip("Toggle premultiplied blending")) = [this] {
             auto settings = previewSettings();
             settings.premultiply = !settings.premultiply;
             previewSettings(settings);
         };
 
-        actions().bindCommand("ImagePreviewPanel.TogglePixelGrid"_id) = [this] {
+        m_previewToolbar->createButton(ui::ToolBarButtonInfo("Checkers"_id).caption("Background", "background").tooltip("Toggle checked background")) = [this] {
+            auto settings = previewSettings();
+            settings.showCheckers = !settings.showCheckers;
+            previewSettings(settings);
+        };
+
+        m_previewToolbar->createSeparator();
+
+        m_previewToolbar->createButton(ui::ToolBarButtonInfo("PixelGrid"_id).caption("Pixel grid", "grid").tooltip("Toggle pixel grid overlay")) = [this] {
             auto settings = previewSettings();
             settings.showGrid = !settings.showGrid;
             previewSettings(settings);
         };
+
+        m_previewToolbar->createSeparator();
+
+        m_previewToolbar->createButton(ui::ToolBarButtonInfo().caption("Fit", "zoom").tooltip("Show all content")) = [this] {  m_previewPanel->zoomToFit(); };
+        m_previewToolbar->createButton(ui::ToolBarButtonInfo().caption("Fill", "arrow_inout").tooltip("Fill window with content")) = [this] {  m_previewPanel->zoomToFill(); };
+        m_previewToolbar->createButton(ui::ToolBarButtonInfo().caption("Reset", "1to1").tooltip("Reset zoom to 1:1")) = [this] { m_previewPanel->resetZoomToOne(); };
+
+        bindShortcut("Home") = [this] {  m_previewPanel->zoomToFit(); };
 
         //--
     }
@@ -428,19 +411,8 @@ ImagePreviewPanelWithToolbar::ImagePreviewPanelWithToolbar()
 
     // slice selector
     {
-        m_previewToolbar->createSeparator();
-        m_previewToolbar->createButton("ImagePreviewPanel.ShowAllSlices"_id, ui::ToolbarButtonSetup().caption("All Slices").tooltip("Toggle display of all slices side by side"));
-
-        actions().bindToggle("ImagePreviewPanel.ShowAllSlices"_id) = [this] { return m_previewPanel->previewSettings().allSlices; };
-
-        actions().bindCommand("ImagePreviewPanel.ShowAllSlices"_id) = [this] {
-            auto settings = previewSettings();
-            settings.allSlices = !settings.allSlices;
-            previewSettings(settings);
-        };
-
         m_sliceChoicebox = m_previewToolbar->createChildWithType<ui::ComboBox>("ToolbarComboBox"_id);
-        m_sliceChoicebox->customMinSize(150, 10);
+        m_sliceChoicebox->customMinSize(100, 10);
         m_sliceChoicebox->addOption("No slices");
         m_sliceChoicebox->selectOption(0);
         m_sliceChoicebox->visibility(false);
@@ -448,7 +420,6 @@ ImagePreviewPanelWithToolbar::ImagePreviewPanelWithToolbar()
         m_sliceChoicebox->bind(ui::EVENT_COMBO_SELECTED) = [this](int option)
         {
             auto settings = previewSettings();
-            settings.allSlices = false;
             settings.selectedSlice = option;
             previewSettings(settings);
         };
@@ -457,7 +428,7 @@ ImagePreviewPanelWithToolbar::ImagePreviewPanelWithToolbar()
     // HDR exposure/tonemap
     {
         m_previewToolbar->createSeparator();
-        m_previewToolbar->createButton("ImagePreviewPanel.Tonemap"_id, ui::ToolbarButtonSetup().caption("Tonemap").tooltip("Apply HDR tonemapping to image preview"));
+        //m_previewToolbar->createButton(ui::ToolBarButtonInfo("ToneMap").caption("Tonemap").tooltip("Apply HDR tonemapping to image preview")) 
 
         m_toneMapMode = m_previewToolbar->createChildWithType<ui::ComboBox>("ToolbarComboBox"_id);
         m_toneMapMode->customMinSize(150, 10);
@@ -509,15 +480,33 @@ const ImagePreviewPanelSettings& ImagePreviewPanelWithToolbar::previewSettings()
 
 void ImagePreviewPanelWithToolbar::previewSettings(const ImagePreviewPanelSettings& settings)
 {
-    auto oldSettings = previewSettings();
+    auto oldMip = previewSettings().selectedMip;
+    auto oldSlice = previewSettings().selectedSlice;
+
     m_previewPanel->previewSettings(settings);
 
-    if (oldSettings.allSlices != settings.allSlices || oldSettings.selectedMip != settings.selectedMip || oldSettings.selectedSlice != settings.selectedSlice)
-    {
+    if (settings.selectedMip != oldMip || settings.selectedSlice != oldSlice)
         recreatePreviewItems();
-    }
 
     updateUIState();
+}
+
+static gpu::ImageSampledViewPtr AdaptView(const gpu::ImageSampledView* view)
+{
+    if (!view)
+        return nullptr;
+
+    auto imageType = view->image()->type();
+    if (imageType == ImageViewType::ViewCube)
+    {
+        return view->image()->createSampledViewEx(ImageViewType::View2DArray, 0, 0, view->image()->mips(), 6);
+    }
+    else if (imageType == ImageViewType::ViewCubeArray)
+    {
+        return nullptr;
+    }
+
+    return AddRef(view);
 }
 
 void ImagePreviewPanelWithToolbar::bindImageView(const gpu::ImageSampledView* view, assets::ImageContentColorSpace knownColorSpace)
@@ -531,16 +520,16 @@ void ImagePreviewPanelWithToolbar::bindImageView(const gpu::ImageSampledView* vi
             knownColorSpace = assets::ImageContentColorSpace::HDR;
     }
 
-    bool hadContent = !m_mainImageSRV.empty();
-	bool biggerContent = hadContent && (view->width() > m_mainImageSRV->width() || view->height() > m_mainImageSRV->height());
-    m_mainImageSRV = AddRef(view);
-
+    bool hadContent = !m_imageSRV.empty();
+	bool biggerContent = hadContent && (view->width() > m_imageSRV->width() || view->height() > m_imageSRV->height());
     auto settings = previewSettings();
 
-    if (m_numImageMips != view->mips() || m_numImageSlices != view->slices() || settings.colorSpace != knownColorSpace)
+    m_imageSRV = AdaptView(view);
+    if (m_imageSRV)
     {
-        m_numImageMips = view->mips();
-        m_numImageSlices = view->slices();
+        m_imageIsCube = m_imageSRV->image()->type() == ImageViewType::ViewCube || m_imageSRV->image()->type() == ImageViewType::ViewCubeArray;
+        m_numImageMips = m_imageSRV->mips();
+        m_numImageSlices = m_imageSRV->slices();
 
         if (m_numImageMips <= 1)
             settings.selectedMip = 0;
@@ -548,14 +537,9 @@ void ImagePreviewPanelWithToolbar::bindImageView(const gpu::ImageSampledView* vi
             settings.selectedMip = m_numImageMips - 1;
 
         if (m_numImageSlices <= 1)
-        {
-            settings.allSlices = false;
             settings.selectedSlice = 0;
-        }
         else if (settings.selectedSlice >= m_numImageSlices)
-        {
             settings.selectedSlice = m_numImageSlices - 1;
-        }
 
         settings.colorSpace = knownColorSpace;
 
@@ -565,6 +549,12 @@ void ImagePreviewPanelWithToolbar::bindImageView(const gpu::ImageSampledView* vi
         updateSliceList();
         updateUIState();
     }
+    else
+    {
+        m_numImageMips = 0;
+        m_numImageSlices = 0;
+        m_imageIsCube = false;
+    }
 
     recreatePreviewItems();
 
@@ -572,40 +562,55 @@ void ImagePreviewPanelWithToolbar::bindImageView(const gpu::ImageSampledView* vi
         m_previewPanel->zoomToFit();
 }
 
+void ImagePreviewPanelWithToolbar::updateToolbar()
+{
+    auto settings = previewSettings();
+    m_previewToolbar->toggleButton("RedChannel"_id, settings.showRed);
+    m_previewToolbar->toggleButton("GreenChannel"_id, settings.showGreen);
+    m_previewToolbar->toggleButton("BlueChannel"_id, settings.showBlue);
+    m_previewToolbar->toggleButton("AlphaChannel"_id, settings.showAlpha);
+    m_previewToolbar->toggleButton("PointFilter"_id, settings.showAlpha);
+    m_previewToolbar->toggleButton("Premultiply"_id, settings.premultiply);
+    m_previewToolbar->toggleButton("Checkers"_id, settings.showCheckers);
+    m_previewToolbar->toggleButton("PixelGrid"_id, settings.showGrid);
+}
+
 void ImagePreviewPanelWithToolbar::updateUIState()
 {
     auto settings = previewSettings();
 
-    for (const auto& elem : m_mainImagePreviewElements)
-        elem->configure(settings);
-
-    m_mipmapChoiceBox->visibility(true);
-    m_sliceChoicebox->visibility(!settings.allSlices);
+    if (m_imagePreview)
+        m_imagePreview->configure(settings);
+    
+    m_mipmapChoiceBox->visibility(m_numImageMips > 1);
+    m_sliceChoicebox->visibility(m_numImageSlices > 1);
     m_exposureControl->visibility(settings.colorSpace == assets::ImageContentColorSpace::HDR);
     m_toneMapMode->visibility(settings.colorSpace == assets::ImageContentColorSpace::HDR);
 
-    if (settings.selectedMip == 0 && !settings.allSlices && m_mainImageSRV)
+    if (m_imageSRV)
     {
-        m_previewHorizontalRuler->activeRegion(0.0f, m_mainImageSRV->width());
-        m_previewVerticalRuler->activeRegion(0.0f, m_mainImageSRV->height());
+        m_previewHorizontalRuler->activeRegion(0.0f, m_imageSRV->width());
+        m_previewVerticalRuler->activeRegion(0.0f, m_imageSRV->height());
     }
+
+    updateToolbar();
 }
 
 void ImagePreviewPanelWithToolbar::updateMipmapList()
 {
     m_mipmapChoiceBox->clearOptions();
 
-    if (m_mainImageSRV)
+    if (m_numImageMips > 1)
     {
         auto settings = previewSettings();
 
         for (uint32_t i = 0; i < m_numImageMips; ++i)
         {
-            auto mipWidth = std::max<uint32_t>(1, m_mainImageSRV->width() >> i);
-            auto mipHeight = std::max<uint32_t>(1, m_mainImageSRV->height() >> i);
-            auto mipDepth = std::max<uint32_t>(1, m_mainImageSRV->depth() >> i);
+            auto mipWidth = std::max<uint32_t>(1, m_imageSRV->width() >> i);
+            auto mipHeight = std::max<uint32_t>(1, m_imageSRV->height() >> i);
+            auto mipDepth = std::max<uint32_t>(1, m_imageSRV->depth() >> i);
 
-			const auto viewType = m_mainImageSRV->image()->type();
+			const auto viewType = m_imageSRV->image()->type();
             if (viewType == ImageViewType::View1D || viewType == ImageViewType::View1DArray)
                 m_mipmapChoiceBox->addOption(TempString("Mip {} ({})", i, mipWidth));
             else if (viewType == ImageViewType::View2D || viewType == ImageViewType::View2DArray)
@@ -631,57 +636,63 @@ void ImagePreviewPanelWithToolbar::updateSliceList()
 {
     m_sliceChoicebox->clearOptions();
 
-    if (m_mainImageSRV)
+    if (m_numImageSlices)
     {
-		const auto viewType = m_mainImageSRV->image()->type();
+        auto settings = previewSettings();
 
-		if (viewType == ImageViewType::View1DArray || viewType == ImageViewType::View2DArray || viewType == ImageViewType::ViewCubeArray)
-		{
-			auto settings = previewSettings();
+        if (m_imageIsCube)
+        {
+            const char* SideNames[6] = { "+X", "-X", "+Y", "-Y", "+Z", "-Z" };
+            if (m_numImageSlices > 6)
+            {
+                for (uint32_t i = 0; i < m_numImageSlices; ++i)
+                {
+                    auto index = i / 6;
+                    m_sliceChoicebox->addOption(TempString("Cube {} {}", i, SideNames[i % 6]));
+                }
+            }
+            else
+            {
+                for (uint32_t i = 0; i < m_numImageSlices; ++i)
+                    m_sliceChoicebox->addOption(TempString("Slice {}", SideNames[i % 6]));
+            }
+        }
+        else
+        {
+            for (uint32_t i = 0; i < m_numImageSlices; ++i)
+                m_sliceChoicebox->addOption(TempString("Slice {}", i));
+        }
 
-			for (uint32_t i = 0; i < m_numImageSlices; ++i)
-				m_sliceChoicebox->addOption(TempString("Slice {}", i));
-
-			m_sliceChoicebox->selectOption(settings.selectedSlice);
-			m_sliceChoicebox->enable(true);
-		}
+		m_sliceChoicebox->selectOption(settings.selectedSlice);
+		m_sliceChoicebox->enable(true);
+        m_sliceChoicebox->visibility(true);
     }
     else
     {
         m_sliceChoicebox->addOption("(no slices)");
         m_sliceChoicebox->selectOption(0);
-        m_sliceChoicebox->enable(false);
+        m_sliceChoicebox->visibility(false);
     }
 }
 
 void ImagePreviewPanelWithToolbar::recreatePreviewItems()
 {
     // detach existing elements
-    for (const auto& elem : m_mainImagePreviewElements)
-        m_previewPanel->removeElement(elem);
-    m_mainImagePreviewElements.clear();
-
-    // get main view
-    if (auto view = m_mainImageSRV)
+    if (m_imagePreview)
     {
-        // create the element
-        const auto& settings = previewSettings();
-        if (settings.selectedMip == 0 && settings.selectedSlice == 0 && !settings.allSlices && m_sourceImageSRV)
-        {
-            auto element = RefNew<ImagePreviewElement>(view, m_sourceImageSRV);
-            m_mainImagePreviewElements.pushBack(element);
-            m_previewPanel->addElement(element, ui::Position(0,0));
-        }
-        else
-        {
-            auto element = RefNew<ImagePreviewElement>(view, settings.selectedMip, settings.selectedSlice);
-            m_mainImagePreviewElements.pushBack(element);
-            m_previewPanel->addElement(element, ui::Position(0, 0));
-        }
+        m_previewPanel->removeElement(m_imagePreview);
+        m_imagePreview.reset();
     }
 
-    for (const auto& elem : m_mainImagePreviewElements)
-        elem->configure(previewSettings());
+    // get main view
+    if (m_imageSRV)
+    {
+        const auto& settings = previewSettings();
+
+        m_imagePreview = RefNew<ImagePreviewElement>(m_imageSRV, settings.selectedMip, settings.selectedSlice);
+        m_imagePreview->configure(settings);
+        m_previewPanel->addElement(m_imagePreview, ui::Position(0, 0));
+    }
 }
 
 //--

@@ -51,7 +51,7 @@ void IResourceImporter::ListImportableResourceClasses(Array<SpecificClassType<IR
 {
     for (const auto& cls : AllImporterClasses())
     {
-        if (const auto mtd = cls->findMetadata<ResourceCookedClassMetadata>())
+        if (const auto mtd = cls->findMetadata<ResourceImportedClassMetadata>())
         {
             for (const auto& resoureCls : mtd->classList())
                 outResourceClasses.pushBackUnique(resoureCls);
@@ -78,7 +78,7 @@ bool IResourceImporter::ListImportableResourceClassesForExtension(StringView fil
 
             if (hasExtension)
             {
-                if (const auto mtd = cls->findMetadata<ResourceCookedClassMetadata>())
+                if (const auto mtd = cls->findMetadata<ResourceImportedClassMetadata>())
                 {
                     for (const auto& resoureCls : mtd->classList())
                     {
@@ -112,7 +112,7 @@ bool IResourceImporter::ListImportConfigurationForExtension(StringView fileExten
 
             if (hasExtension)
             {
-                if (const auto mtd = cls->findMetadata<ResourceCookedClassMetadata>())
+                if (const auto mtd = cls->findMetadata<ResourceImportedClassMetadata>())
                 {
                     for (const auto& resoureCls : mtd->classList())
                     {
@@ -142,7 +142,7 @@ bool IResourceImporter::ListImportableExtensionsForClass(SpecificClassType<IReso
     for (const auto& cls : AllImporterClasses())
     {
         bool hasClass = false;
-        if (const auto mtd = cls->findMetadata<ResourceCookedClassMetadata>())
+        if (const auto mtd = cls->findMetadata<ResourceImportedClassMetadata>())
         {
             for (const auto& resoureCls : mtd->classList())
             {

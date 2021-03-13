@@ -77,7 +77,7 @@ public:
     virtual bool writeParameter(StringID name, const void* data, Type type, bool refresh = true);
 
     // IObject
-    virtual DataViewPtr createDataView() const;
+    virtual DataViewPtr createDataView(bool forceReadOnly=false) const override;
     virtual DataViewResult readDataView(StringView viewPath, void* targetData, Type targetType) const override;
     virtual DataViewResult writeDataView(StringView viewPath, const void* sourceData, Type sourceType) override;
     virtual DataViewResult describeDataView(StringView viewPath, DataViewInfo& outInfo) const override;

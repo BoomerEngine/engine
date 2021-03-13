@@ -38,11 +38,11 @@ public:
 	virtual IBaseSampler* createOptimalSampler(const SamplerState& state) override final;
 	virtual IBaseShaders* createOptimalShaders(const ShaderData* data) override final;
 
-	virtual IBaseObjectCache* createOptimalObjectCache(const app::CommandLine& cmdLine) override final;
+	virtual IBaseObjectCache* createOptimalObjectCache(const CommandLine& cmdLine) override final;
 
-	virtual IBaseBackgroundQueue* createOptimalBackgroundQueue(const app::CommandLine& cmdLine) override final;
+	virtual IBaseBackgroundQueue* createOptimalBackgroundQueue(const CommandLine& cmdLine) override final;
 
-	virtual ObjectRegistry* createOptimalObjectRegistry(const app::CommandLine& cmdLine) override final;
+	virtual ObjectRegistry* createOptimalObjectRegistry(const CommandLine& cmdLine) override final;
 
 	//--
 

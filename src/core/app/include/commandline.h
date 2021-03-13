@@ -16,7 +16,7 @@
 #include "core/system/include/commandline.h"
 #include "core/memory/include/linearAllocator.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(app)
+BEGIN_BOOMER_NAMESPACE()
 
 /// Command line parameter
 struct CORE_APP_API CommandLineParam
@@ -190,4 +190,4 @@ private:
 
 //---
 
-END_BOOMER_NAMESPACE_EX(app)
+END_BOOMER_NAMESPACE()

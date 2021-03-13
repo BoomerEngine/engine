@@ -17,10 +17,9 @@
 #include "engine/canvas/include/canvas.h"
 #include "core/system/include/thread.h"
 #include "core/app/include/localServiceContainer.h"
+#include "core/containers/include/stringVector.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
-
-#pragma optimize("", off)
 
 //---
 
@@ -235,7 +234,7 @@ void Renderer::runModalLoop(Window* window, IElement* focusElement)
         NativeTimePoint timeDelta;
         while (childRenderer.windows().contains(window) && !window->requestedClose())
         {
-            app::LocalServiceContainer::GetInstance().update();
+            ServiceContainer::GetInstance().update();
 
             auto dt = timeDelta.timeTillNow().toSeconds();
             timeDelta.resetToNow();
@@ -391,6 +390,11 @@ Position Renderer::calcWindowPlacement(Size& size, const WindowInitialPlacementS
 
     auto screenArea = m_native->windowMonitorAtPos(referenceArea.absolutePosition());
 
+    if (size.x > screenArea.size().x)
+        size.x = screenArea.size().x;
+    if (size.y > screenArea.size().y)
+        size.y = screenArea.size().y;
+
     bool limitToScreenArea = true;
     Position position = referenceArea.absolutePosition();
     if (placement.mode == WindowInitialPlacementMode::ScreenCenter || placement.mode == WindowInitialPlacementMode::Maximize || (placement.mode == WindowInitialPlacementMode::WindowCenter && !referenceWindow))
@@ -452,10 +456,11 @@ Position Renderer::calcWindowPlacement(Size& size, const WindowInitialPlacementS
             position.x = screenArea.right() - size.x;
         if (position.y + size.y > screenArea.bottom())
             position.y = screenArea.bottom() - size.y;
+
         if (position.x < screenArea.left())
             position.x = screenArea.left();
         if (position.y < screenArea.top())
-            position.x = screenArea.top();
+            position.y = screenArea.top();
     }
 
     TRACE_INFO("Placement position for '{}': [{}x{}]", placement.title, position.x, position.y);
@@ -614,10 +619,11 @@ void Renderer::updateWindowState(WindowInfo& window)
         if (requests->requestMinimize)
             m_native->windowMinimize(window.nativeId);
 
-        if (requests->requestPositionChange)
+        if (requests->requestPositionChange && requests->requestSizeChange)
+            m_native->windowSetPlacement(window.nativeId, requests->requestedPosition, requests->requestedSize);
+        else if (requests->requestPositionChange)
             m_native->windowSetPos(window.nativeId, requests->requestedPosition);
-
-        if (requests->requestSizeChange)
+        else if (requests->requestSizeChange)
             m_native->windowSetSize(window.nativeId, requests->requestedSize);
 
         if (requests->requestTitleChange)
@@ -1654,35 +1660,13 @@ void Renderer::nativeWindowForceRedraw(NativeWindowID id)
 
 //--
 
-bool Renderer::storeDataToClipboard(StringView format, const void* data, uint32_t size)
+void Renderer::storeText(StringView text)
 {
-    return m_native->stroreClipboardData(format, data, size);
+    UTF16StringVector wideString(text);
+    m_native->stroreClipboardData("UNITEXT", wideString.c_str(), (1+wideString.length()) * sizeof(wchar_t));
 }
 
-bool Renderer::storeTextToClipboard(StringView text)
-{
-    auto data = text.toBufferWithZero();
-    return storeDataToClipboard("TEXT", data.data(), data.size());
-}
-
-bool Renderer::storeTextToClipboard(BaseStringView<wchar_t> text)
-{
-    auto data = text.toBufferWithZero();
-    return storeDataToClipboard("UNITEXT", data.data(), data.size());
-}
-
-bool Renderer::storeObjectToClipboard(const ObjectPtr& data)
-{
-    if (data)
-    {
-        auto buffer = data->toBuffer();
-        return storeDataToClipboard(data->cls()->name().view(), buffer.data(), buffer.size());
-    }
-
-    return false;
-}
-
-bool Renderer::loadStringFromClipboard(StringBuf& outText) const
+bool Renderer::loadText(StringBuf& outText) const
 {
     // try unicode text first, most common
     if (auto uniTextData = m_native->loadClipboardData("UNITEXT"))
@@ -1704,35 +1688,20 @@ bool Renderer::loadStringFromClipboard(StringBuf& outText) const
     return false;
 }
 
-bool Renderer::loadObjectFromClipboard(ClassType expectedClass, ObjectPtr& outObject) const
+void Renderer::storeData(StringView format, const void* data, uint32_t size)
 {
-    if (!expectedClass)
-        return false;
+    m_native->stroreClipboardData(format, data, size);
+}
 
-    const auto formatName = expectedClass->name().view();
-    if (auto binaryData = m_native->loadClipboardData(formatName))
+bool Renderer::loadData(StringView format, Buffer& outData) const
+{
+    if (auto binaryData = m_native->loadClipboardData(format))
     {
-        if (auto object = IObject::FromBuffer(binaryData.data(), binaryData.size()))
-        {
-            outObject = object;
-            return true;
-        }
+        outData = binaryData;
+        return true;
     }
 
     return false;
-}
-
-bool Renderer::checkClipboardHasText() const
-{
-    return m_native->checkClipboardHasData("TEXT") || m_native->checkClipboardHasData("UNITEXT");
-}
-
-bool Renderer::checkClipboardHasData(ClassType expectedClass) const
-{
-    if (!expectedClass)
-        return false;
-
-    return m_native->checkClipboardHasData(expectedClass.name().view());
 }
 
 //--

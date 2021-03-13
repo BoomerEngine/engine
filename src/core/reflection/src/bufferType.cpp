@@ -17,8 +17,6 @@
 
 BEGIN_BOOMER_NAMESPACE()
 
-#pragma optimize("",off)
-
 namespace prv
 {
 

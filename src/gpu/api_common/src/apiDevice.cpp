@@ -60,7 +60,7 @@ Point IBaseDevice::maxRenderTargetSize() const
 	return ret;
 }
 
-bool IBaseDevice::initialize(const app::CommandLine& cmdLine, DeviceCaps& outCaps)
+bool IBaseDevice::initialize(const CommandLine& cmdLine, DeviceCaps& outCaps)
 {
 	// create window manager
 	m_windows = createOptimalWindowManager(cmdLine);
@@ -139,12 +139,12 @@ void IBaseDevice::sync(bool flush)
 
 //--
 
-WindowManager* IBaseDevice::createOptimalWindowManager(const app::CommandLine& cmdLine)
+WindowManager* IBaseDevice::createOptimalWindowManager(const CommandLine& cmdLine)
 {
 	return createDefaultPlatformWindowManager(cmdLine);
 }
 
-WindowManager* IBaseDevice::createDefaultPlatformWindowManager(const app::CommandLine& cmdLine)
+WindowManager* IBaseDevice::createDefaultPlatformWindowManager(const CommandLine& cmdLine)
 {
 #ifdef PLATFORM_WINAPI
 	auto ret = new WindowManagerWinApi();

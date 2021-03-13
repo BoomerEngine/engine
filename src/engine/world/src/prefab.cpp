@@ -59,7 +59,6 @@ PrefabAppearance::PrefabAppearance()
 
 RTTI_BEGIN_TYPE_CLASS(Prefab);
     RTTI_METADATA(ResourceDescriptionMetadata).description("Prefab");
-    RTTI_METADATA(ResourceTagColorMetadata).color(0x86, 0x6b, 0xed);
     RTTI_PROPERTY(m_root);
     RTTI_PROPERTY(m_appearances);
     RTTI_PROPERTY(m_internalSeed);

@@ -11,6 +11,7 @@
 #include "engine/ui/include/uiSimpleListModel.h"
 #include "engine/ui/include/uiAbstractItemModel.h"
 #include "engine/ui/include/uiDragDrop.h"
+#include "engine/ui/include/uiListViewEx.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -30,9 +31,9 @@ struct MeshMaterialPreviewSettings
 //--
 
 /// helper object for editable mesh material
-class MeshMaterialParameters : public IObject
+class MeshMaterialParameters : public ui::IListItem
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MeshMaterialParameters, IObject);
+    RTTI_DECLARE_VIRTUAL_CLASS(MeshMaterialParameters, ui::IListItem);
 
 public:
     MeshMaterialParameters(MaterialInstance* data, StringID name);
@@ -41,36 +42,27 @@ public:
 
     INLINE const MaterialInstancePtr& data() const { return m_data; }
 
-    INLINE const StringBuf& displayString() const { return m_displayString; }
-
-    bool updateDisplayString();
-    bool baseMaterial(const MaterialRef& material);
+    void updateDisplayString();
+    void baseMaterial(const MaterialRef& material);
 
 private:
+    GlobalEventTable m_events;
+
     StringID m_name;
-    StringBuf m_displayString;
+
+    ui::TextLabelPtr m_label;
 
     MaterialInstancePtr m_data;
-};
 
-//--
+    //--
 
-/// list model for material list
-class MeshMaterialListModel : public ui::SimpleTypedListModel<RefPtr<MeshMaterialParameters>>
-{
-public:
-    MeshMaterialListModel();
+    virtual bool handleItemFilter(const ui::ICollectionView* view, const ui::SearchPattern& filter) const override final;
+    virtual void handleItemSort(const ui::ICollectionView* view, int colIndex, SortingData& outInfo) const override final;
+    virtual bool handleItemContextMenu(ui::ICollectionView* view, const ui::CollectionItems& items, const ui::Position& pos, input::KeyMask controlKeys) override final;
+    virtual bool handleItemActivate(ui::ICollectionView* view) override final;
 
-    virtual bool compare(const RefPtr<MeshMaterialParameters>& a, const RefPtr<MeshMaterialParameters>& b, int colIndex) const override final;
-    virtual bool filter(const RefPtr<MeshMaterialParameters>& data, const ui::SearchPattern& filter, int colIndex = 0) const override final;
-    virtual StringBuf content(const RefPtr<MeshMaterialParameters>& data, int colIndex = 0) const override final;
-
-    virtual ui::DragDropHandlerPtr handleDragDropData(ui::AbstractItemView* view, const ui::ModelIndex& item, const ui::DragDropDataPtr& data, const ui::Position& pos) override final;
-    virtual bool handleDragDropCompletion(ui::AbstractItemView* view, const ui::ModelIndex& item, const ui::DragDropDataPtr& data) override final;
-
-    StringID materialName(const ui::ModelIndex& index) const;
-
-    ui::ModelIndex findMaterial(StringID name) const;
+    virtual ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override final;
+    virtual void handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override final;
 };
 
 //--
@@ -87,29 +79,31 @@ public:
 
     INLINE const MeshMaterialPreviewSettings& settings() const { return m_settings; }
 
+    StringID selectedMaterial() const;
+
     void bindResource(const MeshPtr& mesh);
 
     void showMaterials(const Array<StringID>& names);
 
     void collectSelectedMaterialNames(HashSet<StringID>& outNames) const;
-               
+
 private:
     MeshPtr m_mesh;
 
     //--
 
     ui::DataInspectorPtr m_properties;
-    ui::ListViewPtr m_list;
+    ui::ListViewExPtr m_list;
+    ui::ToolBarPtr m_toolbar;
         
     MeshMaterialPreviewSettings m_settings;
 
-    ui::Timer m_captionsRefreshTimer;
-
-    RefPtr<MeshMaterialListModel> m_listModel;
-
+    //--
+         
     void refreshMaterialList();
     void refreshMaterialProperties();
-    void updateCaptions();
+
+    void updateToolbar();
 };
 
 //--

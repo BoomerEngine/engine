@@ -13,10 +13,8 @@
 #include "graphEditorPanel.h"
 
 #include "core/resource/include/resource.h"
-#include "editor/common/include/managedFile.h"
-#include "editor/common/include/assetFormat.h"
-#include "editor/common/include/managedFileNativeResource.h"
-#include "editor/common/include/assetBrowser.h"
+#include "core/resource/include/loader.h"
+#include "editor/assets/include/browserService.h"
 #include "engine/ui/include/uiDockLayout.h"
 #include "engine/ui/include/uiDockPanel.h"
 #include "engine/ui/include/uiDataInspector.h"
@@ -37,19 +35,35 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 RTTI_BEGIN_TYPE_NATIVE_CLASS(MaterialGraphEditor);
 RTTI_END_TYPE();
 
-MaterialGraphEditor::MaterialGraphEditor(ManagedFileNativeResource* file)
-    : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::CopyPaste, ResourceEditorFeatureBit::UndoRedo })
+MaterialGraphEditor::MaterialGraphEditor(const ResourceInfo& info)
+    : ResourceEditor(info, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::CopyPaste, ResourceEditorFeatureBit::UndoRedo })
+    , m_graph(rtti_cast<MaterialGraph>(info.resource))
+    , m_events(this)
 {
     createInterface();
+
+    m_graphEditor->bindGraph(m_graph);
+    m_graphPalette->setRootClasses(m_graph->graph());
+
+    m_previewMaterial = RefNew<MaterialInstance>();
+    m_previewPanel->bindMaterial(m_previewMaterial);
+    m_parametersPanel->bindGraph(m_graph);
+
+    m_events.bind(info.resource->eventKey(), EVENT_RESOURCE_MODIFIED) = [this]
+    {
+        updatePreviewMaterial();
+    };
+
+    updatePreviewMaterial();
 }
 
 MaterialGraphEditor::~MaterialGraphEditor()
 {}
 
-void MaterialGraphEditor::handleContentModified()
+/*void MaterialGraphEditor::handleContentModified()
 {
     updatePreviewMaterial();
-}
+}*/
 
 void MaterialGraphEditor::handleGeneralCopy()
 {
@@ -151,58 +165,21 @@ void MaterialGraphEditor::createInterface()
     }        
 }
 
-bool MaterialGraphEditor::initialize()
-{
-    if (!TBaseClass::initialize())
-        return false;
-
-    m_graph = rtti_cast<MaterialGraph>(resource());
-    if (!m_graph)
-        return false;
-
-    m_graphEditor->bindGraph(m_graph);
-    m_graphPalette->setRootClasses(m_graph->graph());
-
-    m_previewMaterial = RefNew<MaterialInstance>();
-    m_previewPanel->bindMaterial(m_previewMaterial);
-    m_parametersPanel->bindGraph(m_graph);
-
-    updatePreviewMaterial();
-
-    return true;
-}
-
-bool MaterialGraphEditor::save()
-{
-    if (!TBaseClass::save())
-        return false;
-
-    // load just saved material graph as a material template to force a reload
-    LoadResource(nativeFile()->depotPath());
-    return true;
-}
-
 //--
 
 void MaterialGraphEditor::updatePreviewMaterial()
 {
-    auto previewTemplate = m_graph->createPreviewTemplate(TempString("{}.preview", nativeFile()->depotPath()));
+    auto previewTemplate = m_graph->createPreviewTemplate(TempString("{}.preview", info().resourceDepotPath));
     m_previewMaterial->baseMaterial(MaterialRef(ResourceID(), previewTemplate));
 }
 
 void MaterialGraphEditor::handleChangedSelection()
 {
-    // TODO: multiple block selection
     const auto& selectedBlocks = m_graphEditor->selectedBlocks();
     if (!selectedBlocks.empty())
-    {
-        m_properties->bindData(selectedBlocks.back()->createDataView());
-    }
+        m_properties->bindObjects(selectedBlocks);
     else
-    {
-        // if nothing is selected edit the graph itself
-        m_properties->bindData(m_previewMaterial->createDataView());
-    }
+        m_properties->bindObject(m_previewMaterial);
 }
 
 //---
@@ -212,18 +189,15 @@ class MaterialGraphResourceEditorOpener : public IResourceEditorOpener
     RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphResourceEditorOpener, IResourceEditorOpener);
 
 public:
-    virtual bool canOpen(const ManagedFileFormat& format) const override
+    virtual bool createEditor(ui::IElement* owner, const ResourceInfo& context, ResourceEditorPtr& outEditor) const override final
     {
-        const auto graphClass = MaterialGraph::GetStaticClass();
-        return (format.nativeResourceClass() == graphClass);
-    }
+        if (auto texture = rtti_cast<MaterialGraph>(context.resource))
+        {
+            outEditor = RefNew<MaterialGraphEditor>(context);
+            return true;
+        }
 
-    virtual RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
-    {
-        if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-            return RefNew<MaterialGraphEditor>(nativeFile);
-
-        return nullptr;
+        return false;
     }
 };
 

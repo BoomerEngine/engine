@@ -31,7 +31,7 @@ StringBuf Device::name() const
 	return "NullDevice";
 }
 
-IBaseThread* Device::createOptimalThread(const app::CommandLine& cmdLine)
+IBaseThread* Device::createOptimalThread(const CommandLine& cmdLine)
 {
 	return new Thread(this, windows());
 }

@@ -58,7 +58,6 @@ RTTI_END_TYPE();
 
 RTTI_BEGIN_TYPE_CLASS(MaterialInstance);
     RTTI_METADATA(ResourceDescriptionMetadata).description("Material Instance");
-    RTTI_METADATA(ResourceTagColorMetadata).color(0x4c, 0x5b, 0x61);
     RTTI_PROPERTY(m_parameters);
     RTTI_PROPERTY(m_imported);
     RTTI_CATEGORY("Material hierarchy");
@@ -161,7 +160,7 @@ static const void* FindBaseParameterDataInternal(const MaterialInstance* a, Stri
 
 //--
 
-static StaticResource<MaterialTemplate> resFallbackMaterial("/engine/materials/fallback.v4mg");
+static StaticResource<MaterialTemplate> resFallbackMaterial("/engine/materials/fallback.xfile");
 
 MaterialDataProxyPtr MaterialInstance::dataProxy() const
 {
@@ -196,7 +195,9 @@ const MaterialTemplate* MaterialInstance::resolveTemplate() const
         if (auto baseTemplate = base->resolveTemplate())
             return baseTemplate;
 
-    auto fallbackTemplate = resFallbackMaterial.load().resource();
+    static MaterialTemplatePtr fallbackTemplate;
+    if (!fallbackTemplate)
+        fallbackTemplate = resFallbackMaterial.load().resource();
     DEBUG_CHECK_EX(fallbackTemplate, "Failed to load fallback material template, rendering pipeline is seriously broken");
     return fallbackTemplate;
 }
@@ -583,8 +584,11 @@ DataViewResult MaterialInstance::writeDataView(StringView viewPath, const void* 
             {
                 // ALWAYS write to compatible type to avoid confusion
                 Variant value(param->queryDataType());
-                if (const auto ret = HasError(value.type()->writeDataView(viewPath, value.data(), sourceData, sourceType)))
-                    return ret; // writing data to type container failed - something is wrong with the data
+                {
+                    const auto ret = value.type()->writeDataView(viewPath, value.data(), sourceData, sourceType);
+                    if (!ret.valid())
+                        return ret; // writing data to type container failed - something is wrong with the data
+                }
 
                 // add or replace the value
                 writeParameterInternal(paramName, std::move(value));
@@ -721,7 +725,7 @@ private:
     MaterialInstance* m_material;
 };
 
-DataViewPtr MaterialInstance::createDataView() const
+DataViewPtr MaterialInstance::createDataView(bool forceReadOnly) const
 {
     return RefNew<MaterialInstanceDataView>(const_cast<MaterialInstance*>(this));
 }

@@ -94,6 +94,15 @@ void DockPanel::close()
         notebook->closeTab(this);
 }
 
+void DockPanel::ensureVisible(bool activateWindow)
+{
+    if (auto notebook = findParent<DockNotebook>())
+        notebook->tab(this);
+
+    if (auto window = findParent<Window>())
+        window->requestShow(activateWindow);
+}
+
 void DockPanel::handleCloseRequest()
 {
     if (m_locked)

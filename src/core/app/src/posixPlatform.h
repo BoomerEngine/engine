@@ -25,7 +25,7 @@ namespace base
                 Platform();
                 virtual ~Platform();
 
-                virtual ExitCode start(const app::CommandLine& cmdline) override;
+                virtual ExitCode start(const CommandLine& cmdline) override;
                 virtual bool update() override;
                 virtual void cleanup() override;
 
@@ -35,7 +35,7 @@ namespace base
 
                 UniquePtr<GenericOutput> m_output;
 
-                ExitCode protectedStart(const app::CommandLine& cmdline);
+                ExitCode protectedStart(const CommandLine& cmdline);
 
                 void installSignalHandlers();
 

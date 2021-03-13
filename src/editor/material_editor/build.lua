@@ -21,6 +21,7 @@ Dependency("core_graph")
 
 Dependency("editor_common")
 Dependency("editor_viewport")
+Dependency("editor_assets")
 
 Dependency("engine_ui")
 Dependency("engine_rendering")

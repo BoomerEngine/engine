@@ -31,7 +31,6 @@ struct ImagePreviewPanelSettings
     bool showBlue = true;
     bool showAlpha = true;
 
-    bool allSlices = false;
     int selectedSlice = 0;
     int selectedMip = 0;
 
@@ -137,17 +136,18 @@ private:
     ui::TrackBarPtr m_exposureControl;
     ui::ComboBoxPtr m_toneMapMode;
 
+    bool m_imageIsCube = false;
     uint32_t m_numImageSlices = 0;
     uint32_t m_numImageMips = 0;
 
-    gpu::ImageSampledViewPtr m_mainImageSRV;
-	gpu::ImageSampledViewPtr m_sourceImageSRV;
+    gpu::ImageSampledViewPtr m_imageSRV;
 
-    Array<RefPtr<ImagePreviewElement>> m_mainImagePreviewElements;
+    RefPtr<ImagePreviewElement> m_imagePreview;
 
     void updateMipmapList();
     void updateSliceList();
     void updateUIState();
+    void updateToolbar();
     void recreatePreviewItems();
 };
 

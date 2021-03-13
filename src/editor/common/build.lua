@@ -24,5 +24,7 @@ Dependency("engine_canvas")
 Dependency("engine_ui")
 Dependency("engine_rendering")
 
+Dependency("gpu_device")
+
 ProjectOption("devonly")
 

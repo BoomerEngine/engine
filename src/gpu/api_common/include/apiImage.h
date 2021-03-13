@@ -90,7 +90,7 @@ public:
 	ImageObjectProxy(ObjectID id, IDeviceObjectHandler* impl, const Setup& setup);
 
 	virtual ImageSampledViewPtr createSampledView(uint32_t firstMip, uint32_t firstSlice) override;
-	virtual ImageSampledViewPtr createSampledViewEx(uint32_t firstMip, uint32_t firstSlice, uint32_t numMips, uint32_t numSlices) override;
+	virtual ImageSampledViewPtr createSampledViewEx(ImageViewType viewType, uint32_t firstMip, uint32_t firstSlice, uint32_t numMips, uint32_t numSlices) override;
 	virtual ImageReadOnlyViewPtr createReadOnlyView(uint32_t mip = 0, uint32_t slice = 0) override;
 	virtual ImageWritableViewPtr createWritableView(uint32_t mip, uint32_t slice) override;
 	virtual RenderTargetViewPtr createRenderTargetView(uint32_t mip, uint32_t firstSlice, uint32_t numSlices) override;

@@ -88,7 +88,7 @@ public:
 
     virtual bool findFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath, ResourceID* outFoundResourceID) const override final
     {
-        const auto searchFileName = ReplaceExtension(fileName, IResource::FILE_EXTENSION); // always look for resources, even when asked for "lena.png"
+        const auto searchFileName = ReplaceExtension(fileName, ResourceMetadata::FILE_EXTENSION);
 
         StringBuf foundDepotPath;
         if (m_depot->findFile(depotPath, searchFileName, maxDepth, foundDepotPath))
@@ -203,13 +203,20 @@ ResourceConfigurationPtr Importer::compileFinalImportConfiguration(StringView so
     return config;
 }
 
-bool Importer::checkStatus(ImportExtendedStatusFlags& outStatusFlags, const ResourceMetadata* metadata, const ResourceConfiguration* newUserConfiguration, IProgressTracker* progress) const
+void Importer::checkStatus(ImportExtendedStatusFlags& outStatusFlags, const ResourceMetadata* metadata, const ResourceConfiguration* newUserConfiguration, IProgressTracker* progress) const
 {
+    // invalid metadata
+    if (!metadata)
+    {
+        outStatusFlags |= ImportExtendedStatusBit::MetadataInvalid;
+        return;
+    }
+
     // not imported from any files
     if (metadata->importDependencies.empty())
     {
         outStatusFlags |= ImportExtendedStatusBit::NotImported;
-        return true; // we are "up to date" since we can't be imported
+        return;
     }
 
     // check asset dependencies
@@ -296,7 +303,8 @@ bool Importer::checkStatus(ImportExtendedStatusFlags& outStatusFlags, const Reso
     }
 
     // return final status, the details are passed via outStatusFlags
-    return valid;
+    if (valid)
+        outStatusFlags |= ImportExtendedStatusBit::UpToDate;
 }
 
 bool Importer::importResource(const ImportJobInfo& info, ImportJobResult& outResult, IProgressTracker* progress /*= nullptr*/) const
@@ -308,7 +316,11 @@ bool Importer::importResource(const ImportJobInfo& info, ImportJobResult& outRes
     DEBUG_CHECK_RETURN_EX_V(info.resourceClass, "Invalid import job", false);
     DEBUG_CHECK_RETURN_EX_V(info.depotFilePath.endsWith(IResource::FILE_EXTENSION), "Resource file does not follow the convention", false);
 
-    if (import_checkUpToDate(info, outResult, progress))
+    bool upToDate = false;
+    if (!import_checkUpToDate(info, outResult, progress, upToDate))
+        return true;
+
+    if (upToDate && !info.force)
         return true;
 
     if (!import_assignID(info, outResult, progress))
@@ -332,7 +344,7 @@ bool Importer::importResource(const ImportJobInfo& info, ImportJobResult& outRes
     return true;
 }
 
-bool Importer::import_checkUpToDate(const ImportJobInfo& info, ImportJobResult& outResult, IProgressTracker* progress) const
+bool Importer::import_checkUpToDate(const ImportJobInfo& info, ImportJobResult& outResult, IProgressTracker* progress, bool& outUpToDate) const
 {
     // load existing metadata
     const auto metadataPath = ReplaceExtension(info.depotFilePath, ResourceMetadata::FILE_EXTENSION);
@@ -342,24 +354,74 @@ bool Importer::import_checkUpToDate(const ImportJobInfo& info, ImportJobResult& 
     if (outResult.metadata)
     {
         // check if file is update to date
-        if (checkStatus(outResult.extendedStatusFlags, outResult.metadata, info.userConfig))
+        checkStatus(outResult.extendedStatusFlags, outResult.metadata, info.userConfig);
+        if (outResult.extendedStatusFlags.test(ImportExtendedStatusBit::NotImported))
         {
-            if (outResult.extendedStatusFlags.test(ImportExtendedStatusBit::NotImported))
-            {
-                auto& message = outResult.messages.emplaceBack();
-                message.type = logging::OutputLevel::Warning;
-                message.message = StringBuf(TempString("File has metadata but was was not imported in the first place"));
-            }
-            else
+            auto& message = outResult.messages.emplaceBack();
+            message.type = logging::OutputLevel::Warning;
+            message.message = StringBuf(TempString("File has metadata but was was not imported in the first place"));
+
+            return false; // we can't import file that 
+        }
+
+        if (outResult.extendedStatusFlags.test(ImportExtendedStatusBit::UpToDate))
+        {
+            outUpToDate = true;
+
+            auto& message = outResult.messages.emplaceBack();
+            message.type = logging::OutputLevel::Info;
+            message.message = StringBuf(TempString("File is up to date"));
+        }
+        else
+        {
+            if (outResult.extendedStatusFlags.test(ImportExtendedStatusBit::ConfigurationChanged))
             {
                 auto& message = outResult.messages.emplaceBack();
                 message.type = logging::OutputLevel::Info;
-                message.message = StringBuf(TempString("File is up to date"));
+                message.message = StringBuf(TempString("File import configuration has changed"));
             }
-
-            // if we are not FORCED to do a reimport we can exit now as there's nothing to do
-            if (!info.force)
-                return true;
+            if (outResult.extendedStatusFlags.test(ImportExtendedStatusBit::SourceFileChanged))
+            {
+                auto& message = outResult.messages.emplaceBack();
+                message.type = logging::OutputLevel::Info;
+                message.message = StringBuf(TempString("Sources assets have changed"));
+            }
+            if (outResult.extendedStatusFlags.test(ImportExtendedStatusBit::ImporterClassMissing))
+            {
+                auto& message = outResult.messages.emplaceBack();
+                message.type = logging::OutputLevel::Warning;
+                message.message = StringBuf(TempString("Importer class used for the original import is missing"));
+            }
+            if (outResult.extendedStatusFlags.test(ImportExtendedStatusBit::ResourceClassMissing))
+            {
+                auto& message = outResult.messages.emplaceBack();
+                message.type = logging::OutputLevel::Warning;
+                message.message = StringBuf(TempString("Resource class used for the original import is missing"));
+            }
+            if (outResult.extendedStatusFlags.test(ImportExtendedStatusBit::ImporterVersionChanged))
+            {
+                auto& message = outResult.messages.emplaceBack();
+                message.type = logging::OutputLevel::Info;
+                message.message = StringBuf(TempString("Importer has a new version"));
+            }
+            if (outResult.extendedStatusFlags.test(ImportExtendedStatusBit::ResourceVersionChanged))
+            {
+                auto& message = outResult.messages.emplaceBack();
+                message.type = logging::OutputLevel::Info;
+                message.message = StringBuf(TempString("Resource data format has a new version"));
+            }
+            if (outResult.extendedStatusFlags.test(ImportExtendedStatusBit::SourceFileMissing))
+            {
+                auto& message = outResult.messages.emplaceBack();
+                message.type = logging::OutputLevel::Warning;
+                message.message = StringBuf(TempString("Original source files are missing"));
+            }
+            if (outResult.extendedStatusFlags.test(ImportExtendedStatusBit::SourceFileNotReadable))
+            {
+                auto& message = outResult.messages.emplaceBack();
+                message.type = logging::OutputLevel::Warning;
+                message.message = StringBuf(TempString("Original source files are invalid"));
+            }
         }
     }
     else
@@ -368,8 +430,7 @@ bool Importer::import_checkUpToDate(const ImportJobInfo& info, ImportJobResult& 
         outResult.metadata = RefNew<ResourceMetadata>();
     }
 
-    // we are not up to date and must continue import
-    return false;
+    return true;
 }
 
 bool Importer::import_assignID(const ImportJobInfo& info, ImportJobResult& outResult, IProgressTracker* progress) const
@@ -378,6 +439,8 @@ bool Importer::import_assignID(const ImportJobInfo& info, ImportJobResult& outRe
     {
         if (!outResult.metadata->ids.contains(info.id))
         {
+            outResult.metadata->ids.pushBack(info.id);
+
             auto& message = outResult.messages.emplaceBack();
             message.type = logging::OutputLevel::Info;
             message.message = StringBuf(TempString("A new ID '{}' will be assigned to the resource", info.id));
@@ -562,6 +625,7 @@ bool Importer::import_doActualImport(const ImportJobInfo& info, ImportJobResult&
         auto& message = outResult.messages.emplaceBack();
         message.type = logging::OutputLevel::Error;
         message.message = StringBuf(TempString("Import was canceled before it finished, results are invalid"));
+        outResult.extendedStatusFlags |= ImportExtendedStatusBit::Canceled;
         return false;
     }
 
@@ -619,7 +683,7 @@ void Importer::buildClassMap()
     for (const auto cls : importerClasses)
     {
         auto extensionMetadata = cls->findMetadata<ResourceSourceFormatMetadata>();
-        auto targetClassMetadata = cls->findMetadata<ResourceCookedClassMetadata>();
+        auto targetClassMetadata = cls->findMetadata<ResourceImportedClassMetadata>();
         if (extensionMetadata && targetClassMetadata)
         {
             // check that class is valid
@@ -668,7 +732,7 @@ void Importer::buildClassMap()
         }
         else
         {
-            TRACE_WARNING("Importer class '{}' has invalid metadata (missing ResourceSourceFormatMetadata/ResourceCookedClassMetadata)", cls->name());
+            TRACE_WARNING("Importer class '{}' has invalid metadata (missing ResourceSourceFormatMetadata/ResourceImportedClassMetadata)", cls->name());
         }
     }
 }

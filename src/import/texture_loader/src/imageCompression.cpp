@@ -12,6 +12,7 @@
 #include "core/image/include/image.h"
 #include "core/image/include/imageView.h"
 #include "core/image/include/imageUtils.h"
+#include "core/system/include/algorithms.h"
 
 #include "gpu/device/include/deviceService.h"
 #include "gpu/device/include/device.h"
@@ -444,7 +445,7 @@ struct TempMip
 
 //--
 
-static RefPtr<ImageCompressedResult> AssembleFinalResult(const Array<TempMip>& mips)
+static RefPtr<ImageCompressedResult> AssembleFinalResult(const Array<TempMip>& mips, bool compressDataBuffer)
 {
     const auto textureMipAlignment = 256U;
 
@@ -475,7 +476,12 @@ static RefPtr<ImageCompressedResult> AssembleFinalResult(const Array<TempMip>& m
         memcpy(data.data() + destMip.dataOffset, sourceMip.data.data(), destMip.dataSize);
     }
 
-    ret->data.bind(data, CompressionType::LZ4HC);
+#ifndef BUILD_DEBUG
+    if (compressDataBuffer)
+        ret->data.bind(data, CompressionType::LZ4HC);
+    else
+#endif
+        ret->data.bind(data, CompressionType::Uncompressed);
 
     return ret;
 }
@@ -1121,7 +1127,7 @@ RefPtr<ImageCompressedResult> CompressImage(const image::ImageView& data, const 
         return nullptr;
             
     // create final result
-    auto ret = AssembleFinalResult(mips);
+    auto ret = AssembleFinalResult(mips, settings.m_compressDataBuffer);
     if (!ret)
     {
         TRACE_ERROR("Source image dimensions [{}x{}x{}] cannot be assembled into one buffer (OOM?)", data.width(), data.height(), data.depth());
@@ -1141,6 +1147,65 @@ RefPtr<ImageCompressedResult> CompressImage(const image::ImageView& data, const 
     ret->info.slices = 1;
     return ret;
 }
+
+//--
+
+RefPtr<ImageCompressedResult> MergeCompressedImages(const Array<RefPtr<ImageCompressedResult>>& slices, ImageViewType viewType, bool compressFinalDataBuffer)
+{
+    DEBUG_CHECK_RETURN_EX_V(!slices.empty(), "Nothing to merge", nullptr);
+    DEBUG_CHECK_RETURN_EX_V(slices[0], "Invalid slice", nullptr);
+    DEBUG_CHECK_RETURN_EX_V(viewType == ImageViewType::View2DArray || viewType == ImageViewType::View1DArray || viewType == ImageViewType::ViewCube || viewType == ImageViewType::ViewCubeArray, "Not a valid view type", nullptr);
+
+    // copy basic setup from first slice
+    auto ret = RefNew<ImageCompressedResult>();
+    ret->info = slices[0]->info;
+    ret->info.type = viewType;
+    ret->info.slices = slices.size();
+
+    // calculate total data size
+    uint32_t totalDataSize = 0;
+    uint32_t totalMips = 0;
+    InplaceArray<uint32_t, 64> slicesOffsets;
+    for (const auto& slice : slices)
+    {
+        auto size = slice->data.size();
+        auto offset = Align<uint32_t>(totalDataSize, 4096);
+        slicesOffsets.pushBack(offset);
+        totalDataSize = offset + size;
+        totalMips += slice->mips.size();
+    }
+
+    // allocate output buffer
+    auto finalBuffer = Buffer::CreateZeroInitialized(POOL_IMAGE, totalDataSize);
+    ret->mips.reserve(totalMips);
+
+    // copy data
+    for (auto i : slices.indexRange())
+    {
+        const auto& slice = slices[i];
+
+        auto sliceData = slice->data.decompress();
+        memcpy(finalBuffer.data() + slicesOffsets[i], sliceData.data(), sliceData.size());
+
+        for (const auto& mip : slice->mips)
+        {
+            auto& outMip = ret->mips.emplaceBack(mip);
+            outMip.dataOffset += slicesOffsets[i];
+            outMip.streamed = false;
+        }
+    }
+
+    // compress the final buffer
+//#ifndef BUILD_DEBUG
+    if (compressFinalDataBuffer)
+        ret->data.bind(finalBuffer, CompressionType::LZ4HC);
+    else 
+//#endif
+        ret->data.bind(finalBuffer, CompressionType::Uncompressed);
+
+    return ret;
+}
+
 
 //--
 

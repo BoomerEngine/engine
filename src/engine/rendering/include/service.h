@@ -39,9 +39,9 @@ struct ENGINE_RENDERING_API FrameCompositionTarget
 ///---
 
 /// service that facilitates rendering a single scene frame
-class ENGINE_RENDERING_API FrameRenderingService : public app::ILocalService
+class ENGINE_RENDERING_API FrameRenderingService : public IService
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(FrameRenderingService, app::ILocalService);
+    RTTI_DECLARE_VIRTUAL_CLASS(FrameRenderingService, IService);
 
 public:
     FrameRenderingService();
@@ -55,7 +55,7 @@ public:
     //--
 
 private:
-    virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
+    virtual bool onInitializeService(const CommandLine& cmdLine) override final;
     virtual void onShutdownService() override final;
     virtual void onSyncUpdate() override final;
 

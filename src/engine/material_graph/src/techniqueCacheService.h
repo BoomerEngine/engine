@@ -17,9 +17,9 @@ BEGIN_BOOMER_NAMESPACE()
 class MaterialTechniqueCompiler;
 
 // local service for compiling techniques for materials, only reason it's a service is that we need to observer the depot
-class MaterialTechniqueCacheService : public app::ILocalService
+class MaterialTechniqueCacheService : public IService
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MaterialTechniqueCacheService, app::ILocalService);
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialTechniqueCacheService, IService);
 
 public:
     MaterialTechniqueCacheService();
@@ -29,8 +29,8 @@ public:
     void requestTechniqueCompilation(StringView contextName, const Array<MaterialTemplateParamInfo>& params, const MaterialGraphContainerPtr& graph, MaterialTechnique* technique);
 
 protected:
-    // ILocalService
-    virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
+    // IService
+    virtual bool onInitializeService(const CommandLine& cmdLine) override final;
     virtual void onShutdownService() override final;
     virtual void onSyncUpdate() override final;
 

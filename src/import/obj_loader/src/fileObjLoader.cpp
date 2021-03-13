@@ -57,7 +57,7 @@ namespace parser
     {
         StringView objectName = "object";
         StringView groupName = "group";
-        StringView materialName = "material";
+        StringView materialName = "default";
         const char* startPtr = nullptr;
         const char* endPtr = nullptr;
         uint32_t lineCount = 0;

@@ -69,6 +69,9 @@ extern CORE_IMAGE_API void FlipX(const ImageView& dest);
 /// Flip image in Y direction
 extern CORE_IMAGE_API void FlipY(const ImageView& dest);
 
+/// Swap X and Y directions (square only)
+extern CORE_IMAGE_API void SwapXY(const ImageView& dest);
+
 ///----------------------------
 
 /// Unpack image into a floating point array

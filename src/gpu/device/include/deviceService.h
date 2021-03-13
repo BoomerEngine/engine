@@ -18,9 +18,9 @@ BEGIN_BOOMER_NAMESPACE_EX(gpu)
 class DeviceGlobalObjects;
 
 /// service that manages and controls rendering device
-class GPU_DEVICE_API DeviceService : public app::ILocalService
+class GPU_DEVICE_API DeviceService : public IService
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(DeviceService, app::ILocalService);
+    RTTI_DECLARE_VIRTUAL_CLASS(DeviceService, IService);
 
 public:
     DeviceService();
@@ -47,7 +47,7 @@ public:
     //--
 
 private:
-    virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
+    virtual bool onInitializeService(const CommandLine& cmdLine) override final;
     virtual void onShutdownService() override final;
     virtual void onSyncUpdate() override final;
 

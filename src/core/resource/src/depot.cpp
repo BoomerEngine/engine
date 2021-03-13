@@ -9,6 +9,8 @@
 #include "build.h"
 #include "depot.h"
 #include "depotStructure.h"
+#include "metadata.h"
+#include "resource.h"
 #include "fileLoader.h"
 #include "fileSaver.h"
 
@@ -19,6 +21,7 @@
 #include "core/xml/include/xmlUtils.h"
 #include "core/xml/include/xmlDocument.h"
 #include "core/xml/include/xmlWrappers.h"
+#include "tags.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -35,6 +38,24 @@ static const StringView PROJECT_PREFIX = "/engine/";
 DepotService::DepotService()
 {}
 
+bool DepotService::createDirectories(StringView depotPath) const
+{
+    StringBuf absolutePath;
+    DEBUG_CHECK_RETURN_EX_V(queryFileAbsolutePath(depotPath, absolutePath), "Invalid depot path", false);
+
+    return boomer::CreatePath(absolutePath);
+}
+
+bool DepotService::removeDirectory(StringView depotPath) const
+{
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotDirPath(depotPath), "Not a directory path", false);
+
+    StringBuf absolutePath;
+    DEBUG_CHECK_RETURN_EX_V(queryFileAbsolutePath(depotPath, absolutePath), "Invalid depot path", false);
+
+    return boomer::DeleteDir(absolutePath);
+}
+
 StringBuf DepotService::queryDepotAbsolutePath(DepotType type) const
 {
     const auto index = (int)type;
@@ -46,15 +67,32 @@ StringBuf DepotService::queryDepotAbsolutePath(DepotType type) const
 
 bool DepotService::queryFileAbsolutePath(StringView depotPath, StringBuf& outAbsolutePath) const
 {
-    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
-
-    for (const auto& depot : m_depots)
+    if (depotPath.endsWith("/"))
     {
-        if (depot.prefix && depotPath.beginsWith(depot.prefix))
+        DEBUG_CHECK_RETURN_EX_V(ValidateDepotDirPath(depotPath), "Invalid path", false);
+
+        for (const auto& depot : m_depots)
         {
-            const auto remainingPath = depotPath.subString(depot.prefix.length());
-            outAbsolutePath = TempString("{}{}", depot.absolutePath, remainingPath);
-            return true;
+            if (depot.prefix && depotPath.beginsWith(depot.prefix))
+            {
+                const auto remainingPath = depotPath.subString(depot.prefix.length());
+                outAbsolutePath = TempString("{}{}", depot.absolutePath, remainingPath);
+                return true;
+            }
+        }
+    }
+    else
+    {
+        DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
+
+        for (const auto& depot : m_depots)
+        {
+            if (depot.prefix && depotPath.beginsWith(depot.prefix))
+            {
+                const auto remainingPath = depotPath.subString(depot.prefix.length());
+                outAbsolutePath = TempString("{}{}", depot.absolutePath, remainingPath);
+                return true;
+            }
         }
     }
 
@@ -74,6 +112,12 @@ bool DepotService::queryFileDepotPath(StringView absolutePath, StringBuf& outDep
     }
 
     return false;
+}
+
+bool DepotService::fileExists(StringView depotPath) const
+{
+    TimeStamp ts;
+    return queryFileTimestamp(depotPath, ts);
 }
 
 bool DepotService::queryFileTimestamp(StringView depotPath, TimeStamp& outTimestamp) const
@@ -228,42 +272,7 @@ bool DepotStructure::findFileInternal(DepotPathAppendBuffer& path, StringView fi
 
 bool DepotStructure::findFileInternal(const DepotFileSystem* fs, DepotPathAppendBuffer& path, StringView matchFileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const
 {
-    const auto mountPoint = fs->mountPoint().view();
-    const auto relativePath = path.view().subString(mountPoint.length());
 
-    if (fs->fileSystem().enumFilesAtPath(relativePath, [&outFoundFileDepotPath, &path, matchFileName](StringView name)
-        {
-            if (name.caseCmp(matchFileName) == 0)
-            {
-                outFoundFileDepotPath = TempString("{}{}", path.view(), name);
-                return true;
-            }
-
-            return false;
-        }))
-        return true;
-
-        if (maxDepth > 0)
-        {
-            maxDepth -= 1;
-
-            if (fs->fileSystem().enumDirectoriesAtPath(relativePath, [this, fs, &outFoundFileDepotPath, &path, matchFileName, maxDepth](StringView name)
-                {
-                    uint32_t pos = 0;
-                    if (path.append(TempString("{}/", name), pos))
-                    {
-                        if (findFileInternal(fs, path, matchFileName, maxDepth, outFoundFileDepotPath))
-                            return true;
-
-                        path.revert(pos);
-                    }
-
-                    return false;
-                }))
-                return true;
-        }
-
-        return false;
 }
 #endif
 
@@ -271,7 +280,56 @@ bool DepotService::findFile(StringView depotPath, StringView fileName, uint32_t 
 {
     DEBUG_CHECK_RETURN_EX_V(ValidateDepotDirPath(depotPath), "Invalid directory path", false);
 
+    for (const auto& depot : m_depots)
+    {
+        if (depot.prefix && depotPath.beginsWith(depot.prefix))
+        {
+            const auto remainingPath = depotPath.subString(depot.prefix.length());
+
+            return depot.structure->enumFilesRecrusive(remainingPath, maxDepth, [fileName, &depot, &outFoundFileDepotPath](StringView localDirPath, StringView localFileName)
+                {
+                    if (fileName.caseCmp(localFileName) == 0)
+                    {
+                        outFoundFileDepotPath = TempString("{}{}{}", depot.prefix, localDirPath, localFileName);
+                        return true;
+                    }
+                    return false;
+                });
+        }
+    }
+
     return false;
+}
+
+bool DepotService::findUniqueFileName(StringView directoryDepotPath, StringView coreName, StringBuf& outFoundFileDepotPath) const
+{
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotDirPath(directoryDepotPath), "Invalid directory path", false);
+
+    const auto ext = coreName.extensions();
+    
+    coreName = coreName.fileStem();
+    coreName = coreName.trimTailNumbers();
+
+    if (!coreName)
+        coreName = "file";
+
+    uint32_t index = 0;
+    for (;;)
+    {
+        TimeStamp ts;
+
+        StringBuf depotPath;
+        if (index)
+            depotPath = TempString("{}{}{}.{}", directoryDepotPath, coreName, index, ext);
+        else 
+            depotPath = TempString("{}{}.{}", directoryDepotPath, coreName, ext);
+
+        if (!queryFileTimestamp(depotPath, ts))
+        {
+            outFoundFileDepotPath = depotPath;
+            return true;
+        }
+    }
 }
 
 //--
@@ -290,11 +348,13 @@ public:
     }
 };
 
-app::ServiceInitializationResult DepotService::onInitializeService(const app::CommandLine& cmdLine)
+bool DepotService::onInitializeService(const CommandLine& cmdLine)
 {
     const auto engineDir = SystemPath(PathCategory::EngineDir);
 
     DepotErrorCapture err;
+
+    bool observe = true;
 
     {
         auto& depot = m_depots[(int)DepotType::Engine];
@@ -302,7 +362,7 @@ app::ServiceInitializationResult DepotService::onInitializeService(const app::Co
         TRACE_INFO("Engine depot directory: '{}'", depot.absolutePath);
 
         depot.prefix = "/engine/";
-        depot.structure = new DepotStructure(depot.absolutePath);
+        depot.structure = new DepotStructure(depot.absolutePath, observe);
         depot.structure->scan(err);
     }
 
@@ -316,11 +376,11 @@ app::ServiceInitializationResult DepotService::onInitializeService(const app::Co
         TRACE_INFO("Project depot directory: '{}'", depot.absolutePath);
 
         depot.prefix = "/project/";
-        depot.structure = new DepotStructure(depot.absolutePath);
+        depot.structure = new DepotStructure(depot.absolutePath, observe);
         depot.structure->scan(err);
     }
 
-    return app::ServiceInitializationResult::Finished;
+    return true;
 }
 
 void DepotService::onShutdownService()
@@ -336,7 +396,46 @@ void DepotService::onShutdownService()
 
 void DepotService::onSyncUpdate()
 {
-    // TODO: process updates
+    InplaceArray<DepotStructure::Event, 50> events;
+
+    // update the in-memory depot structure
+    DepotErrorCapture err;
+    for (auto& depot : m_depots)
+    {
+        if (depot.structure)
+            depot.structure->update(depot.prefix, events, err);
+    }
+
+    // send events to listeners
+    for (const auto& evt : events)
+    {
+        switch (evt.type)
+        {
+            case DepotStructure::EventType::FileAdded:
+            {
+                DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_FILE_ADDED, evt.depotPath);
+                break;
+            }
+
+            case DepotStructure::EventType::FileRemoved:
+            {
+                DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_FILE_REMOVED, evt.depotPath);
+                break;
+            }
+
+            case DepotStructure::EventType::DirectoryAdded:
+            {
+                DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_DIRECTORY_ADDED, evt.depotPath);
+                break;
+            }
+
+            case DepotStructure::EventType::DirectoryRemoved:
+            {
+                DispatchGlobalEvent(m_eventKey, EVENT_DEPOT_DIRECTORY_REMOVED, evt.depotPath);
+                break;
+            }
+        }
+    }
 }
 
 //--
@@ -592,6 +691,68 @@ bool DepotService::resolveIDForPath(StringView depotPath, ResourceID& outID) con
 }
 
 //--
+
+bool DepotService::createFile(StringView depotPath, const IResource* data, ResourceID& id) const
+{
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid depot path", false);
+    DEBUG_CHECK_RETURN_EX_V(data, "Invalid resoruce to save", false);
+
+    // determine load extension for the resource
+    const auto resourceExtension = IResource::FILE_EXTENSION; // for now
+
+    // load and update existing metadata or create new one
+    bool canUseExistingID = false;
+    const auto metadataPath = ReplaceExtension(depotPath, ResourceMetadata::FILE_EXTENSION);
+    auto metadata = loadFileToXMLObject<ResourceMetadata>(metadataPath);
+    if (metadata)
+    {
+        // we can use existing ID only if file is of similar type
+        if (!metadata->resourceClassType || !data->is(metadata->resourceClassType))
+            canUseExistingID = false;
+
+        // reset crap
+        metadata->internalRevision += 1;
+        metadata->importerClassType = nullptr;
+        metadata->importerClassVersion = 0;
+        metadata->importFullConfiguration = nullptr;
+        metadata->importUserConfiguration = nullptr;
+        metadata->importBaseConfiguration = nullptr;
+        metadata->importDependencies.clear();
+    }
+    else
+    {
+        metadata = RefNew<ResourceMetadata>();
+    }
+
+    // set new data
+    metadata->resourceClassType = data->cls().cast<IResource>();
+    metadata->resourceClassVersion = data->cls()->findMetadataRef<ResourceDataVersionMetadata>().version();
+    metadata->loadExtension = StringBuf(resourceExtension); // for now
+
+    // get/set resource ID
+    if (id)
+    {
+        metadata->ids.clear();
+        metadata->ids.pushBack(id);
+    }
+    else if (metadata->ids.empty() || !canUseExistingID)
+    {
+        id = ResourceID::Create();
+        metadata->ids.pushBack(id);
+    }
+    else
+    {
+        id = metadata->ids[0];
+    }
+
+    // save metadata
+    if (!saveFileFromXMLObject(metadataPath, metadata))
+        return false;
+
+    // save resource data
+    const auto resourcePath = ReplaceExtension(depotPath, resourceExtension);
+    return saveFileFromResource(resourcePath, data);
+}
 
 END_BOOMER_NAMESPACE()
 

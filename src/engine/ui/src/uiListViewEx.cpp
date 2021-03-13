@@ -62,8 +62,10 @@ void ListViewEx::rebuildDisplayList()
     m_displayList.reset();
 
     for (auto* item : m_viewItems)
-        if (item->item->handleItemFilter(m_filter))
+        if (item->item->handleItemFilter(this, m_filter))
             m_displayList.pushBack(item);
+
+    sortViewItems(m_displayList);
 
     for (auto* item : m_staticElements)
         m_displayList.pushBack(item);
@@ -87,7 +89,20 @@ void ListViewEx::addItem(IListItem* item)
     DEBUG_CHECK_RETURN_EX(item, "Invalid item");
     DEBUG_CHECK_RETURN_EX(item->m_view.unsafe() == nullptr, "Item already in a list");
 
-    internalAddItem(item);
+    if (auto* viewItem = internalAddItem(item))
+    {
+        if (item->handleItemFilter(this, m_filter))
+        {
+            if (m_sortingColumnIndex == -1)
+            {
+                m_displayList.pushBack(viewItem);
+            }
+            else
+            {
+                invalidateDisplayList();
+            }
+        }
+    }
 }
 
 void ListViewEx::removeItem(IListItem* item)

@@ -38,8 +38,7 @@ bool ShowInputBox(IElement* owner, const InputBoxSetup& setup, StringBuf& inOutT
     window->layoutVertical();
 
     auto windowRef = window.get();
-    window->actions().bindCommand("Cancel"_id) = [windowRef]() { windowRef->requestClose(0); };
-    window->actions().bindShortcut("Cancel"_id, "Escape");
+    window->bindShortcut("Escape") = [windowRef]() { windowRef->requestClose(0); };
 
     if (setup.m_message)
         window->createChild<TextLabel>(setup.m_message);

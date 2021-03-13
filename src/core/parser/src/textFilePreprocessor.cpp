@@ -1,4 +1,4 @@
-/***
+﻿/***
 * Boomer Engine v4
 * Written by Tomasz Jonarski (RexDex)
 * Source code licensed under LGPL 3.0 license
@@ -84,7 +84,7 @@ bool TextFilePreprocessor::defineSymbol(StringView name, StringView value)
     macro->m_replacement = std::move(replacements);
     macro->m_values.pushBack(valueStr);
 
-    TRACE_DEEP("Defined '{}' = '{}'", name, macro->m_replacement);
+    TRACE_INFO("Defined '{}' = '{}'", name, macro->m_replacement);
     return true;
 }
 
@@ -680,22 +680,324 @@ TextFilePreprocessor::MacroDefinition* TextFilePreprocessor::createDefine(String
     return ret;
 }
 
+
+const TextFilePreprocessor::ExprElement& TextFilePreprocessor::ExprStack::operator[](int index) const
+{
+    static TextFilePreprocessor::ExprElement theEmptyToken;
+    if (index < 0 || index > tokens.lastValidIndex())
+        return theEmptyToken;
+    return tokens[index];
+}
+
+void TextFilePreprocessor::ExprStack::pop(int count)
+{
+    for (int i = 0; i < count; ++i)
+        tokens.popBack();
+}
+
+void TextFilePreprocessor::ExprStack::shiftToken(const Token* token)
+{
+    auto& entry = tokens.emplaceBack();
+    if (token->isInteger())
+    {
+        entry.text = "<num>";
+        entry.value = (int)token->floatNumber();
+    }
+    else
+    {
+        entry.text = token->view();
+        entry.value = 0;
+    }
+}
+
+void TextFilePreprocessor::ExprStack::shiftNumber(int num)
+{
+    auto& entry = tokens.emplaceBack();
+    entry.text = "<num>";
+    entry.value = num;
+}
+
+/*
+* 1	++ --	Suffix/postfix increment and decrement	Left-to-right
+()	Function call
+[]	Array subscripting
+.	Structure and union member access
+->	Structure and union member access through pointer
+(type){list}	Compound literal(C99)
+2	++ --	Prefix increment and decrement[note 1]	Right-to-left
++ -	Unary plus and minus
+! ~	Logical NOT and bitwise NOT
+(type)	Cast
+*	Indirection (dereference)
+&	Address-of
+sizeof	Size-of[note 2]
+_Alignof	Alignment requirement(C11)
+3	* / %	Multiplication, division, and remainder	Left-to-right
+4	+ -	Addition and subtraction
+5	<< >>	Bitwise left shift and right shift
+6	< <=	For relational operators < and ≤ respectively
+> >=	For relational operators > and ≥ respectively
+7	== !=	For relational = and ≠ respectively
+8	&	Bitwise AND
+9	^	Bitwise XOR (exclusive or)
+10	|	Bitwise OR (inclusive or)
+11	&&	Logical AND
+12	||	Logical OR
+13	?:	Ternary conditional[note 3]	Right-to-left
+14[note 4]	=	Simple assignment
++= -=	Assignment by sum and difference
+*= /= %=	Assignment by product, quotient, and remainder
+<<= >>=	Assignment by bitwise left shift and right shift
+&= ^= |=	Assignment by bitwise AND, XOR, and OR
+15	,	Comma
+*/
+
+int TextFilePreprocessor::ExprElement::precedence() const
+{
+    if (text == "*" || text == "/" || text == "%")
+        return 0;
+    if (text == "+" || text == "-")
+        return 1;
+    if (text == "<<" || text == ">>")
+        return 2;
+    if (text == "<" || text == "<=")
+        return 3;
+    if (text == ">" || text == ">=")
+        return 4;
+    if (text == "==" || text == "!=")
+        return 5;
+    if (text == "&")
+        return 6;
+    if (text == "^")
+        return 7;
+    if (text == "|")
+        return 8;
+    if (text == "&&")
+        return 9;
+    if (text == "||")
+        return 10;
+    return -1;
+}
+
+bool TextFilePreprocessor::evaluateExpressionRecursive_Reduce(const Location& loc, ExprStack& stack, int top)
+{
+    if (stack[top - 3].text == "defined" 
+        && stack[top - 2].text == "("
+        && stack[top - 0].text == ")")
+    {
+        auto id = stack[top - 1];
+        stack.pop(4);
+
+        if (id.text == "<num>")
+        { 
+            stack.shiftNumber(1);
+        }
+        else
+        {
+            auto val = m_defineMap.contains(id.text);
+            stack.shiftNumber(val ? 1 : 0);
+        }
+        return true;
+    }
+
+    if (stack[top - 2].text == "(" && stack[top - 0].text == ")")
+    {
+        auto center = stack[top - 1];
+        stack.pop(3);
+        stack.tokens.pushBack(center);
+        return true;
+    }
+
+    if (stack[top - 2].text == "<num>" && stack[top - 0].text == "<num>")
+    {
+        auto a = stack[top - 2].value;
+        auto b = stack[top - 2].value;
+
+        auto op = stack[top - 1].text;
+
+        const int VAL_TRUE = 1;
+        const int VAL_FALSE = 0;
+
+        auto curP = stack[top - 1].precedence();
+        auto laP = stack[top + 1].precedence();
+        if (curP <= laP)
+        {
+            if (op == "+")
+            {
+                stack.pop(3);
+                stack.shiftNumber(a + b);
+                return true;
+            }
+            else if (op == "-")
+            {
+                stack.pop(3);
+                stack.shiftNumber(a - b);
+                return true;
+            }
+            else if (op == "*")
+            {
+                stack.pop(3);
+                stack.shiftNumber(a * b);
+                return true;
+            }
+            else if (op == "/")
+            {
+                if (b == 0)
+                {
+                    m_errorHandler.reportError(loc, "Division by zero");
+                    b = VAL_TRUE;
+                }
+                stack.pop(3);
+                stack.shiftNumber(a / b);
+                return true;
+            }
+            else if (op == "%")
+            {
+                if (b == 0)
+                {
+                    m_errorHandler.reportError(loc, "Division by zero");
+                    b = VAL_TRUE;
+                }
+                stack.pop(3);
+                stack.shiftNumber(a % b);
+                return true;
+            }
+            else if (op == "|")
+            {
+                stack.pop(3);
+                stack.shiftNumber(a | b);
+                return true;
+            }
+            else if (op == "&")
+            {
+                stack.pop(3);
+                stack.shiftNumber(a & b);
+                return true;
+            }
+            else if (op == "^")
+            {
+                stack.pop(3);
+                stack.shiftNumber(a ^ b);
+                return true;
+            }
+            else if (op == "&&")
+            {
+                stack.pop(3);
+                stack.shiftNumber((a != VAL_FALSE) && (b != VAL_FALSE) ? VAL_TRUE : VAL_FALSE);
+                return true;
+            }
+            else if (op == "||")
+            {
+                stack.pop(3);
+                stack.shiftNumber((a != VAL_FALSE) || (b != VAL_FALSE) ? VAL_TRUE : VAL_FALSE);
+                return true;
+            }
+            else if (op == "<")
+            {
+                stack.pop(3);
+                stack.shiftNumber(a < b ? VAL_TRUE : VAL_FALSE);
+                return true;
+            }
+            else if (op == "<=")
+            {
+                stack.pop(3);
+                stack.shiftNumber(a <= b ? VAL_TRUE : VAL_FALSE);
+                return true;
+            }
+            else if (op == ">")
+            {
+                stack.pop(3);
+                stack.shiftNumber(a > b ? VAL_TRUE : VAL_FALSE);
+                return true;
+            }
+            else if (op == ">=")
+            {
+                stack.pop(3);
+                stack.shiftNumber(a >= b ? VAL_TRUE : VAL_FALSE);
+                return true;
+            }
+            else if (op == "==")
+            {
+                stack.pop(3);
+                stack.shiftNumber(a == b ? VAL_TRUE : VAL_FALSE);
+                return true;
+            }
+            else if (op == "!=")
+            {
+                stack.pop(3);
+                stack.shiftNumber(a != b ? VAL_TRUE : VAL_FALSE);
+                return true;
+            }
+        }
+    }
+
+    if (stack[top - 0].text == "<num>")
+    {
+        auto a = stack[top].value;
+
+        auto op = stack[top - 1].text;
+        if (op == "-")
+        {
+            stack.pop(2);
+            stack.shiftNumber(-a);
+            return true;
+        }
+        else if (op == "~")
+        {
+            stack.pop(2);
+            stack.shiftNumber(~a);
+            return true;
+        }
+        else if (op == "!")
+        {
+            stack.pop(2);
+            stack.shiftNumber(a ? 0 : 1);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool TextFilePreprocessor::evaluateExpression(TokenList& list, bool& result)
 {
     if (list.empty())
         return false;
 
-    auto cur = list.head();
-    if (!cur->isInteger())
+    const auto loc = list.head()->location();
+
+    // shift/reduce
+    ExprStack stack;
+    for (;;)
     {
-        m_errorHandler.reportError(cur->location(), TempString("preprocessor expression can only work on integers"));
+        // try to reduce
+        if (evaluateExpressionRecursive_Reduce(loc, stack, stack.tokens.size() - 1))
+            continue;
+
+        // we could not reduce anything and there's nothing more to push
+        if (list.empty())
+            break;
+
+        // push
+        const auto* cur = list.popFront();
+        stack.shiftToken(cur);
+    }
+
+    // something off
+    if (stack.tokens.size() != 1)
+    {
+        m_errorHandler.reportError(loc, TempString("unable to evaluate preprocessor expression"));
         return false;
     }
 
-    int value = 0;
-    cur->view().match(value);
+    // something off
+    if (stack.tokens[0].text != "<num>")
+    {
+        m_errorHandler.reportError(loc, TempString("preprocessor expression is not numerical"));
+        return false;
+    }
 
-    result = value != 0;;
+    result = stack.tokens[0].value != 0;
     return true;
 }
 

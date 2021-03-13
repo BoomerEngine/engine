@@ -21,9 +21,9 @@ struct CanvasRenderStates;
 //--
 
 /// canvas data/rendering service
-class ENGINE_CANVAS_API CanvasService : public app::ILocalService
+class ENGINE_CANVAS_API CanvasService : public IService
 {
-	RTTI_DECLARE_VIRTUAL_CLASS(CanvasService, app::ILocalService);
+	RTTI_DECLARE_VIRTUAL_CLASS(CanvasService, IService);
 	RTTI_DECLARE_POOL(POOL_CANVAS);
 
 public:
@@ -48,7 +48,7 @@ public:
 private:
 	static const uint32_t MAX_ATLASES = 64;
 
-	virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
+	virtual bool onInitializeService(const CommandLine& cmdLine) override final;
 	virtual void onShutdownService() override final;
 	virtual void onSyncUpdate() override final;
 

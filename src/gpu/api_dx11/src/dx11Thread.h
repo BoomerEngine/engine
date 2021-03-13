@@ -40,11 +40,11 @@ public:
 	virtual IBaseSampler* createOptimalSampler(const SamplerState& state) override final;
 	virtual IBaseShaders* createOptimalShaders(const ShaderData* data) override final;
 
-	virtual IBaseObjectCache* createOptimalObjectCache(const app::CommandLine& cmdLine) override final;
+	virtual IBaseObjectCache* createOptimalObjectCache(const CommandLine& cmdLine) override final;
 
-	virtual IBaseBackgroundQueue* createOptimalBackgroundQueue(const app::CommandLine& cmdLine) override final;
+	virtual IBaseBackgroundQueue* createOptimalBackgroundQueue(const CommandLine& cmdLine) override final;
 
-	virtual ObjectRegistry* createOptimalObjectRegistry(const app::CommandLine& cmdLine) override final;
+	virtual ObjectRegistry* createOptimalObjectRegistry(const CommandLine& cmdLine) override final;
 
 	//--
 
@@ -70,7 +70,7 @@ private:
 
 	//--
 
-	virtual bool threadStartup(const app::CommandLine& cmdLine, DeviceCaps& outCaps) override final;
+	virtual bool threadStartup(const CommandLine& cmdLine, DeviceCaps& outCaps) override final;
 	virtual void threadFinish() override final;
 
 	virtual void insertGpuFrameFence_Thread(uint64_t frameIndex) override final;

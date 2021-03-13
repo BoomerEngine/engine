@@ -21,12 +21,12 @@ BEGIN_BOOMER_NAMESPACE()
 
 
 RTTI_BEGIN_TYPE_CLASS(CommandFingerprint);
-RTTI_METADATA(app::CommandNameMetadata).name("fingerprint");
+RTTI_METADATA(CommandNameMetadata).name("fingerprint");
 RTTI_END_TYPE();
 
 //--
 
-bool CommandFingerprint::run(IProgressTracker* progress, const app::CommandLine& commandline)
+bool CommandFingerprint::run(IProgressTracker* progress, const CommandLine& commandline)
 {
     // find the source asset service - we need it to have access to source assets
     auto fingerprintService = GetService<SourceAssetFingerprintService>();

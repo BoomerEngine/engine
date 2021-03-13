@@ -27,12 +27,12 @@ BEGIN_BOOMER_NAMESPACE()
 //--
 
 RTTI_BEGIN_TYPE_CLASS(CommandCook);
-    RTTI_METADATA(app::CommandNameMetadata).name("cook");
+    RTTI_METADATA(CommandNameMetadata).name("cook");
 RTTI_END_TYPE();
 
 //--
 
-bool CommandCook::run(IProgressTracker* progress, const app::CommandLine& commandline)
+bool CommandCook::run(IProgressTracker* progress, const CommandLine& commandline)
 {
     m_outputDir = commandline.singleValue("outDir");
     if (m_outputDir.empty())

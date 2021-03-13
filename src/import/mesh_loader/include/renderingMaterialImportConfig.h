@@ -74,10 +74,6 @@ public:
     StringBuf m_postfixMetallic;
     StringBuf m_postfixAmbientOcclusion;
     StringBuf m_postfixMetallicAOSpecularSmoothness;
-
-    //--
-
-    virtual void computeConfigurationKey(CRC64& crc) const override;
 };
 
 //---

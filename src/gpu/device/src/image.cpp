@@ -117,7 +117,7 @@ uint32_t ImageObject::calcMemorySize() const
     return numPixels * GetImageFormatInfo(m_key.format).bitsPerPixel / 8;
 }
 
-bool ImageObject::validateSampledView(uint32_t firstMip, uint32_t numMips, uint32_t firstSlice, uint32_t numSlices, ImageSampledView::Setup& outSetup) const
+bool ImageObject::validateSampledView(ImageViewType viewType, uint32_t firstMip, uint32_t numMips, uint32_t firstSlice, uint32_t numSlices, ImageSampledView::Setup& outSetup) const
 {
     if (numMips == INDEX_MAX)
         numMips = mips() - firstMip;
@@ -138,6 +138,7 @@ bool ImageObject::validateSampledView(uint32_t firstMip, uint32_t numMips, uint3
     outSetup.firstSlice = firstSlice;
     outSetup.numMips = numMips;
     outSetup.numSlices = numSlices;
+    outSetup.viewType = viewType;
 
     return true;
 }
@@ -240,6 +241,7 @@ ImageSampledView::ImageSampledView(ObjectID viewId, ImageObject* img, IDeviceObj
 	, m_firstSlice(setup.firstSlice)
 	, m_numMips(setup.numMips)
 	, m_numSlices(setup.numSlices)
+    , m_imageViewType(setup.viewType)
 {
 	m_width = std::max<uint32_t>(1, img->width() >> setup.firstMip);
 	m_height = std::max<uint32_t>(1, img->height() >> setup.firstMip);

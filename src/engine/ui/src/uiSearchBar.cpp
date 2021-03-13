@@ -13,6 +13,7 @@
 #include "uiTextLabel.h"
 #include "uiInputAction.h"
 #include "uiItemView.h"
+#include "uiCollectionView.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 
@@ -109,6 +110,17 @@ SearchBar::SearchBar(bool extendedSearchParams)
         m_timer.startOneShot(0.1f);
     };
 
+
+    {
+        m_flagClear = createChild<Button>("[img:cross]", ButtonMode{ ButtonModeBit::EventOnClickRelease, ButtonModeBit::Toggle, ButtonModeBit::AutoToggle });
+        m_flagClear->customVerticalAligment(ElementVerticalLayout::Middle);
+        m_flagClear->visibility(false);
+        m_flagClear->bind(EVENT_CLICKED) = [this]()
+        {
+            clearSearchPattern();
+        };
+    }
+
     {
         m_flagCaseSensitive = createChild<Button>("Aa", ButtonMode{ ButtonModeBit::EventOnClickRelease, ButtonModeBit::Toggle, ButtonModeBit::AutoToggle });
         m_flagCaseSensitive->customVerticalAligment(ElementVerticalLayout::Middle);
@@ -156,7 +168,7 @@ IElement* SearchBar::focusFindFirst()
     return m_text;
 }
 
-void SearchBar::bindItemView(ItemView* ptr)
+void SearchBar::bindItemView(ICollectionView* ptr)
 {
     if (auto view = m_itemView.lock())
         view->bindInputPropagationElement(nullptr);
@@ -196,6 +208,15 @@ static bool IsWidcardPattern(StringView txt)
     return false;
 }
 
+void SearchBar::clearSearchPattern()
+{
+    if (m_currentSearchPattern.pattern)
+    {
+        m_currentSearchPattern.pattern = "";
+        updateSearchPattern();
+    }
+}
+
 void SearchBar::updateSearchPattern()
 {
     m_currentSearchPattern.pattern = m_text->text();
@@ -204,6 +225,8 @@ void SearchBar::updateSearchPattern()
     m_currentSearchPattern.caseSenitive = m_flagCaseSensitive->toggled();
     m_currentSearchPattern.regex = m_flagRegEx ? m_flagRegEx->toggled() : false;
     m_currentSearchPattern.wholeWordsOnly = m_flagWholeWords ? m_flagWholeWords->toggled() : false;
+
+    m_flagClear->visibility(!m_currentSearchPattern.pattern.empty());
 
     if (auto view = m_itemView.lock())
         view->filter(m_currentSearchPattern);

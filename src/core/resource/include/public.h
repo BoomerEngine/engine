@@ -19,13 +19,6 @@ typedef RefWeakPtr<ObjectIndirectTemplate> ObjectIndirectTemplateWeakPtr;
 
 //--
 
-DECLARE_GLOBAL_EVENT(EVENT_DEPOT_FILE_CHANGED, StringBuf)
-DECLARE_GLOBAL_EVENT(EVENT_DEPOT_FILE_ADDED, StringBuf)
-DECLARE_GLOBAL_EVENT(EVENT_DEPOT_FILE_REMOVED, StringBuf)
-DECLARE_GLOBAL_EVENT(EVENT_DEPOT_FILE_RELOADED, StringBuf)
-DECLARE_GLOBAL_EVENT(EVENT_DEPOT_DIRECTORY_ADDED, StringBuf)
-DECLARE_GLOBAL_EVENT(EVENT_DEPOT_DIRECTORY_REMOVED, StringBuf)
-
 enum class DepotType : uint8_t
 {
     Engine = 0,
@@ -34,6 +27,7 @@ enum class DepotType : uint8_t
 
 class DepotService;
 class DepotStructure;
+struct DepotPathAppendBuffer;
 
 //--
 
@@ -124,6 +118,30 @@ extern CORE_RESOURCE_API Buffer SaveObjectToBuffer(const IObject* object);
 
 // load object from binary buffer
 extern CORE_RESOURCE_API ObjectPtr LoadObjectFromBuffer(const void* data, uint64_t size, bool loadImports=false);
+
+//--
+
+/// load a valid resource reference from a depot path
+extern CORE_RESOURCE_API BaseReference LoadResourceRef(StringView depotPath, ClassType cls);
+
+/// check if depot file can be loaded into given class
+template< typename T >
+INLINE ResourceRef<T> LoadResourceRef(StringView depotPath)
+{
+    const auto ref = LoadResourceRef(depotPath, T::GetStaticClass());
+    return *(const ResourceRef<T>*) & ref;
+}
+
+/// build a valid async resource reference from a depot path
+extern CORE_RESOURCE_API BaseAsyncReference BuildAsyncResourceRef(StringView depotPath, ClassType cls);
+
+/// check if depot file can be loaded into given class
+template< typename T >
+INLINE ResourceAsyncRef<T> BuildAsyncResourceRef(StringView depotPath)
+{
+    const auto ref = BuildAsyncResourceRef(depotPath, T::GetStaticClass());
+    return *(const ResourceAsyncRef<T>*) & ref;
+}
 
 //--
 

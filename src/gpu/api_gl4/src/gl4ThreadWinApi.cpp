@@ -85,7 +85,7 @@ ThreadWinApi::~ThreadWinApi()
 {
 }
 
-bool ThreadWinApi::threadStartup(const app::CommandLine& cmdLine, DeviceCaps& outCaps)
+bool ThreadWinApi::threadStartup(const CommandLine& cmdLine, DeviceCaps& outCaps)
 {
 	// get the handle to dummy window
 	m_hFakeHWND = (HWND)m_windows->offscreenWindow();
@@ -322,7 +322,7 @@ ThreadSharedContextWinApi* ThreadWinApi::createSharedContext()
 	return nullptr;
 }
 					
-IBaseBackgroundQueue* ThreadWinApi::createOptimalBackgroundQueue(const app::CommandLine& cmdLine)
+IBaseBackgroundQueue* ThreadWinApi::createOptimalBackgroundQueue(const CommandLine& cmdLine)
 {
 	return new BackgroundQueueWinApi(this);
 }

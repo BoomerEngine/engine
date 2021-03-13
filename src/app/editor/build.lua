@@ -12,4 +12,7 @@ Dependency("import_*")
 --Dependency("editor_*")
 Dependency("editor_common")
 Dependency("editor_viewport")
+Dependency("editor_image_editor")
+Dependency("editor_material_editor")
+Dependency("editor_mesh_editor")
 

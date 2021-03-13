@@ -15,15 +15,28 @@ BEGIN_BOOMER_NAMESPACE()
 
 //---
 
+// depot file/directory event (something added/remove)
+DECLARE_GLOBAL_EVENT(EVENT_DEPOT_FILE_CHANGED, StringBuf)
+DECLARE_GLOBAL_EVENT(EVENT_DEPOT_FILE_ADDED, StringBuf)
+DECLARE_GLOBAL_EVENT(EVENT_DEPOT_FILE_REMOVED, StringBuf)
+DECLARE_GLOBAL_EVENT(EVENT_DEPOT_FILE_RELOADED, StringBuf)
+DECLARE_GLOBAL_EVENT(EVENT_DEPOT_DIRECTORY_ADDED, StringBuf)
+DECLARE_GLOBAL_EVENT(EVENT_DEPOT_DIRECTORY_REMOVED, StringBuf)
+
+//---
+
 /// depot data service
-class CORE_RESOURCE_API DepotService : public app::ILocalService
+class CORE_RESOURCE_API DepotService : public IService
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(DepotService, app::ILocalService);
+    RTTI_DECLARE_VIRTUAL_CLASS(DepotService, IService);
 
 public:
     DepotService();
 
     //--
+
+    /// check if given physical file exists
+    bool fileExists(StringView depotPath) const;
 
     /// get mount path for given depot, can be empty if depot was not mounted (especially project)
     StringBuf queryDepotAbsolutePath(DepotType type) const;
@@ -62,8 +75,19 @@ public:
 
     //--
 
+    /// create all missing depot directories in a path
+    bool createDirectories(StringView depotPath) const;
+
+    /// remove directory, must be empty (for safety.., imagine a bug that deletes C:\)
+    bool removeDirectory(StringView depotPath) const;
+
+    //--
+
     // find file in depot
     bool findFile(StringView depotPath, StringView fileName, uint32_t maxDepth, StringBuf& outFoundFileDepotPath) const;
+
+    // find unique file name in directory (finds a name that does not exist yet)
+    bool findUniqueFileName(StringView directoryDepotPath, StringView coreName, StringBuf& outFoundFileDepotPath) const;
 
     //--
 
@@ -86,6 +110,15 @@ public:
         return loadFileToXMLObject(depotPath, *(ObjectPtr*) &outObject, T::GetStaticClass(), timestamp);
     }
 
+    // load content directly (via simple XML serialization)
+    template< typename T >
+    INLINE RefPtr<T> loadFileToXMLObject(StringView depotPath) const
+    {
+        RefPtr<T> ret;
+        loadFileToXMLObject(depotPath, ret);
+        return ret;
+    }
+
     // load a resource directly (uncached)
     bool loadFileToResource(StringView depotPath, ResourcePtr& outResource, ResourceClass expectedClass = nullptr, bool loadImports = true, TimeStamp* timestamp = nullptr) const;
 
@@ -94,6 +127,16 @@ public:
     INLINE bool loadFileToResource(StringView depotPath, RefPtr<T>& outObject, bool loadImports = true, TimeStamp* timestamp = nullptr) const
     {
         return loadFileToResource(depotPath, *(ResourcePtr*)&outObject, T::GetStaticClass(), loadImports, timestamp);
+    }
+
+
+    // load a resource directly (uncached)
+    template< typename T >
+    INLINE RefPtr<T> loadFileToResource(StringView depotPath, bool loadImports = true) const
+    {
+        RefPtr<T> ptr;
+        loadFileToResource(depotPath, ptr, loadImports);
+        return ptr;
     }
 
     //--
@@ -130,6 +173,11 @@ public:
 
     //--
 
+    // save resource and metadata for a new file, if ID is not given it's generated
+    bool createFile(StringView depotPath, const IResource* data, ResourceID& id) const;
+
+    //--
+
 private:
     struct DepotInfo
     {
@@ -144,7 +192,7 @@ private:
 
     //--
 
-    virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
+    virtual bool onInitializeService(const CommandLine& cmdLine) override final;
     virtual void onShutdownService() override final;
     virtual void onSyncUpdate() override final;
 };

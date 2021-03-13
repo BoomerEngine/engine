@@ -12,9 +12,9 @@ BEGIN_BOOMER_NAMESPACE()
 //---
 
 /// container for global "debug pages" that are rendered using ImGui
-class ENGINE_IMGUI_API DebugPageService : public app::ILocalService
+class ENGINE_IMGUI_API DebugPageService : public IService
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(DebugPageService, app::ILocalService);
+    RTTI_DECLARE_VIRTUAL_CLASS(DebugPageService, IService);
 
 public:
     DebugPageService();
@@ -51,7 +51,7 @@ private:
 
     //--
 
-    virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
+    virtual bool onInitializeService(const CommandLine& cmdLine) override final;
     virtual void onShutdownService() override final;
     virtual void onSyncUpdate() override final;
 

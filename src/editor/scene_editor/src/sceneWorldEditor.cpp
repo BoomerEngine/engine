@@ -288,7 +288,7 @@ class SceneWorldResourceEditorOpener : public IResourceEditorOpener
     RTTI_DECLARE_VIRTUAL_CLASS(SceneWorldResourceEditorOpener, IResourceEditorOpener);
 
 public:
-    virtual bool canOpen(const ManagedFileFormat& format) const override
+    virtual bool canOpen(const AssetFormat& format) const override
     {
         return format.nativeResourceClass() == RawScene::GetStaticClass();
     }

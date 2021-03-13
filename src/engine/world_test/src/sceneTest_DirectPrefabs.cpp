@@ -56,7 +56,7 @@ public:
     {
         PrefabBuilder prefabBuilder;
 
-        if (auto mesh = loadMesh("/engine/meshes/cube.v4mesh"))
+        if (auto mesh = loadMesh("/engine/meshes/cube.xfile"))
         {
             EulerTransform placement;
             placement.T = Vector3(0,0,0);
@@ -83,13 +83,13 @@ public:
     {
         PrefabBuilder prefabBuilder;
 
-        if (auto mesh = loadMesh("/engine/meshes/cube.v4mesh"))
+        if (auto mesh = loadMesh("/engine/meshes/cube.xfile"))
         {
             EulerTransform placement;
             placement.T = Vector3(0,0,0);
             int parent = prefabBuilder.addNode(PrefabBuilder::BuildMeshNode(mesh, placement));
 
-            if (auto mesh = loadMesh("/engine/meshes/sphere.v4mesh"))
+            if (auto mesh = loadMesh("/engine/meshes/sphere.xfile"))
             {
                 EulerTransform placement;
                 placement.T = Vector3(0, 0, 1.0f);
@@ -114,7 +114,7 @@ public:
 
     virtual void createWorldContent() override
     {
-        PlaneGround ground(m_world, loadMesh("/engine/meshes/plane.v4mesh"));
+        PlaneGround ground(m_world, loadMesh("/engine/meshes/plane.xfile"));
 
         const auto prefab = selectPrefab();
 

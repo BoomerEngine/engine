@@ -10,23 +10,23 @@
 
 #include "core/containers/include/hashMap.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(config)
+BEGIN_BOOMER_NAMESPACE()
 
 ///----
 
 /// storage entry for a group of configuration variables
 /// NOTE: once created exists till deletion of the ConfigStorage (but may be empty)
 /// NOTE: the ConfigGroup objects owned by the config system are ETERNAL can be held onto by a pointer
-class CORE_CONFIG_API Group : public NoCopy
+class CORE_CONFIG_API ConfigGroup : public NoCopy
 {
     RTTI_DECLARE_POOL(POOL_CONFIG)
 
 public:
-    Group(Storage* storage, const StringBuf& name);
-    ~Group();
+    ConfigGroup(ConfigStorage* storage, const StringBuf& name);
+    ~ConfigGroup();
 
     /// get the owning storage
-    INLINE Storage* storage() const { return m_storage; }
+    INLINE ConfigStorage* storage() const { return m_storage; }
 
     /// get name of the group
     INLINE const StringBuf& name() const { return m_name; }
@@ -35,7 +35,7 @@ public:
     INLINE bool empty() const { return m_entries.empty(); }
 
     /// get all entries
-    INLINE const Array<Entry*>& entries() const { return m_entries.values(); }
+    INLINE const Array<ConfigEntry*>& entries() const { return m_entries.values(); }
 
     //--
 
@@ -43,13 +43,13 @@ public:
     bool clear();
 
     /// get entry for given name, does not create one if not found
-    const Entry* findEntry(StringView name) const;
+    const ConfigEntry* findEntry(StringView name) const;
 
     /// remove entry from group (clears all data for the entry)
     bool removeEntry(StringView name);
 
     /// get entry for given name, creates and empty entry if not found
-    Entry& entry(StringView name);
+    ConfigEntry& entry(StringView name);
 
     /// get value of entry
     StringBuf entryValue(StringView name, const StringBuf& defaultValue = StringBuf::EMPTY()) const;
@@ -57,19 +57,19 @@ public:
     //--
 
     // save group difference
-    static void SaveDiff(IFormatStream& f, const Group& cur, const Group& base);
+    static void SaveDiff(IFormatStream& f, const ConfigGroup& cur, const ConfigGroup& base);
 
     // save group content
-    static void Save(IFormatStream& f, const Group& cur);
+    static void Save(IFormatStream& f, const ConfigGroup& cur);
 
 private:
-    friend class Entry;
+    friend class ConfigEntry;
 
-    const Entry* findEntry_NoLock(StringView name) const;
+    const ConfigEntry* findEntry_NoLock(StringView name) const;
 
-    Storage* m_storage;
+    ConfigStorage* m_storage;
     StringBuf m_name;
-    HashMap<StringBuf, Entry*> m_entries;
+    HashMap<StringBuf, ConfigEntry*> m_entries;
     SpinLock m_lock;
 
     void modified();
@@ -77,4 +77,4 @@ private:
 
 ///----
 
-END_BOOMER_NAMESPACE_EX(config)
+END_BOOMER_NAMESPACE()

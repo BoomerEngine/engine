@@ -47,15 +47,18 @@ public:
     //--
 
     // attach to item view (to pass keyboard events and filter settings)
-    void bindItemView(ItemView* ptr);
+    void bindItemView(ICollectionView* view);
 
     //--
+
+    void bindItemView(ItemView* ptr) {};
 
 private:
     EditBoxPtr m_text;
     ButtonPtr m_flagWholeWords;
     ButtonPtr m_flagCaseSensitive;
     ButtonPtr m_flagRegEx;
+    ButtonPtr m_flagClear;
     ButtonPtr m_showHistory;
     Timer m_timer;
 
@@ -66,11 +69,12 @@ private:
 
     //--
 
-    RefWeakPtr<ItemView> m_itemView;
+    RefWeakPtr<ICollectionView> m_itemView;
 
     //--
 
     void updateSearchPattern();
+    void clearSearchPattern();
 
     //--
 

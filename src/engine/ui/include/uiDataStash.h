@@ -62,7 +62,7 @@ protected:
 	RefPtr<canvas::DynamicAtlas> m_mainIconAtlas;
 
     HashMap<StringID, canvas::ImageEntry> m_imageMap;
-	HashMap<const image::Image*, canvas::ImageEntry> m_imagePtrMap;
+	HashMap<uint32_t, canvas::ImageEntry> m_imagePtrMap;
 
     Array<StringBuf> m_imageSearchPaths;
 

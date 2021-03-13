@@ -57,7 +57,12 @@ public:
 
     // visit all elements
     template< typename T >
-    INLINE void visit(const std::function<void(T*)>& func) const;
+    INLINE void iterate(const std::function<void(T*)>& func) const;
+
+    // collect all elements matching predicate
+    // NOTE: slow, use iterate when possible
+    template< typename T >
+    INLINE Array<RefPtr<T>> collect(const std::function<bool(T*)>& func = nullptr) const;
 
 private:
     virtual void internalAttachItem(ViewItem* item) override;
@@ -80,11 +85,23 @@ INLINE T* ListViewEx::find(const std::function<bool(T*)>& func) const
 }
 
 template< typename T >
-INLINE void ListViewEx::visit(const std::function<void(T*)>& func) const
+INLINE void ListViewEx::iterate(const std::function<void(T*)>& func) const
 {
     for (const auto* element : m_viewItems.keys())
         if (auto item = rtti_cast<T>(element->item.get()))
             func(item);
+}
+
+template< typename T >
+INLINE Array<RefPtr<T>> ListViewEx::collect(const std::function<bool(T*)>& func) const
+{
+    Array<RefPtr<T>> ret;
+    for (const auto* element : m_viewItems.keys())
+        if (auto item = rtti_cast<T>(element->item.get()))
+            if (!func || func(item))
+                ret.pushBack(AddRef(item));
+
+    return ret;
 }
 
 //---

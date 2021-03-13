@@ -69,6 +69,8 @@ public:
     // resolve texture to a image view that can be used in the rendering
     virtual gpu::ImageSampledViewPtr view() const = 0;
 
+    //--
+
 protected:
     TextureInfo m_info;
 };

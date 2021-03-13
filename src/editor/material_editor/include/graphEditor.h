@@ -8,8 +8,7 @@
 
 #pragma once
 
-#include "editor/common/include/resourceEditor.h"
-#include "editor/common/include/resourceEditorNativeFile.h"
+#include "editor/assets/include/resourceEditor.h"
 #include "engine/material/include/materialInstance.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
@@ -19,12 +18,12 @@ class MaterialParametersPanel;
 class MaterialPreviewPanel;
 
 /// editor for meshes
-class EDITOR_MATERIAL_EDITOR_API MaterialGraphEditor : public ResourceEditorNativeFile
+class EDITOR_MATERIAL_EDITOR_API MaterialGraphEditor : public ResourceEditor
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphEditor, ResourceEditorNativeFile);
+    RTTI_DECLARE_VIRTUAL_CLASS(MaterialGraphEditor, ResourceEditor);
 
 public:
-    MaterialGraphEditor(ManagedFileNativeResource* file);
+    MaterialGraphEditor(const ResourceInfo& info);
     virtual ~MaterialGraphEditor();
 
     //--
@@ -36,6 +35,8 @@ public:
     //--
 
 private:
+    GlobalEventTable m_events;
+
     RefPtr<MaterialGraph> m_graph;
     RefPtr<MaterialInstance> m_previewMaterial;
 
@@ -52,7 +53,6 @@ private:
     void createInterface();
     void handleChangedSelection();
 
-    virtual void handleContentModified() override;
     virtual void handleGeneralCopy() override;
     virtual void handleGeneralCut() override;
     virtual void handleGeneralPaste() override;
@@ -62,9 +62,6 @@ private:
     virtual bool checkGeneralCut() const override;
     virtual bool checkGeneralPaste() const override;
     virtual bool checkGeneralDelete() const override;
-
-    virtual bool initialize() override;
-    virtual bool save() override;
 };
 
 END_BOOMER_NAMESPACE_EX(ed)

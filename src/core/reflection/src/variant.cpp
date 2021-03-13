@@ -150,6 +150,12 @@ void Variant::suckFrom(Variant& other)
 #endif
     ASSERT_EX(!m_type, "Variant should be empty before initialization");
 
+    if (!other)
+    {
+        reset();
+        return;
+    }
+
     if (other.m_allocated)
     {
         m_allocated = true;

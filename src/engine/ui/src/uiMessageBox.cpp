@@ -92,18 +92,12 @@ MessageButton ShowMessageBox(IElement* owner, const MessageBoxSetup& setup)
     // close with Escape
     const auto escapeButton = DetermineEscapeButton(setup);
     if (escapeButton != MessageButton::None)
-    {
-        window->actions().bindCommand("Cancel"_id) = [windowRef, escapeButton]() { windowRef->requestClose((int)escapeButton); };
-        window->actions().bindShortcut("Cancel"_id, "Escape");
-    }
+        window->bindShortcut("ESC") = [windowRef, escapeButton]() { windowRef->requestClose((int)escapeButton); };
 
     // accept with Enter
     const auto acceptButton = DetermineAcceptButton(setup);
     if (acceptButton != MessageButton::None)
-    {
-        window->actions().bindCommand("Accept"_id) = [windowRef, acceptButton]() { windowRef->requestClose((int)acceptButton); };
-        window->actions().bindShortcut("Accept"_id, "Enter");
-    }
+        window->bindShortcut("Enter") = [windowRef, acceptButton]() { windowRef->requestClose((int)acceptButton); };
 
     // message area
     {

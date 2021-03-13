@@ -13,6 +13,7 @@
 #include "engine/material/include/material.h"
 #include "engine/material/include/materialInstance.h"
 #include "engine/material/include/materialTemplate.h"
+#include "engine/texture/include/staticTexture2D.h"
 
 #include "core/resource_compiler/include/importInterface.h"
 #include "core/containers/include/path.h"
@@ -87,43 +88,6 @@ MaterialImportConfig::MaterialImportConfig()
     m_postfixMetallic = "metallic;MT";
     m_postfixAmbientOcclusion = "ao;AO";
     m_postfixMetallicAOSpecularSmoothness = "mask";
-}
-
-void MaterialImportConfig::computeConfigurationKey(CRC64& crc) const
-{
-    TBaseClass::computeConfigurationKey(crc);
-
-    crc << m_importTextures;
-    crc << m_textureImportPath.view();
-    crc << m_textureSearchPath.view();
-
-    crc << m_depotSearchDepth;
-    crc << m_sourceAssetsSearchDepth;
-
-    crc << m_bindingColor.view();
-    crc << m_bindingMapColor.view();
-    crc << m_bindingMapBump.view();
-    crc << m_bindingMapNormal.view();
-    crc << m_bindingMapMask.view();
-    crc << m_bindingMapSpecular.view();
-    crc << m_bindingMapEmissive.view();
-    crc << m_bindingMapRoughness.view();
-    crc << m_bindingMapMetallic.view();
-    crc << m_bindingMapAmbientOcclusion.view();
-
-    crc << m_postfixColor.view();
-    crc << m_postfixColorMask.view();
-    crc << m_postfixNormal.view();
-    crc << m_postfixBump.view();
-    crc << m_postfixMask.view();
-    crc << m_postfixSpecular.view();
-    crc << m_postfixRoughness.view();
-    crc << m_postfixRoughnessSpecularity.view();
-    crc << m_postfixNormalSpecularity.view();
-    crc << m_postfixEmissive.view();
-    crc << m_postfixMetallic.view();
-    crc << m_postfixAmbientOcclusion.view();
-    crc << m_postfixMetallicAOSpecularSmoothness.view();
 }
 
 //--
@@ -258,7 +222,7 @@ TextureRef IGeneralMaterialImporter::importTextureRef(IResourceImporterInterface
             TRACE_INFO("Texture '{}' found at '{}' will be improted as '{}'", assetPathToTexture, foundTexturePath, depotPath);
 
             // emit the follow-up import, no extra config at the moment
-            if (const auto textureRef = importer.followupImport<ITexture>(foundTexturePath, depotPath))
+            if (const auto textureRef = importer.followupImport<ITexture>(foundTexturePath, depotPath, StaticTexture2D::GetStaticClass()))
             {
                 // export the asset import path
                 outAssetImportPath = foundTexturePath;
@@ -536,9 +500,6 @@ bool IGeneralMaterialImporter::applyVector4Param(StringView mappingParams, const
     return false;
 }
 
-static StaticResource<IMaterial> resUnlitMaterialBase("/engine/materials/std_unlit.v4mg");
-static StaticResource<IMaterial> resDefaultMaterialBase("/engine/materials/std_pbr.v4mg");
-
 MaterialInstancePtr IGeneralMaterialImporter::importMaterial(IResourceImporterInterface& importer, const MaterialImportConfig& config, const GeneralMaterialInfo& sourceMaterial) const
 {
     // load textures
@@ -559,7 +520,9 @@ MaterialInstancePtr IGeneralMaterialImporter::importMaterial(IResourceImporterIn
         loadAdditionalTextures(importer, config, loadedTextures);
 
     // load the base template to use, this can't fail - otherwise what's the point
-    const auto baseMaterial = loadedTextures.forceUnlit ? resUnlitMaterialBase.load() : resDefaultMaterialBase.load();
+    const auto baseMaterial = loadedTextures.forceUnlit
+        ? LoadResourceRef<IMaterial>("/engine/materials/std_unlit.xfile")
+        : LoadResourceRef<IMaterial>("/engine/materials/std_pbr.xfile");
     if (!baseMaterial)
         return nullptr;
 

@@ -12,12 +12,12 @@ BEGIN_BOOMER_NAMESPACE()
 
 //--
 
-class CommandCook : public app::ICommand
+class CommandCook : public ICommand
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CommandCook, app::ICommand);
+    RTTI_DECLARE_VIRTUAL_CLASS(CommandCook, ICommand);
 
 public:
-    virtual bool run(IProgressTracker* progress, const app::CommandLine& commandline) override final;
+    virtual bool run(IProgressTracker* progress, const CommandLine& commandline) override final;
 
 private:
     StringBuf m_outputDir;

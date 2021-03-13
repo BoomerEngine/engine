@@ -132,6 +132,28 @@ protected:
 
     //--
 
+    struct ExprElement
+    {
+        StringView text;
+        int value = 0;
+
+        int precedence() const;
+    };
+
+    struct ExprStack
+    {
+        InplaceArray<ExprElement, 40> tokens;
+
+        const ExprElement& operator[](int index) const;
+        void pop(int count);
+        void shiftToken(const Token* token);
+        void shiftNumber(int num);
+    };
+    
+    bool evaluateExpressionRecursive_Reduce(const Location& loc, ExprStack& stack, int top);
+
+    //--
+
     MacroDefinition* define(StringView name) const;
     MacroDefinition* createDefine(StringView name);
 

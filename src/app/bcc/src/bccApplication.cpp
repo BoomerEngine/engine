@@ -26,13 +26,13 @@ struct CommandInfo
 {
     StringView name;
     StringView desc;
-    SpecificClassType<app::ICommand> cls;
+    SpecificClassType<ICommand> cls;
 };
 
-SpecificClassType<app::ICommand> FindCommandClass(StringView name)
+SpecificClassType<ICommand> FindCommandClass(StringView name)
 {
     // list all command classes
-    InplaceArray<SpecificClassType<app::ICommand>, 100> commandClasses;
+    InplaceArray<SpecificClassType<ICommand>, 100> commandClasses;
     RTTI::GetInstance().enumClasses(commandClasses);
 
     // find command by name
@@ -44,7 +44,7 @@ SpecificClassType<app::ICommand> FindCommandClass(StringView name)
             return cls;
 
         // check the name from the metadata
-        if (const auto* nameMetadata = cls->findMetadata<app::CommandNameMetadata>())
+        if (const auto* nameMetadata = cls->findMetadata<CommandNameMetadata>())
         {
             if (nameMetadata->name() == name)
                 return cls;
@@ -171,7 +171,7 @@ private:
     bool m_captureErrors;
 };
 
-bool BCCApp::initialize(const app::CommandLine& commandline)
+bool BCCApp::initialize(const CommandLine& commandline)
 {
     // should we capture errors ?
     const auto captureErrors = !commandline.hasParam("noErrorCapture");
@@ -181,7 +181,7 @@ bool BCCApp::initialize(const app::CommandLine& commandline)
     m_startedTime.resetToNow();
 
     // create the host for the command to run
-    auto host = RefNew<app::CommandHost>();
+    auto host = RefNew<CommandHost>();
     if (!host->start(commandline))
         return false;
 

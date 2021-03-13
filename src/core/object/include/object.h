@@ -236,6 +236,17 @@ public:
         };
     }
 
+    // run some code on main thread in context of this object (assuming it was not deleted before)
+    void runSync(const std::function<void()>& func)
+    {
+        auto weakSelf = RefWeakPtr<IObject>(this);
+        RunSync("ObjectSyncJob") << [weakSelf, func](FIBER_FUNC)
+        {
+            if (auto obj = weakSelf.lock())
+                func();
+        };
+    }
+
     //---
 
     // post event from this object to all interested object's observers

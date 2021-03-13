@@ -195,7 +195,7 @@ bool Host::processDebugInput(const input::BaseEvent& evt)
             {
                 // Exit application when "ESC" is pressed
                 case input::KeyCode::KEY_F10:
-                    platform::GetLaunchPlatform().requestExit("Instant exit key pressed");
+                    GetLaunchPlatform().requestExit("Instant exit key pressed");
                     return true;
 
                 // Toggle game pause

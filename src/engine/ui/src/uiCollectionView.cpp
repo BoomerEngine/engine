@@ -28,43 +28,42 @@ ICollectionItem::ICollectionItem()
     m_uniqueIndex = GUniqueListItemIndex++;
 }
 
-bool ICollectionItem::handleItemFilter(const SearchPattern& filter) const
+bool ICollectionItem::handleItemFilter(const ICollectionView* view, const SearchPattern& filter) const
 {
     return true;
 }
 
-bool ICollectionItem::handleItemSort(const ICollectionItem* other, int colIndex) const
+void ICollectionItem::handleItemSort(const ICollectionView* view, int colIndex, SortingData& outInfo) const
 {
-    auto otherIndex = other ? other->uniqueIndex() : 0;
-    return uniqueIndex() < otherIndex;
+    outInfo.index = uniqueIndex();
 }
 
-bool ICollectionItem::handleItemContextMenu(const CollectionItems& items, PopupPtr& outPopup) const
+bool ICollectionItem::handleItemContextMenu(ICollectionView* view, const CollectionItems& items, const Position& pos, input::KeyMask controlKeys)
 {
     return false;
 }
 
-bool ICollectionItem::handleItemSelected()
+bool ICollectionItem::handleItemSelected(ICollectionView* view)
 {
     return true;
 }
 
-void ICollectionItem::handleItemUnselected()
+void ICollectionItem::handleItemUnselected(ICollectionView* view)
 {
 
 }
 
-void ICollectionItem::handleItemFocused()
+void ICollectionItem::handleItemFocused(ICollectionView* view)
 {
 
 }
 
-void ICollectionItem::handleItemUnfocused()
+void ICollectionItem::handleItemUnfocused(ICollectionView* view)
 {
 
 }
 
-bool ICollectionItem::handleItemActivate()
+bool ICollectionItem::handleItemActivate(ICollectionView* view)
 {
     return false;
 }
@@ -144,10 +143,10 @@ ICollectionView::ICollectionView()
     verticalScrollMode(ScrollMode::Auto);
 }
 
-void ICollectionView::internalAddItem(ICollectionItem* item)
+ICollectionView::ViewItem* ICollectionView::internalAddItem(ICollectionItem* item)
 {
-    DEBUG_CHECK_RETURN_EX(item, "Invalid item");
-    DEBUG_CHECK_RETURN_EX(item->m_view.unsafe() == nullptr, "Item already in a list");
+    DEBUG_CHECK_RETURN_EX_V(item, "Invalid item", nullptr);
+    DEBUG_CHECK_RETURN_EX_V(item->m_view.unsafe() == nullptr, "Item already in a list", nullptr);
 
     auto* viewItem = m_viewItemsPool.create();
     viewItem->item = AddRef(item);
@@ -157,9 +156,8 @@ void ICollectionView::internalAddItem(ICollectionItem* item)
     item->m_viewItem = viewItem;
     m_viewItems.insert(viewItem);
 
-    invalidateDisplayList();
-
     internalAttachItem(viewItem);
+    return viewItem;
 }
 
 /*void ICollectionView::internalAttachItem(ViewItem* item)
@@ -177,7 +175,7 @@ void ICollectionView::internalRemoveItem(ViewItem* viewItem)
         m_current = nullptr;
         currentChanged = true;
 
-        old->unfocus();
+        old->unfocus(this);
     }
 
     auto displayIndex = m_displayList.find(viewItem);
@@ -200,7 +198,7 @@ void ICollectionView::internalRemoveItem(ViewItem* viewItem)
         if (index >= 0 && index <= m_displayList.lastValidIndex())
         {
             m_current = m_displayList[index];
-            m_current->focus();
+            m_current->focus(this);
         }
     }
 }
@@ -278,10 +276,22 @@ void ICollectionView::sortViewItems(Array<ViewItem*>& items) const
         {
             std::sort(items.begin(), items.end(), [this](const auto* a, const auto* b)
                 {
-                    if (m_sortingAsc)
-                        std::swap(a, b);
+                    ICollectionItem::SortingData dataA;
+                    a->item->handleItemSort(this, m_sortingColumnIndex, dataA);
 
-                    return a->item->handleItemSort(b->item, m_sortingColumnIndex);
+                    ICollectionItem::SortingData dataB;
+                    b->item->handleItemSort(this, m_sortingColumnIndex, dataB);
+
+                    if (dataA.type != dataB.type)
+                        return dataA.type < dataB.type;
+
+                    if (dataA.caption != dataB.caption)
+                        if (m_sortingAsc)
+                            return dataA.caption < dataB.caption;
+                        else
+                            return dataA.caption > dataB.caption;
+                            
+                    return dataA.index < dataB.index;
                 });
         }
     }
@@ -383,7 +393,7 @@ void ICollectionView::validateDisplayList()
             }
             else
             {
-                m_current->unfocus();
+                m_current->unfocus(this);
                 m_current = nullptr;
             }
         }
@@ -605,11 +615,11 @@ InputActionPtr ICollectionView::handleMouseClick(const ElementArea& area, const 
     return TBaseClass::handleMouseClick(area, evt);
 }
 
-bool ICollectionView::ViewItem::select()
+bool ICollectionView::ViewItem::select(ICollectionView* view)
 {
     if (!item->m_selected)
     {
-        if (!item->handleItemSelected())
+        if (!item->handleItemSelected(view))
             return false;
         item->m_selected = true;
     }
@@ -618,27 +628,27 @@ bool ICollectionView::ViewItem::select()
     return true;
 }
 
-void ICollectionView::ViewItem::unselect()
+void ICollectionView::ViewItem::unselect(ICollectionView* view)
 {
     if (item->m_selected)
     {
-        item->handleItemUnselected();
+        item->handleItemUnselected(view);
         item->m_selected = false;
     }
 
     item->removeStyleClass("selected"_id);
 }
 
-void ICollectionView::ViewItem::focus()
+void ICollectionView::ViewItem::focus(ICollectionView* view)
 {
     item->addStyleClass("current"_id);
-    item->handleItemFocused();
+    item->handleItemFocused(view);
 }
 
-void ICollectionView::ViewItem::unfocus()
+void ICollectionView::ViewItem::unfocus(ICollectionView* view)
 {
     item->removeStyleClass("current"_id);
-    item->handleItemUnfocused();
+    item->handleItemUnfocused(view);
 }
 
 void ICollectionView::focusElement(ViewItem* item)
@@ -679,7 +689,7 @@ void ICollectionView::select(const Array<ViewItem*>& items, ItemSelectionMode mo
         {
             if (!m_selection.contains(it))
             {
-                if (it->select())
+                if (it->select(this))
                 {
                     newSelection.insert(it);
                     somethingChanged = true;
@@ -696,7 +706,7 @@ void ICollectionView::select(const Array<ViewItem*>& items, ItemSelectionMode mo
         {
             if (!tempSelection.contains(it))
             {
-                it->unselect();
+                it->unselect(this);
                 somethingChanged = true;
             }
         }
@@ -712,7 +722,7 @@ void ICollectionView::select(const Array<ViewItem*>& items, ItemSelectionMode mo
         {
             if (item && !m_selection.contains(item))
             {
-                if (item->select())
+                if (item->select(this))
                 {
                     m_selection.insert(item);
                     somethingChanged = true;
@@ -728,7 +738,7 @@ void ICollectionView::select(const Array<ViewItem*>& items, ItemSelectionMode mo
         {
             if (item && m_selection.removeOrdered(item))
             {
-                item->unselect();
+                item->unselect(this);
                 somethingChanged = true;
             }
         }
@@ -741,12 +751,12 @@ void ICollectionView::select(const Array<ViewItem*>& items, ItemSelectionMode mo
         {
             if (m_selection.remove(item))
             {
-                item->unselect();
+                item->unselect(this);
                 somethingChanged = true;
             }
             else if (!m_selection.contains(item))
             {
-                if (item->select())
+                if (item->select(this))
                 {
                     m_selection.insert(item);
                     somethingChanged = true;
@@ -762,12 +772,12 @@ void ICollectionView::select(const Array<ViewItem*>& items, ItemSelectionMode mo
         if (newCurrent != m_current)
         {
             if (m_current)
-                m_current->unfocus();
+                m_current->unfocus(this);
 
             m_current = newCurrent;
 
             if (m_current)
-                m_current->focus();
+                m_current->focus(this);
         }
     }
 
@@ -849,15 +859,8 @@ InputActionPtr ICollectionView::handleOverlayMouseClick(const ElementArea& area,
 bool ICollectionView::handleContextMenu(const ElementArea& area, const Position& absolutePosition, input::KeyMask controlKeys)
 {
     if (auto item = itemAtPoint(absolutePosition))
-    {
-        PopupPtr popupToShow;
-        item->item->handleItemContextMenu(m_selectionItems, popupToShow);
-
-        if (popupToShow)
-            popupToShow->show(this, PopupWindowSetup().relativeToCursor().bottomLeft().interactive().autoClose());
-
-        return true;
-    }
+        if (item->item->handleItemContextMenu(this, m_selectionItems, absolutePosition, controlKeys))
+            return true;
 
     return TBaseClass::handleContextMenu(area, absolutePosition, controlKeys);
 }
@@ -886,7 +889,7 @@ bool ICollectionView::processActivation()
 {
     if (m_current)
     {
-        if (m_current->item->handleItemActivate())
+        if (m_current->item->handleItemActivate(this))
             return true;
 
         if (call(EVENT_ITEM_ACTIVATED, m_current->item))

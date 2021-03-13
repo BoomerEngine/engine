@@ -21,7 +21,7 @@
 
 #include <Windows.h>
 
-BEGIN_BOOMER_NAMESPACE_EX(platform)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -33,7 +33,7 @@ CommonPlatform::~CommonPlatform()
 
 #undef GetUserName
 
-bool CommonPlatform::handleStart(const app::CommandLine& systemCmdline, app::IApplication* application)
+bool CommonPlatform::handleStart(const CommandLine& systemCmdline, IApplication* application)
 {
     // header
     TRACE_INFO("Boomer Engine v4");
@@ -55,7 +55,7 @@ bool CommonPlatform::handleStart(const app::CommandLine& systemCmdline, app::IAp
     // if no command line was specified load the default "exename.commandline.txt" file
     // this is useful in cases when we want to have some default behavior for an executable that otherwise requires parameters
     auto cmdLine  = &systemCmdline;
-    app::CommandLine defaultCommandLine;
+    CommandLine defaultCommandLine;
     if (systemCmdline.empty())
     {
         // prepare the special file name
@@ -87,7 +87,7 @@ bool CommonPlatform::handleStart(const app::CommandLine& systemCmdline, app::IAp
 	socket::Initialize();
 
     // initialize all services
-    if (!app::LocalServiceContainer::GetInstance().init(*cmdLine))
+    if (!ServiceContainer::GetInstance().init(*cmdLine))
         return false;
 
     // no app
@@ -134,7 +134,7 @@ void CommonPlatform::handleUpdate()
 {
     PC_SCOPE_LVL0(PlatformUpdate);
 
-    app::LocalServiceContainer::GetInstance().update();
+    ServiceContainer::GetInstance().update();
 
     if (m_application)
         m_application->update();
@@ -152,7 +152,7 @@ void CommonPlatform::handleCleanup()
     }
 
     // close all services
-    app::LocalServiceContainer::GetInstance().shutdown();
+    ServiceContainer::GetInstance().shutdown();
 
     // deinitialize any global singletons and free any non-persistent content acquired by them
     // NOTE: this step is mostly so we can report actual leaks more accurately
@@ -168,4 +168,4 @@ void CommonPlatform::handleCleanup()
     DumpMemoryLeaks();
 }
 
-END_BOOMER_NAMESPACE_EX(platform)
+END_BOOMER_NAMESPACE()

@@ -50,6 +50,7 @@ RTTI_BEGIN_TYPE_CLASS(OBJMeshImportConfig);
     RTTI_PROPERTY(emitColors).editable("Should we emit the loaded colors").overriddable();
     RTTI_CATEGORY("Texture mapping");
     RTTI_PROPERTY(flipUV).editable("Flip V channel of the UVs").overriddable();
+    RTTI_PROPERTY(uvScale).editable("Additional UV scale to apply").overriddable();
     RTTI_CATEGORY("Selective import");
     RTTI_PROPERTY(objectFilter).editable("Import only those objects").overriddable();
     RTTI_PROPERTY(groupFilter).editable("Import only those groups").overriddable();
@@ -59,27 +60,11 @@ OBJMeshImportConfig::OBJMeshImportConfig()
 {
 }
 
-void OBJMeshImportConfig::computeConfigurationKey(CRC64& crc) const
-{
-    TBaseClass::computeConfigurationKey(crc);
-
-    crc << objectFilter.view();
-    crc << groupFilter.view();
-
-    crc << (char)emitNormals;
-    crc << (char)emitUVs;
-    crc << (char)emitColors;
-
-    crc << forceTriangles;
-    crc << allowThreads;
-    crc << flipUV;
-}
-
 //--
 
 RTTI_BEGIN_TYPE_CLASS(OBJMeshImporter);
     RTTI_OLD_NAME("wavefront::OBJMeshImporter");
-    RTTI_METADATA(ResourceCookedClassMetadata).addClass<Mesh>();
+    RTTI_METADATA(ResourceImportedClassMetadata).addClass<Mesh>();
     RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtension("obj");
     RTTI_METADATA(ResourceCookerVersionMetadata).version(3);
     RTTI_METADATA(ResourceImporterConfigurationClassMetadata).configurationClass<OBJMeshImportConfig>();
@@ -550,7 +535,7 @@ static void ExtractStreamData(uint32_t attributeIndex, const void* readRawPtr, T
     writeRawPtr = writePtr;
 }
 
-static void ProcessSingleChunk(MeshTopologyType top, const SourceAssetOBJ& data, const Matrix& assetToEngine, const Array<const GroupChunk*>& sourceChunks, MeshStreamMask streams, bool flipFaces, bool flipUV, MeshRawChunk& outChunk)
+static void ProcessSingleChunk(MeshTopologyType top, const SourceAssetOBJ& data, const Matrix& assetToEngine, const Array<const GroupChunk*>& sourceChunks, MeshStreamMask streams, bool flipFaces, bool flipUV, const Vector2& uvScale, MeshRawChunk& outChunk)
 {
     PC_SCOPE_LVL0(ProcessSingleChunk);
 
@@ -715,7 +700,7 @@ static void ProcessSingleChunk(MeshTopologyType top, const SourceAssetOBJ& data,
 
     // copy out the attributes for each chunk
     auto jobCounter = CreateFence("ChunkExportStream", sourceJobsInfo.size());
-    RunChildFiber("ChunkExportStream").invocations(sourceJobsInfo.size()) << [jobCounter, flipUV, flipFaces, top, &assetToEngine, &data, streams, positions, uvs, colors, normals, &sourceJobsInfo, &builder](FIBER_FUNC)
+    RunChildFiber("ChunkExportStream").invocations(sourceJobsInfo.size()) << [jobCounter, flipUV, uvScale, flipFaces, top, &assetToEngine, &data, streams, positions, uvs, colors, normals, &sourceJobsInfo, &builder](FIBER_FUNC)
     {
         const auto& jobInfo = sourceJobsInfo[index];
 
@@ -754,6 +739,17 @@ static void ProcessSingleChunk(MeshTopologyType top, const SourceAssetOBJ& data,
                     while (startUV < writeUV)
                     {
                         startUV->y = 1.0f - startUV->y;
+                        startUV->x = startUV->x * uvScale.x;
+                        startUV->y = startUV->y * uvScale.y;
+                        startUV += 1;
+                    }
+                }
+                else
+                {
+                    while (startUV < writeUV)
+                    {
+                        startUV->x = startUV->x * uvScale.x;
+                        startUV->y = startUV->y * uvScale.y;
                         startUV += 1;
                     }
                 }
@@ -914,7 +910,7 @@ static void BuildRenderChunks(const SourceAssetOBJ& sourceData, const Matrix ass
     RunFiberLoop("ProcessModels", packingJobs.size(), -2, [&packingJobs, &rawChunks, &sourceData, &assetToEngineTransform, &config](uint32_t jobIndex)
         {
             const auto& job = packingJobs[jobIndex];
-            ProcessSingleChunk(job.topology, sourceData, assetToEngineTransform, job.sourceChunks, job.streams, config.flipFaces, config.flipUV, rawChunks[jobIndex]);
+            ProcessSingleChunk(job.topology, sourceData, assetToEngineTransform, job.sourceChunks, job.streams, config.flipFaces, config.flipUV, config.uvScale, rawChunks[jobIndex]);
             rawChunks[jobIndex].detailMask = job.chunk.detailMask;
             rawChunks[jobIndex].renderMask = (MeshChunkRenderingMask)job.chunk.renderMask;
             rawChunks[jobIndex].materialIndex = job.chunk.materialIndex;
@@ -967,9 +963,6 @@ ResourcePtr OBJMeshImporter::importResource(IResourceImporterInterface& importer
 
     // should we swap faces ?
     auto swapFaces = meshGeometryManifest->flipFaces ^ (assetToEngineTransform.det() < 0.0f);
-
-    // should we swap the UVs ?
-    auto flipUVs = meshGeometryManifest->flipUV;
 
     ///--
 

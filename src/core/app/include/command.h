@@ -11,7 +11,7 @@
 #include "core/system/include/timing.h"
 #include "localServiceContainer.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(app)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -29,7 +29,7 @@ public:
     //--
 
     /// do actual work of the command, called after all local services were initialized
-    virtual bool run(IProgressTracker* progress, const app::CommandLine& commandline) = 0;
+    virtual bool run(IProgressTracker* progress, const CommandLine& commandline) = 0;
 
     //--
 };
@@ -54,4 +54,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(app)
+END_BOOMER_NAMESPACE()

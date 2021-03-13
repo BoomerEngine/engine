@@ -196,6 +196,39 @@ bool ValidateDepotDirPath(StringView text)
 
 //---
 
+StringBuf ConformDepotFilePath(StringView path)
+{
+    StringBuilder txt;
+
+    for (auto ch : path)
+    {
+        if (ch == '\\')
+            ch = '/';
+        txt.appendch(ch);
+    }
+
+    return txt.toString();
+}
+
+StringBuf ConformDepotDirectoryPath(StringView path)
+{
+    StringBuilder txt;
+
+    for (auto ch : path)
+    {
+        if (ch == '\\')
+            ch = '/';
+        txt.appendch(ch);
+    }
+
+    if (!txt.view().endsWith("/"))
+        txt.append("/");
+
+    return txt.toString();
+}
+
+//---
+
 bool BuildRelativePath(StringView basePath, StringView targetPath, StringBuf& outRelativePath)
 {
     InplaceArray<StringView, 20> basePathParts;

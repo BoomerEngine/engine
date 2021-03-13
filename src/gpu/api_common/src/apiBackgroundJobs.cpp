@@ -93,7 +93,7 @@ ConfigProperty<uint32_t> cvBackgroundQueueThreads("Rendering", "BackgroundJobThr
 ConfigProperty<uint32_t> cvBackgroundQueueTimeout("Rendering", "BackgroundQueueTimeout", 100);
 ConfigProperty<uint32_t> cvBackgroundQueueSemaphoreWait("Rendering", "BackgroundQueueSemaphoreWait", 5);
 
-bool IBaseBackgroundQueue::initialize(const app::CommandLine& cmdLine)
+bool IBaseBackgroundQueue::initialize(const CommandLine& cmdLine)
 {
 	const auto numThreadsRequested = cvBackgroundQueueThreads.get();
 

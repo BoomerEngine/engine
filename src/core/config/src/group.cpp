@@ -11,22 +11,22 @@
 #include "group.h"
 #include "entry.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(config)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
-Group::Group(Storage* storage, const StringBuf& name)
+ConfigGroup::ConfigGroup(ConfigStorage* storage, const StringBuf& name)
     : m_storage(storage)
     , m_name(name)
 {
 }
 
-Group::~Group()
+ConfigGroup::~ConfigGroup()
 {
     m_entries.clearPtr();
 }
 
-bool Group::clear()
+bool ConfigGroup::clear()
 {
     auto lock  = CreateLock(m_lock);
 
@@ -37,25 +37,25 @@ bool Group::clear()
     return wasModified;
 }
 
-StringBuf Group::entryValue(StringView name, const StringBuf& defaultValue/*= ""*/) const
+StringBuf ConfigGroup::entryValue(StringView name, const StringBuf& defaultValue/*= ""*/) const
 {
     if (auto entry  = findEntry(name))
         return entry->value();
     return defaultValue;
 }
 
-const Entry* Group::findEntry(StringView name) const
+const ConfigEntry* ConfigGroup::findEntry(StringView name) const
 {
     auto lock  = CreateLock(m_lock);
     return findEntry_NoLock(name);
 }
 
-const Entry* Group::findEntry_NoLock(StringView name) const
+const ConfigEntry* ConfigGroup::findEntry_NoLock(StringView name) const
 {
     return m_entries.findSafe(name, nullptr);
 }
 
-Entry& Group::entry(StringView name)
+ConfigEntry& ConfigGroup::entry(StringView name)
 {
     auto lock  = CreateLock(m_lock);
 
@@ -65,7 +65,7 @@ Entry& Group::entry(StringView name)
     if (!entry)
     {
         auto nameStr = StringBuf(name);
-        entry = new Entry(this, nameStr);
+        entry = new ConfigEntry(this, nameStr);
         m_entries[nameStr] = entry;
         // NOTE: we do not mark a group as modified since empty entry will NOT be saved any way
     }
@@ -73,7 +73,7 @@ Entry& Group::entry(StringView name)
     return *entry;
 }
 
-bool Group::removeEntry(StringView name)
+bool ConfigGroup::removeEntry(StringView name)
 {
     auto lock  = CreateLock(m_lock);
 
@@ -90,12 +90,12 @@ bool Group::removeEntry(StringView name)
     return false;
 }
 
-void Group::modified()
+void ConfigGroup::modified()
 {
     m_storage->modified();
 }
 
-void Group::SaveDiff(IFormatStream& f, const Group& cur, const Group& base)
+void ConfigGroup::SaveDiff(IFormatStream& f, const ConfigGroup& cur, const ConfigGroup& base)
 {
     auto lockA  = CreateLock(cur.m_lock);
     auto lockB  = CreateLock(base.m_lock);
@@ -108,7 +108,7 @@ void Group::SaveDiff(IFormatStream& f, const Group& cur, const Group& base)
         auto baseEntry  = base.findEntry_NoLock(entry->name());
         if (baseEntry)
         {
-            if (Entry::Equal(*entry, *baseEntry))
+            if (ConfigEntry::Equal(*entry, *baseEntry))
                 continue;
         }
 
@@ -121,9 +121,9 @@ void Group::SaveDiff(IFormatStream& f, const Group& cur, const Group& base)
 
         // print the value difference
         if (baseEntry)
-            Entry::PrintDiff(f, *entry, *baseEntry);
+            ConfigEntry::PrintDiff(f, *entry, *baseEntry);
         else
-            Entry::Print(f, *entry);
+            ConfigEntry::Print(f, *entry);
     }
 
     // print separator
@@ -131,7 +131,7 @@ void Group::SaveDiff(IFormatStream& f, const Group& cur, const Group& base)
         f.append("\n");
 }
 
-void Group::Save(IFormatStream& f, const Group& cur)
+void ConfigGroup::Save(IFormatStream& f, const ConfigGroup& cur)
 {
     auto lockA  = CreateLock(cur.m_lock);
 
@@ -146,7 +146,7 @@ void Group::Save(IFormatStream& f, const Group& cur)
         }
 
         // print the value difference
-        Entry::Print(f, *entry);
+        ConfigEntry::Print(f, *entry);
     }
 
     // print separator
@@ -156,4 +156,4 @@ void Group::Save(IFormatStream& f, const Group& cur)
 
 //---
 
-END_BOOMER_NAMESPACE_EX(config)
+END_BOOMER_NAMESPACE()

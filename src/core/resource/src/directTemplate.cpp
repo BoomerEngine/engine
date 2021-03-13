@@ -213,7 +213,7 @@ void IObjectDirectTemplate::onPropertyChanged(StringView path)
         if (ParsePropertyName(path, propertyName))
         {
             if (auto propertyStringID = StringID::Find(propertyName))
-                markPropertyOverride(propertyStringID);                    
+                markPropertyOverride(propertyStringID);
         }
     }
 }
@@ -241,8 +241,11 @@ bool IObjectDirectTemplate::onPropertyShouldSave(const Property* prop) const
 
 DataViewResult IObjectDirectTemplate::describeDataView(StringView viewPath, DataViewInfo& outInfo) const
 {
-    if (auto ret = HasError(IObject::describeDataView(viewPath, outInfo)))
-        return ret;
+    {
+        auto ret = IObject::describeDataView(viewPath, outInfo);
+        if (!ret.valid())
+            return ret;
+    }
 
     if (viewPath.empty())
     {
@@ -294,6 +297,9 @@ DataViewResult IObjectDirectTemplate::describeDataView(StringView viewPath, Data
                     else
                         outInfo.flags -= DataViewInfoFlagBit::ResetableToBaseValue;
                 }
+
+                //const auto* data = prop->offsetPtr(this);
+                //return prop->type()->describeDataView(viewPath, data, outInfo);
             }
         }
     }

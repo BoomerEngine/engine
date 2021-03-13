@@ -48,25 +48,12 @@ ScintillaTextEditor::ScintillaTextEditor()
     customProportion(1.0f);
 
     // bind actions
-    actions().bindShortcut("Edit.Undo"_id, "Ctrl+Z");
-    actions().bindShortcut("Edit.Redo"_id, "Ctrl+Y");
-    actions().bindShortcut("Edit.Paste"_id, "Ctrl+V");
-    actions().bindShortcut("Edit.Copy"_id, "Ctrl+C");
-    actions().bindShortcut("Edit.Cut"_id, "Ctrl+X");
-    actions().bindShortcut("Edit.SelectAll"_id, "Ctrl+A");
-
-    actions().bindFilter("Edit.Undo"_id) = [this]() -> bool { return canUndo(); };
-    actions().bindFilter("Edit.Redo"_id) = [this]() -> bool { return canRedo(); };
-
-    actions().bindFilter("Edit.Copy"_id) = [this]() -> bool { return hasSelection(); };
-    actions().bindFilter("Edit.Cut"_id) = [this]() -> bool { return hasSelection(); };
-
-    actions().bindCommand("Edit.Undo"_id) = [this]() { cmdUndo(); };
-    actions().bindCommand("Edit.Redo"_id) = [this]() { cmdRedo(); };
-    actions().bindCommand("Edit.Delete"_id) = [this]() { cmdDelete(); };
-    actions().bindCommand("Edit.Copy"_id) = [this]() { cmdCopy(); };
-    actions().bindCommand("Edit.Cut"_id) = [this]() { cmdCut(); };
-    actions().bindCommand("Edit.Paste"_id) = [this]() { cmdPaste(); };
+    bindShortcut("Ctrl+Z") = [this]() { cmdUndo(); };
+    bindShortcut("Ctrl+Y") = [this]() { cmdRedo(); };
+    bindShortcut("Ctrl+V") = [this]() { cmdPaste(); };
+    bindShortcut("Ctrl+C") = [this]() { cmdCopy(); };
+    bindShortcut("Ctrl+X") = [this]() { cmdCut(); };
+    bindShortcut("Ctrl+A") = [this]() { cmdSelectAll(); };
 }
 
 ScintillaTextEditor::~ScintillaTextEditor()

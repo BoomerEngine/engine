@@ -19,9 +19,9 @@ struct ENGINE_PHYSICS_RUNTIME_API PhysicsSceneDesc
 };
 
 /// physics service for the engine
-class ENGINE_PHYSICS_RUNTIME_API PhysicsService : public app::ILocalService
+class ENGINE_PHYSICS_RUNTIME_API PhysicsService : public IService
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(PhysicsService, app::ILocalService);
+    RTTI_DECLARE_VIRTUAL_CLASS(PhysicsService, IService);
 
 public:
     PhysicsService();
@@ -30,7 +30,7 @@ public:
     PhysicsScenePtr createScene(const PhysicsSceneDesc& desc);
 
 private:
-    virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
+    virtual bool onInitializeService(const CommandLine& cmdLine) override final;
     virtual void onShutdownService() override final;
     virtual void onSyncUpdate() override final;
 

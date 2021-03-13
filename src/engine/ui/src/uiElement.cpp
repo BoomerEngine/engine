@@ -81,6 +81,96 @@ ElementCachedGeometry::~ElementCachedGeometry()
 
 //---
 
+IClipboard::~IClipboard()
+{}
+
+void IClipboard::storeObject(const IObject* data)
+{
+    if (data)
+        if (auto buffer = data->toBuffer())
+            storeData(data->cls()->name().view(), buffer.data(), buffer.size());
+}
+
+ObjectPtr IClipboard::loadObject(ClassType expectedClass) const
+{
+    if (expectedClass)
+    {
+        const auto formatName = expectedClass->name().view();
+
+        Buffer data;
+        if (loadData(formatName, data))
+            if (auto object = IObject::FromBuffer(data.data(), data.size()))
+                return object;
+    }
+
+    return nullptr;
+}
+
+//--
+
+namespace prv
+{
+    class LocalClipboard : public ISingleton, public IClipboard
+    {
+        DECLARE_SINGLETON(LocalClipboard);
+
+        virtual void storeText(StringView text) override final
+        {
+            m_format = "TEXT";
+            m_data.reset();
+            m_text = StringBuf(text);
+        }
+
+        virtual bool loadText(StringBuf& outText) const override final
+        {
+            if (m_format == "TEXT")
+            {
+                outText = m_text;
+                return true;
+            }
+
+            return false;
+        }
+
+        virtual void storeData(StringView format, const void* data, uint32_t size) override final
+        {
+            m_format = StringBuf(format);
+            m_data = Buffer::Create(POOL_TEMP, size, 16, data);
+            m_text = "";
+        }
+
+        virtual bool loadData(StringView format, Buffer& outData) const override final
+        {
+            if (m_format == format)
+            {
+                outData = m_data;
+                return true;
+            }
+
+            return false;
+        }
+
+    private:
+        Buffer m_data;
+        StringBuf m_text;
+        StringBuf m_format;
+
+        virtual void deinit() override
+        {
+            m_data.reset();
+            m_text.clear();
+            m_format.clear();
+        }
+    };
+}
+
+IClipboard& IClipboard::LocalClipboard()
+{
+    return prv::LocalClipboard::GetInstance();
+}
+
+//---
+
 RTTI_BEGIN_TYPE_CLASS(IElement);
     RTTI_PROPERTY(m_name);
     RTTI_METADATA(ElementClassNameMetadata).name("Element");
@@ -124,6 +214,9 @@ IElement::~IElement()
 
     ASSERT_EX(m_firstChild == nullptr, "Element still contains children");
     ASSERT_EX(m_lastChild == nullptr, "Element still contains children");
+
+    delete m_keyShortctuts;
+    m_keyShortctuts = nullptr;
 
     delete m_customLocalStyles;
     m_customLocalStyles = nullptr;
@@ -641,7 +734,7 @@ bool IElement::handleKeyEvent(const input::KeyEvent& evt)
     // handle bounded key events
     if (evt.pressed())
     {
-        if (m_actionTable && m_actionTable->processKeyEvent(evt))
+        if (m_keyShortctuts && m_keyShortctuts->processKeyEvent(evt))
             return true;
 
         if (evt.keyCode() == input::KeyCode::KEY_TAB)
@@ -1202,6 +1295,15 @@ void IElement::bindNativeWindowRenderer(Renderer* windowRenderer)
     }
 }
 
+uint64_t IElement::windowNativeHandle() const
+{
+    if (renderer())
+        if (auto window = findParentWindow())
+            return window->renderer()->queryWindowNativeHandle(window);
+
+    return 0;
+}
+
 void IElement::focus()
 {
     if (m_renderer)// && m_hitTest == HitTestState::Enabled)
@@ -1502,7 +1604,7 @@ void IElement::prepareBackgroundGeometry(DataStash& stash, const ElementArea& dr
 {
     if (auto shadowPtr = evalStyleValueIfPresentPtr<style::RenderStyle>("background"_id))
     {
-        float borderWidth = evalStyleValue<float>("border-width"_id, 0.0f) * pixelScale;
+        float borderWidth = evalStyleValue<float>("border-width"_id, 0.0f);// *pixelScale;
 
         auto style = shadowPtr->evaluate(stash, pixelScale, drawArea);
         adjustBackgroundStyle(style, borderWidth);
@@ -1528,7 +1630,7 @@ void IElement::prepareOverlayGeometry(DataStash& stash, const ElementArea& drawA
     {
         if (borderStylePtr->a > 0)
         {
-            float borderWidth = evalStyleValue<float>("border-width"_id, 0.0f) * pixelScale;
+            float borderWidth = evalStyleValue<float>("border-width"_id, 0.0f);// *pixelScale;
             if (borderWidth > 0.0f)
             {
                 auto style = canvas::SolidColor(*borderStylePtr);
@@ -1541,10 +1643,10 @@ void IElement::prepareOverlayGeometry(DataStash& stash, const ElementArea& drawA
             }
             else
             {
-                auto borderLeft = evalStyleValue<float>("border-left"_id, 0.0f) * pixelScale;
-                auto borderTop = evalStyleValue<float>("border-top"_id, 0.0f) * pixelScale;
-                auto borderRight = evalStyleValue<float>("border-right"_id, 0.0f) * pixelScale;
-                auto borderBottom = evalStyleValue<float>("border-bottom"_id, 0.0f) * pixelScale;
+                auto borderLeft = evalStyleValue<float>("border-left"_id, 0.0f);// *pixelScale;
+                auto borderTop = evalStyleValue<float>("border-top"_id, 0.0f);// *pixelScale;
+                auto borderRight = evalStyleValue<float>("border-right"_id, 0.0f);// *pixelScale;
+                auto borderBottom = evalStyleValue<float>("border-bottom"_id, 0.0f);// *pixelScale;
                 if (borderLeft > 0.0f || borderTop > 0.0f || borderRight > 0.0f || borderBottom > 0.0f)
                 {
                     auto style = canvas::SolidColor(*borderStylePtr);
@@ -1976,42 +2078,22 @@ bool IElement::callGeneric(IElement* originator, StringID name, const Variant& d
 
 //--
 
-ActionTable& IElement::actions()
+KeyShortcutTable& IElement::shortcuts()
 {
-    if (!m_actionTable)
-        m_actionTable = new ActionTable(this);
-    return *m_actionTable;
+    if (!m_keyShortctuts)
+        m_keyShortctuts = new KeyShortcutTable(this);
+    return *m_keyShortctuts;
 }
 
-const ActionTable& IElement::actions() const
+const KeyShortcutTable& IElement::shortcuts() const
 {
-    static ActionTable theEmptyTable(nullptr);
-    return m_actionTable ? *m_actionTable : theEmptyTable;
+    static KeyShortcutTable theEmptyTable(nullptr);
+    return m_keyShortctuts ? *m_keyShortctuts : theEmptyTable;
 }
 
-bool IElement::runAction(StringID name, IElement* source)
+EventFunctionBinder IElement::bindShortcut(KeyShortcut key)
 {
-    if (m_actionTable && m_actionTable->run(name, source))
-        return true;
-
-    if (auto parent = parentElement())
-        return parent->runAction(name, source);
-
-    return false;
-}
-
-ActionStatusFlags IElement::checkAction(StringID name) const
-{
-    ActionStatusFlags ret;
-
-    if (m_actionTable)
-        ret |= m_actionTable->status(name);
-
-    if (auto parent = parentElement())
-        if (parent && !ret.test(ActionStatusBit::Defined)) // action can be enabled/toggled by children but once it's defined we stop looking
-            ret |= parent->checkAction(name);
-
-    return ret;
+    return shortcuts().bindShortcut(key);
 }
 
 //--
@@ -2026,6 +2108,13 @@ void IElement::configLoad(const ConfigBlock& block)
 
 void IElement::configSave(const ConfigBlock& block) const
 {}
+
+//--
+
+IClipboard& IElement::clipboard() const
+{
+    return m_renderer ? *m_renderer : IClipboard::LocalClipboard();
+}
 
 //--
 

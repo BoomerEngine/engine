@@ -1,0 +1,39 @@
+<?xml version="1.0" standalone="yes"?>
+<object class="ResourceMetadata">
+  <ids>
+    <element>{910C7A0F-F617-41CF-F88E-7B4566FA7464}</element>
+  </ids>
+  <importDependencies>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/meshes/plane.obj</importPath>
+      <crc>3921789995</crc>
+    </element>
+  </importDependencies>
+  <resourceClassType>Mesh</resourceClassType>
+  <resourceClassVersion>11</resourceClassVersion>
+  <importerClassType>assets::OBJMeshImporter</importerClassType>
+  <importerClassVersion>3</importerClassVersion>
+  <importBaseConfiguration class="assets::OBJMeshImportConfig">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600383922330000</sourceImportedOn>
+  </importBaseConfiguration>
+  <importUserConfiguration class="assets::OBJMeshImportConfig">
+    <flipFaces>true</flipFaces>
+    <uvScale>
+      <x>20.000000</x>
+      <y>20.000000</y>
+    </uvScale>
+  </importUserConfiguration>
+  <importFullConfiguration class="assets::OBJMeshImportConfig">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132600383922330000</sourceImportedOn>
+    <flipFaces>true</flipFaces>
+    <uvScale>
+      <x>20.000000</x>
+      <y>20.000000</y>
+    </uvScale>
+  </importFullConfiguration>
+  <internalRevision>13</internalRevision>
+</object>

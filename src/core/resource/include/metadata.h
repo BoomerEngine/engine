@@ -34,10 +34,6 @@ public:
 
     //--
 
-    // compute the hash from configuration parameters
-    // NOTE: hash is never stored but instead used to compare configurations when detecting if resource should be reimproted or not
-    virtual void computeConfigurationKey(CRC64& crc) const;
-
     // compare with other configuration
     virtual bool compare(const ResourceConfiguration* other) const;
 
@@ -99,6 +95,9 @@ public:
 
     // version of the importer used to import the resource
     uint32_t importerClassVersion = 0;
+
+    // custom load file extension (only for custom loaded types, the generic one is not stored)
+    StringBuf loadExtension;
 
     //--
 

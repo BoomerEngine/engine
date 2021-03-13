@@ -29,7 +29,6 @@ RTTI_END_TYPE();
 
 RTTI_BEGIN_TYPE_CLASS(ImportFingerprintCache);
     RTTI_METADATA(ResourceDescriptionMetadata).description("Fingerprint Cache");
-    RTTI_METADATA(ResourceTagColorMetadata).color(0x70, 0x70, 0x70);
     RTTI_PROPERTY(m_entries);
 RTTI_END_TYPE();
 

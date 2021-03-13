@@ -17,7 +17,7 @@
 #include "core/io/include/directoryWatcher.h"
 #include "core/io/include/io.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(config)
+BEGIN_BOOMER_NAMESPACE()
 
 RTTI_BEGIN_TYPE_CLASS(ConfigService);
 RTTI_END_TYPE();
@@ -29,7 +29,7 @@ ConfigService::ConfigService()
 ConfigService::~ConfigService()
 {}
 
-app::ServiceInitializationResult ConfigService::onInitializeService( const app::CommandLine& cmdLine)
+bool ConfigService::onInitializeService(const CommandLine& cmdLine)
 {
     /*m_engineConfigDir = SystemPath(PathCategory::).addDir("config");
     TRACE_INFO("Engine config directory: '{}'", m_engineConfigDir);
@@ -55,16 +55,16 @@ app::ServiceInitializationResult ConfigService::onInitializeService( const app::
     if (!reloadConfig())
     {
         TRACE_ERROR("Failed to load base configuration for engine and project. Check your config files for errors.");
-        return app::ServiceInitializationResult::FatalError;
+        return false;
     }
 
     if (cmdLine.hasParam("dumpConfig"))
         dumpConfig();
 
-    return app::ServiceInitializationResult::Finished;
+    return true;
 }
 
-bool ConfigService::loadFileConfig(StringView path, config::Storage& outStorage) const
+bool ConfigService::loadFileConfig(StringView path, ConfigStorage& outStorage) const
 {
     if (FileExists(path))
     {
@@ -75,7 +75,7 @@ bool ConfigService::loadFileConfig(StringView path, config::Storage& outStorage)
             return false;
         }
 
-        if (!config::Storage::Load(txt, outStorage))
+        if (!ConfigStorage::Load(txt, outStorage))
         {
             TRACE_ERROR("Failed to parse config file '{}', see log for details", path);
             return false;
@@ -89,7 +89,7 @@ bool ConfigService::loadFileConfig(StringView path, config::Storage& outStorage)
     return true;
 }
 
-bool ConfigService::loadDirConfig(StringView path, config::Storage& outStorage) const
+bool ConfigService::loadDirConfig(StringView path, ConfigStorage& outStorage) const
 {
     bool ret = true;
 
@@ -110,7 +110,7 @@ bool ConfigService::loadDirConfig(StringView path, config::Storage& outStorage) 
     return ret;
 }
 
-bool ConfigService::loadBaseConfig(config::Storage& outStorage) const
+bool ConfigService::loadBaseConfig(ConfigStorage& outStorage) const
 {
     bool ret = true;
 
@@ -152,7 +152,7 @@ bool ConfigService::reloadConfig()
         saveUserConfig();
 
     // load a new base
-    auto newBase = CreateUniquePtr<config::Storage>();
+    auto newBase = CreateUniquePtr<ConfigStorage>();
     if (!loadBaseConfig(*newBase))
     {
         TRACE_ERROR("Failed to load base configuration");
@@ -164,13 +164,13 @@ bool ConfigService::reloadConfig()
     m_hasValidBase = true;
 
     // reset all stored values
-    config::RawStorageData().clear();
+    ConfigRawStorageData().clear();
 
     // load again into the config system
-    loadBaseConfig(config::RawStorageData());
+    loadBaseConfig(ConfigRawStorageData());
 
     // load the user config on top
-    loadFileConfig(m_userConfigFile, config::RawStorageData());
+    loadFileConfig(m_userConfigFile, ConfigRawStorageData());
 
     // apply the loaded configuration to config properties
     ConfigPropertyBase::PullAll();
@@ -186,7 +186,7 @@ void ConfigService::saveUserConfig()
 
     // get the difference between base and
     StringBuilder txt;
-    config::Storage::Save(txt, config::RawStorageData(), *m_baseConfig);
+    ConfigStorage::Save(txt, ConfigRawStorageData(), *m_baseConfig);
 
     // store the user config
     if (!SaveFileFromString(m_userConfigFile, txt.toString()))
@@ -225,4 +225,4 @@ void ConfigService::onSyncUpdate()
     }
 }
 
-END_BOOMER_NAMESPACE_EX(config)
+END_BOOMER_NAMESPACE()

@@ -70,7 +70,7 @@ SourceAssetFingerprintService::SourceAssetFingerprintService()
 SourceAssetFingerprintService::~SourceAssetFingerprintService()
 {}
 
-app::ServiceInitializationResult SourceAssetFingerprintService::onInitializeService(const app::CommandLine& cmdLine)
+bool SourceAssetFingerprintService::onInitializeService(const CommandLine& cmdLine)
 {
     // determine the fingerprint cache file
     m_cacheFilePath = TempString("{}fingerprint.cache", SystemPath(PathCategory::UserConfigDir));
@@ -79,7 +79,7 @@ app::ServiceInitializationResult SourceAssetFingerprintService::onInitializeServ
     // load/cache the cache
     m_cache = LoadCache(m_cacheFilePath);
     m_nextCacheWriteCheck = NativeTimePoint::Now() + cvFingerprintCacheSaveInterval.get();
-    return app::ServiceInitializationResult::Finished;
+    return true;
 }
 
 void SourceAssetFingerprintService::onShutdownService()

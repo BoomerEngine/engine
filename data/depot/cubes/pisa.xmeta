@@ -1,0 +1,47 @@
+<?xml version="1.0" standalone="yes"?>
+<object class="ResourceMetadata">
+  <ids>
+    <element>{D22D26CC-B771-47F8-4D9E-76CF24C45B9B}</element>
+  </ids>
+  <importDependencies>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/cubes/pisa-PZ.exr</importPath>
+      <crc>2663515978</crc>
+    </element>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/cubes/pisa-PY.exr</importPath>
+      <crc>3609738624</crc>
+    </element>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/cubes/pisa-NZ.exr</importPath>
+      <crc>3551785412</crc>
+    </element>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/cubes/pisa-PX.exr</importPath>
+      <crc>4183926853</crc>
+    </element>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/cubes/pisa-NX.exr</importPath>
+      <crc>3745188730</crc>
+    </element>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/cubes/pisa-NY.exr</importPath>
+      <crc>799554261</crc>
+    </element>
+  </importDependencies>
+  <resourceClassType>StaticTextureCube</resourceClassType>
+  <importerClassType>assets::StaticCubeTextureFromImageImporter</importerClassType>
+  <importerClassVersion>1</importerClassVersion>
+  <importBaseConfiguration class="assets::StaticTextureCubeCompressionConfiguration">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132599566404010000</sourceImportedOn>
+  </importBaseConfiguration>
+  <importUserConfiguration class="assets::StaticTextureCubeCompressionConfiguration"/>
+  <importFullConfiguration class="assets::StaticTextureCubeCompressionConfiguration">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132599566404010000</sourceImportedOn>
+  </importFullConfiguration>
+  <internalRevision>5</internalRevision>
+</object>

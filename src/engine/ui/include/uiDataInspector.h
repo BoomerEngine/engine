@@ -76,17 +76,77 @@ public:
 
     //--
 
-    // bind null (remove any existing binding)
-    void bindNull();
-
-    // set the data view to show/edit in this inspector
-    void bindData(IDataView* data, bool readOnly = false);
-
-    // set the root view from an object, shorhand for bindData(obj->createDataView())
-    void bindObject(IObject* obj, bool readOnly = false);
-
     // bind action history through which all undo/redo is performed
     void bindActionHistory(ActionHistory* ah);
+
+    // set the data view to show/edit in this inspector
+    void bindViews(IDataView** views, uint32_t numViews, bool readOnly = false);
+
+    //--
+
+    // bind null (remove any existing binding)
+    INLINE void bindNull()
+    {
+        bindViews(nullptr, 0, false);
+    }
+
+    // bind single view
+    INLINE void bindView(IDataView* view, bool readOnly = false)
+    {
+        bindViews(&view, 1, readOnly);
+    }
+        
+    // set the root view from an object, shorhand for bindData(obj->createDataView())
+    INLINE void bindObject(IObject* obj, bool readOnly = false)
+    {
+        auto view = obj ? obj->createDataView() : nullptr;
+        bindView(view, readOnly);
+    }
+
+    // bind multiple objects objects
+    INLINE void bindObjects(IObject** objects, uint32_t numObjects, bool readOnly = false)
+    {
+        InplaceArray<DataViewPtr, 100> views;
+        InplaceArray<IDataView*, 100> viewPtrs;
+
+        for (uint32_t i = 0; i < numObjects; ++i)
+        {
+            if (objects[i])
+            {
+                if (auto view = objects[i]->createDataView())
+                {
+                    views.pushBack(view);
+                    viewPtrs.pushBack(view);
+                }
+            }
+        }
+        
+        bindViews(viewPtrs.typedData(), viewPtrs.size(), readOnly);
+    }
+
+    //--
+
+    // bind objects from table
+    template< typename T >
+    void bindObjects(const Array<RefPtr<T>>& objects, bool readOnly = false)
+    {
+        InplaceArray<DataViewPtr, 100> views;
+        InplaceArray<IDataView*, 100> viewPtrs;
+
+        for (const auto& obj : objects)
+        {
+            if (obj)
+            {
+                if (auto view = obj->createDataView())
+                {
+                    views.pushBack(view);
+                    viewPtrs.pushBack(view);
+                }
+            }
+        }
+
+        bindViews(viewPtrs.typedData(), viewPtrs.size(), readOnly);
+    }
 
     //--
 

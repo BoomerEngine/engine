@@ -134,7 +134,6 @@ enum class ImageFormatClass
     SRGB,
 };
 
-/// image view type
 enum class ImageViewType : uint8_t
 {
     View1D, // one dimensional view, compatible only with 1D textures or a slice of 1D array
@@ -144,6 +143,16 @@ enum class ImageViewType : uint8_t
     View1DArray, // array of 1D textures
     View2DArray, // array of 2D textures
     ViewCubeArray, // array of cube maps
+};
+
+enum class ImageCubeFace : uint8_t
+{
+    PositiveX,
+    NegativeX,
+    PositiveY,
+    NegativeY,
+    PositiveZ,
+    NegativeZ,
 };
 
 struct ImageFormatInfo

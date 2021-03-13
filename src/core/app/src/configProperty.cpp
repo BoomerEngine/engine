@@ -185,22 +185,22 @@ bool ConfigPropertyBase::pullValueFromConfig()
 {
     if (auto type  = this->type())
     {
-        if (auto entry = config::FindEntry(m_group, m_name))
+        if (auto entry = ConfigFindEntry(m_group, m_name))
         {
-                if (!LoadFromEntry(type, data(), defaultData(), *entry))
-                {
-                    TRACE_ERROR("Failed to load config element {}.{}", group(), name());
-                    return false;
-                }
+            if (!LoadFromEntry(type, data(), defaultData(), *entry))
+            {
+                TRACE_ERROR("Failed to load config element {}.{}", group(), name());
+                return false;
+            }
 
-                return true;
+            return true;
         }
     }
 
     return false;
 }
 
-void ConfigPropertyBase::SaveToEntry(Type type, const void* data, const void* defaultData, config::Entry& entry)
+void ConfigPropertyBase::SaveToEntry(Type type, const void* data, const void* defaultData, ConfigEntry& entry)
 {
     DEBUG_CHECK(type);
     DEBUG_CHECK(data);
@@ -234,7 +234,7 @@ void ConfigPropertyBase::SaveToEntry(Type type, const void* data, const void* de
     }
 }
 
-bool ConfigPropertyBase::LoadFromEntry(Type type, void* data, const void* defaultData, const config::Entry& entry)
+bool ConfigPropertyBase::LoadFromEntry(Type type, void* data, const void* defaultData, const ConfigEntry& entry)
 {
     DEBUG_CHECK(type);
     DEBUG_CHECK(data);
@@ -281,7 +281,7 @@ void ConfigPropertyBase::pushValueToConfig() const
         if (!type->compare(data(), defaultData()))
         {
             // get the configuration entry
-            auto &entry = config::MakeEntry(m_group, m_name);
+            auto &entry = ConfigMakeEntry(m_group, m_name);
             SaveToEntry(type, data(), defaultData(), entry);
         }
     }

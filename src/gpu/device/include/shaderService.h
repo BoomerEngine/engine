@@ -52,9 +52,9 @@ public:
 //----
 
 /// service for loading/compiling shaders
-class GPU_DEVICE_API ShaderService : public app::ILocalService
+class GPU_DEVICE_API ShaderService : public IService
 {
-	RTTI_DECLARE_VIRTUAL_CLASS(ShaderService, app::ILocalService);
+	RTTI_DECLARE_VIRTUAL_CLASS(ShaderService, IService);
 
 public:
 	ShaderService();
@@ -84,7 +84,7 @@ private:
 
     //--
 
-    virtual app::ServiceInitializationResult onInitializeService(const app::CommandLine& cmdLine) override final;
+    virtual bool onInitializeService(const CommandLine& cmdLine) override final;
     virtual void onShutdownService() override final;
     virtual void onSyncUpdate() override final;
 };

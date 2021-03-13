@@ -13,71 +13,71 @@
 #include "core/containers/include/stringBuilder.h"
 #include "core/containers/include/stringParser.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(config)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
-Storage::Storage()
+ConfigStorage::ConfigStorage()
 {}
 
-Storage::~Storage()
+ConfigStorage::~ConfigStorage()
 {
     m_groups.clearPtr();
 }
 
-void Storage::clear()
+void ConfigStorage::clear()
 {
     auto lock  = CreateLock(m_lock);
     for (auto group  : m_groups.values())
         group->clear();
 }
 
-void Storage::modified()
+void ConfigStorage::modified()
 {
     ++m_version;
 }
 
-Group& Storage::group(StringView name)
+ConfigGroup& ConfigStorage::group(StringView name)
 {
-    ASSERT_EX(!name.empty(), "Group name cannot be empty");
+    ASSERT_EX(!name.empty(), "ConfigGroup name cannot be empty");
 
     auto lock  = CreateLock(m_lock);
     return *group_NoLock(name);
 }
 
-Group* Storage::group_NoLock(StringView name)
+ConfigGroup* ConfigStorage::group_NoLock(StringView name)
 {
     auto group  = m_groups.findSafe(name, nullptr);
     if (!group)
     {
         auto nameStr = StringBuf(name);
-        group = new Group(this, nameStr);
+        group = new ConfigGroup(this, nameStr);
         m_groups[nameStr] = group;
     }
 
     return group;
 }
 
-const Group* Storage::findGroup(StringView name) const
+const ConfigGroup* ConfigStorage::findGroup(StringView name) const
 {
     auto lock  = CreateLock(m_lock);
     return findGroup_NoLock(name);
 }
 
-const Group* Storage::findGroup_NoLock(StringView name) const
+const ConfigGroup* ConfigStorage::findGroup_NoLock(StringView name) const
 {
     return m_groups.findSafe(name, nullptr);
 }
 
-Array<const Group*> Storage::findAllGroups(StringView groupNameSubString) const
+Array<const ConfigGroup*> ConfigStorage::findAllGroups(StringView groupNameSubString) const
 {
     auto lock  = CreateLock(m_lock);
     return findAllGroups_NoLock(groupNameSubString);
 }
 
-Array<const Group*> Storage::findAllGroups_NoLock(StringView groupNameSubString) const
+Array<const ConfigGroup*> ConfigStorage::findAllGroups_NoLock(StringView groupNameSubString) const
 {
-    Array<const Group*> ret;
+    Array<const ConfigGroup*> ret;
     for (auto group  : m_groups.values())
         if (group->name().view().beginsWith(groupNameSubString))
             ret.pushBack(group);
@@ -85,7 +85,7 @@ Array<const Group*> Storage::findAllGroups_NoLock(StringView groupNameSubString)
     return ret;
 }
 
-bool Storage::removeGroup(StringView name)
+bool ConfigStorage::removeGroup(StringView name)
 {
     auto lock  = CreateLock(m_lock);
 
@@ -96,7 +96,7 @@ bool Storage::removeGroup(StringView name)
     return false;
 }
 
-bool Storage::removeEntry(StringView groupName, StringView varName)
+bool ConfigStorage::removeEntry(StringView groupName, StringView varName)
 {
     auto lock  = CreateLock(m_lock);
 
@@ -109,7 +109,7 @@ bool Storage::removeEntry(StringView groupName, StringView varName)
 
 //--
 
-bool Storage::Load(StringView txt, Storage& ret)
+bool ConfigStorage::Load(StringView txt, ConfigStorage& ret)
 {
     StringParser f(txt);
     StringView lastGroup;
@@ -211,7 +211,7 @@ bool Storage::Load(StringView txt, Storage& ret)
     return true;
 }
 
-void Storage::Save(IFormatStream& f, const Storage& cur, const Storage& base)
+void ConfigStorage::Save(IFormatStream& f, const ConfigStorage& cur, const ConfigStorage& base)
 {
     // nothing to save if we compare against self
     if (&cur == &base)
@@ -223,12 +223,12 @@ void Storage::Save(IFormatStream& f, const Storage& cur, const Storage& base)
     for (auto curGroup  : cur.m_groups.values())
     {
         if (auto baseGroup  = base.findGroup_NoLock(curGroup->name()))
-            Group::SaveDiff(f, *curGroup, *baseGroup);
+            ConfigGroup::SaveDiff(f, *curGroup, *baseGroup);
         else
-            Group::Save(f, *curGroup);
+            ConfigGroup::Save(f, *curGroup);
     }
 }
 
 //---
 
-END_BOOMER_NAMESPACE_EX(config)
+END_BOOMER_NAMESPACE()

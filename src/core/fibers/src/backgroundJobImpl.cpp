@@ -145,6 +145,7 @@ void BackgroundScheduler::runBucket(ThreadBucket* bucket)
         {
             PC_SCOPE_LVL0(BackgroundJob);
             bucket->currentJob->run();
+            bucket->currentJob.reset();
         }
     }
 

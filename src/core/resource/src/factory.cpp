@@ -43,7 +43,7 @@ void IResourceFactory::GetAllFactories(Array<ClassType>& outFactories)
     RTTI::GetInstance().enumClasses(IResourceFactory::GetStaticClass(), outFactories);
 }
 
-void IResourceFactory::GetAllResourceClasses(Array<ClassType>& outResourceClasses)
+void IResourceFactory::GetAllResourceClasses(Array<ResourceClass>& outResourceClasses)
 {
     // get all known resource factories
     Array<ClassType> factoryClasses;
@@ -56,16 +56,16 @@ void IResourceFactory::GetAllResourceClasses(Array<ClassType>& outResourceClasse
         if (metaData != nullptr)
         {
             DEBUG_CHECK_EX(metaData->resourceClass() != nullptr, "Factory without bound resource class");
-            if (metaData->resourceClass())
+            if (auto rc = metaData->resourceClass().cast<IResource>())
             {
-                DEBUG_CHECK_EX(!outResourceClasses.contains(metaData->resourceClass()), "Many factories for the same resource class");
-                outResourceClasses.pushBack(metaData->resourceClass());
+                DEBUG_CHECK_EX(!outResourceClasses.contains(rc), "Many factories for the same resource class");
+                outResourceClasses.pushBack(rc);
             }
         }
     }
 }
 
-FactoryPtr IResourceFactory::CreateFactoryForResource(ClassType resourceClass)
+FactoryPtr IResourceFactory::CreateFactoryForResource(ResourceClass resourceClass)
 {
     // get all known resource factories
     Array<ClassType> factoryClasses;

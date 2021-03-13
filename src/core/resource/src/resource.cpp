@@ -41,7 +41,7 @@ void IResource::metadata(const ResourceMetadataPtr& data)
     m_metadata->parent(this);
 }
 
-void IResource::resourceModifiedFlag()
+void IResource::resetModifiedFlag()
 {
     if (m_modified)
     {
@@ -61,13 +61,11 @@ void IResource::markModified()
     TBaseClass::markModified();
 
     // mark as modified only if we are standalone resource
-    if (!m_modified)
-    {
-        m_modified = true;
+    m_modified = true;
 
-        auto selfRef = ResourcePtr(AddRef(this));
-        DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_MODIFIED, selfRef);
-    }
+    // notify listeners
+    auto selfRef = ResourcePtr(AddRef(this));
+    DispatchGlobalEvent(eventKey(), EVENT_RESOURCE_MODIFIED, selfRef);
 }
 
 void IResource::invalidateRuntimeVersion()

@@ -53,6 +53,8 @@ enum class ImportStatus : uint8_t
 /// import flags
 enum class ImportExtendedStatusBit : uint32_t
 {
+    Canceled,
+    MetadataInvalid,
     NotImported,
     ImporterClassMissing,
     ImporterVersionChanged,
@@ -62,6 +64,7 @@ enum class ImportExtendedStatusBit : uint32_t
     SourceFileChanged,
     SourceFileNotReadable,
     ConfigurationChanged,
+    UpToDate,
 };
 
 typedef BitFlags<ImportExtendedStatusBit> ImportExtendedStatusFlags;

@@ -12,8 +12,9 @@
 #include "core/system/include/timing.h"
 
 #include "uiElementLayout.h"
-#include "uiActionTable.h"
 #include "uiEventFunction.h"
+#include "uiKeyShortcuts.h"
+
 #include "core/containers/include/hashSet.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
@@ -302,6 +303,42 @@ private:
 
 //------
 
+/// clipboard interface
+class ENGINE_UI_API IClipboard : public NoCopy
+{
+public:
+    virtual ~IClipboard();
+
+    //--
+
+    // UTF8 text
+    virtual void storeText(StringView text) = 0; // format: Text and UniText
+    virtual bool loadText(StringBuf& outText) const = 0;
+
+    // generic data
+    virtual void storeData(StringView format, const void* data, uint32_t size) = 0;
+    virtual bool loadData(StringView format, Buffer& outData) const = 0;
+
+    //--
+
+    /// store (serialize) object into the clipboard, the object's class is the format
+    void storeObject(const IObject* data);
+
+    /// load object from clipboard
+    ObjectPtr loadObject(ClassType expectedClass) const;
+
+    /// load object from clipboard
+    template< typename T >
+    INLINE RefPtr<T> loadObject() const { return rtti_cast<T>(loadObject(T::GetStaticClass())); }
+
+    //--
+
+    // get the "local", in-app clipboard, always there
+    static IClipboard& LocalClipboard();
+};
+
+//------
+
 /// basic ui element
 /// containers form a hierarchy and do all the heavy lifting of a "control"
 /// the tiny bits are left to be implemented by the "elements"
@@ -459,17 +496,14 @@ public:
 
     //--
 
-    /// get the action table for this element, created on demand
-    ActionTable& actions();
+    /// get the key shortcut table, creates one on demand
+    KeyShortcutTable& shortcuts();
 
-    /// get the action table for this element, returns default empty table if element has no table on it's own
-    const ActionTable& actions() const;
+    /// get the key shortcut table for this element, returns default empty table if element has no table on it's own
+    const KeyShortcutTable& shortcuts() const;
 
-    /// call action on this element, if action is not found here we propagate it to parent
-    virtual bool runAction(StringID name, IElement* source);
-
-    /// check action status
-    virtual ActionStatusFlags checkAction(StringID name) const;
+    /// bind key shortcut
+    EventFunctionBinder bindShortcut(KeyShortcut key);
 
     //--
 
@@ -657,11 +691,11 @@ public:
     ///---
 
     /// handle primary mouse input (first click)
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt);
+    virtual InputActionPtr handleMouseClick(const ui::ElementArea& area, const input::MouseClickEvent& evt);
 
     /// handle primary overlay mouse input (first click)
     /// the overlay events are passed in the reverse order to allow the parents to handle the overlay events
-    virtual InputActionPtr handleOverlayMouseClick(const ElementArea& area, const input::MouseClickEvent& evt);
+    virtual InputActionPtr handleOverlayMouseClick(const ui::ElementArea& area, const input::MouseClickEvent& evt);
 
     /// handle mouse wheel
     virtual bool handleMouseWheel(const input::MouseMovementEvent &evt, float delta);
@@ -685,22 +719,22 @@ public:
     virtual bool handleExternalCharEvent(const input::CharEvent& evt);
 
     /// handle window system cursor request
-    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const;
+    virtual bool handleCursorQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, input::CursorType& outCursorType) const;
 
     /// handle window system window area query
-    virtual bool handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, input::AreaType& outAreaType) const;
+    virtual bool handleWindowAreaQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, input::AreaType& outAreaType) const;
 
     // handle context menu at given position
-    virtual bool handleContextMenu(const ElementArea& area, const Position& absolutePosition, input::KeyMask controlKeys);
+    virtual bool handleContextMenu(const ui::ElementArea& area, const ui::Position& absolutePosition, input::KeyMask controlKeys);
 
     // handle entering hover state
-    virtual void handleHoverEnter(const Position& absolutePosition);
+    virtual void handleHoverEnter(const ui::Position& absolutePosition);
 
     // handle leaving hover state
-    virtual void handleHoverLeave(const Position& absolutePosition);
+    virtual void handleHoverLeave(const ui::Position& absolutePosition);
 
     // handle long hover, if not handled a tooltip as attempted
-    virtual bool handleHoverDuration(const Position& absolutePosition);
+    virtual bool handleHoverDuration(const ui::Position& absolutePosition);
 
     // handle gaining focus state
     virtual void handleFocusGained();
@@ -713,11 +747,11 @@ public:
 
     /// handle drag&drop action with given data that enters this item at given position
     /// if a drag&drop handler is returned it will be used to coordinate all dragging, returning NULL continues the search
-    virtual DragDropHandlerPtr handleDragDrop(const DragDropDataPtr& data, const Position& entryPosition);
+    virtual DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition);
 
     /// generic drag&drop behavior - accept drag&drop data, called by the generic handler only
     /// NOTE: there's no cancel event in the generic behavior because we assume that the simple handling will not create a complicated preview
-    virtual void handleDragDropGenericCompletion(const DragDropDataPtr& data, const Position& entryPosition);
+    virtual void handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition);
 
     /// notification to sub classes than the enable state of the element has changed
     virtual void handleEnableStateChange(bool isEnabled);
@@ -817,6 +851,9 @@ public:
 
     /// bind window renderer
     virtual void bindNativeWindowRenderer(Renderer* windowRenderer);
+
+    // get parent window native handle for given ui element (useful for OS interop)
+    uint64_t windowNativeHandle() const;
 
     /// request layout of this element to be invalidated
     void invalidateLayout();
@@ -991,6 +1028,11 @@ public:
 
     //--
 
+    /// get the clipboard associated with the element (usually the system one)
+    IClipboard& clipboard() const;
+
+    //--
+
 protected:
     friend class ElementChildIterator;
 
@@ -1153,8 +1195,8 @@ private:
     // window renderer, can be used to create windows
     Renderer* m_renderer = nullptr;
 
-    // actions (for menus and toolbars, as well as key shortcuts)
-    ActionTable* m_actionTable = nullptr;
+    // keyboard shortctuts that this element should process when in the focus chain
+    KeyShortcutTable* m_keyShortctuts = nullptr;
 
     // event list, created only if events are registered
     EventTable* m_eventTable = nullptr;
@@ -1166,8 +1208,6 @@ private:
 
     void unlinkFromChildrenList(IElement*& listHead, IElement*& listTail);
     void linkToChildrenList(IElement*& listHead, IElement*& listTail);
-
-    void updateTimers();
 
     void computeSizeOverlay(Size& outSize) const;
     void computeSizeVertical(Size& outSize) const;

@@ -56,33 +56,6 @@ void PopupWindow::handleExternalActivation(bool isActive)
         requestClose();
 }
 
-bool PopupWindow::runAction(StringID name, IElement* source)
-{
-    if (TBaseClass::runAction(name, source))
-        return true;
-
-    if (auto parent = m_parent.lock())
-        return parent->runAction(name, source);
-
-    if (auto owner = m_setup.m_popupOwner.lock())
-        return owner->runAction(name, source);
-
-    return false;
-}
-
-ActionStatusFlags PopupWindow::checkAction(StringID name) const
-{
-    ActionStatusFlags ret = TBaseClass::checkAction(name);
-
-    if (auto parent = m_parent.lock())
-        ret |= parent->checkAction(name);
-
-    if (auto owner = m_setup.m_popupOwner.lock())
-        ret |= owner->checkAction(name);
-
-    return ret;
-}
-
 static PopupWindow* FindRootPopupWindow(IElement* element)
 {
     if (element)

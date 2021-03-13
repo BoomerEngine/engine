@@ -13,18 +13,18 @@ BEGIN_BOOMER_NAMESPACE()
 class BCCLogSinkWithErrorCapture;
 
 // commandline processor application
-class BCCApp : public app::IApplication
+class BCCApp : public IApplication
 {
 public:
     BCCApp();
     virtual ~BCCApp();
 
-    virtual bool initialize(const app::CommandLine& commandline) override final;
+    virtual bool initialize(const CommandLine& commandline) override final;
     virtual void update() override final;
     virtual void cleanup() override final;
 
     UniquePtr<BCCLogSinkWithErrorCapture> m_globalSink;
-    app::CommandHostPtr m_commandHost;
+    CommandHostPtr m_commandHost;
 
     NativeTimePoint m_startedTime;
 

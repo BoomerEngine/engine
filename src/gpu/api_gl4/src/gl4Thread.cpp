@@ -158,7 +158,7 @@ Thread::~Thread()
 
 }
 
-bool Thread::threadStartup(const app::CommandLine& cmdLine, DeviceCaps& outCaps)
+bool Thread::threadStartup(const CommandLine& cmdLine, DeviceCaps& outCaps)
 {
 	// initialize the extension library
 	auto ret = glewInit();
@@ -355,12 +355,12 @@ IBaseShaders* Thread::createOptimalShaders(const ShaderData* data)
 	return new Shaders(this, data);
 }
 			
-ObjectRegistry* Thread::createOptimalObjectRegistry(const app::CommandLine& cmdLine)
+ObjectRegistry* Thread::createOptimalObjectRegistry(const CommandLine& cmdLine)
 {
 	return new ObjectRegistry(this);
 }
 
-IBaseObjectCache* Thread::createOptimalObjectCache(const app::CommandLine& cmdLine)
+IBaseObjectCache* Thread::createOptimalObjectCache(const CommandLine& cmdLine)
 {
 	return new ObjectCache(this);
 }

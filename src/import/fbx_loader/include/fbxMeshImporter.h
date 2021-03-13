@@ -33,6 +33,7 @@ public:
     bool m_flipUV = true;
     bool m_forceNodeSkin = false;
     bool m_createNodeMaterials = false;
+    Vector2 m_uvScale = Vector2(1, 1);
 
     // base material template to use when importing materials
     ResourceAsyncRef<IMaterial> m_baseMaterialTemplate;

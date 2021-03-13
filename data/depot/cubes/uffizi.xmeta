@@ -1,0 +1,47 @@
+<?xml version="1.0" standalone="yes"?>
+<object class="ResourceMetadata">
+  <ids>
+    <element>{A0F1BDD3-BF81-492A-C4BD-8FD83FB38DCF}</element>
+  </ids>
+  <importDependencies>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/cubes/uffizi-NY.exr</importPath>
+      <crc>3546052005</crc>
+    </element>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/cubes/uffizi-PY.exr</importPath>
+      <crc>2159342446</crc>
+    </element>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/cubes/uffizi-PX.exr</importPath>
+      <crc>1993511486</crc>
+    </element>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/cubes/uffizi-NX.exr</importPath>
+      <crc>622582392</crc>
+    </element>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/cubes/uffizi-PZ.exr</importPath>
+      <crc>3908997642</crc>
+    </element>
+    <element>
+      <importPath>LOCAL:/z/assets/engine/cubes/uffizi-NZ.exr</importPath>
+      <crc>4109700005</crc>
+    </element>
+  </importDependencies>
+  <resourceClassType>StaticTextureCube</resourceClassType>
+  <importerClassType>assets::StaticCubeTextureFromImageImporter</importerClassType>
+  <importerClassVersion>1</importerClassVersion>
+  <importBaseConfiguration class="assets::StaticTextureCubeCompressionConfiguration">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132599860673910000</sourceImportedOn>
+  </importBaseConfiguration>
+  <importUserConfiguration class="assets::StaticTextureCubeCompressionConfiguration"/>
+  <importFullConfiguration class="assets::StaticTextureCubeCompressionConfiguration">
+    <sourceImportedBy>RexDex</sourceImportedBy>
+    <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
+    <sourceImportedOn>132599860673910000</sourceImportedOn>
+  </importFullConfiguration>
+  <internalRevision>5</internalRevision>
+</object>

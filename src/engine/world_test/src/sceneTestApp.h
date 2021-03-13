@@ -18,13 +18,13 @@ class ISceneTest;
         
 /// boilerplate for rendering scene test
 /// contains basic scene initialization and other shit
-class SceneTestProject : public app::IApplication
+class SceneTestProject : public IApplication
 {
 public:
     SceneTestProject();
 
 protected:
-    virtual bool initialize(const app::CommandLine& commandline) override;
+    virtual bool initialize(const CommandLine& commandline) override;
     virtual void update() override;
     virtual void cleanup() override;
 

@@ -31,17 +31,11 @@ MTLMaterialImportConfig::MTLMaterialImportConfig()
 {
 }
 
-void MTLMaterialImportConfig::computeConfigurationKey(CRC64& crc) const
-{
-    TBaseClass::computeConfigurationKey(crc);
-    crc << m_materialName.view();
-}
-
 //--
 
 RTTI_BEGIN_TYPE_CLASS(MTLMaterialImporter);
     RTTI_OLD_NAME("wavefront::MTLMaterialImporter");
-    RTTI_METADATA(ResourceCookedClassMetadata).addClass<MaterialInstance>();
+    RTTI_METADATA(ResourceImportedClassMetadata).addClass<MaterialInstance>();
     RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtension("mtl");
     RTTI_METADATA(ResourceCookerVersionMetadata).version(5);
     RTTI_METADATA(ResourceImporterConfigurationClassMetadata).configurationClass<MTLMaterialImportConfig>();

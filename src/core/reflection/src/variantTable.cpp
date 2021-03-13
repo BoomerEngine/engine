@@ -64,36 +64,50 @@ void VariantTable::setVariant(StringID name, Variant&& value)
 {
     DEBUG_CHECK(name);
 
-    for (auto& entry : m_parameters)
+    if (value)
     {
-        if (entry.name == name)
+        for (auto& entry : m_parameters)
         {
-            entry.data = std::move(value);
-            return;
+            if (entry.name == name)
+            {
+                entry.data = std::move(value);
+                return;
+            }
         }
-    }
 
-    auto& entry = m_parameters.emplaceBack();
-    entry.name = name;
-    entry.data = std::move(value);
+        auto& entry = m_parameters.emplaceBack();
+        entry.name = name;
+        entry.data = std::move(value);
+    }
+    else
+    {
+        remove(name);
+    }
 }
 
 void VariantTable::setVariant(StringID name, const Variant& value)
 {
     DEBUG_CHECK(name);
 
-    for (auto& entry : m_parameters)
+    if (value)
     {
-        if (entry.name == name)
+        for (auto& entry : m_parameters)
         {
-            entry.data = value;
-            return;
+            if (entry.name == name)
+            {
+                entry.data = value;
+                return;
+            }
         }
-    }
 
-    auto& entry = m_parameters.emplaceBack();
-    entry.name = name;
-    entry.data = value;
+        auto& entry = m_parameters.emplaceBack();
+        entry.name = name;
+        entry.data = value;
+    }
+    else
+    {
+        remove(name);
+    }
 }
 
 const Variant& VariantTable::getVariant(StringID name) const

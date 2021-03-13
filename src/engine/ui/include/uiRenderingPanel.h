@@ -54,6 +54,8 @@ public:
 		uint32_t width = 0;
 		uint32_t height = 0;
 
+        INLINE Size size() const { return Size(width, height); }
+
 		const gpu::RenderTargetView* colorBuffer = nullptr;
 		const gpu::RenderTargetView* depthBuffer = nullptr;
 		const rendering::FrameParams_Capture* capture = nullptr;

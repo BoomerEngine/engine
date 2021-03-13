@@ -11,7 +11,7 @@
 #include "core/system/include/timing.h"
 #include "localServiceContainer.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(app)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -43,7 +43,7 @@ public:
 
 private:
     // command itself
-    app::CommandPtr m_command;
+    CommandPtr m_command;
 
     // signal that is flagged once command finishes
     FiberSemaphore m_finishedSignal;
@@ -63,4 +63,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(app)
+END_BOOMER_NAMESPACE()
