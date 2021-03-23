@@ -42,6 +42,12 @@ EntityThreadContext::EntityThreadContext()
 
 //--
 
+EntityEditorState::EntityEditorState() = default;
+EntityEditorState::EntityEditorState(const EntityEditorState& other) = default;
+EntityEditorState& EntityEditorState::operator=(const EntityEditorState& other) = default;
+
+//--
+
 RTTI_BEGIN_TYPE_CLASS(Entity);
     RTTI_PROPERTY(m_transform);
 RTTI_END_TYPE();
@@ -127,8 +133,9 @@ void Entity::requestTransformParentChange(Entity* newEntityToFollow, bool keepWo
     // TODO
 }
 
-void Entity::handleSelectionChanged()
+void Entity::handleEditorStateChange(const EntityEditorState& state)
 {
+    m_editorState = state;
 }
 
 void Entity::applyTransform(World* world, const EntityThreadContext& tc, const Transform& localTransform, const Transform& worldTransform)

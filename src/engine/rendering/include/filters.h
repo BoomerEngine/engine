@@ -14,7 +14,7 @@ BEGIN_BOOMER_NAMESPACE_EX(rendering)
 
 ///---
 
-enum class FilterBit : uint16_t
+enum class FrameFilterBit : uint16_t
 {
     Meshes,
     CascadeShadows, // render cascade shadows
@@ -77,7 +77,7 @@ struct ENGINE_RENDERING_API FilterFlags
     static const FilterFlags& DefaultGame();
     static const FilterFlags& DefaultEditor();
 
-    INLINE FilterFlags& operator+=(FilterBit bit)
+    INLINE FilterFlags& operator+=(FrameFilterBit bit)
     {
         auto wordIndex = (int)bit / 64;
         auto bitIndex = (int)bit % 64;
@@ -85,12 +85,12 @@ struct ENGINE_RENDERING_API FilterFlags
         return *this;
     }
 
-    INLINE FilterFlags& operator|=(FilterBit bit)
+    INLINE FilterFlags& operator|=(FrameFilterBit bit)
     {
         return *this += bit;
     }
 
-    INLINE FilterFlags& operator-=(FilterBit bit)
+    INLINE FilterFlags& operator-=(FrameFilterBit bit)
     {
         auto wordIndex = (int)bit / 64;
         auto bitIndex = (int)bit % 64;
@@ -98,7 +98,7 @@ struct ENGINE_RENDERING_API FilterFlags
         return *this;
     }
 
-    INLINE FilterFlags& operator^=(FilterBit bit)
+    INLINE FilterFlags& operator^=(FrameFilterBit bit)
     {
         auto wordIndex = (int)bit / 64;
         auto bitIndex = (int)bit % 64;
@@ -106,19 +106,19 @@ struct ENGINE_RENDERING_API FilterFlags
         return *this;
     }
 
-    INLINE bool test(FilterBit bit) const
+    INLINE bool test(FrameFilterBit bit) const
     {
         auto wordIndex = (int)bit / 64;
         auto bitIndex = (int)bit % 64;
         return 0 != (m_bits[wordIndex] & (1ULL << bitIndex));
     }
 
-    INLINE bool operator&(FilterBit bit) const
+    INLINE bool operator&(FrameFilterBit bit) const
     {
         return test(bit);
     }
 
-    INLINE void toggle(FilterBit bit, bool value)
+    INLINE void toggle(FrameFilterBit bit, bool value)
     {
         if (value)
             *this += bit;
@@ -127,7 +127,7 @@ struct ENGINE_RENDERING_API FilterFlags
     }
 
 private:
-    static const auto NUM_WORDS = ((int)FilterBit::MAX + 63) / 64;
+    static const auto NUM_WORDS = ((int)FrameFilterBit::MAX + 63) / 64;
     uint64_t m_bits[NUM_WORDS];
 };
 
@@ -140,7 +140,7 @@ struct FilterBitInfo : public NoCopy
 public:
     StringID name;
     Array<const FilterBitInfo*> children;
-    FilterBit bit; // may not be set
+    FrameFilterBit bit; // may not be set
 };
 
 // get extra info about a filter bit

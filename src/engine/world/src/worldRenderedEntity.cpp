@@ -80,30 +80,38 @@ void IWorldRenderedEntity::destroyRenderingProxy()
     }
 }
 
+void IWorldRenderedEntity::handleEditorStateChange(const EntityEditorState& state)
+{
+    const auto oldState = editorState();
+    TBaseClass::handleEditorStateChange(state);
+
+    if (state.selectable != oldState.selectable)
+    {
+        recreateRenderingProxy();
+    }
+    else if (state.selected != oldState.selected)
+    {
+        if (m_proxyObject)
+        {
+            rendering::ObjectProxyFlags clearFlags, setFlags;
+
+            const auto selected = state.selected;
+            if (selected)
+                setFlags |= rendering::ObjectProxyFlagBit::Selected;
+            else
+                clearFlags |= rendering::ObjectProxyFlagBit::Selected;
+
+            m_proxyManager->commandUpdateProxyFlag(m_proxyObject, clearFlags, setFlags);
+        }
+    }
+}
+
 void IWorldRenderedEntity::handleTransformUpdate(const EntityThreadContext& tc)
 {
     TBaseClass::handleTransformUpdate(tc);
 
     if (m_proxyObject)
         m_proxyManager->commandMoveProxy(m_proxyObject, cachedLocalToWorldMatrix());
-}
-
-void IWorldRenderedEntity::handleSelectionChanged()
-{
-    TBaseClass::handleSelectionChanged();
-
-    if (m_proxyObject)
-    {
-        rendering::ObjectProxyFlags clearFlags, setFlags;
-
-        const auto selected = false; // TODO: selection "service"
-        if (selected)
-            setFlags |= rendering::ObjectProxyFlagBit::Selected;
-        else
-            clearFlags |= rendering::ObjectProxyFlagBit::Selected;
-
-        m_proxyManager->commandUpdateProxyFlag(m_proxyObject, clearFlags, setFlags);
-    }
 }
 
 bool IWorldRenderedEntity::initializeFromTemplateProperties(const ITemplatePropertyValueContainer& templateProperties)

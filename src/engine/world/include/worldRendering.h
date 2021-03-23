@@ -39,6 +39,8 @@ public:
 
     void renderViewport(World* world, gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const WorldRenderingContext& context) const;
 
+    //--
+
 protected:
     virtual bool handleInitialize(World& scene) override;
     virtual void handleShutdown() override;

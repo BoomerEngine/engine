@@ -108,14 +108,14 @@ void MeshEntity::createRenderingProxy(rendering::Scene* scene, rendering::Object
                 if (m_receiveShadows)
                     proxy->m_flags |= rendering::ObjectProxyFlagBit::ReceivesShadows;
 
-                const auto selected = false;
+                const auto selected = editorState().selected;
                 if (selected)
                     proxy->m_flags |= rendering::ObjectProxyFlagBit::Selected;
 
                 proxy->m_color = m_color;
                 proxy->m_colorEx = m_colorEx;
                 proxy->m_localToWorld = cachedLocalToWorldMatrix();
-                //proxy->m_selectable = Selectable(selectionOwner());
+                proxy->m_selectable = editorState().selectable;
 
                 outProxy = proxy;
                 outManager = manager;

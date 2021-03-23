@@ -193,18 +193,6 @@ bool SceneNodeVisualizationHandler::CheckProxy(const RefWeakPtr<SceneNodeVisuali
     return false;
 }
 
-static void ApplySelectionFlagToEntity(Entity* entity, bool flag)
-{
-    /*if (entity)
-        entity->requestSelectionChange(flag);*/
-}
-
-static void ApplySelectables(Entity* entity, uint32_t nodeObjectID)
-{
-    /*if (entity)
-        entity->bindSelectionOwner(nodeObjectID);*/
-}
-
 void SceneNodeVisualizationHandler::ApplyProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex, const EntityPtr& entity)
 {
     if (auto handler = self.lock())
@@ -222,8 +210,10 @@ void SceneNodeVisualizationHandler::ApplyProxy(const RefWeakPtr<SceneNodeVisuali
                     {
                         entity->requestTransformChangeWorldSpace(proxy->placement);
 
-                        ApplySelectables(entity, proxy->contentNodeObjectId);
-                        ApplySelectionFlagToEntity(entity, proxy->effectSelection);
+                        EntityEditorState state;
+                        state.selectable = proxy->contentNodeObjectId;
+                        state.selected = proxy->effectSelection;
+                        entity->handleEditorStateChange(state);
 
                         auto& entry = handler->m_reattachList.emplaceBack();
                         entry.index = proxyIndex;
@@ -312,8 +302,15 @@ void SceneNodeVisualizationHandler::updateProxySelection(SceneNodeVisualization*
         changed = true;
     }
 
-    if (changed)
-        ApplySelectionFlagToEntity(proxy->entity, useSelectionEffect);
+    if (changed && proxy->entity)
+    {
+        auto state = proxy->entity->editorState();
+        if (state.selected != useSelectionEffect)
+        {
+            state.selected = useSelectionEffect;
+            proxy->entity->handleEditorStateChange(state);
+        }
+    }
 }
     
 void SceneNodeVisualizationHandler::updateProxyVisibility(SceneNodeVisualization* proxy, const SceneContentEntityNode* entityNode)

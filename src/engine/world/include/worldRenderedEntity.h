@@ -46,7 +46,7 @@ protected:
     virtual void handleAttach() override;
     virtual void handleDetach() override;
     virtual void handleTransformUpdate(const EntityThreadContext& tc) override;
-    virtual void handleSelectionChanged() override;
+    virtual void handleEditorStateChange(const EntityEditorState& state) override;
 
     virtual void queryTemplateProperties(ITemplatePropertyBuilder& outTemplateProperties) const override;
     virtual bool initializeFromTemplateProperties(const ITemplatePropertyValueContainer& templateProperties) override;

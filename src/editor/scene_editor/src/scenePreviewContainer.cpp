@@ -217,7 +217,7 @@ SceneContentNodePtr ScenePreviewContainer::resolveSelectable(const Selectable& s
         if (!m_selectionSettings.explorePrefabs)
         {
             while (IsDevivedNode(node->parent()))
-                node = AddRef(node->parent());                    
+                node = AddRef(node->parent());
         }
     }
 

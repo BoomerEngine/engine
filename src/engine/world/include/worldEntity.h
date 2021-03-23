@@ -10,6 +10,7 @@
 #pragma once
 
 #include "core/object/include/object.h"
+#include "core/object/include/objectSelection.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -70,6 +71,20 @@ public:
 
 //---
 
+// entity editor state, accessible only for entities while they are in the editor
+struct ENGINE_WORLD_API EntityEditorState
+{
+    Selectable selectable;
+
+    bool selected = false;
+
+    EntityEditorState();
+    EntityEditorState(const EntityEditorState& other);
+    EntityEditorState& operator=(const EntityEditorState& other);
+};
+
+//---
+
 // a basic game dweller, contains components and links between them
 class ENGINE_WORLD_API Entity : public IObject
 {
@@ -105,6 +120,9 @@ public:
 
     /// cached world space matrix
     INLINE const Matrix& cachedLocalToWorldMatrix() const { return m_cachedLocalToWorldMatrix; }
+
+    // get editor state
+    INLINE const EntityEditorState& editorState() const { return m_editorState; }
 
     //--
 
@@ -156,9 +174,6 @@ public:
     /// render debug elements
     virtual void handleDebugRender(rendering::FrameParams& frame) const;
 
-    /// handle selection change (editor...)
-    virtual void handleSelectionChanged();
-
     /// handle game input event
     virtual bool handleInput(const input::BaseEvent& evt);
 
@@ -200,6 +215,9 @@ public:
 
     //---
 
+    // toggle editor state
+    virtual void handleEditorStateChange(const EntityEditorState& state);
+
 private:
     World* m_world = nullptr;
 
@@ -209,6 +227,8 @@ private:
     StringID m_name; // assigned when attaching to world
 
     Transform m_transform;
+
+    EntityEditorState m_editorState;
 
     //--
 
