@@ -11,23 +11,23 @@
 #include "core/math/include/point.h"
 #include "core/system/include/timing.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
 
 /// basic concept of input device
-class CORE_INPUT_API IDevice
+class CORE_INPUT_API IInputDevicve
 {
-    RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IDevice);
+    RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IInputDevicve);
 
 public:
-    IDevice();
-    virtual ~IDevice();
+    IInputDevicve();
+    virtual ~IInputDevicve();
 
     /// initialize device
-    virtual bool initialize(IContext* context) = 0;
+    virtual bool initialize(IInputContext* context) = 0;
 
     /// reset internal state of this device
     /// this acts as if user release all keys on the device
     virtual void process() = 0;
 };
 
-END_BOOMER_NAMESPACE_EX(input)
+END_BOOMER_NAMESPACE()

@@ -39,7 +39,7 @@ public:
     virtual void windowDestroy(NativeWindowID id)  override;
     virtual NativeWindowID windowAtPos(const Position& absoluteWindowPosition) override;
     virtual ElementArea windowMonitorAtPos(const Position& absoluteWindowPosition) override;
-    virtual input::EventPtr windowPullInputEvent(NativeWindowID id) override;
+    virtual EventPtr windowPullInputEvent(NativeWindowID id) override;
     virtual uint64_t windowNativeHandle(NativeWindowID id) override;
     virtual void windowShow(NativeWindowID id, bool visible) override;
     virtual void windowEnable(NativeWindowID id, bool enabled) override;
@@ -72,8 +72,8 @@ public:
     /// INativeWindowCallback
     virtual void onOutputWindowStateChanged(gpu::ObjectID output, bool active) override;
     virtual void onOutputWindowPlacementChanged(gpu::ObjectID output, const Rect& newSize, float pixelScale, bool duringSizeMove) override;
-    virtual bool onOutputWindowSelectCursor(gpu::ObjectID output, const Point& absolutePosition, input::CursorType& outCursorType) override;
-    virtual bool onOutputWindowHitTestNonClientArea(gpu::ObjectID output, const Point& absolutePosition, input::AreaType& outAreaType) override;
+    virtual bool onOutputWindowSelectCursor(gpu::ObjectID output, const Point& absolutePosition, CursorType& outCursorType) override;
+    virtual bool onOutputWindowHitTestNonClientArea(gpu::ObjectID output, const Point& absolutePosition, AreaType& outAreaType) override;
 
 private:
     struct NativeWindow : public NoCopy

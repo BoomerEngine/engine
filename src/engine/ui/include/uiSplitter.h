@@ -76,9 +76,9 @@ public:
 
 private:
     // IElement
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
-    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const override;
-    virtual bool handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, input::AreaType& outAreaType) const override final;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
+    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const override;
+    virtual bool handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, AreaType& outAreaType) const override final;
 
     Splitter* m_splitter;
     bool m_dragging : 1;

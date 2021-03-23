@@ -117,14 +117,14 @@ TypePickerBox::TypePickerBox(Type initialType, bool allowNullType, StringView ca
     };
 }
 
-bool TypePickerBox::handleKeyEvent(const input::KeyEvent & evt)
+bool TypePickerBox::handleKeyEvent(const InputKeyEvent & evt)
 {
-    if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_ESCAPE)
+    if (evt.pressed() && evt.keyCode() == InputKey::KEY_ESCAPE)
     {
         requestClose();
         return true;
     }
-    else if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_RETURN)
+    else if (evt.pressed() && evt.keyCode() == InputKey::KEY_RETURN)
     {
         closeIfValidTypeSelected();
         return true;

@@ -49,7 +49,7 @@ private:
     RefPtr<TypeListModel> m_listModel;
     bool m_allowNullType;
 
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
     void closeWithType(Type value);
     void closeIfValidTypeSelected();
 };

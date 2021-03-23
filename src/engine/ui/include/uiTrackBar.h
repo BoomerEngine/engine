@@ -53,9 +53,9 @@ public:
     void closeEditBox();
 
 private:
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override final;
-    virtual bool handleCursorQuery(const ElementArea &area, const Position &absolutePosition, input::CursorType &outCursorType) const override;
-    virtual bool handleMouseWheel(const input::MouseMovementEvent &evt, float delta) override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override final;
+    virtual bool handleCursorQuery(const ElementArea &area, const Position &absolutePosition, CursorType &outCursorType) const override;
+    virtual bool handleMouseWheel(const InputMouseMovementEvent &evt, float delta) override;
 
     double m_min;
     double m_max;
@@ -83,9 +83,9 @@ private:
 
 protected:
     virtual void arrangeChildren(const ElementArea& innerArea, const ElementArea& clipArea, ArrangedChildren& outArrangedChildren, const ElementDynamicSizing* dynamicSizing) const override;
-    virtual bool handleKeyEvent(const input::KeyEvent &evt) override;
+    virtual bool handleKeyEvent(const InputKeyEvent &evt) override;
 
-    virtual InputActionPtr handleOverlayMouseClick(const ElementArea &area, const input::MouseClickEvent &evt) override;
+    virtual InputActionPtr handleOverlayMouseClick(const ElementArea &area, const InputMouseClickEvent &evt) override;
     virtual void handleFocusLost() override;
 
     StringBuf formatDisplayText() const;

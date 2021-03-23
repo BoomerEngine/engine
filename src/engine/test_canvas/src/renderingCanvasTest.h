@@ -64,7 +64,7 @@ public:
 	virtual void shutdown() {};
     virtual void render(canvas::Canvas& canvas) {};
     virtual void update(float dt) {};
-    virtual void processInput(const input::BaseEvent& evt) {};
+    virtual void processInput(const InputEvent& evt) {};
 
     void reportError(StringView msg);
 

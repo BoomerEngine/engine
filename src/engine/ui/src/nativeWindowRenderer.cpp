@@ -144,7 +144,7 @@ void NativeWindowRenderer::windowDestroy(NativeWindowID id)
     }
 }
 
-input::EventPtr NativeWindowRenderer::windowPullInputEvent(NativeWindowID id)
+EventPtr NativeWindowRenderer::windowPullInputEvent(NativeWindowID id)
 {
     if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
         if (auto inputContext = window->output->window()->windowGetInputContext())
@@ -481,7 +481,7 @@ void NativeWindowRenderer::onOutputWindowPlacementChanged(gpu::ObjectID output, 
     }
 }
 
-bool NativeWindowRenderer::onOutputWindowSelectCursor(gpu::ObjectID output, const Point& absolutePosition, input::CursorType& outCursorType)
+bool NativeWindowRenderer::onOutputWindowSelectCursor(gpu::ObjectID output, const Point& absolutePosition, CursorType& outCursorType)
 {
     for (auto* info : m_nativeWindowMap.values())
     {
@@ -496,7 +496,7 @@ bool NativeWindowRenderer::onOutputWindowSelectCursor(gpu::ObjectID output, cons
     return false;
 }
 
-bool NativeWindowRenderer::onOutputWindowHitTestNonClientArea(gpu::ObjectID output, const Point& absolutePosition, input::AreaType& outAreaType)
+bool NativeWindowRenderer::onOutputWindowHitTestNonClientArea(gpu::ObjectID output, const Point& absolutePosition, AreaType& outAreaType)
 {
     for (auto* info : m_nativeWindowMap.values())
     {

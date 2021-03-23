@@ -51,7 +51,7 @@ FrameViewMain::FrameViewMain(const FrameRenderer& frame, const Setup& setup)
     m_viewport = Rect(0, 0, frame.frame().resolution.width, frame.frame().resolution.height);
 
     // compute cascade pars and start rendering
-    if (m_frame.frame().filters & FilterBit::CascadeShadows)
+    if (m_frame.frame().filters & FrameFilterBit::CascadeShadows)
     {
         const auto globalLightDir = m_frame.frame().globalLighting.globalLightDirection;
         const auto globalCascadesResolution = m_frame.resources().cascadesShadowDepth->width();
@@ -79,7 +79,7 @@ void FrameViewMain::render(gpu::CommandWriter& cmd)
     // TODO: render background
 
     // render debug fragments
-    if (m_frame.frame().filters & FilterBit::DebugGeometry)
+    if (m_frame.frame().filters & FrameFilterBit::DebugGeometry)
     {
         DebugGeometryViewRecorder debugRec(&rec);
         debugRec.solid.attachBuffer(rec.forwardSolid.opCreateChildCommandBuffer(false));

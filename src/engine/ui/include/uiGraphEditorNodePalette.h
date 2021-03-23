@@ -38,7 +38,7 @@ private:
     virtual bool compare(const GraphBlockPaletteEntry& a, const GraphBlockPaletteEntry& b, int colIndex) const override;
     virtual bool filter(const GraphBlockPaletteEntry& data, const SearchPattern& filter, int colIndex = 0) const override;
     virtual StringBuf displayContent(const GraphBlockPaletteEntry& data, int colIndex = 0) const override;
-    virtual DragDropDataPtr queryDragDropData(const input::BaseKeyFlags& keys, const ModelIndex& item) override;
+    virtual DragDropDataPtr queryDragDropData(const BaseKeyFlags& keys, const ModelIndex& item) override;
     virtual ElementPtr tooltip(const GraphBlockPaletteEntry& data) const override;
 
     HashMap<StringBuf, ModelIndex> m_groups;

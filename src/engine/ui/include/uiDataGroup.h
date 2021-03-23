@@ -86,7 +86,7 @@ private:
 
 protected:
     virtual void createChildren(Array<RefPtr< DataInspectorNavigationItem>>& outCreatedChildren);
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
 
     ButtonPtr createExpandButton();
     void updateExpandStyle();

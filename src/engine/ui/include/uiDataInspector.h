@@ -176,8 +176,8 @@ private:
 
     void select(DataInspectorNavigationItem* item, bool focus=true);
 
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
-    virtual InputActionPtr handleOverlayMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
+    virtual InputActionPtr handleOverlayMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
 
     virtual void handleFullObjectChange() override;
     virtual void handlePropertyChanged(StringView fullPath, bool parentNotification) override;

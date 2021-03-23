@@ -132,7 +132,7 @@ public:
     rendering::FrameRenderMode renderMode = rendering::FrameRenderMode::Default;
     StringID renderMaterialDebugChannelName;
 
-    rendering::FilterFlags filters;
+    rendering::FrameFilterFlags filters;
 
     float cameraSpeedFactor = 1.0f;
     //bool cameraForceOrbit = false;
@@ -167,7 +167,7 @@ public:
     //--
 
     // get the scene to render :)
-    virtual rendering::Scene* scene() const { return nullptr; }
+    virtual rendering::RenderingScene* scene() const { return nullptr; }
 
     //--
 
@@ -221,10 +221,10 @@ public:
     //--
 
 protected:
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
-    virtual bool handleMouseMovement(const input::MouseMovementEvent& evt) override;
-    virtual bool handleMouseWheel(const input::MouseMovementEvent& evt, float delta) override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
+    virtual bool handleMouseMovement(const InputMouseMovementEvent& evt) override;
+    virtual bool handleMouseWheel(const InputMouseMovementEvent& evt, float delta) override;
     virtual void handleFocusLost() override;
 
     virtual void handleUpdate(float dt);
@@ -233,7 +233,7 @@ protected:
     virtual void handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& camera, const rendering::FrameParams_Capture* capture) override;
     virtual void handlePointSelection(bool ctrl, bool shift, const Point& clientPosition);
     virtual void handleAreaSelection(bool ctrl, bool shift, const Rect& clientRect);
-    virtual bool handleContextMenu(const ElementArea& area, const Position& absolutePosition, input::KeyMask controlKeys) override;
+    virtual bool handleContextMenu(const ElementArea& area, const Position& absolutePosition, InputKeyMask controlKeys) override;
     virtual void handlePostRenderContent();
 
     virtual void handlePointSelection(bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables);
@@ -282,12 +282,12 @@ private:
 
     //--
 
-    void createFilterItem(StringView prefix, const rendering::FilterBitInfo* bitInfo, MenuButtonContainer* menu);
+    void createFilterItem(StringView prefix, const rendering::FrameFilterBitInfo* bitInfo, MenuButtonContainer* menu);
     void createToolbarItems();
 
-    InputActionPtr createLeftMouseButtonCameraAction(const ElementArea& area, const input::MouseClickEvent& evt, bool allowSelection);
-    InputActionPtr createRightMouseButtonCameraAction(const ElementArea& area, const input::MouseClickEvent& evt);
-    InputActionPtr createMiddleMouseButtonCameraAction(const ElementArea& area, const input::MouseClickEvent& evt);
+    InputActionPtr createLeftMouseButtonCameraAction(const ElementArea& area, const InputMouseClickEvent& evt, bool allowSelection);
+    InputActionPtr createRightMouseButtonCameraAction(const ElementArea& area, const InputMouseClickEvent& evt);
+    InputActionPtr createMiddleMouseButtonCameraAction(const ElementArea& area, const InputMouseClickEvent& evt);
 };
 
 //--
@@ -303,12 +303,12 @@ public:
 
     //--
 
-    virtual rendering::Scene* scene() const override final { return m_scene; }
+    virtual rendering::RenderingScene* scene() const override final { return m_scene; }
 
     //--
 
 protected:
-    rendering::ScenePtr m_scene;
+    rendering::RenderingScenePtr m_scene;
 };
 
 //---

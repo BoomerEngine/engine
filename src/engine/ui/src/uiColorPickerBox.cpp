@@ -94,12 +94,12 @@ class ColorPickerLSBoxInputAction : public MouseInputAction
 {
 public:
     ColorPickerLSBoxInputAction(const RefPtr<ColorPickerLSBox>& box)
-        : MouseInputAction(box, input::KeyCode::KEY_MOUSE0)
+        : MouseInputAction(box, InputKey::KEY_MOUSE0)
         , m_box(box)
     {
     }
 
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
     {
         m_box->updateFromPosition(evt.absolutePosition().toVector());
         return InputActionResult();
@@ -176,7 +176,7 @@ void ColorPickerLSBox::renderForeground(DataStash& stash, const ElementArea& dra
     TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);        
 }
 
-InputActionPtr ColorPickerLSBox::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr ColorPickerLSBox::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftClicked())
     {
@@ -187,13 +187,13 @@ InputActionPtr ColorPickerLSBox::handleMouseClick(const ElementArea& area, const
     return nullptr;
 }
 
-bool ColorPickerLSBox::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const
+bool ColorPickerLSBox::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const
 {
-    outCursorType = input::CursorType::Hand;
+    outCursorType = CursorType::Hand;
     return true;
 }
 
-bool ColorPickerLSBox::handleKeyEvent(const input::KeyEvent& evt)
+bool ColorPickerLSBox::handleKeyEvent(const InputKeyEvent& evt)
 {
     if (evt.pressedOrRepeated())
     {
@@ -300,12 +300,12 @@ class ColorPickerHueBarInputAction : public MouseInputAction
 {
 public:
     ColorPickerHueBarInputAction(const RefPtr<ColorPickerHueBar>& box)
-        : MouseInputAction(box, input::KeyCode::KEY_MOUSE0)
+        : MouseInputAction(box, InputKey::KEY_MOUSE0)
         , m_box(box)
     {
     }
 
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
     {
         m_box->updateFromPosition(evt.absolutePosition().toVector());
         return InputActionResult();
@@ -359,7 +359,7 @@ void ColorPickerHueBar::renderForeground(DataStash& stash, const ElementArea& dr
     TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
 }
 
-InputActionPtr ColorPickerHueBar::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr ColorPickerHueBar::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftClicked())
     {
@@ -370,13 +370,13 @@ InputActionPtr ColorPickerHueBar::handleMouseClick(const ElementArea& area, cons
     return nullptr;
 }
 
-bool ColorPickerHueBar::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const
+bool ColorPickerHueBar::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const
 {
-    outCursorType = input::CursorType::Hand;
+    outCursorType = CursorType::Hand;
     return true;
 }
 
-bool ColorPickerHueBar::handleKeyEvent(const input::KeyEvent& evt)
+bool ColorPickerHueBar::handleKeyEvent(const InputKeyEvent& evt)
 {
     if (evt.pressedOrRepeated())
     {
@@ -650,16 +650,16 @@ ColorPickerBox::ColorPickerBox(Color initialColor, bool editAlpha, StringView ca
 ColorPickerBox::~ColorPickerBox()
 {}
 
-bool ColorPickerBox::handleKeyEvent(const input::KeyEvent& evt)
+bool ColorPickerBox::handleKeyEvent(const InputKeyEvent& evt)
 {
-    if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_ESCAPE)
+    if (evt.pressed() && evt.keyCode() == InputKey::KEY_ESCAPE)
     {
         m_currentColor = m_initialColor;
         sendColorChange();
         requestClose();
         return true;
     }
-    else if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_RETURN)
+    else if (evt.pressed() && evt.keyCode() == InputKey::KEY_RETURN)
     {
         requestClose();
         return true;

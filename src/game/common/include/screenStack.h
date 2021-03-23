@@ -62,7 +62,7 @@ public:
     void render(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output);
 
     // service input message
-    bool input(const input::BaseEvent& evt);
+    bool input(const InputEvent& evt);
 
     // should the host have exclusive access to user input?
     bool shouldCaptureInput() const;
@@ -131,7 +131,7 @@ private:
     //--
 
     void renderImGuiDebugOverlay(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output);
-    bool processDebugInput(const input::BaseEvent& evt);
+    bool processDebugInput(const InputEvent& evt);
 };
 
 //--

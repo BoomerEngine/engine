@@ -704,37 +704,37 @@ void IElement::handleDragDropGenericCompletion(const DragDropDataPtr& data, cons
     // nothing in the default item
 }
 
-InputActionPtr IElement::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr IElement::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     return InputActionPtr();
 }
 
-InputActionPtr IElement::handleOverlayMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr IElement::handleOverlayMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     return InputActionPtr();
 }
     
-bool IElement::handleMouseWheel(const input::MouseMovementEvent &evt, float delta)
+bool IElement::handleMouseWheel(const InputMouseMovementEvent &evt, float delta)
 {
     return false;
 }
 
-bool IElement::handleMouseMovement(const input::MouseMovementEvent& evt)
+bool IElement::handleMouseMovement(const InputMouseMovementEvent& evt)
 {
     return false;
 }
 
-bool IElement::handleAxisEvent(const input::AxisEvent& evt)
+bool IElement::handleAxisEvent(const InputAxisEvent& evt)
 {
     return false;
 }
 
-bool IElement::previewKeyEvent(const input::KeyEvent& evt)
+bool IElement::previewKeyEvent(const InputKeyEvent& evt)
 {
     return false;
 }
 
-bool IElement::handleKeyEvent(const input::KeyEvent& evt)
+bool IElement::handleKeyEvent(const InputKeyEvent& evt)
 {
     // handle bounded key events
     if (evt.pressed())
@@ -742,7 +742,7 @@ bool IElement::handleKeyEvent(const input::KeyEvent& evt)
         if (m_keyShortctuts && m_keyShortctuts->processKeyEvent(evt))
             return true;
 
-        if (evt.keyCode() == input::KeyCode::KEY_TAB)
+        if (evt.keyCode() == InputKey::KEY_TAB)
         {
             const auto back = evt.keyMask().isShiftDown();
             if (back)
@@ -768,39 +768,39 @@ bool IElement::handleKeyEvent(const input::KeyEvent& evt)
     return false;
 }
 
-bool IElement::handleExternalKeyEvent(const input::KeyEvent& evt)
+bool IElement::handleExternalKeyEvent(const InputKeyEvent& evt)
 {
     return false;
 }
 
-bool IElement::handleCharEvent(const input::CharEvent& evt)
+bool IElement::handleCharEvent(const InputCharEvent& evt)
 {
     return false;
 }
 
-bool IElement::handleExternalCharEvent(const input::CharEvent& evt)
+bool IElement::handleExternalCharEvent(const InputCharEvent& evt)
 {
     return false;
 }
 
-bool IElement::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const
+bool IElement::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const
 {
     return false;
 }
 
-bool IElement::handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, input::AreaType& outAreaType) const
+bool IElement::handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, AreaType& outAreaType) const
 {
-    if (auto areaType = evalStyleValueIfPresentPtr<input::AreaType>("windowAreaType"_id))
+    if (auto areaType = evalStyleValueIfPresentPtr<AreaType>("windowAreaType"_id))
     {
         outAreaType = *areaType;
         return true;
     }
 
-    outAreaType = input::AreaType::Client;
+    outAreaType = AreaType::Client;
     return true;
 }
 
-bool IElement::handleContextMenu(const ElementArea& area, const Position& absolutePosition, input::KeyMask controlKeys)
+bool IElement::handleContextMenu(const ElementArea& area, const Position& absolutePosition, InputKeyMask controlKeys)
 {
     // try local event
     if (call(EVENT_CONTEXT_MENU, absolutePosition))
@@ -1905,7 +1905,7 @@ ElementPtr IElement::queryTooltipElement(const Position& absolutePosition, Eleme
     return nullptr;
 }
 
-DragDropDataPtr IElement::queryDragDropData(const input::BaseKeyFlags& keys, const Position& position) const
+DragDropDataPtr IElement::queryDragDropData(const BaseKeyFlags& keys, const Position& position) const
 {
     return nullptr;
 }

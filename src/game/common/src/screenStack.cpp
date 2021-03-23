@@ -344,7 +344,7 @@ void GameScreenStack::renderImGuiDebugOverlay(gpu::CommandWriter& cmd, const gpu
 #endif
 }
 
-bool GameScreenStack::input(const input::BaseEvent& evt)
+bool GameScreenStack::input(const InputEvent& evt)
 {
     // always send input to debug code first
     if (processDebugInput(evt))
@@ -390,7 +390,7 @@ bool GameScreenStack::shouldCaptureInput() const
     return false;
 }
 
-bool GameScreenStack::processDebugInput(const input::BaseEvent& evt)
+bool GameScreenStack::processDebugInput(const InputEvent& evt)
 {
 #ifndef BUILD_FINAL
     if (auto keyEvent = evt.toKeyEvent())
@@ -400,17 +400,17 @@ bool GameScreenStack::processDebugInput(const input::BaseEvent& evt)
             switch (keyEvent->keyCode())
             {
                 // Fast exit key that bypasses all menus
-                case input::KeyCode::KEY_F10:
+                case InputKey::KEY_F10:
                     requestExit();
                     return true;
 
                 // Toggle input passthrough
-                case input::KeyCode::KEY_F11:
+                case InputKey::KEY_F11:
                     m_imguiOverlayInputPassThrough = !m_imguiOverlayInputPassThrough;
                     return true;
 
                 // Toggle debug panels
-                case input::KeyCode::KEY_F1:
+                case InputKey::KEY_F1:
                     DebugPagesVisibility(!DebugPagesVisible());
                     return true;
             }

@@ -55,20 +55,20 @@ class GamePlatformService;
 
 //--
 
-struct InputAction;
+struct GameInputAction;
 
-class InputActionTable;
-typedef RefPtr<InputActionTable> InputActionTablePtr;
+class GameInputActionTable;
+typedef RefPtr<GameInputActionTable> InputActionTablePtr;
 
-class InputContext;
-typedef RefPtr<InputContext> InputContextPtr;
+class GameInputContext;
+typedef RefPtr<GameInputContext> InputContextPtr;
 
-class InputEvent;
-typedef RefPtr<InputEvent> InputEventPtr;
+class GameInputEvent;
+typedef RefPtr<GameInputEvent> GameInputEventPtr;
 
-class InputDefinitions;
-typedef RefPtr<InputDefinitions> InputDefinitionsPtr;
-typedef ResourceRef<InputDefinitions> InputDefinitionsRef;
+class GameInputDefinitions;
+typedef RefPtr<GameInputDefinitions> InputDefinitionsPtr;
+typedef ResourceRef<GameInputDefinitions> InputDefinitionsRef;
 
 //--
 

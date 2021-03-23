@@ -11,12 +11,12 @@
 #include "core/containers/include/queue.h"
 #include "inputStructures.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
 
 ///---
 
 /// native window message
-struct NativeEventWinApi
+struct NativeWindowEventWinApi
 {
     uint64_t m_window;
     uint32_t m_message;
@@ -27,7 +27,7 @@ struct NativeEventWinApi
     bool processed = false;
 };
 
-struct NativeEventX11
+struct NativeWindowEventX11
 {
     void* m_display;
     void* m_screen;
@@ -37,9 +37,9 @@ struct NativeEventX11
 };
 
 /// input context - contains device instances that produce input
-class CORE_INPUT_API IContext : public IObject
+class CORE_INPUT_API IInputContext : public IObject
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(IContext, IObject);
+    RTTI_DECLARE_VIRTUAL_CLASS(IInputContext, IObject);
 
 public:
     // drop all events from the queue
@@ -71,7 +71,7 @@ public:
     static ContextPtr CreateNativeContext(uint64_t nativeWindow, uint64_t nativeDisplay, bool gameMode);
 
 protected:
-    IContext();
+    IInputContext();
 
     SpinLock m_eventQueueLock;
     Queue<EventPtr> m_eventQueue;
@@ -79,4 +79,4 @@ protected:
 
 ///---
 
-END_BOOMER_NAMESPACE_EX(input)
+END_BOOMER_NAMESPACE()

@@ -26,14 +26,14 @@ namespace base
         class X11Keyboard : public GenericKeyboard
         {
         public:
-            X11Keyboard(IContext* context);
+            X11Keyboard(IInputContext* context);
 
             void nativeKeyPress(uint32_t keyCode);
             void nativeKeyRelease(uint32_t keyCode);
             void nativeKeyType(wchar_t ch);
 
         private:
-            KeyCode m_keyMapping[256];
+            InputKey m_keyMapping[256];
         };
 
         //--
@@ -67,7 +67,7 @@ namespace base
         //--        
 
         /// input system wrapper for the X11, managed the Window/Input interaction
-        class ContextX11 : public IContext
+        class ContextX11 : public IInputContext
         {
         public:
             ContextX11(uint64_t nativeWindow, uint64_t nativeDisplay);
@@ -80,7 +80,7 @@ namespace base
             virtual void processMessage(const void* msg) override final;
 
         private:
-            void processNativeEvent(const NativeEventX11& evt);
+            void processNativeEvent(const NativeWindowEventX11& evt);
 
             Point absoluteCursorPos(window::IWindow* window) const;
 

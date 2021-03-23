@@ -15,26 +15,26 @@ BEGIN_BOOMER_NAMESPACE_EX(rendering)
 //--
 
 /// manager for rendering objects
-class ENGINE_RENDERING_API IObjectManager : public NoCopy
+class ENGINE_RENDERING_API IRenderingObjectManager : public NoCopy
 {
-    RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IObjectManager);
+    RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IRenderingObjectManager);
     RTTI_DECLARE_POOL(POOL_RENDERING_RUNTIME)
 
 public:
-    virtual ~IObjectManager();
+    virtual ~IRenderingObjectManager();
 
     void renderLock();
     void renderUnlock();
 
-    virtual void initialize(Scene* scene, gpu::IDevice* dev) = 0;
+    virtual void initialize(RenderingScene* scene, gpu::IDevice* dev) = 0;
     virtual void shutdown() = 0;
 
     //--- VALID ANYWHERE, BUFFERED IN RENDERING PHASE
 
-    virtual void commandAttachProxy(IObjectProxy* object) = 0;
-    virtual void commandDetachProxy(IObjectProxy* object) = 0;
-    virtual void commandMoveProxy(IObjectProxy* object, Matrix newLocation) = 0;
-    virtual void commandUpdateProxyFlag(IObjectProxy* object, ObjectProxyFlags clearFlags, ObjectProxyFlags setFlags) = 0;
+    virtual void commandAttachProxy(IRenderingObject* object) = 0;
+    virtual void commandDetachProxy(IRenderingObject* object) = 0;
+    virtual void commandMoveProxy(IRenderingObject* object, Matrix newLocation) = 0;
+    virtual void commandUpdateProxyFlag(IRenderingObject* object, RenderingObjectFlags clearFlags, RenderingObjectFlags setFlags) = 0;
 
     //--- VALID ONLY IN RENDER PHASE
 
@@ -68,14 +68,14 @@ private:
 //--
 
 template< typename T >
-struct ProxyMemoryAllocator
+struct RenderingObjectMemoryAllocator
 {
     uint32_t size = 0;
 
     uint8_t* memPtr = nullptr;
     uint8_t* memEndPtr = nullptr;
 
-    inline ProxyMemoryAllocator()
+    inline RenderingObjectMemoryAllocator()
     {
         size = sizeof(T);
     }

@@ -1261,48 +1261,48 @@ ActionPtr CreateSceneNodeTransformAction(Array<ActionMoveSceneNodeData>&& nodes,
 
 //--
 
-bool SceneEditMode_Default::handleInternalKeyAction(input::KeyCode key, bool shift, bool alt, bool ctrl)
+bool SceneEditMode_Default::handleInternalKeyAction(InputKey key, bool shift, bool alt, bool ctrl)
 {
     if (!shift && !alt && !ctrl)
     {
-        if (key == input::KeyCode::KEY_F)
+        if (key == InputKey::KEY_F)
         {
             focusNodes(m_selection.keys());
             return true;
         }
-        else if (key == input::KeyCode::KEY_W)
+        else if (key == InputKey::KEY_W)
         {
             changeGizmo(SceneGizmoMode::Translation);
             return true;
         }
-        else if (key == input::KeyCode::KEY_E)
+        else if (key == InputKey::KEY_E)
         {
             changeGizmo(SceneGizmoMode::Rotation);
             return true;
         }
-        else if (key == input::KeyCode::KEY_R)
+        else if (key == InputKey::KEY_R)
         {
             changeGizmo(SceneGizmoMode::Scale);
             return true;
         }
-        else if (key == input::KeyCode::KEY_SPACE)
+        else if (key == InputKey::KEY_SPACE)
         {
             changeGizmoNext();
             return true;
         }
-        else if (key == input::KeyCode::KEY_LBRACKET)
+        else if (key == InputKey::KEY_LBRACKET)
         {
             changePositionGridSize(-1);
             return true;
         }
-        else if (key == input::KeyCode::KEY_RBRACKET)
+        else if (key == InputKey::KEY_RBRACKET)
         {
             changePositionGridSize(1);
             return true;
         }
     }
 
-    if (key == input::KeyCode::KEY_H && !alt)
+    if (key == InputKey::KEY_H && !alt)
     {
         if (shift && !ctrl)
         {

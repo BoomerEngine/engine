@@ -9,11 +9,11 @@
 #include "build.h"
 #include "inputStructures.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
-RTTI_BEGIN_TYPE_ENUM(EventType);
+RTTI_BEGIN_TYPE_ENUM(InputEventType);
     RTTI_ENUM_OPTION(None);
     RTTI_ENUM_OPTION(Key);
     RTTI_ENUM_OPTION(Char);
@@ -24,7 +24,7 @@ RTTI_BEGIN_TYPE_ENUM(EventType);
     RTTI_ENUM_OPTION(DragDrop);
 RTTI_END_TYPE();
 
-RTTI_BEGIN_TYPE_ENUM(KeyCode);
+RTTI_BEGIN_TYPE_ENUM(InputKey);
     RTTI_ENUM_OPTION(KEY_INVALID);
     RTTI_ENUM_OPTION(KEY_BACK);
     RTTI_ENUM_OPTION(KEY_TAB);
@@ -177,7 +177,7 @@ RTTI_BEGIN_TYPE_ENUM(KeyCode);
     RTTI_ENUM_OPTION(KEY_RIGHT_ALT);
 RTTI_END_TYPE();
 
-RTTI_BEGIN_TYPE_ENUM(AxisCode);
+RTTI_BEGIN_TYPE_ENUM(InputAxis);
     RTTI_ENUM_OPTION(AXIS_MOUSEX);
     RTTI_ENUM_OPTION(AXIS_MOUSEY);
     RTTI_ENUM_OPTION(AXIS_MOUSEZ);
@@ -189,7 +189,7 @@ RTTI_BEGIN_TYPE_ENUM(MouseEventType);
 	RTTI_ENUM_OPTION(Release);
 RTTI_END_TYPE();
 
-RTTI_BEGIN_TYPE_ENUM(DeviceType);
+RTTI_BEGIN_TYPE_ENUM(InputDeviceType);
 	RTTI_ENUM_OPTION(Invalid);
 	RTTI_ENUM_OPTION(Unknown);
 	RTTI_ENUM_OPTION(Keyboard);
@@ -242,55 +242,55 @@ RTTI_END_TYPE();
 
 //--
 
-RTTI_BEGIN_TYPE_CLASS(BaseEvent);
+RTTI_BEGIN_TYPE_CLASS(InputEvent);
 	RTTI_PROPERTY(m_eventType);
 	RTTI_PROPERTY(m_deviceType);
 	RTTI_PROPERTY(m_deviceId);
 RTTI_END_TYPE();
 
-BaseEvent::BaseEvent(EventType eventType, DeviceType deviceType, DeviceID deviceId)
+InputEvent::InputEvent(InputEventType eventType, InputDeviceType deviceType, InputDeviceID deviceId)
     : m_eventType(eventType)
     , m_deviceType(deviceType)
     , m_deviceId(deviceId)
     , m_timeStamp(NativeTimePoint::Now())
 {}
 
-const CharEvent* BaseEvent::toCharEvent() const
+const InputCharEvent* InputEvent::toCharEvent() const
 {
-    return (m_eventType == EventType::Char) ? static_cast<const CharEvent*>(this) : nullptr;
+    return (m_eventType == InputEventType::Char) ? static_cast<const InputCharEvent*>(this) : nullptr;
 }
 
-const KeyEvent* BaseEvent::toKeyEvent() const
+const InputKeyEvent* InputEvent::toKeyEvent() const
 {
-    return (m_eventType == EventType::Key) ? static_cast<const KeyEvent*>(this) : nullptr;
+    return (m_eventType == InputEventType::Key) ? static_cast<const InputKeyEvent*>(this) : nullptr;
 }
 
-const AxisEvent* BaseEvent::toAxisEvent() const
+const InputAxisEvent* InputEvent::toAxisEvent() const
 {
-    return (m_eventType == EventType::Axis) ? static_cast<const AxisEvent*>(this) : nullptr;
+    return (m_eventType == InputEventType::Axis) ? static_cast<const InputAxisEvent*>(this) : nullptr;
 }
 
-const MouseClickEvent* BaseEvent::toMouseClickEvent() const
+const InputMouseClickEvent* InputEvent::toMouseClickEvent() const
 {
-    return (m_eventType == EventType::MouseClick) ? static_cast<const MouseClickEvent*>(this) : nullptr;
+    return (m_eventType == InputEventType::MouseClick) ? static_cast<const InputMouseClickEvent*>(this) : nullptr;
 }
 
-const MouseMovementEvent* BaseEvent::toMouseMoveEvent() const
+const InputMouseMovementEvent* InputEvent::toMouseMoveEvent() const
 {
-    return (m_eventType == EventType::MouseMove) ? static_cast<const MouseMovementEvent*>(this) : nullptr;
+    return (m_eventType == InputEventType::MouseMove) ? static_cast<const InputMouseMovementEvent*>(this) : nullptr;
 }
 
-const MouseCaptureLostEvent* BaseEvent::toMouseCaptureLostEvent() const
+const InputMouseCaptureLostEvent* InputEvent::toMouseCaptureLostEvent() const
 {
-    return (m_eventType == EventType::MouseCaptureLost) ? static_cast<const MouseCaptureLostEvent*>(this) : nullptr;
+    return (m_eventType == InputEventType::MouseCaptureLost) ? static_cast<const InputMouseCaptureLostEvent*>(this) : nullptr;
 }
 
-const DragDropEvent* BaseEvent::toDragAndDropEvent() const
+const InputDragDropEvent* InputEvent::toDragAndDropEvent() const
 {
-    return (m_eventType == EventType::DragDrop) ? static_cast<const DragDropEvent*>(this) : nullptr;
+    return (m_eventType == InputEventType::DragDrop) ? static_cast<const InputDragDropEvent*>(this) : nullptr;
 }
 
-void BaseEvent::printBase(IFormatStream& f) const
+void InputEvent::printBase(IFormatStream& f) const
 {
 	f << m_eventType;
 	if (m_deviceId != 0)
@@ -299,17 +299,17 @@ void BaseEvent::printBase(IFormatStream& f) const
 		f.appendf(" @{} ago", TimeInterval(m_timeStamp.timeTillNow().toSeconds()));
 }
 
-void BaseEvent::print(IFormatStream& f) const
+void InputEvent::print(IFormatStream& f) const
 {
 	switch (m_eventType)
 	{
-		case EventType::Key: toKeyEvent()->print(f); break;
-		case EventType::Char: toCharEvent()->print(f); break;
-		case EventType::Axis: toAxisEvent()->print(f); break;
-		case EventType::MouseClick: toMouseClickEvent()->print(f); break;
-		case EventType::MouseMove: toMouseMoveEvent()->print(f); break;
-		case EventType::MouseCaptureLost: toMouseCaptureLostEvent()->print(f); break;
-		case EventType::DragDrop: toDragAndDropEvent()->print(f); break;
+		case InputEventType::Key: toKeyEvent()->print(f); break;
+		case InputEventType::Char: toCharEvent()->print(f); break;
+		case InputEventType::Axis: toAxisEvent()->print(f); break;
+		case InputEventType::MouseClick: toMouseClickEvent()->print(f); break;
+		case InputEventType::MouseMove: toMouseMoveEvent()->print(f); break;
+		case InputEventType::MouseCaptureLost: toMouseCaptureLostEvent()->print(f); break;
+		case InputEventType::DragDrop: toDragAndDropEvent()->print(f); break;
 		default: printBase(f);
 	}
 }
@@ -334,7 +334,7 @@ RTTI_END_TYPE();
 BaseKeyFlags::BaseKeyFlags()
 {}
 
-BaseKeyFlags::BaseKeyFlags(const KeyMask& mask)
+BaseKeyFlags::BaseKeyFlags(const InputKeyMask& mask)
 	: m_keyMask(mask)
 {}
 
@@ -343,30 +343,30 @@ BaseKeyFlags& BaseKeyFlags::operator=(const BaseKeyFlags& other) = default;
 
 void BaseKeyFlags::print(IFormatStream& f) const
 {
-	if (m_keyMask.test(KeyMaskBit::LEFT_SHIFT))
+	if (m_keyMask.test(InputKeyMaskBit::LEFT_SHIFT))
 		f.append(" +LSHIFT");
-	if (m_keyMask.test(KeyMaskBit::RIGHT_SHIFT))
+	if (m_keyMask.test(InputKeyMaskBit::RIGHT_SHIFT))
 		f.append(" +RSHIFT");
-	if (m_keyMask.test(KeyMaskBit::LEFT_CTRL))
+	if (m_keyMask.test(InputKeyMaskBit::LEFT_CTRL))
 		f.append(" +LCTRL");
-	if (m_keyMask.test(KeyMaskBit::RIGHT_CTRL))
+	if (m_keyMask.test(InputKeyMaskBit::RIGHT_CTRL))
 		f.append(" +RCTRL");
-	if (m_keyMask.test(KeyMaskBit::LEFT_ALT))
+	if (m_keyMask.test(InputKeyMaskBit::LEFT_ALT))
 		f.append(" +LALT");
-	if (m_keyMask.test(KeyMaskBit::RIGHT_ALT))
+	if (m_keyMask.test(InputKeyMaskBit::RIGHT_ALT))
 		f.append(" +RALT");
-	if (m_keyMask.test(KeyMaskBit::LEFT_MOUSE))
+	if (m_keyMask.test(InputKeyMaskBit::LEFT_MOUSE))
 		f.append(" +LMB");
-	if (m_keyMask.test(KeyMaskBit::RIGHT_MOUSE))
+	if (m_keyMask.test(InputKeyMaskBit::RIGHT_MOUSE))
 		f.append(" +RMB");
-	if (m_keyMask.test(KeyMaskBit::MIDDLE_MOUSE))
+	if (m_keyMask.test(InputKeyMaskBit::MIDDLE_MOUSE))
 		f.append(" +MMB");
 }
 
 //--
 
-RTTI_BEGIN_TYPE_CLASS(MouseClickEvent);
-	RTTI_PROPERTY_VIRTUAL("base", BaseEvent, 0);
+RTTI_BEGIN_TYPE_CLASS(InputMouseClickEvent);
+	RTTI_PROPERTY_VIRTUAL("base", InputEvent, 0);
 	RTTI_PROPERTY(m_key);
 	RTTI_PROPERTY(m_clickType);
 	RTTI_PROPERTY(m_keyMask);
@@ -381,8 +381,8 @@ RTTI_BEGIN_TYPE_CLASS(MouseClickEvent);
 	RTTI_FUNCTION("RightReleased", rightReleased);
 RTTI_END_TYPE();
 
-MouseClickEvent::MouseClickEvent(DeviceID deviceId, KeyCode key, MouseEventType type, BaseKeyFlags BaseKeyFlags, const Point& windowPos, const Point& absolutePos)
-    : BaseEvent(EventType::MouseClick, DeviceType::Mouse, deviceId)
+InputMouseClickEvent::InputMouseClickEvent(InputDeviceID deviceId, InputKey key, MouseEventType type, BaseKeyFlags BaseKeyFlags, const Point& windowPos, const Point& absolutePos)
+    : InputEvent(InputEventType::MouseClick, InputDeviceType::Mouse, deviceId)
     , m_key(key)
     , m_clickType(type)
     , m_keyMask(BaseKeyFlags)
@@ -392,7 +392,7 @@ MouseClickEvent::MouseClickEvent(DeviceID deviceId, KeyCode key, MouseEventType 
 
 //--
 
-void MouseClickEvent::print(IFormatStream& f) const
+void InputMouseClickEvent::print(IFormatStream& f) const
 {
 	printBase(f);
 			
@@ -405,8 +405,8 @@ void MouseClickEvent::print(IFormatStream& f) const
 
 //--
 
-RTTI_BEGIN_TYPE_CLASS(MouseMovementEvent);
-	RTTI_PROPERTY_VIRTUAL("base", BaseEvent, 0);
+RTTI_BEGIN_TYPE_CLASS(InputMouseMovementEvent);
+	RTTI_PROPERTY_VIRTUAL("base", InputEvent, 0);
 	RTTI_PROPERTY(m_keyMask);
 	RTTI_PROPERTY(m_windowPos);
 	RTTI_PROPERTY(m_absolutePos);
@@ -414,8 +414,8 @@ RTTI_BEGIN_TYPE_CLASS(MouseMovementEvent);
 	RTTI_PROPERTY(m_delta);
 RTTI_END_TYPE();
 
-MouseMovementEvent::MouseMovementEvent(DeviceID deviceId, BaseKeyFlags BaseKeyFlags, bool captured, const Point& windowPoint, const Point& absolutePoint, const Vector3& delta)
-    : BaseEvent(EventType::MouseMove, DeviceType::Mouse, deviceId)
+InputMouseMovementEvent::InputMouseMovementEvent(InputDeviceID deviceId, BaseKeyFlags BaseKeyFlags, bool captured, const Point& windowPoint, const Point& absolutePoint, const Vector3& delta)
+    : InputEvent(InputEventType::MouseMove, InputDeviceType::Mouse, deviceId)
     , m_keyMask(BaseKeyFlags)
     , m_captured(captured)
     , m_windowPos(windowPoint)
@@ -423,7 +423,7 @@ MouseMovementEvent::MouseMovementEvent(DeviceID deviceId, BaseKeyFlags BaseKeyFl
     , m_delta(delta)
 {}
 
-bool MouseMovementEvent::merge(const MouseMovementEvent& source)
+bool InputMouseMovementEvent::merge(const InputMouseMovementEvent& source)
 {
     if (m_keyMask != source.m_keyMask)
         return false;
@@ -434,7 +434,7 @@ bool MouseMovementEvent::merge(const MouseMovementEvent& source)
     return true;
 }
 
-void MouseMovementEvent::print(IFormatStream& f) const
+void InputMouseMovementEvent::print(IFormatStream& f) const
 {
 	printBase(f);
 
@@ -456,37 +456,37 @@ void MouseMovementEvent::print(IFormatStream& f) const
 
 //---
 
-RTTI_BEGIN_TYPE_CLASS(MouseCaptureLostEvent);
-	RTTI_PROPERTY_VIRTUAL("base", BaseEvent, 0);
+RTTI_BEGIN_TYPE_CLASS(InputMouseCaptureLostEvent);
+	RTTI_PROPERTY_VIRTUAL("base", InputEvent, 0);
 RTTI_END_TYPE();
 
-MouseCaptureLostEvent::MouseCaptureLostEvent(DeviceID deviceId)
-    : BaseEvent(EventType::MouseCaptureLost, DeviceType::Mouse, deviceId)
+InputMouseCaptureLostEvent::InputMouseCaptureLostEvent(InputDeviceID deviceId)
+    : InputEvent(InputEventType::MouseCaptureLost, InputDeviceType::Mouse, deviceId)
 {}
 
-void MouseCaptureLostEvent::print(IFormatStream& f) const
+void InputMouseCaptureLostEvent::print(IFormatStream& f) const
 {
 	printBase(f);
 }
 
 //---
 
-RTTI_BEGIN_TYPE_CLASS(CharEvent);
-	RTTI_PROPERTY_VIRTUAL("base", BaseEvent, 0);
+RTTI_BEGIN_TYPE_CLASS(InputCharEvent);
+	RTTI_PROPERTY_VIRTUAL("base", InputEvent, 0);
 	RTTI_PROPERTY_FORCE_TYPE(m_scanCode, uint16_t);
 	RTTI_PROPERTY(m_repeated);
 	RTTI_PROPERTY(m_keyMask);
 	RTTI_FUNCTION("GetPrintableText", text);
 RTTI_END_TYPE();
 
-CharEvent::CharEvent(DeviceID deviceId, KeyScanCode scanCode, bool repeated, BaseKeyFlags BaseKeyFlags)
-    : BaseEvent(EventType::Char, DeviceType::Keyboard, deviceId)
+InputCharEvent::InputCharEvent(InputDeviceID deviceId, KeyScanCode scanCode, bool repeated, BaseKeyFlags BaseKeyFlags)
+    : InputEvent(InputEventType::Char, InputDeviceType::Keyboard, deviceId)
     , m_scanCode(scanCode)
     , m_repeated(repeated)
     , m_keyMask(BaseKeyFlags)
 {}
 
-void CharEvent::print(IFormatStream& f) const
+void InputCharEvent::print(IFormatStream& f) const
 {
 	printBase(f);
 
@@ -504,7 +504,7 @@ void CharEvent::print(IFormatStream& f) const
 		f.append(" +REPEATED");
 }
 
-StringBuf CharEvent::text() const
+StringBuf InputCharEvent::text() const
 {
 	const wchar_t str[2] = { m_scanCode, 0 };
 	return UTF16StringVector(str).ansi_str();
@@ -512,8 +512,8 @@ StringBuf CharEvent::text() const
 
 //---
 
-RTTI_BEGIN_TYPE_CLASS(KeyEvent);
-	RTTI_PROPERTY_VIRTUAL("base", BaseEvent, 0);
+RTTI_BEGIN_TYPE_CLASS(InputKeyEvent);
+	RTTI_PROPERTY_VIRTUAL("base", InputEvent, 0);
 	RTTI_PROPERTY(m_key);
 	RTTI_PROPERTY(m_pressed);
 	RTTI_PROPERTY(m_repeated);
@@ -524,20 +524,20 @@ RTTI_BEGIN_TYPE_CLASS(KeyEvent);
 	RTTI_FUNCTION("IsDown", isDown);
 RTTI_END_TYPE();
 
-KeyEvent::KeyEvent(DeviceType deviceType, DeviceID deviceId, KeyCode key, bool pressed, bool repeated, BaseKeyFlags BaseKeyFlags)
-    : BaseEvent(EventType::Key, deviceType, deviceId)
+InputKeyEvent::InputKeyEvent(InputDeviceType deviceType, InputDeviceID deviceId, InputKey key, bool pressed, bool repeated, BaseKeyFlags BaseKeyFlags)
+    : InputEvent(InputEventType::Key, deviceType, deviceId)
     , m_key(key)
     , m_pressed(pressed)
     , m_repeated(repeated)
     , m_keyMask(BaseKeyFlags)
 {}
 
-RefPtr<KeyEvent> KeyEvent::makeReleaseEvent() const
+RefPtr<InputKeyEvent> InputKeyEvent::makeReleaseEvent() const
 {
-    return RefNew<KeyEvent>(deviceType(), deviceID(), keyCode(), false, false, keyMask());
+    return RefNew<InputKeyEvent>(deviceType(), deviceID(), keyCode(), false, false, keyMask());
 }
 
-void KeyEvent::print(IFormatStream& f) const
+void InputKeyEvent::print(IFormatStream& f) const
 {
 	printBase(f);
 
@@ -553,20 +553,20 @@ void KeyEvent::print(IFormatStream& f) const
 
 //---
 
-RTTI_BEGIN_TYPE_CLASS(AxisEvent);
-	RTTI_PROPERTY_VIRTUAL("base", BaseEvent, 0);
+RTTI_BEGIN_TYPE_CLASS(InputAxisEvent);
+	RTTI_PROPERTY_VIRTUAL("base", InputEvent, 0);
 	RTTI_PROPERTY(m_axis);
 	RTTI_PROPERTY(m_displacement);
 RTTI_END_TYPE();
 
 
-AxisEvent::AxisEvent(DeviceType deviceType, DeviceID deviceId, AxisCode axisCode, float value)
-    : BaseEvent(EventType::Axis, deviceType, deviceId)
+InputAxisEvent::InputAxisEvent(InputDeviceType deviceType, InputDeviceID deviceId, InputAxis axisCode, float value)
+    : InputEvent(InputEventType::Axis, deviceType, deviceId)
     , m_axis(axisCode)
     , m_displacement(value)
 {}
 
-    bool AxisEvent::merge(const AxisEvent& source)
+    bool InputAxisEvent::merge(const InputAxisEvent& source)
 {
     if (m_axis != source.axisCode())
         return false;
@@ -575,12 +575,12 @@ AxisEvent::AxisEvent(DeviceType deviceType, DeviceID deviceId, AxisCode axisCode
     return true;
 }
 
-    RefPtr<AxisEvent> AxisEvent::makeResetEvent() const
+    RefPtr<InputAxisEvent> InputAxisEvent::makeResetEvent() const
 {
-    return RefNew<AxisEvent>(deviceType(), deviceID(), axisCode(), 0.0f);
+    return RefNew<InputAxisEvent>(deviceType(), deviceID(), axisCode(), 0.0f);
 }
 
-void AxisEvent::print(IFormatStream& f) const
+void InputAxisEvent::print(IFormatStream& f) const
 {
 	printBase(f);
 
@@ -590,17 +590,17 @@ void AxisEvent::print(IFormatStream& f) const
 
 //---
 
-RTTI_BEGIN_TYPE_CLASS(DragDropEvent);
+RTTI_BEGIN_TYPE_CLASS(InputDragDropEvent);
 RTTI_END_TYPE();
 
-DragDropEvent::DragDropEvent(DragDropAction action, const Buffer& ptr, const Point& point)
-    : BaseEvent(EventType::DragDrop, DeviceType::Unknown, 0)
+InputDragDropEvent::InputDragDropEvent(DragDropAction action, const Buffer& ptr, const Point& point)
+    : InputEvent(InputEventType::DragDrop, InputDeviceType::Unknown, 0)
     , m_action(action)
     , m_point(point)
     , m_data(ptr)
 {}
 
-void DragDropEvent::print(IFormatStream& f) const
+void InputDragDropEvent::print(IFormatStream& f) const
 {
 	printBase(f);
 
@@ -609,4 +609,4 @@ void DragDropEvent::print(IFormatStream& f) const
 
 //---
 
-END_BOOMER_NAMESPACE_EX(input)
+END_BOOMER_NAMESPACE()

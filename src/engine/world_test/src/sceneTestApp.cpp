@@ -236,17 +236,17 @@ void SceneTestProject::handleTick(float dt)
         m_currentTest->update(dt);
 }
 
-bool SceneTestProject::handleAppInputEvent(const input::BaseEvent& evt)
+bool SceneTestProject::handleAppInputEvent(const InputEvent& evt)
 {
     auto keyEvt = evt.toKeyEvent();
     if (keyEvt && keyEvt->pressed())
     {
-        if (keyEvt->keyCode() == input::KeyCode::KEY_ESCAPE)
+        if (keyEvt->keyCode() == InputKey::KEY_ESCAPE)
         {
             m_exitRequested = true;
             return true;
         }
-        else if (keyEvt->keyCode() == input::KeyCode::KEY_LEFT)
+        else if (keyEvt->keyCode() == InputKey::KEY_LEFT)
         {
             if (m_pendingTestCaseIndex <= 0)
                 m_pendingTestCaseIndex = m_testClasses.size() - 1;
@@ -254,33 +254,33 @@ bool SceneTestProject::handleAppInputEvent(const input::BaseEvent& evt)
                 m_pendingTestCaseIndex -= 1;
             return true;
         }
-        else if (keyEvt->keyCode() == input::KeyCode::KEY_RIGHT)
+        else if (keyEvt->keyCode() == InputKey::KEY_RIGHT)
         {
             m_pendingTestCaseIndex += 1;
             if (m_pendingTestCaseIndex >= (int)m_testClasses.size())
                 m_pendingTestCaseIndex = 0;
             return true;
         }
-        else if (keyEvt->keyCode() == input::KeyCode::KEY_F1)
+        else if (keyEvt->keyCode() == InputKey::KEY_F1)
         {
             DebugPagesVisibility(!DebugPagesVisible());
         }
-        else if (keyEvt->keyCode() == input::KeyCode::KEY_F2)
+        else if (keyEvt->keyCode() == InputKey::KEY_F2)
         {
             m_timeMultiplier = 0;
         }
-        else if (keyEvt->keyCode() == input::KeyCode::KEY_PAUSE)
+        else if (keyEvt->keyCode() == InputKey::KEY_PAUSE)
         {
             m_timeAdvance = !m_timeAdvance;
         }
-        else if (keyEvt->keyCode() == input::KeyCode::KEY_MINUS)
+        else if (keyEvt->keyCode() == InputKey::KEY_MINUS)
         {
             if (m_timeAdvance)
                 m_timeMultiplier -= 1;
             else
                 m_timeAdvance = true;
         }
-        else if (keyEvt->keyCode() == input::KeyCode::KEY_EQUAL)
+        else if (keyEvt->keyCode() == InputKey::KEY_EQUAL)
         {
             if (m_timeAdvance)
                 m_timeMultiplier += 1;
@@ -292,7 +292,7 @@ bool SceneTestProject::handleAppInputEvent(const input::BaseEvent& evt)
     return false;
 }
 
-bool SceneTestProject::handleInputEvent(const input::BaseEvent& evt)
+bool SceneTestProject::handleInputEvent(const InputEvent& evt)
 {
     if (handleAppInputEvent(evt))
         return true;
@@ -311,7 +311,7 @@ bool SceneTestProject::handleInputEvent(const input::BaseEvent& evt)
     return false;
 }
 
-void SceneTestProject::handleInput(input::IContext& context)
+void SceneTestProject::handleInput(IInputContext& context)
 {
     while (auto evt = context.pull())
         handleInputEvent(*evt);

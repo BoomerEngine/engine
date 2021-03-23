@@ -83,11 +83,11 @@ bool IDragDropHandler::canHideDefaultDataPreview() const
     return false;
 }
 
-void IDragDropHandler::handleMouseWheel(const input::MouseMovementEvent &evt, float delta)
+void IDragDropHandler::handleMouseWheel(const InputMouseMovementEvent &evt, float delta)
 {
 }
 
-IDragDropHandler::UpdateResult IDragDropHandler::processMouseMovement(const input::MouseMovementEvent& evt)
+IDragDropHandler::UpdateResult IDragDropHandler::processMouseMovement(const InputMouseMovementEvent& evt)
 {
     // if we lost the target we must cancel
     auto target = m_target.lock();

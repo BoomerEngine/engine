@@ -13,81 +13,81 @@ BEGIN_BOOMER_NAMESPACE_EX(rendering)
 
 //--
 
-FilterFlags::FilterFlags()
+FrameFilterFlags::FrameFilterFlags()
 {
     //*this = DefaultGame();
     memset(m_bits, 0, sizeof(m_bits));
 }
 
-FilterFlags::FilterFlags(const FilterFlags& other) = default;
-FilterFlags::FilterFlags(FilterFlags&& other) = default;
-FilterFlags& FilterFlags::operator=(const FilterFlags& other) = default;
-FilterFlags& FilterFlags::operator=(FilterFlags&& other) = default;
+FrameFilterFlags::FrameFilterFlags(const FrameFilterFlags& other) = default;
+FrameFilterFlags::FrameFilterFlags(FrameFilterFlags&& other) = default;
+FrameFilterFlags& FrameFilterFlags::operator=(const FrameFilterFlags& other) = default;
+FrameFilterFlags& FrameFilterFlags::operator=(FrameFilterFlags&& other) = default;
 
 //--
 
-static FilterFlags MakeDefaultGameFilter()
+static FrameFilterFlags MakeDefaultGameFilter()
 {
-    FilterFlags ret;
+    FrameFilterFlags ret;
 
-    ret |= FilterBit::Meshes;
-    ret |= FilterBit::CascadeShadows;
+    ret |= FrameFilterBit::Meshes;
+    ret |= FrameFilterBit::CascadeShadows;
 
-    ret |= FilterBit::PassClear;
-    ret |= FilterBit::PassDepthPrepass;
-    ret |= FilterBit::PassShadowDepth;
-    ret |= FilterBit::PassForward;
+    ret |= FrameFilterBit::PassClear;
+    ret |= FrameFilterBit::PassDepthPrepass;
+    ret |= FrameFilterBit::PassShadowDepth;
+    ret |= FrameFilterBit::PassForward;
 
-    ret |= FilterBit::FragOpaqueNonMovable;
-    ret |= FilterBit::FragOpaqueSolid;
-    ret |= FilterBit::FragOpaqueMasked;
-    ret |= FilterBit::FragTransparent;
+    ret |= FrameFilterBit::FragOpaqueNonMovable;
+    ret |= FrameFilterBit::FragOpaqueSolid;
+    ret |= FrameFilterBit::FragOpaqueMasked;
+    ret |= FrameFilterBit::FragTransparent;
 
-    ret |= FilterBit::Lighting;
-    ret |= FilterBit::Lighting_Global;
-    ret |= FilterBit::Lighting_IBL;
+    ret |= FrameFilterBit::Lighting;
+    ret |= FrameFilterBit::Lighting_Global;
+    ret |= FrameFilterBit::Lighting_IBL;
 
-    ret |= FilterBit::PostProcessing;
-    ret |= FilterBit::PostProcesses_ToneMap;
+    ret |= FrameFilterBit::PostProcessing;
+    ret |= FrameFilterBit::PostProcesses_ToneMap;
 
     return ret;
 }
 
-const FilterFlags& FilterFlags::DefaultGame()
+const FrameFilterFlags& FrameFilterFlags::DefaultGame()
 {
-    static FilterFlags theResult = MakeDefaultGameFilter();
+    static FrameFilterFlags theResult = MakeDefaultGameFilter();
     return theResult;
 }
 
-static FilterFlags MakeDefaultEditorFilter()
+static FrameFilterFlags MakeDefaultEditorFilter()
 {
-    FilterFlags ret = MakeDefaultGameFilter();
+    FrameFilterFlags ret = MakeDefaultGameFilter();
 
-    ret |= FilterBit::PassDepthSelection;
-    ret |= FilterBit::PassSelectionFragments;
-    ret |= FilterBit::PassOverlay;
+    ret |= FrameFilterBit::PassDepthSelection;
+    ret |= FrameFilterBit::PassSelectionFragments;
+    ret |= FrameFilterBit::PassOverlay;
 
-    ret |= FilterBit::DebugGeometry;
-    ret |= FilterBit::DebugGeometryLines;
-    ret |= FilterBit::DebugGeometrySolid;
-    ret |= FilterBit::DebugGeometryScreen;
-    ret |= FilterBit::DebugGeometryTransparent;
-    ret |= FilterBit::DebugGeometryOverlay;
+    ret |= FrameFilterBit::DebugGeometry;
+    ret |= FrameFilterBit::DebugGeometryLines;
+    ret |= FrameFilterBit::DebugGeometrySolid;
+    ret |= FrameFilterBit::DebugGeometryScreen;
+    ret |= FrameFilterBit::DebugGeometryTransparent;
+    ret |= FrameFilterBit::DebugGeometryOverlay;
 
-    ret |= FilterBit::ViewportCameraInfo;
-    ret |= FilterBit::ViewportCameraAxes; // small camera orientation axes in the BL
-    ret |= FilterBit::ViewportWorldGrid; // world grid at Z=0
-    ret |= FilterBit::ViewportWorldAxes; // bit, one meter axes at [0,0,0]
+    ret |= FrameFilterBit::ViewportCameraInfo;
+    ret |= FrameFilterBit::ViewportCameraAxes; // small camera orientation axes in the BL
+    ret |= FrameFilterBit::ViewportWorldGrid; // world grid at Z=0
+    ret |= FrameFilterBit::ViewportWorldAxes; // bit, one meter axes at [0,0,0]
 
-    ret |= FilterBit::PostProcesses_SelectionHighlight;
-    ret |= FilterBit::PostProcesses_SelectionOutline;
+    ret |= FrameFilterBit::PostProcesses_SelectionHighlight;
+    ret |= FrameFilterBit::PostProcesses_SelectionOutline;
 
     return ret;
 }
 
-const FilterFlags& FilterFlags::DefaultEditor()
+const FrameFilterFlags& FrameFilterFlags::DefaultEditor()
 {
-    static FilterFlags theResult = MakeDefaultEditorFilter();
+    static FrameFilterFlags theResult = MakeDefaultEditorFilter();
     return theResult;
 }
 
@@ -104,73 +104,73 @@ public:
 
         {
             auto* parent = create(m_root, "Main");
-            create(parent, "Meshes", FilterBit::Meshes);
-            create(parent, "CascadeShadows", FilterBit::CascadeShadows);
+            create(parent, "Meshes", FrameFilterBit::Meshes);
+            create(parent, "CascadeShadows", FrameFilterBit::CascadeShadows);
         }
 
         {
             auto* parent = create(m_root, "Pass");
-            create(parent, "Clear", FilterBit::PassClear);
-            create(parent, "DepthPrepass", FilterBit::PassDepthPrepass);
-            create(parent, "DepthSelection", FilterBit::PassDepthSelection);
-            create(parent, "SelectionFragments", FilterBit::PassSelectionFragments);
-            create(parent, "ShadowDepth", FilterBit::PassShadowDepth);
-            create(parent, "Forward", FilterBit::PassForward);
-            create(parent, "Overlay", FilterBit::PassOverlay);
+            create(parent, "Clear", FrameFilterBit::PassClear);
+            create(parent, "DepthPrepass", FrameFilterBit::PassDepthPrepass);
+            create(parent, "DepthSelection", FrameFilterBit::PassDepthSelection);
+            create(parent, "SelectionFragments", FrameFilterBit::PassSelectionFragments);
+            create(parent, "ShadowDepth", FrameFilterBit::PassShadowDepth);
+            create(parent, "Forward", FrameFilterBit::PassForward);
+            create(parent, "Overlay", FrameFilterBit::PassOverlay);
         }
 
         {
             auto* parent = create(m_root, "Fragments");
-            create(parent, "OpaqueNonMovable", FilterBit::FragOpaqueNonMovable);
-            create(parent, "OpaqueSolid", FilterBit::FragOpaqueSolid);
-            create(parent, "OpaqueMasked", FilterBit::FragOpaqueMasked);
-            create(parent, "Transparent", FilterBit::FragTransparent);
+            create(parent, "OpaqueNonMovable", FrameFilterBit::FragOpaqueNonMovable);
+            create(parent, "OpaqueSolid", FrameFilterBit::FragOpaqueSolid);
+            create(parent, "OpaqueMasked", FrameFilterBit::FragOpaqueMasked);
+            create(parent, "Transparent", FrameFilterBit::FragTransparent);
         }
 
         {
-            auto* parent = create(m_root, "DebugGeometry", FilterBit::DebugGeometry);
-            create(parent, "Solid", FilterBit::DebugGeometrySolid);
-            create(parent, "Lines", FilterBit::DebugGeometryLines);
-            create(parent, "Transparent", FilterBit::DebugGeometryTransparent);
-            create(parent, "Screen", FilterBit::DebugGeometryScreen);
-            create(parent, "Overlay", FilterBit::DebugGeometryOverlay);
+            auto* parent = create(m_root, "DebugGeometry", FrameFilterBit::DebugGeometry);
+            create(parent, "Solid", FrameFilterBit::DebugGeometrySolid);
+            create(parent, "Lines", FrameFilterBit::DebugGeometryLines);
+            create(parent, "Transparent", FrameFilterBit::DebugGeometryTransparent);
+            create(parent, "Screen", FrameFilterBit::DebugGeometryScreen);
+            create(parent, "Overlay", FrameFilterBit::DebugGeometryOverlay);
         }
 
         {
             auto* parent = create(m_root, "DebugViewport");
-            create(parent, "CameraInfo", FilterBit::ViewportCameraInfo);
-            create(parent, "CameraAxes", FilterBit::ViewportCameraAxes);
-            create(parent, "SafeArea", FilterBit::ViewportSafeArea);
-            create(parent, "WorldGrid", FilterBit::ViewportWorldGrid);
-            create(parent, "WorldAxes", FilterBit::ViewportWorldAxes);
+            create(parent, "CameraInfo", FrameFilterBit::ViewportCameraInfo);
+            create(parent, "CameraAxes", FrameFilterBit::ViewportCameraAxes);
+            create(parent, "SafeArea", FrameFilterBit::ViewportSafeArea);
+            create(parent, "WorldGrid", FrameFilterBit::ViewportWorldGrid);
+            create(parent, "WorldAxes", FrameFilterBit::ViewportWorldAxes);
         }
 
         {
             auto* parent = create(m_root, "Material");
-            create(parent, "DisableLighting", FilterBit::Material_DisableLighting);
-            create(parent, "DisableColorMap", FilterBit::Material_DisableColorMap);
-            create(parent, "DisableObjectColor", FilterBit::Material_DisableObjectColor);
-            create(parent, "DisableVertexColor", FilterBit::Material_DisableVertexColor);
-            create(parent, "DisableTextures", FilterBit::Material_DisableTextures);
-            create(parent, "DisableNormals", FilterBit::Material_DisableNormals);
-            create(parent, "DisableMasking", FilterBit::Material_DisableMasking);
-            create(parent, "DisableVertexMotion", FilterBit::Material_DisableVertexMotion);
+            create(parent, "DisableLighting", FrameFilterBit::Material_DisableLighting);
+            create(parent, "DisableColorMap", FrameFilterBit::Material_DisableColorMap);
+            create(parent, "DisableObjectColor", FrameFilterBit::Material_DisableObjectColor);
+            create(parent, "DisableVertexColor", FrameFilterBit::Material_DisableVertexColor);
+            create(parent, "DisableTextures", FrameFilterBit::Material_DisableTextures);
+            create(parent, "DisableNormals", FrameFilterBit::Material_DisableNormals);
+            create(parent, "DisableMasking", FrameFilterBit::Material_DisableMasking);
+            create(parent, "DisableVertexMotion", FrameFilterBit::Material_DisableVertexMotion);
         }
 
         {
-            auto* parent = create(m_root, "POSTFX", FilterBit::PostProcessing);
-            create(parent, "Tonemap", FilterBit::PostProcesses_ToneMap);
-            create(parent, "SelectionOutline", FilterBit::PostProcesses_SelectionOutline);
-            create(parent, "SelectionHighlight", FilterBit::PostProcesses_SelectionHighlight);
+            auto* parent = create(m_root, "POSTFX", FrameFilterBit::PostProcessing);
+            create(parent, "Tonemap", FrameFilterBit::PostProcesses_ToneMap);
+            create(parent, "SelectionOutline", FrameFilterBit::PostProcesses_SelectionOutline);
+            create(parent, "SelectionHighlight", FrameFilterBit::PostProcesses_SelectionHighlight);
         }
     }
 
-    Array<FilterBitInfo*> m_infos;
-    FilterBitInfo* m_root = nullptr;
+    Array<FrameFilterBitInfo*> m_infos;
+    FrameFilterBitInfo* m_root = nullptr;
 
-    FilterBitInfo* create(FilterBitInfo* parent, StringView name, FilterBit bit = FilterBit::MAX)
+    FrameFilterBitInfo* create(FrameFilterBitInfo* parent, StringView name, FrameFilterBit bit = FrameFilterBit::MAX)
     {
-        auto* ret = new FilterBitInfo;
+        auto* ret = new FrameFilterBitInfo;
         ret->name = StringID(name);
         ret->bit = bit;
 
@@ -189,7 +189,7 @@ public:
 };
 
 // get extra info about a filter bit
-const FilterBitInfo* GetFilterTree()
+const FrameFilterBitInfo* GetFilterTree()
 {
     return FilterBitRegistry::GetInstance().m_root;
 }

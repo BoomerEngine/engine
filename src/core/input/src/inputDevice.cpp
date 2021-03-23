@@ -9,15 +9,15 @@
 #include "build.h"
 #include "inputDevice.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
 
-RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IDevice);
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IInputDevicve);
 RTTI_END_TYPE();
 
-IDevice::IDevice()
+IInputDevicve::IInputDevicve()
 {}
 
-IDevice::~IDevice()
+IInputDevicve::~IInputDevicve()
 {}
 
-END_BOOMER_NAMESPACE_EX(input)
+END_BOOMER_NAMESPACE()

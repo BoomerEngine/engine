@@ -39,16 +39,17 @@ struct FrameParams_Capture;
 
 struct FrameStats;
 
-//--
-
-class Scene;
-typedef RefPtr<Scene> ScenePtr;
+struct FrameFilterFlags;
 
 class FrameRenderer;
 class FrameView;
 class FrameSurfaces;
 
-struct FilterFlags;
+//--
+
+class RenderingScene;
+typedef RefPtr<RenderingScene> RenderingScenePtr;
+
 
 //--
 
@@ -69,13 +70,13 @@ struct FrameViewCaptureDepthRecorder;
 
 //--
 
-class IObjectManager;
+class IRenderingObjectManager;
 		
-class IObjectProxy;
-typedef RefPtr<IObjectProxy> ObjectProxyPtr;
+class IRenderingObject;
+typedef RefPtr<IRenderingObject> RenderingObjectPtr;
 
-class ObjectProxyMesh;
-typedef RefPtr<ObjectProxyMesh> ObjectProxyMeshPtr;
+class RenderingMesh;
+typedef RefPtr<RenderingMesh> RenderingMeshPtr;
 
 //--
 

@@ -15,9 +15,9 @@ BEGIN_BOOMER_NAMESPACE()
 //---
 
 /// game input event
-class GAME_COMMON_API InputEvent : public IObject
+class GAME_COMMON_API GameInputEvent : public IObject
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(InputEvent, IObject);
+    RTTI_DECLARE_VIRTUAL_CLASS(GameInputEvent, IObject);
 
 public:
     StringID m_name;
@@ -28,14 +28,14 @@ public:
 //---
 
 /// context for game input handling
-class GAME_COMMON_API InputContext : public IObject
+class GAME_COMMON_API GameInputContext : public IObject
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(InputContext, IObject);
+    RTTI_DECLARE_VIRTUAL_CLASS(GameInputContext, IObject);
 
 public:
-    InputContext();
-    InputContext(const InputDefinitionsPtr& defs); // starts at root
-    InputContext(const InputActionTablePtr& table);
+    GameInputContext();
+    GameInputContext(const InputDefinitionsPtr& defs); // starts at root
+    GameInputContext(const InputActionTablePtr& table);
 
     //--
 
@@ -51,7 +51,7 @@ public:
     //--
 
     // process input event, will eat it if there's an action for it
-    bool handleInputEvent(const input::BaseEvent& evt, InputEventPtr& outEvent);
+    bool handleInputEvent(const InputEvent& evt, GameInputEventPtr& outEvent);
 
     //--
 

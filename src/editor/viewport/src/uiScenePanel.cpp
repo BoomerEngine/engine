@@ -284,7 +284,7 @@ RTTI_END_TYPE();
 
 RenderingScenePanelSettings::RenderingScenePanelSettings()
 {
-    filters = rendering::FilterFlags::DefaultEditor();
+    filters = rendering::FrameFilterFlags::DefaultEditor();
 }
 
 //---
@@ -381,7 +381,7 @@ void RenderingScenePanel::handleUpdate(float dt)
     m_gameTimeCounter += dt;
 }
 
-bool RenderingScenePanel::handleKeyEvent(const input::KeyEvent& evt)
+bool RenderingScenePanel::handleKeyEvent(const InputKeyEvent& evt)
 {
     return TBaseClass::handleKeyEvent(evt);
 }
@@ -405,7 +405,7 @@ namespace helper
         {
         }
 
-        virtual InputActionResult onMouseEvent(const input::MouseClickEvent& evt, const ElementWeakPtr& hoveredElement) override
+        virtual InputActionResult onMouseEvent(const InputMouseClickEvent& evt, const ElementWeakPtr& hoveredElement) override
         {
             if (evt.leftReleased())
             {
@@ -423,7 +423,7 @@ namespace helper
             return nullptr;
         }
 
-        virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override
+        virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override
         {
             auto dist = evt.absolutePosition().distanceTo(m_startPoint);
             if (dist <= 4.0f)
@@ -456,7 +456,7 @@ namespace helper
         {
         }
 
-        virtual InputActionResult onMouseEvent(const input::MouseClickEvent& evt, const ElementWeakPtr& hoveredElement) override
+        virtual InputActionResult onMouseEvent(const InputMouseClickEvent& evt, const ElementWeakPtr& hoveredElement) override
         {
             if (evt.leftReleased())
             {
@@ -495,7 +495,7 @@ namespace helper
             }
         }
 
-        virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override
+        virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override
         {
             m_currentPoint = evt.absolutePosition();
             return InputActionResult();
@@ -525,7 +525,7 @@ namespace helper
         typedef std::function<void(float dp, float dy)> TRotateFunction;
 
         MouseLightRotation(IElement* ptr, const TRotateFunction& func)
-            : MouseInputAction(ptr, input::KeyCode::KEY_MOUSE1, true)
+            : MouseInputAction(ptr, InputKey::KEY_MOUSE1, true)
             , m_rotateLightFunction(func)
         {}
 
@@ -534,7 +534,7 @@ namespace helper
             outRedrawPolicy = WindowRedrawPolicy::ActiveOnly;
         }
 
-        virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override final
+        virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override final
         {
             auto deltaPitch = -evt.delta().y * 0.5f;
             auto deltaYaw = -evt.delta().x * 0.5f;
@@ -556,7 +556,7 @@ void RenderingScenePanel::handleFocusLost()
     //m_cameraController.resetInput();
 }
 
-InputActionPtr RenderingScenePanel::createLeftMouseButtonCameraAction(const ElementArea& area, const input::MouseClickEvent& evt, bool allowSelection)
+InputActionPtr RenderingScenePanel::createLeftMouseButtonCameraAction(const ElementArea& area, const InputMouseClickEvent& evt, bool allowSelection)
 {
     const float zoomScale = 1.0f / (1 << m_renderTargetZoom);
 
@@ -572,7 +572,7 @@ InputActionPtr RenderingScenePanel::createLeftMouseButtonCameraAction(const Elem
             // create a point selection mode
             // NOTE: this can mutate into the camera movement
             auto selectionFunc = [this](bool ctrl, bool shift, const Point& point) { handlePointSelection(ctrl, shift, point); };
-            auto copiedEvent = RefNew<input::MouseClickEvent>(evt.deviceID(), evt.keyCode(), evt.type(), evt.keyMask(), evt.windowPosition(), evt.absolutePosition());
+            auto copiedEvent = RefNew<InputMouseClickEvent>(evt.deviceID(), evt.keyCode(), evt.type(), evt.keyMask(), evt.windowPosition(), evt.absolutePosition());
             auto continuationFunc = [this, area, copiedEvent]() -> InputActionPtr { return createLeftMouseButtonCameraAction(area, *copiedEvent, false); };
             return RefNew<helper::SelectionClickInputHandler>(this, evt.absolutePosition(), selectionFunc, continuationFunc);
         }
@@ -593,7 +593,7 @@ InputActionPtr RenderingScenePanel::createLeftMouseButtonCameraAction(const Elem
     return nullptr;
 }
 
-InputActionPtr RenderingScenePanel::createRightMouseButtonCameraAction(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr RenderingScenePanel::createRightMouseButtonCameraAction(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     const float zoomScale = 1.0f / (1 << m_renderTargetZoom);
 
@@ -683,7 +683,7 @@ InputActionPtr RenderingScenePanel::createRightMouseButtonCameraAction(const Ele
     return nullptr;
 }
 
-InputActionPtr RenderingScenePanel::createMiddleMouseButtonCameraAction(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr RenderingScenePanel::createMiddleMouseButtonCameraAction(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     const float zoomScale = 1.0f / (1 << m_renderTargetZoom);
 
@@ -713,7 +713,7 @@ InputActionPtr RenderingScenePanel::createMiddleMouseButtonCameraAction(const El
     return nullptr;
 }
 
-InputActionPtr RenderingScenePanel::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr RenderingScenePanel::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.keyMask().isCtrlDown() && evt.rightClicked())
     {
@@ -748,12 +748,12 @@ InputActionPtr RenderingScenePanel::handleMouseClick(const ElementArea& area, co
     return InputActionPtr();
 }
 
-bool RenderingScenePanel::handleMouseMovement(const input::MouseMovementEvent& evt)
+bool RenderingScenePanel::handleMouseMovement(const InputMouseMovementEvent& evt)
 {
     return TBaseClass::handleMouseMovement(evt);
 }
 
-bool RenderingScenePanel::handleMouseWheel(const input::MouseMovementEvent& evt, float delta)
+bool RenderingScenePanel::handleMouseWheel(const InputMouseMovementEvent& evt, float delta)
 {
     float cameraDistance = 0.0f;
     if (delta > 0.0f)
@@ -851,7 +851,7 @@ void RenderingScenePanel::handleAreaSelection(bool ctrl, bool shift, const Rect&
     handleAreaSelection(ctrl, shift, clientRect, selectables.keys());
 }
 
-bool RenderingScenePanel::handleContextMenu(const ElementArea& area, const Position& absolutePosition, input::KeyMask controlKeys)
+bool RenderingScenePanel::handleContextMenu(const ElementArea& area, const Position& absolutePosition, InputKeyMask controlKeys)
 {
     // well, something is wrong (probably capture)
     if (!area.contains(absolutePosition))
@@ -905,7 +905,7 @@ bool RenderingScenePanel::handleContextMenu(const ElementArea& area, const Posit
     }
 
     // call general handler but with more data
-    handleContextMenu(controlKeys.test(input::KeyMaskBit::ANY_CTRL), controlKeys.test(input::KeyMaskBit::ANY_SHIFT),
+    handleContextMenu(controlKeys.test(InputKeyMaskBit::ANY_CTRL), controlKeys.test(InputKeyMaskBit::ANY_SHIFT),
         absolutePosition, clickPos,
         selectable.object, clickPositionValid ? &clickPosition : nullptr);
 
@@ -915,22 +915,22 @@ bool RenderingScenePanel::handleContextMenu(const ElementArea& area, const Posit
 void RenderingScenePanel::handleFrame(rendering::FrameParams& frame)
 {
     // draw grid
-    if (m_panelSettings.drawInternalGrid && (frame.filters & rendering::FilterBit::ViewportWorldGrid))
+    if (m_panelSettings.drawInternalGrid && (frame.filters & rendering::FrameFilterBit::ViewportWorldGrid))
         drawGrid(frame);
 
     // draw world axes
-    if (m_panelSettings.drawInternalWorldAxis && (frame.filters & rendering::FilterBit::ViewportWorldAxes))
+    if (m_panelSettings.drawInternalWorldAxis && (frame.filters & rendering::FrameFilterBit::ViewportWorldAxes))
     {
         rendering::DebugDrawer dd(frame.geometry.solid);
         dd.axes(Matrix::IDENTITY(), 1.0f);
     }
 
     // draw screen axis
-    if (m_panelSettings.drawInternalCameraAxis && (frame.filters & rendering::FilterBit::ViewportCameraAxes))
+    if (m_panelSettings.drawInternalCameraAxis && (frame.filters & rendering::FrameFilterBit::ViewportCameraAxes))
         drawViewAxes(cachedDrawArea().size().x, cachedDrawArea().size().y, frame);
 
     // draw camera info
-    if (m_panelSettings.drawInternalCameraData && (frame.filters & rendering::FilterBit::ViewportCameraInfo))
+    if (m_panelSettings.drawInternalCameraData && (frame.filters & rendering::FrameFilterBit::ViewportCameraInfo))
         drawCameraInfo(cachedDrawArea().size().x, cachedDrawArea().size().y, frame);
 
     // use the selected render mode
@@ -1392,11 +1392,11 @@ void RenderingScenePanel::buildRenderModePopup(ui::MenuButtonContainer* menu)
     menu->createSeparator();
 }
 
-void RenderingScenePanel::createFilterItem(StringView prefix, const rendering::FilterBitInfo* bitInfo, MenuButtonContainer* menu)
+void RenderingScenePanel::createFilterItem(StringView prefix, const rendering::FrameFilterBitInfo* bitInfo, MenuButtonContainer* menu)
 {
     StringBuf name = prefix ? StringBuf(TempString("{}.{}", prefix, bitInfo->name)) : StringBuf(bitInfo->name.view());
 
-    if (bitInfo->bit != rendering::FilterBit::MAX)
+    if (bitInfo->bit != rendering::FrameFilterBit::MAX)
     {
         const auto toggled = m_panelSettings.filters.test(bitInfo->bit);
 
@@ -1529,8 +1529,8 @@ RTTI_END_TYPE();
 
 RenderingSimpleScenePanel::RenderingSimpleScenePanel()
 {
-    const auto sceneType = rendering::SceneType::EditorPreview;
-    m_scene = RefNew<rendering::Scene>(sceneType);
+    const auto sceneType = rendering::RenderingSceneType::EditorPreview;
+    m_scene = RefNew<rendering::RenderingScene>(sceneType);
 }
 
 RenderingSimpleScenePanel::~RenderingSimpleScenePanel()

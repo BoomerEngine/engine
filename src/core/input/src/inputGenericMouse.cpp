@@ -10,11 +10,11 @@
 #include "inputGenericMouse.h"
 #include "inputGenericKeyboard.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
-GenericMouse::GenericMouse(IContext* context, GenericKeyboard* keyboard, DeviceID id)
+GenericMouse::GenericMouse(IInputContext* context, GenericKeyboard* keyboard, InputDeviceID id)
     : m_lastEventWindowPoint(0,0)
     , m_lastEventAbsolutePoint(0, 0)
     , m_lastClickWasDoubleClick(false)
@@ -24,34 +24,34 @@ GenericMouse::GenericMouse(IContext* context, GenericKeyboard* keyboard, DeviceI
     , m_keyboard(keyboard)
     , m_id(id)
 {
-    m_mouseKeyMapping[0] = KeyCode::KEY_MOUSE0;
-    m_mouseKeyMapping[1] = KeyCode::KEY_MOUSE1;
-    m_mouseKeyMapping[2] = KeyCode::KEY_MOUSE2;
-    m_mouseKeyMapping[3] = KeyCode::KEY_MOUSE3;
-    m_mouseKeyMapping[4] = KeyCode::KEY_MOUSE4;
-    m_mouseKeyMapping[5] = KeyCode::KEY_MOUSE5;
-    m_mouseKeyMapping[6] = KeyCode::KEY_MOUSE6;
-    m_mouseKeyMapping[7] = KeyCode::KEY_MOUSE7;
-    m_mouseKeyMapping[8] = KeyCode::KEY_MOUSE8;
-    m_mouseKeyMapping[9] = KeyCode::KEY_MOUSE9;
-    m_mouseKeyMapping[10] = KeyCode::KEY_MOUSE10;
-    m_mouseKeyMapping[11] = KeyCode::KEY_MOUSE11;
-    m_mouseKeyMapping[12] = KeyCode::KEY_MOUSE12;
-    m_mouseKeyMapping[13] = KeyCode::KEY_MOUSE13;
-    m_mouseKeyMapping[14] = KeyCode::KEY_MOUSE14;
-    m_mouseKeyMapping[15] = KeyCode::KEY_MOUSE15;
+    m_mouseKeyMapping[0] = InputKey::KEY_MOUSE0;
+    m_mouseKeyMapping[1] = InputKey::KEY_MOUSE1;
+    m_mouseKeyMapping[2] = InputKey::KEY_MOUSE2;
+    m_mouseKeyMapping[3] = InputKey::KEY_MOUSE3;
+    m_mouseKeyMapping[4] = InputKey::KEY_MOUSE4;
+    m_mouseKeyMapping[5] = InputKey::KEY_MOUSE5;
+    m_mouseKeyMapping[6] = InputKey::KEY_MOUSE6;
+    m_mouseKeyMapping[7] = InputKey::KEY_MOUSE7;
+    m_mouseKeyMapping[8] = InputKey::KEY_MOUSE8;
+    m_mouseKeyMapping[9] = InputKey::KEY_MOUSE9;
+    m_mouseKeyMapping[10] = InputKey::KEY_MOUSE10;
+    m_mouseKeyMapping[11] = InputKey::KEY_MOUSE11;
+    m_mouseKeyMapping[12] = InputKey::KEY_MOUSE12;
+    m_mouseKeyMapping[13] = InputKey::KEY_MOUSE13;
+    m_mouseKeyMapping[14] = InputKey::KEY_MOUSE14;
+    m_mouseKeyMapping[15] = InputKey::KEY_MOUSE15;
 }       
 
-KeyMask GenericMouse::currentKeyMask() const
+InputKeyMask GenericMouse::currentKeyMask() const
 {
-    KeyMask mask;
+    InputKeyMask mask;
 
     if (TestBit(&m_mouseButtonKeys, 0))
-        mask |= KeyMaskBit::LEFT_MOUSE;
+        mask |= InputKeyMaskBit::LEFT_MOUSE;
 	if (TestBit(&m_mouseButtonKeys, 1))
-        mask |= KeyMaskBit::MIDDLE_MOUSE;
+        mask |= InputKeyMaskBit::MIDDLE_MOUSE;
 	if (TestBit(&m_mouseButtonKeys, 2))
-        mask |= KeyMaskBit::RIGHT_MOUSE;
+        mask |= InputKeyMaskBit::RIGHT_MOUSE;
 
     if (m_keyboard)
         mask |= m_keyboard->currentKeyMask();
@@ -97,13 +97,13 @@ void GenericMouse::mouseDown(MouseButtonIndex buttonIndex, const Point& windowPo
         // test for double clicks
         if (buttonIndex == 0 && canEmitDoubleClick(buttonIndex, windowPoint, absolutePoint))
         {
-            m_context->inject(RefNew<MouseClickEvent>(m_id, keyCode, MouseEventType::DoubleClick, keyMask, windowPoint, absolutePoint));
+            m_context->inject(RefNew<InputMouseClickEvent>(m_id, keyCode, MouseEventType::DoubleClick, keyMask, windowPoint, absolutePoint));
             m_lastClickWasDoubleClick = true;
         }
         else
         {
-            m_context->inject(RefNew<MouseClickEvent>(m_id, keyCode, MouseEventType::Click, keyMask, windowPoint, absolutePoint));
-            m_context->inject(RefNew<KeyEvent>(DeviceType::Mouse, m_id, keyCode, true, false, keyMask));
+            m_context->inject(RefNew<InputMouseClickEvent>(m_id, keyCode, MouseEventType::Click, keyMask, windowPoint, absolutePoint));
+            m_context->inject(RefNew<InputKeyEvent>(InputDeviceType::Mouse, m_id, keyCode, true, false, keyMask));
             m_lastClickWasDoubleClick = false;
         }
     }
@@ -131,8 +131,8 @@ void GenericMouse::mouseUp(MouseButtonIndex buttonIndex, const Point& windowPoin
         // release only if press was registered
         {
             ClearBit(&m_mouseButtonKeys, buttonIndex);
-            m_context->inject(RefNew<MouseClickEvent>(m_id, keyCode, MouseEventType::Release, keyMask, windowPoint, absolutePoint));
-            m_context->inject(RefNew<KeyEvent>(DeviceType::Mouse, m_id, keyCode, false, false, keyMask));
+            m_context->inject(RefNew<InputMouseClickEvent>(m_id, keyCode, MouseEventType::Release, keyMask, windowPoint, absolutePoint));
+            m_context->inject(RefNew<InputKeyEvent>(InputDeviceType::Mouse, m_id, keyCode, false, false, keyMask));
         }
     }
 }
@@ -146,23 +146,23 @@ void GenericMouse::mouseMovement(const Point& windowPoint, const Point& absolute
     // send the displacement event
     if (0.0f != delta.x)
     {
-        SetBit(&m_movementAxisPerturbed, (uint8_t)AxisCode::AXIS_MOUSEX);
-        m_context->inject(RefNew<AxisEvent>(DeviceType::Mouse, m_id, AxisCode::AXIS_MOUSEX, delta.x));
+        SetBit(&m_movementAxisPerturbed, (uint8_t)InputAxis::AXIS_MOUSEX);
+        m_context->inject(RefNew<InputAxisEvent>(InputDeviceType::Mouse, m_id, InputAxis::AXIS_MOUSEX, delta.x));
     }
     if (0.0f != delta.y)
     {
-		SetBit(&m_movementAxisPerturbed, (uint8_t)AxisCode::AXIS_MOUSEY);
-        m_context->inject(RefNew<AxisEvent>(DeviceType::Mouse, m_id, AxisCode::AXIS_MOUSEY, delta.y));
+		SetBit(&m_movementAxisPerturbed, (uint8_t)InputAxis::AXIS_MOUSEY);
+        m_context->inject(RefNew<InputAxisEvent>(InputDeviceType::Mouse, m_id, InputAxis::AXIS_MOUSEY, delta.y));
     }
     if (0.0f != delta.z)
     {
-		SetBit(&m_movementAxisPerturbed, (uint8_t)AxisCode::AXIS_MOUSEZ);
-        m_context->inject(RefNew<AxisEvent>(DeviceType::Mouse, m_id, AxisCode::AXIS_MOUSEZ, delta.z));
+		SetBit(&m_movementAxisPerturbed, (uint8_t)InputAxis::AXIS_MOUSEZ);
+        m_context->inject(RefNew<InputAxisEvent>(InputDeviceType::Mouse, m_id, InputAxis::AXIS_MOUSEZ, delta.z));
     }
 
     // send the mouse movement event
     auto keyMask = currentKeyMask();
-    m_context->inject(RefNew<MouseMovementEvent>(m_id, keyMask, captured, windowPoint, absolutePoint, delta));
+    m_context->inject(RefNew<InputMouseMovementEvent>(m_id, keyMask, captured, windowPoint, absolutePoint, delta));
     m_lastEventKeyMask = keyMask;
     m_lastMouseMoveValid = true;
     m_hasMouseMovement = true;
@@ -182,8 +182,8 @@ void GenericMouse::reset(bool postReleaseEvents)
                 {
                     auto keyCode = m_mouseKeyMapping[i];
 
-                    m_context->inject(RefNew<MouseClickEvent>(m_id, keyCode, MouseEventType::Release, KeyMask(), m_lastEventWindowPoint, m_lastEventAbsolutePoint));
-                    m_context->inject(RefNew<KeyEvent>(DeviceType::Mouse, m_id, keyCode, false, false, KeyMask()));
+                    m_context->inject(RefNew<InputMouseClickEvent>(m_id, keyCode, MouseEventType::Release, InputKeyMask(), m_lastEventWindowPoint, m_lastEventAbsolutePoint));
+                    m_context->inject(RefNew<InputKeyEvent>(InputDeviceType::Mouse, m_id, keyCode, false, false, InputKeyMask()));
                 }
             }
         }
@@ -204,7 +204,7 @@ void GenericMouse::update()
         }
         else if (TestBit(&m_movementAxisTracked, i))
         {
-            m_context->inject(RefNew<AxisEvent>(DeviceType::Mouse, m_id, (AxisCode)i, 0.0f));
+            m_context->inject(RefNew<InputAxisEvent>(InputDeviceType::Mouse, m_id, (InputAxis)i, 0.0f));
             ClearBit(&m_movementAxisTracked, i);
         }
     }
@@ -217,7 +217,7 @@ void GenericMouse::update()
         {
             m_lastEventKeyMask = controlKeyMask;
 
-            m_context->inject(RefNew<MouseMovementEvent>(m_id, controlKeyMask, false, m_lastEventWindowPoint, m_lastEventAbsolutePoint, Vector3::ZERO()));
+            m_context->inject(RefNew<InputMouseMovementEvent>(m_id, controlKeyMask, false, m_lastEventWindowPoint, m_lastEventAbsolutePoint, Vector3::ZERO()));
         }
     }
 	m_movementAxisPerturbed = 0;
@@ -225,4 +225,4 @@ void GenericMouse::update()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(input)
+END_BOOMER_NAMESPACE()

@@ -86,8 +86,8 @@ public:
 
 protected:
     // IElement
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
 
     ButtonMode m_mode;
     bool m_pressed = false;

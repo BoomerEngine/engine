@@ -201,9 +201,9 @@ ClassPickerBox::ClassPickerBox(ClassType rootClass, ClassType initialType, bool 
     };
 }
 
-bool ClassPickerBox::handleKeyEvent(const input::KeyEvent & evt)
+bool ClassPickerBox::handleKeyEvent(const InputKeyEvent & evt)
 {
-    if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_ESCAPE)
+    if (evt.pressed() && evt.keyCode() == InputKey::KEY_ESCAPE)
     {
         if (m_hasButtons)
         {
@@ -211,7 +211,7 @@ bool ClassPickerBox::handleKeyEvent(const input::KeyEvent & evt)
             return true;
         }
     }
-    else if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_RETURN)
+    else if (evt.pressed() && evt.keyCode() == InputKey::KEY_RETURN)
     {
         closeIfValidTypeSelected();
         return true;

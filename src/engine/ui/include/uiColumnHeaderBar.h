@@ -46,8 +46,8 @@ public:
 
 private:
     virtual void prepareDynamicSizing(const ElementArea& drawArea, const ElementDynamicSizing*& dataPtr) const override;
-    virtual InputActionPtr handleOverlayMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
-    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const override;
+    virtual InputActionPtr handleOverlayMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
+    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const override;
 
     //---
 

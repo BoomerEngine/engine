@@ -34,9 +34,9 @@ public:
     // NOTE: the frequency of events as well as dead zone is controlled by config value
 
 protected:
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
-    virtual bool handleMouseWheel(const input::MouseMovementEvent& evt, float delta) override;
-    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
+    virtual bool handleMouseWheel(const InputMouseMovementEvent& evt, float delta) override;
+    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const override;
 };
 
 //--

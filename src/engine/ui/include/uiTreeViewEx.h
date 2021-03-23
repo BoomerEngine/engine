@@ -52,7 +52,7 @@ public:
     virtual void handleItemExpand();
     virtual void handleItemCollapse();
 
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
 
     //--
 

@@ -33,7 +33,7 @@ public:
     virtual void render(CanvasArea* owner, float x, float y, float sx, float sy, canvas::Canvas& canvas, float mergedOpacity) = 0;
 
     // service input action
-    virtual InputActionPtr handleMouseClick(CanvasArea* owner, Position virtualPosition, const input::MouseClickEvent& evt);
+    virtual InputActionPtr handleMouseClick(CanvasArea* owner, Position virtualPosition, const InputMouseClickEvent& evt);
 };
 
 //--
@@ -162,8 +162,8 @@ protected:
 
     virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
     virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
-    virtual bool handleMouseWheel(const input::MouseMovementEvent& evt, float delta) override;
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
+    virtual bool handleMouseWheel(const InputMouseMovementEvent& evt, float delta) override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
 };
 
 //--

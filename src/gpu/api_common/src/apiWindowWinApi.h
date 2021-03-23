@@ -64,7 +64,7 @@ public:
 	virtual void windowAdjustWindowPlacement(const Rect& windowRect) override;
 	virtual void windowSetAlpha(float alpha) override;
 	virtual void windowCancelCloseRequest() override;
-	virtual input::ContextPtr windowGetInputContext() override;
+	virtual ContextPtr windowGetInputContext() override;
 	virtual void windowBindOwner(ObjectID id) override;
 
 	//--
@@ -98,7 +98,7 @@ private:
 
 	std::atomic<uint32_t> m_windowCloseRequest = 0; // WM_CLOSE
 
-	input::ContextPtr m_inputContext;
+	ContextPtr m_inputContext;
 
 	std::atomic<uint32_t> m_numFramesStarted = 0;
 	uint32_t m_numLastFramesRendered = 0;

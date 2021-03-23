@@ -234,7 +234,7 @@ void SearchBar::updateSearchPattern()
     call(EVENT_SEARCH_CHANGED);
 }
 
-bool SearchBar::handleExternalKeyEvent(const input::KeyEvent& evt)
+bool SearchBar::handleExternalKeyEvent(const InputKeyEvent& evt)
 {
     if (m_blockExternalKeyPropagation)
     {
@@ -242,7 +242,7 @@ bool SearchBar::handleExternalKeyEvent(const input::KeyEvent& evt)
         return false;
     }
 
-    if (evt.keyCode() == input::KeyCode::KEY_BACK || evt.keyCode() == input::KeyCode::KEY_DELETE || evt.keyCode() == input::KeyCode::KEY_TAB)
+    if (evt.keyCode() == InputKey::KEY_BACK || evt.keyCode() == InputKey::KEY_DELETE || evt.keyCode() == InputKey::KEY_TAB)
     {
         if (!m_text->isFocused())
         {
@@ -264,7 +264,7 @@ static bool IsGoodCharToStartTyping(wchar_t ch)
     return true;
 }
 
-bool SearchBar::handleExternalCharEvent(const input::CharEvent& evt)
+bool SearchBar::handleExternalCharEvent(const InputCharEvent& evt)
 {
     if (IsGoodCharToStartTyping(evt.scanCode()))
     {
@@ -286,9 +286,9 @@ bool SearchBar::handleExternalCharEvent(const input::CharEvent& evt)
     return false;
 }
 
-bool SearchBar::handleKeyEvent(const input::KeyEvent& evt)
+bool SearchBar::handleKeyEvent(const InputKeyEvent& evt)
 {
-    if (evt.deviceType() == input::DeviceType::Keyboard)
+    if (evt.deviceType() == InputDeviceType::Keyboard)
     {
         if (auto view = m_itemView.lock())
         {

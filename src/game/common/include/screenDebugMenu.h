@@ -38,7 +38,7 @@ public:
 
     virtual void measure(IGameScreenDebugMenu* menu, canvas::Canvas& c, float displayScale, Vector2& outNeededSize) const = 0;
     virtual void render(IGameScreenDebugMenu* menu, canvas::Canvas& c, const RenderState& state) const = 0;
-    virtual bool handleKey(IGameScreenDebugMenu* menu, input::KeyCode key, bool repeat) = 0;
+    virtual bool handleKey(IGameScreenDebugMenu* menu, InputKey key, bool repeat) = 0;
 
 protected:
     StringID m_action;
@@ -57,7 +57,7 @@ public:
 
     virtual void measure(IGameScreenDebugMenu* menu, canvas::Canvas& c, float displayScale, Vector2& outNeededSize) const override;
     virtual void render(IGameScreenDebugMenu* menu, canvas::Canvas& c, const RenderState& state) const override;
-    virtual bool handleKey(IGameScreenDebugMenu* menu, input::KeyCode key, bool repeat) override;
+    virtual bool handleKey(IGameScreenDebugMenu* menu, InputKey key, bool repeat) override;
 
     virtual void clicked(IGameScreenDebugMenu* menu);
 
@@ -94,7 +94,7 @@ public:
 protected:
     virtual void handleAttached() override;
     virtual void handleUpdate(double dt) override;
-    virtual bool handleInput(const input::BaseEvent& evt) override;
+    virtual bool handleInput(const InputEvent& evt) override;
     virtual void handleRender(canvas::Canvas& c, float visibility) override;
 
     virtual bool queryOpaqueState() const override;

@@ -132,7 +132,7 @@ void DeviceService::onSyncUpdate()
     m_device->sync(cvSyncdeviceEveryFrame.get());
 
     // reload shaders ?
-    if (input::CheckInputKeyPressed(input::KeyCode::KEY_F11))
+    if (CheckInputKeyPressed(InputKey::KEY_F11))
         reloadShaders();
 }
 

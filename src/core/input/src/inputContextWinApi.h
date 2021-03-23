@@ -14,9 +14,9 @@
 
 #include <Windows.h>
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
 
-class ContextWinApi;
+class InputContextWinApi;
 
 ///---
 
@@ -24,7 +24,7 @@ class ContextWinApi;
 class RawKeyboard : public GenericKeyboard
 {
 public:
-    RawKeyboard(IContext* context);
+    RawKeyboard(IInputContext* context);
     ~RawKeyboard();
 
     void interpretChar(HWND hWnd, WPARAM charCode);
@@ -32,9 +32,9 @@ public:
     void interpretKeyDown(HWND hWnd, WPARAM keyCode, LPARAM flags);
     void interpretKeyUp(HWND hWnd, WPARAM keyCode, LPARAM flags);
 
-    KeyCode mapKeyCode(USHORT virtualKey, bool extendedKey) const;
+    InputKey mapKeyCode(USHORT virtualKey, bool extendedKey) const;
 
-    KeyCode m_windowsKeyMapping[256];
+    InputKey m_windowsKeyMapping[256];
 };
 
 ///---
@@ -43,7 +43,7 @@ public:
 class RawMouse : public GenericMouse
 {
 public:
-    RawMouse(ContextWinApi* context, RawKeyboard* keyboard);
+    RawMouse(InputContextWinApi* context, RawKeyboard* keyboard);
     ~RawMouse();
 
     void interpretRawInput(HWND hWnd, const RID_DEVICE_INFO* deviceInfo, const RAWINPUT* inputData, bool& outGotClick);
@@ -55,18 +55,18 @@ private:
     static bool IsCaptureWindow(HWND hWnd);
 
     bool m_isCaptured;
-    ContextWinApi* m_context;
+    InputContextWinApi* m_context;
 };
 
 ///---
 
 /// WinAPI input context
-class CORE_INPUT_API ContextWinApi : public IContext
+class CORE_INPUT_API InputContextWinApi : public IInputContext
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ContextWinApi, IContext);
+    RTTI_DECLARE_VIRTUAL_CLASS(InputContextWinApi, IInputContext);
 
 public:
-    ContextWinApi(uint64_t nativeWindow, uint64_t nativeDisplay, bool gameMode);
+    InputContextWinApi(uint64_t nativeWindow, uint64_t nativeDisplay, bool gameMode);
 
     INLINE HWND hWND() const { return m_hWnd; }
 
@@ -98,4 +98,4 @@ protected:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(input)
+END_BOOMER_NAMESPACE()

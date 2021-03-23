@@ -64,7 +64,7 @@ public:
 class ENGINE_RENDERING_API FrameRenderer : public NoCopy
 {
 public:
-    FrameRenderer(const FrameParams& frame, const gpu::AcquiredOutput& output, const FrameResources& resources, const FrameHelper& helpers, const Scene* scene);
+    FrameRenderer(const FrameParams& frame, const gpu::AcquiredOutput& output, const FrameResources& resources, const FrameHelper& helpers, const RenderingScene* scene);
     ~FrameRenderer();
 
     //--
@@ -81,7 +81,7 @@ public:
     INLINE uint32_t width() const { return m_frame.resolution.width; }
     INLINE uint32_t height() const { return m_frame.resolution.height; }
 
-    INLINE const Scene* scene() const { return m_scene; }
+    INLINE const RenderingScene* scene() const { return m_scene; }
 
     //--
 
@@ -100,7 +100,7 @@ public:
 private:
     bool m_msaa = false;
 
-    const Scene* m_scene = nullptr;
+    const RenderingScene* m_scene = nullptr;
 
     LinearAllocator m_allocator;
 

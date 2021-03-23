@@ -179,7 +179,7 @@ namespace helper
     {
     public:
         TrackBarDragAction(TrackBar* ptr, const Position& pos, float deltaPos, double minRange, double maxRange, double resolution)
-            : MouseInputAction(ptr, input::KeyCode::KEY_MOUSE0, true)
+            : MouseInputAction(ptr, InputKey::KEY_MOUSE0, true)
             , m_trackBar(ptr)
             , m_startPos(pos)
             , m_deltaPos(deltaPos)
@@ -202,7 +202,7 @@ namespace helper
             return false;
         }
 
-        virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
+        virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
         {
             if (auto bar = m_trackBar.lock())
             {
@@ -245,7 +245,7 @@ void TrackBar::handleFocusLost()
     TBaseClass::handleFocusLost();
 }
 
-InputActionPtr TrackBar::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr TrackBar::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     // are we close to the drag area?
     if (evt.leftClicked() && isCloseToDragArea(area, evt.absolutePosition().toVector()))
@@ -259,12 +259,12 @@ InputActionPtr TrackBar::handleMouseClick(const ElementArea& area, const input::
     return TBaseClass::handleMouseClick(area, evt);
 }
 
-bool TrackBar::handleCursorQuery(const ElementArea &area, const Position &absolutePosition, input::CursorType &outCursorType) const
+bool TrackBar::handleCursorQuery(const ElementArea &area, const Position &absolutePosition, CursorType &outCursorType) const
 {
     // show the sizer cursor when close to drag area
     if (isCloseToDragArea(area, absolutePosition))
     {
-        outCursorType = input::CursorType::SizeWE;
+        outCursorType = CursorType::SizeWE;
         return true;
     }
 
@@ -272,15 +272,15 @@ bool TrackBar::handleCursorQuery(const ElementArea &area, const Position &absolu
     return TBaseClass::handleCursorQuery(area, absolutePosition, outCursorType);
 }
 
-bool TrackBar::handleKeyEvent(const input::KeyEvent &evt)
+bool TrackBar::handleKeyEvent(const InputKeyEvent &evt)
 {
     auto stepSize = evt.keyMask().isCtrlDown() ? 1 : (evt.keyMask().isShiftDown() ? 100 : 10);
-    if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_LEFT)
+    if (evt.pressed() && evt.keyCode() == InputKey::KEY_LEFT)
     {
         moveStep(-stepSize);
         return true;
     }
-    else if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_RIGHT)
+    else if (evt.pressed() && evt.keyCode() == InputKey::KEY_RIGHT)
     {
         moveStep(stepSize);
         return true;
@@ -288,12 +288,12 @@ bool TrackBar::handleKeyEvent(const input::KeyEvent &evt)
 
     if (m_allowEditBox)
     {
-        if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_ESCAPE)
+        if (evt.pressed() && evt.keyCode() == InputKey::KEY_ESCAPE)
         {
             closeEditBox();
             return true;
         }
-        else if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_RETURN)
+        else if (evt.pressed() && evt.keyCode() == InputKey::KEY_RETURN)
         {
             if (!m_editBox)
                 showEditBox();
@@ -322,7 +322,7 @@ void TrackBar::moveStep(int delta)
     }
 }
 
-bool TrackBar::handleMouseWheel(const input::MouseMovementEvent &evt, float delta)
+bool TrackBar::handleMouseWheel(const InputMouseMovementEvent &evt, float delta)
 {
     if (delta < 0.0f && m_value > m_min)
     {
@@ -338,7 +338,7 @@ bool TrackBar::handleMouseWheel(const input::MouseMovementEvent &evt, float delt
     return false;
 }
 
-InputActionPtr TrackBar::handleOverlayMouseClick(const ElementArea &area, const input::MouseClickEvent &evt)
+InputActionPtr TrackBar::handleOverlayMouseClick(const ElementArea &area, const InputMouseClickEvent &evt)
 {
     if (evt.leftDoubleClicked() && m_allowEditBox)
     {

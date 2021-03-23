@@ -209,11 +209,11 @@ void IGameScreenSinglePlayer::handleUpdate(double dt)
         m_game->update(dt);
 }
 
-bool IGameScreenSinglePlayer::handleInput(const input::BaseEvent& evt)
+bool IGameScreenSinglePlayer::handleInput(const InputEvent& evt)
 {
     if (auto* key = evt.toKeyEvent())
     {
-        if (key->pressed() && key->keyCode() == input::KeyCode::KEY_ESCAPE)
+        if (key->pressed() && key->keyCode() == InputKey::KEY_ESCAPE)
         {
             auto pauseMenu = GetSettings<GameProjectSettingScreens>()->m_ingamePauseScreen->create<IGameScreen>();
             host()->pushTransition(pauseMenu, GameTransitionMode::PushOnTop);

@@ -34,7 +34,7 @@ ScrollArea::ScrollArea(ScrollMode vmode /*= ScrollMode::None*/, ScrollMode hmode
         horizontalScrollMode(hmode);
 }
 
-bool ScrollArea::handleMouseWheel(const input::MouseMovementEvent& evt, float delta)
+bool ScrollArea::handleMouseWheel(const InputMouseMovementEvent& evt, float delta)
 {
     /*if (evt.keyMask().isCtrlDown())
     {

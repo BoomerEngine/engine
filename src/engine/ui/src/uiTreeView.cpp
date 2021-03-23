@@ -353,7 +353,7 @@ void TreeView::modelItemsRemoved(const ModelIndex& parent, const Array<ModelInde
 
 //---
 
-InputActionPtr TreeView::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr TreeView::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftDoubleClicked())
     {
@@ -375,7 +375,7 @@ InputActionPtr TreeView::handleMouseClick(const ElementArea& area, const input::
     return TBaseClass::handleMouseClick(area, evt);
 }
 
-bool TreeView::handleKeyEvent(const input::KeyEvent& evt)
+bool TreeView::handleKeyEvent(const InputKeyEvent& evt)
 {
     if (evt.pressedOrRepeated())
     {
@@ -384,26 +384,26 @@ bool TreeView::handleKeyEvent(const input::KeyEvent& evt)
         {
             switch (evt.keyCode())
             {
-                case input::KeyCode::KEY_RETURN:
+                case InputKey::KEY_RETURN:
                 {
                     if (!call(EVENT_ITEM_ACTIVATED, item->m_index))
                         changeExpandState(item, !item->m_expanded);
                     return true;
                 }
 
-                case input::KeyCode::KEY_NUMPAD_ADD:
+                case InputKey::KEY_NUMPAD_ADD:
                 {
                     changeExpandState(item, true);
                     return true;
                 }
 
-                case input::KeyCode::KEY_NUMPAD_SUBTRACT:
+                case InputKey::KEY_NUMPAD_SUBTRACT:
                 {
                     changeExpandState(item, false);
                     return true;
                 }
 
-                case input::KeyCode::KEY_NUMPAD_MULTIPLY:
+                case InputKey::KEY_NUMPAD_MULTIPLY:
                 {
                     changeExpandState(item, true, true);
                     return true;

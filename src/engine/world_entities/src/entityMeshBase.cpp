@@ -91,26 +91,26 @@ void MeshEntity::colorEx(Color color)
     }
 }
 
-void MeshEntity::createRenderingProxy(rendering::Scene* scene, rendering::ObjectProxyPtr& outProxy, rendering::IObjectManager*& outManager) const
+void MeshEntity::createRenderingProxy(rendering::RenderingScene* scene, rendering::RenderingObjectPtr& outProxy, rendering::IRenderingObjectManager*& outManager) const
 {
     if (const auto meshData = m_mesh.resource())
     {
-        if (auto manager = scene->manager<rendering::ObjectManagerMesh>())
+        if (auto manager = scene->manager<rendering::RenderingMeshManager>())
         {
-            rendering::ObjectProxyMesh::Setup setup;
+            rendering::RenderingMesh::Setup setup;
             setup.forcedLodLevel = m_forceDetailLevel;
             setup.mesh = meshData;
 
-            if (auto proxy = rendering::ObjectProxyMesh::Compile(setup))
+            if (auto proxy = rendering::RenderingMesh::Compile(setup))
             {
                 if (m_castShadows)
-                    proxy->m_flags |= rendering::ObjectProxyFlagBit::CastShadows;
+                    proxy->m_flags |= rendering::RenderingObjectFlagBit::CastShadows;
                 if (m_receiveShadows)
-                    proxy->m_flags |= rendering::ObjectProxyFlagBit::ReceivesShadows;
+                    proxy->m_flags |= rendering::RenderingObjectFlagBit::ReceivesShadows;
 
                 const auto selected = editorState().selected;
                 if (selected)
-                    proxy->m_flags |= rendering::ObjectProxyFlagBit::Selected;
+                    proxy->m_flags |= rendering::RenderingObjectFlagBit::Selected;
 
                 proxy->m_color = m_color;
                 proxy->m_colorEx = m_colorEx;

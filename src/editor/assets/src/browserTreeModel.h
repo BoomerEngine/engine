@@ -49,13 +49,13 @@ protected:
 
     //--
 
-    virtual ui::DragDropDataPtr queryDragDropData(const input::BaseKeyFlags& keys, const ui::Position& position) const override;
+    virtual ui::DragDropDataPtr queryDragDropData(const BaseKeyFlags& keys, const ui::Position& position) const override;
     virtual ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
     virtual void handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
 
     //--
 
-    virtual bool handleItemContextMenu(ui::ICollectionView* view, const ui::CollectionItems& items, const ui::Position& pos, input::KeyMask controlKeys) override;
+    virtual bool handleItemContextMenu(ui::ICollectionView* view, const ui::CollectionItems& items, const ui::Position& pos, InputKeyMask controlKeys) override;
     virtual bool handleItemFilter(const ui::ICollectionView* view, const ui::SearchPattern& filter) const override;
     virtual void handleItemSort(const ui::ICollectionView* view, int colIndex, SortingData& outData) const override;
 

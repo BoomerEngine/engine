@@ -57,7 +57,7 @@ public:
     virtual void handleUpdate(double dt);
 
     // process high level input
-    virtual bool handleInput(const input::BaseEvent& evt);
+    virtual bool handleInput(const InputEvent& evt);
 
     // render internal 
     virtual void handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, float visibility);

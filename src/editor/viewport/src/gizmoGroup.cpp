@@ -27,7 +27,7 @@ GizmoGroup::GizmoGroup(const IGizmoHost* host, Array<GizmoPtr>&& gizmos)
     : m_host(host)
     , m_gizmos(std::move(gizmos))
     , m_hoverClientPos(0,0)
-    , m_hoverCursor(input::CursorType::Hand)
+    , m_hoverCursor(CursorType::Hand)
 {
     alignGizmos();
 }
@@ -107,14 +107,14 @@ bool GizmoGroup::updateHover(const Point& clientPoint)
     m_activeGizmo = nullptr;
     m_activeInput = nullptr;
 
-    m_hoverCursor = input::CursorType::Hand;
+    m_hoverCursor = CursorType::Hand;
     m_hoverClientPos = clientPoint;
     m_hoverGizmo = findGizmoUnderCursor(m_hoverClientPos, m_hoverCursor);
 
     return m_hoverGizmo;
 }
 
-bool GizmoGroup::updateCursor(input::CursorType& outCursor)
+bool GizmoGroup::updateCursor(CursorType& outCursor)
 {
     if (m_hoverGizmo)
     {
@@ -143,7 +143,7 @@ ui::InputActionPtr GizmoGroup::activate()
     return nullptr;
 }
 
-IGizmo* GizmoGroup::findGizmoUnderCursor(const Point& point, input::CursorType& outCursor) const
+IGizmo* GizmoGroup::findGizmoUnderCursor(const Point& point, CursorType& outCursor) const
 {
     const auto viewportSize = m_host->gizmoHost_viewportSize();
     const auto& viewportCamera = m_host->gizmoHost_camera();

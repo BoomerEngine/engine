@@ -7,9 +7,9 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
-class BaseEvent;
-END_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
+class InputEvent;
+END_BOOMER_NAMESPACE()
 
 BEGIN_BOOMER_NAMESPACE_EX(canvas)
 class Canvas;
@@ -37,7 +37,7 @@ namespace ImGui
 
 		// BoomerEngine integration - convert engine input event to ImGui input
 		// Returns true if ImGui wants to "eat" this particular event
-		bool processInput(const boomer::input::BaseEvent& evt);
+		bool processInput(const boomer::InputEvent& evt);
 
 		// being ImGui frame with BoomerEngine canvas
 		void beginFrame(boomer::canvas::Canvas& c, float dt);
@@ -97,9 +97,9 @@ namespace ImGui
 	IMGUI_API void ToggleButton(const char* str_id, bool* v);
 
 	// Key states
-	IMGUI_API bool IsKeyDown(const boomer::input::KeyCode code);
-	IMGUI_API bool IsKeyPressed(const boomer::input::KeyCode code, bool ctrl = false, bool shift = false, bool alt = false);
-	IMGUI_API bool IsKeyReleased(const boomer::input::KeyCode code);
+	IMGUI_API bool IsKeyDown(const boomer::InputKey code);
+	IMGUI_API bool IsKeyPressed(const boomer::InputKey code, bool ctrl = false, bool shift = false, bool alt = false);
+	IMGUI_API bool IsKeyReleased(const boomer::InputKey code);
 
 	//--
 

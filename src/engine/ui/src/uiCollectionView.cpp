@@ -38,7 +38,7 @@ void ICollectionItem::handleItemSort(const ICollectionView* view, int colIndex, 
     outInfo.index = uniqueIndex();
 }
 
-bool ICollectionItem::handleItemContextMenu(ICollectionView* view, const CollectionItems& items, const Position& pos, input::KeyMask controlKeys)
+bool ICollectionItem::handleItemContextMenu(ICollectionView* view, const CollectionItems& items, const Position& pos, InputKeyMask controlKeys)
 {
     return false;
 }
@@ -604,7 +604,7 @@ void ICollectionView::handleFocusGained()
 
 }
 
-InputActionPtr ICollectionView::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr ICollectionView::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftDoubleClicked())
     {
@@ -807,7 +807,7 @@ void ICollectionView::select(ViewItem* item, ItemSelectionMode mode, bool postEv
     select(items, mode, postEvent);
 }
 
-InputActionPtr ICollectionView::handleOverlayMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr ICollectionView::handleOverlayMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftClicked() || evt.rightClicked())
     {
@@ -856,7 +856,7 @@ InputActionPtr ICollectionView::handleOverlayMouseClick(const ElementArea& area,
     return TBaseClass::handleOverlayMouseClick(area, evt);
 }
 
-bool ICollectionView::handleContextMenu(const ElementArea& area, const Position& absolutePosition, input::KeyMask controlKeys)
+bool ICollectionView::handleContextMenu(const ElementArea& area, const Position& absolutePosition, InputKeyMask controlKeys)
 {
     if (auto item = itemAtPoint(absolutePosition))
         if (item->item->handleItemContextMenu(this, m_selectionItems, absolutePosition, controlKeys))
@@ -870,7 +870,7 @@ ElementPtr ICollectionView::queryTooltipElement(const Position& absolutePosition
     return nullptr;
 }
 
-DragDropDataPtr ICollectionView::queryDragDropData(const input::BaseKeyFlags& keys, const Position& position) const
+DragDropDataPtr ICollectionView::queryDragDropData(const BaseKeyFlags& keys, const Position& position) const
 {
     return nullptr;
 }
@@ -941,7 +941,7 @@ bool ICollectionView::processNavigation(bool shift, NavigationDirection mode)
     return true;
 }
 
-bool ICollectionView::handleKeyEvent(const input::KeyEvent& evt)
+bool ICollectionView::handleKeyEvent(const InputKeyEvent& evt)
 {
     if (evt.pressedOrRepeated())
     {
@@ -949,35 +949,35 @@ bool ICollectionView::handleKeyEvent(const input::KeyEvent& evt)
 
         switch (evt.keyCode())
         {
-        case input::KeyCode::KEY_UP:
+        case InputKey::KEY_UP:
             return processNavigation(shift, NavigationDirection::Up);
 
-        case input::KeyCode::KEY_DOWN:
+        case InputKey::KEY_DOWN:
             return processNavigation(shift, NavigationDirection::Down);
 
-        case input::KeyCode::KEY_PRIOR:
+        case InputKey::KEY_PRIOR:
             return processNavigation(shift, NavigationDirection::PageUp);
 
-        case input::KeyCode::KEY_NEXT:
+        case InputKey::KEY_NEXT:
             return processNavigation(shift, NavigationDirection::PageDown);
 
-        case input::KeyCode::KEY_LEFT:
+        case InputKey::KEY_LEFT:
             return processNavigation(shift, NavigationDirection::Left);
 
-        case input::KeyCode::KEY_RIGHT:
+        case InputKey::KEY_RIGHT:
             return processNavigation(shift, NavigationDirection::Right);
 
-        case input::KeyCode::KEY_HOME:
+        case InputKey::KEY_HOME:
             return processNavigation(shift, NavigationDirection::Home);
 
-        case input::KeyCode::KEY_END:
+        case InputKey::KEY_END:
             return processNavigation(shift, NavigationDirection::End);
 
-        case input::KeyCode::KEY_RETURN:
+        case InputKey::KEY_RETURN:
             return processActivation();
         }
 
-        if (evt.deviceType() == input::DeviceType::Keyboard)
+        if (evt.deviceType() == InputDeviceType::Keyboard)
         {
             if (!evt.keyMask().isCtrlDown())
             {
@@ -991,7 +991,7 @@ bool ICollectionView::handleKeyEvent(const input::KeyEvent& evt)
     return TBaseClass::handleKeyEvent(evt);
 }
 
-bool ICollectionView::handleCharEvent(const input::CharEvent& evt)
+bool ICollectionView::handleCharEvent(const InputCharEvent& evt)
 {
     if (!evt.keyMask().isCtrlDown())
     {

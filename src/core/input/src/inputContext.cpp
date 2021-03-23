@@ -11,33 +11,33 @@
 
 #if defined(PLATFORM_WINDOWS)
     #include "inputContextWinApi.h"
-    typedef boomer::input::ContextWinApi InputSystemClass;
+    typedef boomer::InputContextWinApi InputSystemClass;
 #elif defined(PLATFORM_LINUX)
     #include "inputContextX11.h"
-    typedef boomer::input::ContextX11 InputSystemClass;
+    typedef boomer::ContextX11 InputSystemClass;
 #else
     #include "inputContextNull.h"
-    typedef boomer::input::ContextNull InputSystemClass;
+    typedef boomer::InputContextNull InputSystemClass;
 #endif
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
-RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IContext);
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IInputContext);
 RTTI_END_TYPE();
 
-IContext::IContext()
+IInputContext::IInputContext()
 {
 }
 
-void IContext::clear()
+void IInputContext::clear()
 {
     auto lock = CreateLock(m_eventQueueLock);
     m_eventQueue.clear();
 }
 
-void IContext::inject(const EventPtr& evt)
+void IInputContext::inject(const EventPtr& evt)
 {
     if (evt)
     {
@@ -46,7 +46,7 @@ void IContext::inject(const EventPtr& evt)
     }
 }
 
-EventPtr IContext::pull()
+EventPtr IInputContext::pull()
 {
     auto lock = CreateLock(m_eventQueueLock);
 
@@ -58,11 +58,11 @@ EventPtr IContext::pull()
     return ret;
 }
 
-ContextPtr IContext::CreateNativeContext(uint64_t nativeWindow, uint64_t nativeDisplay, bool gameMode)
+ContextPtr IInputContext::CreateNativeContext(uint64_t nativeWindow, uint64_t nativeDisplay, bool gameMode)
 {
     return RefNew<InputSystemClass>(nativeWindow, nativeDisplay, gameMode);
 }
 
 //---
         
-END_BOOMER_NAMESPACE_EX(input)
+END_BOOMER_NAMESPACE()

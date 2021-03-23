@@ -50,13 +50,13 @@ private:
     ElementArea computeSashArea(const ElementArea& area) const;
     uint8_t computeSashInputMask(const Position& pos) const;
 
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
-    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const override;
-    virtual bool handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, input::AreaType& outAreaType) const override final;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
+    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const override;
+    virtual bool handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, AreaType& outAreaType) const override final;
 
     void inputActionFinished();
 
-    static void CursorForInputMask(uint8_t mask, input::CursorType& outCursorType);
+    static void CursorForInputMask(uint8_t mask, CursorType& outCursorType);
 
     friend class FourWaySplitterSashInputAction;    
 };

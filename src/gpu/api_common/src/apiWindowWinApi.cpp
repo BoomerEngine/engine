@@ -326,7 +326,7 @@ WindowWinApi* WindowWinApi::Create(const OutputInitInfo& creationInfo)
 
 	// create input callback
 	if (creationInfo.m_windowCreateInputContext)
-		ret->m_inputContext = input::IContext::CreateNativeContext((uint64_t)hWnd, 0, creationInfo.m_windowInputContextGameMode);
+		ret->m_inputContext = IInputContext::CreateNativeContext((uint64_t)hWnd, 0, creationInfo.m_windowInputContextGameMode);
 
 	// bind data
 	SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)ret);
@@ -381,25 +381,25 @@ LRESULT WindowWinApi::windowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 				{
 					auto pos = GetAbsoluteMousePosition();
 
-					auto cursorType = input::CursorType::Default;
+					auto cursorType = CursorType::Default;
 					m_callback->onOutputWindowSelectCursor(m_owner, pos, cursorType);
 
 					switch (cursorType)
 					{
-					case input::CursorType::Hidden: SetCursor(NULL); break;
-					case input::CursorType::Default: SetCursor(LoadCursor(NULL, IDC_ARROW)); break;
-					case input::CursorType::Cross: SetCursor(LoadCursor(NULL, IDC_CROSS)); break;
-					case input::CursorType::Hand: SetCursor(LoadCursor(NULL, IDC_HAND)); break;
-					case input::CursorType::Help: SetCursor(LoadCursor(NULL, IDC_HELP)); break;
-					case input::CursorType::TextBeam: SetCursor(LoadCursor(NULL, IDC_IBEAM)); break;
-					case input::CursorType::No: SetCursor(LoadCursor(NULL, IDC_NO)); break;
-					case input::CursorType::SizeAll: SetCursor(LoadCursor(NULL, IDC_SIZEALL)); break;
-					case input::CursorType::SizeNS: SetCursor(LoadCursor(NULL, IDC_SIZENS)); break;
-					case input::CursorType::SizeWE: SetCursor(LoadCursor(NULL, IDC_SIZEWE)); break;
-					case input::CursorType::SizeNESW: SetCursor(LoadCursor(NULL, IDC_SIZENESW)); break;
-					case input::CursorType::SizeNWSE: SetCursor(LoadCursor(NULL, IDC_SIZENWSE)); break;
-					case input::CursorType::UpArrow: SetCursor(LoadCursor(NULL, IDC_UPARROW)); break;
-					case input::CursorType::Wait: SetCursor(LoadCursor(NULL, IDC_WAIT)); break;
+					case CursorType::Hidden: SetCursor(NULL); break;
+					case CursorType::Default: SetCursor(LoadCursor(NULL, IDC_ARROW)); break;
+					case CursorType::Cross: SetCursor(LoadCursor(NULL, IDC_CROSS)); break;
+					case CursorType::Hand: SetCursor(LoadCursor(NULL, IDC_HAND)); break;
+					case CursorType::Help: SetCursor(LoadCursor(NULL, IDC_HELP)); break;
+					case CursorType::TextBeam: SetCursor(LoadCursor(NULL, IDC_IBEAM)); break;
+					case CursorType::No: SetCursor(LoadCursor(NULL, IDC_NO)); break;
+					case CursorType::SizeAll: SetCursor(LoadCursor(NULL, IDC_SIZEALL)); break;
+					case CursorType::SizeNS: SetCursor(LoadCursor(NULL, IDC_SIZENS)); break;
+					case CursorType::SizeWE: SetCursor(LoadCursor(NULL, IDC_SIZEWE)); break;
+					case CursorType::SizeNESW: SetCursor(LoadCursor(NULL, IDC_SIZENESW)); break;
+					case CursorType::SizeNWSE: SetCursor(LoadCursor(NULL, IDC_SIZENWSE)); break;
+					case CursorType::UpArrow: SetCursor(LoadCursor(NULL, IDC_UPARROW)); break;
+					case CursorType::Wait: SetCursor(LoadCursor(NULL, IDC_WAIT)); break;
 					default: ASSERT(!"Invalid window cursor");
 					}
 				}
@@ -416,32 +416,32 @@ LRESULT WindowWinApi::windowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 				pos.x = (int)(short)LOWORD(lParam);
 				pos.y = (int)(short)HIWORD(lParam);
 
-				auto area = input::AreaType::Client;
+				auto area = AreaType::Client;
 				if (m_callback->onOutputWindowHitTestNonClientArea(m_owner, pos, area))
 				{
 					switch (area)
 					{
-						case input::AreaType::NotInWindow: return HTTRANSPARENT;
-						case input::AreaType::Client: return HTCLIENT;
-						case input::AreaType::NonSizableBorder: return HTBORDER;
-						case input::AreaType::BorderBottom: return HTBOTTOM;
-						case input::AreaType::BorderBottomLeft: return HTBOTTOMLEFT;
-						case input::AreaType::BorderBottomRight: return HTBOTTOMRIGHT;
-						case input::AreaType::BorderTop: return HTTOP;
-						case input::AreaType::BorderTopLeft: return HTTOPLEFT;
-						case input::AreaType::BorderTopRight: return HTTOPRIGHT;
-						case input::AreaType::BorderLeft: return HTLEFT;
-						case input::AreaType::BorderRight: return HTRIGHT;
-						case input::AreaType::Caption: return HTCAPTION;
-						case input::AreaType::Close: return HTCLOSE;
-						case input::AreaType::SizeBox: return HTSIZE;
-						case input::AreaType::Help: return HTHELP;
-						case input::AreaType::HorizontalScroll: return HTHSCROLL;
-						case input::AreaType::VerticalScroll: return HTVSCROLL;
-						case input::AreaType::Menu: return HTMENU;
-						case input::AreaType::Minimize: return HTMINBUTTON;
-						case input::AreaType::Maximize: return HTMAXBUTTON;
-						case input::AreaType::SysMenu: return HTSYSMENU;
+						case AreaType::NotInWindow: return HTTRANSPARENT;
+						case AreaType::Client: return HTCLIENT;
+						case AreaType::NonSizableBorder: return HTBORDER;
+						case AreaType::BorderBottom: return HTBOTTOM;
+						case AreaType::BorderBottomLeft: return HTBOTTOMLEFT;
+						case AreaType::BorderBottomRight: return HTBOTTOMRIGHT;
+						case AreaType::BorderTop: return HTTOP;
+						case AreaType::BorderTopLeft: return HTTOPLEFT;
+						case AreaType::BorderTopRight: return HTTOPRIGHT;
+						case AreaType::BorderLeft: return HTLEFT;
+						case AreaType::BorderRight: return HTRIGHT;
+						case AreaType::Caption: return HTCAPTION;
+						case AreaType::Close: return HTCLOSE;
+						case AreaType::SizeBox: return HTSIZE;
+						case AreaType::Help: return HTHELP;
+						case AreaType::HorizontalScroll: return HTHSCROLL;
+						case AreaType::VerticalScroll: return HTVSCROLL;
+						case AreaType::Menu: return HTMENU;
+						case AreaType::Minimize: return HTMINBUTTON;
+						case AreaType::Maximize: return HTMAXBUTTON;
+						case AreaType::SysMenu: return HTSYSMENU;
 						default: ASSERT(!"Invalid window area");
 					}
 				}
@@ -627,7 +627,7 @@ LRESULT WindowWinApi::windowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	// input
 	if (m_inputContext)
 	{
-		input::NativeEventWinApi msg;
+		NativeWindowEventWinApi msg;
 		msg.m_window = (uint64_t)m_hWnd;
 		msg.m_message = (uint32_t)uMsg;
 		msg.m_wParam = (uint64_t)wParam;
@@ -650,25 +650,25 @@ LRESULT WindowWinApi::windowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			{
 				auto pos = GetAbsoluteMousePosition();
 
-				auto cursorType = input::CursorType::Default;
+				auto cursorType = CursorType::Default;
 				m_callback->onOutputWindowSelectCursor(m_owner, pos, cursorType);
 
 				switch (cursorType)
 				{
-				case input::CursorType::Hidden: SetCursor(NULL); break;
-				case input::CursorType::Default: SetCursor(LoadCursor(NULL, IDC_ARROW)); break;
-				case input::CursorType::Cross: SetCursor(LoadCursor(NULL, IDC_CROSS)); break;
-				case input::CursorType::Hand: SetCursor(LoadCursor(NULL, IDC_HAND)); break;
-				case input::CursorType::Help: SetCursor(LoadCursor(NULL, IDC_HELP)); break;
-				case input::CursorType::TextBeam: SetCursor(LoadCursor(NULL, IDC_IBEAM)); break;
-				case input::CursorType::No: SetCursor(LoadCursor(NULL, IDC_NO)); break;
-				case input::CursorType::SizeAll: SetCursor(LoadCursor(NULL, IDC_SIZEALL)); break;
-				case input::CursorType::SizeNS: SetCursor(LoadCursor(NULL, IDC_SIZENS)); break;
-				case input::CursorType::SizeWE: SetCursor(LoadCursor(NULL, IDC_SIZEWE)); break;
-				case input::CursorType::SizeNESW: SetCursor(LoadCursor(NULL, IDC_SIZENESW)); break;
-				case input::CursorType::SizeNWSE: SetCursor(LoadCursor(NULL, IDC_SIZENWSE)); break;
-				case input::CursorType::UpArrow: SetCursor(LoadCursor(NULL, IDC_UPARROW)); break;
-				case input::CursorType::Wait: SetCursor(LoadCursor(NULL, IDC_WAIT)); break;
+				case CursorType::Hidden: SetCursor(NULL); break;
+				case CursorType::Default: SetCursor(LoadCursor(NULL, IDC_ARROW)); break;
+				case CursorType::Cross: SetCursor(LoadCursor(NULL, IDC_CROSS)); break;
+				case CursorType::Hand: SetCursor(LoadCursor(NULL, IDC_HAND)); break;
+				case CursorType::Help: SetCursor(LoadCursor(NULL, IDC_HELP)); break;
+				case CursorType::TextBeam: SetCursor(LoadCursor(NULL, IDC_IBEAM)); break;
+				case CursorType::No: SetCursor(LoadCursor(NULL, IDC_NO)); break;
+				case CursorType::SizeAll: SetCursor(LoadCursor(NULL, IDC_SIZEALL)); break;
+				case CursorType::SizeNS: SetCursor(LoadCursor(NULL, IDC_SIZENS)); break;
+				case CursorType::SizeWE: SetCursor(LoadCursor(NULL, IDC_SIZEWE)); break;
+				case CursorType::SizeNESW: SetCursor(LoadCursor(NULL, IDC_SIZENESW)); break;
+				case CursorType::SizeNWSE: SetCursor(LoadCursor(NULL, IDC_SIZENWSE)); break;
+				case CursorType::UpArrow: SetCursor(LoadCursor(NULL, IDC_UPARROW)); break;
+				case CursorType::Wait: SetCursor(LoadCursor(NULL, IDC_WAIT)); break;
 				default: ASSERT(!"Invalid window cursor");
 				}
 
@@ -983,7 +983,7 @@ void WindowWinApi::windowCancelCloseRequest()
 	}
 }
 
-input::ContextPtr WindowWinApi::windowGetInputContext()
+ContextPtr WindowWinApi::windowGetInputContext()
 {
 	return m_inputContext;
 }

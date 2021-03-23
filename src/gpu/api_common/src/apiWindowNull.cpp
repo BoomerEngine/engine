@@ -73,7 +73,7 @@ WindowNull* WindowNull::Create(const OutputInitInfo& creationInfo)
 	ret->m_visible = creationInfo.m_windowShow;
 
 	/*if (creationInfo.m_windowCreateInputContext)
-		ret->m_inputContext = input::IContext::CreateNativeContext((uint64_t)hWnd, 0, creationInfo.m_windowInputContextGameMode);*/
+		ret->m_inputContext = IContext::CreateNativeContext((uint64_t)hWnd, 0, creationInfo.m_windowInputContextGameMode);*/
 
 	return ret;
 }
@@ -299,7 +299,7 @@ void WindowNull::windowBindOwner(ObjectID id)
 	m_owner = id;
 }
 
-input::ContextPtr WindowNull::windowGetInputContext()
+ContextPtr WindowNull::windowGetInputContext()
 {
 	return nullptr;
 }

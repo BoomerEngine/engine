@@ -9,154 +9,154 @@
 #include "build.h"
 #include "inputContextWinApi.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
 
 ///--
 
-static void BuildKeyMapping(KeyCode* outKeyMapping)
+static void BuildKeyMapping(InputKey* outKeyMapping)
 {
-    outKeyMapping[VK_BACK] = KeyCode::KEY_BACK;
-    outKeyMapping[VK_TAB] = KeyCode::KEY_TAB;
-    outKeyMapping[VK_CLEAR] = KeyCode::KEY_CLEAR;
-    outKeyMapping[VK_RETURN] = KeyCode::KEY_RETURN;
-    outKeyMapping[VK_PAUSE] = KeyCode::KEY_PAUSE;
-    outKeyMapping[VK_CAPITAL] = KeyCode::KEY_CAPITAL;
-    outKeyMapping[VK_ESCAPE] = KeyCode::KEY_ESCAPE;
-    outKeyMapping[VK_CONVERT] = KeyCode::KEY_CONVERT;
-    outKeyMapping[VK_NONCONVERT] = KeyCode::KEY_NONCONVERT;
-    outKeyMapping[VK_ACCEPT] = KeyCode::KEY_ACCEPT;
-    outKeyMapping[VK_MODECHANGE] = KeyCode::KEY_MODECHANGE;
-    outKeyMapping[VK_SPACE] = KeyCode::KEY_SPACE;
-    outKeyMapping[VK_PRIOR] = KeyCode::KEY_PRIOR;
-    outKeyMapping[VK_NEXT] = KeyCode::KEY_NEXT;
-    outKeyMapping[VK_END] = KeyCode::KEY_END;
-    outKeyMapping[VK_HOME] = KeyCode::KEY_HOME;
-    outKeyMapping[VK_LEFT] = KeyCode::KEY_LEFT;
-    outKeyMapping[VK_UP] = KeyCode::KEY_UP;
-    outKeyMapping[VK_RIGHT] = KeyCode::KEY_RIGHT;
-    outKeyMapping[VK_DOWN] = KeyCode::KEY_DOWN;
-    outKeyMapping[VK_SELECT] = KeyCode::KEY_SELECT;
-    outKeyMapping[VK_PRINT] = KeyCode::KEY_PRINT;
-    outKeyMapping[VK_SNAPSHOT] = KeyCode::KEY_SNAPSHOT;
-    outKeyMapping[VK_INSERT] = KeyCode::KEY_INSERT;
-    outKeyMapping[VK_DELETE] = KeyCode::KEY_DELETE;
-    outKeyMapping[VK_HELP] = KeyCode::KEY_HELP;
-    outKeyMapping[VK_LWIN] = KeyCode::KEY_LWIN;
-    outKeyMapping[VK_RWIN] = KeyCode::KEY_RWIN;
-    outKeyMapping[VK_APPS] = KeyCode::KEY_APPS;
-    outKeyMapping[VK_SLEEP] = KeyCode::KEY_SLEEP;
-    outKeyMapping[VK_OEM_PLUS] = KeyCode::KEY_EQUAL;
-    outKeyMapping[VK_OEM_MINUS] = KeyCode::KEY_MINUS;
-    outKeyMapping[VK_OEM_COMMA] = KeyCode::KEY_COMMA;
-    outKeyMapping[VK_OEM_PERIOD] = KeyCode::KEY_PERIOD;
-    outKeyMapping[VK_OEM_1] = KeyCode::KEY_SEMICOLON;
-    outKeyMapping[VK_OEM_2] = KeyCode::KEY_BACKSLASH;
-    outKeyMapping[VK_OEM_3] = KeyCode::KEY_GRAVE;
-    outKeyMapping[VK_OEM_4] = KeyCode::KEY_LBRACKET;
-    outKeyMapping[VK_OEM_5] = KeyCode::KEY_SLASH;
-    outKeyMapping[VK_OEM_6] = KeyCode::KEY_RBRACKET;
-    outKeyMapping[VK_OEM_7] = KeyCode::KEY_APOSTROPHE;
-    outKeyMapping[VK_NUMPAD0] = KeyCode::KEY_NUMPAD0;
-    outKeyMapping[VK_NUMPAD1] = KeyCode::KEY_NUMPAD1;
-    outKeyMapping[VK_NUMPAD2] = KeyCode::KEY_NUMPAD2;
-    outKeyMapping[VK_NUMPAD3] = KeyCode::KEY_NUMPAD3;
-    outKeyMapping[VK_NUMPAD4] = KeyCode::KEY_NUMPAD4;
-    outKeyMapping[VK_NUMPAD5] = KeyCode::KEY_NUMPAD5;
-    outKeyMapping[VK_NUMPAD6] = KeyCode::KEY_NUMPAD6;
-    outKeyMapping[VK_NUMPAD7] = KeyCode::KEY_NUMPAD7;
-    outKeyMapping[VK_NUMPAD8] = KeyCode::KEY_NUMPAD8;
-    outKeyMapping[VK_NUMPAD9] = KeyCode::KEY_NUMPAD9;
-    outKeyMapping[VK_MULTIPLY] = KeyCode::KEY_NUMPAD_MULTIPLY;
-    outKeyMapping[VK_ADD] = KeyCode::KEY_NUMPAD_ADD;
-    outKeyMapping[VK_SEPARATOR] = KeyCode::KEY_NUMPAD_SEPARATOR;
-    outKeyMapping[VK_SUBTRACT] = KeyCode::KEY_NUMPAD_SUBTRACT;
-    outKeyMapping[VK_DECIMAL] = KeyCode::KEY_NUMPAD_DECIMAL;
-    outKeyMapping[VK_DIVIDE] = KeyCode::KEY_NUMPAD_DIVIDE;
-    outKeyMapping[VK_LCONTROL] = KeyCode::KEY_LEFT_CTRL;
-    outKeyMapping[VK_RCONTROL] = KeyCode::KEY_RIGHT_CTRL;
-    outKeyMapping[VK_LSHIFT] = KeyCode::KEY_LEFT_SHIFT;
-    outKeyMapping[VK_RSHIFT] = KeyCode::KEY_RIGHT_SHIFT;
-    outKeyMapping[VK_LMENU] = KeyCode::KEY_LEFT_ALT;
-    outKeyMapping[VK_RMENU] = KeyCode::KEY_RIGHT_ALT;
-    outKeyMapping[VK_F1] = KeyCode::KEY_F1;
-    outKeyMapping[VK_F2] = KeyCode::KEY_F2;
-    outKeyMapping[VK_F3] = KeyCode::KEY_F3;
-    outKeyMapping[VK_F4] = KeyCode::KEY_F4;
-    outKeyMapping[VK_F5] = KeyCode::KEY_F5;
-    outKeyMapping[VK_F6] = KeyCode::KEY_F6;
-    outKeyMapping[VK_F7] = KeyCode::KEY_F7;
-    outKeyMapping[VK_F8] = KeyCode::KEY_F8;
-    outKeyMapping[VK_F9] = KeyCode::KEY_F9;
-    outKeyMapping[VK_F10] = KeyCode::KEY_F10;
-    outKeyMapping[VK_F11] = KeyCode::KEY_F11;
-    outKeyMapping[VK_F12] = KeyCode::KEY_F12;
-    outKeyMapping[VK_F13] = KeyCode::KEY_F13;
-    outKeyMapping[VK_F14] = KeyCode::KEY_F14;
-    outKeyMapping[VK_F15] = KeyCode::KEY_F15;
-    outKeyMapping[VK_F16] = KeyCode::KEY_F16;
-    outKeyMapping[VK_F17] = KeyCode::KEY_F17;
-    outKeyMapping[VK_F18] = KeyCode::KEY_F18;
-    outKeyMapping[VK_F19] = KeyCode::KEY_F19;
-    outKeyMapping[VK_F20] = KeyCode::KEY_F20;
-    outKeyMapping[VK_F21] = KeyCode::KEY_F21;
-    outKeyMapping[VK_F22] = KeyCode::KEY_F22;
-    outKeyMapping[VK_F23] = KeyCode::KEY_F23;
-    outKeyMapping[VK_F24] = KeyCode::KEY_F24;
+    outKeyMapping[VK_BACK] = InputKey::KEY_BACK;
+    outKeyMapping[VK_TAB] = InputKey::KEY_TAB;
+    outKeyMapping[VK_CLEAR] = InputKey::KEY_CLEAR;
+    outKeyMapping[VK_RETURN] = InputKey::KEY_RETURN;
+    outKeyMapping[VK_PAUSE] = InputKey::KEY_PAUSE;
+    outKeyMapping[VK_CAPITAL] = InputKey::KEY_CAPITAL;
+    outKeyMapping[VK_ESCAPE] = InputKey::KEY_ESCAPE;
+    outKeyMapping[VK_CONVERT] = InputKey::KEY_CONVERT;
+    outKeyMapping[VK_NONCONVERT] = InputKey::KEY_NONCONVERT;
+    outKeyMapping[VK_ACCEPT] = InputKey::KEY_ACCEPT;
+    outKeyMapping[VK_MODECHANGE] = InputKey::KEY_MODECHANGE;
+    outKeyMapping[VK_SPACE] = InputKey::KEY_SPACE;
+    outKeyMapping[VK_PRIOR] = InputKey::KEY_PRIOR;
+    outKeyMapping[VK_NEXT] = InputKey::KEY_NEXT;
+    outKeyMapping[VK_END] = InputKey::KEY_END;
+    outKeyMapping[VK_HOME] = InputKey::KEY_HOME;
+    outKeyMapping[VK_LEFT] = InputKey::KEY_LEFT;
+    outKeyMapping[VK_UP] = InputKey::KEY_UP;
+    outKeyMapping[VK_RIGHT] = InputKey::KEY_RIGHT;
+    outKeyMapping[VK_DOWN] = InputKey::KEY_DOWN;
+    outKeyMapping[VK_SELECT] = InputKey::KEY_SELECT;
+    outKeyMapping[VK_PRINT] = InputKey::KEY_PRINT;
+    outKeyMapping[VK_SNAPSHOT] = InputKey::KEY_SNAPSHOT;
+    outKeyMapping[VK_INSERT] = InputKey::KEY_INSERT;
+    outKeyMapping[VK_DELETE] = InputKey::KEY_DELETE;
+    outKeyMapping[VK_HELP] = InputKey::KEY_HELP;
+    outKeyMapping[VK_LWIN] = InputKey::KEY_LWIN;
+    outKeyMapping[VK_RWIN] = InputKey::KEY_RWIN;
+    outKeyMapping[VK_APPS] = InputKey::KEY_APPS;
+    outKeyMapping[VK_SLEEP] = InputKey::KEY_SLEEP;
+    outKeyMapping[VK_OEM_PLUS] = InputKey::KEY_EQUAL;
+    outKeyMapping[VK_OEM_MINUS] = InputKey::KEY_MINUS;
+    outKeyMapping[VK_OEM_COMMA] = InputKey::KEY_COMMA;
+    outKeyMapping[VK_OEM_PERIOD] = InputKey::KEY_PERIOD;
+    outKeyMapping[VK_OEM_1] = InputKey::KEY_SEMICOLON;
+    outKeyMapping[VK_OEM_2] = InputKey::KEY_BACKSLASH;
+    outKeyMapping[VK_OEM_3] = InputKey::KEY_GRAVE;
+    outKeyMapping[VK_OEM_4] = InputKey::KEY_LBRACKET;
+    outKeyMapping[VK_OEM_5] = InputKey::KEY_SLASH;
+    outKeyMapping[VK_OEM_6] = InputKey::KEY_RBRACKET;
+    outKeyMapping[VK_OEM_7] = InputKey::KEY_APOSTROPHE;
+    outKeyMapping[VK_NUMPAD0] = InputKey::KEY_NUMPAD0;
+    outKeyMapping[VK_NUMPAD1] = InputKey::KEY_NUMPAD1;
+    outKeyMapping[VK_NUMPAD2] = InputKey::KEY_NUMPAD2;
+    outKeyMapping[VK_NUMPAD3] = InputKey::KEY_NUMPAD3;
+    outKeyMapping[VK_NUMPAD4] = InputKey::KEY_NUMPAD4;
+    outKeyMapping[VK_NUMPAD5] = InputKey::KEY_NUMPAD5;
+    outKeyMapping[VK_NUMPAD6] = InputKey::KEY_NUMPAD6;
+    outKeyMapping[VK_NUMPAD7] = InputKey::KEY_NUMPAD7;
+    outKeyMapping[VK_NUMPAD8] = InputKey::KEY_NUMPAD8;
+    outKeyMapping[VK_NUMPAD9] = InputKey::KEY_NUMPAD9;
+    outKeyMapping[VK_MULTIPLY] = InputKey::KEY_NUMPAD_MULTIPLY;
+    outKeyMapping[VK_ADD] = InputKey::KEY_NUMPAD_ADD;
+    outKeyMapping[VK_SEPARATOR] = InputKey::KEY_NUMPAD_SEPARATOR;
+    outKeyMapping[VK_SUBTRACT] = InputKey::KEY_NUMPAD_SUBTRACT;
+    outKeyMapping[VK_DECIMAL] = InputKey::KEY_NUMPAD_DECIMAL;
+    outKeyMapping[VK_DIVIDE] = InputKey::KEY_NUMPAD_DIVIDE;
+    outKeyMapping[VK_LCONTROL] = InputKey::KEY_LEFT_CTRL;
+    outKeyMapping[VK_RCONTROL] = InputKey::KEY_RIGHT_CTRL;
+    outKeyMapping[VK_LSHIFT] = InputKey::KEY_LEFT_SHIFT;
+    outKeyMapping[VK_RSHIFT] = InputKey::KEY_RIGHT_SHIFT;
+    outKeyMapping[VK_LMENU] = InputKey::KEY_LEFT_ALT;
+    outKeyMapping[VK_RMENU] = InputKey::KEY_RIGHT_ALT;
+    outKeyMapping[VK_F1] = InputKey::KEY_F1;
+    outKeyMapping[VK_F2] = InputKey::KEY_F2;
+    outKeyMapping[VK_F3] = InputKey::KEY_F3;
+    outKeyMapping[VK_F4] = InputKey::KEY_F4;
+    outKeyMapping[VK_F5] = InputKey::KEY_F5;
+    outKeyMapping[VK_F6] = InputKey::KEY_F6;
+    outKeyMapping[VK_F7] = InputKey::KEY_F7;
+    outKeyMapping[VK_F8] = InputKey::KEY_F8;
+    outKeyMapping[VK_F9] = InputKey::KEY_F9;
+    outKeyMapping[VK_F10] = InputKey::KEY_F10;
+    outKeyMapping[VK_F11] = InputKey::KEY_F11;
+    outKeyMapping[VK_F12] = InputKey::KEY_F12;
+    outKeyMapping[VK_F13] = InputKey::KEY_F13;
+    outKeyMapping[VK_F14] = InputKey::KEY_F14;
+    outKeyMapping[VK_F15] = InputKey::KEY_F15;
+    outKeyMapping[VK_F16] = InputKey::KEY_F16;
+    outKeyMapping[VK_F17] = InputKey::KEY_F17;
+    outKeyMapping[VK_F18] = InputKey::KEY_F18;
+    outKeyMapping[VK_F19] = InputKey::KEY_F19;
+    outKeyMapping[VK_F20] = InputKey::KEY_F20;
+    outKeyMapping[VK_F21] = InputKey::KEY_F21;
+    outKeyMapping[VK_F22] = InputKey::KEY_F22;
+    outKeyMapping[VK_F23] = InputKey::KEY_F23;
+    outKeyMapping[VK_F24] = InputKey::KEY_F24;
 #if(_WIN32_WINNT >= 0x0604)
-    outKeyMapping[VK_NAVIGATION_VIEW] = KeyCode::KEY_NAVIGATION_VIEW;
-    outKeyMapping[VK_NAVIGATION_MENU] = KeyCode::KEY_NAVIGATION_MENU;
-    outKeyMapping[VK_NAVIGATION_UP] = KeyCode::KEY_NAVIGATION_UP;
-    outKeyMapping[VK_NAVIGATION_DOWN] = KeyCode::KEY_NAVIGATION_DOWN;
-    outKeyMapping[VK_NAVIGATION_LEFT] = KeyCode::KEY_NAVIGATION_LEFT;
-    outKeyMapping[VK_NAVIGATION_RIGHT] = KeyCode::KEY_NAVIGATION_RIGHT;
-    outKeyMapping[VK_NAVIGATION_ACCEPT] = KeyCode::KEY_NAVIGATION_ACCEPT;
-    outKeyMapping[VK_NAVIGATION_CANCEL] = KeyCode::KEY_NAVIGATION_CANCEL;
+    outKeyMapping[VK_NAVIGATION_VIEW] = InputKey::KEY_NAVIGATION_VIEW;
+    outKeyMapping[VK_NAVIGATION_MENU] = InputKey::KEY_NAVIGATION_MENU;
+    outKeyMapping[VK_NAVIGATION_UP] = InputKey::KEY_NAVIGATION_UP;
+    outKeyMapping[VK_NAVIGATION_DOWN] = InputKey::KEY_NAVIGATION_DOWN;
+    outKeyMapping[VK_NAVIGATION_LEFT] = InputKey::KEY_NAVIGATION_LEFT;
+    outKeyMapping[VK_NAVIGATION_RIGHT] = InputKey::KEY_NAVIGATION_RIGHT;
+    outKeyMapping[VK_NAVIGATION_ACCEPT] = InputKey::KEY_NAVIGATION_ACCEPT;
+    outKeyMapping[VK_NAVIGATION_CANCEL] = InputKey::KEY_NAVIGATION_CANCEL;
 #endif
-    outKeyMapping[VK_NUMLOCK] = KeyCode::KEY_NUMLOCK;
-    outKeyMapping[VK_SCROLL] = KeyCode::KEY_SCROLL;
-    outKeyMapping['0'] = KeyCode::KEY_0;
-    outKeyMapping['1'] = KeyCode::KEY_1;
-    outKeyMapping['2'] = KeyCode::KEY_2;
-    outKeyMapping['3'] = KeyCode::KEY_3;
-    outKeyMapping['4'] = KeyCode::KEY_4;
-    outKeyMapping['5'] = KeyCode::KEY_5;
-    outKeyMapping['6'] = KeyCode::KEY_6;
-    outKeyMapping['7'] = KeyCode::KEY_7;
-    outKeyMapping['8'] = KeyCode::KEY_8;
-    outKeyMapping['9'] = KeyCode::KEY_9;
-    outKeyMapping['A'] = KeyCode::KEY_A;
-    outKeyMapping['B'] = KeyCode::KEY_B;
-    outKeyMapping['C'] = KeyCode::KEY_C;
-    outKeyMapping['D'] = KeyCode::KEY_D;
-    outKeyMapping['E'] = KeyCode::KEY_E;
-    outKeyMapping['F'] = KeyCode::KEY_F;
-    outKeyMapping['G'] = KeyCode::KEY_G;
-    outKeyMapping['H'] = KeyCode::KEY_H;
-    outKeyMapping['I'] = KeyCode::KEY_I;
-    outKeyMapping['J'] = KeyCode::KEY_J;
-    outKeyMapping['K'] = KeyCode::KEY_K;
-    outKeyMapping['L'] = KeyCode::KEY_L;
-    outKeyMapping['M'] = KeyCode::KEY_M;
-    outKeyMapping['N'] = KeyCode::KEY_N;
-    outKeyMapping['O'] = KeyCode::KEY_O;
-    outKeyMapping['P'] = KeyCode::KEY_P;
-    outKeyMapping['Q'] = KeyCode::KEY_Q;
-    outKeyMapping['R'] = KeyCode::KEY_R;
-    outKeyMapping['S'] = KeyCode::KEY_S;
-    outKeyMapping['T'] = KeyCode::KEY_T;
-    outKeyMapping['U'] = KeyCode::KEY_U;
-    outKeyMapping['V'] = KeyCode::KEY_V;
-    outKeyMapping['W'] = KeyCode::KEY_W;
-    outKeyMapping['X'] = KeyCode::KEY_X;
-    outKeyMapping['Y'] = KeyCode::KEY_Y;
-    outKeyMapping['Z'] = KeyCode::KEY_Z;
+    outKeyMapping[VK_NUMLOCK] = InputKey::KEY_NUMLOCK;
+    outKeyMapping[VK_SCROLL] = InputKey::KEY_SCROLL;
+    outKeyMapping['0'] = InputKey::KEY_0;
+    outKeyMapping['1'] = InputKey::KEY_1;
+    outKeyMapping['2'] = InputKey::KEY_2;
+    outKeyMapping['3'] = InputKey::KEY_3;
+    outKeyMapping['4'] = InputKey::KEY_4;
+    outKeyMapping['5'] = InputKey::KEY_5;
+    outKeyMapping['6'] = InputKey::KEY_6;
+    outKeyMapping['7'] = InputKey::KEY_7;
+    outKeyMapping['8'] = InputKey::KEY_8;
+    outKeyMapping['9'] = InputKey::KEY_9;
+    outKeyMapping['A'] = InputKey::KEY_A;
+    outKeyMapping['B'] = InputKey::KEY_B;
+    outKeyMapping['C'] = InputKey::KEY_C;
+    outKeyMapping['D'] = InputKey::KEY_D;
+    outKeyMapping['E'] = InputKey::KEY_E;
+    outKeyMapping['F'] = InputKey::KEY_F;
+    outKeyMapping['G'] = InputKey::KEY_G;
+    outKeyMapping['H'] = InputKey::KEY_H;
+    outKeyMapping['I'] = InputKey::KEY_I;
+    outKeyMapping['J'] = InputKey::KEY_J;
+    outKeyMapping['K'] = InputKey::KEY_K;
+    outKeyMapping['L'] = InputKey::KEY_L;
+    outKeyMapping['M'] = InputKey::KEY_M;
+    outKeyMapping['N'] = InputKey::KEY_N;
+    outKeyMapping['O'] = InputKey::KEY_O;
+    outKeyMapping['P'] = InputKey::KEY_P;
+    outKeyMapping['Q'] = InputKey::KEY_Q;
+    outKeyMapping['R'] = InputKey::KEY_R;
+    outKeyMapping['S'] = InputKey::KEY_S;
+    outKeyMapping['T'] = InputKey::KEY_T;
+    outKeyMapping['U'] = InputKey::KEY_U;
+    outKeyMapping['V'] = InputKey::KEY_V;
+    outKeyMapping['W'] = InputKey::KEY_W;
+    outKeyMapping['X'] = InputKey::KEY_X;
+    outKeyMapping['Y'] = InputKey::KEY_Y;
+    outKeyMapping['Z'] = InputKey::KEY_Z;
 
-    outKeyMapping[VK_OEM_3] = KeyCode::KEY_GRAVE;
+    outKeyMapping[VK_OEM_3] = InputKey::KEY_GRAVE;
 }
 
 ///--
 
-RawKeyboard::RawKeyboard(IContext* context)
+RawKeyboard::RawKeyboard(IInputContext* context)
     : GenericKeyboard(context)
 {
     memzero(&m_windowsKeyMapping, sizeof(m_windowsKeyMapping));
@@ -190,52 +190,52 @@ void RawKeyboard::interpretChar(HWND hWnd, WPARAM wParam)
     charDown(scanCode);
 }
 
-KeyCode RawKeyboard::mapKeyCode(USHORT virtualKey, bool flag0) const
+InputKey RawKeyboard::mapKeyCode(USHORT virtualKey, bool flag0) const
 {
     // handle special keys
     switch (virtualKey)
     {
     case VK_CONTROL:
-        return flag0 ? KeyCode::KEY_RIGHT_CTRL : KeyCode::KEY_LEFT_CTRL;
+        return flag0 ? InputKey::KEY_RIGHT_CTRL : InputKey::KEY_LEFT_CTRL;
 
     case VK_MENU:
-        return flag0 ? KeyCode::KEY_RIGHT_ALT : KeyCode::KEY_LEFT_ALT;
+        return flag0 ? InputKey::KEY_RIGHT_ALT : InputKey::KEY_LEFT_ALT;
 
     case VK_SHIFT:
-        return flag0 ? KeyCode::KEY_RIGHT_SHIFT : KeyCode::KEY_LEFT_SHIFT;
+        return flag0 ? InputKey::KEY_RIGHT_SHIFT : InputKey::KEY_LEFT_SHIFT;
 
     case VK_INSERT:
-        return flag0 ? KeyCode::KEY_INSERT : KeyCode::KEY_NUMPAD0;
+        return flag0 ? InputKey::KEY_INSERT : InputKey::KEY_NUMPAD0;
 
     case VK_DELETE:
-        return flag0 ? KeyCode::KEY_DELETE : KeyCode::KEY_NUMPAD_DECIMAL;
+        return flag0 ? InputKey::KEY_DELETE : InputKey::KEY_NUMPAD_DECIMAL;
 
     case VK_HOME:
-        return flag0 ? KeyCode::KEY_HOME : KeyCode::KEY_NUMPAD1;
+        return flag0 ? InputKey::KEY_HOME : InputKey::KEY_NUMPAD1;
 
     case VK_END:
-        return flag0 ? KeyCode::KEY_END : KeyCode::KEY_NUMPAD7;
+        return flag0 ? InputKey::KEY_END : InputKey::KEY_NUMPAD7;
 
     case VK_PRIOR:
-        return flag0 ? KeyCode::KEY_PRIOR : KeyCode::KEY_NUMPAD9;
+        return flag0 ? InputKey::KEY_PRIOR : InputKey::KEY_NUMPAD9;
 
     case VK_NEXT:
-        return flag0 ? KeyCode::KEY_NEXT : KeyCode::KEY_NUMPAD3;
+        return flag0 ? InputKey::KEY_NEXT : InputKey::KEY_NUMPAD3;
 
     case VK_UP:
-        return flag0 ? KeyCode::KEY_UP : KeyCode::KEY_NUMPAD2;
+        return flag0 ? InputKey::KEY_UP : InputKey::KEY_NUMPAD2;
 
     case VK_LEFT:
-        return flag0 ? KeyCode::KEY_LEFT : KeyCode::KEY_NUMPAD4;
+        return flag0 ? InputKey::KEY_LEFT : InputKey::KEY_NUMPAD4;
 
     case VK_RIGHT:
-        return flag0 ? KeyCode::KEY_RIGHT : KeyCode::KEY_NUMPAD6;
+        return flag0 ? InputKey::KEY_RIGHT : InputKey::KEY_NUMPAD6;
 
     case VK_DOWN:
-        return flag0 ? KeyCode::KEY_DOWN : KeyCode::KEY_NUMPAD8;
+        return flag0 ? InputKey::KEY_DOWN : InputKey::KEY_NUMPAD8;
 
     case VK_CLEAR:
-        return KeyCode::KEY_NUMPAD5;
+        return InputKey::KEY_NUMPAD5;
     }
 
     // use standard mapping table for the rest of the keys
@@ -257,7 +257,7 @@ void RawKeyboard::interpretRawInput(HWND hWnd, const RID_DEVICE_INFO* deviceInfo
     // remap virtual key to internal key code
     bool extendedKey = 0 != (rawKeyboard.Flags & RI_KEY_E0);
     auto keyCode = mapKeyCode(virtualKey, extendedKey);
-    if (keyCode != (KeyCode)0)
+    if (keyCode != (InputKey)0)
     {
         // emit event
         if (rawKeyboard.Flags & RI_KEY_BREAK)
@@ -271,7 +271,7 @@ void RawKeyboard::interpretKeyDown(HWND hWnd, WPARAM virtualKeyCode, LPARAM flag
 {
     bool extendedKey = 0 != (flags & (1U << 24));
     auto keyCode = mapKeyCode(virtualKeyCode, extendedKey);
-    if (keyCode != (KeyCode)0)
+    if (keyCode != (InputKey)0)
         keyDown(keyCode);
 }
 
@@ -279,13 +279,13 @@ void RawKeyboard::interpretKeyUp(HWND hWnd, WPARAM virtualKeyCode, LPARAM flags)
 {
     bool extendedKey = 0 != (flags & (1U << 24));
     auto keyCode = mapKeyCode(virtualKeyCode, extendedKey);
-    if (keyCode != (KeyCode)0)
+    if (keyCode != (InputKey)0)
         keyUp(keyCode);
 }
 
 ///--
 
-RawMouse::RawMouse(ContextWinApi* context, RawKeyboard* keyboard)
+RawMouse::RawMouse(InputContextWinApi* context, RawKeyboard* keyboard)
     : GenericMouse(context, keyboard)
     , m_context(context)
 {}
@@ -389,10 +389,10 @@ void RawMouse::interpretRawInput(HWND hWnd, const RID_DEVICE_INFO* deviceInfo, c
 }
 ///--
 
-RTTI_BEGIN_TYPE_NATIVE_CLASS(ContextWinApi);
+RTTI_BEGIN_TYPE_NATIVE_CLASS(InputContextWinApi);
 RTTI_END_TYPE();
 
-ContextWinApi::ContextWinApi(uint64_t nativeWindow, uint64_t nativeDisplay, bool useRawInput)
+InputContextWinApi::InputContextWinApi(uint64_t nativeWindow, uint64_t nativeDisplay, bool useRawInput)
     : m_hWnd((HWND)nativeWindow)
     , m_keyboard(this)
     , m_mouse(this, &m_keyboard)
@@ -422,7 +422,7 @@ ContextWinApi::ContextWinApi(uint64_t nativeWindow, uint64_t nativeDisplay, bool
     }
 }
 
-void ContextWinApi::resetInput()
+void InputContextWinApi::resetInput()
 {
     DEBUG_CHECK_EX(IsMainThread(), "Only allowed on main thread");
     if (IsMainThread())
@@ -432,7 +432,7 @@ void ContextWinApi::resetInput()
     }
 }
 
-void ContextWinApi::processState()
+void InputContextWinApi::processState()
 {
     DEBUG_CHECK_EX(IsMainThread(), "Only allowed on main thread");
     if (IsMainThread())
@@ -442,7 +442,7 @@ void ContextWinApi::processState()
     }
 }
 
-void ContextWinApi::releaseCapture()
+void InputContextWinApi::releaseCapture()
 {
     if (m_activeCaptureMode)
     {
@@ -468,11 +468,11 @@ void ContextWinApi::releaseCapture()
 
         TRACE_INFO("Mouse capture disabled");
 
-        inject(RefNew<MouseCaptureLostEvent>(0));
+        inject(RefNew<InputMouseCaptureLostEvent>(0));
     }
 }
 
-void ContextWinApi::requestCapture(int captureMode)
+void InputContextWinApi::requestCapture(int captureMode)
 {
     DEBUG_CHECK_EX(IsMainThread(), "Only allowed on main thread");
     if (IsMainThread())
@@ -519,17 +519,17 @@ void ContextWinApi::requestCapture(int captureMode)
     }
 }
 
-void ContextWinApi::processMessage(const void* msg)
+void InputContextWinApi::processMessage(const void* msg)
 {
     DEBUG_CHECK_EX(IsMainThread(), "Only allowed on main thread");
     if (IsMainThread())
     {
-        auto evt = (NativeEventWinApi*)msg;
+        auto evt = (NativeWindowEventWinApi*)msg;
         evt->returnValue = windowProc(m_hWnd, (UINT)evt->m_message, (WPARAM)evt->m_wParam, (LPARAM)evt->m_lParam, evt->processed);
     }
 }
 
-void ContextWinApi::processRawInput(HWND hWnd, HRAWINPUT hRawInput)
+void InputContextWinApi::processRawInput(HWND hWnd, HRAWINPUT hRawInput)
 {
     // get data 
     RAWINPUT rawInput;
@@ -582,7 +582,7 @@ static MouseButtonIndex DecodeButtonIndex(UINT uMsg)
 
 #pragma optimize("",off)
 
-uint64_t ContextWinApi::windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool& processed)
+uint64_t InputContextWinApi::windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam, bool& processed)
 {
     switch (uMsg)
     {
@@ -874,10 +874,10 @@ uint64_t ContextWinApi::windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
 class ReverseKeyMap
 {
 public:
-    KeyCode m_windowsKeyMapping[256];
-    DWORD m_reverseWindowsKeyMapping[(int)KeyCode::KEY_MAX];
+    InputKey m_windowsKeyMapping[256];
+    DWORD m_reverseWindowsKeyMapping[(int)InputKey::KEY_MAX];
 
-    bool m_reportedPressedState[(int)KeyCode::KEY_MAX];
+    bool m_reportedPressedState[(int)InputKey::KEY_MAX];
 
     ReverseKeyMap()
     {
@@ -889,12 +889,12 @@ public:
 
         for (uint32_t i = 0; i < ARRAY_COUNT(m_windowsKeyMapping); ++i)
         {
-            if (m_windowsKeyMapping[i] != KeyCode::KEY_INVALID)
+            if (m_windowsKeyMapping[i] != InputKey::KEY_INVALID)
                 m_reverseWindowsKeyMapping[(int)m_windowsKeyMapping[i]] = i;
         }
     }
 
-    bool checkKeyDown(KeyCode key)
+    bool checkKeyDown(InputKey key)
     {
         if (const auto dwVirtualKey = m_reverseWindowsKeyMapping[(int)key])
         {
@@ -908,7 +908,7 @@ public:
         return false;
     }
 
-    bool checkKeyPressed(KeyCode key)
+    bool checkKeyPressed(InputKey key)
     {
         if (auto down = checkKeyDown(key))
         {
@@ -925,16 +925,16 @@ public:
 
 static ReverseKeyMap GReverseKeyMap;
 
-bool CheckInputKeyState(KeyCode key)
+bool CheckInputKeyState(InputKey key)
 {
     return GReverseKeyMap.checkKeyDown(key);
 }
 
-bool CheckInputKeyPressed(KeyCode key)
+bool CheckInputKeyPressed(InputKey key)
 {
     return GReverseKeyMap.checkKeyPressed(key);
 }
 
 //---
 
-END_BOOMER_NAMESPACE_EX(input)
+END_BOOMER_NAMESPACE()

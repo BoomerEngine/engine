@@ -28,7 +28,7 @@ void DefaultPlayerEntity::requestTransformChange(const Vector3& pos, const Angle
     TBaseClass::requestTransformChange(pos);
 }
 
-bool DefaultPlayerEntity::handleInput(const input::BaseEvent& evt)
+bool DefaultPlayerEntity::handleInput(const InputEvent& evt)
 {
     return m_freeCamera.input(evt);
 }

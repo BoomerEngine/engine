@@ -23,7 +23,7 @@ class ButtonInputAction : public MouseInputAction
 {
 public:
     ButtonInputAction(Button* button, const ElementArea& buttonArea)
-        : MouseInputAction(button, input::KeyCode::KEY_MOUSE0)
+        : MouseInputAction(button, InputKey::KEY_MOUSE0)
         , m_button(button)
         , m_buttonArea(buttonArea)
     {
@@ -43,7 +43,7 @@ public:
             button->inputActionFinished();
     }
 
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
     {
         if (auto button = m_button.lock())
         {
@@ -120,13 +120,13 @@ void Button::mode(ButtonMode mode)
     allowFocusFromKeyboard(!m_mode.test(ButtonModeBit::NoKeyboard));
 }
 
-bool Button::handleKeyEvent(const input::KeyEvent& evt)
+bool Button::handleKeyEvent(const InputKeyEvent& evt)
 {
     if (!m_mode.test(ButtonModeBit::NoKeyboard))
     {
         if (evt.pressed())
         {
-            if (evt.keyCode() == input::KeyCode::KEY_SPACE)
+            if (evt.keyCode() == InputKey::KEY_SPACE)
             {
                 if (m_mode.test(ButtonModeBit::EventOnClick))
                     clicked();
@@ -137,7 +137,7 @@ bool Button::handleKeyEvent(const input::KeyEvent& evt)
         }
         else if (evt.released())
         {
-            if (evt.keyCode() == input::KeyCode::KEY_SPACE && pressed())
+            if (evt.keyCode() == InputKey::KEY_SPACE && pressed())
             {
                 inputActionFinished();
                 return true;
@@ -148,7 +148,7 @@ bool Button::handleKeyEvent(const input::KeyEvent& evt)
     return TBaseClass::handleKeyEvent(evt);
 }
 
-InputActionPtr Button::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr Button::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (isEnabled())
     {

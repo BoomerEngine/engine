@@ -82,7 +82,7 @@ StringBuf AssetBrowserTreeDirectoryItem::queryTooltipString() const
     return m_depotPath;
 }
 
-ui::DragDropDataPtr AssetBrowserTreeDirectoryItem::queryDragDropData(const input::BaseKeyFlags& keys, const ui::Position& position) const
+ui::DragDropDataPtr AssetBrowserTreeDirectoryItem::queryDragDropData(const BaseKeyFlags& keys, const ui::Position& position) const
 {
     return nullptr;
 }
@@ -97,7 +97,7 @@ void AssetBrowserTreeDirectoryItem::handleDragDropGenericCompletion(const ui::Dr
 
 }
 
-bool AssetBrowserTreeDirectoryItem::handleItemContextMenu(ui::ICollectionView* view, const ui::CollectionItems& items, const ui::Position& pos, input::KeyMask controlKeys)
+bool AssetBrowserTreeDirectoryItem::handleItemContextMenu(ui::ICollectionView* view, const ui::CollectionItems& items, const ui::Position& pos, InputKeyMask controlKeys)
 {
     return false;
 }

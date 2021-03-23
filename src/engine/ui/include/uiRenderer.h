@@ -24,8 +24,8 @@ class ENGINE_UI_API INativeWindowCallback : public NoCopy
 public:        
     virtual ~INativeWindowCallback();
 
-    virtual bool nativeWindowSelectCursor(NativeWindowID id, const Position& absolutePosition, input::CursorType& outCursorType) = 0;
-    virtual bool nativeWindowHitTestNonClientArea(NativeWindowID id, const Position& absolutePosition, input::AreaType& outAreaType) = 0;
+    virtual bool nativeWindowSelectCursor(NativeWindowID id, const Position& absolutePosition, CursorType& outCursorType) = 0;
+    virtual bool nativeWindowHitTestNonClientArea(NativeWindowID id, const Position& absolutePosition, AreaType& outAreaType) = 0;
     virtual void nativeWindowForceRedraw(NativeWindowID id) = 0;
 };
 
@@ -83,7 +83,7 @@ public:
     virtual ElementArea windowMonitorAtPos(const Position& absoluteWindowPosition) = 0;
 
     /// pull input event from native window, returns null if queue empty
-    virtual input::EventPtr windowPullInputEvent(NativeWindowID id) = 0;
+    virtual EventPtr windowPullInputEvent(NativeWindowID id) = 0;
 
     /// get native window handle
     virtual uint64_t windowNativeHandle(NativeWindowID id) = 0;
@@ -298,12 +298,12 @@ protected:
     void updateWindowRepresentation(WindowInfo& window);
     void updateWindowState(WindowInfo& window);
 
-    void processMouseMovement(const input::MouseMovementEvent& evt);
-    void processMouseClick(const input::MouseClickEvent& evt);
-    void processMouseCaptureLostEvent(const input::MouseCaptureLostEvent& evt);
-    void processKeyEvent(const input::KeyEvent& evt);
-    void processAxisEvent(const input::AxisEvent& evt);
-    void processCharEvent(const input::CharEvent& evt);
+    void processMouseMovement(const InputMouseMovementEvent& evt);
+    void processMouseClick(const InputMouseClickEvent& evt);
+    void processMouseCaptureLostEvent(const InputMouseCaptureLostEvent& evt);
+    void processKeyEvent(const InputKeyEvent& evt);
+    void processAxisEvent(const InputAxisEvent& evt);
+    void processCharEvent(const InputCharEvent& evt);
 
     bool processInputActionResult(const InputActionResult& result);
 
@@ -327,7 +327,7 @@ protected:
     bool m_currentDragDropCanFinish = false;
 
     void resetDragDrop();
-    bool updateDragDrop(const input::MouseMovementEvent& evt);
+    bool updateDragDrop(const InputMouseMovementEvent& evt);
 
     //--
 
@@ -374,8 +374,8 @@ protected:
     //--
 
     // INativeWindowCallback
-    virtual bool nativeWindowSelectCursor(NativeWindowID id, const Position& absolutePosition, input::CursorType& outCursorType) override;
-    virtual bool nativeWindowHitTestNonClientArea(NativeWindowID id, const Position& absolutePosition, input::AreaType& outAreaType) override;
+    virtual bool nativeWindowSelectCursor(NativeWindowID id, const Position& absolutePosition, CursorType& outCursorType) override;
+    virtual bool nativeWindowHitTestNonClientArea(NativeWindowID id, const Position& absolutePosition, AreaType& outAreaType) override;
     virtual void nativeWindowForceRedraw(NativeWindowID id) override;
 };
 

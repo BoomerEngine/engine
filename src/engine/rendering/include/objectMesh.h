@@ -17,7 +17,7 @@ BEGIN_BOOMER_NAMESPACE_EX(rendering)
 
 ///---
 
-struct ObjectProxyMeshChunk
+struct RenderingObjectMeshChunk
 {
     MeshChunkProxyPtr data;
     MaterialDataProxyPtr material;
@@ -32,13 +32,13 @@ struct ObjectProxyMeshChunk
     void updatePassTypes();
 };
 
-struct ObjectProxyMeshLOD
+struct RenderingObjectMeshLOD
 {
     float minDistanceSquared = 0.0f;
     float maxDistanceSquared = 0.0f;
 };
 
-struct ObjectMeshBatchingStats
+struct RenderingMeshStats
 {
     uint32_t numTriangles = 0;
     uint32_t numShaderChanges = 0;
@@ -51,7 +51,7 @@ struct ObjectMeshBatchingStats
     double recordingTime = 0.0;
 };
 
-struct ObjectMeshVisibilityStats
+struct RenderingMeshVisibilityStats
 {
     uint32_t numTestedObjects = 0;
     uint32_t numVisibleObjects = 0;
@@ -60,32 +60,32 @@ struct ObjectMeshVisibilityStats
     double cullingTime = 0.0;
 };
 
-struct ObjectMeshTotalStats
+struct RenderingMeshTotalStats
 {
-    ObjectMeshVisibilityStats mainVisibility;
-    ObjectMeshVisibilityStats globalShadowsVisibility;
+    RenderingMeshVisibilityStats mainVisibility;
+    RenderingMeshVisibilityStats globalShadowsVisibility;
 
-    ObjectMeshBatchingStats depthBatching;
-    ObjectMeshBatchingStats mainBatching;
-    ObjectMeshBatchingStats globalShadowsBatching;
-    ObjectMeshBatchingStats localShadowsBatching;
+    RenderingMeshStats depthBatching;
+    RenderingMeshStats mainBatching;
+    RenderingMeshStats globalShadowsBatching;
+    RenderingMeshStats localShadowsBatching;
     double totalTime = 0.0;
 };
 
-class ENGINE_RENDERING_API ObjectProxyMesh : public IObjectProxy
+class ENGINE_RENDERING_API RenderingMesh : public IRenderingObject
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ObjectProxyMesh, IObjectProxy);
+    RTTI_DECLARE_VIRTUAL_CLASS(RenderingMesh, IRenderingObject);
 
 public:
-    ObjectProxyMesh();
-    virtual ~ObjectProxyMesh();
+    RenderingMesh();
+    virtual ~RenderingMesh();
 
     Color m_color = Color::WHITE;
 
     Color m_colorEx = Color::BLACK;
     //--
 
-    ObjectProxyFlags m_flags;
+    RenderingObjectFlags m_flags;
 
     uint8_t m_numLods = 0;
     uint16_t m_numChunks = 0;
@@ -97,10 +97,10 @@ public:
 
     //--
 
-    inline const ObjectProxyMeshLOD* lods() const { return (const ObjectProxyMeshLOD*)(this + 1); }
-    inline const ObjectProxyMeshChunk* chunks() const { return (const ObjectProxyMeshChunk*)(lods() + m_numLods); }
-    inline ObjectProxyMeshLOD* lods() { return (ObjectProxyMeshLOD*)(this + 1); }
-    inline ObjectProxyMeshChunk* chunks() { return (ObjectProxyMeshChunk*)(lods() + m_numLods); }
+    inline const RenderingObjectMeshLOD* lods() const { return (const RenderingObjectMeshLOD*)(this + 1); }
+    inline const RenderingObjectMeshChunk* chunks() const { return (const RenderingObjectMeshChunk*)(lods() + m_numLods); }
+    inline RenderingObjectMeshLOD* lods() { return (RenderingObjectMeshLOD*)(this + 1); }
+    inline RenderingObjectMeshChunk* chunks() { return (RenderingObjectMeshChunk*)(lods() + m_numLods); }
 
     // WARNING: packed data follows!
     //
@@ -123,7 +123,7 @@ public:
     };
 
     // compile a mesh proxy from given setup
-    static ObjectProxyMeshPtr Compile(const Setup& setup);
+    static RenderingMeshPtr Compile(const Setup& setup);
 
     //--
 
@@ -137,17 +137,17 @@ public:
 ///--
 
 // object handler for standalone meshes
-class ENGINE_RENDERING_API ObjectManagerMesh : public IObjectManager, public IMaterialDataProxyListener
+class ENGINE_RENDERING_API RenderingMeshManager : public IRenderingObjectManager, public IMaterialDataProxyListener
 {
-	RTTI_DECLARE_VIRTUAL_CLASS(ObjectManagerMesh, IObjectManager);
+	RTTI_DECLARE_VIRTUAL_CLASS(RenderingMeshManager, IRenderingObjectManager);
 
 public:
-	ObjectManagerMesh();
-	virtual ~ObjectManagerMesh();
+	RenderingMeshManager();
+	virtual ~RenderingMeshManager();
 
 	//--
 
-	virtual void initialize(Scene* scene, gpu::IDevice* dev) override final;
+	virtual void initialize(RenderingScene* scene, gpu::IDevice* dev) override final;
 	virtual void shutdown() override final;
 
 	virtual void prepare(gpu::CommandWriter& cmd, gpu::IDevice* dev, const FrameRenderer& frame) override final;
@@ -165,19 +165,19 @@ public:
 
 	//--
 
-    virtual void commandAttachProxy(IObjectProxy* object) override;
-    virtual void commandDetachProxy(IObjectProxy* object) override;
-    virtual void commandMoveProxy(IObjectProxy* object, Matrix newLocation) override;
-    virtual void commandUpdateProxyFlag(IObjectProxy* object, ObjectProxyFlags clearFlags, ObjectProxyFlags setFlags) override;
+    virtual void commandAttachProxy(IRenderingObject* object) override;
+    virtual void commandDetachProxy(IRenderingObject* object) override;
+    virtual void commandMoveProxy(IRenderingObject* object, Matrix newLocation) override;
+    virtual void commandUpdateProxyFlag(IRenderingObject* object, RenderingObjectFlags clearFlags, RenderingObjectFlags setFlags) override;
 
-    void commandAttachProxy(ObjectProxyMeshPtr mesh);
-    void commandDetachProxy(ObjectProxyMeshPtr mesh);
-    void commandMoveProxy(ObjectProxyMeshPtr mesh, Matrix newLocation);
-    void commandUpdateProxyFlag(ObjectProxyMeshPtr mesh, ObjectProxyFlags clearFlags, ObjectProxyFlags setFlags);
+    void commandAttachProxy(RenderingMeshPtr mesh);
+    void commandDetachProxy(RenderingMeshPtr mesh);
+    void commandMoveProxy(RenderingMeshPtr mesh, Matrix newLocation);
+    void commandUpdateProxyFlag(RenderingMeshPtr mesh, RenderingObjectFlags clearFlags, RenderingObjectFlags setFlags);
 
 	//--
 
-    INLINE const ObjectMeshTotalStats& stats() const { return m_lastStats; }
+    INLINE const RenderingMeshTotalStats& stats() const { return m_lastStats; }
 
 private:
     struct GPUObjectInfo
@@ -199,21 +199,21 @@ private:
         Vector3 distanceRefPoint;
         float maxDistanceSquared = 0.0f;
         //uint16_t chunkCount = 0;
-		ObjectProxyMeshPtr data = nullptr;
+		RenderingMeshPtr data = nullptr;
 	};
 
     typedef uint16_t ObjectIndex;
 
 	struct VisibleStandaloneChunk
 	{
-		const ObjectProxyMesh* object = nullptr;
+		const RenderingMesh* object = nullptr;
         const MaterialTemplateProxy* shader = nullptr;
         const MaterialDataProxy* material = nullptr;
 		const MeshChunkProxy_Standalone* chunk = nullptr;
 		uint16_t materialIndex = 0;
 	};
 
-	HashMap<ObjectProxyMesh*, LocalObject> m_localObjects;
+	HashMap<RenderingMesh*, LocalObject> m_localObjects;
 
 	struct VisibleChunkList
 	{
@@ -253,21 +253,21 @@ private:
 	VisibleCaptureCollector m_cacheCaptureView;
 
     SpinLock m_statLock;
-    ObjectMeshTotalStats m_lastStats;
-    ObjectMeshTotalStats m_stats;
+    RenderingMeshTotalStats m_lastStats;
+    RenderingMeshTotalStats m_stats;
 
 	//--
 
-	void collectMainViewChunks(const FrameViewSingleCamera& view, VisibleMainViewCollector& outCollector, ObjectMeshVisibilityStats& outStats) const;
+	void collectMainViewChunks(const FrameViewSingleCamera& view, VisibleMainViewCollector& outCollector, RenderingMeshVisibilityStats& outStats) const;
 	void collectWireframeViewChunks(const FrameViewSingleCamera& view, VisibleWireframeViewCollector& outCollector) const;
 	void collectCaptureChunks(const FrameViewSingleCamera& view, VisibleCaptureCollector& outCollector) const;
 
-	void renderChunkListStandalone(gpu::CommandWriter& cmd, const Array<VisibleStandaloneChunk>& chunks, MaterialPass pass, ObjectMeshBatchingStats& outStats) const;
+	void renderChunkListStandalone(gpu::CommandWriter& cmd, const Array<VisibleStandaloneChunk>& chunks, MaterialPass pass, RenderingMeshStats& outStats) const;
 
 	void sortChunksByBatch(Array<VisibleStandaloneChunk>& chunks) const;
 
-    void exportStats(const ObjectMeshBatchingStats& stats, FrameViewStats& outStats) const;
-    void exportStats(const ObjectMeshVisibilityStats& stats, FrameViewStats& outStats) const;
+    void exportStats(const RenderingMeshStats& stats, FrameViewStats& outStats) const;
+    void exportStats(const RenderingMeshVisibilityStats& stats, FrameViewStats& outStats) const;
 
 	//--
 };

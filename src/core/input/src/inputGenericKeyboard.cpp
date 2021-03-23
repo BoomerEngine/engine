@@ -11,11 +11,11 @@
 #include "inputStructures.h"
 #include "inputGenericKeyboard.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
-GenericKeyboard::GenericKeyboard(IContext* owner, DeviceID id)
+GenericKeyboard::GenericKeyboard(IInputContext* owner, InputDeviceID id)
     : m_keyRepeatDelay(0.333f)
     , m_keyRepeatPeriod(0.033f)
     , m_context(owner)
@@ -30,33 +30,33 @@ void GenericKeyboard::repeatAndDelay(float delay, float repeatRate)
     m_keyRepeatPeriod = NativeTimeInterval(repeatRate ? 1.0f / repeatRate : 1.0f);
 }
 
-KeyMask GenericKeyboard::currentKeyMask() const
+InputKeyMask GenericKeyboard::currentKeyMask() const
 {
-    KeyMask mask;
+    InputKeyMask mask;
 
-    if (m_pressedKeys[(uint16_t)KeyCode::KEY_LEFT_ALT])
-        mask |= KeyMaskBit::LEFT_ALT;
-    if (m_pressedKeys[(uint16_t)KeyCode::KEY_RIGHT_ALT])
-        mask |= KeyMaskBit::RIGHT_ALT;
-    if (m_pressedKeys[(uint16_t)KeyCode::KEY_LEFT_CTRL])
-        mask |= KeyMaskBit::LEFT_CTRL;
-    if (m_pressedKeys[(uint16_t)KeyCode::KEY_RIGHT_CTRL])
-        mask |= KeyMaskBit::RIGHT_CTRL;
-    if (m_pressedKeys[(uint16_t)KeyCode::KEY_LEFT_SHIFT])
-        mask |= KeyMaskBit::LEFT_SHIFT;
-    if (m_pressedKeys[(uint16_t)KeyCode::KEY_RIGHT_SHIFT])
-        mask |= KeyMaskBit::RIGHT_SHIFT;
+    if (m_pressedKeys[(uint16_t)InputKey::KEY_LEFT_ALT])
+        mask |= InputKeyMaskBit::LEFT_ALT;
+    if (m_pressedKeys[(uint16_t)InputKey::KEY_RIGHT_ALT])
+        mask |= InputKeyMaskBit::RIGHT_ALT;
+    if (m_pressedKeys[(uint16_t)InputKey::KEY_LEFT_CTRL])
+        mask |= InputKeyMaskBit::LEFT_CTRL;
+    if (m_pressedKeys[(uint16_t)InputKey::KEY_RIGHT_CTRL])
+        mask |= InputKeyMaskBit::RIGHT_CTRL;
+    if (m_pressedKeys[(uint16_t)InputKey::KEY_LEFT_SHIFT])
+        mask |= InputKeyMaskBit::LEFT_SHIFT;
+    if (m_pressedKeys[(uint16_t)InputKey::KEY_RIGHT_SHIFT])
+        mask |= InputKeyMaskBit::RIGHT_SHIFT;
 
     return mask;
 }
 
-void GenericKeyboard::keyDown(KeyCode keyCode)
+void GenericKeyboard::keyDown(InputKey keyCode)
 {
     auto& keyState = m_pressedKeys[(uint16_t)keyCode];
     if (!keyState)
     {
         auto keyMask  = currentKeyMask();
-        auto evt  = RefNew<KeyEvent>(DeviceType::Keyboard, m_id, keyCode, true, false, keyMask);
+        auto evt  = RefNew<InputKeyEvent>(InputDeviceType::Keyboard, m_id, keyCode, true, false, keyMask);
         m_context->inject(evt);
 
         // insert the pressed key to the repeat list
@@ -66,12 +66,12 @@ void GenericKeyboard::keyDown(KeyCode keyCode)
     }
 }
 
-void GenericKeyboard::keyUp(KeyCode keyCode)
+void GenericKeyboard::keyUp(InputKey keyCode)
 {
     auto& keyState = m_pressedKeys[(uint16_t)keyCode];
     if (keyState)
     {
-        auto evt  = RefNew<KeyEvent>(DeviceType::Keyboard, m_id, keyCode, false, false, currentKeyMask());
+        auto evt  = RefNew<InputKeyEvent>(InputDeviceType::Keyboard, m_id, keyCode, false, false, currentKeyMask());
         m_context->inject(evt);
 
         m_repeatKey.reset();
@@ -81,19 +81,19 @@ void GenericKeyboard::keyUp(KeyCode keyCode)
 
 void GenericKeyboard::charDown(KeyScanCode scanCode)
 {
-    auto evt  = RefNew<CharEvent>(m_id, scanCode, false, currentKeyMask());
+    auto evt  = RefNew<InputCharEvent>(m_id, scanCode, false, currentKeyMask());
     m_context->inject(evt);
 }
 
 void GenericKeyboard::reset()
 {
     // send the release events to the owning windows
-    for (uint32_t i = 0; i < (uint16_t)KeyCode::KEY_MAX; ++i)
+    for (uint32_t i = 0; i < (uint16_t)InputKey::KEY_MAX; ++i)
     {
         auto owningWindowId = m_pressedKeys[i];
         if (0 != owningWindowId)
         {
-            auto evt = RefNew<KeyEvent>(DeviceType::Keyboard, m_id, (KeyCode)i, false, false, KeyMask());
+            auto evt = RefNew<InputKeyEvent>(InputDeviceType::Keyboard, m_id, (InputKey)i, false, false, InputKeyMask());
             m_context->inject(evt);
 
             m_pressedKeys[i] = false;
@@ -117,7 +117,7 @@ void GenericKeyboard::update()
                 m_repeatKey.m_nextRepeatTime = m_repeatKey.m_nextRepeatTime + m_keyRepeatPeriod;
                 m_repeatKey.m_maxRepeat += 1;
 
-                auto evt = RefNew<KeyEvent>(DeviceType::Keyboard, m_id, m_repeatKey.m_keyCode, true, true, m_repeatKey.m_keyMask);
+                auto evt = RefNew<InputKeyEvent>(InputDeviceType::Keyboard, m_id, m_repeatKey.m_keyCode, true, true, m_repeatKey.m_keyMask);
                 m_context->inject(evt);
             }
 
@@ -130,4 +130,4 @@ void GenericKeyboard::update()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(input)
+END_BOOMER_NAMESPACE()

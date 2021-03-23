@@ -73,7 +73,7 @@ FrameHelper::~FrameHelper()
 
 //--
 
-FrameRenderer::FrameRenderer(const FrameParams& frame, const gpu::AcquiredOutput& output, const FrameResources& resources, const FrameHelper& helpers, const Scene* scene)
+FrameRenderer::FrameRenderer(const FrameParams& frame, const gpu::AcquiredOutput& output, const FrameResources& resources, const FrameHelper& helpers, const RenderingScene* scene)
     : m_frame(frame)
     , m_resources(resources)
 	, m_helpers(helpers)

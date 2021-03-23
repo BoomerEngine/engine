@@ -24,102 +24,102 @@ class KeyNameMap : public ISingleton
 public:
     KeyNameMap()
     {
-        m_keys.emplaceBack(input::KeyCode::KEY_BACK, "Backspace");
-        m_keys.emplaceBack(input::KeyCode::KEY_TAB, "Tab");
-        m_keys.emplaceBack(input::KeyCode::KEY_RETURN, "Enter");
-        m_keys.emplaceBack(input::KeyCode::KEY_PAUSE, "Pause");
-        m_keys.emplaceBack(input::KeyCode::KEY_CAPITAL, "Capslock");
-        m_keys.emplaceBack(input::KeyCode::KEY_ESCAPE, "Esc");
-        m_keys.emplaceBack(input::KeyCode::KEY_ESCAPE, "Escape");
-        m_keys.emplaceBack(input::KeyCode::KEY_SPACE, "Space");
-        m_keys.emplaceBack(input::KeyCode::KEY_PRIOR, "PageUp");
-        m_keys.emplaceBack(input::KeyCode::KEY_NEXT, "PageDown");
-        m_keys.emplaceBack(input::KeyCode::KEY_END, "End");
-        m_keys.emplaceBack(input::KeyCode::KEY_HOME, "Home");
-        m_keys.emplaceBack(input::KeyCode::KEY_LEFT, "Left");
-        m_keys.emplaceBack(input::KeyCode::KEY_RIGHT, "Right");
-        m_keys.emplaceBack(input::KeyCode::KEY_UP, "Up");
-        m_keys.emplaceBack(input::KeyCode::KEY_DOWN, "Down");
-        m_keys.emplaceBack(input::KeyCode::KEY_INSERT, "Insert");
-        m_keys.emplaceBack(input::KeyCode::KEY_DELETE, "Delete");
-        m_keys.emplaceBack(input::KeyCode::KEY_0, "0");
-        m_keys.emplaceBack(input::KeyCode::KEY_1, "1");
-        m_keys.emplaceBack(input::KeyCode::KEY_2, "2");
-        m_keys.emplaceBack(input::KeyCode::KEY_3, "3");
-        m_keys.emplaceBack(input::KeyCode::KEY_4, "4");
-        m_keys.emplaceBack(input::KeyCode::KEY_5, "5");
-        m_keys.emplaceBack(input::KeyCode::KEY_6, "6");
-        m_keys.emplaceBack(input::KeyCode::KEY_7, "7");
-        m_keys.emplaceBack(input::KeyCode::KEY_8, "8");
-        m_keys.emplaceBack(input::KeyCode::KEY_9, "9");
-        m_keys.emplaceBack(input::KeyCode::KEY_A, "A");
-        m_keys.emplaceBack(input::KeyCode::KEY_B, "B");
-        m_keys.emplaceBack(input::KeyCode::KEY_C, "C");
-        m_keys.emplaceBack(input::KeyCode::KEY_D, "D");
-        m_keys.emplaceBack(input::KeyCode::KEY_E, "E");
-        m_keys.emplaceBack(input::KeyCode::KEY_F, "F");
-        m_keys.emplaceBack(input::KeyCode::KEY_G, "G");
-        m_keys.emplaceBack(input::KeyCode::KEY_H, "H");
-        m_keys.emplaceBack(input::KeyCode::KEY_I, "I");
-        m_keys.emplaceBack(input::KeyCode::KEY_J, "J");
-        m_keys.emplaceBack(input::KeyCode::KEY_K, "K");
-        m_keys.emplaceBack(input::KeyCode::KEY_L, "L");
-        m_keys.emplaceBack(input::KeyCode::KEY_M, "M");
-        m_keys.emplaceBack(input::KeyCode::KEY_N, "N");
-        m_keys.emplaceBack(input::KeyCode::KEY_O, "O");
-        m_keys.emplaceBack(input::KeyCode::KEY_P, "P");
-        m_keys.emplaceBack(input::KeyCode::KEY_Q, "Q");
-        m_keys.emplaceBack(input::KeyCode::KEY_R, "R");
-        m_keys.emplaceBack(input::KeyCode::KEY_S, "S");
-        m_keys.emplaceBack(input::KeyCode::KEY_T, "T");
-        m_keys.emplaceBack(input::KeyCode::KEY_U, "U");
-        m_keys.emplaceBack(input::KeyCode::KEY_V, "V");
-        m_keys.emplaceBack(input::KeyCode::KEY_W, "W");
-        m_keys.emplaceBack(input::KeyCode::KEY_X, "X");
-        m_keys.emplaceBack(input::KeyCode::KEY_Y, "Y");
-        m_keys.emplaceBack(input::KeyCode::KEY_Z, "Z");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD0, "NumPad0");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD1, "NumPad1");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD2, "NumPad2");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD3, "NumPad3");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD4, "NumPad4");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD5, "NumPad5");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD6, "NumPad6");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD7, "NumPad7");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD8, "NumPad8");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD9, "NumPad9");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD_MULTIPLY, "NumPad*");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD_ADD, "NumPad+");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD_SEPARATOR, "NumPad.");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD_SUBTRACT, "NumPad-");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD_DECIMAL, "NumPad,");
-        m_keys.emplaceBack(input::KeyCode::KEY_NUMPAD_DIVIDE, "NumPad/");
-        m_keys.emplaceBack(input::KeyCode::KEY_F1, "F1");
-        m_keys.emplaceBack(input::KeyCode::KEY_F2, "F2");
-        m_keys.emplaceBack(input::KeyCode::KEY_F3, "F3");
-        m_keys.emplaceBack(input::KeyCode::KEY_F4, "F4");
-        m_keys.emplaceBack(input::KeyCode::KEY_F5, "F5");
-        m_keys.emplaceBack(input::KeyCode::KEY_F6, "F6");
-        m_keys.emplaceBack(input::KeyCode::KEY_F7, "F7");
-        m_keys.emplaceBack(input::KeyCode::KEY_F8, "F8");
-        m_keys.emplaceBack(input::KeyCode::KEY_F9, "F9");
-        m_keys.emplaceBack(input::KeyCode::KEY_F10, "F10");
-        m_keys.emplaceBack(input::KeyCode::KEY_F11, "F11");
-        m_keys.emplaceBack(input::KeyCode::KEY_F12, "F12");
-        m_keys.emplaceBack(input::KeyCode::KEY_RBRACKET, "RBracket");
-        m_keys.emplaceBack(input::KeyCode::KEY_LBRACKET, "LBracket");
+        m_keys.emplaceBack(InputKey::KEY_BACK, "Backspace");
+        m_keys.emplaceBack(InputKey::KEY_TAB, "Tab");
+        m_keys.emplaceBack(InputKey::KEY_RETURN, "Enter");
+        m_keys.emplaceBack(InputKey::KEY_PAUSE, "Pause");
+        m_keys.emplaceBack(InputKey::KEY_CAPITAL, "Capslock");
+        m_keys.emplaceBack(InputKey::KEY_ESCAPE, "Esc");
+        m_keys.emplaceBack(InputKey::KEY_ESCAPE, "Escape");
+        m_keys.emplaceBack(InputKey::KEY_SPACE, "Space");
+        m_keys.emplaceBack(InputKey::KEY_PRIOR, "PageUp");
+        m_keys.emplaceBack(InputKey::KEY_NEXT, "PageDown");
+        m_keys.emplaceBack(InputKey::KEY_END, "End");
+        m_keys.emplaceBack(InputKey::KEY_HOME, "Home");
+        m_keys.emplaceBack(InputKey::KEY_LEFT, "Left");
+        m_keys.emplaceBack(InputKey::KEY_RIGHT, "Right");
+        m_keys.emplaceBack(InputKey::KEY_UP, "Up");
+        m_keys.emplaceBack(InputKey::KEY_DOWN, "Down");
+        m_keys.emplaceBack(InputKey::KEY_INSERT, "Insert");
+        m_keys.emplaceBack(InputKey::KEY_DELETE, "Delete");
+        m_keys.emplaceBack(InputKey::KEY_0, "0");
+        m_keys.emplaceBack(InputKey::KEY_1, "1");
+        m_keys.emplaceBack(InputKey::KEY_2, "2");
+        m_keys.emplaceBack(InputKey::KEY_3, "3");
+        m_keys.emplaceBack(InputKey::KEY_4, "4");
+        m_keys.emplaceBack(InputKey::KEY_5, "5");
+        m_keys.emplaceBack(InputKey::KEY_6, "6");
+        m_keys.emplaceBack(InputKey::KEY_7, "7");
+        m_keys.emplaceBack(InputKey::KEY_8, "8");
+        m_keys.emplaceBack(InputKey::KEY_9, "9");
+        m_keys.emplaceBack(InputKey::KEY_A, "A");
+        m_keys.emplaceBack(InputKey::KEY_B, "B");
+        m_keys.emplaceBack(InputKey::KEY_C, "C");
+        m_keys.emplaceBack(InputKey::KEY_D, "D");
+        m_keys.emplaceBack(InputKey::KEY_E, "E");
+        m_keys.emplaceBack(InputKey::KEY_F, "F");
+        m_keys.emplaceBack(InputKey::KEY_G, "G");
+        m_keys.emplaceBack(InputKey::KEY_H, "H");
+        m_keys.emplaceBack(InputKey::KEY_I, "I");
+        m_keys.emplaceBack(InputKey::KEY_J, "J");
+        m_keys.emplaceBack(InputKey::KEY_K, "K");
+        m_keys.emplaceBack(InputKey::KEY_L, "L");
+        m_keys.emplaceBack(InputKey::KEY_M, "M");
+        m_keys.emplaceBack(InputKey::KEY_N, "N");
+        m_keys.emplaceBack(InputKey::KEY_O, "O");
+        m_keys.emplaceBack(InputKey::KEY_P, "P");
+        m_keys.emplaceBack(InputKey::KEY_Q, "Q");
+        m_keys.emplaceBack(InputKey::KEY_R, "R");
+        m_keys.emplaceBack(InputKey::KEY_S, "S");
+        m_keys.emplaceBack(InputKey::KEY_T, "T");
+        m_keys.emplaceBack(InputKey::KEY_U, "U");
+        m_keys.emplaceBack(InputKey::KEY_V, "V");
+        m_keys.emplaceBack(InputKey::KEY_W, "W");
+        m_keys.emplaceBack(InputKey::KEY_X, "X");
+        m_keys.emplaceBack(InputKey::KEY_Y, "Y");
+        m_keys.emplaceBack(InputKey::KEY_Z, "Z");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD0, "NumPad0");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD1, "NumPad1");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD2, "NumPad2");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD3, "NumPad3");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD4, "NumPad4");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD5, "NumPad5");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD6, "NumPad6");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD7, "NumPad7");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD8, "NumPad8");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD9, "NumPad9");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD_MULTIPLY, "NumPad*");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD_ADD, "NumPad+");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD_SEPARATOR, "NumPad.");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD_SUBTRACT, "NumPad-");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD_DECIMAL, "NumPad,");
+        m_keys.emplaceBack(InputKey::KEY_NUMPAD_DIVIDE, "NumPad/");
+        m_keys.emplaceBack(InputKey::KEY_F1, "F1");
+        m_keys.emplaceBack(InputKey::KEY_F2, "F2");
+        m_keys.emplaceBack(InputKey::KEY_F3, "F3");
+        m_keys.emplaceBack(InputKey::KEY_F4, "F4");
+        m_keys.emplaceBack(InputKey::KEY_F5, "F5");
+        m_keys.emplaceBack(InputKey::KEY_F6, "F6");
+        m_keys.emplaceBack(InputKey::KEY_F7, "F7");
+        m_keys.emplaceBack(InputKey::KEY_F8, "F8");
+        m_keys.emplaceBack(InputKey::KEY_F9, "F9");
+        m_keys.emplaceBack(InputKey::KEY_F10, "F10");
+        m_keys.emplaceBack(InputKey::KEY_F11, "F11");
+        m_keys.emplaceBack(InputKey::KEY_F12, "F12");
+        m_keys.emplaceBack(InputKey::KEY_RBRACKET, "RBracket");
+        m_keys.emplaceBack(InputKey::KEY_LBRACKET, "LBracket");
     }
 
-    input::KeyCode code(StringView name) const
+    InputKey code(StringView name) const
     {
         for (const auto& key : m_keys)
             if (0 == key.m_name.compareWithNoCase(name))
                 return key.m_code;
 
-        return input::KeyCode::KEY_INVALID;
+        return InputKey::KEY_INVALID;
     }
 
-    const StringBuf& name(const input::KeyCode code) const
+    const StringBuf& name(const InputKey code) const
     {
         for (const auto& key : m_keys)
             if (key.m_code == code)
@@ -131,10 +131,10 @@ public:
 private:
     struct Key
     {
-        input::KeyCode m_code;
+        InputKey m_code;
         StringBuf m_name;
 
-        INLINE Key(input::KeyCode code, const StringBuf& name)
+        INLINE Key(InputKey code, const StringBuf& name)
             : m_code(code)
             , m_name(name)
         {}
@@ -160,13 +160,13 @@ RTTI_BEGIN_CUSTOM_TYPE(KeyShortcut);
 RTTI_END_TYPE();
 
 KeyShortcut::KeyShortcut()
-    : key(input::KeyCode::KEY_INVALID)
+    : key(InputKey::KEY_INVALID)
     , shift(false)
     , ctrl(false)
     , alt(false)
 {}
 
-KeyShortcut::KeyShortcut(const input::KeyCode key, bool shift, bool ctrl, bool alt)
+KeyShortcut::KeyShortcut(const InputKey key, bool shift, bool ctrl, bool alt)
     : key(key)
     , shift(shift)
     , ctrl(ctrl)
@@ -236,7 +236,7 @@ bool KeyShortcut::Parse(StringView txt, KeyShortcut& outKey)
         else
         {
             auto keyCode = KeyNameMap::GetInstance().code(part);
-            if (keyCode == input::KeyCode::KEY_INVALID)
+            if (keyCode == InputKey::KEY_INVALID)
                 break;
 
             outKey.key = keyCode;
@@ -250,15 +250,15 @@ bool KeyShortcut::Parse(StringView txt, KeyShortcut& outKey)
     return false;
 }
 
-bool KeyShortcut::matches(const input::KeyEvent& evt) const
+bool KeyShortcut::matches(const InputKeyEvent& evt) const
 {
     if (evt.keyCode() != key)
         return false;
-    if (evt.keyMask().mask().test(input::KeyMaskBit::ANY_ALT) != alt)
+    if (evt.keyMask().mask().test(InputKeyMaskBit::ANY_ALT) != alt)
         return false;
-    if (evt.keyMask().mask().test(input::KeyMaskBit::ANY_SHIFT) != shift)
+    if (evt.keyMask().mask().test(InputKeyMaskBit::ANY_SHIFT) != shift)
         return false;
-    if (evt.keyMask().mask().test(input::KeyMaskBit::ANY_CTRL) != ctrl)
+    if (evt.keyMask().mask().test(InputKeyMaskBit::ANY_CTRL) != ctrl)
         return false;
     return true;
 }
@@ -307,7 +307,7 @@ EventFunctionBinder KeyShortcutTable::bindShortcut(KeyShortcut key)
     return EventFunctionBinder(&entry->callback);
 }
 
-bool KeyShortcutTable::processKeyEvent(const input::KeyEvent& evt) const
+bool KeyShortcutTable::processKeyEvent(const InputKeyEvent& evt) const
 {
     for (const auto* entry : m_shortcuts)
         if (entry->shortcut.matches(evt))

@@ -25,129 +25,129 @@ namespace base
 
         //--
 
-        X11Keyboard::X11Keyboard(IContext* context)
+        X11Keyboard::X11Keyboard(IInputContext* context)
             : GenericKeyboard(context)
         {
             memzero(&m_keyMapping, sizeof(m_keyMapping));
 
-            m_keyMapping[22] = KeyCode::KEY_BACK;
-            m_keyMapping[23] = KeyCode::KEY_TAB;
-            m_keyMapping[119] = KeyCode::KEY_CLEAR;
-            m_keyMapping[36] = KeyCode::KEY_RETURN;
-            m_keyMapping[127] = KeyCode::KEY_PAUSE;
-            m_keyMapping[66] = KeyCode::KEY_CAPITAL;
-            m_keyMapping[9] = KeyCode::KEY_ESCAPE;
-            m_keyMapping[65] = KeyCode::KEY_SPACE;
-            m_keyMapping[112] = KeyCode::KEY_PRIOR;
-            m_keyMapping[117] = KeyCode::KEY_NEXT;
-            m_keyMapping[115] = KeyCode::KEY_END;
-            m_keyMapping[110] = KeyCode::KEY_HOME;
-            m_keyMapping[133] = KeyCode::KEY_LEFT;
-            m_keyMapping[111] = KeyCode::KEY_UP;
-            m_keyMapping[114] = KeyCode::KEY_RIGHT;
-            m_keyMapping[116] = KeyCode::KEY_DOWN;
-            m_keyMapping[118] = KeyCode::KEY_INSERT;
-            m_keyMapping[119] = KeyCode::KEY_DELETE;
-            m_keyMapping[133] = KeyCode::KEY_LWIN;
-            m_keyMapping[135] = KeyCode::KEY_NAVIGATION_MENU;
-            m_keyMapping[90] = KeyCode::KEY_NUMPAD0;
-            m_keyMapping[87] = KeyCode::KEY_NUMPAD1;
-            m_keyMapping[88] = KeyCode::KEY_NUMPAD2;
-            m_keyMapping[89] = KeyCode::KEY_NUMPAD3;
-            m_keyMapping[83] = KeyCode::KEY_NUMPAD4;
-            m_keyMapping[84] = KeyCode::KEY_NUMPAD5;
-            m_keyMapping[85] = KeyCode::KEY_NUMPAD6;
-            m_keyMapping[79] = KeyCode::KEY_NUMPAD7;
-            m_keyMapping[80] = KeyCode::KEY_NUMPAD8;
-            m_keyMapping[81] = KeyCode::KEY_NUMPAD9;
-            m_keyMapping[63] = KeyCode::KEY_NUMPAD_MULTIPLY;
-            m_keyMapping[86] = KeyCode::KEY_NUMPAD_ADD;
-            m_keyMapping[82] = KeyCode::KEY_NUMPAD_SUBTRACT;
-            m_keyMapping[91] = KeyCode::KEY_NUMPAD_DECIMAL;
-            m_keyMapping[106] = KeyCode::KEY_NUMPAD_DIVIDE;
+            m_keyMapping[22] = InputKey::KEY_BACK;
+            m_keyMapping[23] = InputKey::KEY_TAB;
+            m_keyMapping[119] = InputKey::KEY_CLEAR;
+            m_keyMapping[36] = InputKey::KEY_RETURN;
+            m_keyMapping[127] = InputKey::KEY_PAUSE;
+            m_keyMapping[66] = InputKey::KEY_CAPITAL;
+            m_keyMapping[9] = InputKey::KEY_ESCAPE;
+            m_keyMapping[65] = InputKey::KEY_SPACE;
+            m_keyMapping[112] = InputKey::KEY_PRIOR;
+            m_keyMapping[117] = InputKey::KEY_NEXT;
+            m_keyMapping[115] = InputKey::KEY_END;
+            m_keyMapping[110] = InputKey::KEY_HOME;
+            m_keyMapping[133] = InputKey::KEY_LEFT;
+            m_keyMapping[111] = InputKey::KEY_UP;
+            m_keyMapping[114] = InputKey::KEY_RIGHT;
+            m_keyMapping[116] = InputKey::KEY_DOWN;
+            m_keyMapping[118] = InputKey::KEY_INSERT;
+            m_keyMapping[119] = InputKey::KEY_DELETE;
+            m_keyMapping[133] = InputKey::KEY_LWIN;
+            m_keyMapping[135] = InputKey::KEY_NAVIGATION_MENU;
+            m_keyMapping[90] = InputKey::KEY_NUMPAD0;
+            m_keyMapping[87] = InputKey::KEY_NUMPAD1;
+            m_keyMapping[88] = InputKey::KEY_NUMPAD2;
+            m_keyMapping[89] = InputKey::KEY_NUMPAD3;
+            m_keyMapping[83] = InputKey::KEY_NUMPAD4;
+            m_keyMapping[84] = InputKey::KEY_NUMPAD5;
+            m_keyMapping[85] = InputKey::KEY_NUMPAD6;
+            m_keyMapping[79] = InputKey::KEY_NUMPAD7;
+            m_keyMapping[80] = InputKey::KEY_NUMPAD8;
+            m_keyMapping[81] = InputKey::KEY_NUMPAD9;
+            m_keyMapping[63] = InputKey::KEY_NUMPAD_MULTIPLY;
+            m_keyMapping[86] = InputKey::KEY_NUMPAD_ADD;
+            m_keyMapping[82] = InputKey::KEY_NUMPAD_SUBTRACT;
+            m_keyMapping[91] = InputKey::KEY_NUMPAD_DECIMAL;
+            m_keyMapping[106] = InputKey::KEY_NUMPAD_DIVIDE;
 
-            m_keyMapping[37] = KeyCode::KEY_LEFT_CTRL;
-            m_keyMapping[105] = KeyCode::KEY_RIGHT_CTRL;
-            m_keyMapping[50] = KeyCode::KEY_LEFT_SHIFT;
-            m_keyMapping[62] = KeyCode::KEY_RIGHT_SHIFT;
-            m_keyMapping[64] = KeyCode::KEY_LEFT_ALT;
-            m_keyMapping[108] = KeyCode::KEY_RIGHT_ALT;
+            m_keyMapping[37] = InputKey::KEY_LEFT_CTRL;
+            m_keyMapping[105] = InputKey::KEY_RIGHT_CTRL;
+            m_keyMapping[50] = InputKey::KEY_LEFT_SHIFT;
+            m_keyMapping[62] = InputKey::KEY_RIGHT_SHIFT;
+            m_keyMapping[64] = InputKey::KEY_LEFT_ALT;
+            m_keyMapping[108] = InputKey::KEY_RIGHT_ALT;
 
-            m_keyMapping[67] = KeyCode::KEY_F1;
-            m_keyMapping[68] = KeyCode::KEY_F2;
-            m_keyMapping[69] = KeyCode::KEY_F3;
-            m_keyMapping[70] = KeyCode::KEY_F4;
-            m_keyMapping[71] = KeyCode::KEY_F5;
-            m_keyMapping[72] = KeyCode::KEY_F6;
-            m_keyMapping[73] = KeyCode::KEY_F7;
-            m_keyMapping[74] = KeyCode::KEY_F8;
-            m_keyMapping[75] = KeyCode::KEY_F9;
-            m_keyMapping[76] = KeyCode::KEY_F10;
-            m_keyMapping[95] = KeyCode::KEY_F11;
-            m_keyMapping[96] = KeyCode::KEY_F12;
+            m_keyMapping[67] = InputKey::KEY_F1;
+            m_keyMapping[68] = InputKey::KEY_F2;
+            m_keyMapping[69] = InputKey::KEY_F3;
+            m_keyMapping[70] = InputKey::KEY_F4;
+            m_keyMapping[71] = InputKey::KEY_F5;
+            m_keyMapping[72] = InputKey::KEY_F6;
+            m_keyMapping[73] = InputKey::KEY_F7;
+            m_keyMapping[74] = InputKey::KEY_F8;
+            m_keyMapping[75] = InputKey::KEY_F9;
+            m_keyMapping[76] = InputKey::KEY_F10;
+            m_keyMapping[95] = InputKey::KEY_F11;
+            m_keyMapping[96] = InputKey::KEY_F12;
 
-            m_keyMapping[77] = KeyCode::KEY_NUMLOCK;
-            m_keyMapping[78] = KeyCode::KEY_SCROLL;
-            m_keyMapping[127] = KeyCode::KEY_PAUSE;
-            m_keyMapping[107] = KeyCode::KEY_PRINT;
+            m_keyMapping[77] = InputKey::KEY_NUMLOCK;
+            m_keyMapping[78] = InputKey::KEY_SCROLL;
+            m_keyMapping[127] = InputKey::KEY_PAUSE;
+            m_keyMapping[107] = InputKey::KEY_PRINT;
 
-            m_keyMapping[20] = KeyCode::KEY_MINUS;
-            m_keyMapping[21] = KeyCode::KEY_EQUAL;
-            m_keyMapping[34] = KeyCode::KEY_LBRACKET;
-            m_keyMapping[35] = KeyCode::KEY_RBRACKET;
-            m_keyMapping[51] = KeyCode::KEY_BACKSLASH;
+            m_keyMapping[20] = InputKey::KEY_MINUS;
+            m_keyMapping[21] = InputKey::KEY_EQUAL;
+            m_keyMapping[34] = InputKey::KEY_LBRACKET;
+            m_keyMapping[35] = InputKey::KEY_RBRACKET;
+            m_keyMapping[51] = InputKey::KEY_BACKSLASH;
 
-            m_keyMapping[47] = KeyCode::KEY_SEMICOLON;
-            m_keyMapping[48] = KeyCode::KEY_APOSTROPHE;
-            m_keyMapping[59] = KeyCode::KEY_COMMA;
-            m_keyMapping[60] = KeyCode::KEY_PERIOD;
-            m_keyMapping[61] = KeyCode::KEY_SLASH;
-            m_keyMapping[49] = KeyCode::KEY_GRAVE;
+            m_keyMapping[47] = InputKey::KEY_SEMICOLON;
+            m_keyMapping[48] = InputKey::KEY_APOSTROPHE;
+            m_keyMapping[59] = InputKey::KEY_COMMA;
+            m_keyMapping[60] = InputKey::KEY_PERIOD;
+            m_keyMapping[61] = InputKey::KEY_SLASH;
+            m_keyMapping[49] = InputKey::KEY_GRAVE;
 
-            m_keyMapping[111] = KeyCode::KEY_UP;
-            m_keyMapping[116] = KeyCode::KEY_DOWN;
-            m_keyMapping[113] = KeyCode::KEY_LEFT;
-            m_keyMapping[114] = KeyCode::KEY_RIGHT;
+            m_keyMapping[111] = InputKey::KEY_UP;
+            m_keyMapping[116] = InputKey::KEY_DOWN;
+            m_keyMapping[113] = InputKey::KEY_LEFT;
+            m_keyMapping[114] = InputKey::KEY_RIGHT;
 
-            m_keyMapping[10] = KeyCode::KEY_1;
-            m_keyMapping[11] = KeyCode::KEY_2;
-            m_keyMapping[12] = KeyCode::KEY_3;
-            m_keyMapping[13] = KeyCode::KEY_4;
-            m_keyMapping[14] = KeyCode::KEY_5;
-            m_keyMapping[15] = KeyCode::KEY_6;
-            m_keyMapping[16] = KeyCode::KEY_7;
-            m_keyMapping[17] = KeyCode::KEY_8;
-            m_keyMapping[18] = KeyCode::KEY_9;
-            m_keyMapping[19] = KeyCode::KEY_0;
+            m_keyMapping[10] = InputKey::KEY_1;
+            m_keyMapping[11] = InputKey::KEY_2;
+            m_keyMapping[12] = InputKey::KEY_3;
+            m_keyMapping[13] = InputKey::KEY_4;
+            m_keyMapping[14] = InputKey::KEY_5;
+            m_keyMapping[15] = InputKey::KEY_6;
+            m_keyMapping[16] = InputKey::KEY_7;
+            m_keyMapping[17] = InputKey::KEY_8;
+            m_keyMapping[18] = InputKey::KEY_9;
+            m_keyMapping[19] = InputKey::KEY_0;
 
-            m_keyMapping[24] = KeyCode::KEY_Q;
-            m_keyMapping[25] = KeyCode::KEY_W;
-            m_keyMapping[26] = KeyCode::KEY_E;
-            m_keyMapping[27] = KeyCode::KEY_R;
-            m_keyMapping[28] = KeyCode::KEY_T;
-            m_keyMapping[29] = KeyCode::KEY_Y;
-            m_keyMapping[30] = KeyCode::KEY_U;
-            m_keyMapping[31] = KeyCode::KEY_I;
-            m_keyMapping[32] = KeyCode::KEY_O;
-            m_keyMapping[33] = KeyCode::KEY_P;
+            m_keyMapping[24] = InputKey::KEY_Q;
+            m_keyMapping[25] = InputKey::KEY_W;
+            m_keyMapping[26] = InputKey::KEY_E;
+            m_keyMapping[27] = InputKey::KEY_R;
+            m_keyMapping[28] = InputKey::KEY_T;
+            m_keyMapping[29] = InputKey::KEY_Y;
+            m_keyMapping[30] = InputKey::KEY_U;
+            m_keyMapping[31] = InputKey::KEY_I;
+            m_keyMapping[32] = InputKey::KEY_O;
+            m_keyMapping[33] = InputKey::KEY_P;
 
-            m_keyMapping[38] = KeyCode::KEY_A;
-            m_keyMapping[39] = KeyCode::KEY_S;
-            m_keyMapping[40] = KeyCode::KEY_D;
-            m_keyMapping[41] = KeyCode::KEY_F;
-            m_keyMapping[42] = KeyCode::KEY_G;
-            m_keyMapping[43] = KeyCode::KEY_H;
-            m_keyMapping[44] = KeyCode::KEY_J;
-            m_keyMapping[45] = KeyCode::KEY_K;
-            m_keyMapping[46] = KeyCode::KEY_L;
+            m_keyMapping[38] = InputKey::KEY_A;
+            m_keyMapping[39] = InputKey::KEY_S;
+            m_keyMapping[40] = InputKey::KEY_D;
+            m_keyMapping[41] = InputKey::KEY_F;
+            m_keyMapping[42] = InputKey::KEY_G;
+            m_keyMapping[43] = InputKey::KEY_H;
+            m_keyMapping[44] = InputKey::KEY_J;
+            m_keyMapping[45] = InputKey::KEY_K;
+            m_keyMapping[46] = InputKey::KEY_L;
 
-            m_keyMapping[52] = KeyCode::KEY_Z;
-            m_keyMapping[53] = KeyCode::KEY_X;
-            m_keyMapping[54] = KeyCode::KEY_C;
-            m_keyMapping[55] = KeyCode::KEY_V;
-            m_keyMapping[56] = KeyCode::KEY_B;
-            m_keyMapping[57] = KeyCode::KEY_N;
-            m_keyMapping[58] = KeyCode::KEY_M;
+            m_keyMapping[52] = InputKey::KEY_Z;
+            m_keyMapping[53] = InputKey::KEY_X;
+            m_keyMapping[54] = InputKey::KEY_C;
+            m_keyMapping[55] = InputKey::KEY_V;
+            m_keyMapping[56] = InputKey::KEY_B;
+            m_keyMapping[57] = InputKey::KEY_N;
+            m_keyMapping[58] = InputKey::KEY_M;
         }
 
         X11Keyboard::~X11Keyboard()
@@ -160,7 +160,7 @@ namespace base
             if (keyCode <= 255)
             {
                 auto mappedKeyCode = m_keyMapping[keyCode];
-                if (mappedKeyCode != KeyCode::KEY_INVALID)
+                if (mappedKeyCode != InputKey::KEY_INVALID)
                     keyDown(mappedKeyCode);
             }
         }
@@ -170,7 +170,7 @@ namespace base
             if (keyCode <= 255)
             {
                 auto mappedKeyCode = m_keyMapping[keyCode];
-                if (mappedKeyCode != KeyCode::KEY_INVALID)
+                if (mappedKeyCode != InputKey::KEY_INVALID)
                     keyUp(mappedKeyCode);
             }
         }
@@ -283,7 +283,7 @@ namespace base
 
         void ContextX11::processMessage(const void* msg) override final
         {
-            auto evt  = (const NativeEventX11*)msg;
+            auto evt  = (const NativeWindowEventX11*)msg;
             processNativeEvent(*evt);
         }
 
@@ -321,7 +321,7 @@ namespace base
             Point deltaPos;
         };
 
-        void ContextX11::processNativeEvent(const NativeEventX11& evt)
+        void ContextX11::processNativeEvent(const NativeWindowEventX11& evt)
         {
             Display* display = (Display*)m_display;
             Window window = (Window)m_window;

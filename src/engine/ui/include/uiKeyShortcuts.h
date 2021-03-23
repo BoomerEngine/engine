@@ -20,7 +20,7 @@ struct ENGINE_UI_API KeyShortcut
 {
 public:
     KeyShortcut();
-    KeyShortcut(input::KeyCode key, bool shift = false, bool ctrl = false, bool alt=false);
+    KeyShortcut(InputKey key, bool shift = false, bool ctrl = false, bool alt=false);
     explicit KeyShortcut(StringView txt); // will remain empty if passed string is not valid
     KeyShortcut(const char* txt); // will remain empty if passed string is not valid
 
@@ -29,19 +29,19 @@ public:
     bool operator==(const KeyShortcut& other) const;
     INLINE bool operator!=(const KeyShortcut& other) const { return !operator==(other); }
 
-    INLINE operator bool() const { return key != input::KeyCode::KEY_INVALID; }
-    INLINE bool valid() const { return key != input::KeyCode::KEY_INVALID; }
+    INLINE operator bool() const { return key != InputKey::KEY_INVALID; }
+    INLINE bool valid() const { return key != InputKey::KEY_INVALID; }
 
     //--
 
-    INLINE input::KeyCode keyCode() const { return key; }
+    INLINE InputKey keyCode() const { return key; }
     INLINE bool shiftRequired() const { return shift; }
     INLINE bool controlRequired() const { return ctrl; }
     INLINE bool altRequired() const { return alt; }
 
     //--
 
-    bool matches(const input::KeyEvent& evt) const;
+    bool matches(const InputKeyEvent& evt) const;
 
     //--
 
@@ -52,7 +52,7 @@ public:
     //--
 
 private:
-    input::KeyCode key;
+    InputKey key;
     uint8_t shift:1;
     uint8_t ctrl:1;
     uint8_t alt:1;
@@ -84,7 +84,7 @@ public:
 
     /// process key event short cut
     /// looks for matching command and if found calls it
-    bool processKeyEvent(const input::KeyEvent& evt) const;
+    bool processKeyEvent(const InputKeyEvent& evt) const;
 
     ///---
 

@@ -11,13 +11,13 @@
 #include "inputDevice.h"
 #include "inputStructures.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
 
 /// generic keyboard device
 class CORE_INPUT_API GenericKeyboard : public NoCopy
 {
 public:
-    GenericKeyboard(IContext* owner, DeviceID id = 0);
+    GenericKeyboard(IInputContext* owner, InputDeviceID id = 0);
 
     // reset state
     void reset();
@@ -29,35 +29,35 @@ public:
     void repeatAndDelay(float delay, float repeatRate);
 
     // emit a key down event
-    void keyDown(KeyCode keyCode);
+    void keyDown(InputKey keyCode);
 
     // emit a key up event
-    void keyUp(KeyCode keyCode);
+    void keyUp(InputKey keyCode);
 
     // emit a char
     void charDown(KeyScanCode scanCode);
 
     // get the control key mask
-    KeyMask currentKeyMask() const; // get the current SHIFT/CTRL/ALT key mask
+    InputKeyMask currentKeyMask() const; // get the current SHIFT/CTRL/ALT key mask
 
 private:
-    bool m_pressedKeys[(uint16_t)KeyCode::KEY_MAX]; // windows owning given pressed keys
+    bool m_pressedKeys[(uint16_t)InputKey::KEY_MAX]; // windows owning given pressed keys
 
     struct RepeatKey
     {
-        KeyCode m_keyCode;
-        KeyMask m_keyMask;
+        InputKey m_keyCode;
+        InputKeyMask m_keyMask;
         NativeTimePoint m_nextRepeatTime;
         bool m_pressed;
         uint32_t m_maxRepeat;
 
         INLINE RepeatKey()
-            : m_keyCode((KeyCode)0)
+            : m_keyCode((InputKey)0)
             , m_maxRepeat(1)
             , m_pressed(false)
         {}
 
-        INLINE RepeatKey(KeyCode code, KeyMask keyMask, const NativeTimePoint& nextRepeatTime)
+        INLINE RepeatKey(InputKey code, InputKeyMask keyMask, const NativeTimePoint& nextRepeatTime)
             : m_keyCode(code)
             , m_keyMask(keyMask)
             , m_nextRepeatTime(nextRepeatTime)
@@ -67,7 +67,7 @@ private:
 
         INLINE void reset()
         {
-            m_keyCode = (KeyCode)0;
+            m_keyCode = (InputKey)0;
             m_maxRepeat = 1;
             m_pressed = false;
         }
@@ -83,8 +83,8 @@ private:
     NativeTimeInterval m_keyRepeatDelay;
     NativeTimeInterval m_keyRepeatPeriod;
 
-    IContext* m_context;
-    DeviceID m_id;
+    IInputContext* m_context;
+    InputDeviceID m_id;
 };
 
-END_BOOMER_NAMESPACE_EX(input)
+END_BOOMER_NAMESPACE()

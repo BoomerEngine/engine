@@ -32,7 +32,7 @@ WindowTitleBar::WindowTitleBar(WindowFeatureFlags flags, StringView title)
     {
         auto appIcon = createNamedChild<Image>("AppIcon"_id);
         appIcon->hitTest(true);
-        appIcon->customStyle("windowAreaType"_id, input::AreaType::SysMenu);
+        appIcon->customStyle("windowAreaType"_id, AreaType::SysMenu);
     }
 
     {
@@ -79,9 +79,9 @@ WindowTitleBar::WindowTitleBar(WindowFeatureFlags flags, StringView title)
     }
 }
 
-bool WindowTitleBar::handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, input::AreaType& outAreaType) const
+bool WindowTitleBar::handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, AreaType& outAreaType) const
 {
-    outAreaType = input::AreaType::Caption;
+    outAreaType = AreaType::Caption;
     return true;
 }
 

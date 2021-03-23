@@ -55,7 +55,7 @@ private:
     MeshPreviewPanelSettings m_previewSettings;
     HashMap<StringID, MaterialPtr> m_previewMaterials;
 
-    Array<rendering::ObjectProxyMeshPtr> m_proxies;
+    Array<rendering::RenderingMeshPtr> m_proxies;
 
     Box m_lastBounds;
 

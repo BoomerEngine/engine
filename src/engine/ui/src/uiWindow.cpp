@@ -241,7 +241,7 @@ void Window::handleExternalActivation(bool isActive)
         removeStyleClass("active"_id);
 }
 
-InputActionPtr Window::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr Window::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     return nullptr;
 }
@@ -270,17 +270,17 @@ int Window::QuerySizeCode(const ElementArea& area, const Position& absolutePosit
     return -1;
 }
 
-bool Window::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const
+bool Window::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const
 {
     if (queryResizableState())
     {
         auto code = QuerySizeCode(area, absolutePosition);
         if (code != -1 && code != 4)
         {
-            input::CursorType areas[3][3] = {
-                { input::CursorType::SizeNWSE, input::CursorType::SizeNS, input::CursorType::SizeNESW },
-                { input::CursorType::SizeWE, input::CursorType::Default, input::CursorType::SizeWE },
-                { input::CursorType::SizeNESW, input::CursorType::SizeNS, input::CursorType::SizeNWSE}
+            CursorType areas[3][3] = {
+                { CursorType::SizeNWSE, CursorType::SizeNS, CursorType::SizeNESW },
+                { CursorType::SizeWE, CursorType::Default, CursorType::SizeWE },
+                { CursorType::SizeNESW, CursorType::SizeNS, CursorType::SizeNWSE}
             };
 
             outCursorType = areas[code / 3][code % 3];
@@ -291,7 +291,7 @@ bool Window::handleCursorQuery(const ElementArea& area, const Position& absolute
     return TBaseClass::handleCursorQuery(area, absolutePosition, outCursorType);
 }
 
-bool Window::handleWindowFrameArea(const ElementArea& area, const Position& absolutePosition, input::AreaType& outAreaType) const
+bool Window::handleWindowFrameArea(const ElementArea& area, const Position& absolutePosition, AreaType& outAreaType) const
 {
     // border stuff
     if (queryResizableState())
@@ -299,10 +299,10 @@ bool Window::handleWindowFrameArea(const ElementArea& area, const Position& abso
         auto code = QuerySizeCode(area, absolutePosition);
         if (code != -1 && code != 4)
         {
-            input::AreaType areas[3][3] = {
-                { input::AreaType::BorderTopLeft , input::AreaType::BorderTop, input::AreaType::BorderTopRight },
-                { input::AreaType::BorderLeft, input::AreaType::Caption, input::AreaType::BorderRight },
-                { input::AreaType::BorderBottomLeft, input::AreaType::BorderBottom, input::AreaType::BorderBottomRight }
+            AreaType areas[3][3] = {
+                { AreaType::BorderTopLeft , AreaType::BorderTop, AreaType::BorderTopRight },
+                { AreaType::BorderLeft, AreaType::Caption, AreaType::BorderRight },
+                { AreaType::BorderBottomLeft, AreaType::BorderBottom, AreaType::BorderBottomRight }
             };
 
             outAreaType = areas[code / 3][code % 3];
@@ -313,12 +313,12 @@ bool Window::handleWindowFrameArea(const ElementArea& area, const Position& abso
     return false;
 }
 
-bool Window::handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, input::AreaType& outAreaType) const
+bool Window::handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, AreaType& outAreaType) const
 {
     // allow to move whole window by dragging any non-active element
     if (queryMovableState())
     {
-        outAreaType = input::AreaType::Caption;
+        outAreaType = AreaType::Caption;
         return true;
     }
 

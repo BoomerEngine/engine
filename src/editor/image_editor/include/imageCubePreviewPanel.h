@@ -75,8 +75,8 @@ private:
     virtual void handleCamera(CameraSetup& outCamera) const override;
     virtual void handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& camera, const rendering::FrameParams_Capture* capture) override;
 
-    virtual ui::InputActionPtr handleMouseClick(const ui::ElementArea& area, const input::MouseClickEvent& evt) override;
-    virtual bool handleMouseWheel(const input::MouseMovementEvent& evt, float delta) override;
+    virtual ui::InputActionPtr handleMouseClick(const ui::ElementArea& area, const InputMouseClickEvent& evt) override;
+    virtual bool handleMouseWheel(const InputMouseMovementEvent& evt, float delta) override;
 };
 
 //--

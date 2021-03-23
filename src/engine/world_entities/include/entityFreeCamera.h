@@ -24,7 +24,7 @@ public:
     Angles m_rotation;
 
     void reset();
-    bool input(const input::BaseEvent& evt);
+    bool input(const InputEvent& evt);
     void update(float dt, Vector3& outDeltaPosition);
 
 private:
@@ -70,7 +70,7 @@ public:
     //--
 
     // process raw input to fly the camera (free camera is not mapped)
-    bool processRawInput(const input::BaseEvent& evt);
+    bool processRawInput(const InputEvent& evt);
 
     // draw on-screen debug information
     void renderDebugCanvas(canvas::Canvas& c) const;

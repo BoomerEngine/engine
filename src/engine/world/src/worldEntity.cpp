@@ -167,7 +167,7 @@ void Entity::handleDebugRender(rendering::FrameParams& frame) const
 
 }
 
-bool Entity::handleInput(const input::BaseEvent& evt)
+bool Entity::handleInput(const InputEvent& evt)
 {
     return false;
 }

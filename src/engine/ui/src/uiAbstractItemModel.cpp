@@ -82,7 +82,7 @@ bool IAbstractItemModel::handleIconClick(const ModelIndex& item, int columnIndex
     return false;
 }
 
-DragDropDataPtr IAbstractItemModel::queryDragDropData(const input::BaseKeyFlags& keys, const ModelIndex& item)
+DragDropDataPtr IAbstractItemModel::queryDragDropData(const BaseKeyFlags& keys, const ModelIndex& item)
 {
     return nullptr;
 }
@@ -127,7 +127,7 @@ public:
         hitTest(txt.beginsWith("["));
     }
 
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override
     {
         if (evt.leftClicked() && text().beginsWith("["))
         {

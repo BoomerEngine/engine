@@ -77,7 +77,7 @@ void ISceneTest::GlobalLightingParams::pack(rendering::FrameParams_GlobalLightin
 
 //--
 
-rendering::FilterFlags ISceneTest::st_FrameFilterFlags = rendering::FilterFlags::DefaultEditor();
+rendering::FrameFilterFlags ISceneTest::st_FrameFilterFlags = rendering::FrameFilterFlags::DefaultEditor();
 rendering::FrameRenderMode ISceneTest::st_FrameMode = rendering::FrameRenderMode::Default;
 Angles ISceneTest::st_GlobalLightingRotation(70.0f, 40.0f, 0.0f);
 
@@ -205,7 +205,7 @@ void ISceneTest::update(float dt)
         m_world->update(dt);
 }
 
-bool ISceneTest::processInput(const input::BaseEvent& evt)
+bool ISceneTest::processInput(const InputEvent& evt)
 {
     if (m_camera)
         return m_camera->processRawInput(evt);
@@ -247,7 +247,7 @@ static void DrawEnumOptions(T& mode)
     }
 }
 
-static void DrawFilterNodes(const rendering::FilterBitInfo* bit, rendering::FilterFlags& flags)
+static void DrawFilterNodes(const rendering::FrameFilterBitInfo* bit, rendering::FrameFilterFlags& flags)
 {
     if (bit->children.empty())
     {

@@ -117,9 +117,9 @@ DragDropHandlerPtr ScintillaInnerWidget::handleDragDrop(const DragDropDataPtr& d
     return nullptr;
 }
 
-bool ScintillaInnerWidget::handleCursorQuery(const ElementArea &area, const Position &absolutePosition, input::CursorType &outCursorType) const
+bool ScintillaInnerWidget::handleCursorQuery(const ElementArea &area, const Position &absolutePosition, CursorType &outCursorType) const
 {
-    outCursorType = input::CursorType::TextBeam;
+    outCursorType = CursorType::TextBeam;
     return true;
 }
 
@@ -127,7 +127,7 @@ class ScintillaInnerWidgetMouseDragAction : public MouseInputAction
 {
 public:
     ScintillaInnerWidgetMouseDragAction(IElement* owner)
-        : MouseInputAction(owner, input::KeyCode::KEY_MOUSE0, true)
+        : MouseInputAction(owner, InputKey::KEY_MOUSE0, true)
         , m_requestExit(false)
     {}
 
@@ -143,7 +143,7 @@ public:
         return MouseInputAction::onUpdate(dt);
     }
 
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
     {
         auto widget = element();
         if (widget)
@@ -155,7 +155,7 @@ private:
     bool m_requestExit;
 };
 
-InputActionPtr ScintillaInnerWidget::handleMouseClick(const ElementArea &area, const input::MouseClickEvent &evt)
+InputActionPtr ScintillaInnerWidget::handleMouseClick(const ElementArea &area, const InputMouseClickEvent &evt)
 {
     auto pos = evt.absolutePosition() - area.absolutePosition();
     auto time = (int)m_timeBase.timeTillNow().toMiliSeconds();
@@ -184,7 +184,7 @@ InputActionPtr ScintillaInnerWidget::handleMouseClick(const ElementArea &area, c
     }
 }
 
-bool ScintillaInnerWidget::handleMouseMovement(const input::MouseMovementEvent &evt)
+bool ScintillaInnerWidget::handleMouseMovement(const InputMouseMovementEvent &evt)
 {
     if (evt.keyMask().isLeftDown())
     {
@@ -203,7 +203,7 @@ bool ScintillaInnerWidget::handleMouseMovement(const input::MouseMovementEvent &
     return TBaseClass::handleMouseMovement(evt);
 }
 
-bool ScintillaInnerWidget::handleMouseWheel(const input::MouseMovementEvent &evt, float delta)
+bool ScintillaInnerWidget::handleMouseWheel(const InputMouseMovementEvent &evt, float delta)
 {
     if (evt.keyMask().isCtrlDown())
     {
@@ -223,13 +223,13 @@ bool ScintillaInnerWidget::handleMouseWheel(const input::MouseMovementEvent &evt
     return true;
 }
 
-bool ScintillaInnerWidget::handleKeyEvent(const input::KeyEvent &evt)
+bool ScintillaInnerWidget::handleKeyEvent(const InputKeyEvent &evt)
 {
     if (evt.pressedOrRepeated())
     {
         switch (evt.keyCode())
         {
-            case input::KeyCode::KEY_LEFT:
+            case InputKey::KEY_LEFT:
                 if (evt.keyMask().isShiftDown())
                 {
                     if (evt.keyMask().isCtrlDown())
@@ -246,7 +246,7 @@ bool ScintillaInnerWidget::handleKeyEvent(const input::KeyEvent &evt)
                 }
                 return true;
 
-            case input::KeyCode::KEY_RIGHT:
+            case InputKey::KEY_RIGHT:
                 if (evt.keyMask().isShiftDown())
                 {
                     if (evt.keyMask().isCtrlDown())
@@ -263,35 +263,35 @@ bool ScintillaInnerWidget::handleKeyEvent(const input::KeyEvent &evt)
                 }
                 return true;
 
-            case input::KeyCode::KEY_UP:
+            case InputKey::KEY_UP:
                 if (evt.keyMask().isShiftDown())
                     KeyCommand(SCI_LINEUPEXTEND);
                 else
                     KeyCommand(SCI_LINEUP);
                 return true;
 
-            case input::KeyCode::KEY_DOWN:
+            case InputKey::KEY_DOWN:
                 if (evt.keyMask().isShiftDown())
                     KeyCommand(SCI_LINEDOWNEXTEND);
                 else
                     KeyCommand(SCI_LINEDOWN);
                 return true;
 
-            case input::KeyCode::KEY_PRIOR:
+            case InputKey::KEY_PRIOR:
                 if (evt.keyMask().isShiftDown())
                     KeyCommand(SCI_PAGEUPEXTEND);
                 else
                     KeyCommand(SCI_PAGEUP);
                 return true;
 
-            case input::KeyCode::KEY_NEXT:
+            case InputKey::KEY_NEXT:
                 if (evt.keyMask().isShiftDown())
                     KeyCommand(SCI_PAGEDOWNEXTEND);
                 else
                     KeyCommand(SCI_PAGEDOWN);
                 return true;
 
-            case input::KeyCode::KEY_HOME:
+            case InputKey::KEY_HOME:
                 if (evt.keyMask().isShiftDown())
                 {
                     if (evt.keyMask().isCtrlDown())
@@ -308,7 +308,7 @@ bool ScintillaInnerWidget::handleKeyEvent(const input::KeyEvent &evt)
                 }
                 return true;
 
-            case input::KeyCode::KEY_END:
+            case InputKey::KEY_END:
                 if (evt.keyMask().isShiftDown())
                 {
                     if (evt.keyMask().isCtrlDown())
@@ -325,11 +325,11 @@ bool ScintillaInnerWidget::handleKeyEvent(const input::KeyEvent &evt)
                 }
                 return true;
 
-            case input::KeyCode::KEY_ESCAPE:
+            case InputKey::KEY_ESCAPE:
                 KeyCommand(SCI_CANCEL);
                 return true;
 
-            case input::KeyCode::KEY_DELETE:
+            case InputKey::KEY_DELETE:
                 if (evt.keyMask().isShiftDown())
                 {
                     if (evt.keyMask().isCtrlDown())
@@ -346,7 +346,7 @@ bool ScintillaInnerWidget::handleKeyEvent(const input::KeyEvent &evt)
                 }
                 return true;
 
-            case input::KeyCode::KEY_BACK:
+            case InputKey::KEY_BACK:
                 if (evt.keyMask().isShiftDown())
                 {
                     if (evt.keyMask().isCtrlDown())
@@ -363,11 +363,11 @@ bool ScintillaInnerWidget::handleKeyEvent(const input::KeyEvent &evt)
                 }
                 return true;
 
-            case input::KeyCode::KEY_TAB:
+            case InputKey::KEY_TAB:
                 KeyCommand(SCI_TAB);
                 return true;
 
-            case input::KeyCode::KEY_RETURN:
+            case InputKey::KEY_RETURN:
                 KeyCommand(SCI_NEWLINE);
                 return true;
         }
@@ -391,7 +391,7 @@ void ScintillaInnerWidget::handleFocusGained()
     ShowCaretAtCurrentPosition();
 }
 
-bool ScintillaInnerWidget::handleCharEvent(const input::CharEvent &evt)
+bool ScintillaInnerWidget::handleCharEvent(const InputCharEvent &evt)
 {
     auto key = (wchar_t)evt.scanCode();
     if (key >= ' ')

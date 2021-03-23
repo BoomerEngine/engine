@@ -78,7 +78,7 @@ public:
     virtual void prepareFrame(rendering::FrameParams& info);
     virtual void renderFrame(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, rendering::FrameStats& outStats, CameraSetup& outCamera);
     virtual void update(float dt);
-    virtual bool processInput(const input::BaseEvent& evt);
+    virtual bool processInput(const InputEvent& evt);
 
     virtual CompiledWorldDataPtr createStaticContent();
     virtual void createDynamicContent(World* world);
@@ -101,7 +101,7 @@ protected:
     void configureLocalAdjustments();
     void recreateWorld();
 
-    static rendering::FilterFlags st_FrameFilterFlags;
+    static rendering::FrameFilterFlags st_FrameFilterFlags;
     static rendering::FrameRenderMode st_FrameMode;
 
     static Angles st_GlobalLightingRotation;

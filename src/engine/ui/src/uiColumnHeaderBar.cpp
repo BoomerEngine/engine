@@ -24,7 +24,7 @@ class ColumnSizeChangeInputAction : public MouseInputAction
 {
 public:
     ColumnSizeChangeInputAction(ColumnHeaderBar* header, int columnIndex, float referencePos, const Position& delta)
-        : MouseInputAction(header, input::KeyCode::KEY_MOUSE0)
+        : MouseInputAction(header, InputKey::KEY_MOUSE0)
         , m_header(header)
         , m_referencePos(referencePos)
         , m_columnIndex(columnIndex)
@@ -49,12 +49,12 @@ public:
         return false;
     }
 
-    virtual void onUpdateCursor(input::CursorType& outCursorType) override
+    virtual void onUpdateCursor(CursorType& outCursorType) override
     {
-        outCursorType = input::CursorType::SizeWE;
+        outCursorType = CursorType::SizeWE;
     }
 
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
     {
         if (auto header = m_header.lock())
         {
@@ -137,7 +137,7 @@ void ColumnHeaderBar::prepareDynamicSizing(const ElementArea& drawArea, const El
     dataPtr = &m_cachedSizingData;
 }
 
-InputActionPtr ColumnHeaderBar::handleOverlayMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr ColumnHeaderBar::handleOverlayMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     // start column size dragging if the column supports resizing
     if (evt.leftClicked())
@@ -232,7 +232,7 @@ int ColumnHeaderBar::findSplitterColumnIndex(const ElementArea& area, const Posi
     return -1;
 }
 
-bool ColumnHeaderBar::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const
+bool ColumnHeaderBar::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const
 {
     // check if we are near the splitter
     auto columnIndex = findSplitterColumnIndex(area, absolutePosition);
@@ -241,7 +241,7 @@ bool ColumnHeaderBar::handleCursorQuery(const ElementArea& area, const Position&
         const auto &info = m_columns[columnIndex];
         if (info.m_canResize)
         {
-            outCursorType = input::CursorType::SizeWE;
+            outCursorType = CursorType::SizeWE;
             return true;
         }
     }

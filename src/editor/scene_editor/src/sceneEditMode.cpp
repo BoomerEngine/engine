@@ -88,12 +88,12 @@ void ISceneEditMode::handleRender(ScenePreviewPanel* panel, rendering::FramePara
 {
 }
 
-ui::InputActionPtr ISceneEditMode::handleMouseClick(ScenePreviewPanel* panel, const input::MouseClickEvent& evt)
+ui::InputActionPtr ISceneEditMode::handleMouseClick(ScenePreviewPanel* panel, const InputMouseClickEvent& evt)
 {
     return nullptr;
 }
 
-bool ISceneEditMode::handleKeyEvent(ScenePreviewPanel* panel, const input::KeyEvent& evt)
+bool ISceneEditMode::handleKeyEvent(ScenePreviewPanel* panel, const InputKeyEvent& evt)
 {
     return false;
 }

@@ -759,7 +759,7 @@ void ItemView::handleFocusGained()
     return TBaseClass::handleFocusGained();
 }
 
-InputActionPtr ItemView::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr ItemView::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftDoubleClicked())
     {
@@ -780,7 +780,7 @@ InputActionPtr ItemView::handleMouseClick(const ElementArea& area, const input::
     return TBaseClass::handleMouseClick(area, evt);
 }
 
-InputActionPtr ItemView::handleOverlayMouseClick(const ElementArea &area, const input::MouseClickEvent &evt)
+InputActionPtr ItemView::handleOverlayMouseClick(const ElementArea &area, const InputMouseClickEvent &evt)
 {
     if (evt.leftClicked() || evt.rightClicked())
     {
@@ -812,7 +812,7 @@ InputActionPtr ItemView::handleOverlayMouseClick(const ElementArea &area, const 
     return TBaseClass::handleOverlayMouseClick(area, evt);
 }
 
-bool ItemView::handleContextMenu(const ElementArea &area, const Position &absolutePosition, input::KeyMask controlKeys)
+bool ItemView::handleContextMenu(const ElementArea &area, const Position &absolutePosition, InputKeyMask controlKeys)
 {
     if (auto index = indexAtPoint(absolutePosition))
     {
@@ -847,7 +847,7 @@ ElementPtr ItemView::queryTooltipElement(const Position& absolutePosition, Eleme
     return TBaseClass::queryTooltipElement(absolutePosition, outArea);
 }
 
-DragDropDataPtr ItemView::queryDragDropData(const input::BaseKeyFlags& keys, const Position& position) const
+DragDropDataPtr ItemView::queryDragDropData(const BaseKeyFlags& keys, const Position& position) const
 {
     if (auto index = indexAtPoint(position))
     {
@@ -880,7 +880,7 @@ void ItemView::handleDragDropGenericCompletion(const DragDropDataPtr& data, cons
     return TBaseClass::handleDragDropGenericCompletion(data, entryPosition);
 }
 
-bool ItemView::handleCharEvent(const input::CharEvent& evt)
+bool ItemView::handleCharEvent(const InputCharEvent& evt)
 {
     if (!evt.keyMask().isCtrlDown())
     {
@@ -892,7 +892,7 @@ bool ItemView::handleCharEvent(const input::CharEvent& evt)
     return TBaseClass::handleCharEvent(evt);
 }
 
-bool ItemView::handleKeyEvent(const input::KeyEvent& evt)
+bool ItemView::handleKeyEvent(const InputKeyEvent& evt)
 {
     if (evt.pressedOrRepeated())
     {
@@ -902,56 +902,56 @@ bool ItemView::handleKeyEvent(const input::KeyEvent& evt)
 
         switch (evt.keyCode())
         {
-            case input::KeyCode::KEY_UP:
+            case InputKey::KEY_UP:
             {
                 nextIndex = resolveIndexNavigation(m_current, ItemNavigationDirection::Up);
                 processed = true;
                 break;
             }
 
-            case input::KeyCode::KEY_DOWN:
+            case InputKey::KEY_DOWN:
             {
                 nextIndex = resolveIndexNavigation(m_current, ItemNavigationDirection::Down);
                 processed = true;
                 break;
             }
 
-            case input::KeyCode::KEY_PRIOR:
+            case InputKey::KEY_PRIOR:
             {
                 nextIndex = resolveIndexNavigation(m_current, ItemNavigationDirection::PageUp);
                 processed = true;
                 break;
             }
 
-            case input::KeyCode::KEY_NEXT:
+            case InputKey::KEY_NEXT:
             {
                 nextIndex = resolveIndexNavigation(m_current, ItemNavigationDirection::PageDown);
                 processed = true;
                 break;
             }
 
-            case input::KeyCode::KEY_LEFT:
+            case InputKey::KEY_LEFT:
             {
                 nextIndex = resolveIndexNavigation(m_current, ItemNavigationDirection::Left);
                 processed = true;
                 break;
             }
 
-            case input::KeyCode::KEY_RIGHT:
+            case InputKey::KEY_RIGHT:
             {
                 nextIndex = resolveIndexNavigation(m_current, ItemNavigationDirection::Right);
                 processed = true;
                 break;
             }
 
-            case input::KeyCode::KEY_HOME:
+            case InputKey::KEY_HOME:
             {
                 nextIndex = resolveIndexNavigation(m_current, ItemNavigationDirection::Home);
                 processed = true;
                 break;
             }
 
-            case input::KeyCode::KEY_END:
+            case InputKey::KEY_END:
             {
                 nextIndex = resolveIndexNavigation(m_current, ItemNavigationDirection::End);
                 processed = true;
@@ -979,14 +979,14 @@ bool ItemView::handleKeyEvent(const input::KeyEvent& evt)
 
         if (m_current)
         {
-            if (evt.keyCode() == input::KeyCode::KEY_RETURN)
+            if (evt.keyCode() == InputKey::KEY_RETURN)
             {
                 if (call(EVENT_ITEM_ACTIVATED, m_current))
                     return true;
             }                   
         }
 
-        if (evt.deviceType() == input::DeviceType::Keyboard)
+        if (evt.deviceType() == InputDeviceType::Keyboard)
         {
             if (!evt.keyMask().isCtrlDown())
             {

@@ -72,7 +72,7 @@ void FrameRenderingService::onSyncUpdate()
 
 }
 
-gpu::CommandBuffer* FrameRenderingService::render(const FrameParams& frame, const gpu::AcquiredOutput& output, Scene* scene, FrameStats& outStats)
+gpu::CommandBuffer* FrameRenderingService::render(const FrameParams& frame, const gpu::AcquiredOutput& output, RenderingScene* scene, FrameStats& outStats)
 {
     PC_SCOPE_LVL0(RenderFrame);
 

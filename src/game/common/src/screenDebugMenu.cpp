@@ -132,9 +132,9 @@ void DebugMenuButton::render(IGameScreenDebugMenu* menu, canvas::Canvas& c, cons
     }
 }
 
-bool DebugMenuButton::handleKey(IGameScreenDebugMenu* menu, input::KeyCode key, bool repeat)
+bool DebugMenuButton::handleKey(IGameScreenDebugMenu* menu, InputKey key, bool repeat)
 {
-    if (key == input::KeyCode::KEY_RETURN && !repeat)
+    if (key == InputKey::KEY_RETURN && !repeat)
     {
         if (!m_cooldown || m_cooldown.reached())
         {
@@ -226,7 +226,7 @@ void IGameScreenDebugMenu::navigate(int newIndex)
     }
 }
 
-bool IGameScreenDebugMenu::handleInput(const input::BaseEvent& evt)
+bool IGameScreenDebugMenu::handleInput(const InputEvent& evt)
 {
     if (const auto* key = evt.toKeyEvent())
     {
@@ -234,43 +234,43 @@ bool IGameScreenDebugMenu::handleInput(const input::BaseEvent& evt)
         {
             switch (key->keyCode())
             {
-                case input::KeyCode::KEY_UP:
+                case InputKey::KEY_UP:
                 {
                     navigate(m_activeElement - 1);
                     return true;
                 }
 
-                case input::KeyCode::KEY_HOME:
+                case InputKey::KEY_HOME:
                 {
                     navigate(0);
                     return true;
                 }
 
-                case input::KeyCode::KEY_DOWN:
+                case InputKey::KEY_DOWN:
                 {
                     navigate(m_activeElement + 1);
                     return true;
                 }
 
-                case input::KeyCode::KEY_END:
+                case InputKey::KEY_END:
                 {
                     navigate(m_elements.lastValidIndex());
                     return true;
                 }
 
-                case input::KeyCode::KEY_PRIOR:
+                case InputKey::KEY_PRIOR:
                 {
                     navigate(m_activeElement - 10);
                     return true;
                 }
 
-                case input::KeyCode::KEY_NEXT:
+                case InputKey::KEY_NEXT:
                 {
                     navigate(m_activeElement + 10);
                     return true;
                 }
 
-                case input::KeyCode::KEY_ESCAPE:
+                case InputKey::KEY_ESCAPE:
                 {
                     postAction("Close"_id);
                     return true;

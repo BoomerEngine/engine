@@ -58,7 +58,7 @@ private:
 
     virtual bool handleItemFilter(const ui::ICollectionView* view, const ui::SearchPattern& filter) const override final;
     virtual void handleItemSort(const ui::ICollectionView* view, int colIndex, SortingData& outInfo) const override final;
-    virtual bool handleItemContextMenu(ui::ICollectionView* view, const ui::CollectionItems& items, const ui::Position& pos, input::KeyMask controlKeys) override final;
+    virtual bool handleItemContextMenu(ui::ICollectionView* view, const ui::CollectionItems& items, const ui::Position& pos, InputKeyMask controlKeys) override final;
     virtual bool handleItemActivate(ui::ICollectionView* view) override final;
 
     virtual ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override final;

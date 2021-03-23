@@ -97,7 +97,7 @@ public:
     virtual void windowCancelCloseRequest() = 0;
 
     /// get input context for the window
-    virtual input::ContextPtr windowGetInputContext() = 0;
+    virtual ContextPtr windowGetInputContext() = 0;
 
     /// bind owner to window
     virtual void windowBindOwner(ObjectID id) = 0;
@@ -117,10 +117,10 @@ public:
     virtual void onOutputWindowPlacementChanged(ObjectID output, const Rect& newSize, float pixelScale, bool duringSizeMove) {};
 
     /// hit test window area for cursor type
-    virtual bool onOutputWindowSelectCursor(ObjectID output, const Point& absolutePosition, input::CursorType& outCursorType) { return false; };
+    virtual bool onOutputWindowSelectCursor(ObjectID output, const Point& absolutePosition, CursorType& outCursorType) { return false; };
 
     /// hit test window title area for window system integration (custom title bar and system buttons)
-    virtual bool onOutputWindowHitTestNonClientArea(ObjectID output, const Point& absolutePosition, input::AreaType& outAreaType) { return false; };
+    virtual bool onOutputWindowHitTestNonClientArea(ObjectID output, const Point& absolutePosition, AreaType& outAreaType) { return false; };
 };
     
 //---

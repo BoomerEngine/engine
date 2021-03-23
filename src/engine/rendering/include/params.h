@@ -268,7 +268,7 @@ enum class FrameRenderMode : uint8_t
 struct ENGINE_RENDERING_API FrameParams : public NoCopy
 {
     FrameRenderMode mode = FrameRenderMode::Default;
-    FilterFlags filters = FilterFlags::DefaultEditor();
+    FrameFilterFlags filters = FrameFilterFlags::DefaultEditor();
 
     uint32_t index = 0; // frame index, should be increased every frame by the caller
 

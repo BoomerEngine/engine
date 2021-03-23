@@ -60,7 +60,7 @@ void FrameViewWireframe::render(gpu::CommandWriter& cmd)
     // TODO: render background
 
     // render debug fragments
-    if (m_frame.frame().filters & FilterBit::DebugGeometry)
+    if (m_frame.frame().filters & FrameFilterBit::DebugGeometry)
     {
         DebugGeometryViewRecorder debugRec(&rec);
         debugRec.solid.attachBuffer(rec.mainSolid.opCreateChildCommandBuffer(false));

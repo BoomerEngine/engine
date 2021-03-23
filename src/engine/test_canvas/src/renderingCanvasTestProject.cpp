@@ -182,25 +182,25 @@ void CanvasTestProject::processInput()
 			{
 				if (keyEvt->pressedOrRepeated())
 				{
-					if (keyEvt->keyCode() == input::KeyCode::KEY_ESCAPE)
+					if (keyEvt->keyCode() == InputKey::KEY_ESCAPE)
 					{
 						m_exitRequested = true;
 						break;
 					}
-					else if (keyEvt->keyCode() == input::KeyCode::KEY_LEFT)
+					else if (keyEvt->keyCode() == InputKey::KEY_LEFT)
 					{
 						if (m_pendingTestCaseIndex <= 0)
 							m_pendingTestCaseIndex = m_testClasses.size() - 1;
 						else
 							m_pendingTestCaseIndex -= 1;
 					}
-					else if (keyEvt->keyCode() == input::KeyCode::KEY_RIGHT)
+					else if (keyEvt->keyCode() == InputKey::KEY_RIGHT)
 					{
 						m_pendingTestCaseIndex += 1;
 						if (m_pendingTestCaseIndex >= (int)m_testClasses.size())
 							m_pendingTestCaseIndex = 0;
 					}		
-					else if (keyEvt->keyCode() == input::KeyCode::KEY_EQUAL)
+					else if (keyEvt->keyCode() == InputKey::KEY_EQUAL)
 					{
 						if (keyEvt->keyMask().isShiftDown())
 							m_pixelScaleTest += 1;
@@ -208,7 +208,7 @@ void CanvasTestProject::processInput()
 							m_pixelScaleTest += 10;
 						updateTitleBar();
 					}
-					else if (keyEvt->keyCode() == input::KeyCode::KEY_MINUS)
+					else if (keyEvt->keyCode() == InputKey::KEY_MINUS)
 					{
 						if (keyEvt->keyMask().isShiftDown())
 							m_pixelScaleTest -= 1;

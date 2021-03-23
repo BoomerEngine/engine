@@ -10,17 +10,17 @@
 
 #include "inputContext.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
 
 ///---
 
 /// Null input context
-class CORE_INPUT_API ContextNull : public IContext
+class CORE_INPUT_API InputContextNull : public IInputContext
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ContextNull, IContext);
+    RTTI_DECLARE_VIRTUAL_CLASS(InputContextNull, IInputContext);
 
 public:
-    ContextNull(uint64_t nativeWindow=0, uint64_t nativeDisplay=0);
+    InputContextNull(uint64_t nativeWindow=0, uint64_t nativeDisplay=0);
 
     //--
 
@@ -31,4 +31,4 @@ public:
 
 ///---
 
-END_BOOMER_NAMESPACE_EX(input)
+END_BOOMER_NAMESPACE()

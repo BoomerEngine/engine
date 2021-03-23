@@ -229,7 +229,7 @@ void ImageHistogramWidget::cacheHistogramGeometry()
     }
 }
 
-bool ImageHistogramWidget::handleMouseMovement(const input::MouseMovementEvent& evt)
+bool ImageHistogramWidget::handleMouseMovement(const InputMouseMovementEvent& evt)
 {
     auto pos = (int)(evt.absolutePosition().x - cachedDrawArea().absolutePosition().x);
     if (pos != m_hoverPositionX)

@@ -155,13 +155,13 @@ void ImageCubePreviewPanel::handleRender(gpu::CommandWriter& cmd, const gpu::Acq
     cmd.opEndPass();
 }
 
-bool ImageCubePreviewPanel::handleMouseWheel(const input::MouseMovementEvent& evt, float delta)
+bool ImageCubePreviewPanel::handleMouseWheel(const InputMouseMovementEvent& evt, float delta)
 {
     m_cameraController.processMouseWheel(evt, delta);
     return true;
 }
 
-ui::InputActionPtr ImageCubePreviewPanel::handleMouseClick(const ui::ElementArea& area, const input::MouseClickEvent& evt)
+ui::InputActionPtr ImageCubePreviewPanel::handleMouseClick(const ui::ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftClicked())
         return m_cameraController.handleOrbitAroundPoint(this, 0, true);

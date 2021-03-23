@@ -45,8 +45,8 @@ public:
     virtual void configureViewMenu(ui::MenuButtonContainer* menu) override;
 
     virtual void handleRender(ScenePreviewPanel* panel, rendering::FrameParams& frame) override;
-    virtual ui::InputActionPtr handleMouseClick(ScenePreviewPanel* panel, const input::MouseClickEvent& evt) override;
-    virtual bool handleKeyEvent(ScenePreviewPanel* panel, const input::KeyEvent& evt) override;
+    virtual ui::InputActionPtr handleMouseClick(ScenePreviewPanel* panel, const InputMouseClickEvent& evt) override;
+    virtual bool handleKeyEvent(ScenePreviewPanel* panel, const InputKeyEvent& evt) override;
     virtual void handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const ExactPosition* positionUnderCursor) override;
     virtual void handlePointSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables) override;
     virtual void handleAreaSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables) override;
@@ -180,7 +180,7 @@ protected:
     void changeGizmoNext();
     void changePositionGridSize(int delta);
 
-    bool handleInternalKeyAction(input::KeyCode key, bool shift, bool alt, bool ctrl);
+    bool handleInternalKeyAction(InputKey key, bool shift, bool alt, bool ctrl);
 
     //--
 

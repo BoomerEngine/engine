@@ -15,12 +15,12 @@ BEGIN_BOOMER_NAMESPACE()
 //---
 
 /// file with input mapping definitions
-class GAME_COMMON_API InputDefinitions : public IResource
+class GAME_COMMON_API GameInputDefinitions : public IResource
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(InputDefinitions, IResource);
+    RTTI_DECLARE_VIRTUAL_CLASS(GameInputDefinitions, IResource);
 
 public:
-    InputDefinitions();
+    GameInputDefinitions();
 
     // get root context
     INLINE const InputActionTablePtr& root() const { return m_root; }

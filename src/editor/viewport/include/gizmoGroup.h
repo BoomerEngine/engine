@@ -60,7 +60,7 @@ public:
     bool updateHover(const Point& clientPoint);
 
     // ask for current cursor, returns true if we have active hover
-    bool updateCursor(input::CursorType& outCursor);
+    bool updateCursor(CursorType& outCursor);
 
     // process click
     ui::InputActionPtr activate();
@@ -79,7 +79,7 @@ private:
     //--
 
     Point m_hoverClientPos;
-    input::CursorType m_hoverCursor;
+    CursorType m_hoverCursor;
 
     //--
 
@@ -87,7 +87,7 @@ private:
 
     //--
 
-    IGizmo* findGizmoUnderCursor(const Point& point, input::CursorType& outCursor) const;
+    IGizmo* findGizmoUnderCursor(const Point& point, CursorType& outCursor) const;
     GizmoRenderMode determineRenderMode(const IGizmo* gizmo) const;
 
     void alignGizmos();

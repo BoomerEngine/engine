@@ -32,28 +32,28 @@ namespace ImGui
 		m_context->IO.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		m_context->IO.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
-		m_context->IO.KeyMap[ImGuiKey_Tab] = (int)boomer::input::KeyCode::KEY_TAB;
-		m_context->IO.KeyMap[ImGuiKey_LeftArrow] = (int)boomer::input::KeyCode::KEY_LEFT;
-		m_context->IO.KeyMap[ImGuiKey_RightArrow] = (int)boomer::input::KeyCode::KEY_RIGHT;
-		m_context->IO.KeyMap[ImGuiKey_UpArrow] = (int)boomer::input::KeyCode::KEY_UP;
-		m_context->IO.KeyMap[ImGuiKey_DownArrow] = (int)boomer::input::KeyCode::KEY_DOWN;
-		m_context->IO.KeyMap[ImGuiKey_PageUp] = (int)boomer::input::KeyCode::KEY_PRIOR;
-		m_context->IO.KeyMap[ImGuiKey_PageDown] = (int)boomer::input::KeyCode::KEY_NEXT;
-		m_context->IO.KeyMap[ImGuiKey_Home] = (int)boomer::input::KeyCode::KEY_HOME;
-		m_context->IO.KeyMap[ImGuiKey_End] = (int)boomer::input::KeyCode::KEY_END;
-		m_context->IO.KeyMap[ImGuiKey_Insert] = (int)boomer::input::KeyCode::KEY_INSERT;
-		m_context->IO.KeyMap[ImGuiKey_Delete] = (int)boomer::input::KeyCode::KEY_DELETE;
-		m_context->IO.KeyMap[ImGuiKey_Backspace] = (int)boomer::input::KeyCode::KEY_BACK;
-		m_context->IO.KeyMap[ImGuiKey_Space] = (int)boomer::input::KeyCode::KEY_SPACE;
-		m_context->IO.KeyMap[ImGuiKey_Enter] = (int)boomer::input::KeyCode::KEY_RETURN;
-		m_context->IO.KeyMap[ImGuiKey_Escape] = (int)boomer::input::KeyCode::KEY_ESCAPE;
-		m_context->IO.KeyMap[ImGuiKey_KeyPadEnter] = (int)boomer::input::KeyCode::KEY_NAVIGATION_ACCEPT;
-		m_context->IO.KeyMap[ImGuiKey_A] = (int)boomer::input::KeyCode::KEY_A;
-		m_context->IO.KeyMap[ImGuiKey_C] = (int)boomer::input::KeyCode::KEY_C;
-		m_context->IO.KeyMap[ImGuiKey_V] = (int)boomer::input::KeyCode::KEY_V;
-		m_context->IO.KeyMap[ImGuiKey_X] = (int)boomer::input::KeyCode::KEY_X;
-		m_context->IO.KeyMap[ImGuiKey_Y] = (int)boomer::input::KeyCode::KEY_Y;
-		m_context->IO.KeyMap[ImGuiKey_Z] = (int)boomer::input::KeyCode::KEY_Z;
+		m_context->IO.KeyMap[ImGuiKey_Tab] = (int)boomer::InputKey::KEY_TAB;
+		m_context->IO.KeyMap[ImGuiKey_LeftArrow] = (int)boomer::InputKey::KEY_LEFT;
+		m_context->IO.KeyMap[ImGuiKey_RightArrow] = (int)boomer::InputKey::KEY_RIGHT;
+		m_context->IO.KeyMap[ImGuiKey_UpArrow] = (int)boomer::InputKey::KEY_UP;
+		m_context->IO.KeyMap[ImGuiKey_DownArrow] = (int)boomer::InputKey::KEY_DOWN;
+		m_context->IO.KeyMap[ImGuiKey_PageUp] = (int)boomer::InputKey::KEY_PRIOR;
+		m_context->IO.KeyMap[ImGuiKey_PageDown] = (int)boomer::InputKey::KEY_NEXT;
+		m_context->IO.KeyMap[ImGuiKey_Home] = (int)boomer::InputKey::KEY_HOME;
+		m_context->IO.KeyMap[ImGuiKey_End] = (int)boomer::InputKey::KEY_END;
+		m_context->IO.KeyMap[ImGuiKey_Insert] = (int)boomer::InputKey::KEY_INSERT;
+		m_context->IO.KeyMap[ImGuiKey_Delete] = (int)boomer::InputKey::KEY_DELETE;
+		m_context->IO.KeyMap[ImGuiKey_Backspace] = (int)boomer::InputKey::KEY_BACK;
+		m_context->IO.KeyMap[ImGuiKey_Space] = (int)boomer::InputKey::KEY_SPACE;
+		m_context->IO.KeyMap[ImGuiKey_Enter] = (int)boomer::InputKey::KEY_RETURN;
+		m_context->IO.KeyMap[ImGuiKey_Escape] = (int)boomer::InputKey::KEY_ESCAPE;
+		m_context->IO.KeyMap[ImGuiKey_KeyPadEnter] = (int)boomer::InputKey::KEY_NAVIGATION_ACCEPT;
+		m_context->IO.KeyMap[ImGuiKey_A] = (int)boomer::InputKey::KEY_A;
+		m_context->IO.KeyMap[ImGuiKey_C] = (int)boomer::InputKey::KEY_C;
+		m_context->IO.KeyMap[ImGuiKey_V] = (int)boomer::InputKey::KEY_V;
+		m_context->IO.KeyMap[ImGuiKey_X] = (int)boomer::InputKey::KEY_X;
+		m_context->IO.KeyMap[ImGuiKey_Y] = (int)boomer::InputKey::KEY_Y;
+		m_context->IO.KeyMap[ImGuiKey_Z] = (int)boomer::InputKey::KEY_Z;
 
 		/*ImVec4* colors = m_context->Style.Colors;
 		colors[ImGuiCol_WindowBg] = ImVec4(0.24f, 0.25f, 0.25f, 1.00f);
@@ -92,7 +92,7 @@ namespace ImGui
 		m_atlas.reset();
 	}
 
-	bool ImGUICanvasHelper::processInput(const boomer::input::BaseEvent& evt)
+	bool ImGUICanvasHelper::processInput(const boomer::InputEvent& evt)
 	{
 		auto& io = m_context->IO;
 		if (const auto* keyEvent = evt.toKeyEvent())
@@ -132,20 +132,20 @@ namespace ImGui
 			int index = -1;
 			switch (mouseClick->keyCode())
 			{
-			case boomer::input::KeyCode::KEY_MOUSE0: index = 0; break;
-			case boomer::input::KeyCode::KEY_MOUSE1: index = 1; break;
-			case boomer::input::KeyCode::KEY_MOUSE2: index = 2; break;
-			case boomer::input::KeyCode::KEY_MOUSE3: index = 3; break;
-			case boomer::input::KeyCode::KEY_MOUSE4: index = 4; break;
+			case boomer::InputKey::KEY_MOUSE0: index = 0; break;
+			case boomer::InputKey::KEY_MOUSE1: index = 1; break;
+			case boomer::InputKey::KEY_MOUSE2: index = 2; break;
+			case boomer::InputKey::KEY_MOUSE3: index = 3; break;
+			case boomer::InputKey::KEY_MOUSE4: index = 4; break;
 			}
 
 			if (index != -1)
 			{
-				if (mouseClick->type() == boomer::input::MouseEventType::DoubleClick || mouseClick->type() == boomer::input::MouseEventType::Click)
+				if (mouseClick->type() == boomer::MouseEventType::DoubleClick || mouseClick->type() == boomer::MouseEventType::Click)
 				{
 					io.MouseDown[index] = true;
 				}
-				else if (mouseClick->type() == boomer::input::MouseEventType::Release)
+				else if (mouseClick->type() == boomer::MouseEventType::Release)
 				{
 					io.MouseDown[index] = false;
 				}
@@ -415,20 +415,20 @@ namespace ImGui
 	}
 #endif
 
-	bool IsKeyDown(const boomer::input::KeyCode code)
+	bool IsKeyDown(const boomer::InputKey code)
 	{
 		return IsKeyDown((int)code);
 	}
 
-	bool IsKeyPressed(const boomer::input::KeyCode code, bool ctrl /*= false*/, bool shift /*= false*/, bool alt /*= false*/)
+	bool IsKeyPressed(const boomer::InputKey code, bool ctrl /*= false*/, bool shift /*= false*/, bool alt /*= false*/)
 	{
 		if (IsKeyPressed((int)code))
 		{
-			if (ctrl && !IsKeyDown(boomer::input::KeyCode::KEY_LEFT_CTRL))
+			if (ctrl && !IsKeyDown(boomer::InputKey::KEY_LEFT_CTRL))
 				return false;
-			if (shift && !IsKeyDown(boomer::input::KeyCode::KEY_LEFT_SHIFT))
+			if (shift && !IsKeyDown(boomer::InputKey::KEY_LEFT_SHIFT))
 				return false;
-			if (alt && !IsKeyDown(boomer::input::KeyCode::KEY_LEFT_ALT))
+			if (alt && !IsKeyDown(boomer::InputKey::KEY_LEFT_ALT))
 				return false;
 
 			return true;
@@ -437,7 +437,7 @@ namespace ImGui
 		return false;
 	}
 
-	bool IsKeyReleased(const boomer::input::KeyCode code)
+	bool IsKeyReleased(const boomer::InputKey code)
 	{
 		return IsKeyReleased((int)code);
 	}

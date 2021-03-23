@@ -144,7 +144,7 @@ void Scrollbar::computeSize(Size& outSize) const
     }
 }
 
-InputActionPtr Scrollbar::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr Scrollbar::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftClicked() && isEnabled())
     {
@@ -169,7 +169,7 @@ void Scrollbar::handleEnableStateChange(bool isEnabled)
         m_forwardButton->enable(isEnabled);
 }
 
-bool Scrollbar::handleMouseWheel(const input::MouseMovementEvent &evt, float delta)
+bool Scrollbar::handleMouseWheel(const InputMouseMovementEvent &evt, float delta)
 {
     auto oldPos = scrollPosition();
 
@@ -263,7 +263,7 @@ class ScrollbarThumbInputAction : public MouseInputAction
 {
 public:
     ScrollbarThumbInputAction(ScrollbarThumb* thumb, const ElementArea& thumbArea, const Position& originalClickPosition)
-        : MouseInputAction(thumb, input::KeyCode::KEY_MOUSE0)
+        : MouseInputAction(thumb, InputKey::KEY_MOUSE0)
         , m_thumb(thumb)
         , m_thumbInitialArea(thumbArea)
         , m_originalClickPosition(originalClickPosition)
@@ -332,7 +332,7 @@ public:
         return m_originalScrollPosition; 
     }
 
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
     {
         if (auto bar = m_thumb.lock())
         {
@@ -377,7 +377,7 @@ void ScrollbarThumb::dragging(bool flag)
     }
 }
 
-InputActionPtr ScrollbarThumb::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr ScrollbarThumb::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftClicked() && m_scrollbar->isEnabled())
     {

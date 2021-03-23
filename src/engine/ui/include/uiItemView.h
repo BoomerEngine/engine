@@ -327,15 +327,15 @@ protected:
 
     // IElement
     virtual void handleFocusGained() override;
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
-    virtual InputActionPtr handleOverlayMouseClick(const ElementArea &area, const input::MouseClickEvent &evt) override;
-    virtual bool handleContextMenu(const ElementArea &area, const Position &absolutePosition, input::KeyMask controlKeys) override final;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
+    virtual InputActionPtr handleOverlayMouseClick(const ElementArea &area, const InputMouseClickEvent &evt) override;
+    virtual bool handleContextMenu(const ElementArea &area, const Position &absolutePosition, InputKeyMask controlKeys) override final;
     virtual ElementPtr queryTooltipElement(const Position& absolutePosition, ElementArea& outArea) const override;
-    virtual DragDropDataPtr queryDragDropData(const input::BaseKeyFlags& keys, const Position& position) const override;
+    virtual DragDropDataPtr queryDragDropData(const BaseKeyFlags& keys, const Position& position) const override;
     virtual DragDropHandlerPtr handleDragDrop(const DragDropDataPtr& data, const Position& entryPosition) override;
     virtual void handleDragDropGenericCompletion(const DragDropDataPtr& data, const Position& entryPosition) override;
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
-    virtual bool handleCharEvent(const input::CharEvent& evt) override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
+    virtual bool handleCharEvent(const InputCharEvent& evt) override;
 
     // IAbstractItemModelObserver
     virtual void modelItemUpdate(const ModelIndex& index, ItemUpdateMode mode) override;

@@ -21,46 +21,46 @@ enum class InputActionType : uint8_t
 };
 
 /// input action
-struct GAME_COMMON_API InputAction
+struct GAME_COMMON_API GameInputAction
 {
-    RTTI_DECLARE_NONVIRTUAL_CLASS(InputAction);
+    RTTI_DECLARE_NONVIRTUAL_CLASS(GameInputAction);
 
 public:
     StringID name;
     InputActionType type = InputActionType::Button;
     bool invert = false;
 
-    input::KeyCode defaultKey = input::KeyCode::KEY_MAX; // default binding for key
-    input::AxisCode defaultAxis = input::AxisCode::AXIS_MAX; // default binding for axis
+    InputKey defaultKey = InputKey::KEY_MAX; // default binding for key
+    InputAxis defaultAxis = InputAxis::AXIS_MAX; // default binding for axis
 
     StringBuf mappingName; // name of this action in user mapping, only if mappable
     StringBuf mappingGroup; // group for user mapping (ie. Driving, Movement, etc)
 
-    InputAction();
+    GameInputAction();
 };
 
 //---
 
 /// table of input actions that are to be used together
-class GAME_COMMON_API InputActionTable : public IObject
+class GAME_COMMON_API GameInputActionTable : public IObject
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(InputActionTable, IObject);
+    RTTI_DECLARE_VIRTUAL_CLASS(GameInputActionTable, IObject);
 
 public:
-    InputActionTable();
+    GameInputActionTable();
 
     // name of the context
     INLINE const StringID& name() const { return m_name; }
 
     // actions
-    INLINE const Array<InputAction>& actions() const { return m_actions; }
+    INLINE const Array<GameInputAction>& actions() const { return m_actions; }
 
     // child contexts
     INLINE const Array<InputActionTablePtr>& children() const { return m_children; }
 
 private:
     StringID m_name;
-    Array<InputAction> m_actions;
+    Array<GameInputAction> m_actions;
     Array<InputActionTablePtr> m_children;
 };
 

@@ -115,7 +115,7 @@ void DataInspectorNavigationItem::createChildren(Array<RefPtr<DataInspectorNavig
 
 }
 
-InputActionPtr DataInspectorNavigationItem::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr DataInspectorNavigationItem::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftDoubleClicked() && expandable())
     {

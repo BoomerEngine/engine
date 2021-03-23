@@ -39,15 +39,15 @@ bool WorldRenderingSystem::handleInitialize(World& scene)
     switch (scene.type())
     {
     case WorldType::SimplePreview:
-        m_scene = RefNew<rendering::Scene>(rendering::SceneType::EditorPreview);
+        m_scene = RefNew<rendering::RenderingScene>(rendering::RenderingSceneType::EditorPreview);
         break;
 
     case WorldType::EditorPreview:
-        m_scene = RefNew<rendering::Scene>(rendering::SceneType::EditorGame);
+        m_scene = RefNew<rendering::RenderingScene>(rendering::RenderingSceneType::EditorGame);
         break;
 
     default:
-        m_scene = RefNew<rendering::Scene>(rendering::SceneType::Game);
+        m_scene = RefNew<rendering::RenderingScene>(rendering::RenderingSceneType::Game);
         break;
     }
 

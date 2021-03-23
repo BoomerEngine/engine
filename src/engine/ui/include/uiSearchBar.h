@@ -81,9 +81,9 @@ private:
     bool m_blockExternalKeyPropagation = false;
     bool m_externalEventReceived = false;
 
-    virtual bool handleExternalKeyEvent(const input::KeyEvent& evt) override;
-    virtual bool handleExternalCharEvent(const input::CharEvent& evt) override;
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
+    virtual bool handleExternalKeyEvent(const InputKeyEvent& evt) override;
+    virtual bool handleExternalCharEvent(const InputCharEvent& evt) override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
 
     virtual IElement* focusFindFirst() override;
 };

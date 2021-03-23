@@ -876,9 +876,9 @@ void VirtualArea::stepZoom(int delta, Position pos)
     setZoom(zoom, pos);
 }
 
-bool VirtualArea::handleKeyEvent(const input::KeyEvent& evt)
+bool VirtualArea::handleKeyEvent(const InputKeyEvent& evt)
 {
-    if (evt.pressedOrRepeated() && evt.keyCode() == input::KeyCode::KEY_HOME)
+    if (evt.pressedOrRepeated() && evt.keyCode() == InputKey::KEY_HOME)
     {
         zoomToFit();
         return true;
@@ -887,7 +887,7 @@ bool VirtualArea::handleKeyEvent(const input::KeyEvent& evt)
     return TBaseClass::handleKeyEvent(evt);
 }
 
-bool VirtualArea::handleMouseWheel(const input::MouseMovementEvent& evt, float delta)
+bool VirtualArea::handleMouseWheel(const InputMouseMovementEvent& evt, float delta)
 {
     auto pos = evt.absolutePosition().toVector() - cachedDrawArea().absolutePosition();
 
@@ -903,12 +903,12 @@ class VirtualAreaBackgroundScroll : public MouseInputAction
 {
 public:
     VirtualAreaBackgroundScroll(VirtualArea* area)
-        : MouseInputAction(area, input::KeyCode::KEY_MOUSE1)
+        : MouseInputAction(area, InputKey::KEY_MOUSE1)
         , m_area(area)
     {
     }
 
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override
     {
         auto offset = m_area->viewOffset();
 
@@ -927,7 +927,7 @@ protected:
 };
 
 
-InputActionPtr VirtualArea::handleOverlayMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr VirtualArea::handleOverlayMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftClicked())
     {
@@ -958,7 +958,7 @@ class VirtualAreaRectSelector : public MouseInputAction
 {
 public:
     VirtualAreaRectSelector(VirtualArea* area, const Point& initialPoint, bool shiftKey, bool ctrlKey, Color selectionColor)
-        : MouseInputAction(area, input::KeyCode::KEY_MOUSE0)
+        : MouseInputAction(area, InputKey::KEY_MOUSE0)
         , m_lastAbsolutePoint(initialPoint)
         , m_selectionColor(selectionColor)
         , m_area(area)
@@ -1026,7 +1026,7 @@ public:
         }
     }
 
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override
     {
         m_shiftKey = evt.keyMask().isShiftDown();
         m_ctrlKey = evt.keyMask().isCtrlDown();
@@ -1055,7 +1055,7 @@ class VirtualAreaMoveSelectedBlocks : public MouseInputAction
 {
 public:
     VirtualAreaMoveSelectedBlocks(VirtualArea* area, const Point& initialPoint)
-        : MouseInputAction(area, input::KeyCode::KEY_MOUSE0)
+        : MouseInputAction(area, InputKey::KEY_MOUSE0)
         , m_lastAbsolutePoint(initialPoint)
         , m_area(area)
     {
@@ -1084,7 +1084,7 @@ public:
         return InputActionResult();
     }
 
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override
     {
         m_lastAbsolutePoint = evt.absolutePosition();
         m_currentVirtualPos = m_area->absoluteToVirtual(evt.absolutePosition());
@@ -1109,7 +1109,7 @@ protected:
 };
 //--
 
-InputActionPtr VirtualArea::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr VirtualArea::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.rightClicked())
         return RefNew<VirtualAreaBackgroundScroll>(this);

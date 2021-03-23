@@ -250,13 +250,13 @@ private:
     void prepare(DataStash& stash, float nativePixelScale, bool initial=false, bool forceUpdate=false);
     void render(canvas::Canvas& canvas, HitCache& hitCache, DataStash& stash, const ElementArea& nativeArea);
 
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
-    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const override;
-    virtual bool handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, input::AreaType& outAreaType) const override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
+    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const override;
+    virtual bool handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, AreaType& outAreaType) const override;
     virtual void prepareBackgroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const override;
     virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
 
-    bool handleWindowFrameArea(const ElementArea& area, const Position& absolutePosition, input::AreaType& outAreaType) const;
+    bool handleWindowFrameArea(const ElementArea& area, const Position& absolutePosition, AreaType& outAreaType) const;
     static int QuerySizeCode(const ElementArea& area, const Position& absolutePosition);
 
     void applySavedPlacement(const WindowSavedPlacementSetup& placement);

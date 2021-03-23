@@ -84,7 +84,7 @@ StringBuf GraphBlockPaletteTreeModel::displayContent(const GraphBlockPaletteEntr
     return data.displayText;
 }
 
-DragDropDataPtr GraphBlockPaletteTreeModel::queryDragDropData(const input::BaseKeyFlags& keys, const ModelIndex& item)
+DragDropDataPtr GraphBlockPaletteTreeModel::queryDragDropData(const BaseKeyFlags& keys, const ModelIndex& item)
 {
     if (const auto data = dataPtrForNode(item))
     {

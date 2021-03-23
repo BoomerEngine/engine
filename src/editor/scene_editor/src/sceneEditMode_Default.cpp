@@ -567,12 +567,12 @@ void SceneEditMode_Default::handleRender(ScenePreviewPanel* panel, rendering::Fr
     renderDragDrop(panel, frame);
 }
 
-ui::InputActionPtr SceneEditMode_Default::handleMouseClick(ScenePreviewPanel* panel, const input::MouseClickEvent& evt)
+ui::InputActionPtr SceneEditMode_Default::handleMouseClick(ScenePreviewPanel* panel, const InputMouseClickEvent& evt)
 {
     return nullptr;
 }
 
-bool SceneEditMode_Default::handleKeyEvent(ScenePreviewPanel* panel, const input::KeyEvent& evt)
+bool SceneEditMode_Default::handleKeyEvent(ScenePreviewPanel* panel, const InputKeyEvent& evt)
 {
     if (evt.pressed())
     {

@@ -9,26 +9,26 @@
 #include "build.h"
 #include "inputContextNull.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
-RTTI_BEGIN_TYPE_NATIVE_CLASS(ContextNull);
+RTTI_BEGIN_TYPE_NATIVE_CLASS(InputContextNull);
 RTTI_END_TYPE();
 
-ContextNull::ContextNull(uint64_t nativeWindow, uint64_t nativeDisplay)
+InputContextNull::InputContextNull(uint64_t nativeWindow, uint64_t nativeDisplay)
 {
 }
 
-void ContextNull::processState()
+void InputContextNull::processState()
 {}
 
-void ContextNull::resetInput()
+void InputContextNull::resetInput()
 {}
 
-void ContextNull::processMessage(const void* msg)
+void InputContextNull::processMessage(const void* msg)
 {}
 
 //--
 
-END_BOOMER_NAMESPACE_EX(input)
+END_BOOMER_NAMESPACE()

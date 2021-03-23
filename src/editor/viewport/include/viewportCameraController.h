@@ -72,7 +72,7 @@ public:
     ///---
 
     /// process mouse wheel
-    void processMouseWheel(const input::MouseMovementEvent& evt, float delta);
+    void processMouseWheel(const InputMouseMovementEvent& evt, float delta);
 
     /// process mouse event
     InputActionPtr handleGeneralFly(IElement* owner, uint8_t button, float sensitivity = 1.0f);

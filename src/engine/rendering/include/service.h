@@ -36,7 +36,7 @@ public:
     //--
 
     /// render given scene
-    gpu::CommandBuffer* render(const FrameParams& frame, const gpu::AcquiredOutput& output, Scene* scene, FrameStats& outStats);
+    gpu::CommandBuffer* render(const FrameParams& frame, const gpu::AcquiredOutput& output, RenderingScene* scene, FrameStats& outStats);
 
     //--
 

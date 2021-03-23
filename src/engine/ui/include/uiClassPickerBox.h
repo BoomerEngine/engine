@@ -52,7 +52,7 @@ private:
     bool m_allowNull;
     bool m_hasButtons;
 
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
     void closeWithType(ClassType value);
     void closeIfValidTypeSelected();
 };

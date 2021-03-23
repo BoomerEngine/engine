@@ -8,19 +8,19 @@
 
 #include "core_input_glue.inl"
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
 
-class IContext;
-typedef RefPtr<IContext> ContextPtr;
+class IInputContext;
+typedef RefPtr<IInputContext> ContextPtr;
 
-class BaseEvent;
-typedef RefPtr<BaseEvent> EventPtr;
+class InputEvent;
+typedef RefPtr<InputEvent> EventPtr;
 
 class EventBuffer;
 
-enum class EventType : uint8_t;
-enum class KeyCode : uint8_t;
-enum class AxisCode : uint8_t;
+enum class InputEventType : uint8_t;
+enum class InputKey : uint8_t;
+enum class InputAxis : uint8_t;
 
 enum class MouseEventType : uint8_t
 {
@@ -29,7 +29,7 @@ enum class MouseEventType : uint8_t
     Release,
 };
 
-enum class DeviceType : uint8_t
+enum class InputDeviceType : uint8_t
 {
     Invalid,
     Unknown,
@@ -84,22 +84,22 @@ enum class AreaType : uint8_t
     SysMenu, // In a window menu or in a Close button in a child window.
 };
 
-typedef uint8_t DeviceID;
+typedef uint8_t InputDeviceID;
 typedef wchar_t KeyScanCode;
 typedef uint8_t MouseButtonIndex;
 
-class IDevice;
+class IInputDevicve;
 class IGenericKeyboard;
 class IGenericMouse;
 class IGenericPad;
 
-class KeyEvent;
-class CharEvent;
-class AxisEvent;
-class MouseClickEvent;
-class MouseMovementEvent;
-class MouseCaptureLostEvent;
-class DragDropEvent;
+class InputKeyEvent;
+class InputCharEvent;
+class InputAxisEvent;
+class InputMouseClickEvent;
+class InputMouseMovementEvent;
+class InputMouseCaptureLostEvent;
+class InputDragDropEvent;
 
 class ISystem;
 typedef RefPtr<ISystem> SystemPtr;
@@ -109,11 +109,11 @@ typedef RefPtr<ISystem> SystemPtr;
 //--
 
 // is key down
-extern CORE_INPUT_API bool CheckInputKeyState(KeyCode key);
+extern CORE_INPUT_API bool CheckInputKeyState(InputKey key);
 
 // was key pressed (resets only when key is released)
-extern CORE_INPUT_API bool CheckInputKeyPressed(KeyCode key);
+extern CORE_INPUT_API bool CheckInputKeyPressed(InputKey key);
 
 //--
 
-END_BOOMER_NAMESPACE_EX(input)
+END_BOOMER_NAMESPACE()

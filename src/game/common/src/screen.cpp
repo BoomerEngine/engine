@@ -76,7 +76,7 @@ void IGameScreen::handleUpdate(double dt)
 
 }
 
-bool IGameScreen::handleInput(const input::BaseEvent& evt)
+bool IGameScreen::handleInput(const InputEvent& evt)
 {
     return false;
 }

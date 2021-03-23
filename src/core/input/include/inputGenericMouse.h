@@ -12,7 +12,7 @@
 #include "inputStructures.h"
 #include "core/containers/include/bitUtils.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
 
 class GenericKeyboard;
 
@@ -20,7 +20,7 @@ class GenericKeyboard;
 class CORE_INPUT_API GenericMouse : public NoCopy
 {
 public:
-    GenericMouse(IContext* context, GenericKeyboard* keyboard, DeviceID id=0);
+    GenericMouse(IInputContext* context, GenericKeyboard* keyboard, InputDeviceID id=0);
 
     // reset state
     void reset(bool postReleaseEvents);
@@ -38,13 +38,13 @@ public:
     void mouseMovement(const Point& windowPoint, const Point& absolutePoint, const Vector3& delta, bool captured);
 
     // get the mouse key mask
-    KeyMask currentKeyMask() const; // get the current SHIFT/CTRL/ALT key mask
+    InputKeyMask currentKeyMask() const; // get the current SHIFT/CTRL/ALT key mask
 
 private:
     static const uint32_t MAX_MOUSE_KEYS = 16;
     static const uint32_t MAX_AXIS = 32;
 
-    KeyCode m_mouseKeyMapping[MAX_MOUSE_KEYS];
+    InputKey m_mouseKeyMapping[MAX_MOUSE_KEYS];
 	BitWord m_mouseButtonKeys = 0;
 
 	BitWord m_movementAxisPerturbed = 0;
@@ -54,13 +54,13 @@ private:
     Point m_lastEventWindowPoint;
     Point m_lastEventAbsolutePoint;
     Point m_lastClickEventAbsolutePoint;
-    KeyMask m_lastEventKeyMask;
+    InputKeyMask m_lastEventKeyMask;
     bool m_lastClickWasDoubleClick;
     bool m_lastMouseMoveValid;
     bool m_hasMouseMovement;
 
-    IContext* m_context;
-    DeviceID m_id;
+    IInputContext* m_context;
+    InputDeviceID m_id;
 
     GenericKeyboard* m_keyboard;
 
@@ -70,4 +70,4 @@ private:
     //---
 };
 
-END_BOOMER_NAMESPACE_EX(input)
+END_BOOMER_NAMESPACE()

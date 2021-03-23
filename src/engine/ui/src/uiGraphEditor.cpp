@@ -161,7 +161,7 @@ void GraphEditor::handleBlockConnectionsChanged(graph::Block* block)
 
 }
 
-bool GraphEditor::handleMouseMovement(const input::MouseMovementEvent& evt)
+bool GraphEditor::handleMouseMovement(const InputMouseMovementEvent& evt)
 {
     refreshHoverFromPosition(evt.absolutePosition().toVector());
     return TBaseClass::handleMouseMovement(evt);
@@ -281,7 +281,7 @@ namespace prv
     {
     public:
         GraphCreateConnectionInputAction(GraphEditor* editor, RefWeakPtr<graph::Socket> sourceSocket, const Point& initialPoint)
-            : MouseInputAction(editor, input::KeyCode::KEY_MOUSE0)
+            : MouseInputAction(editor, InputKey::KEY_MOUSE0)
             , m_lastAbsolutePoint(initialPoint)
             , m_sourceSocket(sourceSocket)
             , m_editor(editor)
@@ -299,22 +299,22 @@ namespace prv
             }
         }
 
-        virtual void onUpdateCursor(input::CursorType& outCursorType) override
+        virtual void onUpdateCursor(CursorType& outCursorType) override
         {
             if (auto target = m_foundTargetSocket.lock())
             {
                 if (m_foundTargetSocketValid)
-                    outCursorType = input::CursorType::Hand;
+                    outCursorType = CursorType::Hand;
                 else
-                    outCursorType = input::CursorType::No;
+                    outCursorType = CursorType::No;
             }
             else
             {
-                outCursorType = input::CursorType::Default;
+                outCursorType = CursorType::Default;
             }
         }
 
-        virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override
+        virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override
         {
             m_lastAbsolutePoint = evt.absolutePosition();
             updateHoverSocket();
@@ -403,7 +403,7 @@ namespace prv
 
 } // prv
 
-InputActionPtr GraphEditor::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr GraphEditor::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftClicked())
         if (m_hoverBlock && m_hoverSocket)
@@ -412,7 +412,7 @@ InputActionPtr GraphEditor::handleMouseClick(const ElementArea& area, const inpu
     return TBaseClass::handleMouseClick(area, evt);
 }
 
-InputActionPtr GraphEditor::handleOverlayMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr GraphEditor::handleOverlayMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (m_hoverBlock && m_hoverSocket)
         return InputActionPtr();
@@ -420,13 +420,13 @@ InputActionPtr GraphEditor::handleOverlayMouseClick(const ElementArea& area, con
     return TBaseClass::handleOverlayMouseClick(area, evt);
 }
 
-bool GraphEditor::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const
+bool GraphEditor::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const
 {
     if (auto socket = m_hoverSocket.lock())
     {
         if (socket->info().m_canInitializeConnections)
         {
-            outCursorType = input::CursorType::Hand;
+            outCursorType = CursorType::Hand;
             return true;
         }
     }
@@ -434,7 +434,7 @@ bool GraphEditor::handleCursorQuery(const ElementArea& area, const Position& abs
     return TBaseClass::handleCursorQuery(area, absolutePosition, outCursorType);
 }
 
-bool GraphEditor::handleContextMenu(const ElementArea& area, const Position& absolutePosition, input::KeyMask controlKeys)
+bool GraphEditor::handleContextMenu(const ElementArea& area, const Position& absolutePosition, InputKeyMask controlKeys)
 {
     auto buttons = RefNew<MenuButtonContainer>();
 

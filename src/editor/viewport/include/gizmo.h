@@ -64,7 +64,7 @@ public:
     virtual void transfom(const GizmoReferenceSpace& space, float scaleFactor) = 0;
 
     /// check collision with this gizmo, uses the captured viewport interface
-    virtual bool hitTest(Point point, float& outMinHitDistance, const ui::ViewportCameraSetup& viewport, input::CursorType& outCursor) = 0;
+    virtual bool hitTest(Point point, float& outMinHitDistance, const ui::ViewportCameraSetup& viewport, CursorType& outCursor) = 0;
 
     /// render this gizmo in the given frame, usually uses the debug rendering functionality
     virtual void render(rendering::FrameParams& frame, GizmoRenderMode mode) = 0;

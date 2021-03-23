@@ -24,7 +24,7 @@ public:
     WindowTitleBar(WindowFeatureFlags flags, StringView title);
 
 private:
-    virtual bool handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, input::AreaType& outAreaType) const override final;
+    virtual bool handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, AreaType& outAreaType) const override final;
 
     ButtonPtr m_minimizeButton;
     ButtonPtr m_maximizeButton;

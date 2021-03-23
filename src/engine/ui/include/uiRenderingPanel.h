@@ -58,8 +58,8 @@ public:
 protected:
     virtual void handleHoverEnter(const Position& pos) override;
     virtual void handleHoverLeave(const Position& pos) override;
-    virtual bool handleMouseMovement(const input::MouseMovementEvent& evt) override;
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
+    virtual bool handleMouseMovement(const InputMouseMovementEvent& evt) override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
 
     bool calculateCurrentPixelUnderCursor(Point& outPixel) const;
 

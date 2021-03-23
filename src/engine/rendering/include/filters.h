@@ -66,18 +66,18 @@ enum class FrameFilterBit : uint16_t
     MAX,
 };
 
-struct ENGINE_RENDERING_API FilterFlags
+struct ENGINE_RENDERING_API FrameFilterFlags
 {
-    FilterFlags();
-    FilterFlags(const FilterFlags& other);
-    FilterFlags(FilterFlags&& other);
-    FilterFlags& operator=(const FilterFlags& other);
-    FilterFlags& operator=(FilterFlags&& other);
+    FrameFilterFlags();
+    FrameFilterFlags(const FrameFilterFlags& other);
+    FrameFilterFlags(FrameFilterFlags&& other);
+    FrameFilterFlags& operator=(const FrameFilterFlags& other);
+    FrameFilterFlags& operator=(FrameFilterFlags&& other);
 
-    static const FilterFlags& DefaultGame();
-    static const FilterFlags& DefaultEditor();
+    static const FrameFilterFlags& DefaultGame();
+    static const FrameFilterFlags& DefaultEditor();
 
-    INLINE FilterFlags& operator+=(FrameFilterBit bit)
+    INLINE FrameFilterFlags& operator+=(FrameFilterBit bit)
     {
         auto wordIndex = (int)bit / 64;
         auto bitIndex = (int)bit % 64;
@@ -85,12 +85,12 @@ struct ENGINE_RENDERING_API FilterFlags
         return *this;
     }
 
-    INLINE FilterFlags& operator|=(FrameFilterBit bit)
+    INLINE FrameFilterFlags& operator|=(FrameFilterBit bit)
     {
         return *this += bit;
     }
 
-    INLINE FilterFlags& operator-=(FrameFilterBit bit)
+    INLINE FrameFilterFlags& operator-=(FrameFilterBit bit)
     {
         auto wordIndex = (int)bit / 64;
         auto bitIndex = (int)bit % 64;
@@ -98,7 +98,7 @@ struct ENGINE_RENDERING_API FilterFlags
         return *this;
     }
 
-    INLINE FilterFlags& operator^=(FrameFilterBit bit)
+    INLINE FrameFilterFlags& operator^=(FrameFilterBit bit)
     {
         auto wordIndex = (int)bit / 64;
         auto bitIndex = (int)bit % 64;
@@ -133,18 +133,18 @@ private:
 
 ///---
 
-struct FilterBitInfo : public NoCopy
+struct FrameFilterBitInfo : public NoCopy
 {
     RTTI_DECLARE_POOL(POOL_RENDERING_FRAME)
 
 public:
     StringID name;
-    Array<const FilterBitInfo*> children;
+    Array<const FrameFilterBitInfo*> children;
     FrameFilterBit bit; // may not be set
 };
 
 // get extra info about a filter bit
-extern ENGINE_RENDERING_API const FilterBitInfo* GetFilterTree();
+extern ENGINE_RENDERING_API const FrameFilterBitInfo* GetFilterTree();
 
 //---
 

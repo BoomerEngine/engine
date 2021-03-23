@@ -226,7 +226,7 @@ public:
 
     //--
 
-    virtual ui::DragDropDataPtr queryDragDropData(const input::BaseKeyFlags& keys, const ui::Position& position) const override
+    virtual ui::DragDropDataPtr queryDragDropData(const BaseKeyFlags& keys, const ui::Position& position) const override
     {
         if (m_depotPath)
             return RefNew<ed::AssetBrowserFileDragDrop>(m_depotPath);

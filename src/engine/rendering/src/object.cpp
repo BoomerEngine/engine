@@ -13,21 +13,21 @@ BEGIN_BOOMER_NAMESPACE_EX(rendering)
 
 //---
 
-RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IObjectProxy);
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IRenderingObject);
 RTTI_END_TYPE();
 
-IObjectProxy::~IObjectProxy()
+IRenderingObject::~IRenderingObject()
 {}
 
 //---
 
-RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IObjectManager);
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(IRenderingObjectManager);
 RTTI_END_TYPE();
 
-IObjectManager::~IObjectManager()
+IRenderingObjectManager::~IRenderingObjectManager()
 {}
 
-void IObjectManager::renderLock()
+void IRenderingObjectManager::renderLock()
 {
     auto lock = CreateLock(m_commandLock);
 
@@ -35,7 +35,7 @@ void IObjectManager::renderLock()
     m_locked = true;
 }
 
-void IObjectManager::renderUnlock()
+void IRenderingObjectManager::renderUnlock()
 {
     auto lock = CreateLock(m_commandLock);
 
@@ -50,7 +50,7 @@ void IObjectManager::renderUnlock()
     }
 }
 
-void IObjectManager::runNowOrBuffer(std::function<void(void)> func)
+void IRenderingObjectManager::runNowOrBuffer(std::function<void(void)> func)
 {
     auto lock = CreateLock(m_commandLock);
 

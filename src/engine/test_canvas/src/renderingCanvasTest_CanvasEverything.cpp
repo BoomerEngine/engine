@@ -675,7 +675,7 @@ public:
     virtual void initialize() override;
 	virtual void shutdown() override;
     virtual void render(canvas::Canvas& canvas) override;
-    virtual void processInput(const input::BaseEvent& evt) override;
+    virtual void processInput(const InputEvent& evt) override;
 
 private:
 	RefPtr<canvas::DynamicAtlas> m_atlas;
@@ -712,7 +712,7 @@ void SceneTest_CanvasEverything::shutdown()
 	m_atlas.reset();
 }
 
-void SceneTest_CanvasEverything::processInput(const input::BaseEvent& evt)
+void SceneTest_CanvasEverything::processInput(const InputEvent& evt)
 {
     if (auto moveEvent  = evt.toMouseMoveEvent())
     {

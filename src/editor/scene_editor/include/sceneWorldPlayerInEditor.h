@@ -43,10 +43,10 @@ protected:
 
     virtual void handleCamera(CameraSetup& outCamera) const override;
     virtual void handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& camera, const rendering::FrameParams_Capture* capture) override;
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
-    virtual ui::InputActionPtr handleMouseClick(const ui::ElementArea& area, const input::MouseClickEvent& evt) override;
-    //virtual bool handleAxisEvent(const input::AxisEvent& evt) override;
-    //virtual bool handleMouseMovement(const input::MouseMovementEvent& evt) override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
+    virtual ui::InputActionPtr handleMouseClick(const ui::ElementArea& area, const InputMouseClickEvent& evt) override;
+    //virtual bool handleAxisEvent(const InputAxisEvent& evt) override;
+    //virtual bool handleMouseMovement(const InputMouseMovementEvent& evt) override;
 };
 
 //--

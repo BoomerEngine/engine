@@ -166,7 +166,7 @@ void SceneContentTreeItem::handleItemSort(const ui::ICollectionView* view, int c
     outInfo.caption = m_cachedName.view();
 }
 
-bool SceneContentTreeItem::handleItemContextMenu(ui::ICollectionView* view, const ui::CollectionItems& items, const ui::Position& pos, input::KeyMask controlKeys)
+bool SceneContentTreeItem::handleItemContextMenu(ui::ICollectionView* view, const ui::CollectionItems& items, const ui::Position& pos, InputKeyMask controlKeys)
 {
     if (auto node = m_owner.lock())
     {
@@ -184,7 +184,7 @@ bool SceneContentTreeItem::handleItemContextMenu(ui::ICollectionView* view, cons
     return false;
 }
 
-ui::DragDropDataPtr SceneContentTreeItem::queryDragDropData(const input::BaseKeyFlags& keys, const ui::Position& position) const
+ui::DragDropDataPtr SceneContentTreeItem::queryDragDropData(const BaseKeyFlags& keys, const ui::Position& position) const
 {
     if (m_type == SceneContentNodeType::Entity)
         if (auto node = m_owner.lock())

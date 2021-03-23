@@ -249,38 +249,38 @@ void TestRenderingFramework::processInput()
 			{
 				if (keyEvt->pressed())
 				{
-					if (keyEvt->keyCode() == input::KeyCode::KEY_ESCAPE)
+					if (keyEvt->keyCode() == InputKey::KEY_ESCAPE)
 					{
 						m_exitRequested = true;
 						break;
 					}
-					else if (keyEvt->keyCode() == input::KeyCode::KEY_LEFT)
+					else if (keyEvt->keyCode() == InputKey::KEY_LEFT)
 					{
 						if (m_pendingTestCaseIndex <= 0)
 							m_pendingTestCaseIndex = m_testClasses.size() - 1;
 						else
 							m_pendingTestCaseIndex -= 1;
 					}
-					else if (keyEvt->keyCode() == input::KeyCode::KEY_RIGHT)
+					else if (keyEvt->keyCode() == InputKey::KEY_RIGHT)
 					{
 						m_pendingTestCaseIndex += 1;
 						if (m_pendingTestCaseIndex >= (int)m_testClasses.size())
 							m_pendingTestCaseIndex = 0;
 					}
-					else if (keyEvt->keyCode() == input::KeyCode::KEY_SPACE)
+					else if (keyEvt->keyCode() == InputKey::KEY_SPACE)
 					{
 						m_advanceTime = !m_advanceTime;
 					}
-					else if (keyEvt->keyCode() == input::KeyCode::KEY_MINUS)
+					else if (keyEvt->keyCode() == InputKey::KEY_MINUS)
 					{
 						m_advanceTimeSpeed *= 0.5f;
 					}
-					else if (keyEvt->keyCode() == input::KeyCode::KEY_EQUAL)
+					else if (keyEvt->keyCode() == InputKey::KEY_EQUAL)
 					{
 						m_advanceTimeSpeed *= 2.0f;
 					}
 
-					else if (keyEvt->keyCode() == input::KeyCode::KEY_R)
+					else if (keyEvt->keyCode() == InputKey::KEY_R)
 					{
 						m_advanceTimeSpeed = 1.0f;
 						m_advanceTime = true;
@@ -288,28 +288,28 @@ void TestRenderingFramework::processInput()
 					}
 				}
 
-				if (keyEvt->keyCode() == input::KeyCode::KEY_W)
+				if (keyEvt->keyCode() == InputKey::KEY_W)
 					m_cameraButtons.configure(CameraButtonBit::Forward, keyEvt->isDown());
-				else if (keyEvt->keyCode() == input::KeyCode::KEY_S)
+				else if (keyEvt->keyCode() == InputKey::KEY_S)
 					m_cameraButtons.configure(CameraButtonBit::Backward, keyEvt->isDown());
-				else if (keyEvt->keyCode() == input::KeyCode::KEY_A)
+				else if (keyEvt->keyCode() == InputKey::KEY_A)
 					m_cameraButtons.configure(CameraButtonBit::Left, keyEvt->isDown());
-				else if (keyEvt->keyCode() == input::KeyCode::KEY_D)
+				else if (keyEvt->keyCode() == InputKey::KEY_D)
 					m_cameraButtons.configure(CameraButtonBit::Right, keyEvt->isDown());
-				else if (keyEvt->keyCode() == input::KeyCode::KEY_Q)
+				else if (keyEvt->keyCode() == InputKey::KEY_Q)
 					m_cameraButtons.configure(CameraButtonBit::Up, keyEvt->isDown());
-				else if (keyEvt->keyCode() == input::KeyCode::KEY_E)
+				else if (keyEvt->keyCode() == InputKey::KEY_E)
 					m_cameraButtons.configure(CameraButtonBit::Down, keyEvt->isDown());
-				else if (keyEvt->keyCode() == input::KeyCode::KEY_LEFT_SHIFT)
+				else if (keyEvt->keyCode() == InputKey::KEY_LEFT_SHIFT)
 					m_cameraButtons.configure(CameraButtonBit::Fast, keyEvt->isDown());
-				else if (keyEvt->keyCode() == input::KeyCode::KEY_LEFT_CTRL)
+				else if (keyEvt->keyCode() == InputKey::KEY_LEFT_CTRL)
 					m_cameraButtons.configure(CameraButtonBit::Slow, keyEvt->isDown());
 			}
 			else if (auto keyEvt = evt->toAxisEvent())
 			{
-				if (keyEvt->axisCode() == input::AxisCode::AXIS_MOUSEX)
+				if (keyEvt->axisCode() == InputAxis::AXIS_MOUSEX)
 					m_cameraViewDeltas.x += keyEvt->displacement();
-				else if (keyEvt->axisCode() == input::AxisCode::AXIS_MOUSEY)
+				else if (keyEvt->axisCode() == InputAxis::AXIS_MOUSEY)
 					m_cameraViewDeltas.y += keyEvt->displacement();
 			}
 		}

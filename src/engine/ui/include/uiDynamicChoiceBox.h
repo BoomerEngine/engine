@@ -84,7 +84,7 @@ private:
     PopupPtr m_popup;
 
     virtual void handleEnableStateChange(bool isEnabled) override;
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
 };
 
 ///---

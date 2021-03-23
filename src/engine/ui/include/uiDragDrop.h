@@ -105,10 +105,10 @@ public:
     };
 
     // process mouse movement
-    UpdateResult processMouseMovement(const input::MouseMovementEvent& evt);
+    UpdateResult processMouseMovement(const InputMouseMovementEvent& evt);
 
     // process mouse wheel
-    virtual void handleMouseWheel(const input::MouseMovementEvent &evt, float delta);
+    virtual void handleMouseWheel(const InputMouseMovementEvent &evt, float delta);
 
 private:
     DragDropDataPtr m_data;

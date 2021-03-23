@@ -74,21 +74,21 @@ void PackFrameParams(GPUFrameParameters& outParams, const FrameRenderer& frame, 
 
     outParams.MaterialFlags = 0;
     const auto& filters = frame.frame().filters;
-    if (filters & FilterBit::Material_DisableColorMap)
+    if (filters & FrameFilterBit::Material_DisableColorMap)
         outParams.MaterialFlags |= MATERIAL_FLAG_DISABLE_COLOR;
-    if (filters & FilterBit::Material_DisableLighting)
+    if (filters & FrameFilterBit::Material_DisableLighting)
         outParams.MaterialFlags |= MATERIAL_FLAG_DISABLE_LIGHTING;
-    if (filters & FilterBit::Material_DisableTextures)
+    if (filters & FrameFilterBit::Material_DisableTextures)
         outParams.MaterialFlags |= MATERIAL_FLAG_DISABLE_TEXTURES;
-    if (filters & FilterBit::Material_DisableNormals)
+    if (filters & FrameFilterBit::Material_DisableNormals)
         outParams.MaterialFlags |= MATERIAL_FLAG_DISABLE_NORMAL;
-    if (filters & FilterBit::Material_DisableObjectColor)
+    if (filters & FrameFilterBit::Material_DisableObjectColor)
         outParams.MaterialFlags |= MATERIAL_FLAG_DISABLE_OBJECT_COLOR;
-    if (filters & FilterBit::Material_DisableVertexColor)
+    if (filters & FrameFilterBit::Material_DisableVertexColor)
         outParams.MaterialFlags |= MATERIAL_FLAG_DISABLE_VERTEX_COLOR;
-    if (filters & FilterBit::Material_DisableMasking)
+    if (filters & FrameFilterBit::Material_DisableMasking)
         outParams.MaterialFlags |= MATERIAL_FLAG_DISABLE_MASKING;
-    if (filters & FilterBit::Material_DisableVertexMotion)
+    if (filters & FrameFilterBit::Material_DisableVertexMotion)
         outParams.MaterialFlags |= MATERIAL_FLAG_DISABLE_VERTEX_MOTION;
 
 

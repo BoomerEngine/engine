@@ -143,14 +143,14 @@ IElement* BlockClassPickerBox::focusFindFirst()
     return m_searchBar;
 }
 
-bool BlockClassPickerBox::handleKeyEvent(const input::KeyEvent & evt)
+bool BlockClassPickerBox::handleKeyEvent(const InputKeyEvent & evt)
 {
-    if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_ESCAPE)
+    if (evt.pressed() && evt.keyCode() == InputKey::KEY_ESCAPE)
     {
         requestClose();
         return true;
     }
-    else if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_RETURN)
+    else if (evt.pressed() && evt.keyCode() == InputKey::KEY_RETURN)
     {
         closeIfValidTypeSelected();
         return true;

@@ -62,7 +62,7 @@ public:
     virtual ~IGamePlayerLocal();
 
     /// process player input
-    virtual bool handleInput(IGameScreen* screen, const input::BaseEvent& evt);
+    virtual bool handleInput(IGameScreen* screen, const InputEvent& evt);
 
     /// render game world
     virtual void handleRender(IGameScreen* screen, gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, float visibility);

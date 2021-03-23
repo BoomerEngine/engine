@@ -691,41 +691,41 @@ public:
     ///---
 
     /// handle primary mouse input (first click)
-    virtual InputActionPtr handleMouseClick(const ui::ElementArea& area, const input::MouseClickEvent& evt);
+    virtual InputActionPtr handleMouseClick(const ui::ElementArea& area, const InputMouseClickEvent& evt);
 
     /// handle primary overlay mouse input (first click)
     /// the overlay events are passed in the reverse order to allow the parents to handle the overlay events
-    virtual InputActionPtr handleOverlayMouseClick(const ui::ElementArea& area, const input::MouseClickEvent& evt);
+    virtual InputActionPtr handleOverlayMouseClick(const ui::ElementArea& area, const InputMouseClickEvent& evt);
 
     /// handle mouse wheel
-    virtual bool handleMouseWheel(const input::MouseMovementEvent &evt, float delta);
+    virtual bool handleMouseWheel(const InputMouseMovementEvent &evt, float delta);
 
     /// handle general mouse movement (called only if element is in the hover stack)
-    virtual bool handleMouseMovement(const input::MouseMovementEvent& evt);
+    virtual bool handleMouseMovement(const InputMouseMovementEvent& evt);
 
     /// preview key event, this travels down to the focused element
-    virtual bool previewKeyEvent(const input::KeyEvent& evt);
+    virtual bool previewKeyEvent(const InputKeyEvent& evt);
 
     /// handle key event, this is called at the focused element, if false is returned the parent is given a chance to handle this event
-    virtual bool handleKeyEvent(const input::KeyEvent& evt);
+    virtual bool handleKeyEvent(const InputKeyEvent& evt);
 
     /// handle key event coming from external UI element (input forwarding)
-    virtual bool handleExternalKeyEvent(const input::KeyEvent& evt);
+    virtual bool handleExternalKeyEvent(const InputKeyEvent& evt);
 
     /// handle char event
-    virtual bool handleCharEvent(const input::CharEvent& evt);
+    virtual bool handleCharEvent(const InputCharEvent& evt);
 
     /// handle char event coming from external UI element (input forwarding)
-    virtual bool handleExternalCharEvent(const input::CharEvent& evt);
+    virtual bool handleExternalCharEvent(const InputCharEvent& evt);
 
     /// handle window system cursor request
-    virtual bool handleCursorQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, input::CursorType& outCursorType) const;
+    virtual bool handleCursorQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, CursorType& outCursorType) const;
 
     /// handle window system window area query
-    virtual bool handleWindowAreaQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, input::AreaType& outAreaType) const;
+    virtual bool handleWindowAreaQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, AreaType& outAreaType) const;
 
     // handle context menu at given position
-    virtual bool handleContextMenu(const ui::ElementArea& area, const ui::Position& absolutePosition, input::KeyMask controlKeys);
+    virtual bool handleContextMenu(const ui::ElementArea& area, const ui::Position& absolutePosition, InputKeyMask controlKeys);
 
     // handle entering hover state
     virtual void handleHoverEnter(const ui::Position& absolutePosition);
@@ -737,7 +737,7 @@ public:
     virtual bool handleHoverDuration(const ui::Position& absolutePosition);
 
     /// axis
-    virtual bool handleAxisEvent(const input::AxisEvent& evt);
+    virtual bool handleAxisEvent(const InputAxisEvent& evt);
 
     // handle gaining focus state
     virtual void handleFocusGained();
@@ -845,7 +845,7 @@ public:
     /// query the drag&drop data this element can produce
     /// NOTE: if this is not null than we will have a D&D action generated once we start dragging this time
     /// NOTE: the type of drag&drop data may depend on the location within the UI element as well as the control keys
-    virtual ui::DragDropDataPtr queryDragDropData(const input::BaseKeyFlags& keys, const ui::Position& position) const;
+    virtual ui::DragDropDataPtr queryDragDropData(const BaseKeyFlags& keys, const ui::Position& position) const;
 
     //---
 

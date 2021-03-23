@@ -23,26 +23,26 @@ ConfigProperty<uint32_t> cvRenderSceneMaxObjectPreview("Rendering.Scene", "MaxOb
 
 //----
 
-Scene::Scene(SceneType type)
+RenderingScene::RenderingScene(RenderingSceneType type)
     : m_type(type)
 {
 	m_device = GetService<DeviceService>()->device();
 	createManagers();
 }
 
-Scene::~Scene()
+RenderingScene::~RenderingScene()
 {
 	destroyManagers();
 }
 
-void Scene::createManagers()
+void RenderingScene::createManagers()
 {
-	InplaceArray<SpecificClassType<IObjectManager>, 10> objectManagersClasses;
+	InplaceArray<SpecificClassType<IRenderingObjectManager>, 10> objectManagersClasses;
 	RTTI::GetInstance().enumClasses(objectManagersClasses);
 
 	for (const auto cls : objectManagersClasses)
 	{
-		auto manager = cls->createPointer<IObjectManager>();
+		auto manager = cls->createPointer<IRenderingObjectManager>();
 		manager->initialize(this, m_device);
 
 		const auto index = m_managers.size();
@@ -52,7 +52,7 @@ void Scene::createManagers()
 	}
 }
 
-void Scene::destroyManagers()
+void RenderingScene::destroyManagers()
 {
 	for (auto* manager : m_managers)
 		manager->shutdown();
@@ -65,61 +65,61 @@ void Scene::destroyManagers()
 
 //--
 
-void Scene::renderLock()
+void RenderingScene::renderLock()
 {
 	const auto prevFlag = m_renderLockFlag.exchange(true);
 	ASSERT_EX(prevFlag == false, "Scene already locked for rendering");
 }
 
-void Scene::renderUnlock()
+void RenderingScene::renderUnlock()
 {
 	const auto prevFlag = m_renderLockFlag.exchange(false);
 	ASSERT_EX(prevFlag == true, "Scene was not locked for rendering");
 }
 
-void Scene::renderMainView(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame) const
+void RenderingScene::renderMainView(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame) const
 {
 	for (auto* manager : m_managers)
 		if (manager)
 			manager->render(cmd, view, frame);
 }
 
-void Scene::renderCascadesView(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame) const
+void RenderingScene::renderCascadesView(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame) const
 {
     for (auto* manager : m_managers)
         if (manager)
             manager->render(cmd, view, frame);
 }
 
-void Scene::renderWireframeView(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame) const
+void RenderingScene::renderWireframeView(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame) const
 {
     for (auto* manager : m_managers)
         if (manager)
             manager->render(cmd, view, frame);
 }
 
-void Scene::renderCaptureSelectionView(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame) const
+void RenderingScene::renderCaptureSelectionView(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame) const
 {
     for (auto* manager : m_managers)
         if (manager)
             manager->render(cmd, view, frame);
 }
 
-void Scene::renderCaptureDepthView(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame) const
+void RenderingScene::renderCaptureDepthView(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame) const
 {
     for (auto* manager : m_managers)
         if (manager)
             manager->render(cmd, view, frame);
 }
 
-void Scene::prepare(gpu::CommandWriter& cmd, const FrameRenderer& frame)
+void RenderingScene::prepare(gpu::CommandWriter& cmd, const FrameRenderer& frame)
 {
 	for (auto* manager : m_managers)
 		if (manager)
 			manager->prepare(cmd, m_device, frame);
 }
 
-void Scene::finish(gpu::CommandWriter& cmd, const FrameRenderer& frame, FrameStats& outStats)
+void RenderingScene::finish(gpu::CommandWriter& cmd, const FrameRenderer& frame, FrameStats& outStats)
 {
     for (auto* manager : m_managers)
         if (manager)

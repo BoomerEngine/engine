@@ -124,7 +124,7 @@ void MeshMaterialParameters::handleItemSort(const ui::ICollectionView* view, int
     outInfo.caption = m_name.view();
 }
 
-bool MeshMaterialParameters::handleItemContextMenu(ui::ICollectionView* view, const ui::CollectionItems& items, const ui::Position& pos, input::KeyMask controlKeys)
+bool MeshMaterialParameters::handleItemContextMenu(ui::ICollectionView* view, const ui::CollectionItems& items, const ui::Position& pos, InputKeyMask controlKeys)
 {
     return false;
 }

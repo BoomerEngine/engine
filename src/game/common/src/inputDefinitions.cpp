@@ -26,25 +26,25 @@ class InputDefinitionsFactory : public IResourceFactory
 public:
     virtual ResourcePtr createResource() const override final
     {
-        return RefNew<InputDefinitions>();
+        return RefNew<GameInputDefinitions>();
     }
 };
 
 RTTI_BEGIN_TYPE_CLASS(InputDefinitionsFactory);
-    RTTI_METADATA(ResourceFactoryClassMetadata).bindResourceClass<InputDefinitions>();
+    RTTI_METADATA(ResourceFactoryClassMetadata).bindResourceClass<GameInputDefinitions>();
 RTTI_END_TYPE();
 
 ///--
 
-RTTI_BEGIN_TYPE_CLASS(InputDefinitions);
+RTTI_BEGIN_TYPE_CLASS(GameInputDefinitions);
     RTTI_METADATA(ResourceDescriptionMetadata).description("Input Definitions");
     RTTI_PROPERTY(m_root);
 RTTI_END_TYPE();
 
-InputDefinitions::InputDefinitions()
+GameInputDefinitions::GameInputDefinitions()
 {}
 
-static InputActionTablePtr FindChildren(const InputActionTable* table, StringView name)
+static InputActionTablePtr FindChildren(const GameInputActionTable* table, StringView name)
 {
     for (const auto& child : table->children())
         if (child->name() == name)
@@ -53,7 +53,7 @@ static InputActionTablePtr FindChildren(const InputActionTable* table, StringVie
     return nullptr;
 }
 
-InputActionTablePtr InputDefinitions::findTable(StringView name) const
+InputActionTablePtr GameInputDefinitions::findTable(StringView name) const
 {
     auto table = m_root;
     if (table)

@@ -182,7 +182,7 @@ class SpliterSashInputAction : public MouseInputAction
 {
 public:
     SpliterSashInputAction(SplitterSash* sash, const ElementArea& sashArea, const Position& delta)
-        : MouseInputAction(sash, input::KeyCode::KEY_MOUSE0)
+        : MouseInputAction(sash, InputKey::KEY_MOUSE0)
         , m_sash(sash)
         , m_delta(delta)
     {
@@ -229,7 +229,7 @@ public:
         return 0.0f;
     }
 
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
     {
         if (auto sash = m_sash.lock())
         {
@@ -240,14 +240,14 @@ public:
         return InputActionResult();
     }
 
-    virtual void onUpdateCursor(input::CursorType& outCursorType) override
+    virtual void onUpdateCursor(CursorType& outCursorType) override
     {
         if (auto sash = m_sash.lock())
         {
             if (sash->parentSplitter()->splitDirection() == Direction::Vertical)
-                outCursorType = input::CursorType::SizeWE;
+                outCursorType = CursorType::SizeWE;
             else
-                outCursorType = input::CursorType::SizeNS;
+                outCursorType = CursorType::SizeNS;
         }
     }
 
@@ -270,7 +270,7 @@ SplitterSash::SplitterSash(Splitter* splitter /*= nullptr*/)
     enableAutoExpand(true, true);
 }
 
-InputActionPtr SplitterSash::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr SplitterSash::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftClicked())
     {
@@ -303,16 +303,16 @@ void SplitterSash::inputActionFinished()
     invalidateStyle();
 }
 
-bool SplitterSash::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const
+bool SplitterSash::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const
 {
-    outCursorType = (m_splitter->splitDirection() == Direction::Vertical) ? input::CursorType::SizeWE : input::CursorType::SizeNS;
+    outCursorType = (m_splitter->splitDirection() == Direction::Vertical) ? CursorType::SizeWE : CursorType::SizeNS;
     return true;
 }
 
-bool SplitterSash::handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, input::AreaType& outAreaType) const
+bool SplitterSash::handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, AreaType& outAreaType) const
 {
     // this is added so the splitter takes precedence over border
-    outAreaType = input::AreaType::Client;
+    outAreaType = AreaType::Client;
     return true;
 }
 

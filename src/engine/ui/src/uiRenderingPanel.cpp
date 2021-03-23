@@ -300,21 +300,21 @@ void RenderingPanel::handleHoverLeave(const Position& pos)
     TBaseClass::handleHoverLeave(pos);
 }
 
-bool RenderingPanel::handleMouseMovement(const input::MouseMovementEvent& evt)
+bool RenderingPanel::handleMouseMovement(const InputMouseMovementEvent& evt)
 {
     m_currentHoverAbsolutePositionValid = true;
     m_currentHoverAbsolutePosition = evt.absolutePosition().toVector();
     return TBaseClass::handleMouseMovement(evt);
 }
 
-bool RenderingPanel::handleKeyEvent(const input::KeyEvent& evt)
+bool RenderingPanel::handleKeyEvent(const InputKeyEvent& evt)
 {
     if (evt.pressed()) // NO REPEAT
     {
         int delta = 0;
-        if (evt.keyCode() == input::KeyCode::KEY_EQUAL)
+        if (evt.keyCode() == InputKey::KEY_EQUAL)
             delta = 1;
-        else if (evt.keyCode() == input::KeyCode::KEY_MINUS)
+        else if (evt.keyCode() == InputKey::KEY_MINUS)
             delta = -1;
 
         if (delta)

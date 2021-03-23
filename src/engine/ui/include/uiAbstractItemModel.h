@@ -142,7 +142,7 @@ public:
     //--
 
     // generate drag&drop data for the item
-    virtual DragDropDataPtr queryDragDropData(const input::BaseKeyFlags& keys, const ModelIndex& item);
+    virtual DragDropDataPtr queryDragDropData(const BaseKeyFlags& keys, const ModelIndex& item);
         
     // handle drag & drop reception for given item
     virtual DragDropHandlerPtr handleDragDropData(AbstractItemView* view, const ModelIndex& item, const DragDropDataPtr& data, const Position& pos);

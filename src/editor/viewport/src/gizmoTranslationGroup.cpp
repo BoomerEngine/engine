@@ -118,9 +118,9 @@ public:
         m_action->revert();
     }
 
-    virtual void onUpdateCursor(input::CursorType& outCursorType) override final
+    virtual void onUpdateCursor(CursorType& outCursorType) override final
     {
-        outCursorType = input::CursorType::SizeAll;
+        outCursorType = CursorType::SizeAll;
     }
 
     virtual void onRender3D(rendering::FrameParams& frame) override final
@@ -160,15 +160,15 @@ public:
         }
     }
 
-    virtual ui::InputActionResult onKeyEvent(const input::KeyEvent& evt) override final
+    virtual ui::InputActionResult onKeyEvent(const InputKeyEvent& evt) override final
     {
-        if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_ESCAPE)
+        if (evt.pressed() && evt.keyCode() == InputKey::KEY_ESCAPE)
             return nullptr;
 
         return ui::InputActionResult();
     }
 
-    virtual ui::InputActionResult onMouseEvent(const input::MouseClickEvent& evt, const ui::ElementWeakPtr& hoveredElement)
+    virtual ui::InputActionResult onMouseEvent(const InputMouseClickEvent& evt, const ui::ElementWeakPtr& hoveredElement)
     {
         if (evt.leftReleased())
         {
@@ -219,7 +219,7 @@ public:
         return Vector3::ZERO();
     }
 
-    virtual ui::InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ui::ElementWeakPtr& hoveredElement) override
+    virtual ui::InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ui::ElementWeakPtr& hoveredElement) override
     {
         static const Vector3 AXIS_VECTORS[3] = {
             Vector3::EX(), Vector3::EY(), Vector3::EZ()
@@ -346,7 +346,7 @@ public:
         m_lines.transfom(space, scaleFactor * lineScale);
     }
 
-    virtual bool hitTest(Point point, float& outMinHitDistance, const ui::ViewportCameraSetup& viewport, input::CursorType& outCursor) override final
+    virtual bool hitTest(Point point, float& outMinHitDistance, const ui::ViewportCameraSetup& viewport, CursorType& outCursor) override final
     {
         return m_lines.hitTest(point, viewport, GetHitTestDistance(), outMinHitDistance);
     }

@@ -77,10 +77,10 @@ public:
     virtual void handleRender(ScenePreviewPanel* panel, rendering::FrameParams& frame);
 
     // handle custom viewport click (if no handler is returned we default to camera movement/selection)
-    virtual ui::InputActionPtr handleMouseClick(ScenePreviewPanel* panel, const input::MouseClickEvent& evt);
+    virtual ui::InputActionPtr handleMouseClick(ScenePreviewPanel* panel, const InputMouseClickEvent& evt);
 
     // handle custom viewport action-less keyboard event
-    virtual bool handleKeyEvent(ScenePreviewPanel* panel, const input::KeyEvent& evt);
+    virtual bool handleKeyEvent(ScenePreviewPanel* panel, const InputKeyEvent& evt);
 
     // handle viewport selection result
     virtual void handlePointSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables);

@@ -33,7 +33,7 @@ public:
 protected:
     virtual void renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
     virtual void renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
-    virtual bool handleMouseMovement(const input::MouseMovementEvent& evt) override;
+    virtual bool handleMouseMovement(const InputMouseMovementEvent& evt) override;
     virtual void handleHoverLeave(const ui::Position& absolutePosition) override;
 
     virtual ui::ElementPtr queryTooltipElement(const ui::Position& absolutePosition, ui::ElementArea& outArea) const override;

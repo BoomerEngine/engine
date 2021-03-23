@@ -218,20 +218,20 @@ namespace helper
         KEY_MAX,
     };
 
-    bool MapMovementKey(const input::KeyCode keyCode, MovementKey& outMovementKey)
+    bool MapMovementKey(const InputKey keyCode, MovementKey& outMovementKey)
     {
         switch (keyCode)
         {
-            case input::KeyCode::KEY_W: outMovementKey = KEY_FOWARD; return true;
-            case input::KeyCode::KEY_S: outMovementKey = KEY_BACKWARD; return true;
-            case input::KeyCode::KEY_A: outMovementKey = KEY_LEFT; return true;
-            case input::KeyCode::KEY_D: outMovementKey = KEY_RIGHT; return true;
-            case input::KeyCode::KEY_Q: outMovementKey = KEY_UP; return true;
-            case input::KeyCode::KEY_E: outMovementKey = KEY_DOWN; return true;
-            case input::KeyCode::KEY_LEFT_CTRL: outMovementKey = KEY_SLOW; return true;
-            case input::KeyCode::KEY_LEFT_SHIFT: outMovementKey = KEY_FAST; return true;
-            case input::KeyCode::KEY_RIGHT_CTRL: outMovementKey = KEY_SLOW; return true;
-            case input::KeyCode::KEY_RIGHT_SHIFT: outMovementKey = KEY_FAST; return true;
+            case InputKey::KEY_W: outMovementKey = KEY_FOWARD; return true;
+            case InputKey::KEY_S: outMovementKey = KEY_BACKWARD; return true;
+            case InputKey::KEY_A: outMovementKey = KEY_LEFT; return true;
+            case InputKey::KEY_D: outMovementKey = KEY_RIGHT; return true;
+            case InputKey::KEY_Q: outMovementKey = KEY_UP; return true;
+            case InputKey::KEY_E: outMovementKey = KEY_DOWN; return true;
+            case InputKey::KEY_LEFT_CTRL: outMovementKey = KEY_SLOW; return true;
+            case InputKey::KEY_LEFT_SHIFT: outMovementKey = KEY_FAST; return true;
+            case InputKey::KEY_RIGHT_CTRL: outMovementKey = KEY_SLOW; return true;
+            case InputKey::KEY_RIGHT_SHIFT: outMovementKey = KEY_FAST; return true;
         }
 
         return false;
@@ -256,7 +256,7 @@ namespace helper
             outRedrawPolicy = WindowRedrawPolicy::ActiveOnly;
         }
 
-        virtual InputActionResult onKeyEvent(const input::KeyEvent &evt) override final
+        virtual InputActionResult onKeyEvent(const InputKeyEvent &evt) override final
         {
             MovementKey movementKey = (MovementKey)0;
             if (MapMovementKey(evt.keyCode(), movementKey))
@@ -268,13 +268,13 @@ namespace helper
                 return InputActionResult();
             }
 
-            if (evt.keyCode() == input::KeyCode::KEY_ESCAPE && evt.pressed())
+            if (evt.keyCode() == InputKey::KEY_ESCAPE && evt.pressed())
                 return nullptr;
 
             return InputActionResult();
         }
 
-        virtual InputActionResult onMouseEvent(const input::MouseClickEvent &evt, const ElementWeakPtr &hoverStack) override final
+        virtual InputActionResult onMouseEvent(const InputMouseClickEvent &evt, const ElementWeakPtr &hoverStack) override final
         {
             // mutate mouse mode
             if (evt.leftClicked())
@@ -298,7 +298,7 @@ namespace helper
             return InputActionResult();
         }
 
-        virtual InputActionResult onMouseMovement(const input::MouseMovementEvent &evt, const ElementWeakPtr&hoverStack) override final
+        virtual InputActionResult onMouseMovement(const InputMouseMovementEvent &evt, const ElementWeakPtr&hoverStack) override final
         {
             Angles deltaRot(0, 0, 0);
             Vector3 deltaPos(0, 0, 0);
@@ -441,7 +441,7 @@ namespace helper
             outRedrawPolicy = WindowRedrawPolicy::ActiveOnly;
         }
 
-        virtual InputActionResult onKeyEvent(const input::KeyEvent &evt) override final
+        virtual InputActionResult onKeyEvent(const InputKeyEvent &evt) override final
         {
             return InputActionResult();
         }
@@ -456,7 +456,7 @@ namespace helper
             }
         }*/
 
-        virtual InputActionResult onMouseEvent(const input::MouseClickEvent &evt, const ElementWeakPtr&hoverStack) override final
+        virtual InputActionResult onMouseEvent(const InputMouseClickEvent &evt, const ElementWeakPtr&hoverStack) override final
         {
             // mutate mouse mode
             if (evt.leftClicked())
@@ -480,7 +480,7 @@ namespace helper
             return InputActionResult();
         }
 
-        virtual InputActionResult onMouseMovement(const input::MouseMovementEvent &evt, const ElementWeakPtr&hoverStack) override final
+        virtual InputActionResult onMouseMovement(const InputMouseMovementEvent &evt, const ElementWeakPtr&hoverStack) override final
         {
             // rotate local reference frame
             m_settings.rotation.pitch = std::clamp<float>(m_settings.rotation.pitch + m_sensitivity * evt.delta().y * 0.25f, -89.9f, 89.9f);
@@ -523,12 +523,12 @@ namespace helper
             outRedrawPolicy = WindowRedrawPolicy::ActiveOnly;
         }
 
-        virtual InputActionResult onKeyEvent(const input::KeyEvent& evt) override final
+        virtual InputActionResult onKeyEvent(const InputKeyEvent& evt) override final
         {
             return InputActionResult();
         }
 
-        virtual InputActionResult onMouseEvent(const input::MouseClickEvent& evt, const ElementWeakPtr& hoverStack) override final
+        virtual InputActionResult onMouseEvent(const InputMouseClickEvent& evt, const ElementWeakPtr& hoverStack) override final
         {
             // mutate mouse mode
             if (evt.leftClicked())
@@ -552,7 +552,7 @@ namespace helper
             return InputActionResult();
         }
 
-        virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override final
+        virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override final
         {
             const auto speed = pow(2.0f, m_settings.speedLog);
 
@@ -593,7 +593,7 @@ InputActionPtr ViewportCameraController::handleOriginShift(IElement* ptr, uint8_
     return RefNew<helper::MouseCameraControlOriginShift>(ptr, m_settings, button, xDir, yDir, sensitivity);
 }
 
-void ViewportCameraController::processMouseWheel(const input::MouseMovementEvent& evt, float delta)
+void ViewportCameraController::processMouseWheel(const InputMouseMovementEvent& evt, float delta)
 {
     switch (m_settings.mode)
     {

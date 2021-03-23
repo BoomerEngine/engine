@@ -64,7 +64,7 @@ protected:
 
     ///
 
-    virtual bool handleMouseWheel(const input::MouseMovementEvent& evt, float delta) override;
+    virtual bool handleMouseWheel(const InputMouseMovementEvent& evt, float delta) override;
     virtual void arrangeChildren(const ElementArea& innerArea, const ElementArea& clipArea, ArrangedChildren& outArrangedChildren, const ElementDynamicSizing* dynamicSizing) const override;
     virtual void computeSize(Size& outSize) const override;
 };

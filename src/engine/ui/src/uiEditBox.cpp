@@ -220,13 +220,13 @@ void EditBox::textModified()
     recheckValidation();
 }
 
-bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
+bool EditBox::handleKeyEvent(const InputKeyEvent& evt)
 {
     if (evt.isDown())
     {
         auto pos = m_textBuffer->cursorPos().m_char;
 
-        if (evt.keyCode() == input::KeyCode::KEY_DELETE)
+        if (evt.keyCode() == InputKey::KEY_DELETE)
         {
             if (canModify())
             {
@@ -243,7 +243,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
             }
             return true;
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_BACK)
+        else if (evt.keyCode() == InputKey::KEY_BACK)
         {
             if (canModify())
             {
@@ -261,7 +261,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
             }
             return true;
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_LEFT)
+        else if (evt.keyCode() == InputKey::KEY_LEFT)
         {
             auto navigation = evt.keyMask().isCtrlDown() ? TextNavigation::WordStart : TextNavigation::PrevChar;
             auto newCursorPos = m_textBuffer->findCursorPosition(m_textBuffer->cursorPos(), navigation);
@@ -269,7 +269,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
             bool extendSelection = evt.keyMask().isShiftDown();
             return moveCursor(newCursorPos, extendSelection);
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_RIGHT)
+        else if (evt.keyCode() == InputKey::KEY_RIGHT)
         {
             auto navigation = evt.keyMask().isCtrlDown() ? TextNavigation::WordEnd : TextNavigation::NextChar;
             auto newCursorPos = m_textBuffer->findCursorPosition(m_textBuffer->cursorPos(), navigation);
@@ -277,7 +277,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
             bool extendSelection = evt.keyMask().isShiftDown();
             return moveCursor(newCursorPos, extendSelection);
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_HOME)
+        else if (evt.keyCode() == InputKey::KEY_HOME)
         {
             auto navigation = evt.keyMask().isCtrlDown() ? TextNavigation::DocumentStart : TextNavigation::LineStart;
             auto newCursorPos = m_textBuffer->findCursorPosition(m_textBuffer->cursorPos(), navigation);
@@ -285,7 +285,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
             bool extendSelection = evt.keyMask().isShiftDown();
             return moveCursor(newCursorPos, extendSelection);
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_END)
+        else if (evt.keyCode() == InputKey::KEY_END)
         {
             auto navigation = evt.keyMask().isCtrlDown() ? TextNavigation::DocumentEnd : TextNavigation::LineEnd;
             auto newCursorPos = m_textBuffer->findCursorPosition(m_textBuffer->cursorPos(), navigation);
@@ -293,7 +293,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
             bool extendSelection = evt.keyMask().isShiftDown();
             return moveCursor(newCursorPos, extendSelection);
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_UP)
+        else if (evt.keyCode() == InputKey::KEY_UP)
         {
             if (m_textBuffer->isMultiLine())
             {
@@ -308,7 +308,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
                 return false; // explicitly DO NOT HANDLE
             }
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_DOWN)
+        else if (evt.keyCode() == InputKey::KEY_DOWN)
         {
             if (m_textBuffer->isMultiLine())
             {
@@ -323,7 +323,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
                 return false; // explicitly DO NOT HANDLE
             }
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_PRIOR)
+        else if (evt.keyCode() == InputKey::KEY_PRIOR)
         {
             if (m_textBuffer->isMultiLine())
             {
@@ -334,7 +334,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
                 return moveCursor(newCursorPos, extendSelection);
             }
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_NEXT)
+        else if (evt.keyCode() == InputKey::KEY_NEXT)
         {
             if (m_textBuffer->isMultiLine())
             {
@@ -345,7 +345,7 @@ bool EditBox::handleKeyEvent(const input::KeyEvent& evt)
                 return moveCursor(newCursorPos, extendSelection);
             }
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_ESCAPE)
+        else if (evt.keyCode() == InputKey::KEY_ESCAPE)
         {
             return false; // pass through
         }
@@ -428,7 +428,7 @@ void EditBox::bindCommands()
     bindShortcut("Ctrl+Y") = [this]() { };
 }
 
-bool EditBox::handleContextMenu(const ElementArea& area, const Position& absolutePosition, input::KeyMask controlKeys)
+bool EditBox::handleContextMenu(const ElementArea& area, const Position& absolutePosition, InputKeyMask controlKeys)
 {
     auto ret = RefNew<MenuButtonContainer>();
     ret->createCallback("Undo", "[img:undo]", "Ctrl+Z") = [this]() {};
@@ -445,7 +445,7 @@ bool EditBox::handleContextMenu(const ElementArea& area, const Position& absolut
     return true;
 }
 
-bool EditBox::handleCharEvent(const input::CharEvent& evt)
+bool EditBox::handleCharEvent(const InputCharEvent& evt)
 {
     // ignore tabs
     if (evt.scanCode() == 9 && !m_features.test(EditBoxFeatureBit::AcceptsTab))
@@ -525,29 +525,29 @@ public:
             editBox->m_textBuffer->moveCursor(m_startSelection, false);
     }
 
-    virtual InputActionResult onKeyEvent(const input::KeyEvent& evt) override
+    virtual InputActionResult onKeyEvent(const InputKeyEvent& evt) override
     {
         // any key action resets the event
         if (evt.pressed())
         {
-            if (evt.keyCode() == input::KeyCode::KEY_LEFT_CTRL || evt.keyCode() == input::KeyCode::KEY_RIGHT_CTRL)
+            if (evt.keyCode() == InputKey::KEY_LEFT_CTRL || evt.keyCode() == InputKey::KEY_RIGHT_CTRL)
                 return InputActionResult();
 
-/*              if (evt.keyCode() == input::KeyCode::KEY_C && evt.isCtrlDown())
+/*              if (evt.keyCode() == InputKey::KEY_C && evt.isCtrlDown())
             {
                 m_editBox->handleKeyEvent(evt);
                 return InputActionResult();
             } 473823
-            else if (evt.keyCode() == input::KeyCode::KEY_X && evt.isCtrlDown())
+            else if (evt.keyCode() == InputKey::KEY_X && evt.isCtrlDown())
             {
                 return InputActionResult();
             }
-            else if (evt.keyCode() == input::KeyCode::KEY_V && evt.isCtrlDown())
+            else if (evt.keyCode() == InputKey::KEY_V && evt.isCtrlDown())
             {
                 return InputActionResult();
             }*/
 
-            if (evt.keyCode() != input::KeyCode::KEY_MOUSE0 && evt.keyCode() != input::KeyCode::KEY_LEFT_SHIFT)
+            if (evt.keyCode() != InputKey::KEY_MOUSE0 && evt.keyCode() != InputKey::KEY_LEFT_SHIFT)
             {
                 if (auto editBox = m_editBox.lock())
                     editBox->moveCursor(m_startSelection, false);
@@ -558,7 +558,7 @@ public:
         return InputActionResult();
     }
 
-    virtual InputActionResult onMouseEvent(const input::MouseClickEvent& evt, const ElementWeakPtr& hoverStack) override
+    virtual InputActionResult onMouseEvent(const InputMouseClickEvent& evt, const ElementWeakPtr& hoverStack) override
     {
         if (!evt.leftReleased())
         {
@@ -569,7 +569,7 @@ public:
         return InputActionResult(nullptr);
     }
 
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
     {            
         if (auto editBox = m_editBox.lock())
         {
@@ -600,7 +600,7 @@ void EditBox::handleFocusGained()
         selectWholeText();
 }
 
-InputActionPtr EditBox::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr EditBox::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftDoubleClicked())
     {
@@ -629,9 +629,9 @@ InputActionPtr EditBox::handleMouseClick(const ElementArea& area, const input::M
     return InputActionPtr();
 }
 
-bool EditBox::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const
+bool EditBox::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const
 {
-    outCursorType = input::CursorType::TextBeam;
+    outCursorType = CursorType::TextBeam;
     return true;
 }
 

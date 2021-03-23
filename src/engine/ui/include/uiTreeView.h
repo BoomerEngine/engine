@@ -45,8 +45,8 @@ protected:
     virtual void modelItemsAdded(const ModelIndex& parent, const Array<ModelIndex>& items) override;
     virtual void modelItemsRemoved(const ModelIndex& parent, const Array<ModelIndex>& items) override;
 
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
 
     void updateExpandStyle(ViewItem* item);
     void changeExpandState(ViewItem* item, bool state, bool recursive = false);

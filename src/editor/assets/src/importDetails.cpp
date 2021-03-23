@@ -118,7 +118,7 @@ public:
         outData.caption = m_fileName;
     }
 
-    virtual bool handleItemContextMenu(ui::ICollectionView* view, const ui::CollectionItems& items, const ui::Position& pos, input::KeyMask controlKeys) override
+    virtual bool handleItemContextMenu(ui::ICollectionView* view, const ui::CollectionItems& items, const ui::Position& pos, InputKeyMask controlKeys) override
     {
         auto menu = RefNew<ui::MenuButtonContainer>();
 

@@ -30,7 +30,7 @@ void ICanvasAreaElement::prepareGeometry(CanvasArea* owner, float sx, float sy, 
     // no baked geometry
 }
 
-InputActionPtr ICanvasAreaElement::handleMouseClick(CanvasArea* owner, Position virtualPosition, const input::MouseClickEvent& evt)
+InputActionPtr ICanvasAreaElement::handleMouseClick(CanvasArea* owner, Position virtualPosition, const InputMouseClickEvent& evt)
 {
     return nullptr;
 }
@@ -326,7 +326,7 @@ void CanvasArea::stepZoom(int delta, Position pos)
     setZoom(zoom, pos);
 }
 
-bool CanvasArea::handleMouseWheel(const input::MouseMovementEvent& evt, float delta)
+bool CanvasArea::handleMouseWheel(const InputMouseMovementEvent& evt, float delta)
 {
     auto pos = evt.absolutePosition().toVector() - cachedDrawArea().absolutePosition();
 
@@ -342,12 +342,12 @@ class CanvasAreaBackgroundScroll : public MouseInputAction
 {
 public:
     CanvasAreaBackgroundScroll(CanvasArea* area)
-        : MouseInputAction(area, input::KeyCode::KEY_MOUSE1)
+        : MouseInputAction(area, InputKey::KEY_MOUSE1)
         , m_area(area)
     {
     }
 
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoveredElement) override
     {
         if (auto area = m_area.lock())
         {
@@ -369,7 +369,7 @@ protected:
 };
 
 
-InputActionPtr CanvasArea::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr CanvasArea::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.rightClicked())
         return RefNew<CanvasAreaBackgroundScroll>(this);

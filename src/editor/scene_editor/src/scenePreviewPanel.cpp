@@ -55,7 +55,7 @@ void ScenePreviewPanel::requestRecreateGizmo()
     recreateGizmo();
 }
 
-rendering::Scene* ScenePreviewPanel::scene() const
+rendering::RenderingScene* ScenePreviewPanel::scene() const
 {
     auto rendering = m_container->world()->system<WorldRenderingSystem>();
     return rendering->scene();
@@ -104,7 +104,7 @@ void ScenePreviewPanel::handleContextMenu(bool ctrl, bool shift, const ui::Posit
         editMode->handleContextMenu(this, ctrl, shift, absolutePosition, clientPosition, objectUnderCursor, positionUnderCursor);
 }
 
-ui::InputActionPtr ScenePreviewPanel::handleMouseClick(const ui::ElementArea& area, const input::MouseClickEvent& evt)
+ui::InputActionPtr ScenePreviewPanel::handleMouseClick(const ui::ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftClicked() && m_gizmos)
     {
@@ -121,7 +121,7 @@ ui::InputActionPtr ScenePreviewPanel::handleMouseClick(const ui::ElementArea& ar
     return TBaseClass::handleMouseClick(area, evt);
 }
 
-bool ScenePreviewPanel::handleMouseMovement(const input::MouseMovementEvent& evt)
+bool ScenePreviewPanel::handleMouseMovement(const InputMouseMovementEvent& evt)
 {
     if (m_gizmos)
     {
@@ -132,7 +132,7 @@ bool ScenePreviewPanel::handleMouseMovement(const input::MouseMovementEvent& evt
     return TBaseClass::handleMouseMovement(evt);
 }
 
-bool ScenePreviewPanel::handleCursorQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, input::CursorType& outCursorType) const
+bool ScenePreviewPanel::handleCursorQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, CursorType& outCursorType) const
 {
     if (m_gizmos)
     {
@@ -145,7 +145,7 @@ bool ScenePreviewPanel::handleCursorQuery(const ui::ElementArea& area, const ui:
     return TBaseClass::handleCursorQuery(area, absolutePosition, outCursorType);
 }
 
-bool ScenePreviewPanel::handleKeyEvent(const input::KeyEvent& evt)
+bool ScenePreviewPanel::handleKeyEvent(const InputKeyEvent& evt)
 {
     if (auto editMode = m_editMode.lock())
         if (editMode->handleKeyEvent(this, evt))

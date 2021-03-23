@@ -296,11 +296,11 @@ bool LauncherApp::createGame(const CommandLine& commandline)
     return true;
 }
 
-bool LauncherApp::processInput(const input::BaseEvent& evt)
+bool LauncherApp::processInput(const InputEvent& evt)
 {
     if (const auto* key = evt.toKeyEvent())
     {
-        if (key->pressed() && key->keyCode() == input::KeyCode::KEY_RETURN && key->keyMask().isLeftAltDown())
+        if (key->pressed() && key->keyCode() == InputKey::KEY_RETURN && key->keyMask().isLeftAltDown())
         {
             toggleFullscreen();
             return true;

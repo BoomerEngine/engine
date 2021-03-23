@@ -291,31 +291,31 @@ void DataInspector::navigateItem(int delta)
         select(allItems[index], true);
 }
 
-bool DataInspector::handleKeyEvent(const input::KeyEvent& evt)
+bool DataInspector::handleKeyEvent(const InputKeyEvent& evt)
 {
     if (evt.pressedOrRepeated())
     {
-        if (evt.keyCode() == input::KeyCode::KEY_UP)
+        if (evt.keyCode() == InputKey::KEY_UP)
         {
             navigateItem(-1);
             return true;
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_DOWN)
+        else if (evt.keyCode() == InputKey::KEY_DOWN)
         {
             navigateItem(1);
             return true;
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_PRIOR)
+        else if (evt.keyCode() == InputKey::KEY_PRIOR)
         {
             navigateItem(-10);
             return true;
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_NEXT)
+        else if (evt.keyCode() == InputKey::KEY_NEXT)
         {
             navigateItem(10);
             return true;
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_RETURN)
+        else if (evt.keyCode() == InputKey::KEY_RETURN)
         {
             if (auto * item = m_selectedItem.unsafe())
             {
@@ -335,7 +335,7 @@ bool DataInspector::handleKeyEvent(const input::KeyEvent& evt)
     return TBaseClass::handleKeyEvent(evt);
 }
 
-InputActionPtr DataInspector::handleOverlayMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr DataInspector::handleOverlayMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftClicked())
     {

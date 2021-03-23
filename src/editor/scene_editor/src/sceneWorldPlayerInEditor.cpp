@@ -123,28 +123,28 @@ public:
         , m_stack(AddRef(screenStack))
     {}
 
-    virtual ui::InputActionResult onKeyEvent(const input::KeyEvent& evt) override
+    virtual ui::InputActionResult onKeyEvent(const InputKeyEvent& evt) override
     {
-        if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_ESCAPE)
+        if (evt.pressed() && evt.keyCode() == InputKey::KEY_ESCAPE)
             return nullptr;
 
         m_stack->input(evt);
         return ui::InputActionResult();
     }
 
-    virtual ui::InputActionResult onAxisEvent(const input::AxisEvent& evt)
+    virtual ui::InputActionResult onAxisEvent(const InputAxisEvent& evt)
     {
         m_stack->input(evt);
         return ui::InputActionResult();
     }
 
-    virtual ui::InputActionResult onMouseEvent(const input::MouseClickEvent& evt, const ui::ElementWeakPtr& hoveredElement) override
+    virtual ui::InputActionResult onMouseEvent(const InputMouseClickEvent& evt, const ui::ElementWeakPtr& hoveredElement) override
     {
         m_stack->input(evt);
         return ui::InputActionResult();
     }
 
-    virtual ui::InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ui::ElementWeakPtr& hoveredElement) override
+    virtual ui::InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ui::ElementWeakPtr& hoveredElement) override
     {
         m_stack->input(evt);
         return ui::InputActionResult();
@@ -169,12 +169,12 @@ private:
     GameScreenStackPtr m_stack;
 };
 
-ui::InputActionPtr ScenePlayInEditorViewport::handleMouseClick(const ui::ElementArea& area, const input::MouseClickEvent& evt)
+ui::InputActionPtr ScenePlayInEditorViewport::handleMouseClick(const ui::ElementArea& area, const InputMouseClickEvent& evt)
 {
     return RefNew<ScenePlayInEditorViewportInputAction>(this, m_screenStack);
 }
 
-bool ScenePlayInEditorViewport::handleKeyEvent(const input::KeyEvent& evt)
+bool ScenePlayInEditorViewport::handleKeyEvent(const InputKeyEvent& evt)
 {
     if (m_screenStack)
         if (m_screenStack->input(evt))
@@ -183,7 +183,7 @@ bool ScenePlayInEditorViewport::handleKeyEvent(const input::KeyEvent& evt)
     return TBaseClass::handleKeyEvent(evt);
 }
 
-/*bool ScenePlayInEditorViewport::handleAxisEvent(const input::AxisEvent& evt)
+/*bool ScenePlayInEditorViewport::handleAxisEvent(const InputAxisEvent& evt)
 {
     if (m_screenStack)
         if (m_screenStack->input(evt))
@@ -192,7 +192,7 @@ bool ScenePlayInEditorViewport::handleKeyEvent(const input::KeyEvent& evt)
     return TBaseClass::handleAxisEvent(evt);
 }
 
-bool ScenePlayInEditorViewport::handleMouseMovement(const input::MouseMovementEvent& evt)
+bool ScenePlayInEditorViewport::handleMouseMovement(const InputMouseMovementEvent& evt)
 {
     if (m_screenStack)
         if (m_screenStack->input(evt))

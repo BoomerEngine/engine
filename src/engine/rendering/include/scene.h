@@ -19,7 +19,7 @@ BEGIN_BOOMER_NAMESPACE_EX(rendering)
 ///--
 
 // scene type
-enum class SceneType : uint8_t
+enum class RenderingSceneType : uint8_t
 {
     Game, // actual full blown game scene, usually there's only one 
     EditorGame, // in-editor game scene, some features may have bigger budgets
@@ -29,7 +29,7 @@ enum class SceneType : uint8_t
 ///--
 
 // shared object flags
-enum class ObjectProxyFlagBit : uint8_t
+enum class RenderingObjectFlagBit : uint8_t
 {
 	Attached,
 	Visible,
@@ -41,39 +41,39 @@ enum class ObjectProxyFlagBit : uint8_t
 	ForceShadowsOnly,
 };
 
-typedef BitFlagsBase<ObjectProxyFlagBit, uint32_t> ObjectProxyFlags;
+typedef BitFlagsBase<RenderingObjectFlagBit, uint32_t> RenderingObjectFlags;
 
 ///--
 
 /// public wrapper for the object
-class ENGINE_RENDERING_API IObjectProxy : public IReferencable
+class ENGINE_RENDERING_API IRenderingObject : public IReferencable
 {
-	RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IObjectProxy);
+	RTTI_DECLARE_VIRTUAL_ROOT_CLASS(IRenderingObject);
 	RTTI_DECLARE_POOL(POOL_RENDERING_PROXY);
 
 public:
-	virtual ~IObjectProxy();
+	virtual ~IRenderingObject();
 };
 
 ///--
 
 // a rendering scene - container for objects of various sorts
-class ENGINE_RENDERING_API Scene : public IReferencable
+class ENGINE_RENDERING_API RenderingScene : public IReferencable
 {
 public:
-    Scene(SceneType type);
-	virtual ~Scene();
+    RenderingScene(RenderingSceneType type);
+	virtual ~RenderingScene();
 
     //--
 
     // type of the scene
-    INLINE const SceneType type() const { return m_type; }
+    INLINE const RenderingSceneType type() const { return m_type; }
 
 	// get object manager
 	template <typename T>
 	INLINE T* manager() const
 	{
-		static_assert(std::is_base_of<IObjectManager, T>::value, "Only manager classes are supported");
+		static_assert(std::is_base_of<IRenderingObjectManager, T>::value, "Only manager classes are supported");
 		static const auto index = T::GetStaticClass()->userIndex();
 		return static_cast<T*>(m_managers[index]);
 	}
@@ -91,13 +91,13 @@ public:
 
 private:
 	gpu::IDevice* m_device = nullptr;
-    SceneType m_type = SceneType::Game;
+    RenderingSceneType m_type = RenderingSceneType::Game;
 
 	//--
 
 	std::atomic<bool> m_renderLockFlag = false;
 
-	Array<IObjectManager*> m_managers;
+	Array<IRenderingObjectManager*> m_managers;
 
 	//--
 

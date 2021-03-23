@@ -67,7 +67,7 @@ public:
     virtual void onCanceled();
 
     /// Update mouse cursor
-    virtual void onUpdateCursor(input::CursorType& outCursorType);
+    virtual void onUpdateCursor(CursorType& outCursorType);
 
     /// Update the window refresh policy while using this action
     /// Allows action to adjust the global UI rendering mode to optimize quality of user interaction
@@ -83,16 +83,16 @@ public:
     ///---
 
     /// Handle key event
-    virtual InputActionResult onKeyEvent(const input::KeyEvent& evt);
+    virtual InputActionResult onKeyEvent(const InputKeyEvent& evt);
 
     /// Handle axis event
-    virtual InputActionResult onAxisEvent(const input::AxisEvent& evt);
+    virtual InputActionResult onAxisEvent(const InputAxisEvent& evt);
 
     /// Handle mouse click
-    virtual InputActionResult onMouseEvent(const input::MouseClickEvent& evt, const ElementWeakPtr& hoveredElement);
+    virtual InputActionResult onMouseEvent(const InputMouseClickEvent& evt, const ElementWeakPtr& hoveredElement);
 
     /// Handle mouse movement
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoveredElement);
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoveredElement);
 
     /// Update internal stuff related to this input action, called once per tick
     virtual InputActionResult onUpdate(float dt);
@@ -119,15 +119,15 @@ private:
 class ENGINE_UI_API MouseInputAction : public IInputAction
 {
 public:
-    MouseInputAction(IElement* ptr, const input::KeyCode mouseCode, bool cancelWithEscape = true);
+    MouseInputAction(IElement* ptr, const InputKey mouseCode, bool cancelWithEscape = true);
 
     virtual void onFinished();
 
-    virtual InputActionResult onKeyEvent(const input::KeyEvent& evt) override final;
-    virtual InputActionResult onMouseEvent(const input::MouseClickEvent& evt, const ElementWeakPtr& hoverStack) override final;
+    virtual InputActionResult onKeyEvent(const InputKeyEvent& evt) override final;
+    virtual InputActionResult onMouseEvent(const InputMouseClickEvent& evt, const ElementWeakPtr& hoverStack) override final;
 
 private:
-    input::KeyCode m_controllingButton;
+    InputKey m_controllingButton;
     bool m_escapeCanCancel;
 };
 

@@ -85,8 +85,8 @@ private:
     // IElement
     virtual void computeSize(Size& outSize) const override;
     virtual void arrangeChildren(const ElementArea& innerArea, const ElementArea& clipArea, ArrangedChildren& outArrangedChildren, const ElementDynamicSizing* dynamicSizing) const override;
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override final;
-    virtual bool handleMouseWheel(const input::MouseMovementEvent &evt, float delta) override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override final;
+    virtual bool handleMouseWheel(const InputMouseMovementEvent &evt, float delta) override;
     virtual void handleEnableStateChange(bool isEnabled) override;
 
     float m_scrollPosition; // position in the scrolled area
@@ -124,7 +124,7 @@ public:
 
 private:
     // IElement
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
 
     //--
 

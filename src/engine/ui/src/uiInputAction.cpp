@@ -34,9 +34,9 @@ void IInputAction::onRender(canvas::Canvas& canvas)
 void IInputAction::onRender3D(rendering::FrameParams& frame)
 {}
 
-void IInputAction::onUpdateCursor(input::CursorType& outCursorType)
+void IInputAction::onUpdateCursor(CursorType& outCursorType)
 {
-    outCursorType = input::CursorType::Default;
+    outCursorType = CursorType::Default;
 }
 
 void IInputAction::onUpdateRedrawPolicy(WindowRedrawPolicy& outRedrawPolicy)
@@ -44,22 +44,22 @@ void IInputAction::onUpdateRedrawPolicy(WindowRedrawPolicy& outRedrawPolicy)
     // nothing
 }
 
-InputActionResult IInputAction::onKeyEvent(const input::KeyEvent& evt)
+InputActionResult IInputAction::onKeyEvent(const InputKeyEvent& evt)
 {
     return InputActionResult();
 }
 
-InputActionResult IInputAction::onAxisEvent(const input::AxisEvent& evt)
+InputActionResult IInputAction::onAxisEvent(const InputAxisEvent& evt)
 {
     return InputActionResult();
 }
 
-InputActionResult IInputAction::onMouseEvent(const input::MouseClickEvent& evt, const ElementWeakPtr& hoverStack)
+InputActionResult IInputAction::onMouseEvent(const InputMouseClickEvent& evt, const ElementWeakPtr& hoverStack)
 {
     return InputActionResult();
 }
 
-InputActionResult IInputAction::onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack)
+InputActionResult IInputAction::onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoverStack)
 {
     return InputActionResult();
 }
@@ -88,17 +88,17 @@ public:
         : IInputAction(nullptr)
     {}
 
-    virtual InputActionResult onKeyEvent(const input::KeyEvent& evt) override
+    virtual InputActionResult onKeyEvent(const InputKeyEvent& evt) override
     {
         return nullptr;
     }
 
-    virtual InputActionResult onMouseEvent(const input::MouseClickEvent& evt, const ElementWeakPtr& hoverStack) override
+    virtual InputActionResult onMouseEvent(const InputMouseClickEvent& evt, const ElementWeakPtr& hoverStack) override
     {
         return nullptr;
     }
 
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
     {
         return nullptr;
     }
@@ -141,15 +141,15 @@ RefPtr<IInputAction> IInputAction::CONSUME()
 
 //---
 
-MouseInputAction::MouseInputAction(IElement* ptr, input::KeyCode mouseCode, bool cancelWithEscape /*= true*/)
+MouseInputAction::MouseInputAction(IElement* ptr, InputKey mouseCode, bool cancelWithEscape /*= true*/)
     : IInputAction(ptr)
     , m_controllingButton(mouseCode)
     , m_escapeCanCancel(cancelWithEscape)
 {}
 
-InputActionResult MouseInputAction::onKeyEvent(const input::KeyEvent& evt)
+InputActionResult MouseInputAction::onKeyEvent(const InputKeyEvent& evt)
 {
-    if (m_escapeCanCancel && evt.keyCode() == input::KeyCode::KEY_ESCAPE && evt.pressed())
+    if (m_escapeCanCancel && evt.keyCode() == InputKey::KEY_ESCAPE && evt.pressed())
     {
         onCanceled();
         return InputActionResult(nullptr);
@@ -161,9 +161,9 @@ void MouseInputAction::onFinished()
 {
 }
 
-InputActionResult MouseInputAction::onMouseEvent(const input::MouseClickEvent& evt, const ElementWeakPtr& hoverStack)
+InputActionResult MouseInputAction::onMouseEvent(const InputMouseClickEvent& evt, const ElementWeakPtr& hoverStack)
 {
-    if (evt.keyCode() == m_controllingButton && evt.type() == input::MouseEventType::Release)
+    if (evt.keyCode() == m_controllingButton && evt.type() == MouseEventType::Release)
     {
         onFinished();
         return InputActionResult(nullptr);

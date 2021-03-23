@@ -64,7 +64,7 @@ protected:
 
     virtual void handleDetached() override;
     virtual void handleUpdate(double dt) override;
-    virtual bool handleInput(const input::BaseEvent& evt) override;
+    virtual bool handleInput(const InputEvent& evt) override;
     virtual void handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, float visibility) override;
     virtual void handleRenderImGuiDebugOverlay() override;
 

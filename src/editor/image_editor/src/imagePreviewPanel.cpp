@@ -199,7 +199,7 @@ void ImagePreviewPanel::updateTooltip() const
     }
 }
 
-bool ImagePreviewPanel::handleMouseMovement(const input::MouseMovementEvent& evt)
+bool ImagePreviewPanel::handleMouseMovement(const InputMouseMovementEvent& evt)
 {
     m_previewPixelValid = false;
 

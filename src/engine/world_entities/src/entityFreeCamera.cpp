@@ -45,7 +45,7 @@ void FreeCamera::reset()
     m_mouseDeltaY = 0.0f;
 }
 
-bool FreeCamera::input(const input::BaseEvent& evt)
+bool FreeCamera::input(const InputEvent& evt)
 {
     if (const auto* key = evt.toKeyEvent())
     {
@@ -53,22 +53,22 @@ bool FreeCamera::input(const input::BaseEvent& evt)
 
         switch (key->keyCode())
         {
-            case input::KeyCode::KEY_A: m_buttons.configure(boomer::FreeCamera::ButtonBit::Left, value); return true;
-            case input::KeyCode::KEY_D: m_buttons.configure(boomer::FreeCamera::ButtonBit::Right, value); return true;
-            case input::KeyCode::KEY_W: m_buttons.configure(boomer::FreeCamera::ButtonBit::Forward, value);; return true;
-            case input::KeyCode::KEY_S: m_buttons.configure(boomer::FreeCamera::ButtonBit::Backward, value);; return true;
-            case input::KeyCode::KEY_Q: m_buttons.configure(boomer::FreeCamera::ButtonBit::Down, value);; return true;
-            case input::KeyCode::KEY_E: m_buttons.configure(boomer::FreeCamera::ButtonBit::Up, value);; return true;
-            case input::KeyCode::KEY_LEFT_SHIFT: m_buttons.configure(boomer::FreeCamera::ButtonBit::Fast, value);; return true;
-            case input::KeyCode::KEY_LEFT_CTRL: m_buttons.configure(boomer::FreeCamera::ButtonBit::Slow, value);; return true;
+            case InputKey::KEY_A: m_buttons.configure(boomer::FreeCamera::ButtonBit::Left, value); return true;
+            case InputKey::KEY_D: m_buttons.configure(boomer::FreeCamera::ButtonBit::Right, value); return true;
+            case InputKey::KEY_W: m_buttons.configure(boomer::FreeCamera::ButtonBit::Forward, value);; return true;
+            case InputKey::KEY_S: m_buttons.configure(boomer::FreeCamera::ButtonBit::Backward, value);; return true;
+            case InputKey::KEY_Q: m_buttons.configure(boomer::FreeCamera::ButtonBit::Down, value);; return true;
+            case InputKey::KEY_E: m_buttons.configure(boomer::FreeCamera::ButtonBit::Up, value);; return true;
+            case InputKey::KEY_LEFT_SHIFT: m_buttons.configure(boomer::FreeCamera::ButtonBit::Fast, value);; return true;
+            case InputKey::KEY_LEFT_CTRL: m_buttons.configure(boomer::FreeCamera::ButtonBit::Slow, value);; return true;
         }
     }
     else if (const auto* axis = evt.toAxisEvent())
     {
         switch (axis->axisCode())
         {
-            case input::AxisCode::AXIS_MOUSEX: m_mouseDeltaX = axis->displacement() * cvCameraMouseSensitivity.get(); return true;
-            case input::AxisCode::AXIS_MOUSEY: m_mouseDeltaY = axis->displacement() * cvCameraMouseSensitivity.get(); return true;
+            case InputAxis::AXIS_MOUSEX: m_mouseDeltaX = axis->displacement() * cvCameraMouseSensitivity.get(); return true;
+            case InputAxis::AXIS_MOUSEY: m_mouseDeltaY = axis->displacement() * cvCameraMouseSensitivity.get(); return true;
         }
     }
 
@@ -136,7 +136,7 @@ FreeCameraEntity::FreeCameraEntity()
 FreeCameraEntity::~FreeCameraEntity()
 {}
 
-bool FreeCameraEntity::processRawInput(const input::BaseEvent& evt)
+bool FreeCameraEntity::processRawInput(const InputEvent& evt)
 {
     if (m_freeCamera.input(evt))
         return true;

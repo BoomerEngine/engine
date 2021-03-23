@@ -30,10 +30,10 @@ public:
         , m_pixelDelta(0)
     {}
 
-    virtual InputActionResult onKeyEvent(const input::KeyEvent& evt) override
+    virtual InputActionResult onKeyEvent(const InputKeyEvent& evt) override
     {
         // revert back to old value on ESC key
-        if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_ESCAPE)
+        if (evt.pressed() && evt.keyCode() == InputKey::KEY_ESCAPE)
         {
             m_box->call(EVENT_VALUE_DRAG_CANCELED);
             return nullptr;
@@ -42,7 +42,7 @@ public:
         return InputActionResult(); // continue
     }
 
-    virtual InputActionResult onMouseEvent(const input::MouseClickEvent& evt, const ElementWeakPtr& hoverStack) override
+    virtual InputActionResult onMouseEvent(const InputMouseClickEvent& evt, const ElementWeakPtr& hoverStack) override
     {
         if (evt.leftReleased())
         {
@@ -53,7 +53,7 @@ public:
         return InputActionResult(); // continue
     }
 
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
     {
         const auto pixelStep = std::max<int>(1, cvDraggerPixelRatio.get());
 
@@ -114,7 +114,7 @@ Dragger::Dragger()
     enableAutoExpand(false, false);
 }
 
-InputActionPtr Dragger::handleMouseClick(const ElementArea &area, const input::MouseClickEvent &evt)
+InputActionPtr Dragger::handleMouseClick(const ElementArea &area, const InputMouseClickEvent &evt)
 {
     if (evt.leftClicked())
     {
@@ -125,14 +125,14 @@ InputActionPtr Dragger::handleMouseClick(const ElementArea &area, const input::M
     return nullptr;
 }
 
-bool Dragger::handleMouseWheel(const input::MouseMovementEvent &evt, float delta)
+bool Dragger::handleMouseWheel(const InputMouseMovementEvent &evt, float delta)
 {
     return false;
 }
 
-bool Dragger::handleCursorQuery(const ElementArea &area, const Position &absolutePosition, input::CursorType &outCursorType) const
+bool Dragger::handleCursorQuery(const ElementArea &area, const Position &absolutePosition, CursorType &outCursorType) const
 {
-    outCursorType = input::CursorType::SizeNS;
+    outCursorType = CursorType::SizeNS;
     return true;
 }
 

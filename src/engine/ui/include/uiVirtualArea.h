@@ -272,10 +272,10 @@ protected:
 
     virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
     virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
-    virtual bool handleMouseWheel(const input::MouseMovementEvent& evt, float delta) override;
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
-    virtual InputActionPtr handleOverlayMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
+    virtual bool handleMouseWheel(const InputMouseMovementEvent& evt, float delta) override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
+    virtual InputActionPtr handleOverlayMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
 
     virtual bool iterateDrawChildren(ElementDrawListToken& token) const override;
     virtual void renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, canvas::Canvas& canvas, float mergedOpacity) override;

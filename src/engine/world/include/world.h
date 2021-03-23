@@ -84,7 +84,7 @@ struct ENGINE_WORLD_API WorldCreationSetup
     bool hasStreaming = true;
     bool editor = false;
 
-    const rendering::Scene* existingRenderingScene = nullptr;
+    const rendering::RenderingScene* existingRenderingScene = nullptr;
 };
 
 ///----

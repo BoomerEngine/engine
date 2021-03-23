@@ -17,7 +17,7 @@ BEGIN_BOOMER_NAMESPACE()
 
 ///--
 
-RTTI_BEGIN_TYPE_CLASS(InputEvent);
+RTTI_BEGIN_TYPE_CLASS(GameInputEvent);
     RTTI_PROPERTY(m_name);
     RTTI_PROPERTY(m_deltaValue);
     RTTI_PROPERTY(m_absoluteValue);
@@ -25,26 +25,26 @@ RTTI_END_TYPE();
 
 ///--
 
-RTTI_BEGIN_TYPE_CLASS(InputContext);
+RTTI_BEGIN_TYPE_CLASS(GameInputContext);
 RTTI_END_TYPE();
 
-InputContext::InputContext()
+GameInputContext::GameInputContext()
 {}
 
-InputContext::InputContext(const InputDefinitionsPtr& defs)
+GameInputContext::GameInputContext(const InputDefinitionsPtr& defs)
 {
     if (defs)
         m_table = defs->root();
 }
 
-InputContext::InputContext(const InputActionTablePtr& table)
+GameInputContext::GameInputContext(const InputActionTablePtr& table)
     : m_table(table)
 {
 }
 
 //--
 
-bool InputContext::enterSubContext(StringID name)
+bool GameInputContext::enterSubContext(StringID name)
 {
     if (m_table)
     {
@@ -61,12 +61,12 @@ bool InputContext::enterSubContext(StringID name)
     return false;
 }
 
-void InputContext::leaveSubContext(StringID name)
+void GameInputContext::leaveSubContext(StringID name)
 {
     auto test = m_table.get();
     while (test)
     {
-        auto parent = rtti_cast<InputActionTable>(m_table->parent());
+        auto parent = rtti_cast<GameInputActionTable>(m_table->parent());
 
         if (test->name() == name)
         {
@@ -78,51 +78,51 @@ void InputContext::leaveSubContext(StringID name)
     }
 }
 
-void InputContext::switchContext(StringView name)
+void GameInputContext::switchContext(StringView name)
 {
     // TODO:
 }
 
 //--
 
-static const InputAction* FindKeyAction(const InputActionTable& table, input::KeyCode code)
+static const GameInputAction* FindKeyAction(const GameInputActionTable& table, InputKey code)
 {
     for (const auto& action : table.actions())
         if (action.type == InputActionType::Button && action.defaultKey == code && action.name)
             return &action;
         
-    if (auto parent = rtti_cast<InputActionTable>(table.parent()))
+    if (auto parent = rtti_cast<GameInputActionTable>(table.parent()))
         return FindKeyAction(*parent, code);
 
     return nullptr;
 }
 
-static const InputAction* FindAxisAction(const InputActionTable& table, input::AxisCode code)
+static const GameInputAction* FindAxisAction(const GameInputActionTable& table, InputAxis code)
 {
     for (const auto& action : table.actions())
         if (action.type == InputActionType::Axis && action.defaultAxis == code && action.name)
             return &action;
 
-    if (auto parent = rtti_cast<InputActionTable>(table.parent()))
+    if (auto parent = rtti_cast<GameInputActionTable>(table.parent()))
         return FindAxisAction(*parent, code);
 
     return nullptr;
 }
 
-static bool IsDeltaAxis(input::AxisCode code)
+static bool IsDeltaAxis(InputAxis code)
 {
     switch (code)
     {
-    case input::AxisCode::AXIS_MOUSEX:
-    case input::AxisCode::AXIS_MOUSEY:
-    case input::AxisCode::AXIS_MOUSEZ:
+    case InputAxis::AXIS_MOUSEX:
+    case InputAxis::AXIS_MOUSEY:
+    case InputAxis::AXIS_MOUSEZ:
         return true;
     }
 
     return false;
 }
 
-bool InputContext::handleInputEvent(const input::BaseEvent& evt, InputEventPtr& outEvent)
+bool GameInputContext::handleInputEvent(const InputEvent& evt, GameInputEventPtr& outEvent)
 {
     if (m_table)
     {
@@ -142,7 +142,7 @@ bool InputContext::handleInputEvent(const input::BaseEvent& evt, InputEventPtr& 
                     if (m_consumedPresses.insert(keyCode))
                         m_buttonValues[action->name] += value;
 
-                    outEvent = RefNew<InputEvent>();
+                    outEvent = RefNew<GameInputEvent>();
                     outEvent->m_name = action->name;
                     outEvent->m_deltaValue = value;
                     outEvent->m_absoluteValue = m_buttonValues[action->name];
@@ -159,7 +159,7 @@ bool InputContext::handleInputEvent(const input::BaseEvent& evt, InputEventPtr& 
                     if (m_consumedPresses.remove(keyCode))
                         m_buttonValues[action->name] += value;
 
-                    outEvent = RefNew<InputEvent>();
+                    outEvent = RefNew<GameInputEvent>();
                     outEvent->m_name = action->name;
                     outEvent->m_deltaValue = value;
                     outEvent->m_absoluteValue = m_buttonValues[action->name];
@@ -184,7 +184,7 @@ bool InputContext::handleInputEvent(const input::BaseEvent& evt, InputEventPtr& 
 
                     m_axisValues[action->name] += delta;
 
-                    outEvent = RefNew<InputEvent>();
+                    outEvent = RefNew<GameInputEvent>();
                     outEvent->m_name = action->name;
                     outEvent->m_deltaValue = delta;
                     outEvent->m_absoluteValue = m_axisValues[action->name];
@@ -196,7 +196,7 @@ bool InputContext::handleInputEvent(const input::BaseEvent& evt, InputEventPtr& 
 
                     const auto delta = action->invert ? -axisEvent->displacement() : axisEvent->displacement();
 
-                    outEvent = RefNew<InputEvent>();
+                    outEvent = RefNew<GameInputEvent>();
                     outEvent->m_name = action->name;
                     outEvent->m_deltaValue = prev - axisEvent->displacement();
                     outEvent->m_absoluteValue = axisEvent->displacement();

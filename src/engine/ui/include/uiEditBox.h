@@ -114,11 +114,11 @@ private:
     virtual void prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const override;
     virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
 
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
-    virtual bool handleCharEvent(const input::CharEvent& evt) override;
-    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const override;
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
-    virtual bool handleContextMenu(const ElementArea& area, const Position& absolutePosition, input::KeyMask controlKeys) override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
+    virtual bool handleCharEvent(const InputCharEvent& evt) override;
+    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
+    virtual bool handleContextMenu(const ElementArea& area, const Position& absolutePosition, InputKeyMask controlKeys) override;
     virtual void handleFocusGained() override;
 
     bool moveCursor(const CursorNavigation& pos, bool extendSelection);

@@ -11,10 +11,10 @@
 #include "core/math/include/point.h"
 #include "core/system/include/timing.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(input)
+BEGIN_BOOMER_NAMESPACE()
 
 /// type of the input event
-enum class EventType : uint8_t
+enum class InputEventType : uint8_t
 {
     None,
     Key,
@@ -26,16 +26,16 @@ enum class EventType : uint8_t
     DragDrop,
 };
 
-class KeyEvent;
-class CharEvent;
-class AxisEvent;
-class MouseClickEvent;
-class MouseMovementEvent;
-class MouseCaptureLostEvent;
-class DragDropEvent;
+class InputKeyEvent;
+class InputCharEvent;
+class InputAxisEvent;
+class InputMouseClickEvent;
+class InputMouseMovementEvent;
+class InputMouseCaptureLostEvent;
+class InputDragDropEvent;
 
 /// shared namespace for keys and mouse button IDs
-enum class KeyCode : uint8_t
+enum class InputKey : uint8_t
 {
     KEY_INVALID = 0x0,
 
@@ -206,7 +206,7 @@ enum class KeyCode : uint8_t
     KEY_MAX = 0xFF,
 };
 
-enum class AxisCode : uint8_t
+enum class InputAxis : uint8_t
 {
     AXIS_MOUSEX = 0x00,
     AXIS_MOUSEY = 0x01,
@@ -214,7 +214,7 @@ enum class AxisCode : uint8_t
     AXIS_MAX,
 };
 
-enum class KeyMaskBit : uint16_t
+enum class InputKeyMaskBit : uint16_t
 {
     LEFT_SHIFT = FLAG(0),
     RIGHT_SHIFT = FLAG(1),
@@ -232,55 +232,55 @@ enum class KeyMaskBit : uint16_t
     ANY_ALT = LEFT_ALT | RIGHT_ALT,
 };
 
-typedef DirectFlags<KeyMaskBit> KeyMask;
+typedef DirectFlags<InputKeyMaskBit> InputKeyMask;
 
 //--
 
 /// base class for event type
-class CORE_INPUT_API BaseEvent : public IReferencable
+class CORE_INPUT_API InputEvent : public IReferencable
 {
-	RTTI_DECLARE_VIRTUAL_ROOT_CLASS(BaseEvent);
+	RTTI_DECLARE_VIRTUAL_ROOT_CLASS(InputEvent);
 
 public:
     /// get the type of the event, allows event casting
-    INLINE EventType eventType() const { return m_eventType; }
+    INLINE InputEventType eventType() const { return m_eventType; }
 
     /// get the type of the device that produced the event
-    INLINE DeviceType deviceType() const { return m_deviceType; }
+    INLINE InputDeviceType deviceType() const { return m_deviceType; }
 
     /// get ID of the device that generated the event (support for multiple pads/keyboards/mouses)
-    INLINE DeviceID deviceID() const { return m_deviceId; }
+    INLINE InputDeviceID deviceID() const { return m_deviceId; }
 
     /// get timestamp of where was this event generated
     INLINE NativeTimePoint timestamp() const { return m_timeStamp; }
 
     //--
 
-	INLINE BaseEvent() = default;
-	BaseEvent(EventType eventType, DeviceType deviceType, DeviceID deviceId);
+	INLINE InputEvent() = default;
+	InputEvent(InputEventType eventType, InputDeviceType deviceType, InputDeviceID deviceId);
 
     //--
 
     // convert to key event
-    const KeyEvent* toKeyEvent() const;
+    const InputKeyEvent* toKeyEvent() const;
 
     // convert to axis event
-    const AxisEvent* toAxisEvent() const;
+    const InputAxisEvent* toAxisEvent() const;
 
     // convert to character event
-    const CharEvent* toCharEvent() const;
+    const InputCharEvent* toCharEvent() const;
 
     // convert to mouse click event
-    const MouseClickEvent* toMouseClickEvent() const;
+    const InputMouseClickEvent* toMouseClickEvent() const;
 
     // convert to mouse move event
-    const MouseMovementEvent* toMouseMoveEvent() const;
+    const InputMouseMovementEvent* toMouseMoveEvent() const;
 
     // convert to mouse capture lost event
-    const MouseCaptureLostEvent* toMouseCaptureLostEvent() const;
+    const InputMouseCaptureLostEvent* toMouseCaptureLostEvent() const;
 
     // convert to drag&drop event
-    const DragDropEvent* toDragAndDropEvent() const;
+    const InputDragDropEvent* toDragAndDropEvent() const;
 
 	//--
 
@@ -288,9 +288,9 @@ public:
 	void print(IFormatStream& f) const;
 
 protected:
-    EventType m_eventType;
-    DeviceType m_deviceType;
-    DeviceID m_deviceId;            
+    InputEventType m_eventType;
+    InputDeviceType m_deviceType;
+    InputDeviceID m_deviceId;            
     NativeTimePoint m_timeStamp;
 
 	void printBase(IFormatStream& f) const;
@@ -305,50 +305,50 @@ class CORE_INPUT_API BaseKeyFlags
 
 public:
 	BaseKeyFlags();
-	BaseKeyFlags(const KeyMask& mask);
+	BaseKeyFlags(const InputKeyMask& mask);
 	BaseKeyFlags(const BaseKeyFlags& other);
 	BaseKeyFlags& operator=(const BaseKeyFlags& other);
 	INLINE bool operator==(const BaseKeyFlags& other) const { return m_keyMask == other.m_keyMask; }
 	INLINE bool operator!=(const BaseKeyFlags& other) const { return m_keyMask != other.m_keyMask; }
 
 	/// get the raw mask
-	INLINE KeyMask mask() const { return m_keyMask; }
+	INLINE InputKeyMask mask() const { return m_keyMask; }
 
 	/// is the left button pressed right now ?
-	INLINE bool isLeftDown() const { return m_keyMask.test(KeyMaskBit::LEFT_MOUSE); }
+	INLINE bool isLeftDown() const { return m_keyMask.test(InputKeyMaskBit::LEFT_MOUSE); }
 
 	/// is the middle button pressed NOW ?
-	INLINE bool isMidDown() const { return m_keyMask.test(KeyMaskBit::MIDDLE_MOUSE); }
+	INLINE bool isMidDown() const { return m_keyMask.test(InputKeyMaskBit::MIDDLE_MOUSE); }
 
 	/// is the right button pressed NOW ?
-	INLINE bool isRightDown() const { return m_keyMask.test(KeyMaskBit::RIGHT_MOUSE); }
+	INLINE bool isRightDown() const { return m_keyMask.test(InputKeyMaskBit::RIGHT_MOUSE); }
 
 	/// is the alt key pressed during this mouse event ?
-	INLINE bool isAltDown() const { return m_keyMask.test(KeyMaskBit::ANY_ALT); }
+	INLINE bool isAltDown() const { return m_keyMask.test(InputKeyMaskBit::ANY_ALT); }
 
 	/// is the shift key pressed during this mouse event ?
-	INLINE bool isShiftDown() const { return m_keyMask.test(KeyMaskBit::ANY_SHIFT); }
+	INLINE bool isShiftDown() const { return m_keyMask.test(InputKeyMaskBit::ANY_SHIFT); }
 
 	/// is the control key pressed during this mouse event ?
-	INLINE bool isCtrlDown() const { return m_keyMask.test(KeyMaskBit::ANY_CTRL); }
+	INLINE bool isCtrlDown() const { return m_keyMask.test(InputKeyMaskBit::ANY_CTRL); }
 
 	/// is the left alt key pressed during this mouse event ?
-	INLINE bool isLeftAltDown() const { return m_keyMask.test(KeyMaskBit::LEFT_ALT); }
+	INLINE bool isLeftAltDown() const { return m_keyMask.test(InputKeyMaskBit::LEFT_ALT); }
 
 	/// is the left shift key pressed during this mouse event ?
-	INLINE bool isLeftShiftDown() const { return m_keyMask.test(KeyMaskBit::LEFT_SHIFT); }
+	INLINE bool isLeftShiftDown() const { return m_keyMask.test(InputKeyMaskBit::LEFT_SHIFT); }
 
 	/// is the left control key pressed during this mouse event ?
-	INLINE bool isLeftCtrlDown() const { return m_keyMask.test(KeyMaskBit::LEFT_CTRL); }
+	INLINE bool isLeftCtrlDown() const { return m_keyMask.test(InputKeyMaskBit::LEFT_CTRL); }
 
 	/// is the right alt key pressed during this mouse event ?
-	INLINE bool isRightAltDown() const { return m_keyMask.test(KeyMaskBit::RIGHT_ALT); }
+	INLINE bool isRightAltDown() const { return m_keyMask.test(InputKeyMaskBit::RIGHT_ALT); }
 
 	/// is the right shift key pressed during this mouse event ?
-	INLINE bool isRightShiftDown() const { return m_keyMask.test(KeyMaskBit::RIGHT_SHIFT); }
+	INLINE bool isRightShiftDown() const { return m_keyMask.test(InputKeyMaskBit::RIGHT_SHIFT); }
 
 	/// is the right control key pressed during this mouse event ?
-	INLINE bool isRightCtrlDown() const { return m_keyMask.test(KeyMaskBit::RIGHT_CTRL); }
+	INLINE bool isRightCtrlDown() const { return m_keyMask.test(InputKeyMaskBit::RIGHT_CTRL); }
 
 	//--
 
@@ -356,37 +356,37 @@ public:
 	void print(IFormatStream& f) const;
 
 private:
-	KeyMask m_keyMask;
+	InputKeyMask m_keyMask;
 };
 
 //--
 
 /// mouse event
-class CORE_INPUT_API MouseClickEvent : public BaseEvent
+class CORE_INPUT_API InputMouseClickEvent : public InputEvent
 {
-	RTTI_DECLARE_VIRTUAL_CLASS(MouseClickEvent, BaseEvent);
+	RTTI_DECLARE_VIRTUAL_CLASS(InputMouseClickEvent, InputEvent);
 
 public:
     /// is the left button just clicked ?
-    INLINE bool leftClicked() const { return (m_key == KeyCode::KEY_MOUSE0) && (m_clickType == MouseEventType::Click); }
+    INLINE bool leftClicked() const { return (m_key == InputKey::KEY_MOUSE0) && (m_clickType == MouseEventType::Click); }
 
     /// is the left button just double clicked ?
-    INLINE bool leftDoubleClicked() const { return (m_key == KeyCode::KEY_MOUSE0) && (m_clickType == MouseEventType::DoubleClick); }
+    INLINE bool leftDoubleClicked() const { return (m_key == InputKey::KEY_MOUSE0) && (m_clickType == MouseEventType::DoubleClick); }
 
     /// is the left button just released ?
-    INLINE bool leftReleased() const { return (m_key == KeyCode::KEY_MOUSE0) && (m_clickType == MouseEventType::Release);}
+    INLINE bool leftReleased() const { return (m_key == InputKey::KEY_MOUSE0) && (m_clickType == MouseEventType::Release);}
 
     /// is the middle button just clicked ?
-    INLINE bool midClicked() const { return (m_key == KeyCode::KEY_MOUSE2) && (m_clickType == MouseEventType::Click); }
+    INLINE bool midClicked() const { return (m_key == InputKey::KEY_MOUSE2) && (m_clickType == MouseEventType::Click); }
 
     /// is the middle button just released ?
-    INLINE bool midReleased() const { return (m_key == KeyCode::KEY_MOUSE2) && (m_clickType == MouseEventType::Release); }
+    INLINE bool midReleased() const { return (m_key == InputKey::KEY_MOUSE2) && (m_clickType == MouseEventType::Release); }
 
     /// is the right button just clicked ?
-    INLINE bool rightClicked() const { return (m_key == KeyCode::KEY_MOUSE1) && (m_clickType == MouseEventType::Click); }
+    INLINE bool rightClicked() const { return (m_key == InputKey::KEY_MOUSE1) && (m_clickType == MouseEventType::Click); }
 
     /// is the right button just released ?
-    INLINE bool rightReleased() const { return (m_key == KeyCode::KEY_MOUSE1) && (m_clickType == MouseEventType::Release); }
+    INLINE bool rightReleased() const { return (m_key == InputKey::KEY_MOUSE1) && (m_clickType == MouseEventType::Release); }
 
     /// get position in the window space where the event occurred
     INLINE const Point& windowPosition() const { return m_windowPos; }
@@ -395,7 +395,7 @@ public:
     INLINE const Point& absolutePosition() const { return m_absolutePos; }
 
     /// get the code of the mouse button pressed
-    INLINE KeyCode keyCode() const { return m_key; }
+    INLINE InputKey keyCode() const { return m_key; }
 
     /// get the mouse event type
     INLINE MouseEventType type() const { return m_clickType; }
@@ -405,8 +405,8 @@ public:
 
     //---
 
-	INLINE MouseClickEvent() = default;
-	MouseClickEvent(DeviceID deviceId, KeyCode key, MouseEventType type, BaseKeyFlags keyMask, const Point& windowPos, const Point& absolutePos);
+	INLINE InputMouseClickEvent() = default;
+	InputMouseClickEvent(InputDeviceID deviceId, InputKey key, MouseEventType type, BaseKeyFlags keyMask, const Point& windowPos, const Point& absolutePos);
 
 	//--
 	
@@ -414,7 +414,7 @@ public:
 	void print(IFormatStream& f) const;
 
 private:
-    KeyCode         m_key;      // button pressed/released
+    InputKey         m_key;      // button pressed/released
     MouseEventType  m_clickType; // type of event
 	BaseKeyFlags    m_keyMask;  // shift/ctrl/alt key mask (so we don't have to track it)
     Point     m_windowPos; // position in window's client space where the click occurred
@@ -424,9 +424,9 @@ private:
 //--
 
 /// mouse movement event
-class CORE_INPUT_API MouseMovementEvent : public BaseEvent
+class CORE_INPUT_API InputMouseMovementEvent : public InputEvent
 {
-	RTTI_DECLARE_VIRTUAL_CLASS(MouseMovementEvent, BaseEvent);
+	RTTI_DECLARE_VIRTUAL_CLASS(InputMouseMovementEvent, InputEvent);
 
 public:
     /// is the mouse input captured
@@ -446,11 +446,11 @@ public:
 
     ///---
 
-	INLINE MouseMovementEvent() = default;
-	MouseMovementEvent(DeviceID deviceId, BaseKeyFlags keyMask, bool captured, const Point& windowPoint, const Point& absolutePoint, const Vector3& delta);
+	INLINE InputMouseMovementEvent() = default;
+	InputMouseMovementEvent(InputDeviceID deviceId, BaseKeyFlags keyMask, bool captured, const Point& windowPoint, const Point& absolutePoint, const Vector3& delta);
 
     // merge this event with other instance
-    bool merge(const MouseMovementEvent& source);
+    bool merge(const InputMouseMovementEvent& source);
 
 	// describe the event
 	void print(IFormatStream& f) const;
@@ -466,13 +466,13 @@ private:
 //--
 
 /// mouse capture was lost
-class CORE_INPUT_API MouseCaptureLostEvent : public BaseEvent
+class CORE_INPUT_API InputMouseCaptureLostEvent : public InputEvent
 {
-	RTTI_DECLARE_VIRTUAL_CLASS(MouseCaptureLostEvent, BaseEvent);
+	RTTI_DECLARE_VIRTUAL_CLASS(InputMouseCaptureLostEvent, InputEvent);
 
 public:
-	INLINE MouseCaptureLostEvent() = default;
-	MouseCaptureLostEvent(DeviceID deviceId);
+	INLINE InputMouseCaptureLostEvent() = default;
+	InputMouseCaptureLostEvent(InputDeviceID deviceId);
 
 	// describe the event
 	void print(IFormatStream& f) const;
@@ -481,9 +481,9 @@ public:
 //--
 
 /// character event (for typing)
-class CORE_INPUT_API CharEvent : public BaseEvent
+class CORE_INPUT_API InputCharEvent : public InputEvent
 {
-	RTTI_DECLARE_VIRTUAL_CLASS(CharEvent, BaseEvent);
+	RTTI_DECLARE_VIRTUAL_CLASS(InputCharEvent, InputEvent);
 
 public:
     /// get the key scan code of the character
@@ -497,8 +497,8 @@ public:
 
     //---
 
-	INLINE CharEvent() = default;
-	CharEvent(DeviceID deviceId, KeyScanCode scanCode, bool repeated, BaseKeyFlags keyMask);
+	INLINE InputCharEvent() = default;
+	InputCharEvent(InputDeviceID deviceId, KeyScanCode scanCode, bool repeated, BaseKeyFlags keyMask);
 
 	// describe the event
 	void print(IFormatStream& f) const;
@@ -515,13 +515,13 @@ private:
 //--
 
 /// key event (key was pressed/released)
-class CORE_INPUT_API KeyEvent : public BaseEvent
+class CORE_INPUT_API InputKeyEvent : public InputEvent
 {
-	RTTI_DECLARE_VIRTUAL_CLASS(KeyEvent, BaseEvent);
+	RTTI_DECLARE_VIRTUAL_CLASS(InputKeyEvent, InputEvent);
 
 public:
     /// get the key that was pressed ?
-    INLINE KeyCode keyCode() const { return m_key; }
+    INLINE InputKey keyCode() const { return m_key; }
 
     /// was the key just pressed ? NOTE: returns false if it's a repeat
     INLINE bool pressed() const { return m_pressed && !m_repeated; }
@@ -540,13 +540,13 @@ public:
 
     //---
 
-	INLINE KeyEvent() = default;
-	KeyEvent(DeviceType deviceType, DeviceID deviceId, KeyCode key, bool pressed, bool repeated, BaseKeyFlags keyMask);
+	INLINE InputKeyEvent() = default;
+	InputKeyEvent(InputDeviceType deviceType, InputDeviceID deviceId, InputKey key, bool pressed, bool repeated, BaseKeyFlags keyMask);
 
 	//---
 
 	// make a matching "key release" event that originates from the same source etc
-	RefPtr<KeyEvent> makeReleaseEvent() const;
+	RefPtr<InputKeyEvent> makeReleaseEvent() const;
 
 	//---
 
@@ -554,7 +554,7 @@ public:
 	void print(IFormatStream& f) const;
 
 private:
-    KeyCode m_key; // key in question
+    InputKey m_key; // key in question
     bool    m_pressed; // is this a press event ?
     bool    m_repeated;  // is this a auto-repeat press event ?
 	BaseKeyFlags m_keyMask; // shift/ctrl/alt key mask (so we don't have to track it)
@@ -563,27 +563,27 @@ private:
 //---
 
 /// axis event (mouse deltas, pad/joystick displacements)
-class CORE_INPUT_API AxisEvent : public BaseEvent
+class CORE_INPUT_API InputAxisEvent : public InputEvent
 {
-	RTTI_DECLARE_VIRTUAL_CLASS(AxisEvent, BaseEvent);
+	RTTI_DECLARE_VIRTUAL_CLASS(InputAxisEvent, InputEvent);
 
 public:
     /// get the axis that is changing
-    INLINE AxisCode axisCode() const { return m_axis; }
+    INLINE InputAxis axisCode() const { return m_axis; }
 
     /// get axis displacement
     INLINE float displacement() const { return m_displacement; }
 
     //---
 
-	INLINE AxisEvent() = default;
-    AxisEvent(DeviceType deviceType, DeviceID deviceId, AxisCode axisCode, float value);
+	INLINE InputAxisEvent() = default;
+    InputAxisEvent(InputDeviceType deviceType, InputDeviceID deviceId, InputAxis axisCode, float value);
 
     // merge two events
-    bool merge(const AxisEvent& source);
+    bool merge(const InputAxisEvent& source);
 
 	// make a reset event for this axis
-	RefPtr<AxisEvent> makeResetEvent() const;
+	RefPtr<InputAxisEvent> makeResetEvent() const;
 
 	//---
 
@@ -591,7 +591,7 @@ public:
 	void print(IFormatStream& f) const;
 
 private:
-    AxisCode m_axis;
+    InputAxis m_axis;
     float m_displacement;
 };
 
@@ -605,9 +605,9 @@ enum class DragDropAction : uint8_t
     Drop,
 };
 
-class CORE_INPUT_API DragDropEvent : public BaseEvent
+class CORE_INPUT_API InputDragDropEvent : public InputEvent
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(DragDropEvent, BaseEvent);
+    RTTI_DECLARE_VIRTUAL_CLASS(InputDragDropEvent, InputEvent);
 
 public:
     // get drag&drop action type
@@ -621,8 +621,8 @@ public:
 
     //--
 
-	INLINE DragDropEvent() = default;
-	DragDropEvent(DragDropAction action, const Buffer& ptr, const Point& point);
+	INLINE InputDragDropEvent() = default;
+	InputDragDropEvent(DragDropAction action, const Buffer& ptr, const Point& point);
 
 	//---
 
@@ -635,4 +635,4 @@ private:
     Point m_point;
 };
 
-END_BOOMER_NAMESPACE_EX(input)
+END_BOOMER_NAMESPACE()

@@ -36,7 +36,7 @@ public:
     //--
 
     /// handle player input, called ONLY when entity is local
-    virtual bool handleInput(const input::BaseEvent& evt) = 0;
+    virtual bool handleInput(const InputEvent& evt) = 0;
 
     //--
 

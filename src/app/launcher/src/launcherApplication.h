@@ -45,7 +45,7 @@ private:
     void updateWindow();
     void updateGame(double dt);
 
-    bool processInput(const input::BaseEvent& evt);
+    bool processInput(const InputEvent& evt);
 
     void renderFrame();
 };

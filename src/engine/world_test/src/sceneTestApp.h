@@ -30,9 +30,9 @@ protected:
     virtual void cleanup() override;
 
     void handleTick(float dt);
-    void handleInput(input::IContext& context);
-    bool handleInputEvent(const input::BaseEvent& evt);
-    bool handleAppInputEvent(const input::BaseEvent& evt);
+    void handleInput(IInputContext& context);
+    bool handleInputEvent(const InputEvent& evt);
+    bool handleAppInputEvent(const InputEvent& evt);
 
     void prepareSceneCommandBuffers(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output);
     void prepareCanvasCommandBuffers(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output);

@@ -147,7 +147,7 @@ uint8_t FourWaySplitter::computeSashInputMask(const Position& pos) const
     return mask;
 }
 
-InputActionPtr FourWaySplitter::handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt)
+InputActionPtr FourWaySplitter::handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt)
 {
     if (evt.leftClicked())
     {
@@ -170,27 +170,27 @@ InputActionPtr FourWaySplitter::handleMouseClick(const ElementArea& area, const 
     return InputActionPtr();
 }
 
-void FourWaySplitter::CursorForInputMask(uint8_t inputMask, input::CursorType& outCursorType)
+void FourWaySplitter::CursorForInputMask(uint8_t inputMask, CursorType& outCursorType)
 {
     if (inputMask == 3)
-        outCursorType = input::CursorType::SizeAll;
+        outCursorType = CursorType::SizeAll;
     else if (inputMask == 1)
-        outCursorType = input::CursorType::SizeWE;
+        outCursorType = CursorType::SizeWE;
     else if (inputMask == 2)
-        outCursorType = input::CursorType::SizeNS;
+        outCursorType = CursorType::SizeNS;
 }
 
-bool FourWaySplitter::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const
+bool FourWaySplitter::handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const
 {
     const auto mask = computeSashInputMask(absolutePosition);
     CursorForInputMask(mask, outCursorType);
     return true;
 }
 
-bool FourWaySplitter::handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, input::AreaType& outAreaType) const
+bool FourWaySplitter::handleWindowAreaQuery(const ElementArea& area, const Position& absolutePosition, AreaType& outAreaType) const
 {
     // this is added so the splitter takes precedence over border
-    outAreaType = input::AreaType::Client;
+    outAreaType = AreaType::Client;
     return true;
 }
 
@@ -200,7 +200,7 @@ class FourWaySplitterSashInputAction : public MouseInputAction
 {
 public:
     FourWaySplitterSashInputAction(FourWaySplitter* splitter, const ElementArea& sashArea, const Position& delta, uint8_t inputMask, Size sashSize)
-        : MouseInputAction(splitter, input::KeyCode::KEY_MOUSE0)
+        : MouseInputAction(splitter, InputKey::KEY_MOUSE0)
         , m_splitter(splitter)
         , m_inputMask(inputMask)
         , m_sashSize(sashSize)
@@ -252,7 +252,7 @@ public:
         return Vector2(0.5f, 0.5f);
     }
 
-    virtual InputActionResult onMouseMovement(const input::MouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
+    virtual InputActionResult onMouseMovement(const InputMouseMovementEvent& evt, const ElementWeakPtr& hoverStack) override
     {
         if (auto splitter = m_splitter.lock())
         {
@@ -263,7 +263,7 @@ public:
         return InputActionResult();
     }
 
-    virtual void onUpdateCursor(input::CursorType& outCursorType) override
+    virtual void onUpdateCursor(CursorType& outCursorType) override
     {
         FourWaySplitter::CursorForInputMask(m_inputMask, outCursorType);
     }

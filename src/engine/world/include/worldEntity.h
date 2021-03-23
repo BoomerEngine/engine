@@ -175,7 +175,7 @@ public:
     virtual void handleDebugRender(rendering::FrameParams& frame) const;
 
     /// handle game input event
-    virtual bool handleInput(const input::BaseEvent& evt);
+    virtual bool handleInput(const InputEvent& evt);
 
     /// handle stream-in of the component island, called after children were streamed in
     /// NOTE: none of the entities in the island are attached at the time of stream it so we can modify the hierarchy freely

@@ -872,7 +872,7 @@ void Renderer::updateAndRender(float dt)
     }
 
     // suck all input events
-    InplaceArray<RefPtr<input::BaseEvent>, 64> inputEvents;
+    InplaceArray<RefPtr<InputEvent>, 64> inputEvents;
     {
         PC_SCOPE_LVL1(PullInput);
         for (auto& info : m_windows)
@@ -1119,7 +1119,7 @@ void Renderer::resetDragDrop()
     m_currentDragDropCanFinish = false;
 }
 
-bool Renderer::updateDragDrop(const input::MouseMovementEvent& evt)
+bool Renderer::updateDragDrop(const InputMouseMovementEvent& evt)
 {
     // consider if we should start a full drag
     if (!m_currentDragDropData)
@@ -1288,7 +1288,7 @@ bool Renderer::updateDragDrop(const input::MouseMovementEvent& evt)
     return true;
 }
 
-void Renderer::processMouseMovement(const input::MouseMovementEvent& evt)
+void Renderer::processMouseMovement(const InputMouseMovementEvent& evt)
 {
     // track position
     m_lastMouseMovementPosition = evt.absolutePosition().toVector();
@@ -1318,7 +1318,7 @@ void Renderer::processMouseMovement(const input::MouseMovementEvent& evt)
     }
 }
 
-void Renderer::processMouseClick(const input::MouseClickEvent& evt)
+void Renderer::processMouseClick(const InputMouseClickEvent& evt)
 {
     // always track the focus element
     //updateHoverPosition(evt.absolutePosition().toVector());
@@ -1440,7 +1440,7 @@ void Renderer::processMouseClick(const input::MouseClickEvent& evt)
     }
 }
 
-void Renderer::processMouseCaptureLostEvent(const input::MouseCaptureLostEvent& evt)
+void Renderer::processMouseCaptureLostEvent(const InputMouseCaptureLostEvent& evt)
 {
     if (m_currentInputAction)
     {
@@ -1450,16 +1450,16 @@ void Renderer::processMouseCaptureLostEvent(const input::MouseCaptureLostEvent& 
     }
 }
 
-void Renderer::processKeyEvent(const input::KeyEvent& evt)
+void Renderer::processKeyEvent(const InputKeyEvent& evt)
 {
     // pressing any key revokes our chance to get the context menu
-    if (evt.pressed() && evt.keyCode() != input::KeyCode::KEY_MOUSE1)
+    if (evt.pressed() && evt.keyCode() != InputKey::KEY_MOUSE1)
         m_potentialContextMenuElementPtr.reset();
 
     // pressing any key cancels the drag action
     if (m_currentDragDropHandler)
     {
-        if (evt.pressed() && evt.keyCode() == input::KeyCode::KEY_ESCAPE)
+        if (evt.pressed() && evt.keyCode() == InputKey::KEY_ESCAPE)
         {
             resetDragDrop();
             return;
@@ -1471,7 +1471,7 @@ void Renderer::processKeyEvent(const input::KeyEvent& evt)
         if (processInputActionResult(m_currentInputAction->onKeyEvent(evt)))
             return;
 
-    //TRACE_INFO("KeyEvent: {} {} {}", evt.pressed(), evt.released(), evt.keyCode());
+    //TRACE_INFO("InputKeyEvent: {} {} {}", evt.pressed(), evt.released(), evt.keyCode());
 
     // send the preview event to the controls in the reverse order
     // NOTE: the preview is not sent to the focused element
@@ -1510,7 +1510,7 @@ void Renderer::processKeyEvent(const input::KeyEvent& evt)
     }
 }
 
-void Renderer::processCharEvent(const input::CharEvent& evt)
+void Renderer::processCharEvent(const InputCharEvent& evt)
 {
     // pressing any key cancels the drag action
     resetDragDrop();
@@ -1525,7 +1525,7 @@ void Renderer::processCharEvent(const input::CharEvent& evt)
             break;
 }
 
-void Renderer::processAxisEvent(const input::AxisEvent& evt)
+void Renderer::processAxisEvent(const InputAxisEvent& evt)
 {
     // during active input action the chars are ignored
     if (m_currentInputAction)
@@ -1571,7 +1571,7 @@ bool Renderer::processInputActionResult(const InputActionResult& result)
 
 //--
 
-bool Renderer::nativeWindowSelectCursor(NativeWindowID id, const Position& absolutePosition, input::CursorType& outCursorType)
+bool Renderer::nativeWindowSelectCursor(NativeWindowID id, const Position& absolutePosition, CursorType& outCursorType)
 {
     for (auto& window : m_windows)
     {
@@ -1606,7 +1606,7 @@ bool Renderer::nativeWindowSelectCursor(NativeWindowID id, const Position& absol
     return false;
 }
 
-bool Renderer::nativeWindowHitTestNonClientArea(NativeWindowID id, const Position& absolutePosition, input::AreaType& outAreaType)
+bool Renderer::nativeWindowHitTestNonClientArea(NativeWindowID id, const Position& absolutePosition, AreaType& outAreaType)
 {
     for (auto& window : m_windows)
     {

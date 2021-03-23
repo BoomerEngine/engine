@@ -27,7 +27,7 @@ public:
     void requestTransformChange(const Vector3& pos, const Angles& angles);
 
 protected:
-    virtual bool handleInput(const input::BaseEvent& evt) override;
+    virtual bool handleInput(const InputEvent& evt) override;
     virtual void handleUpdate(const EntityThreadContext& tc, WorldUpdatePhase phase, float dt) override final;
     virtual void handleUpdateMask(WorldUpdateMask& outUpdateMask) const override final;
 

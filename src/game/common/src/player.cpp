@@ -50,7 +50,7 @@ IGamePlayerLocal::~IGamePlayerLocal()
     m_cameraContext.reset();
 }
 
-bool IGamePlayerLocal::handleInput(IGameScreen* screen, const input::BaseEvent& evt)
+bool IGamePlayerLocal::handleInput(IGameScreen* screen, const InputEvent& evt)
 {
     if (auto ent = entity())
         return ent->handleInput(evt);

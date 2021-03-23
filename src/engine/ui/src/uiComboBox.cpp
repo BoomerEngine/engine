@@ -179,28 +179,28 @@ int ComboBox::numOptions() const
     return (int)m_options.size();
 }
 
-bool ComboBox::handleKeyEvent(const input::KeyEvent& evt)
+bool ComboBox::handleKeyEvent(const InputKeyEvent& evt)
 {
     if (evt.pressed())
     {
-        if (evt.keyCode() == input::KeyCode::KEY_ESCAPE)
+        if (evt.keyCode() == InputKey::KEY_ESCAPE)
         {
             closePopupList();
             return true;
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_RETURN)
+        else if (evt.keyCode() == InputKey::KEY_RETURN)
         {
             if (!m_popup)
                 showPopupList();
             return true;
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_LEFT)
+        else if (evt.keyCode() == InputKey::KEY_LEFT)
         {
             if (m_selectedOption > 0)
                 selectOption(m_selectedOption - 1);
             return true;
         }
-        else if (evt.keyCode() == input::KeyCode::KEY_RIGHT)
+        else if (evt.keyCode() == InputKey::KEY_RIGHT)
         {
             if (m_selectedOption < m_options.lastValidIndex())
                 selectOption(m_selectedOption + 1);

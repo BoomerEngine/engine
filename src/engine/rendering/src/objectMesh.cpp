@@ -28,7 +28,7 @@ BEGIN_BOOMER_NAMESPACE_EX(rendering)
 
 //---
 
-void ObjectProxyMeshChunk::updatePassTypes()
+void RenderingObjectMeshChunk::updatePassTypes()
 {
     if (material)
     {
@@ -62,16 +62,16 @@ void ObjectProxyMeshChunk::updatePassTypes()
 
 //---
 
-RTTI_BEGIN_TYPE_NATIVE_CLASS(ObjectProxyMesh);
+RTTI_BEGIN_TYPE_NATIVE_CLASS(RenderingMesh);
 RTTI_END_TYPE();
 
-ObjectProxyMesh::ObjectProxyMesh()
+RenderingMesh::RenderingMesh()
 {}
 
-ObjectProxyMesh::~ObjectProxyMesh()
+RenderingMesh::~RenderingMesh()
 {}
 
-ObjectProxyMeshPtr ObjectProxyMesh::Compile(const Setup& setup)
+RenderingMeshPtr RenderingMesh::Compile(const Setup& setup)
 {
     DEBUG_CHECK_RETURN_EX_V(setup.mesh, "No source mesh", nullptr);
 
@@ -104,9 +104,9 @@ ObjectProxyMeshPtr ObjectProxyMesh::Compile(const Setup& setup)
 
     const auto numLods = (setup.forcedLodLevel == -1) ? maxLods : 1;
 
-    ProxyMemoryAllocator<ObjectProxyMesh> allocator;
-    allocator.add<ObjectProxyMeshLOD>(numLods);
-    allocator.add<ObjectProxyMeshChunk>(chunksToCreate.size());
+    RenderingObjectMemoryAllocator<RenderingMesh> allocator;
+    allocator.add<RenderingObjectMeshLOD>(numLods);
+    allocator.add<RenderingObjectMeshChunk>(chunksToCreate.size());
 
     auto* ret = allocator.allocate();
     ret->m_numChunks = 0;// chunksToCreate.size();
@@ -114,7 +114,7 @@ ObjectProxyMeshPtr ObjectProxyMesh::Compile(const Setup& setup)
     ret->m_localBox = setup.mesh->bounds();
 
     // setup lod table
-    auto* lodTable = (ObjectProxyMeshLOD*)ret->lods();
+    auto* lodTable = (RenderingObjectMeshLOD*)ret->lods();
     if (setup.forcedLodLevel != -1)
     {
 		const auto& lastLOD = setup.mesh->detailLevels().back();
@@ -132,7 +132,7 @@ ObjectProxyMeshPtr ObjectProxyMesh::Compile(const Setup& setup)
     }
 
     // setup chunks
-    auto* chunkTable = (ObjectProxyMeshChunk*)ret->chunks();
+    auto* chunkTable = (RenderingObjectMeshChunk*)ret->chunks();
     for (auto index : chunksToCreate)
     {
         const auto& chunk = setup.mesh->chunks().typedData()[index];
@@ -180,7 +180,7 @@ ObjectProxyMeshPtr ObjectProxyMesh::Compile(const Setup& setup)
     return AddRef(ret);
 }
 
-float ObjectProxyMesh::visibilityDistanceSquared() const
+float RenderingMesh::visibilityDistanceSquared() const
 {
 	if (m_numLods)
 		return lods()[m_numLods - 1].maxDistanceSquared;
@@ -188,7 +188,7 @@ float ObjectProxyMesh::visibilityDistanceSquared() const
 		return 0.0f;
 }
 
-uint32_t ObjectProxyMesh::calcDetailMask(float distanceSquared) const
+uint32_t RenderingMesh::calcDetailMask(float distanceSquared) const
 {
 	uint32_t mask = 0;
 	uint32_t bit = 1;
@@ -208,33 +208,33 @@ uint32_t ObjectProxyMesh::calcDetailMask(float distanceSquared) const
 
 //---
 
-RTTI_BEGIN_TYPE_CLASS(ObjectManagerMesh);
+RTTI_BEGIN_TYPE_CLASS(RenderingMeshManager);
 RTTI_END_TYPE();
 
-ObjectManagerMesh::ObjectManagerMesh()
+RenderingMeshManager::RenderingMeshManager()
 {}
 
-ObjectManagerMesh::~ObjectManagerMesh()
+RenderingMeshManager::~RenderingMeshManager()
 {}
 
-void ObjectManagerMesh::initialize(Scene* scene, gpu::IDevice* dev)
+void RenderingMeshManager::initialize(RenderingScene* scene, gpu::IDevice* dev)
 {
     static auto* materialService = GetService<MaterialService>();
     materialService->registerMaterialProxyChangeListener(this);
 }
 
-void ObjectManagerMesh::shutdown()
+void RenderingMeshManager::shutdown()
 {
     static auto* materialService = GetService<MaterialService>();
     materialService->unregisterMaterialProxyChangeListener(this);
 }
 
-void ObjectManagerMesh::prepare(gpu::CommandWriter& cmd, gpu::IDevice* dev, const FrameRenderer& frame)
+void RenderingMeshManager::prepare(gpu::CommandWriter& cmd, gpu::IDevice* dev, const FrameRenderer& frame)
 {
-	m_stats = ObjectMeshTotalStats();
+	m_stats = RenderingMeshTotalStats();
 }
 
-void ObjectManagerMesh::finish(gpu::CommandWriter& cmd, gpu::IDevice* dev, const FrameRenderer& frame, FrameStats& outStats)
+void RenderingMeshManager::finish(gpu::CommandWriter& cmd, gpu::IDevice* dev, const FrameRenderer& frame, FrameStats& outStats)
 {
 	{
 		auto lock = CreateLock(m_statLock);
@@ -250,7 +250,7 @@ void ObjectManagerMesh::finish(gpu::CommandWriter& cmd, gpu::IDevice* dev, const
     exportStats(m_lastStats.localShadowsBatching, outStats.localShadowView);
 }
 
-void ObjectManagerMesh::exportStats(const ObjectMeshBatchingStats& stats, FrameViewStats& outStats) const
+void RenderingMeshManager::exportStats(const RenderingMeshStats& stats, FrameViewStats& outStats) const
 {
 	outStats.numChunks += stats.numInstances;
 	outStats.numDrawCalls += stats.numBatches;
@@ -260,12 +260,12 @@ void ObjectManagerMesh::exportStats(const ObjectMeshBatchingStats& stats, FrameV
 	outStats.recordingTime += stats.recordingTime;
 }
 
-void ObjectManagerMesh::exportStats(const ObjectMeshVisibilityStats& stats, FrameViewStats& outStats) const
+void RenderingMeshManager::exportStats(const RenderingMeshVisibilityStats& stats, FrameViewStats& outStats) const
 {
 	outStats.cullingTime += stats.cullingTime;
 }
 
-void ObjectManagerMesh::render(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame)
+void RenderingMeshManager::render(FrameViewMainRecorder& cmd, const FrameViewMain& view, const FrameRenderer& frame)
 {
 	PC_SCOPE_LVL1(RenderMeshesMain);
 
@@ -292,12 +292,12 @@ void ObjectManagerMesh::render(FrameViewMainRecorder& cmd, const FrameViewMain& 
 	renderChunkListStandalone(cmd.selectionOutline, collector.selectionOutlineList.standaloneChunks, MaterialPass::DepthPrepass, m_stats.depthBatching);
 }
 
-void ObjectManagerMesh::render(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame)
+void RenderingMeshManager::render(FrameViewCascadesRecorder& cmd, const FrameViewCascades& view, const FrameRenderer& frame)
 {
 	PC_SCOPE_LVL1(RenderMeshesCascades);
 }
 
-void ObjectManagerMesh::render(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame)
+void RenderingMeshManager::render(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame)
 {
 	PC_SCOPE_LVL1(RenderMeshesWireframe);
 
@@ -308,7 +308,7 @@ void ObjectManagerMesh::render(FrameViewWireframeRecorder& cmd, const FrameViewW
     sortChunksByBatch(collector.mainList.standaloneChunks);
 	sortChunksByBatch(collector.selectionOutlineList.standaloneChunks);
 
-	ObjectMeshBatchingStats stats;
+	RenderingMeshStats stats;
 
 	const auto solid = (frame.frame().mode == FrameRenderMode::WireframeSolid);
 	if (solid)
@@ -324,7 +324,7 @@ void ObjectManagerMesh::render(FrameViewWireframeRecorder& cmd, const FrameViewW
 	renderChunkListStandalone(cmd.selectionOutline, collector.selectionOutlineList.standaloneChunks, MaterialPass::DepthPrepass, stats);
 }
 
-void ObjectManagerMesh::render(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame)
+void RenderingMeshManager::render(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame)
 {
     PC_SCOPE_LVL1(RenderCaptureSelection);
 
@@ -334,12 +334,12 @@ void ObjectManagerMesh::render(FrameViewCaptureSelectionRecorder& cmd, const Fra
 
 	sortChunksByBatch(collector.mainList.standaloneChunks);
 
-    ObjectMeshBatchingStats stats;
+    RenderingMeshStats stats;
     renderChunkListStandalone(cmd.depthPrePass, collector.mainList.standaloneChunks, MaterialPass::DepthPrepass, stats);
     renderChunkListStandalone(cmd.mainFragments, collector.mainList.standaloneChunks, MaterialPass::SelectionFragments, stats);
 }
 
-void ObjectManagerMesh::render(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame)
+void RenderingMeshManager::render(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame)
 {
     PC_SCOPE_LVL1(RenderCaptureSelection);
 
@@ -349,18 +349,18 @@ void ObjectManagerMesh::render(FrameViewCaptureDepthRecorder& cmd, const FrameVi
 
     sortChunksByBatch(collector.mainList.standaloneChunks);
 
-    ObjectMeshBatchingStats stats;
+    RenderingMeshStats stats;
 	renderChunkListStandalone(cmd.depth, collector.mainList.standaloneChunks, MaterialPass::DepthPrepass, stats);
 }
 
 //--
 
-ObjectManagerMesh::VisibleChunkList::VisibleChunkList()
+RenderingMeshManager::VisibleChunkList::VisibleChunkList()
 {
 	standaloneChunks.reserve(1024);
 }
 
-void ObjectManagerMesh::VisibleChunkList::prepare(uint32_t totalChunkCount)
+void RenderingMeshManager::VisibleChunkList::prepare(uint32_t totalChunkCount)
 {
 	if (totalChunkCount > standaloneChunks.capacity())
 	{
@@ -372,7 +372,7 @@ void ObjectManagerMesh::VisibleChunkList::prepare(uint32_t totalChunkCount)
 	//standaloneChunks.allocateUninitialized(totalChunkCount);
 }
 
-void ObjectManagerMesh::VisibleMainViewCollector::prepare(uint32_t totalChunkCount)
+void RenderingMeshManager::VisibleMainViewCollector::prepare(uint32_t totalChunkCount)
 {
 	selectionOutlineList.prepare(totalChunkCount);
 
@@ -383,20 +383,20 @@ void ObjectManagerMesh::VisibleMainViewCollector::prepare(uint32_t totalChunkCou
         list.prepare(totalChunkCount);
 }
 
-void ObjectManagerMesh::VisibleWireframeViewCollector::prepare(uint32_t totalChunkCount)
+void RenderingMeshManager::VisibleWireframeViewCollector::prepare(uint32_t totalChunkCount)
 {
 	selectionOutlineList.prepare(totalChunkCount);
 	mainList.prepare(totalChunkCount);
 }
 
-void ObjectManagerMesh::VisibleCaptureCollector::prepare(uint32_t totalChunkCount)
+void RenderingMeshManager::VisibleCaptureCollector::prepare(uint32_t totalChunkCount)
 {
     mainList.prepare(totalChunkCount);
 }
 
 //--
 
-void ObjectManagerMesh::collectMainViewChunks(const FrameViewSingleCamera& view, VisibleMainViewCollector& outCollector, ObjectMeshVisibilityStats& outStats) const
+void RenderingMeshManager::collectMainViewChunks(const FrameViewSingleCamera& view, VisibleMainViewCollector& outCollector, RenderingMeshVisibilityStats& outStats) const
 {
 	PC_SCOPE_LVL1(CollectMainView);
 
@@ -433,7 +433,7 @@ void ObjectManagerMesh::collectMainViewChunks(const FrameViewSingleCamera& view,
 		if (!lodMask)
 			continue;
 
-        const auto selected = object.data->m_flags.test(ObjectProxyFlagBit::Selected);
+        const auto selected = object.data->m_flags.test(RenderingObjectFlagBit::Selected);
 
 		outStats.numVisibleObjects += 1;
 		outStats.numTestedChunks += object.data->m_numChunks;
@@ -485,7 +485,7 @@ void ObjectManagerMesh::collectMainViewChunks(const FrameViewSingleCamera& view,
 	outStats.cullingTime += timer.timeElapsed();
 }
 
-void ObjectManagerMesh::collectCaptureChunks(const FrameViewSingleCamera& view, VisibleCaptureCollector& outCollector) const
+void RenderingMeshManager::collectCaptureChunks(const FrameViewSingleCamera& view, VisibleCaptureCollector& outCollector) const
 {
 	PC_SCOPE_LVL1(CollectMainView);
 
@@ -538,7 +538,7 @@ void ObjectManagerMesh::collectCaptureChunks(const FrameViewSingleCamera& view, 
 	}
 }
 
-void ObjectManagerMesh::collectWireframeViewChunks(const FrameViewSingleCamera& view, VisibleWireframeViewCollector& outCollector) const
+void RenderingMeshManager::collectWireframeViewChunks(const FrameViewSingleCamera& view, VisibleWireframeViewCollector& outCollector) const
 {
 	PC_SCOPE_LVL1(CollectMainView);
 
@@ -572,7 +572,7 @@ void ObjectManagerMesh::collectWireframeViewChunks(const FrameViewSingleCamera& 
         if (!lodMask)
             continue;
 
-		const auto selected = object.data->m_flags.test(ObjectProxyFlagBit::Selected);
+		const auto selected = object.data->m_flags.test(RenderingObjectFlagBit::Selected);
 
 		const auto* chunk = object.data->chunks();
 		const auto* chunkEnd = chunk + object.data->m_numChunks;
@@ -628,7 +628,7 @@ struct GPUInstanceBatchData
 };
 #pragma pack(pop)
 
-void ObjectManagerMesh::sortChunksByBatch(Array<VisibleStandaloneChunk>& chunks) const
+void RenderingMeshManager::sortChunksByBatch(Array<VisibleStandaloneChunk>& chunks) const
 {
     std::sort(chunks.begin(), chunks.end(), [](const VisibleStandaloneChunk& a, const VisibleStandaloneChunk& b)
         {
@@ -640,7 +640,7 @@ void ObjectManagerMesh::sortChunksByBatch(Array<VisibleStandaloneChunk>& chunks)
         });
 }
 
-void ObjectManagerMesh::renderChunkListStandalone(gpu::CommandWriter& cmd, const Array<VisibleStandaloneChunk>& chunks, MaterialPass pass, ObjectMeshBatchingStats& outStats) const
+void RenderingMeshManager::renderChunkListStandalone(gpu::CommandWriter& cmd, const Array<VisibleStandaloneChunk>& chunks, MaterialPass pass, RenderingMeshStats& outStats) const
 {
 	ScopeTimer timer;
 
@@ -765,7 +765,7 @@ void ObjectManagerMesh::renderChunkListStandalone(gpu::CommandWriter& cmd, const
 	outStats.recordingTime += timer.timeElapsed();
 }
 
-void ObjectManagerMesh::handleMaterialProxyChanges(const MaterialDataProxyChangesRegistry& changedProxies)
+void RenderingMeshManager::handleMaterialProxyChanges(const MaterialDataProxyChangesRegistry& changedProxies)
 {
 	for (const auto& object : m_localObjects.values())
 	{
@@ -786,35 +786,35 @@ void ObjectManagerMesh::handleMaterialProxyChanges(const MaterialDataProxyChange
 
 //--
 
-void ObjectManagerMesh::commandAttachProxy(IObjectProxy* object)
+void RenderingMeshManager::commandAttachProxy(IRenderingObject* object)
 {
-	auto meshObject = rtti_cast<ObjectProxyMesh>(object);
+	auto meshObject = rtti_cast<RenderingMesh>(object);
 	DEBUG_CHECK_RETURN_EX(meshObject, "Invalid object");
-	commandAttachProxy(ObjectProxyMeshPtr(AddRef(meshObject)));
+	commandAttachProxy(RenderingMeshPtr(AddRef(meshObject)));
 }
 
-void ObjectManagerMesh::commandDetachProxy(IObjectProxy* object)
+void RenderingMeshManager::commandDetachProxy(IRenderingObject* object)
 {
-    auto meshObject = rtti_cast<ObjectProxyMesh>(object);
+    auto meshObject = rtti_cast<RenderingMesh>(object);
     DEBUG_CHECK_RETURN_EX(meshObject, "Invalid object");
-	commandDetachProxy(ObjectProxyMeshPtr(AddRef(meshObject)));
+	commandDetachProxy(RenderingMeshPtr(AddRef(meshObject)));
 }
 
-void ObjectManagerMesh::commandMoveProxy(IObjectProxy* object, Matrix newLocation)
+void RenderingMeshManager::commandMoveProxy(IRenderingObject* object, Matrix newLocation)
 {
-    auto meshObject = rtti_cast<ObjectProxyMesh>(object);
+    auto meshObject = rtti_cast<RenderingMesh>(object);
     DEBUG_CHECK_RETURN_EX(meshObject, "Invalid object");
-	commandMoveProxy(ObjectProxyMeshPtr(AddRef(meshObject)), newLocation);
+	commandMoveProxy(RenderingMeshPtr(AddRef(meshObject)), newLocation);
 }
 
-void ObjectManagerMesh::commandUpdateProxyFlag(IObjectProxy* object, ObjectProxyFlags clearFlags, ObjectProxyFlags setFlags)
+void RenderingMeshManager::commandUpdateProxyFlag(IRenderingObject* object, RenderingObjectFlags clearFlags, RenderingObjectFlags setFlags)
 {
-    auto meshObject = rtti_cast<ObjectProxyMesh>(object);
+    auto meshObject = rtti_cast<RenderingMesh>(object);
     DEBUG_CHECK_RETURN_EX(meshObject, "Invalid object");
-	commandUpdateProxyFlag(ObjectProxyMeshPtr(AddRef(meshObject)), clearFlags, setFlags);
+	commandUpdateProxyFlag(RenderingMeshPtr(AddRef(meshObject)), clearFlags, setFlags);
 }
 
-void ObjectManagerMesh::commandAttachProxy(ObjectProxyMeshPtr meshProxy)
+void RenderingMeshManager::commandAttachProxy(RenderingMeshPtr meshProxy)
 {
 	runNowOrBuffer([this, meshProxy]() {
 		DEBUG_CHECK_RETURN_EX(meshProxy, "No mesh proxy");
@@ -832,7 +832,7 @@ void ObjectManagerMesh::commandAttachProxy(ObjectProxyMeshPtr meshProxy)
 		});
 }
 
-void ObjectManagerMesh::commandDetachProxy(ObjectProxyMeshPtr meshProxy)
+void RenderingMeshManager::commandDetachProxy(RenderingMeshPtr meshProxy)
 {
 	runNowOrBuffer([this, meshProxy]() {
 		DEBUG_CHECK_RETURN_EX(m_localObjects.contains(meshProxy), "Proxy not registered");
@@ -840,7 +840,7 @@ void ObjectManagerMesh::commandDetachProxy(ObjectProxyMeshPtr meshProxy)
 		});
 }
 
-void ObjectManagerMesh::commandMoveProxy(ObjectProxyMeshPtr meshProxy, Matrix localToWorld)
+void RenderingMeshManager::commandMoveProxy(RenderingMeshPtr meshProxy, Matrix localToWorld)
 {
 	runNowOrBuffer([this, meshProxy, localToWorld]() {
 		meshProxy->m_localToWorld = localToWorld;
@@ -855,7 +855,7 @@ void ObjectManagerMesh::commandMoveProxy(ObjectProxyMeshPtr meshProxy, Matrix lo
 		});
 }
 
-void ObjectManagerMesh::commandUpdateProxyFlag(ObjectProxyMeshPtr meshProxy, ObjectProxyFlags clearFlags, ObjectProxyFlags setFlags)
+void RenderingMeshManager::commandUpdateProxyFlag(RenderingMeshPtr meshProxy, RenderingObjectFlags clearFlags, RenderingObjectFlags setFlags)
 {
 	runNowOrBuffer([this, meshProxy, clearFlags, setFlags]() {
 		auto* localObject = m_localObjects.find(meshProxy);

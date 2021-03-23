@@ -41,9 +41,9 @@ private:
     Vector3 m_value;
 
     virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
-    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const override;
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
+    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
 
 	canvas::Geometry m_colorRectGeometry;
 	canvas::Geometry m_cursorGeometry;
@@ -80,9 +80,9 @@ private:
     float m_hue = 0.0;
 
     virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
-    virtual InputActionPtr handleMouseClick(const ElementArea& area, const input::MouseClickEvent& evt) override;
-    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, input::CursorType& outCursorType) const override;
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
+    virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
+    virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
 
 	canvas::Geometry m_cursorGeometry;
 	canvas::Geometry m_colorBarGeometry;
@@ -130,7 +130,7 @@ private:
 
     bool m_editAlpha = false;
 
-    virtual bool handleKeyEvent(const input::KeyEvent& evt) override;
+    virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
 
     void syncHue();
     void recomputeFromHLS();
