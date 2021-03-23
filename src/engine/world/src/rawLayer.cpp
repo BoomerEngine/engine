@@ -9,7 +9,7 @@
 
 #include "build.h"
 #include "rawLayer.h"
-#include "nodeTemplate.h"
+#include "rawEntity.h"
 
 #include "core/resource/include/factory.h"
 #include "core/resource/include/tags.h"
@@ -19,7 +19,7 @@ BEGIN_BOOMER_NAMESPACE()
 ///----
 
 RTTI_BEGIN_TYPE_CLASS(RawLayer);
-    RTTI_METADATA(ResourceDescriptionMetadata).description("Scene Layer");
+    RTTI_METADATA(ResourceDescriptionMetadata).description("World Layer");
     RTTI_PROPERTY(m_nodes);
 RTTI_END_TYPE();
 
@@ -27,7 +27,7 @@ RawLayer::RawLayer()
 {
 }
 
-void RawLayer::setup(const Array<NodeTemplatePtr>& sourceNodes)
+void RawLayer::setup(const Array<RawEntityPtr>& sourceNodes)
 {
     m_nodes.reset();
 

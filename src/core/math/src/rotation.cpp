@@ -265,85 +265,40 @@ void Angles::print(IFormatStream& f) const
 
 //--
 
-Angles Min(const Angles &a, const Angles &b)
-{
-    return Angles(std::min(a.pitch, b.pitch), std::min(a.yaw, b.yaw), std::min(a.roll, b.roll));
-}
-
-Angles Max(const Angles &a, const Angles &b)
-{
-    return Angles(std::max(a.pitch, b.pitch), std::max(a.yaw, b.yaw), std::max(a.roll, b.roll));
-}
-
-float Dot(const Angles &a, const Angles &b)
-{
-    return Dot(a.forward(), b.forward());
-}
-
-Angles Snap(const Angles &a, float grid)
-{
-    return Angles(Snap(a.pitch, grid), Snap(a.yaw, grid), Snap(a.roll, grid));
-}
-
-Angles LerpNormalized(const Angles &a, const Angles &b, float frac)
-{
-    return Angles(
-            a.pitch + frac * AngleDistance(a.pitch, b.pitch),
-            a.yaw + frac * AngleDistance(a.yaw, b.yaw),
-            a.roll + frac * AngleDistance(a.roll, b.roll));
-}
-
-Angles Lerp(const Angles &a, const Angles &b, float frac)
-{
-    return Angles(Lerp(a.pitch, b.pitch, frac), Lerp(a.yaw, b.yaw, frac), Lerp(a.roll, b.roll, frac));
-}
-
-Angles Clamp(const Angles &a, const Angles &minV, const Angles &maxV)
-{
-    return Angles(std::clamp(a.pitch, minV.pitch, maxV.pitch), std::clamp(a.yaw, minV.yaw, maxV.yaw), std::clamp(a.roll, minV.roll, maxV.roll));
-}
-
-Angles Clamp(const Angles &a, float minF, float maxF)
-{
-    return Angles(std::clamp(a.pitch, minF, maxF), std::clamp(a.yaw, minF, maxF), std::clamp(a.roll, minF, maxF));
-}
-
-//--
-
 static Angles opNegA(const Angles& a) { return -a; }
 static Angles opAddA(const Angles& a, const Angles& b) { return a + b; }
 static Angles opSubA(const Angles& a, const Angles& b) { return a - b; }
 static Angles opMulAF(const Angles& a, float b) { return a * b; }
 static Angles opDivAF(const Angles& a, float b) { return a / b; }
-static float opDotA(const Angles& a, const Angles& b) { return Dot(a,b); }
+//static float opDotA(const Angles& a, const Angles& b) { return a | b; }
 
 static Angles opAsssignAddA(Angles& a, const Angles& b) { return a += b; }
 static Angles opAsssignSubA(Angles& a, const Angles& b) { return a -= b; }
 static Angles opAsssignMulAF(Angles& a, float b) { return a *= b; }
 static Angles opAsssignDivAF(Angles& a, float b) { return a /= b; }
 
-static Angles AbsA(const Angles& a) { return a.abs(); }
+/*static Angles AbsA(const Angles& a) { return a.abs(); }
 static float DotA(const Angles& a, const Angles& b) { return Dot(a,b); }
 static Angles MinA(const Angles& a, const Angles& b) { return Min(a,b); }
 static Angles MaxA(const Angles& a, const Angles& b) { return Max(a,b); }
 static Angles LerpA(const Angles& a, const Angles& b, float f) { return Lerp(a,b, f); }
 static Angles LerpNormalizedA(const Angles& a, const Angles& b, float f) { return Lerp(a,b, f); }
 static Angles ClampA(const Angles& a, const Angles& minV, const Angles& maxV) { return Clamp(a,minV,maxV); }
-static Angles ClampAF(const Angles& a, float minV, float maxV) { return Clamp(a,minV,maxV); }
+static Angles ClampAF(const Angles& a, float minV, float maxV) { return Clamp(a,minV,maxV); }*/
 
-RTTI_GLOBAL_FUNCTION(AbsA, "Core.AbsA");
+/*RTTI_GLOBAL_FUNCTION(AbsA, "Core.AbsA");
 RTTI_GLOBAL_FUNCTION(MinA, "Core.MinA");
 RTTI_GLOBAL_FUNCTION(MaxA, "Core.MaxA");
 RTTI_GLOBAL_FUNCTION(ClampA, "Core.ClampA");
 RTTI_GLOBAL_FUNCTION(ClampAF, "Core.ClampAF");
 RTTI_GLOBAL_FUNCTION(LerpA, "Core.LerpA");
-RTTI_GLOBAL_FUNCTION(LerpNormalizedA, "Core.LerpNormalizedA");
+RTTI_GLOBAL_FUNCTION(LerpNormalizedA, "Core.LerpNormalizedA");*/
 RTTI_GLOBAL_FUNCTION(opNegA, "Core.opNegate_ref_Angles_Angles");
 RTTI_GLOBAL_FUNCTION(opAddA, "Core.opAdd_ref_Angles_ref_Angles_Angles");
 RTTI_GLOBAL_FUNCTION(opSubA, "Core.opSubtract_ref_Angles_ref_Angles_Angles");
 RTTI_GLOBAL_FUNCTION(opMulAF, "Core.opMultiply_ref_Angles_float_Angles");
 RTTI_GLOBAL_FUNCTION(opDivAF, "Core.opDivide_ref_Angles_float_Angles");
-RTTI_GLOBAL_FUNCTION(opDotA, "Core.opBinaryOr_ref_Angles_ref_Angles_float");
+//RTTI_GLOBAL_FUNCTION(opDotA, "Core.opBinaryOr_ref_Angles_ref_Angles_float");
 RTTI_GLOBAL_FUNCTION(opAsssignAddA, "Core.opAddAssign_out_Angles_ref_Angles_Angles");
 RTTI_GLOBAL_FUNCTION(opAsssignSubA, "Core.opSubAssign_out_Angles_ref_Angles_Angles");
 RTTI_GLOBAL_FUNCTION(opAsssignMulAF, "Core.opMulAssign_out_Angles_float_Angles");

@@ -143,6 +143,19 @@ INLINE ResourceAsyncRef<T> BuildAsyncResourceRef(StringView depotPath)
     return *(const ResourceAsyncRef<T>*) & ref;
 }
 
+/// check if depot file can be loaded into given class
+extern CORE_RESOURCE_API bool CanLoadAsClass(StringView depotPath, ClassType cls);
+
+/// query the load class of a file
+extern CORE_RESOURCE_API ResourceClass LoadClass(StringView depotPath);
+
+/// check if depot file can be loaded into given class
+template< typename T >
+INLINE bool CanLoadAsClass(StringView depotPath)
+{
+    return CanLoadAsClass(depotPath, T::GetStaticClass());
+}
+
 //--
 
 END_BOOMER_NAMESPACE()

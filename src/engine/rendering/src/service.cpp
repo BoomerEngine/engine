@@ -26,23 +26,6 @@ BEGIN_BOOMER_NAMESPACE_EX(rendering)
 
 //--
 
-uint32_t FrameCompositionTarget::width() const
-{
-    return targetRect.width();
-}
-
-uint32_t FrameCompositionTarget::height() const
-{
-    return targetRect.height();
-}
-
-float FrameCompositionTarget::aspectRatio() const
-{
-    return width() / std::max<float>(1.0f, (float)height());
-}
-
-//--
-
 RTTI_BEGIN_TYPE_CLASS(FrameRenderingService);
     //RTTI_METADATA(DependsOnServiceMetadata).dependsOn<LoadingService>();
     RTTI_METADATA(DependsOnServiceMetadata).dependsOn<DeviceService>();
@@ -89,7 +72,7 @@ void FrameRenderingService::onSyncUpdate()
 
 }
 
-gpu::CommandBuffer* FrameRenderingService::render(const FrameParams& frame, const FrameCompositionTarget& targetView, Scene* scene, FrameStats& outStats)
+gpu::CommandBuffer* FrameRenderingService::render(const FrameParams& frame, const gpu::AcquiredOutput& output, Scene* scene, FrameStats& outStats)
 {
     PC_SCOPE_LVL0(RenderFrame);
 
@@ -109,7 +92,7 @@ gpu::CommandBuffer* FrameRenderingService::render(const FrameParams& frame, cons
         gpu::CommandWriter cmd("RenderFrame");
 
         // create frame renderer
-        FrameRenderer renderer(frame, targetView, *m_sharedResources, *m_sharedHelpers, scene);
+        FrameRenderer renderer(frame, output, *m_sharedResources, *m_sharedHelpers, scene);
 
         // prepare renderer
         renderer.prepare(cmd);
@@ -123,7 +106,7 @@ gpu::CommandBuffer* FrameRenderingService::render(const FrameParams& frame, cons
         {
             FrameViewCaptureSelection::Setup setup;
             setup.camera = frame.camera.camera;
-            setup.viewport = targetView.targetRect;
+            setup.viewport = Rect(0, 0, output.width, output.height);
             setup.captureRegion = frame.capture.region;
             setup.captureSink = frame.capture.sink;
 
@@ -134,7 +117,7 @@ gpu::CommandBuffer* FrameRenderingService::render(const FrameParams& frame, cons
         {
             FrameViewCaptureDepth::Setup setup;
             setup.camera = frame.camera.camera;
-            setup.viewport = targetView.targetRect;
+            setup.viewport = Rect(0, 0, output.width, output.height);
             setup.captureRegion = frame.capture.region;
             setup.captureSink = frame.capture.sink;
 
@@ -145,9 +128,9 @@ gpu::CommandBuffer* FrameRenderingService::render(const FrameParams& frame, cons
         {
             FrameViewWireframe::Setup setup;
             setup.camera = frame.camera.camera;
-            setup.colorTarget = targetView.targetColorRTV;
-            setup.depthTarget = targetView.targetDepthRTV;
-            setup.viewport = targetView.targetRect;
+            setup.colorTarget = output.color;
+            setup.depthTarget = output.depth;
+            setup.viewport = Rect(0, 0, output.width, output.height);
 
             FrameViewWireframe view(renderer, setup);
             view.render(cmd);
@@ -156,9 +139,9 @@ gpu::CommandBuffer* FrameRenderingService::render(const FrameParams& frame, cons
         {
             FrameViewMain::Setup setup;
             setup.camera = frame.camera.camera;
-            setup.colorTarget = targetView.targetColorRTV;
-            setup.depthTarget = targetView.targetDepthRTV;
-            setup.viewport = targetView.targetRect;
+            setup.colorTarget = output.color;
+            setup.depthTarget = output.depth;
+            setup.viewport = Rect(0, 0, output.width, output.height);
 
             FrameViewMain view(renderer, setup);
             view.render(cmd);

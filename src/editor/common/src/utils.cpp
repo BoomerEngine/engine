@@ -185,22 +185,4 @@ void RunLongAction(ui::IElement* owner, ProgressDialog* dlg, const TLongJobFunc&
 
 //--
 
-bool CanLoadAsClass(StringView depotPath, ClassType cls)
-{
-    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
-
-    auto metadataPath = ReplaceExtension(depotPath, ResourceMetadata::FILE_EXTENSION);
-    auto metadata = GetService<DepotService>()->loadFileToXMLObject<ResourceMetadata>(metadataPath);
-    if (!metadata)
-        return false;
-
-    if (!metadata->resourceClassType.is(cls))
-        return false;
-
-    auto resourcePath = ReplaceExtension(depotPath, metadata->loadExtension);
-    return GetService<DepotService>()->fileExists(resourcePath);
-}
-
-//--
-
 END_BOOMER_NAMESPACE_EX(ed)

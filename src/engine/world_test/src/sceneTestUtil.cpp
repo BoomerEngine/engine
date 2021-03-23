@@ -11,102 +11,272 @@
 #include "sceneTestUtil.h"
 
 #include "engine/world/include/world.h"
-#include "engine/world/include/entity.h"
-#include "core/resource/include/indirectTemplate.h"
+#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/rawEntity.h"
+#include "engine/world/include/rawPrefab.h"
+#include "engine/world/include/compiledWorldData.h"
+
+#include "engine/world_entities/include/entityMeshBase.h"
+#include "engine/world_entities/include/entitySolidMesh.h"
+#include "engine/world_compiler/include/streamingEntitySoup.h"
+#include "engine/world_compiler/include/streamingGrid.h"
+#include "engine/world_compiler/include/streamingIslandGeneration.h"
 
 #include "engine/mesh/include/mesh.h"
-//#include "game/world/include/meshEntity.h"
+
+#include "core/resource/include/indirectTemplate.h"
+#include "core/resource/include/depot.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
-    
+
 //--
 
-PlaneGround::PlaneGround(World* world, const MeshRef& planeMesh)
-    : m_world(world)
-    , m_planeMesh(planeMesh)
-    , m_planeSize(10.0f)
+SceneBuilder::SceneBuilder()
 {
-    m_planeSize = planeMesh.resource()->bounds().size().x;
+    static const auto planeMesh = LoadResourceRef<Mesh>("/engine/meshes/plane.xmeta");
+    m_planeMesh = planeMesh;
+
+    if (const auto mesh = m_planeMesh.resource())
+        m_planeSize = mesh->bounds().size().xy();
 }
 
-void PlaneGround::ensureGroundUnder(float x, float y)
+SceneBuilder::~SceneBuilder()
 {
-    if (m_planeMesh)
+
+}
+
+void SceneBuilder::transform(const EulerTransform& placement)
+{
+    m_transform = placement;
+}
+
+void SceneBuilder::pushTransform()
+{
+    m_transformStack.pushBack(m_transform);
+}
+
+void SceneBuilder::popTransform()
+{
+    DEBUG_CHECK_RETURN(!m_transformStack.empty());
+    m_transform = m_transformStack.back();
+    m_transformStack.popBack();
+}
+
+void SceneBuilder::deltaTranslate(Vector3 delta)
+{
+    m_transform.T += delta;
+}
+
+void SceneBuilder::deltaTranslate(float x, float y, float z)
+{
+    m_transform.T += Vector3(x, y, z);
+}
+
+void SceneBuilder::deltaRotate(Angles delta)
+{
+    m_transform.R += delta;
+}
+
+void SceneBuilder::deltaRotate(float pitch, float yaw, float roll)
+{
+    m_transform.R += Angles(pitch, yaw, roll);
+}
+
+void SceneBuilder::color(Color color)
+{
+    m_color = color;
+}
+
+void SceneBuilder::pushParent(RawEntity* entity)
+{
+    DEBUG_CHECK_RETURN(entity);
+    m_parentStack.pushBack(AddRef(entity));
+    m_transformStack.pushBack(m_transform);
+    m_transform = EulerTransform::IDENTITY();
+}
+
+void SceneBuilder::popParent()
+{
+    DEBUG_CHECK_RETURN(!m_parentStack.empty());
+    m_parentStack.popBack();
+    m_transform = m_transformStack.back();
+    m_transformStack.popBack();
+}
+
+EulerTransform SceneBuilder::transform()
+{
+    return m_transform;
+}
+
+void SceneBuilder::ensureGroundUnder(Vector3 pos)
+{
+    if (pos.z > 0.0f && m_planeMesh)
     {
-        int planeX = (int)std::roundf(x / m_planeSize);
-        int planeY = (int)std::roundf(y / m_planeSize);
+        int planeX = (int)std::roundf(pos.x / m_planeSize.x);
+        int planeY = (int)std::roundf(pos.y / m_planeSize.y);
         const auto planeCode = (planeX + 32000) + (planeY + 32000) * 65535;
         if (m_planeCoordinatesSet.insert(planeCode))
         {
-            AbsoluteTransform entityTransform;
-            entityTransform.position(planeX * m_planeSize, planeY * m_planeSize, 0);
+            EulerTransform entityTransform;
+            entityTransform.T = Vector3(planeX * m_planeSize.x, planeY * m_planeSize.y, 0);
 
-            /*auto entity = RefNew<game::MeshEntity>();
-            entity->requestTransform(entityTransform);
-            entity->mesh(m_planeMesh);
-            m_world->attachEntity(entity);*/
+            auto entity = RefNew<RawEntity>();
+            entity->m_name = StringID(TempString("Plane_{}_{}", planeX, planeY));
+
+            entity->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
+            entity->m_entityTemplate->templateClass(SolidMeshEntity::GetStaticClass());
+            entity->m_entityTemplate->placement(entityTransform);
+            entity->m_entityTemplate->writeProperty<MeshAsyncRef>("mesh"_id, m_planeMesh.id());
+
+            m_rootNodes.pushBack(entity);
+            m_allNodes.pushBack(entity);
         }
     }
 }
 
-//--
-
-PrefabBuilder::PrefabBuilder()
+RawEntityPtr SceneBuilder::createCommonNode(ObjectIndirectTemplate* data, StringView customName)
 {
+    auto ret = RefNew<RawEntity>();
+    ret->m_name = StringID(customName);
+    
+    if (data)
+    {
+        ret->m_entityTemplate = AddRef(data);
+        data->parent(ret);
+    }
+
+    commonProcessNode(ret);
+
+    return ret;
 }
 
-int PrefabBuilder::addNode(const NodeTemplatePtr& node, int parentNode /*= -1*/)
+void SceneBuilder::commonProcessNode(RawEntity* entity)
 {
-    DEBUG_CHECK_RETURN_V(node, -1);
-
-    if (parentNode < 0)
+    if (!entity->m_entityTemplate)
     {
-        m_root = node;
+        entity->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
+        entity->m_entityTemplate->templateClass(Entity::GetStaticClass());
+    }
+
+    entity->m_entityTemplate->placement(transform());
+
+    if (m_flagTransformParent)
+        entity->m_entityTemplate->writeProperty<bool>("attachToParentEntity"_id, true);
+
+    if (!entity->m_name)
+        entity->m_name = StringID(TempString("Node{}", m_nameCounter++));
+
+    m_allNodes.pushBack(AddRef(entity));
+
+    if (m_parentStack.empty())
+    {
+        m_rootNodes.pushBack(AddRef(entity));
     }
     else
     {
-        DEBUG_CHECK_RETURN_V(parentNode <= m_nodes.lastValidIndex(), -1);
-        auto& parent = m_nodes[parentNode];
-        parent->m_children.pushBack(node);
+        auto parent = m_parentStack.back();
+        parent->m_children.pushBack(AddRef(entity));
+        entity->parent(parent);
     }
-
-    m_nodes.pushBack(node);
-    return m_nodes.lastValidIndex();
 }
 
-NodeTemplatePtr PrefabBuilder::BuildMeshNode(const MeshRef& mesh, const EulerTransform& placement, Color color /*= Color::WHITE*/)
+ResourceID SceneBuilder::mapResource(StringView path)
 {
-    DEBUG_CHECK_RETURN_V(mesh, nullptr);
+    ResourceID id;
 
-    auto node = RefNew<NodeTemplate>();
-    node->m_name = "node"_id;
-
+    if (path)
     {
-        node->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
-        node->m_entityTemplate->placement(placement);
-        //node->m_entityTemplate->templateClass(game::MeshEntity::GetStaticClass());
-        node->m_entityTemplate->writeProperty("mesh"_id, MeshAsyncRef(mesh.id()));
-        node->m_entityTemplate->writeProperty("color"_id, color);
+        if (!m_localResourceLookup.find(path, id))
+        {
+            if (GetService<DepotService>()->resolveIDForPath(path, id))
+            {
+                m_localResourceLookup[StringBuf(path)] = id;
+            }
+        }
     }
 
-    return node;
+    return id;
 }
 
-NodeTemplatePtr PrefabBuilder::BuildPrefabNode(const PrefabPtr& prefab, const EulerTransform& placement)
+void SceneBuilder::toggleTransformParent(bool flag)
 {
-    DEBUG_CHECK_RETURN_V(prefab, nullptr);
-
-    auto node = RefNew<NodeTemplate>();
-    node->m_prefabAssets.pushBack(PrefabRef(ResourceID(), prefab));
-
-    return node;
+    m_flagTransformParent = flag;
 }
 
-PrefabPtr PrefabBuilder::extractPrefab()
+RawEntityPtr SceneBuilder::buildMeshNode(ResourceID id, StringView customName)
+{
+    auto data = RefNew<ObjectIndirectTemplate>();
+    data->templateClass(SolidMeshEntity::GetStaticClass());
+    data->writeProperty<MeshAsyncRef>("mesh"_id, id);
+
+    return createCommonNode(data, customName);
+}
+
+RawEntityPtr SceneBuilder::buildPrefabNode(const PrefabPtr& prefab, StringView customName)
+{
+    auto ret = RefNew<RawEntity>();
+    ret->m_name = StringID(customName);
+
+    if (prefab)
+    {
+        m_capturedPrefabs.pushBackUnique(prefab);
+
+        auto& info = ret->m_prefabAssets.emplaceBack();
+        info.enabled = true;
+        info.prefab = PrefabRef(ResourceID(), prefab);
+    }
+
+    commonProcessNode(ret);
+
+    return ret;
+}
+
+//--
+
+PrefabPtr SceneBuilder::extractPrefab() 
 {
     auto ret = RefNew<Prefab>();
-    ret->setup(m_root);
+
+    auto root = RefNew<RawEntity>();
+    root->m_name = "default"_id;
+    root->m_children = m_rootNodes;
+
+    for (const auto& ptr : m_rootNodes)
+        ptr->parent(root);
+
+    for (const auto& ptr : m_capturedPrefabs)
+        ptr->parent(root);
+
+    m_capturedPrefabs.clear();
+    m_rootNodes.clear();
+    m_allNodes.clear();
+
+    ret->setup(root);
+
     return ret;
+}
+
+CompiledWorldPtr SceneBuilder::extractWorld()
+{
+    SourceEntitySoup soup;
+    ExtractSourceEntities(m_rootNodes, soup);
+
+    // build entity islands
+    SourceIslands islands;
+    ExtractSourceIslands(soup, islands);
+
+    // build final islands
+    Array<CompiledStreamingIslandPtr> finalIslands;
+    finalIslands.reserve(islands.rootIslands.size());
+    for (const auto& sourceRootIsland : islands.rootIslands)
+    {
+        if (auto finalIsland = BuildIsland(sourceRootIsland))
+            finalIslands.pushBack(finalIsland);
+    }
+
+    // prepare compiled scene object
+    Array<WorldParametersPtr> parameters;
+    return RefNew<CompiledWorldData>(std::move(finalIslands), std::move(parameters));
 }
 
 //--

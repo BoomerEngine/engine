@@ -197,6 +197,14 @@ extern CORE_OBJECT_API bool CopyPropertyValue(const IObject* srcObject, const Pr
 // NOTE: to save object into existing XML use the object->writeXML()
 extern CORE_OBJECT_API xml::DocumentPtr SaveObjectToXML(const IObject* object, StringView rootNodeName = "object");
 
+// save object to standalone xml file on disk, the root node will contain the "class" 
+// NOTE: to save object into existing XML use the object->writeXML()
+extern CORE_OBJECT_API bool SaveObjectToXMLFile(StringView path, const IObject* object, StringView rootNodeName = "object", bool binaryXMLFormat=false);
+//--
+
+// load object from an XML file (absolute path)
+extern CORE_OBJECT_API ObjectPtr LoadObjectFromXMLFile(StringView absolutePath, SpecificClassType<IObject> expectedClass = nullptr);
+
 // load object from standalone XML document
 extern CORE_OBJECT_API ObjectPtr LoadObjectFromXML(const xml::IDocument* doc, SpecificClassType<IObject> expectedClass = nullptr);
 
@@ -208,6 +216,13 @@ template< typename T >
 INLINE RefPtr<T> LoadObjectFromXML(const xml::IDocument* doc)
 {
     return rtti_cast<T>(LoadObjectFromXML(doc, T::GetStaticClass()));
+}
+
+// load object from standalone XML document file
+template< typename T >
+INLINE RefPtr<T> LoadObjectFromXMLFile(StringView absolutePath)
+{
+    return rtti_cast<T>(LoadObjectFromXMLFile(absolutePath, T::GetStaticClass()));
 }
 
 //---

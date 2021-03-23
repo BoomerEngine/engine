@@ -37,7 +37,7 @@ public:
 
 private:
     bool m_cachedPointsValid = false;
-    Array<AbsolutePosition> m_cachedPoints;
+    Array<ExactPosition> m_cachedPoints;
     Array<Vector3> m_cachedRenderPoints;
 
     bool cacheTransformedPoints(const ui::ViewportCameraSetup& viewport);

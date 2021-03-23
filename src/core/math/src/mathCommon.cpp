@@ -14,8 +14,8 @@ BEGIN_BOOMER_NAMESPACE()
 
 bool GetMostPerpendicularPlane(const Vector3 &forward, const Vector3 &axis, const Vector3 &point, Plane &outPlane)
 {
-    auto cross = Cross(forward, axis).normalized();
-    auto normal = Cross(cross, axis).normalized();
+    auto cross = (forward ^ axis).normalized();
+    auto normal = (cross ^ axis).normalized();
     outPlane = Plane(normal, point);
     return true;
 }
@@ -23,10 +23,10 @@ bool GetMostPerpendicularPlane(const Vector3 &forward, const Vector3 &axis, cons
 bool CalcPlaneRayIntersection(const Vector3& planeNormal, float planeDistance, const Vector3& rayOrigin, const Vector3& rayDir, float rayLength/* = VERY_LARGE_FLOAT*/, float* outDistance, Vector3* outPosition)
 {
     // Calculate the intersection point
-    auto distDot = Dot(planeNormal, rayDir);
+    auto distDot = (planeNormal | rayDir);
     if (distDot < 0.0f)
     {
-        auto distance = Dot(planeNormal, rayOrigin) + planeDistance;
+        auto distance = (planeNormal | rayOrigin) + planeDistance;
         auto realDistance = -distance / distDot;
         if (realDistance < rayLength)
         {
@@ -46,7 +46,7 @@ bool CalcPlaneRayIntersection(const Vector3& planeNormal, float planeDistance, c
 
 bool CalcPlaneRayIntersection(const Vector3& planeNormal, const Vector3& planePoint, const Vector3& rayOrigin, const Vector3& rayDir, float rayLength/*= VERY_LARGE_FLOAT*/, float* outDistance/* = nullptr*/, Vector3* outPosition/* = nullptr*/)
 {
-    return CalcPlaneRayIntersection(planeNormal, -Dot(planeNormal, planePoint), rayOrigin, rayDir, rayLength, outDistance, outPosition);
+    return CalcPlaneRayIntersection(planeNormal, -(planeNormal | planePoint), rayOrigin, rayDir, rayLength, outDistance, outPosition);
 }
 
 Vector3 TriangleNormal(const Vector3 &a, const Vector3 &b, const Vector3 &c)
@@ -100,87 +100,6 @@ float CalcDistanceToEdge(const Vector3& point, const Vector3& a, const Vector3 &
     }
 }
 
-Vector2 NormalPart(const Vector2 &a, const Vector2 &normal)
-{
-    return Dot(a,normal) * normal;
-}
-
-Vector2 TangentPart(const Vector2 &a, const Vector2 &normal)
-{
-    return a - (Dot(a,normal) * normal);
-}
-
-Vector3 NormalPart(const Vector3 &a, const Vector3 &normal)
-{
-    return Dot(a,normal) * normal;
-}
-
-Vector3 TangentPart(const Vector3 &a, const Vector3 &normal)
-{
-    return a - (Dot(a,normal) * normal);
-}
-
-Vector4 NormalPart(const Vector4 &a, const Vector4 &normal)
-{
-    return Dot(a,normal) * normal;
-}
-
-Vector4 TangentPart(const Vector4 &a, const Vector4 &normal)
-{
-    return a - (Dot(a,normal) * normal);
-}
-
-Vector2 ClampLength(const Vector2& a, float maxLength)
-{
-    auto len = a.length();
-    if (len <= maxLength)
-        return a;
-
-    return a * (maxLength / len);
-}
-
-Vector3 ClampLength(const Vector3& a, float maxLength)
-{
-    auto len = a.length();
-    if (len <= maxLength)
-        return a;
-
-    return a * (maxLength / len);
-}
-
-Vector4 ClampLength(const Vector4& a, float maxLength)
-{
-    auto len = a.length();
-    if (len <= maxLength)
-        return a;
-
-    return a * (maxLength / len);
-}
-
-Vector2 SetLength(const Vector2& a, float maxLength)
-{
-    auto len = a.length();
-    if (len <= SMALL_EPSILON)
-        return a;
-    return a * (maxLength / len);
-}
-
-Vector3 SetLength(const Vector3& a, float maxLength)
-{
-    auto len = a.length();
-    if (len <= SMALL_EPSILON)
-        return a;
-    return a * (maxLength / len);
-}
-
-Vector4 SetLength(const Vector4& a, float maxLength)
-{
-    auto len = a.length();
-    if (len <= SMALL_EPSILON)
-        return a;
-    return a * (maxLength / len);
-}
-
 float AngleDistance(float srcAngle, float srcTarget)
 {
     float angle = AngleNormalize(srcAngle);
@@ -216,31 +135,6 @@ float AngleReach(float srcCurrent, float srcTarget, float speed)
         return AngleNormalize(current - speed);
     else
         return target;
-}
-
-//--
-
-float Snap(float val, float grid)
-{
-    if (grid > 0.0f)
-    {
-        int64_t numGridUnits = (int64_t)std::round(val / grid);
-        return numGridUnits * grid;
-    }
-    else
-    {
-        return val;
-    }
-}
-
-uint8_t FloatTo255(float col)
-{
-    if (col <= 0.003921568627450980392156862745098f)
-        return 0;
-    else if (col >= 0.9960784313725490196078431372549f)
-        return 255;
-    else
-        return (uint8_t)std::lround(col * 255.0f);
 }
 
 //--

@@ -15,6 +15,7 @@
 #include "gpu/device/include/pipeline.h"
 #include "gpu/device/include/shader.h"
 #include "gpu/device/include/shaderMetadata.h"
+#include "core/math/include/lerp.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::test)
 
@@ -98,7 +99,7 @@ void RenderingTest_ComputeFillTexture2D::render(CommandWriter& cmd, float time, 
 
 	// upload consts
     float linear = std::fmod(time * 0.2f, 1.0f); // 10s
-    float logZoom = Lerp(std::log(2.0f), std::log(0.000014628f), linear);
+    float logZoom = LinearInterpolation(linear).lerp(std::log(2.0f), std::log(0.000014628f));
     float zoom = exp(logZoom);
 	params.ZoomOffset = Vector2(-0.743643135f, -0.131825963f);
 	params.ZoomScale = Vector2(zoom, zoom);

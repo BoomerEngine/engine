@@ -47,7 +47,7 @@
             : IComponentLink(source, target)
         {}
 
-        void ComponentTransformLink::calculateNewAbsoluteTransform(const Transform& componentRelativeTransform, ComponentFlags componentFlags, const AbsoluteTransform& parentTransform, const Matrix& parentToWorld, AbsoluteTransform& outNewAbsoluteTransform, Matrix& outNewLocalToWorldMatrix) const
+        void ComponentTransformLink::calculateNewAbsoluteTransform(const Transform& componentRelativeTransform, ComponentFlags componentFlags, const Transform& parentTransform, const Matrix& parentToWorld, Transform& outNewAbsoluteTransform, Matrix& outNewLocalToWorldMatrix) const
         {
             if (componentFlags.test(ComponentFlagBit::IdentityRelativeTransform))
             {
@@ -71,7 +71,7 @@
         {
         }
 
-        void ComponentTransformLinkEx::calculateNewAbsoluteTransform(const Transform& componentRelativeTransform, ComponentFlags componentFlags, const AbsoluteTransform& parentTransform, const Matrix& parentToWorld, AbsoluteTransform& outNewAbsoluteTransform, Matrix& outNewLocalToWorldMatrix) const
+        void ComponentTransformLinkEx::calculateNewAbsoluteTransform(const Transform& componentRelativeTransform, ComponentFlags componentFlags, const Transform& parentTransform, const Matrix& parentToWorld, Transform& outNewAbsoluteTransform, Matrix& outNewLocalToWorldMatrix) const
         {
             ComponentTransformLink::calculateNewAbsoluteTransform(componentRelativeTransform, componentFlags, parentTransform, parentToWorld, outNewAbsoluteTransform, outNewLocalToWorldMatrix);
         }
@@ -284,7 +284,7 @@
 
         //--
 
-        void Component::recalculateTransform(const AbsoluteTransform& parentTransform, const Matrix& parentToWorld)
+        void Component::recalculateTransform(const Transform& parentTransform, const Matrix& parentToWorld)
         {
             if (auto* link = transformLink())
             {
@@ -315,7 +315,7 @@
                 m_entity->requestTransformUpdate();
         }
 
-        void Component::handleTransformUpdate(const Component* source, const AbsoluteTransform& parentTransform, const Matrix& parentToWorld)
+        void Component::handleTransformUpdate(const Component* source, const Transform& parentTransform, const Matrix& parentToWorld)
         {
             recalculateTransform(parentTransform, parentToWorld);
 

@@ -132,7 +132,7 @@ void SourceAssetOBJ::transformSimple(float scale, bool flipYZ)
         flipFaces();
 }
 
-void SourceAssetOBJ::transfom(const Matrix& globalTransform)
+void SourceAssetOBJ::transfom(const BaseTransformation& globalTransform)
 {
     {
         auto v  = (Position*)m_positions.data();

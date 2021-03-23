@@ -73,6 +73,9 @@ public:
     /// get files at given path (should be absolute depot DIRECTORY path)
     void enumFilesAtPath(StringView depotPath, const std::function<void(StringView)>& enumFunc) const;
 
+    // visit files in recursive manner
+    bool enumFilesAtPathRecursive(StringView depotPath, uint32_t maxDepth, const std::function<bool(StringView dirDepotPath, StringView fileName)>& enumFunc) const;
+
     //--
 
     /// create all missing depot directories in a path
@@ -80,6 +83,9 @@ public:
 
     /// remove directory, must be empty (for safety.., imagine a bug that deletes C:\)
     bool removeDirectory(StringView depotPath) const;
+
+    /// remove a single file
+    bool removeFile(StringView depotPath) const;
 
     //--
 

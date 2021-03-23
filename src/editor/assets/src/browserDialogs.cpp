@@ -8,6 +8,8 @@
 
 #include "build.h"
 #include "browserService.h"
+#include "browserDialogs.h"
+
 #include "resourceEditor.h"
 
 #include "editor/common/include/utils.h"
@@ -20,9 +22,11 @@
 #include "engine/ui/include/uiEditBox.h"
 #include "engine/ui/include/uiCheckBox.h"
 #include "engine/ui/include/uiTextValidation.h"
+#include "engine/ui/include/uiColumnHeaderBar.h"
+
 #include "core/containers/include/path.h"
 #include "core/system/include/thread.h"
-#include "engine/ui/include/uiColumnHeaderBar.h"
+#include "core/resource/include/metadata.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -456,6 +460,9 @@ void ShowOpenedEditorsList(ui::IElement* owner, const ResourceEditor* currentEdi
 
 bool ShowSaveAsFileDialog(ui::IElement* owner, StringView specificDirectory, StringView message, StringView initialFileName, StringBuf& outDepotPath, StringView extension)
 {
+    if (!extension)
+        extension = ResourceMetadata::FILE_EXTENSION;
+
     auto window = RefNew<ui::Window>(ui::WindowFeatureFlagBit::DEFAULT_DIALOG, "Save as...");
     window->layoutVertical();
 

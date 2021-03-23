@@ -13,6 +13,7 @@
 #include "engine/canvas/include/geometry.h"
 #include "engine/canvas/include/canvas.h"
 #include "engine/canvas/include/style.h"
+#include "core/math/include/lerp.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
 
@@ -32,11 +33,11 @@ public:
 
         for (int i = 0; i < 200; ++i)
         {
-            float w = Lerp(20.0f, 200.0f, rng.unit());
-            float h = Lerp(20.0f, 200.0f, rng.unit());
-            float x = Lerp(0.0f, canvasW - w, rng.unit());
-            float y = Lerp(0.0f, canvasH - h, rng.unit());
-            float r = Lerp(0.0f, std::min(w, h) * 0.9f, rng.unit());
+            float w = LinearInterpolation(rng.unit()).lerp(20.0f, 200.0f);
+            float h = LinearInterpolation(rng.unit()).lerp(20.0f, 200.0f);
+            float x = LinearInterpolation(rng.unit()).lerp(0.0f, canvasW - w);
+            float y = LinearInterpolation(rng.unit()).lerp(0.0f, canvasH - h);
+            float r = LinearInterpolation(rng.unit()).lerp(0.0f, std::min(w, h) * 0.9f);
 
             b.beginPath();
             b.roundedRect(x, y, w, h, r);

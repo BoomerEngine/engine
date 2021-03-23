@@ -143,6 +143,8 @@ public:
     static const XForm2D& FLIPX();
     static const XForm2D& FLIPY();
     static const XForm2D& ONEEIGHTY();
+
+    static void Concat(const XForm2D& a, const XForm2D& b, XForm2D& ret);
 };
 
 //--

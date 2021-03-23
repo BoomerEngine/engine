@@ -12,8 +12,7 @@
 
 //--
 
-#define SIMD_INFINITY VERY_LARGE_FLOAT
-//#define DEBUG_CONVEX_HULL
+#define SIMD_INFINITY boomer::VERY_LARGE_FLOAT
 
 // Ole Kniemeyer, MAXON Computer GmbH, MIT License
 // Convex hull implementation based on Preparata and Hong - O(n log n), numerically stable

@@ -29,6 +29,13 @@ public:
     virtual void initialize(Scene* scene, gpu::IDevice* dev) = 0;
     virtual void shutdown() = 0;
 
+    //--- VALID ANYWHERE, BUFFERED IN RENDERING PHASE
+
+    virtual void commandAttachProxy(IObjectProxy* object) = 0;
+    virtual void commandDetachProxy(IObjectProxy* object) = 0;
+    virtual void commandMoveProxy(IObjectProxy* object, Matrix newLocation) = 0;
+    virtual void commandUpdateProxyFlag(IObjectProxy* object, ObjectProxyFlags clearFlags, ObjectProxyFlags setFlags) = 0;
+
     //--- VALID ONLY IN RENDER PHASE
 
     virtual void prepare(gpu::CommandWriter& cmd, gpu::IDevice* dev, const FrameRenderer& frame) = 0;
@@ -39,7 +46,7 @@ public:
     virtual void render(FrameViewWireframeRecorder& cmd, const FrameViewWireframe& view, const FrameRenderer& frame) = 0;
     virtual void render(FrameViewCaptureSelectionRecorder& cmd, const FrameViewCaptureSelection& view, const FrameRenderer& frame) = 0;
     virtual void render(FrameViewCaptureDepthRecorder& cmd, const FrameViewCaptureDepth& view, const FrameRenderer& frame) = 0;
-
+    
 protected:
     // run given function now if we are not locked or buffer it
     void runNowOrBuffer(std::function<void(void)> func);

@@ -48,7 +48,8 @@ static Color Rainbow(float x)
     auto i  = (int)floor(fabs(x));
     auto f  = fabs(x) - (float)i;
 
-    return Lerp(colors[i % numSegs], colors[(i + 1) % numSegs], f);
+    LinearInterpolation lerp(f);
+    return lerp.lerpGamma(colors[i % numSegs], colors[(i + 1) % numSegs]);
 }
 
 static void PrepareIndexedTriangleList(float x, float y, float w, float h, VertexIndexBunch<>& outGeometry)

@@ -33,6 +33,7 @@
 #include "geometry.h"
 #include "geometryBuilder.h"
 #include "pathCache.h"
+#include "canvas.h"
 
 #include "engine/font/include/font.h"
 #include "engine/font/include/fontGlyph.h"
@@ -989,8 +990,8 @@ namespace helper
 			m_curVertex->attributeFlags = flags;
 			m_curVertex->imagePageIndex = 0;
 			m_curVertex->imageEntryIndex = 0;
-            m_boundsMin = Min(m_boundsMin, m_curVertex->pos);
-            m_boundsMax = Max(m_boundsMax, m_curVertex->pos);
+            m_boundsMin = m_boundsMin.min(m_curVertex->pos);
+            m_boundsMax = m_boundsMax.max(m_curVertex->pos);
             ++m_curVertex;
             ++m_numWritten;
         }
@@ -1006,8 +1007,8 @@ namespace helper
 			m_curVertex->attributeIndex = 0;
 			m_curVertex->imagePageIndex = 0;
 			m_curVertex->imageEntryIndex = 0;
-			m_boundsMin = Min(m_boundsMin, m_curVertex->pos);
-			m_boundsMax = Max(m_boundsMax, m_curVertex->pos);
+			m_boundsMin = m_boundsMin.min(m_curVertex->pos);
+			m_boundsMax = m_boundsMax.max(m_curVertex->pos);
 			++m_curVertex;
 			++m_numWritten;
 		}
@@ -1447,8 +1448,8 @@ void GeometryBuilder::stroke()
 	applyPaintAttributes(firstVertex, vertexWriter.numWrittenVertices(), m_style.cachedStrokeStyleIndex);
 
 	// merge bounds
-	m_outVertexBoundsMin = Min(m_outVertexBoundsMin, vertexWriter.boundsMin());
-	m_outVertexBoundsMax = Max(m_outVertexBoundsMax, vertexWriter.boundsMax());
+	m_outVertexBoundsMin = m_outVertexBoundsMin.min(vertexWriter.boundsMin());
+	m_outVertexBoundsMax = m_outVertexBoundsMax.max(vertexWriter.boundsMax());
 }
 
 void GeometryBuilder::fill()
@@ -1562,8 +1563,8 @@ void GeometryBuilder::fill()
 	// update bounds
 	const auto& vertexBoundsMin = vertexWriter.boundsMin();
 	const auto& vertexBoundsMax = vertexWriter.boundsMax();
-	m_outVertexBoundsMin = Min(m_outVertexBoundsMin, vertexBoundsMin);
-	m_outVertexBoundsMax = Max(m_outVertexBoundsMax, vertexBoundsMax);
+	m_outVertexBoundsMin = m_outVertexBoundsMin.min(vertexBoundsMin);
+	m_outVertexBoundsMax = m_outVertexBoundsMax.max(vertexBoundsMax);
 
     // extra vertices for concave masking
 	if (!convex)
@@ -1787,8 +1788,8 @@ void GeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, uint32
 			}
 
 			// update bounds
-			boundsMin = Min(boundsMin, writeVertex[0].pos);
-			boundsMax = Max(boundsMax, writeVertex[2].pos);
+			boundsMin = boundsMin.min(writeVertex[0].pos);
+			boundsMax = boundsMax.max(writeVertex[2].pos);
 
 			// collect masks
 			if (placement->pageIndex != -1)
@@ -1817,6 +1818,55 @@ void GeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, uint32
 
 	// reclaim unused vertices
 	((BaseArray*)&m_outVertices)->changeSize(firstVertex + numGlyphsWritten * 4);
+}
+
+//--
+
+InplaceGeometryBuilder::InplaceGeometryBuilder(Canvas& c)
+    : GeometryBuilder(m_geometry)
+    , m_canvas(c)
+{}
+
+void InplaceGeometryBuilder::reset()
+{
+    GeometryBuilder::reset();
+    m_geometry.reset();
+}
+
+void InplaceGeometryBuilder::render(float alpha)
+{
+    m_canvas.place(0, 0, m_geometry, alpha);
+    m_geometry.reset();
+}
+
+void InplaceGeometryBuilder::render(Vector2 pos, float alpha)
+{
+    m_canvas.place(pos, m_geometry, alpha);
+    m_geometry.reset();
+}
+
+void InplaceGeometryBuilder::render(float x, float y, float alpha)
+{
+    m_canvas.place(x, y, m_geometry, alpha);
+    m_geometry.reset();
+}
+
+void InplaceGeometryBuilder::solidRect(Color color, float x, float y, float w, float h)
+{
+    beginPath();
+    rect(x, y, w, h);
+    fillColor(color);
+    fill();
+}
+
+void InplaceGeometryBuilder::solidRectWithBorder(Color f, Color l, float x, float y, float w, float h)
+{
+    beginPath();
+    rect(x, y, w, h);
+    fillColor(f);
+    fill();
+    strokeColor(l);
+    stroke();
 }
 
 //--

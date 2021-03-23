@@ -53,7 +53,7 @@ RTTI_END_TYPE();
 
 //--
 
-RTTI_BEGIN_TYPE_CLASS(RenderingPanel);
+RTTI_BEGIN_TYPE_ABSTRACT_CLASS(RenderingPanel);
     RTTI_METADATA(ElementClassNameMetadata).name("RenderingPanel");
 RTTI_END_TYPE();
 
@@ -113,6 +113,7 @@ void RenderingPanel::renderRate(float rate)
     m_renderRate = std::clamp<float>(rate, 0.0f, 1000.0f);
 }
 
+#if 0
 void RenderingPanel::renderContent(const ViewportParams& viewport, Camera* outCameraUsedToRender)
 {
     gpu::CommandWriter cmd(TempString("PreviewPanel"));
@@ -129,13 +130,20 @@ void RenderingPanel::renderContent(const ViewportParams& viewport, Camera* outCa
     auto device = GetService<DeviceService>()->device();
     device->submitWork(cmd.release());
 }
-    
-void RenderingPanel::parepareRenderTargets(ViewportParams& viewport)
+#endif
+
+bool RenderingPanel::parepareRenderTargets(Point requiredSize, gpu::AcquiredOutput& outOutput)
 {
 	auto device = GetService<DeviceService>()->device();
 
-	if (m_colorSurface && (viewport.width > m_colorSurface->width() || viewport.height > m_colorSurface->height()))
+	auto prevWidth = 0;
+	auto prevHeight = 0;
+
+	if (m_colorSurface && (requiredSize.x > m_colorSurface->width() || requiredSize.y > m_colorSurface->height()))
 	{
+		prevWidth = m_colorSurface->width();
+		prevHeight = m_colorSurface->height();
+
 		m_colorSurfaceRTV.reset();
 		m_depthSurfaceRTV.reset();
 		m_colorSurface.reset();
@@ -144,48 +152,60 @@ void RenderingPanel::parepareRenderTargets(ViewportParams& viewport)
 
 	if (!m_colorSurface || !m_depthSurface)
 	{
-		if (viewport.width && viewport.height)
-		{
-			// create color surface
-			gpu::ImageCreationInfo initInfo;
-			initInfo.allowShaderReads = true;
-			initInfo.allowRenderTarget = true;
-			initInfo.allowCopies = true;
-			initInfo.format = ImageFormat::RGBA8_UNORM;
-			initInfo.width = viewport.width;
-			initInfo.height = viewport.height;
-			m_colorSurface = device->createImage(initInfo);
-			m_colorSurfaceRTV = m_colorSurface->createRenderTargetView();
-			m_colorSurfaceSRV = m_colorSurface->createSampledView();
+		const auto alignedWidth = std::max<uint32_t>(prevWidth, Align(requiredSize.x, 256));
+		const auto alignedHeight = std::max<uint32_t>(prevHeight, Align(requiredSize.y, 256));
 
-			// create depth surface
-			initInfo.format = ImageFormat::D24FS8;
-			m_depthSurface = device->createImage(initInfo);
-			m_depthSurfaceRTV = m_depthSurface->createRenderTargetView();
+		// create color surface
+		gpu::ImageCreationInfo initInfo;
+		initInfo.allowShaderReads = true;
+		initInfo.allowRenderTarget = true;
+		initInfo.allowCopies = true;
+		initInfo.format = ImageFormat::RGBA8_UNORM;
+		initInfo.width = alignedWidth;
+		initInfo.height = alignedHeight;
+		m_colorSurface = device->createImage(initInfo);
+		m_colorSurfaceRTV = m_colorSurface->createRenderTargetView();
+		m_colorSurfaceSRV = m_colorSurface->createSampledView();
 
-			// setup quad data
-			auto* batchDataPtr = (gpu::ImageSampledView**) m_quadGeometry->customData.data();
-			*batchDataPtr = m_colorSurfaceSRV.get();
-		}
+		// create depth surface
+		initInfo.format = ImageFormat::D24FS8;
+		m_depthSurface = device->createImage(initInfo);
+		m_depthSurfaceRTV = m_depthSurface->createRenderTargetView();
+
+		// setup quad data
+		auto* batchDataPtr = (gpu::ImageSampledView**) m_quadGeometry->customData.data();
+		*batchDataPtr = m_colorSurfaceSRV.get();
 	}
 		
-	viewport.colorBuffer = m_colorSurfaceRTV;
-	viewport.depthBuffer = m_depthSurfaceRTV;
+	outOutput.width = requiredSize.x;
+	outOutput.height = requiredSize.y;
+	outOutput.color = m_colorSurfaceRTV;
+	outOutput.depth = m_depthSurfaceRTV;
+
+	return true;
 }
 
-void RenderingPanel::renderCaptureScene(const rendering::FrameParams_Capture* capture, Camera* outCameraUsedToRender)
+void RenderingPanel::renderCaptureScene(const CameraSetup& camera, const rendering::FrameParams_Capture* capture)
 {
-    const auto renderWidth = (int)std::ceil(cachedDrawArea().size().x);
-    const auto renderHeight = (int)std::ceil(cachedDrawArea().size().y);
-    if (renderWidth && renderHeight)
-    {
-        ViewportParams params;
-        params.width = renderWidth;
-        params.height = renderHeight;
-        params.capture = capture;
+	const auto size = Point(cachedDrawArea().size());
 
-        parepareRenderTargets(params);
-        renderContent(params, outCameraUsedToRender);
+    if (size.x && size.y)
+    {
+		gpu::AcquiredOutput output;
+		if (parepareRenderTargets(size, output))
+		{
+			gpu::CommandWriter cmd(TempString("PreviewPanelCapture"));
+
+			handleRender(cmd, output, camera, capture);
+
+			if (auto device = GetService<DeviceService>()->device())
+			{
+				device->submitWork(cmd.release());
+				device->sync(true);
+				device->sync(true);
+				device->sync(true);
+			}
+		}
     }
 }
 
@@ -193,29 +213,37 @@ void RenderingPanel::renderForeground(DataStash& stash, const ElementArea& drawA
 {
     TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
 
-	// render area size
-	const auto renderWidth = (int)std::ceil(drawArea.size().x);
-	const auto renderHeight = (int)std::ceil(drawArea.size().y);
-	if (renderWidth && renderHeight)
-	{
-		// render content
+    // we need valid render area
+    const auto size = Point(cachedDrawArea().size());
+    if (size.x && size.y)
+    {
+		// prepare cached render targets
+        gpu::AcquiredOutput output;
+		if (parepareRenderTargets(size, output))
 		{
-			ViewportParams params;
-			params.width = renderWidth;
-			params.height = renderHeight;
+			// send to rendering
+			{
+				gpu::CommandWriter cmd(TempString("PreviewPanel"));
 
-			parepareRenderTargets(params);
-			renderContent(params);
+				CameraSetup camera;
+				handleCamera(camera);
+
+				handleRender(cmd, output, camera, nullptr);
+
+				if (auto device = GetService<DeviceService>()->device())
+					device->submitWork(cmd.release());
+			}
 		}
 
 		// blit into canvas
+		if (m_colorSurface)
 		{
 			// region to render
 			float zoomScale = 1.0f / (1 << m_renderTargetZoom);
 			float x0 = m_renderTargetOffset.x;
 			float y0 = m_renderTargetOffset.y;
-			float x1 = m_renderTargetOffset.x + renderWidth * zoomScale;
-			float y1 = m_renderTargetOffset.y + renderHeight * zoomScale;
+			float x1 = m_renderTargetOffset.x + size.x * zoomScale;
+			float y1 = m_renderTargetOffset.y + size.y * zoomScale;
 
 			const auto invU = 1.0f / (float)m_colorSurface->width();
 			const auto invV = 1.0f / (float)m_colorSurface->height();
@@ -236,12 +264,12 @@ void RenderingPanel::renderForeground(DataStash& stash, const ElementArea& drawA
 			v[3].color = Color::WHITE;
 			v[0].pos.x = 0;
 			v[0].pos.y = 0;
-			v[1].pos.x = renderWidth;
+			v[1].pos.x = size.x;
 			v[1].pos.y = 0;
-			v[2].pos.x = renderWidth;
-			v[2].pos.y = renderHeight;
+			v[2].pos.x = size.x;
+			v[2].pos.y = size.y;
 			v[3].pos.x = 0;
-			v[3].pos.y = renderHeight;
+			v[3].pos.y = size.y;
 
             /*if (m_colorSurface->flippedY())
             {

@@ -6,5 +6,6 @@ ProjectOption("main")
 
 Dependency("core_*")
 Dependency("engine_*")
+Dependency("game_*")
 Dependency("gpu_*")
 

@@ -20,7 +20,7 @@ class EDITOR_SCENE_EDITOR_API ScenePrefabEditor : public SceneCommonEditor
     RTTI_DECLARE_VIRTUAL_CLASS(ScenePrefabEditor, SceneCommonEditor);
 
 public:
-    ScenePrefabEditor(ManagedFileNativeResource* file);
+    ScenePrefabEditor(const ResourceInfo& info);
     virtual ~ScenePrefabEditor();
 
 protected:

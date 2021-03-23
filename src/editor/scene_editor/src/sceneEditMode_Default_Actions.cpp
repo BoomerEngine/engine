@@ -12,27 +12,29 @@
 #include "sceneEditMode_Default_Clipboard.h"
 
 #include "sceneContentNodes.h"
+#include "sceneContentNodesEntity.h"
 #include "sceneContentStructure.h"
 #include "scenePreviewContainer.h"
 #include "scenePreviewPanel.h"
+
+#include "editor/assets/include/browserDialogs.h"
+#include "editor/common/include/utils.h"
 
 #include "engine/ui/include/uiMenuBar.h"
 #include "engine/ui/include/uiClassPickerBox.h"
 #include "engine/ui/include/uiRenderer.h"
 #include "engine/ui/include/uiInputBox.h"
+
+#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/rawEntity.h"
+#include "engine/world/include/rawPrefab.h"
+
 #include "core/object/include/rttiResourceReferenceType.h"
 #include "core/object/include/actionHistory.h"
 #include "core/object/include/action.h"
-#include "engine/world/include/entity.h"
-#include "engine/world/include/entityBehavior.h"
-#include "engine/world/include/nodeTemplate.h"
-#include "engine/world/include/prefab.h"
+#include "core/containers/include/path.h"
 #include "core/resource/include/indirectTemplate.h"
-#include "editor/common/include/assetFormat.h"
-#include "editor/common/include/managedDirectory.h"
-#include "editor/common/include/editorService.h"
-#include "editor/common/src/assetBrowserDialogs.h"
-#include "editor/common/include/managedDepot.h"
+#include "core/resource/include/depot.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -203,7 +205,6 @@ static StringView NodeTypeName(SceneContentNodeType type)
 {
     switch (type)
     {
-    case SceneContentNodeType::Behavior: return "behavior";
     case SceneContentNodeType::Entity: return "entity";
     case SceneContentNodeType::LayerFile: return "layer";
     case SceneContentNodeType::LayerDir: return "group";
@@ -293,7 +294,7 @@ private:
     SceneEditMode_Default* m_mode = nullptr;
 };
 
-void SceneEditMode_Default::processObjectPaste(const SceneContentNodePtr& context, const SceneContentClipboardDataPtr& data, SceneContentNodePasteMode mode, const AbsoluteTransform* worldPlacement)
+void SceneEditMode_Default::processObjectPaste(const SceneContentNodePtr& context, const SceneContentClipboardDataPtr& data, SceneContentNodePasteMode mode, const Transform* worldPlacement)
 {
     DEBUG_CHECK_RETURN_EX(context, "No context");
     DEBUG_CHECK_RETURN_EX(data, "No data to paset");
@@ -315,7 +316,7 @@ void SceneEditMode_Default::processObjectPaste(const SceneContentNodePtr& contex
     {
         const auto& baseWorldPlacement = data->data[0]->worldPlacement;
 
-        AbsoluteTransform contextWorldPlacement; // we may be pasting into a layer, etc that has no transform
+        Transform contextWorldPlacement; // we may be pasting into a layer, etc that has no transform
         if (auto contextPlacedNode = rtti_cast<SceneContentDataNode>(context))
             contextWorldPlacement = contextPlacedNode->cachedLocalToWorldTransform();
 
@@ -452,12 +453,8 @@ private:
 static void CollectHiddenNodes(const SceneContentNode* node, Array<SceneContentNodePtr>& outNodes)
 {
     if (!node->visibilityFlagBool())
-    {
-        if (node->type() == SceneContentNodeType::Entity || node->type() == SceneContentNodeType::Behavior)
-        {
+        if (node->type() == SceneContentNodeType::Entity)
             outNodes.pushBack(AddRef(node));
-        }
-    }
 
     for (const auto& child : node->children())
         CollectHiddenNodes(child, outNodes);
@@ -574,8 +571,8 @@ void SceneEditMode_Default::processSaveAsPrefab(const Array<SceneContentNodePtr>
 
     struct NodeToSave
     {
-        NodeTemplatePtr data;
-        AbsoluteTransform localToWorld;
+        RawEntityPtr data;
+        Transform localToWorld;
     };
 
     HashSet<StringBuf> uniqueNames;
@@ -607,7 +604,7 @@ void SceneEditMode_Default::processSaveAsPrefab(const Array<SceneContentNodePtr>
     }
 
     StringBuf depotPath;
-    if (ShowSaveAsFileDialog(m_panel, nullptr, Prefab::GetStaticClass(), "Enter name of the prefab file:", "prefab", depotPath))
+    if (ShowSaveAsFileDialog(m_panel, nullptr, "Enter name of the prefab file:", "prefab", depotPath, ""))
     {
         auto prefab = RefNew<Prefab>();
 
@@ -621,7 +618,7 @@ void SceneEditMode_Default::processSaveAsPrefab(const Array<SceneContentNodePtr>
         else
         {
             // we have more than one entity to save, create a root node
-            auto newRootNode = RefNew<NodeTemplate>();
+            auto newRootNode = RefNew<RawEntity>();
             newRootNode->m_name = "default"_id;
 
             // whatever we save the root node has it's transform reset
@@ -646,18 +643,16 @@ void SceneEditMode_Default::processSaveAsPrefab(const Array<SceneContentNodePtr>
             prefab->setup(newRootNode);
         }
 
-        const char* fileName = nullptr;
-        if (auto* dir = GetEditor()->managedDepot().findPath(depotPath, &fileName))
+        // save prefab
+        auto id = ResourceID::Create();
+        if (GetService<DepotService>()->createFile(depotPath, prefab, id))
         {
-            if (dir->createFile(fileName, prefab))
-            {
-                ui::PostWindowMessage(m_panel, ui::MessageType::Info, "Save"_id, TempString("Prefab '{}' saved with {} node(s)", depotPath, nodesToSave.size()));
-            }
-            else
-            {
-                ui::PostWindowMessage(m_panel, ui::MessageType::Error, "Save"_id, "Failed to save prefab");
-            }
-        }            
+            ui::PostWindowMessage(m_panel, ui::MessageType::Info, "Save"_id, TempString("Prefab '{}' saved with {} node(s)", depotPath, nodesToSave.size()));
+        }
+        else
+        {
+            ui::PostWindowMessage(m_panel, ui::MessageType::Error, "Save"_id, "Failed to save prefab");
+        }
     }
 }
 
@@ -720,7 +715,7 @@ private:
 
 void SceneEditMode_Default::processUnwrapPrefab(const Array<SceneContentNodePtr>& selection, bool explode)
 {
-    processGenericPrefabAction(selection, [explode](NodeTemplate* node)->NodeTemplatePtr
+    processGenericPrefabAction(selection, [explode](RawEntity* node)->RawEntityPtr
         {
             return UnpackTopLevelPrefabs(node);
         });
@@ -756,9 +751,12 @@ void SceneEditMode_Default::processObjectCut(const Array<SceneContentNodePtr>& s
 
 //--
 
-void BindResourceToObjectTemplate(ObjectIndirectTemplate* ptr, const ManagedFile* file)
+void BindResourceToObjectTemplate(ObjectIndirectTemplate* ptr, StringView depotPath)
 {
-    if (ptr->templateClass() && file)
+    DEBUG_CHECK_RETURN_EX(depotPath, "Empty resource path");
+    DEBUG_CHECK_RETURN_EX(ValidateDepotFilePath(depotPath), "Invalid resource path");
+
+    if (ptr->templateClass())
     {
         for (const auto& temp : ptr->templateClass()->allTemplateProperties())
         {
@@ -767,36 +765,17 @@ void BindResourceToObjectTemplate(ObjectIndirectTemplate* ptr, const ManagedFile
                 const auto* asyncRefType = static_cast<const IResourceReferenceType*>(temp.type.ptr());
                 const auto asyncRefResourceClass = asyncRefType->referenceResourceClass().cast<IResource>();
 
-                if (file->fileFormat().loadableAsType(asyncRefResourceClass))
+                if (CanLoadAsClass(depotPath, asyncRefResourceClass))
                 {
-                    const auto path = file->depotPath();
-
-                    ResourceID id;
-                    if (GetService<DepotService>()->resolveIDForPath(path, id))
-                    {
-                        DataHolder value(asyncRefType);
-                        *((BaseAsyncReference*)value.data()) = id;
-
-                        ptr->writeProperty(temp.name, value.data(), value.type());
-                    }
+                    const auto asyncRef = BuildAsyncResourceRef(depotPath, asyncRefResourceClass);
+                    ptr->writeProperty(temp.name, &asyncRef, asyncRefType);
                 }
             }
         }
     }
 }
 
-static StringView ExtractCoreName(ClassType nodeClass, const ManagedFile* resourceFile)
-{
-    if (resourceFile)
-        return resourceFile->name().view().beforeFirst(".");
-
-    if (nodeClass)
-        return nodeClass->shortName().view();
-
-    return "node";
-}
-
-void SceneEditMode_Default::createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass, const AbsoluteTransform* initialPlacement, const ManagedFile* resourceFile)
+void SceneEditMode_Default::createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass, const Transform* initialPlacement, StringView path)
 {
     if (!entityClass)
         entityClass = Entity::GetStaticClass();
@@ -804,7 +783,9 @@ void SceneEditMode_Default::createEntityAtNodes(const Array<SceneContentNodePtr>
     DEBUG_CHECK_RETURN(entityClass);
     DEBUG_CHECK_RETURN(!entityClass->isAbstract());
 
-    const auto coreName = ExtractCoreName(entityClass, resourceFile);
+    const auto coreName = path 
+        ? StringBuf(path.fileStem()).toLower()
+        : StringBuf(entityClass->name().view());
         
     Array<AddedNodeData> createdNodes;
     for (const auto& node : selection)
@@ -813,16 +794,17 @@ void SceneEditMode_Default::createEntityAtNodes(const Array<SceneContentNodePtr>
         {
             const auto safeName = node->buildUniqueName(coreName);
 
-            auto sourceNode = RefNew<NodeTemplate>();
+            auto sourceNode = RefNew<RawEntity>();
             sourceNode->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
             sourceNode->m_entityTemplate->parent(sourceNode);
             sourceNode->m_entityTemplate->templateClass(entityClass);
 
-            BindResourceToObjectTemplate(sourceNode->m_entityTemplate, resourceFile);
+            if (path)
+                BindResourceToObjectTemplate(sourceNode->m_entityTemplate, path);
 
             if (initialPlacement)
             {
-                AbsoluteTransform parentTransform;
+                Transform parentTransform;
                 if (auto parentDataNode = rtti_cast<SceneContentDataNode>(node))
                     parentTransform = parentDataNode->cachedLocalToWorldTransform();
 
@@ -840,63 +822,55 @@ void SceneEditMode_Default::createEntityAtNodes(const Array<SceneContentNodePtr>
     actionHistory()->execute(action);
 }
 
-void SceneEditMode_Default::createPrefabAtNodes(const Array<SceneContentNodePtr>& selection, const ManagedFile* prefabFile, const AbsoluteTransform* initialPlacement)
+void SceneEditMode_Default::createPrefabAtNodes(const Array<SceneContentNodePtr>& selection, StringView prefabDepotPath, const Transform* initialPlacement)
 {
-    DEBUG_CHECK_RETURN_EX(prefabFile, "Invalid prefab file");
-    DEBUG_CHECK_RETURN_EX(prefabFile->fileFormat().nativeResourceClass().is<Prefab>(), "Not a prefab resource");
+    DEBUG_CHECK_RETURN_EX(ValidateDepotFilePath(prefabDepotPath), "Invalid prefab");
 
-    const auto path = prefabFile->depotPath();
-
-    const auto prefabData = LoadResource<Prefab>(path);
+    const auto prefabData = LoadResourceRef<Prefab>(prefabDepotPath);
     if (!prefabData)
     {
-        ui::PostWindowMessage(container(), ui::MessageType::Error, "LoadResource"_id, TempString("Unable to load prefab '{}'", prefabFile->depotPath()));
+        ui::PostWindowMessage(container(), ui::MessageType::Error, "LoadResource"_id, TempString("Unable to load prefab '{}'", prefabDepotPath));
         return;
     }
 
-    ResourceID id;
-    if (GetService<DepotService>()->resolveIDForPath(path, id))
+    auto coreName = StringBuf(prefabDepotPath.fileStem()).toLower();
+
+    Array<AddedNodeData> createdNodes;
+    for (const auto& node : selection)
     {
-        const auto prefabRef = PrefabRef(id, prefabData);
-        auto coreName = prefabFile->name().view().fileStem();
-
-        Array<AddedNodeData> createdNodes;
-        for (const auto& node : selection)
+        if (node->canAttach(SceneContentNodeType::Entity))
         {
-            if (node->canAttach(SceneContentNodeType::Entity))
+            const auto safeName = node->buildUniqueName(coreName);
+
+            auto sourceNode = RefNew<RawEntity>();
+            sourceNode->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
+            sourceNode->m_entityTemplate->parent(sourceNode);
+
+            if (initialPlacement)
             {
-                const auto safeName = node->buildUniqueName(coreName);
+                Transform parentTransform;
+                if (auto parentDataNode = rtti_cast<SceneContentDataNode>(node))
+                    parentTransform = parentDataNode->cachedLocalToWorldTransform();
 
-                auto sourceNode = RefNew<NodeTemplate>();
-                sourceNode->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
-                sourceNode->m_entityTemplate->parent(sourceNode);
-
-                if (initialPlacement)
-                {
-                    AbsoluteTransform parentTransform;
-                    if (auto parentDataNode = rtti_cast<SceneContentDataNode>(node))
-                        parentTransform = parentDataNode->cachedLocalToWorldTransform();
-
-                    auto placement = (*initialPlacement / parentTransform).toEulerTransform();
-                    sourceNode->m_entityTemplate->placement(placement);
-                }
-
-                auto& prefabInfo = sourceNode->m_prefabAssets.emplaceBack();
-                prefabInfo.enabled = true;
-                prefabInfo.prefab = prefabRef;
-
-                auto& info = createdNodes.emplaceBack();
-                info.parent = node;
-                info.child = RefNew<SceneContentEntityNode>(safeName, sourceNode);
+                auto placement = (*initialPlacement / parentTransform).toEulerTransform();
+                sourceNode->m_entityTemplate->placement(placement);
             }
-        }
 
-        auto action = RefNew<ActionCreateNode>(std::move(createdNodes), this);
-        actionHistory()->execute(action);
+            auto& prefabInfo = sourceNode->m_prefabAssets.emplaceBack();
+            prefabInfo.enabled = true;
+            prefabInfo.prefab = prefabData;
+
+            auto& info = createdNodes.emplaceBack();
+            info.parent = node;
+            info.child = RefNew<SceneContentEntityNode>(safeName, sourceNode);
+        }
     }
+
+    auto action = RefNew<ActionCreateNode>(std::move(createdNodes), this);
+    actionHistory()->execute(action);
 }
 
-/*void SceneEditMode_Default::createEntityWithComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const AbsoluteTransform* initialPlacement, const ManagedFile* resourceFile)
+/*void SceneEditMode_Default::createEntityWithComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const Transform* initialPlacement, const ManagedFile* resourceFile)
 {
     DEBUG_CHECK_RETURN(componentClass);
     DEBUG_CHECK_RETURN(!componentClass->isAbstract());
@@ -912,13 +886,13 @@ void SceneEditMode_Default::createPrefabAtNodes(const Array<SceneContentNodePtr>
 
             //--
 
-            auto sourceNode = RefNew<NodeTemplate>();
+            auto sourceNode = RefNew<RawEntity>();
             sourceNode->m_entityTemplate = RefNew<ObjectIndirectTemplate>();
             sourceNode->m_entityTemplate->parent(sourceNode);
 
             if (initialPlacement)
             {
-                AbsoluteTransform parentTransform;
+                Transform parentTransform;
                 if (auto parentDataNode = rtti_cast<SceneContentDataNode>(node))
                     parentTransform = parentDataNode->cachedLocalToWorldTransform();
 
@@ -947,7 +921,7 @@ void SceneEditMode_Default::createPrefabAtNodes(const Array<SceneContentNodePtr>
     actionHistory()->execute(action);
 }
 
-void SceneEditMode_Default::createComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const AbsoluteTransform* initialPlacement, const ManagedFile* resourceFile)
+void SceneEditMode_Default::createComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const Transform* initialPlacement, const ManagedFile* resourceFile)
 {
     DEBUG_CHECK_RETURN(componentClass);
     DEBUG_CHECK_RETURN(!componentClass->isAbstract());
@@ -967,7 +941,7 @@ void SceneEditMode_Default::createComponentAtNodes(const Array<SceneContentNodeP
 
             if (initialPlacement)
             {
-                AbsoluteTransform parentTransform;
+                Transform parentTransform;
                 if (auto parentDataNode = rtti_cast<SceneContentDataNode>(node))
                     parentTransform = parentDataNode->cachedLocalToWorldTransform();
 
@@ -1014,15 +988,11 @@ void SceneEditMode_Default::handleTreePasteNodes(const SceneContentNodePtr& targ
     if (!m_panel->renderer() || !target)
         return;
 
-    SceneContentClipboardDataPtr data;
-    m_panel->renderer()->loadObjectFromClipboard(data);
-    if (!data || data->data.empty())
-        return;
-
-    processObjectPaste(target, data, SceneContentNodePasteMode::Relative);
+    if (auto data = m_panel->clipboard().loadObject<SceneContentClipboardData>())
+        processObjectPaste(target, data, SceneContentNodePasteMode::Relative);
 }
 
-bool SceneEditMode_Default::handleTreeResourceDrop(const SceneContentNodePtr& target, const ManagedFile* file)
+bool SceneEditMode_Default::handleTreeResourceDrop(const SceneContentNodePtr& target, StringView depotFilePath)
 {
     return false;
 }
@@ -1356,7 +1326,7 @@ bool SceneEditMode_Default::handleInternalKeyAction(input::KeyCode key, bool shi
 
 //--
 
-void SceneEditMode_Default::processGenericPrefabAction(const Array<SceneContentNodePtr>& inputNodes, const std::function<NodeTemplatePtr(NodeTemplate* currentData)>& func)
+void SceneEditMode_Default::processGenericPrefabAction(const Array<SceneContentNodePtr>& inputNodes, const std::function<RawEntityPtr(RawEntity* currentData)>& func)
 {
     auto oldSelection = inputNodes;
 
@@ -1390,59 +1360,41 @@ void SceneEditMode_Default::processGenericPrefabAction(const Array<SceneContentN
     }
 }
 
-void SceneEditMode_Default::cmdAddPrefabFile(const Array<SceneContentNodePtr>& inputNodes, const ManagedFile* file)
+void SceneEditMode_Default::cmdAddPrefabFile(const Array<SceneContentNodePtr>& inputNodes, StringView depotFilePath)
 {
-    const auto path = file->depotPath();
-
-    const auto prefabData = LoadResource<Prefab>(file->depotPath());
+    const auto prefabData = LoadResourceRef<Prefab>(depotFilePath);
     if (!prefabData)
     {
-        ui::PostWindowMessage(m_panel, ui::MessageType::Error, "LoadResource"_id, TempString("Unable to load prefab '{}'", path));
+        ui::PostWindowMessage(m_panel, ui::MessageType::Error, "LoadResource"_id, TempString("Unable to load prefab '{}'", depotFilePath));
         return;
     }
 
-    ResourceID id;
-    if (GetService<DepotService>()->resolveIDForPath(path, id))
-    {
-        const auto prefabRef = PrefabRef(id, prefabData);
-
-        processGenericPrefabAction(inputNodes, [file, id, prefabRef](NodeTemplate* node) -> NodeTemplatePtr
+    processGenericPrefabAction(inputNodes, [prefabData](RawEntity* node) -> RawEntityPtr
+        {
+            bool contains = false;
+            for (const auto& prefab : node->m_prefabAssets)
             {
-                bool contains = false;
-                for (const auto& prefab : node->m_prefabAssets)
+                if (prefab.prefab == prefabData)
                 {
-                    if (prefab.prefab.id() == id)
-                    {
-                        contains = true;
-                    }
+                    contains = true;
+                    break;
                 }
+            }
 
-                if (!contains)
-                {
-                    auto& entry = node->m_prefabAssets.emplaceBack();
-                    entry.enabled = true;
-                    entry.prefab = prefabRef;
-                }
+            if (!contains)
+            {
+                auto& entry = node->m_prefabAssets.emplaceBack();
+                entry.enabled = true;
+                entry.prefab = prefabData;
+            }
 
-                return AddRef(node);
-            });
-    }
+            return AddRef(node);
+        });
 }
 
-void SceneEditMode_Default::cmdRemovePrefabFile(const Array<SceneContentNodePtr>& inputNodes, const Array<const ManagedFile*>& files)
+void SceneEditMode_Default::cmdRemovePrefabFile(const Array<SceneContentNodePtr>& inputNodes, const Array<ResourceID>& ids)
 {
-    InplaceArray<ResourceID, 10> ids;
-
-    for (const auto* file : files)
-    {
-        auto path = file->depotPath();
-
-        ResourceID id;
-        if (GetService<DepotService>()->resolveIDForPath(path, id))
-            ids.pushBack(id);
-    }
-
-    processGenericPrefabAction(inputNodes, [&ids](NodeTemplate* node) -> NodeTemplatePtr
+    processGenericPrefabAction(inputNodes, [&ids](RawEntity* node) -> RawEntityPtr
         {
             for (auto i : node->m_prefabAssets.indexRange().reversed())
             {
@@ -1455,29 +1407,29 @@ void SceneEditMode_Default::cmdRemovePrefabFile(const Array<SceneContentNodePtr>
         });
 }
 
-void SceneEditMode_Default::cmdMovePrefabFileUp(const Array<SceneContentNodePtr>& inputNodes, const ManagedFile* file)
+void SceneEditMode_Default::cmdMovePrefabFileUp(const Array<SceneContentNodePtr>& inputNodes, StringView file)
 {
 
 }
 
-void SceneEditMode_Default::cmdMovePrefabFileDown(const Array<SceneContentNodePtr>& inputNodes, const ManagedFile* file)
+void SceneEditMode_Default::cmdMovePrefabFileDown(const Array<SceneContentNodePtr>& inputNodes, StringView file)
 {
 
 }
 
-void SceneEditMode_Default::cmdEnablePrefabFile(const Array<SceneContentNodePtr>& inputNodes, const Array<const ManagedFile*>& files)
+void SceneEditMode_Default::cmdEnablePrefabFile(const Array<SceneContentNodePtr>& inputNodes, const Array<ResourceID>& files)
 {
 
 }
 
-void SceneEditMode_Default::cmdDisablePrefabFile(const Array<SceneContentNodePtr>& inputNodes, const Array<const ManagedFile*>& files)
+void SceneEditMode_Default::cmdDisablePrefabFile(const Array<SceneContentNodePtr>& inputNodes, const Array<ResourceID>& files)
 {
 
 }
 
 //--
 
-void SceneEditMode_Default::handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const AbsolutePosition* positionUnderCursor)
+void SceneEditMode_Default::handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const ExactPosition* positionUnderCursor)
 {
     ContextMenuSetup setup;
     setup.viewportBased = true;
@@ -1489,15 +1441,7 @@ void SceneEditMode_Default::handleContextMenu(ScenePreviewPanel* panel, bool ctr
         auto pos = *positionUnderCursor;
 
         if (container()->gridSettings().positionGridEnabled)
-        {
-            double x, y, z;
-            pos.expand(x, y, z);
-
-            auto snappedX = Snap(x, container()->gridSettings().positionGridSize);
-            auto snappedY = Snap(y, container()->gridSettings().positionGridSize);
-            auto snappedZ = Snap(z, container()->gridSettings().positionGridSize);
-            pos = AbsolutePosition(snappedX, snappedY, snappedZ);
-        }
+            pos.snap(container()->gridSettings().positionGridSize);
 
         setup.contextWorldPositionValid = true;
         setup.contextWorldPosition = pos;

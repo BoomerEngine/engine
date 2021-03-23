@@ -85,7 +85,7 @@ public:
 
 //--
 
-extern AbsoluteTransform TransformByOperation(const AbsoluteTransform& original, const GizmoReferenceSpace& referenceSpace, const Transform& transform);
+extern Transform TransformByOperation(const Transform& original, const GizmoReferenceSpace& referenceSpace, const Transform& transform);
 
 //--
 

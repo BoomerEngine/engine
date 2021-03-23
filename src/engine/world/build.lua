@@ -20,4 +20,7 @@ Dependency("core_math")
 Dependency("core_image")
 
 Dependency("engine_imgui")
+Dependency("engine_rendering")
+
+Dependency("gpu_device")
 

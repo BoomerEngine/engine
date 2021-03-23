@@ -55,8 +55,8 @@ void ImagePreviewPanel::renderForeground(ui::DataStash& stash, const ui::Element
 
     for (auto* proxy : m_elementProxies)
     {
-        minPos = Min(proxy->virtualPlacement, minPos);
-        maxPos = Max(proxy->virtualPlacement + proxy->virtualSize, maxPos);
+        minPos = minPos.min(proxy->virtualPlacement);
+        maxPos = maxPos.max(proxy->virtualPlacement + proxy->virtualSize);
     }
 
     if (m_hoverPixelValid)
@@ -68,42 +68,32 @@ void ImagePreviewPanel::renderForeground(ui::DataStash& stash, const ui::Element
             float y0 = ((m_hoverPixelY) * m_viewScale.y) + m_viewOffset.y;
             float y1 = ((m_hoverPixelY+1)*m_viewScale.y) + m_viewOffset.y;
 
-			canvas::Geometry g;
-
-			{
-				canvas::GeometryBuilder b(g);
-				b.fillColor(Color(64, 64, 64, 64));
-				b.beginPath();
-				b.rect(x0, 0.0f, x1 - x0, drawArea.size().y);
-				b.fill();
-				b.beginPath();
-				b.rect(0.0f, y0, drawArea.size().x, y1 - y0);
-				b.fill();
-			}
-
-            canvas.place(drawArea.absolutePosition(), g);
+            canvas::InplaceGeometryBuilder b(canvas);
+            b.fillColor(Color(64, 64, 64, 64));
+            b.beginPath();
+            b.rect(x0, 0.0f, x1 - x0, drawArea.size().y);
+            b.fill();
+            b.beginPath();
+            b.rect(0.0f, y0, drawArea.size().x, y1 - y0);
+            b.fill();
+            b.render(drawArea.absolutePosition());
         }
         else
         {
             float x = ((m_hoverPixelX)*m_viewScale.x) + m_viewOffset.x;
             float y = ((m_hoverPixelY)*m_viewScale.y) + m_viewOffset.y;
 
-			canvas::Geometry g;
-
-			{
-				canvas::GeometryBuilder b(g);
-				b.strokeColor(Color(64, 64, 64, 64));
-				b.beginPath();
-				b.moveTo(x, 0.0f);
-				b.lineTo(x, drawArea.size().y);
-				b.stroke();
-				b.beginPath();
-				b.moveTo(0.0f, y);
-				b.lineTo(drawArea.size().x, y);
-				b.stroke();
-			}
-
-            canvas.place(drawArea.absolutePosition(), g);
+            canvas::InplaceGeometryBuilder b(canvas);
+			b.strokeColor(Color(64, 64, 64, 64));
+			b.beginPath();
+			b.moveTo(x, 0.0f);
+			b.lineTo(x, drawArea.size().y);
+			b.stroke();
+			b.beginPath();
+			b.moveTo(0.0f, y);
+			b.lineTo(drawArea.size().x, y);
+			b.stroke();
+            b.render(drawArea.absolutePosition());
         }
     }
 

@@ -272,7 +272,7 @@ static void PrepareGroupBuildList(const SourceAssetOBJ& data, OBJMeshAttributeMo
 
 //--
 
-static Box CalculateGeometryBounds(const SourceAssetOBJ& data, const GroupBuildModelList& buildList, const Matrix& assetToEngine)
+static Box CalculateGeometryBounds(const SourceAssetOBJ& data, const GroupBuildModelList& buildList, const BaseTransformation& assetToEngine)
 {
     struct PerChunkBox
     {
@@ -535,7 +535,7 @@ static void ExtractStreamData(uint32_t attributeIndex, const void* readRawPtr, T
     writeRawPtr = writePtr;
 }
 
-static void ProcessSingleChunk(MeshTopologyType top, const SourceAssetOBJ& data, const Matrix& assetToEngine, const Array<const GroupChunk*>& sourceChunks, MeshStreamMask streams, bool flipFaces, bool flipUV, const Vector2& uvScale, MeshRawChunk& outChunk)
+static void ProcessSingleChunk(MeshTopologyType top, const SourceAssetOBJ& data, const BaseTransformation& assetToEngine, const Array<const GroupChunk*>& sourceChunks, MeshStreamMask streams, bool flipFaces, bool flipUV, const Vector2& uvScale, MeshRawChunk& outChunk)
 {
     PC_SCOPE_LVL0(ProcessSingleChunk);
 

@@ -72,8 +72,8 @@ public:
 
     EventFunctionBinder createCallback(StringView text, StringView icon = "", StringView shortcut="", bool enabled=true);
 
-    void show(IElement* owner);
-    void showAsDropdown(IElement* owner);
+    bool show(IElement* owner);
+    bool showAsDropdown(IElement* owner);
 
     PopupPtr convertToPopup();
 };

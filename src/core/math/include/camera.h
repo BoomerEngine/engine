@@ -59,6 +59,7 @@ class CORE_MATH_API Camera
 {
 public:
     Camera();
+    Camera(const CameraSetup& setup);
     Camera(const Camera& other);
     Camera(Camera&& other);
     Camera& operator=(const Camera& other);
@@ -176,6 +177,8 @@ private:
     Matrix m_screenToCamera;
     Matrix m_worldToScreen;
     Matrix m_screenToWorld;
+
+    void updateMatrices();
 };
         
 //--

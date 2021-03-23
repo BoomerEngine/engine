@@ -33,7 +33,9 @@ CameraSetup::CameraSetup()
 void CameraSetup::calcWorldToCamera(Matrix& outWorldToCamera) const
 {
     outWorldToCamera = rotation.inverted().toMatrix();
-    outWorldToCamera.translation(-outWorldToCamera.transformVector(position));
+
+    BaseTransformation t(outWorldToCamera);
+    outWorldToCamera.translation(-t.transformVector(position));
 }
 
 void CameraSetup::calcCameraToWorld(Matrix &outCameraToWorld) const
@@ -52,14 +54,19 @@ void CameraSetup::calcViewToScreen(Matrix& outViewToScreen) const
 
 void CameraSetup::calcAxes(Vector3* outForward, Vector3* outRight, Vector3* outUp) const
 {
-    if (outForward)
-        *outForward = rotation.transformVector(Vector3::EX());
+    if (outForward || outRight || outUp)
+    {
+        Transformation t(rotation);
 
-    if (outRight)
-        *outRight = rotation.transformVector(Vector3::EY());
+        if (outForward)
+            *outForward = t.transformVector(Vector3::EX());
 
-    if (outUp)
-        *outUp = rotation.transformVector(Vector3::EZ());
+        if (outRight)
+            *outRight = t.transformVector(Vector3::EY());
+
+        if (outUp)
+            *outUp = t.transformVector(Vector3::EZ());
+    }
 }
 
 ///--
@@ -76,11 +83,20 @@ Camera::Camera(Camera&& other) = default;
 Camera& Camera::operator=(const Camera& other) = default;
 Camera& Camera::operator=(Camera&& other) = default;
 
+Camera::Camera(const CameraSetup& setup)
+    : m_setup(setup)
+{
+    updateMatrices();
+}
+
 void Camera::setup(const CameraSetup& setupParams)
 {
-    // configure camera
     m_setup = setupParams;
+    updateMatrices();
+}
 
+void Camera::updateMatrices()
+{
     // get data
     m_setup.calcViewToScreen(m_viewToScreen);
     m_setup.calcWorldToCamera(m_worldToCamera);
@@ -100,7 +116,7 @@ void Camera::setup(const CameraSetup& setupParams)
 float Camera::calcScreenSpaceScalingFactor(const Vector3 &pos, uint32_t width, uint32_t height) const
 {
     // transform point from world space to screen space
-    auto screenSpacePoint = worldToScreen().transformVector4(Vector4(pos, 1.0f));
+    auto screenSpacePoint = BaseTransformation(worldToScreen()).transformVector4(Vector4(pos, 1.0f));
 
     // calculate pixel size in world space at given depth
     auto pixelDeltaX = (2.0f / (float)width) * screenSpacePoint.w;
@@ -118,12 +134,12 @@ bool Camera::calcWorldSpaceRay(const Vector3& screenPosition, Vector3& outRaySta
     screenSpacePoint.w = 1.0f;
 
     // transform to point on the near plane to world space
-    auto startPoint = screenToWorld().transformVector4(screenSpacePoint);
+    auto startPoint = BaseTransformation(screenToWorld()).transformVector4(screenSpacePoint);
     startPoint.project();
 
     // setup the end point at the far plane
     screenSpacePoint.z = 1.0f;
-    auto endPoint = screenToWorld().transformVector4(screenSpacePoint);
+    auto endPoint = BaseTransformation(screenToWorld()).transformVector4(screenSpacePoint);
     endPoint.project();
 
     // Use camera origin as ray origin
@@ -136,7 +152,7 @@ bool Camera::calcWorldSpaceRay(const Vector3& screenPosition, Vector3& outRaySta
 bool Camera::projectWorldToScreen(const Vector3 &worldPosition, Vector3 &outScreenPosition) const
 {
     Vector4 worldPos(worldPosition.x, worldPosition.y, worldPosition.z, 1.0f);
-    auto screenPos = m_worldToScreen.transformVector4(worldPos);
+    auto screenPos = BaseTransformation(m_worldToScreen).transformVector4(worldPos);
 
     // we don't want to divide by 0, the world is not yet ready for Naked Singularity
     auto w = screenPos.w;
@@ -156,7 +172,7 @@ bool Camera::projectWorldToScreen(const Vector3 &worldPosition, Vector3 &outScre
     // calculate the linear distance from the camera plane
     outScreenPosition.x = (x + 1.0f) / 2.0f;
     outScreenPosition.y = (y + 1.0f) / 2.0f;
-    outScreenPosition.z = Dot(directionForward(), worldPosition - position());
+    outScreenPosition.z = directionForward() | (worldPosition - position());
     return true;
 }
 
@@ -168,7 +184,7 @@ bool Camera::projectScreenToWorld(Vector3& outWorldPosition, const Vector3& scre
     screenSpacePoint.z = 0.0f;
     screenSpacePoint.w = 1.0f;
 
-    Vector4 worldPosition(screenToWorld().transformVector4(screenSpacePoint));
+    Vector4 worldPosition(BaseTransformation(screenToWorld()).transformVector4(screenSpacePoint));
     auto w = worldPosition.w;
     if (w >= -SMALL_EPSILON && w <= SMALL_EPSILON)
         return false;
@@ -181,10 +197,11 @@ bool Camera::projectScreenToWorld(Vector3& outWorldPosition, const Vector3& scre
 
 void Camera::calcFrustumCorners(float zPlane, Vector3* outCorners) const
 {
-    outCorners[0] = screenToWorld().transformVector4(Vector4(1.0f, -1.0f, zPlane, 1.0f)).projected();
-    outCorners[1] = screenToWorld().transformVector4(Vector4(1.0f, 1.0f, zPlane, 1.0f)).projected();
-    outCorners[2] = screenToWorld().transformVector4(Vector4(-1.0f, 1.0f, zPlane, 1.0f)).projected();
-    outCorners[3] = screenToWorld().transformVector4(Vector4(-1.0f, -1.0f, zPlane, 1.0f)).projected();
+    BaseTransformation t(screenToWorld());
+    outCorners[0] = t.transformVector4(Vector4(1.0f, -1.0f, zPlane, 1.0f)).projected();
+    outCorners[1] = t.transformVector4(Vector4(1.0f, 1.0f, zPlane, 1.0f)).projected();
+    outCorners[2] = t.transformVector4(Vector4(-1.0f, 1.0f, zPlane, 1.0f)).projected();
+    outCorners[3] = t.transformVector4(Vector4(-1.0f, -1.0f, zPlane, 1.0f)).projected();
 }
 
 // screenZ = (worldZ * m22 + m23) / worldZ;
@@ -288,7 +305,7 @@ namespace helper
     static void CalculateFrustumPlaneFromPoints(const Vector3& a, const Vector3& b, const Vector3& c, SIMDQuad& outPlane, SIMDQuad& outMask)
     {
         auto n = TriangleNormal(a, b, c);
-        outPlane = SIMDQuad(n.x, n.y, n.z, -Dot(n, a));
+        outPlane = SIMDQuad(n.x, n.y, n.z, -(n | a));
         outMask = outPlane.cmpL(SIMDQuad());
     }
 
@@ -350,8 +367,9 @@ void VisibilityFrustum::setup(const Camera& sourceCamera)
         auto centerV = sourceCamera.position();
         auto center = SIMDQuad(centerV.x, centerV.y, centerV.z, 1.0f);
 
+        BaseTransformation t(matrix);
         for (uint8_t i = 0; i < ARRAY_COUNT(positions); ++i)
-            positions[i] = matrix.transformPoint(positions[i]);
+            positions[i] = t.transformPoint(positions[i]);
 
         helper::CalculateFrustumPlaneFromPoints(positions[0], positions[1], positions[2], planes[PLANE_NEAR], planeMask[PLANE_NEAR]);
         helper::CalculateFrustumPlaneFromPoints(positions[7], positions[6], positions[5], planes[PLANE_FAR], planeMask[PLANE_FAR]);

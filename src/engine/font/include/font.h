@@ -102,7 +102,7 @@ public:
     /// printable characters are written in the render buffer 
     /// the images for particular glyphs needed to render the text are maintained in the provided glyph cache
     /// returns size of the text (the same as measureText)
-    void renderText(const FontStyleParams& styleParams, const FontAssemblyParams& textParams, const FontInputText& str, GlyphBuffer& outBuffer) const;
+    void renderText(const FontStyleParams& styleParams, const FontAssemblyParams& textParams, const FontInputText& str, GlyphBuffer& outBuffer, Color color = Color::WHITE) const;
 
     /// fetch information about single character
     const Glyph* renderGlyph(const FontStyleParams& styleParams, uint32_t glyphcode) const;

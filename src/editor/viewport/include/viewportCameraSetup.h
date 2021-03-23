@@ -22,7 +22,7 @@ public:
     //--
 
     /// calculate exact camera ray for given client pixel position
-    bool worldSpaceRayForClientPixelExact(int x, int y, AbsolutePosition& outStart, Vector3& outDir) const;
+    bool worldSpaceRayForClientPixelExact(int x, int y, ExactPosition& outStart, Vector3& outDir) const;
 
     /// calculate camera ray for given client pixel position
     bool worldSpaceRayForClientPixel(int x, int y, Vector3& outStart, Vector3& outDir) const;
@@ -34,18 +34,18 @@ public:
     Point clientPositionFromNormalizedPosition(const Vector3& normalizedPosition) const;
 
     /// query the position for given normalized screen XY (XY - [0,1], Z-linear depth)
-    bool screenToWorld(const Vector3* normalizedScreenPos, AbsolutePosition* outWorldPosition, uint32_t count) const;
+    bool screenToWorld(const Vector3* normalizedScreenPos, ExactPosition* outWorldPosition, uint32_t count) const;
 
     /// query the screen space position (XY - [0,1], Z-linear depth) for given world position
-    bool worldToScreen(const AbsolutePosition* worldPosition, Vector3* outScreenPosition, uint32_t count) const;
+    bool worldToScreen(const ExactPosition* worldPosition, Vector3* outScreenPosition, uint32_t count) const;
 
     /// query the client space position (XY - [0,w]x[0xh], Z-linear depth) for given world position
     /// NOTE: this is resolution dependent
-    bool worldToClient(const AbsolutePosition* worldPosition, Vector3* outClientPosition, uint32_t count) const;
+    bool worldToClient(const ExactPosition* worldPosition, Vector3* outClientPosition, uint32_t count) const;
 
     /// calculate viewport scale factor for given world position, keeps stuff constant in size on the screen
     /// NOTE: by default this takes the DPI of the viewport into account for free
-    float calculateViewportScaleFactor(const AbsolutePosition& worldPosition, bool useDPI = true) const;
+    float calculateViewportScaleFactor(const ExactPosition& worldPosition, bool useDPI = true) const;
 
     //--
 

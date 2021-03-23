@@ -10,20 +10,22 @@
 
 #include "sceneWorldEditor.h"
 #include "sceneContentNodes.h"
+#include "sceneContentNodesEntity.h"
 #include "sceneContentStructure.h"
+#include "sceneWorldPlayerInEditor.h"
 #include "sceneEditMode_Default.h"
 
-#include "engine/world/include/prefab.h"
-#include "engine/world/include/rawScene.h"
+#include "engine/world/include/rawPrefab.h"
+#include "engine/world/include/rawWorldData.h"
 #include "engine/world/include/rawLayer.h"
-#include "editor/common/include/assetFormat.h"
-#include "editor/common/include/managedFile.h"
-#include "editor/common/include/managedFileNativeResource.h"
-#include "editor/common/include/managedItem.h"
-#include "editor/common/include/managedDirectory.h"
-#include "editor/common/include/editorService.h"
-#include "core/io/include/io.h"
 #include "engine/ui/include/uiToolBar.h"
+
+#include "core/io/include/io.h"
+#include "core/resource/include/depot.h"
+#include "core/app/include/projectSettingsService.h"
+
+#include "engine/ui/include/uiDockLayout.h"
+#include "engine/world_compiler/include/worldCompiler.h"
 
 #undef DeleteFile
 
@@ -34,26 +36,28 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneWorldEditor);
 RTTI_END_TYPE();
 
-SceneWorldEditor::SceneWorldEditor(ManagedFileNativeResource* file)
-    : SceneCommonEditor(file, SceneContentNodeType::WorldRoot, "Main")
+SceneWorldEditor::SceneWorldEditor(const ResourceInfo& info)
+    : SceneCommonEditor(info, SceneContentNodeType::WorldRoot, "Main")
 {
     m_rootLayersGroup = RefNew<SceneContentWorldDir>("layers", true);
     m_content->root()->attachChildNode(m_rootLayersGroup);
     m_content->root()->resetModifiedStatus(true);
 
-    toolbar()->createCallback(ui::ToolbarButtonSetup().caption("Assets").icon("database").tooltip("Show asset browser window")) = [this]()
+    recreateContent();
+    refreshEditMode();
+
     {
-        cmdShowAssetBrowser();
-    };
+        m_piePanel = RefNew<ScenePlayInEditorPanel>(info.resourceDepotPath, m_content, m_previewContainer);
+        dockLayout().attachPanel(m_piePanel, false);
+    }
+
+    {
+        toolbar()->createButton(ui::ToolBarButtonInfo().caption("Build", "cog")) = [this]() { cmdBuildWorld(); };
+    }
 }
 
 SceneWorldEditor::~SceneWorldEditor()
 {}
-
-void SceneWorldEditor::cmdShowAssetBrowser()
-{
-    GetEditor()->showAssetBrowser();
-}
 
 static RefPtr<SceneContentWorldLayer> UnpackLayer(StringView name, const RawLayer* layer, Array<StringBuf>& outErrors)
 {
@@ -68,66 +72,77 @@ static RefPtr<SceneContentWorldLayer> UnpackLayer(StringView name, const RawLaye
     return ret;
 }
 
-static void ExtractLayerStructure(const ManagedDirectory* dir, SceneContentNode* dirNode, Array<StringBuf>& outErrors)
+struct ExtractedLayer
 {
-    for (const auto* file : dir->files())
-    {
-        if (file->fileFormat().loadableAsType(RawLayer::GetStaticClass()))
-        {
-            if (const auto* nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-            {
-                if (const auto layerData = rtti_cast<RawLayer>(nativeFile->loadContent()))
-                {
-                    if (const auto layerNode = UnpackLayer(file->name().view().beforeFirst("."), layerData, outErrors))
-                    {
-                        dirNode->attachChildNode(layerNode);
-                    }
-                    else
-                    {
-                        outErrors.emplaceBack(TempString("Failed to unpack content of layer '{}'", nativeFile->depotPath()));
-                    }
-                }
-                else
-                {
-                    outErrors.emplaceBack(TempString("Failed to load content for layer '{}'", nativeFile->depotPath()));
-                }
-            }
-        }
-    }
+    SceneContentNode* dirNode = nullptr;
+    StringBuf path;
+};
 
-    for (const auto* childDir : dir->directories())
-    {
-        auto childDirNode = RefNew<SceneContentWorldDir>(childDir->name(), false);
-        ExtractLayerStructure(childDir, childDirNode, outErrors);
-        dirNode->attachChildNode(childDirNode);
-    }
+static void ExtractLayerStructure(StringView depotPath, SceneContentNode* dirNode, Array<ExtractedLayer>& outLayerPaths)
+{
+    GetService<DepotService>()->enumFilesAtPath(depotPath, [depotPath, dirNode, &outLayerPaths](StringView name)
+        {
+            if (name.endsWith(RawLayer::FILE_EXTENSION))
+            {
+                auto& info = outLayerPaths.emplaceBack();
+                info.path = TempString("{}{}", depotPath, name);
+                info.dirNode = dirNode;
+            }
+        });
+
+    GetService<DepotService>()->enumDirectoriesAtPath(depotPath, [depotPath, dirNode, &outLayerPaths](StringView name)
+        {
+            auto childDirNode = RefNew<SceneContentWorldDir>(StringBuf(name), false);
+            ExtractLayerStructure(TempString("{}{}/", depotPath, name), childDirNode, outLayerPaths);
+            dirNode->attachChildNode(childDirNode);
+        });
 }
 
 void SceneWorldEditor::recreateContent()
 {
-    // layers are stored in "layers" directory
-    if (auto* layersDirectory = nativeFile()->parentDirectory()->createDirectory("layers"))
+    // get the path to layers directory
+    const auto layersPath = StringBuf(TempString("{}layers/", info().resourceDepotPath.view().baseDirectory()));
+
+    // find layers
+    Array<ExtractedLayer> layerPaths;
+    ExtractLayerStructure(layersPath, m_rootLayersGroup, layerPaths);
+
+    // load layers
+    Array<StringBuf> reportedErrors;
+    for (const auto& layerPath : layerPaths)
     {
-        Array<StringBuf> reportedErrors;
-        ExtractLayerStructure(layersDirectory, m_rootLayersGroup, reportedErrors);
-
-        if (!reportedErrors.empty())
+        const auto name = layerPath.path.view().fileStem();
+        if (const auto layerData = GetService<DepotService>()->loadFileToResource<RawLayer>(layerPath.path))
         {
-            StringBuilder txt;
-            txt << "Scene loading errors:[br]";
-            auto numErrors = std::min<uint32_t>(reportedErrors.size(), 100);
-            for (uint32_t i = 0; i < numErrors; ++i)
-            {
-                txt << reportedErrors[i];
-                txt << "[br]";
-            }
-
-            ui::PostNotificationMessage(this, ui::MessageType::Error, "LoadSave"_id, txt.view());
+            if (const auto layerNode = UnpackLayer(name, layerData, reportedErrors))
+                layerPath.dirNode->attachChildNode(layerNode);
+            else
+                reportedErrors.emplaceBack(TempString("Failed to unpack content of layer '{}'", name));
+        }
+        else
+        {
+            reportedErrors.emplaceBack(TempString("Failed to load content for layer '{}'", name));
         }
     }
 
+
+    // show loading errors
+    if (!reportedErrors.empty())
+    {
+        StringBuilder txt;
+        txt << "Scene loading errors:[br]";
+        auto numErrors = std::min<uint32_t>(reportedErrors.size(), 100);
+        for (uint32_t i = 0; i < numErrors; ++i)
+        {
+            txt << reportedErrors[i];
+            txt << "[br]";
+        }
+
+        ui::PostNotificationMessage(this, ui::MessageType::Error, "LoadSave"_id, txt.view());
+    }
+
     // reset all modified state after loading
-    m_content->root()->resetModifiedStatus();        
+    m_content->root()->resetModifiedStatus();
 }
 
 bool SceneWorldEditor::checkGeneralSave() const
@@ -140,7 +155,7 @@ bool SceneWorldEditor::checkGeneralSave() const
 
 static RawLayerPtr BuildLayerData(const SceneContentWorldLayer* data)
 {
-    Array<NodeTemplatePtr> nodes;
+    Array<RawEntityPtr> nodes;
     nodes.reserve(data->entities().size());
 
     for (const auto& content : data->entities())
@@ -152,107 +167,92 @@ static RawLayerPtr BuildLayerData(const SceneContentWorldLayer* data)
     return ret;
 }
 
-static void CollectDirToDelete(ManagedDirectory* dir, Array<ManagedDirectory*>& outDirsToDelete, Array<ManagedFile*>& outFilesToDelete)
+static void CollectDirToDelete(StringView dirPath, Array<StringBuf>& outDirsToDelete, Array<StringBuf>& outFilesToDelete)
 {
-    for (auto* childDir : dir->directories())
-        CollectDirToDelete(childDir, outDirsToDelete, outFilesToDelete);
+    GetService<DepotService>()->enumDirectoriesAtPath(dirPath, [dirPath, &outDirsToDelete, &outFilesToDelete](StringView name)
+        {CollectDirToDelete(TempString("{}{}/", dirPath, name), outDirsToDelete, outFilesToDelete); });
 
-    for (auto* file : dir->files())
-        outFilesToDelete.pushBack(file);
+    GetService<DepotService>()->enumFilesAtPath(dirPath, [dirPath, outDirsToDelete, &outFilesToDelete](StringView name)
+        {outFilesToDelete.emplaceBack(TempString("{}{}", dirPath, name)); });
 
-    outDirsToDelete.pushBack(dir);
+    outDirsToDelete.emplaceBack(dirPath);
 }
 
-static void SaveLayerStructure(ManagedDirectory* dir, const SceneContentWorldDir* data, Array<ManagedDirectory*>& outDirsToDelete, Array<ManagedFile*>& outFilesToDelete, Array<StringBuf>& outErrors)
+static void SaveLayerStructure(StringView dirPath, const SceneContentWorldDir* data, Array<StringBuf>& outDirsToDelete, Array<StringBuf>& outFilesToDelete, Array<StringBuf>& outErrors)
 {
-    auto existingFiles = dir->files(); // copy
-    auto existingDirs = dir->directories(); // copy
+    Array<StringBuf> existingDirNames;
+    GetService<DepotService>()->enumDirectoriesAtPath(dirPath, [dirPath, &existingDirNames](StringView name)
+        {existingDirNames.emplaceBack(name); });
+
+    Array<StringBuf> existingFileNames;
+    GetService<DepotService>()->enumFilesAtPath(dirPath, [outDirsToDelete, &existingFileNames](StringView name)
+        { 
+            if (name.endsWith(RawLayer::FILE_EXTENSION))
+                existingFileNames.emplaceBack(name.fileStem()); 
+        });
+    
     for (const auto& child : data->children())
     {
         if (auto childDataDir = rtti_cast<SceneContentWorldDir>(child))
         {
-            if (auto* childDir = dir->createDirectory(childDataDir->name()))
+            const auto childDepotDir = StringBuf(TempString("{}{}/", dirPath, childDataDir->name()));
+            if (GetService<DepotService>()->createDirectories(childDepotDir))
             {
-                existingDirs.remove(childDir);
-                SaveLayerStructure(childDir, childDataDir, outDirsToDelete, outFilesToDelete, outErrors);
+                existingDirNames.remove(childDataDir->name());
+                SaveLayerStructure(childDepotDir, childDataDir, outDirsToDelete, outFilesToDelete, outErrors);
             }
             else
             {
-                outErrors.emplaceBack(TempString("Failed to create directory '{}' in '{}'", childDataDir->name(), dir->depotPath()));
+                outErrors.emplaceBack(TempString("Failed to create directory '{}'", childDataDir->name(), childDepotDir));
             }
         }
         else if (auto childDataLayer = rtti_cast<SceneContentWorldLayer>(child))
         {
-            bool shouldSave = childDataLayer->modified();
+            auto fullFileName = StringBuf(TempString("{}{}.{}", dirPath, childDataLayer->name(), RawLayer::FILE_EXTENSION));
+            bool fileExists = GetService<DepotService>()->fileExists(fullFileName);
 
-            auto layerExt = IResource::GetResourceExtensionForClass(RawLayer::GetStaticClass());
+            if (fileExists)
+                existingFileNames.remove(childDataLayer->name());
 
-            auto fullFileName = StringBuf(TempString("{}.{}", childDataLayer->name(), layerExt));
-            auto* existingFile = rtti_cast<ManagedFileNativeResource>(dir->file(fullFileName, true));
-            shouldSave |= (existingFile == nullptr) || (existingFile->isDeleted());
-
-            if (existingFile)
-                existingFiles.remove(existingFile);
-
-            if (shouldSave)
+            if (childDataLayer->modified() || !fileExists)
             {
                 if (auto layerDataToSave = BuildLayerData(childDataLayer))
                 {
-                    if (existingFile)
-                    {
-                        if (!existingFile->storeContent(layerDataToSave))
-                        {
-                            outErrors.emplaceBack(TempString("Failed to save layer '{}' in '{}'", childDataDir->name(), dir->depotPath()));
-                        }
-                        else
-                        {
-                            childDataLayer->resetModifiedStatus(true);
-                        }
-                    }
+                    if (GetService<DepotService>()->saveFileFromResource(fullFileName, layerDataToSave))
+                        childDataLayer->resetModifiedStatus(true);
                     else
-                    {
-                        if (!dir->createFile(childDataLayer->name(), layerDataToSave))
-                        {
-                            outErrors.emplaceBack(TempString("Failed to save layer '{}' in '{}'", childDataDir->name(), dir->depotPath()));
-                        }
-                        else
-                        {
-                            childDataLayer->resetModifiedStatus(true);
-                        }
-                    }
+                        outErrors.emplaceBack(TempString("Failed to save layer '{}'", fullFileName));
                 }
                 else
                 {
-                    outErrors.emplaceBack(TempString("Failed to save nodes to layer '{}' in '{}'", childDataDir->name(), dir->depotPath()));
+                    outErrors.emplaceBack(TempString("Failed to save nodes to layer '{}'", fullFileName));
                 }
             }
         }
     }
 
     // anything existing that was not saved we need to delete
-    for (auto* dir : existingDirs)
-        CollectDirToDelete(dir, outDirsToDelete, outFilesToDelete);
-    for (auto* file : existingFiles)
-        outFilesToDelete.pushBack(file);
+    for (const auto& dirName : existingDirNames)
+        CollectDirToDelete(TempString("{}{}/", dirPath, dirName), outDirsToDelete, outFilesToDelete);
+    for (const auto& fileName : existingFileNames)
+        outFilesToDelete.emplaceBack(TempString("{}{}.{}", dirPath, fileName, RawLayer::FILE_EXTENSION));
 }
 
 bool SceneWorldEditor::save()
 {
     // save scene file only if it's modified
-    if (nativeFile()->isModified())
+    if (info().resource->modified())
         if (!TBaseClass::save())
             return false;
 
-    // create the "layers" directory
-    auto* layersDirectory = nativeFile()->parentDirectory()->createDirectory("layers");
-    if (!layersDirectory)
-        return false;
+    // get the path to layers directory
+    const auto layersPath = StringBuf(TempString("{}layers/", info().resourceDepotPath.view().baseDirectory()));
 
     // save the directory/layer structure
-    Array<ManagedDirectory*> dirsToDelete;
-    Array<ManagedFile*> filesToDelete;
+    Array<StringBuf> dirsToDelete;
+    Array<StringBuf> filesToDelete;
     Array<StringBuf> reportedErrors;
-    SaveLayerStructure(layersDirectory, m_rootLayersGroup, dirsToDelete, filesToDelete, reportedErrors);
+    SaveLayerStructure(layersPath, m_rootLayersGroup, dirsToDelete, filesToDelete, reportedErrors);
 
     // display errors
     if (!reportedErrors.empty())
@@ -271,14 +271,27 @@ bool SceneWorldEditor::save()
     }
 
     // remove files that are no longer needed
-    for (auto* file : filesToDelete)
-        DeleteFile(file->absolutePath());
-    for (auto* dir : dirsToDelete)
-        DeleteDir(dir->absolutePath());
+    for (const auto& file : filesToDelete)
+        GetService<DepotService>()->removeFile(file);
+    for (const auto& dir : dirsToDelete)
+        GetService<DepotService>()->removeDirectory(dir);
 
     // mark as layers as saved
     m_content->root()->resetModifiedStatus(true);
     return true;
+}
+
+void SceneWorldEditor::cleanup()
+{
+    TBaseClass::cleanup();
+    m_piePanel->stopGame();
+}
+
+//---
+
+void SceneWorldEditor::cmdBuildWorld()
+{
+
 }
 
 //---
@@ -288,17 +301,15 @@ class SceneWorldResourceEditorOpener : public IResourceEditorOpener
     RTTI_DECLARE_VIRTUAL_CLASS(SceneWorldResourceEditorOpener, IResourceEditorOpener);
 
 public:
-    virtual bool canOpen(const AssetFormat& format) const override
+    virtual bool createEditor(ui::IElement* owner, const ResourceInfo& context, ResourceEditorPtr& outEditor) const override final
     {
-        return format.nativeResourceClass() == RawScene::GetStaticClass();
-    }
+        if (auto world = rtti_cast<RawWorldData>(context.resource))
+        {
+            outEditor = RefNew<SceneWorldEditor>(context);
+            return true;
+        }
 
-    virtual RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
-    {
-        if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-            return RefNew<SceneWorldEditor>(nativeFile);
-
-        return nullptr;
+        return false;
     }
 };
 

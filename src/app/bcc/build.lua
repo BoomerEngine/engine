@@ -8,6 +8,7 @@ ProjectOption("devonly")
 
 Dependency("core_*")
 Dependency("engine_*")
+Dependency("game_*")
 Dependency("import_*")
 Dependency("gpu_*")
 

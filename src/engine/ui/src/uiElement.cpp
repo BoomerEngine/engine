@@ -724,6 +724,11 @@ bool IElement::handleMouseMovement(const input::MouseMovementEvent& evt)
     return false;
 }
 
+bool IElement::handleAxisEvent(const input::AxisEvent& evt)
+{
+    return false;
+}
+
 bool IElement::previewKeyEvent(const input::KeyEvent& evt)
 {
     return false;

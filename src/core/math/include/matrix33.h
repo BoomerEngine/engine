@@ -122,14 +122,6 @@ public:
 
     //--
 
-    //! Transform vector by matrix
-    Vector3 transformVector(const Vector3& v) const;
-
-    //! Transform vector by transposed matrix
-    Vector3 transformInvVector(const Vector3& v) const;
-
-    //--
-
     //! convert to rotation, assumes orthonormal 3x3 matrix
     Angles toRotator() const;
 

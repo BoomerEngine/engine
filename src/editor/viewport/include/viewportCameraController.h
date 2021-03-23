@@ -38,8 +38,8 @@ public:
     float perspectiveFov = 90.0f; // fov for perspective camera
     float orthoZoom = 10.0f; // meters for full screen (viewport size/DPI independent)
 
-    AbsolutePosition origin;
-    AbsolutePosition position;
+    ExactPosition origin;
+    ExactPosition position;
     Angles rotation;
 
     ViewportCameraControllerSettings();

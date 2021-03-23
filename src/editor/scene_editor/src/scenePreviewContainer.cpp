@@ -12,6 +12,8 @@
 #include "scenePreviewContainer.h"
 #include "scenePreviewStreaming.h"
 #include "sceneContentStructure.h"
+#include "sceneContentNodes.h"
+#include "sceneContentNodesEntity.h"
 
 #include "engine/rendering/include/scene.h"
 #include "engine/rendering/include/debug.h"
@@ -19,7 +21,6 @@
 
 #include "engine/ui/include/uiToolBar.h"
 #include "engine/world/include/world.h"
-#include "sceneContentNodes.h"
 #include "engine/ui/include/uiElementConfig.h"
 #include "engine/ui/include/uiSplitter.h"
 #include "engine/ui/include/uiFourWaySplitter.h"
@@ -151,10 +152,10 @@ SceneLayoutSettings::SceneLayoutSettings()
 RTTI_BEGIN_TYPE_NATIVE_CLASS(ScenePreviewContainer);
 RTTI_END_TYPE();
 
-ScenePreviewContainer::ScenePreviewContainer(SceneContentStructure* content, ISceneEditMode* initialEditMode)
+ScenePreviewContainer::ScenePreviewContainer(SceneContentStructure* content, ISceneEditMode* initialEditMode, RawWorldData* worldData)
     : m_content(content)
 {
-    createWorld();
+    createWorld(worldData);
 
     m_bottomBar = RefNew<ui::ToolBar>();
     m_bottomBar->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
@@ -368,9 +369,12 @@ void ScenePreviewContainer::updateWorld()
     m_world->update(dt);
 }
 
-void ScenePreviewContainer::createWorld()
+void ScenePreviewContainer::createWorld(RawWorldData* data)
 {
-    m_world = RefNew<World>();
+    if (data)
+        m_world = World::CreateEditorWorld(data);
+    else
+        m_world = World::CreatePreviewWorld();
     m_lastWorldTick.resetToNow();
 
     m_visualization = RefNew<SceneNodeVisualizationHandler>(m_world);

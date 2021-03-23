@@ -240,8 +240,8 @@ void CanvasArea::processScheduledZoomChange()
         {
             if (proxy->visible)
             {
-                minPos = Min(proxy->virtualPlacement, minPos);
-                maxPos = Max(proxy->virtualPlacement + proxy->virtualSize, maxPos);
+                minPos = minPos.min(proxy->virtualPlacement);
+                maxPos = maxPos.max(proxy->virtualPlacement + proxy->virtualSize);
             }
         }
 

@@ -406,6 +406,17 @@ xml::DocumentPtr SaveObjectToXML(const IObject* object, StringView rootNodeName 
     return ret;
 }
 
+bool SaveObjectToXMLFile(StringView path, const IObject* object, StringView rootNodeName, bool binaryXMLFormat)
+{
+    if (!object)
+        return false;
+
+    if (auto doc = SaveObjectToXML(object, rootNodeName))
+        return xml::SaveDocument(doc, path, binaryXMLFormat);
+
+    return false;
+}
+
 ObjectPtr LoadObjectFromXML(const xml::IDocument* doc, SpecificClassType<IObject> expectedClass)
 {
     if (doc)
@@ -437,6 +448,16 @@ ObjectPtr LoadObjectFromXML(const xml::Node& node, SpecificClassType<IObject> ex
 
     return nullptr;
 }
+
+ObjectPtr LoadObjectFromXMLFile(StringView absolutePath, SpecificClassType<IObject> expectedClass)
+{
+    if (auto doc = xml::LoadDocument(xml::ILoadingReporter::GetDefault(), absolutePath))
+        return LoadObjectFromXML(doc, expectedClass);
+
+    return nullptr;
+}
+
+//--
 
 bool CopyPropertyValue(const IObject* srcObject, const Property* srcProperty, IObject* targetObject, const Property* targetProperty)
 {

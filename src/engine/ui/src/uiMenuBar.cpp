@@ -176,16 +176,26 @@ PopupPtr MenuButtonContainer::convertToPopup()
     return nullptr;
 }
 
-void MenuButtonContainer::show(IElement* owner)
+bool MenuButtonContainer::show(IElement* owner)
 {
     if (auto popup = convertToPopup())
+    {
         popup->show(owner, PopupWindowSetup().autoClose().relativeToCursor());
+        return true;
+    }
+
+    return false;
 }
 
-void MenuButtonContainer::showAsDropdown(IElement* owner)
+bool MenuButtonContainer::showAsDropdown(IElement* owner)
 {
     if (auto popup = convertToPopup())
+    {
         popup->show(owner, PopupWindowSetup().autoClose().bottomLeft());
+        return true;
+    }
+
+    return false;
 }
 
 EventFunctionBinder MenuButtonContainer::createCallback(StringView text, StringView icon /*= ""*/, StringView shortcut /*= ""*/, bool enabled /*= true*/)

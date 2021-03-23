@@ -186,20 +186,6 @@ Vector3 Matrix33::row(int i) const
     return Vector3(m[0][i], m[1][i], m[2][i]);
 }
 
-Vector3 Matrix33::transformVector(const Vector3& v) const
-{
-    return Vector3(v.x*m[0][0] + v.y*m[0][1] + v.z*m[0][2],
-                    v.x*m[1][0] + v.y*m[1][1] + v.z*m[1][2],
-                    v.x*m[2][0] + v.y*m[2][1] + v.z*m[2][2]);
-}
-
-Vector3 Matrix33::transformInvVector(const Vector3& v) const
-{
-    return Vector3(v.x*m[0][0] + v.y*m[1][0] + v.z*m[2][0],
-    v.x*m[0][1] + v.y*m[1][1] + v.z*m[2][1],
-    v.x*m[0][2] + v.y*m[1][2] + v.z*m[2][2]);
-}
-
 Matrix33 Matrix33::operator*(const Matrix33 &other) const
 {
     return Concat(*this, other);

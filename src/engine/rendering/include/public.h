@@ -34,10 +34,10 @@ typedef RefPtr<CameraContext> CameraContextPtr;
 
 //--
  
-struct FrameCompositionTarget;
-
 struct FrameParams;
 struct FrameParams_Capture;
+
+struct FrameStats;
 
 //--
 

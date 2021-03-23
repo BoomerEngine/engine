@@ -64,7 +64,7 @@ void SceneCamera::calcMatrices(bool flipY)
     const Matrix ViewToCamera = ConvMatrix.inverted();
 
     m_WorldToCamera = rotation.inverted().toMatrix();
-    m_WorldToCamera.translation(-m_WorldToCamera.transformVector(position));
+    m_WorldToCamera.translation(-BaseTransformation(m_WorldToCamera).transformVector(position));
 
     if (fov == 0.0f)
         m_ViewToScreen = Matrix::BuildOrtho(zoom * aspect, zoom, -farPlane, farPlane);
@@ -75,11 +75,11 @@ void SceneCamera::calcMatrices(bool flipY)
     m_CameraToScreen = ConvMatrix * m_ViewToScreen;
 
     m_WorldToScreen = m_WorldToCamera * m_CameraToScreen;
-    m_ScreenToWorld = m_WorldToScreen.inverted();   
+    m_ScreenToWorld = m_WorldToScreen.inverted();
 
 	if (fov == 0.0f)
 	{
-		auto screenPosCamera = m_WorldToScreen.transformPoint(position);
+		auto screenPosCamera = BaseTransformation(m_WorldToScreen).transformPoint(position);
 		auto cameraZDist = std::fabsf(screenPosCamera.z - 0.5f);
 		ASSERT(cameraZDist < 0.01f);
 	}

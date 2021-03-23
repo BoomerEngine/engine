@@ -17,6 +17,7 @@
 #include "engine/rendering/include/params.h"
 
 #include "engine/world/include/world.h"
+#include "engine/world/include/worldRendering.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -56,18 +57,16 @@ void ScenePreviewPanel::requestRecreateGizmo()
 
 rendering::Scene* ScenePreviewPanel::scene() const
 {
-    return nullptr; // TODO
+    auto rendering = m_container->world()->system<WorldRenderingSystem>();
+    return rendering->scene();
 }
 
-void ScenePreviewPanel::handleRender(rendering::FrameParams& frame)
+void ScenePreviewPanel::handleFrame(rendering::FrameParams& frame)
 {
-    TBaseClass::handleRender(frame);
+    TBaseClass::handleFrame(frame);
 
     if (m_container)
-    {
-        m_container->world()->render(frame);
         m_container->content()->handleDebugRender(frame);
-    }
 
     if (auto editMode = m_editMode.lock())
         editMode->handleRender(this, frame);
@@ -99,7 +98,7 @@ void ScenePreviewPanel::handleAreaSelection(bool ctrl, bool shift, const Rect& c
         editMode->handleAreaSelection(this, ctrl, shift, clientRect, selectables);
 }
 
-void ScenePreviewPanel::handleContextMenu(bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const AbsolutePosition* positionUnderCursor)
+void ScenePreviewPanel::handleContextMenu(bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const ExactPosition* positionUnderCursor)
 {
     if (auto editMode = m_editMode.lock())
         editMode->handleContextMenu(this, ctrl, shift, absolutePosition, clientPosition, objectUnderCursor, positionUnderCursor);

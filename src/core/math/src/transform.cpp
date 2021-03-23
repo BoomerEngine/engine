@@ -21,43 +21,47 @@ RTTI_BEGIN_CUSTOM_TYPE(Transform);
     RTTI_BIND_NATIVE_BINARY_SERIALIZATION(Transform);
 RTTI_END_TYPE();
 
-bool Transform::isIdentity() const
+bool Transform::checkIdentity() const
 {
-    return (T == Translation::ZERO()) && (R == Rotation::IDENTITY()) && (S == Scale::ONE());
+    return (T == Vector3::ZERO()) && (R == Quat::IDENTITY()) && (S == Vector3::ONE());
 }
 
 Transform Transform::invertedWithNoScale() const
 {
-    auto invRotation  = R.inverted();
-    auto invTranslation  = -invRotation.transformVector(T);
+    const auto invRotation = R.inverted();
+    Transformation t(invRotation);
+    auto invTranslation = -t.transformPosition(T);
     return Transform(invTranslation, invRotation);
 }
 
 Transform Transform::inverted() const
 {
-    return Transform(-R.inverted().transformVector(T) / S, R.inverted(), S.oneOver());
+    const auto invRotation = R.inverted();
+    Transformation t(invRotation);
+    auto invScale = S.oneOver();
+    auto invTranslation = -t.transformPosition(T) * invScale;
+    return Transform(invTranslation, invRotation, invScale);
 }
 
-Transform Transform::relativeTo(const Transform& baseTransform) const
-{
-    return applyTo(baseTransform.inverted());
-}
-
-Transform Transform::applyTo(const Transform& baseTransform) const
+Transform Transform::operator*(const Transform& baseTransform) const
 {
     // x2 = R1*x1 + T1
     // x3 = R2*x2 + T2 = R2(R1*x1 + T1) + T2
     // = R2*R1*x1 + T2 + T1*R2
 
-    return Transform(baseTransform.R.transformVector(baseTransform.S * T) + baseTransform.T,
-                            baseTransform.R * R,
-                            S * baseTransform.S);
+    return Transform(Transformation(baseTransform.R).transformVector(baseTransform.S * T) + baseTransform.T,
+        baseTransform.R * R,
+        S * baseTransform.S);
 }
 
-static Transform IDENTITY_TRANSFORM;
+Transform Transform::operator/(const Transform& baseTransform) const
+{
+    return *this * baseTransform.inverted();
+}
 
 const Transform& Transform::IDENTITY()
 {
+    static Transform IDENTITY_TRANSFORM;
     return IDENTITY_TRANSFORM;
 }
 

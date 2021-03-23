@@ -153,7 +153,7 @@ const Glyph* Font::renderGlyph(const FontStyleParams& styleParams, uint32_t glyp
     return m_glyphCache->fetchGlyph(styleParams, styleHash, m_face, m_id, glyphcode);
 }
 
-void Font::renderText(const FontStyleParams& styleParams, const FontAssemblyParams& textParams, const FontInputText& str, GlyphBuffer& outBuffer) const
+void Font::renderText(const FontStyleParams& styleParams, const FontAssemblyParams& textParams, const FontInputText& str, GlyphBuffer& outBuffer, Color color) const
 {
     // no data to process
     if (str.empty() || !m_face)
@@ -197,7 +197,7 @@ void Font::renderText(const FontStyleParams& styleParams, const FontAssemblyPara
         if (glyph)
         {
             // place glyph
-            outBuffer.addGlyph(ch, glyph, x, y, textPosition);
+            outBuffer.addGlyph(ch, glyph, x, y, textPosition, color);
 
             // advance to new position
             x += (int)(glyph->advance().x + 0.5f);

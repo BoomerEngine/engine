@@ -21,7 +21,7 @@ GizmoReferenceSpace::GizmoReferenceSpace()
     m_axes[2] = Vector3::EZ();
 }
 
-GizmoReferenceSpace::GizmoReferenceSpace(GizmoSpace space, const AbsolutePosition& rootPoint)
+GizmoReferenceSpace::GizmoReferenceSpace(GizmoSpace space, const ExactPosition& rootPoint)
     : m_transform(rootPoint)
     , m_space(space)
 {
@@ -30,7 +30,7 @@ GizmoReferenceSpace::GizmoReferenceSpace(GizmoSpace space, const AbsolutePositio
     m_axes[2] = Vector3::EZ();
 }
 
-GizmoReferenceSpace::GizmoReferenceSpace(GizmoSpace space, const AbsoluteTransform& transform)
+GizmoReferenceSpace::GizmoReferenceSpace(GizmoSpace space, const Transform& transform)
     : m_transform(transform)
     , m_space(space)
 {
@@ -39,38 +39,38 @@ GizmoReferenceSpace::GizmoReferenceSpace(GizmoSpace space, const AbsoluteTransfo
 
 void GizmoReferenceSpace::cacheAxes()
 {
-    auto localMatrix = m_transform.approximate();
+    auto localMatrix = m_transform.toMatrix();
     m_axes[0] = localMatrix.column(0).xyz();
     m_axes[1] = localMatrix.column(1).xyz();
     m_axes[2] = localMatrix.column(2).xyz();
 }
 
-AbsolutePosition GizmoReferenceSpace::calcAbsolutePositionForLocal(const Vector3& localPosition) const
+ExactPosition GizmoReferenceSpace::calcAbsolutePositionForLocal(const Vector3& localPosition) const
 {
-    return m_transform.transformPointFromSpace(localPosition);
+    return Transformation(m_transform).transformPoint(localPosition);
 }
 
 //--
 
-AbsoluteTransform GizmoReferenceSpace::transform(const AbsoluteTransform& original, const Transform& transform) const
+Transform GizmoReferenceSpace::transform(const Transform& original, const Transform& transform) const
 {
     // apply position
     //auto posInFrame = pos.relativeTo(referenceSpace.absoluteTransform().position());
-    auto posInFrame = absoluteTransform().transformPointToSpace(original.position());
-    posInFrame = transform.R.transformVector(posInFrame);
+    auto posInFrame = Transformation(absoluteTransform().inverted()).transformPoint(original.T);
+    posInFrame = Transformation(transform.R).transformVector(posInFrame);
     posInFrame += transform.T;
-    auto newPos = absoluteTransform().transformPointFromSpace(posInFrame);
+    auto newPos = Transformation(absoluteTransform()).transformPoint(posInFrame);
 
     // apply rotation
     //auto deltaRot = referenceSpace.absoluteTransform().rotation().inverted() * transform.rotation() * referenceSpace.absoluteTransform().rotation();
-    auto deltaRot = absoluteTransform().rotation() * transform.R * absoluteTransform().rotation().inverted();
-    auto newRot = deltaRot * original.rotation();
+    auto deltaRot = absoluteTransform().R * transform.R * absoluteTransform().R.inverted();
+    auto newRot = deltaRot * original.R;
 
     // compute scape
-    auto newScale = transform.S * original.scale();
+    auto newScale = transform.S * original.S;
 
     // build final transform
-    return AbsoluteTransform(newPos, newRot, newScale);
+    return Transform(newPos, newRot, newScale);
 }
 
 //--

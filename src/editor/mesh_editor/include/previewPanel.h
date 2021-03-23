@@ -64,7 +64,7 @@ private:
     void destroyPreviewElements();
     void createPreviewElements();
 
-    virtual void handleRender(rendering::FrameParams& frame) override;
+    virtual void handleFrame(rendering::FrameParams& frame) override;
     virtual void handlePointSelection(bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables) override;
     virtual void handleAreaSelection(bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables) override;
     virtual void handlePostRenderContent() override;

@@ -146,4 +146,31 @@ INLINE Angles Angles::operator/(float value) const
 
 //--
 
+INLINE void Angles::snap(float grid)
+{
+    pitch = Snap(pitch, grid);
+    yaw = Snap(yaw, grid);
+    roll = Snap(roll, grid);
+}
+
+INLINE Angles Angles::snapped(float grid) const
+{
+    return Angles(
+        Snap(pitch, grid),
+        Snap(yaw, grid),
+        Snap(roll, grid));
+}
+
+INLINE float Angles::dot(const Angles& other) const
+{
+    return forward() | other.forward();
+}
+
+INLINE float Angles::dot(const Vector3& other) const
+{
+    return forward() | other;
+}
+
+//--
+
 END_BOOMER_NAMESPACE()

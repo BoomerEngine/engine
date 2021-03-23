@@ -87,7 +87,7 @@ private:
         else
             className = cls->shortName().view();
 
-        if (const auto* tagData = cls->findMetadata<ResourceTagColorMetadata>())
+        /*if (const auto* tagData = cls->findMetadata<ResourceTagColorMetadata>())
         {
             txt.appendf("[tag:{}]", tagData->color());
             txt.appendf("[img:file_empty_edit] ");
@@ -105,7 +105,7 @@ private:
 
             txt << "[/tag]";
         }
-        else
+        else*/
         {
             txt << "[tag:#888]";
             txt.appendf("[img:cog] ");

@@ -120,12 +120,14 @@ INLINE const Vector2& XForm2D::translation() const
 
 INLINE XForm2D XForm2D::operator*(const XForm2D& other) const
 {
-    return Concat(*this, other);
+    XForm2D ret;
+    Concat(*this, other, ret);
+    return ret;
 }
 
 INLINE XForm2D& XForm2D::operator*=(const XForm2D& other)
 {
-    *this = Concat(*this, other);
+    Concat(*this, other, *this);
     return *this;
 }
 

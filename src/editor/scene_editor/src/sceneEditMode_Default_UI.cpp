@@ -12,8 +12,12 @@
 #include "sceneEditMode_Default_Transform.h"
 
 #include "sceneContentNodes.h"
+#include "sceneContentNodesEntity.h"
 #include "sceneContentStructure.h"
 #include "sceneContentDataView.h"
+
+#include "editor/assets/include/browserService.h"
+#include "editor/common/include/utils.h"
 
 #include "engine/ui/include/uiMenuBar.h"
 #include "engine/ui/include/uiEditBox.h"
@@ -25,25 +29,21 @@
 #include "engine/ui/include/uiClassPickerBox.h"
 #include "engine/ui/include/uiNotebook.h"
 #include "engine/ui/include/uiElement.h"
+#include "engine/ui/include/uiCheckBox.h"
 
 #include "core/object/include/actionHistory.h"
 #include "core/object/include/action.h"
 
 #include "core/resource/include/indirectTemplate.h"
 #include "core/resource/include/indirectTemplateCompiler.h"
-
-#include "engine/world/include/nodeTemplate.h"
-#include "engine/world/include/entityBehavior.h"
-#include "engine/world/include/entity.h"
-#include "engine/world/include/prefab.h"
+#include "core/resource/include/depot.h"
 
 #include "core/containers/include/stringBuilder.h"
 
-#include "editor/common/include/editorService.h"
-#include "editor/common/include/assetBrowser.h"
-#include "editor/common/include/managedFile.h"
-#include "editor/common/include/assetFormat.h"
-#include "editor/common/include/managedDepot.h"
+#include "engine/world/include/rawEntity.h"
+#include "engine/world/include/rawPrefab.h"
+#include "engine/world/include/worldEntity.h"
+
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -75,23 +75,6 @@ static bool ValidNodeName(StringView name)
 
 //--
 
-class SceneEditPrefabList : public ui::ListView
-{
-    RTTI_DECLARE_VIRTUAL_CLASS(SceneEditPrefabList, ui::ListView);
-
-public:
-    SceneEditPrefabList();
-
-protected:
-    virtual ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
-    virtual void handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
-};
-
-RTTI_BEGIN_TYPE_CLASS(SceneEditPrefabList);
-RTTI_END_TYPE();
-    
-//--
-
 struct PrefabInfoEntry
 {
     uint32_t count = 0;
@@ -104,41 +87,99 @@ struct PrefabInfoEntry
     bool local = false;
 };
 
-class SceneEditPrefabListModel : public ui::SimpleTypedListModel<PrefabInfoEntry>
+class SceneEditPrefabListItem : public ui::IListItem
 {
+    RTTI_DECLARE_VIRTUAL_CLASS(SceneEditPrefabListItem, ui::IListItem);
+
 public:
-    virtual bool compare(const PrefabInfoEntry& a, const PrefabInfoEntry& b, int colIndex) const override
+    SceneEditPrefabListItem(const PrefabInfoEntry& data)
+        : m_data(data)
     {
-        return a.path < b.path;
+        layoutHorizontal();
+
+        m_enabled = createChild<ui::CheckBox>();
+        m_enabled->state(m_data.enabled);
+
+        m_label = createChild<ui::TextLabel>();
+
+        updateLabel();
     }
 
-    virtual bool filter(const PrefabInfoEntry& data, const ui::SearchPattern& filter, int colIndex) const override
+    INLINE const PrefabInfoEntry& data() const
     {
-        return filter.testString(data.fileName);
+        return m_data;
     }
 
-    virtual StringBuf content(const PrefabInfoEntry& data, int colIndex = 0) const override
+    virtual bool handleItemFilter(const ui::ICollectionView* view, const ui::SearchPattern& filter) const override
+    {
+        return filter.testString(m_data.fileName);
+    }
+
+    virtual void handleItemSort(const ui::ICollectionView* view, int colIndex, SortingData& outInfo) const override
+    {
+        outInfo.index = uniqueIndex();
+        outInfo.caption = m_data.fileName;
+    }
+
+    void updateLabel()
     {
         StringBuilder txt;
 
-        if (data.enabled && data.disabled)
+        if (m_data.enabled && m_data.disabled)
             txt << "[img:question_red] ";
-        else if (data.enabled)
+        else if (m_data.enabled)
             txt << "[img:tick] ";
-        else if (data.disabled)
+        else if (m_data.disabled)
             txt << "[img:cross] ";
 
         txt << "[img:brick] ";
-        txt << data.fileName;
+        txt << m_data.fileName;
 
-        if (data.inherited)
+        if (m_data.inherited)
             txt << " [tag:#888]Inherited[/tag]";
-        if (data.local)
+        if (m_data.local)
             txt << " [tag:#888]Local[/tag]";
 
-        return txt.toString();
+        m_label->text(txt.view());
     }
+
+private:
+    ui::CheckBoxPtr m_enabled;
+    ui::TextLabelPtr m_label;
+
+    PrefabInfoEntry m_data;
 };
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneEditPrefabListItem);
+RTTI_END_TYPE();
+
+//--
+
+class SceneEditPrefabList : public ui::ListViewEx
+{
+    RTTI_DECLARE_VIRTUAL_CLASS(SceneEditPrefabList, ui::ListViewEx);
+
+public:
+    SceneEditPrefabList();
+
+    Array<ResourceID> collectSelectedPrefabs() const
+    {
+        Array<ResourceID> ret;
+        selection().visit<SceneEditPrefabListItem>([&ret](SceneEditPrefabListItem* elem)
+            {
+                if (elem->data().id)
+                    ret.pushBackUnique(elem->data().id);
+            });
+        return ret;
+    }
+
+protected:
+    virtual ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
+    virtual void handleDragDropGenericCompletion(const ui::DragDropDataPtr& data, const ui::Position& entryPosition) override;
+};
+
+RTTI_BEGIN_TYPE_CLASS(SceneEditPrefabList);
+RTTI_END_TYPE();
 
 //--
 
@@ -148,9 +189,8 @@ SceneEditPrefabList::SceneEditPrefabList()
 ui::DragDropHandlerPtr SceneEditPrefabList::handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)
 {
     if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
-        if (auto file = fileData->file())
-            if (file->fileFormat().loadableAsType(Prefab::GetStaticClass()))
-                return RefNew<ui::DragDropHandlerGeneric>(data, this, entryPosition);
+        if (CanLoadAsClass<Prefab>(fileData->depotPath()))
+            return RefNew<ui::DragDropHandlerGeneric>(data, this, entryPosition);
 
     return TBaseClass::handleDragDrop(data, entryPosition);
 }
@@ -159,12 +199,9 @@ void SceneEditPrefabList::handleDragDropGenericCompletion(const ui::DragDropData
 {
     if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
     {
-        if (auto file = fileData->file())
+        if (CanLoadAsClass<Prefab>(fileData->depotPath()))
         {
-            if (file->fileFormat().loadableAsType(Prefab::GetStaticClass()))
-            {
-                call(EVENT_PREFABLIST_ADD_FILE, ManagedFilePtr(AddRef(file)));
-            }
+            call(EVENT_PREFABLIST_ADD_FILE, fileData->depotPath());
         }
     }
 }
@@ -209,7 +246,7 @@ SceneDefaultPropertyInspectorPanel::SceneDefaultPropertyInspectorPanel(SceneEdit
         m_prefabList->customMinSize(0, 200);
         m_prefabList->customMaxSize(0, 200);
 
-        m_prefabList->bind(EVENT_PREFABLIST_ADD_FILE) = [this](ManagedFilePtr file)
+        m_prefabList->bind(EVENT_PREFABLIST_ADD_FILE) = [this](StringBuf file)
         {
             m_host->cmdAddPrefabFile(m_nodes, file);
         };
@@ -223,8 +260,8 @@ SceneDefaultPropertyInspectorPanel::SceneDefaultPropertyInspectorPanel(SceneEdit
             button->customProportion(1.0f);
             button->expand();
             button->bind(ui::EVENT_CLICKED) = [this]() {
-                if (auto file = GetEditor()->selectedFile())
-                    if (file->fileFormat().loadableAsType(Prefab::GetStaticClass()))
+                if (auto file = GetService<AssetBrowserService>()->selectedFile())
+                    if (CanLoadAsClass<Prefab>(file))
                         m_host->cmdAddPrefabFile(m_nodes, file);
             };
         }
@@ -234,13 +271,9 @@ SceneDefaultPropertyInspectorPanel::SceneDefaultPropertyInspectorPanel(SceneEdit
             button->customProportion(1.0f);
             button->expand();
             button->bind(ui::EVENT_CLICKED) = [this]() {
-                InplaceArray<const ManagedFile*, 10> files;
-                for (auto item : m_prefabList->selection())
-                    if (const auto* data = m_prefabListModel->dataPtr(item))
-                        if (const auto* file = GetEditor()->managedDepot().findManagedFile(data->path.view()))
-                            files.pushBack(file);
-
-                m_host->cmdRemovePrefabFile(m_nodes, files);
+                const auto ids = m_prefabList->collectSelectedPrefabs();
+                if (!ids.empty())
+                    m_host->cmdRemovePrefabFile(m_nodes, ids);
             };
         }
     }
@@ -328,8 +361,7 @@ void SceneDefaultPropertyInspectorPanel::unbind()
         m_classPicker->requestClose();
     m_classPicker.reset();
 
-    m_prefabListModel.reset();
-    m_prefabList->model(nullptr);
+    m_prefabList->clear();
     m_prefabList->enable(false);
 
     m_properties->bindNull();
@@ -439,8 +471,8 @@ void SceneDefaultPropertyInspectorPanel::refreshProperties()
                     
                 if (dataNode->is<SceneContentEntityNode>())
                     hasEntityData = true;
-                else if (dataNode->is<SceneContentBehaviorNode>())
-                    hasBehaviorData = true;
+                /*else if (dataNode->is<SceneContentBehaviorNode>())
+                    hasBehaviorData = true;*/
             }
         }
     }
@@ -475,14 +507,12 @@ void SceneDefaultPropertyInspectorPanel::refreshProperties()
             }
         }
 
+        Array<DataViewPtr> views;
         for (const auto& obj : editableObjects)
-        {
             if (auto view = obj.createDataView())
-            {
-                m_properties->bindData(view, false);
-                break;
-            }
-        }
+                views.pushBack(view);
+
+        m_properties->bindViews(views);
 
         if (commonClassInconsistent)
         {
@@ -668,9 +698,6 @@ static bool IsClassCompatible(const SceneContentDataNodePtr& dataNode, ClassType
     if (dataNode->is<SceneContentEntityNode>())
         return newDataClass->is<Entity>();
 
-    else if (dataNode->is<SceneContentBehaviorNode>())
-        return newDataClass->is<IEntityBehavior>();
-
     return false;
 }
 
@@ -706,8 +733,8 @@ static ClassType SelectRootClass(ClassType currentClass)
     if (currentClass->is<Entity>())
         return Entity::GetStaticClass();
 
-    else if (currentClass->is<IEntityBehavior>())
-        return IEntityBehavior::GetStaticClass();
+    /*else if (currentClass->is<IEntityBehavior>())
+        return IEntityBehavior::GetStaticClass();*/
 
     return nullptr;
 }
@@ -1046,26 +1073,24 @@ struct AbsoluteTransformAggregator
 {
     ValueAggregator values[SceneNodeTransformEntry::NUM_ENTRIES];
 
-    void collect(const AbsoluteTransform& data)
+    void collect(const Transform& data)
     {
         {
-            double x, y, z;
-            data.position().expand(x, y, z);
-            values[(int)SceneNodeTransformValueFieldType::TranslationX].collect(x);
-            values[(int)SceneNodeTransformValueFieldType::TranslationY].collect(y);
-            values[(int)SceneNodeTransformValueFieldType::TranslationZ].collect(z);
+            values[(int)SceneNodeTransformValueFieldType::TranslationX].collect(data.T.x);
+            values[(int)SceneNodeTransformValueFieldType::TranslationY].collect(data.T.y);
+            values[(int)SceneNodeTransformValueFieldType::TranslationZ].collect(data.T.z);
         }
 
         {
-            auto rotation = data.rotation().toRotator();
+            auto rotation = data.R.toRotator();
             values[(int)SceneNodeTransformValueFieldType::RotationX].collect(rotation.roll);
             values[(int)SceneNodeTransformValueFieldType::RotationY].collect(rotation.pitch);
             values[(int)SceneNodeTransformValueFieldType::RotationZ].collect(rotation.yaw);
         }
 
-        values[(int)SceneNodeTransformValueFieldType::ScaleX].collect(data.scale().x);
-        values[(int)SceneNodeTransformValueFieldType::ScaleY].collect(data.scale().y);
-        values[(int)SceneNodeTransformValueFieldType::ScaleZ].collect(data.scale().z);
+        values[(int)SceneNodeTransformValueFieldType::ScaleX].collect(data.S.x);
+        values[(int)SceneNodeTransformValueFieldType::ScaleY].collect(data.S.y);
+        values[(int)SceneNodeTransformValueFieldType::ScaleZ].collect(data.S.z);
     }
 
     void apply(SceneNodeTransformEntry& outEntry) const
@@ -1360,14 +1385,14 @@ void SceneDefaultPropertyInspectorPanel::refreshPrefabList()
         }
     }
 
-    // display prefab list
+    /*// display prefab list
     m_prefabListModel = RefNew<SceneEditPrefabListModel>();
     for (const auto& pair : prefabEntries.pairs())
         if (pair.value.count == m_nodes.size()) // exists in all nodes
             m_prefabListModel->add(pair.value);
 
     // show list
-    m_prefabList->model(m_prefabListModel);
+    m_prefabList->model(m_prefabListModel);*/
 }
 
 //--

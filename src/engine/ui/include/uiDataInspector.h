@@ -103,25 +103,28 @@ public:
         bindView(view, readOnly);
     }
 
+    // set multiple views
+    void bindViews(const Array<DataViewPtr>& views, bool readOnly = false)
+    {
+        InplaceArray<IDataView*, 100> viewPtrs;
+
+        for (const auto& view : views)
+            if (view)
+                viewPtrs.pushBack(view.get());
+
+        bindViews(viewPtrs.typedData(), viewPtrs.size(), readOnly);
+    }
+
     // bind multiple objects objects
     INLINE void bindObjects(IObject** objects, uint32_t numObjects, bool readOnly = false)
     {
         InplaceArray<DataViewPtr, 100> views;
-        InplaceArray<IDataView*, 100> viewPtrs;
-
         for (uint32_t i = 0; i < numObjects; ++i)
-        {
             if (objects[i])
-            {
                 if (auto view = objects[i]->createDataView())
-                {
                     views.pushBack(view);
-                    viewPtrs.pushBack(view);
-                }
-            }
-        }
         
-        bindViews(viewPtrs.typedData(), viewPtrs.size(), readOnly);
+        bindViews(views, readOnly);
     }
 
     //--

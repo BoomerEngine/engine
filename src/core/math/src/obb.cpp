@@ -34,30 +34,32 @@ OBB::OBB(const Vector3& pos, const Vector3& edge1, const Vector3& edge2, const V
     edge2AndLength = edge2 / len2;
     edge2AndLength.w = len2;
 
-    positionAndLength.w = Dot(edge3, edgeC());
+    positionAndLength.w = edge3 | edgeC();
 }
 
 OBB::OBB(const Box& box, const Matrix& transform)
 {
-    positionAndLength = transform.transformPoint(box.min);
+    BaseTransformation t(transform);
 
-    auto edge1 = transform.transformVector(Vector3(box.max.x - box.min.x, 0.0f, 0.0f));
+    positionAndLength = t.transformPoint(box.min);
+
+    auto edge1 = t.transformVector(Vector3(box.max.x - box.min.x, 0.0f, 0.0f));
     auto len1 = edge1.length();
     edge1AndLength = edge1 / len1;
     edge1AndLength.w = len1;
 
-    auto edge2 = transform.transformVector(Vector3(0.0f, box.max.y - box.min.y, 0.0f));
+    auto edge2 = t.transformVector(Vector3(0.0f, box.max.y - box.min.y, 0.0f));
     auto len2 = edge2.length();
     edge2AndLength = edge2 / len2;
     edge2AndLength.w = len2;
 
-    auto edge3 = transform.transformVector(Vector3(0.0f, 0.0f, box.max.z - box.min.z));
-    positionAndLength.w = Dot(edge3, edgeC());
+    auto edge3 = t.transformVector(Vector3(0.0f, 0.0f, box.max.z - box.min.z));
+    positionAndLength.w = edge3 | edgeC();
 }
 
 Vector3 OBB::edgeC() const
 {
-    return Cross(edge1AndLength.xyz(), edge2AndLength.xyz());
+    return edge1AndLength.xyz() ^ edge2AndLength.xyz();
 }
 
 void OBB::corners(Vector3* outCorners) const
@@ -107,22 +109,22 @@ Box OBB::bounds() const
 bool OBB::contains(const Vector3& point) const
 {
     {
-        auto t = Dot(point, edge1AndLength.xyz());
-        auto d = Dot(point, positionAndLength.xyz());
+        auto t = point | edge1AndLength.xyz();
+        auto d = point | positionAndLength.xyz();
         if (t <= d || t >= d + edge1AndLength.w)
             return false;
     }
 
     {
-        auto t = Dot(point, edge2AndLength.xyz());
-        auto d = Dot(point, positionAndLength.xyz());
+        auto t = point | edge2AndLength.xyz();
+        auto d = point | positionAndLength.xyz();
         if (t <= d || t >= d + edge2AndLength.w)
             return false;
     }
 
     {
-        auto t = Dot(point, edgeC());
-        auto d = Dot(point, positionAndLength.xyz());
+        auto t = point | edgeC();
+        auto d = point | positionAndLength.xyz();
         if (t <= d || t >= d + positionAndLength.w)
             return false;
     }
@@ -135,8 +137,8 @@ bool OBB::intersect(const Vector3& origin, const Vector3& direction, float maxLe
     auto rel = positionAndLength.xyz() - origin;
 
     auto edge3 = edgeC();
-    Vector3 dir(Dot(direction, edge1AndLength.xyz()), Dot(direction, edge1AndLength.xyz()), Dot(direction, edge3));
-    Vector3 ori(Dot(rel, edge1AndLength.xyz()), Dot(rel, edge1AndLength.xyz()), Dot(rel, edge3));
+    Vector3 dir(direction | edge1AndLength.xyz(), direction | edge1AndLength.xyz(), direction | edge3);
+    Vector3 ori(rel | edge1AndLength.xyz(), rel | edge1AndLength.xyz(), rel | edge3);
 
     auto tMin = -VERY_LARGE_FLOAT;
     auto tMax = VERY_LARGE_FLOAT;

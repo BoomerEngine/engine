@@ -17,32 +17,31 @@
 #include "scenePreviewPanel.h"
 #include "sceneObjectPalettePanel.h"
 
+#include "editor/assets/include/browserService.h"
+#include "editor/common/include/utils.h"
+
 #include "engine/ui/include/uiMenuBar.h"
 #include "engine/ui/include/uiClassPickerBox.h"
 #include "engine/ui/include/uiRenderer.h"
-#include "core/object/include/actionHistory.h"
-#include "core/object/include/action.h"
-#include "engine/world/include/world.h"
-#include "engine/world/include/entity.h"
-#include "engine/world/include/entityBehavior.h"
-#include "core/resource/include/indirectTemplate.h"
-#include "core/resource/include/indirectTemplateCompiler.h"
-#include "engine/world/include/nodeTemplate.h"
-#include "editor/common/include/assetFormat.h"
-#include "editor/common/include/managedDirectory.h"
-#include "engine/world/include/prefab.h"
-#include "editor/common/include/editorService.h"
-#include "editor/common/src/assetBrowserDialogs.h"
-#include "editor/common/include/assetBrowser.h"
 #include "engine/ui/include/uiDragDrop.h"
 
+#include "engine/world/include/world.h"
+#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/rawEntity.h"
+#include "engine/world/include/rawPrefab.h"
+
 #include "engine/rendering/include/debug.h"
+
+#include "core/object/include/actionHistory.h"
+#include "core/object/include/action.h"
+#include "core/resource/include/indirectTemplate.h"
+#include "core/resource/include/indirectTemplateCompiler.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
-extern void BindResourceToObjectTemplate(ObjectIndirectTemplate* ptr, const ManagedFile* file);
+extern void BindResourceToObjectTemplate(ObjectIndirectTemplate* ptr, StringView file);
 
 //--
 
@@ -58,7 +57,7 @@ public:
 
     INLINE bool ready() const { return m_ready.load(); }
 
-    void buildEntityPreview(ClassType entityClass, const ManagedFile* file)
+    void buildEntityPreview(ClassType entityClass, StringView file)
     {
         auto compTemplate = RefNew<ObjectIndirectTemplate>();
         compTemplate->templateClass(entityClass);
@@ -87,35 +86,33 @@ public:
         m_ready.exchange(true);
     }
 
-    void buildPrefabPreview(const ManagedFile* file)
+    void buildPrefabPreview(StringView file)
     {
-        if (const auto prefab = LoadResource<Prefab>(file->depotPath()))
+        if (const auto prefab = LoadResource<Prefab>(file))
         {
-            const auto& rootPlacement = AbsoluteTransform::ROOT();
-
             InplaceArray<EntityPtr, 20> allEntities;
-            prefab->compile(StringID(), rootPlacement, allEntities);
+            prefab->compile(StringID(), allEntities, true);
 
             for (const auto& ent : allEntities)
             {
                 auto& info = m_entities.emplaceBack();
                 info.entity = ent;
-                info.relativePlacementTransform = ent->absoluteTransform() / rootPlacement;
+                info.relativePlacementTransform = ent->transform();
             }
-        }           
+        }
 
-        m_ready.exchange(true);            
+        m_ready.exchange(true);
     }
 
 
-    void move(const AbsoluteTransform& placement)
+    void move(const Transform& placement)
     {
         m_placement = placement;
 
         for (const auto& ent : m_entities)
         {
             auto entityPlacement = placement * ent.relativePlacementTransform;
-            ent.entity->requestTransform(entityPlacement);
+            ent.entity->requestTransformChangeWorldSpace(entityPlacement);
         }
     }
 
@@ -132,7 +129,7 @@ public:
     }
         
 private:
-    AbsoluteTransform m_placement;
+    Transform m_placement;
 
     struct EntityInfo
     {
@@ -150,7 +147,7 @@ private:
 class SceneObjectDragDropCreationHandler : public ui::IDragDropHandler
 {
 public:
-    typedef std::function<void(const AbsoluteTransform&)> TCreateFunc;
+    typedef std::function<void(const Transform&)> TCreateFunc;
 
     SceneObjectDragDropCreationHandler(const ui::DragDropDataPtr& data, ui::IElement* target, const ui::Position& initialPosition, ui::RenderingPanelDepthBufferQuery* depthData, World* world, const SceneGridSettings& gridSettings, const TCreateFunc& createFunc, SceneObjectDragDropPreview* preview)
         : ui::IDragDropHandler(data, target, initialPosition)
@@ -199,23 +196,13 @@ public:
     {
         Point clientPos = absolutePos - target()->cachedDrawArea().absolutePosition();
 
-        AbsolutePosition worldPos;
+        ExactPosition worldPos;
         if (m_depthBuffer->calcWorldPosition(clientPos.x, clientPos.y, worldPos))
         {
             if (m_gridSettings.positionGridEnabled)
-            {
-                double x, y, z;
-                worldPos.expand(x, y, z);
-
-                auto snappedX = Snap(x, m_gridSettings.positionGridSize);
-                auto snappedY = Snap(y, m_gridSettings.positionGridSize);
-                auto snappedZ = Snap(z, m_gridSettings.positionGridSize);
-                m_positionUnderCursor = AbsolutePosition(snappedX, snappedY, snappedZ);
-            }
+                m_positionUnderCursor = worldPos.snapped(m_gridSettings.positionGridSize);
             else
-            {
                 m_positionUnderCursor = worldPos;
-            }
 
             m_positionUnderCursorValid = true;
         }
@@ -266,7 +253,7 @@ public:
         {
             rendering::DebugDrawer dd(frame.geometry.solid);
             dd.color(Color::CYAN);
-            dd.solidSphere(m_positionUnderCursor.approximate(), 0.05f);
+            dd.solidSphere(m_positionUnderCursor, 0.05f);
         }
     }
 
@@ -275,7 +262,7 @@ private:
 
     SceneGridSettings m_gridSettings;
 
-    mutable AbsolutePosition m_positionUnderCursor;
+    mutable ExactPosition m_positionUnderCursor;
     mutable bool m_positionUnderCursorValid = false;
 
     RefPtr<SceneObjectDragDropPreview> m_loadingPreview;
@@ -304,34 +291,31 @@ ui::DragDropHandlerPtr SceneEditMode_Default::handleDragDrop(ScenePreviewPanel* 
     SceneObjectDragDropCreationHandler::TCreateFunc createFunc;
     if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
     {
-        if (auto file = fileData->file())
+        const auto depotPath = fileData->depotPath();
+        if (activeNode->canAttach(SceneContentNodeType::Entity))
         {
-            const auto resClass = file->fileFormat().nativeResourceClass();
-            if (activeNode->canAttach(SceneContentNodeType::Entity))
+            if (CanLoadAsClass<Prefab>(depotPath))
             {
-                if (resClass.is<Prefab>())
+                createFunc = [this, depotPath, targetNodes](const Transform& placement)
                 {
-                    createFunc = [this, file, targetNodes](const AbsoluteTransform& placement)
-                    {
-                        createPrefabAtNodes(targetNodes, file, &placement);
-                    };
+                    createPrefabAtNodes(targetNodes, depotPath, &placement);
+                };
 
-                    previewObject = RefNew<SceneObjectDragDropPreview>();
-                    RunFiber("LoadObjectPreview") << [previewObject, file](FIBER_FUNC)
-                    {
-                        previewObject->buildPrefabPreview(file);
-                    };
-                }
-                else
+                previewObject = RefNew<SceneObjectDragDropPreview>();
+                RunFiber("LoadObjectPreview") << [previewObject, depotPath](FIBER_FUNC)
                 {
-                    if (auto entityClass = m_objectPalette->selectedEntityClass(resClass))
+                    previewObject->buildPrefabPreview(depotPath);
+                };
+            }
+            else if (auto resoureClass = LoadClass(depotPath))
+            {
+                if (auto entityClass = m_objectPalette->selectedEntityClass(resoureClass))
+                {
+                    createFunc = [this, depotPath, targetNodes, entityClass](const Transform& placement)
                     {
-                        createFunc = [this, file, targetNodes, entityClass](const AbsoluteTransform& placement)
-                        {
-                            createEntityAtNodes(targetNodes, entityClass, &placement, file);
-                        };
+                        createEntityAtNodes(targetNodes, entityClass, &placement, depotPath);
                     };
-                }
+                };
             }
         }
     }

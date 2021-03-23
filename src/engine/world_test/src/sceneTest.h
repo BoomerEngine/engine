@@ -27,6 +27,13 @@
 
 #include "engine/rendering/include/params.h"
 
+#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/world.h"
+#include "engine/world/include/worldViewEntity.h"
+#include "engine/world_entities/include/entityFreeCamera.h"
+
+#include "gpu/device/include/commandWriter.h"
+
 BEGIN_BOOMER_NAMESPACE_EX(test)
 
 //---
@@ -56,35 +63,6 @@ public:
 
 //---
 
-class FlyCamera : public IReferencable
-{
-public:
-    FlyCamera();
-    ~FlyCamera();
-
-    void update(float dt);
-
-    void place(const Vector3& initialPos, const Angles& initialRotation);
-
-    void compute(rendering::FrameParams& params) const;
-
-    bool processRawInput(const input::BaseEvent& evt);
-
-private:
-    float m_buttonForwardBackward = 0.0f;
-    float m_buttonLeftRight = 0.0f;
-    float m_buttonUpDown = 0.0f;
-    float m_mouseDeltaX = 0.0f;
-    float m_mouseDeltaY = 0.0f;
-
-    Angles m_rotation;
-    Vector3 m_position;
-
-    rendering::CameraContextPtr m_context;
-};
-
-//---
-
 /// a basic rendering test for the scene
 class ISceneTest : public NoCopy
 {
@@ -97,23 +75,31 @@ public:
 
     virtual void initialize();
     virtual void configure();
-    virtual void render(rendering::FrameParams& info);
+    virtual void prepareFrame(rendering::FrameParams& info);
+    virtual void renderFrame(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, rendering::FrameStats& outStats, CameraSetup& outCamera);
     virtual void update(float dt);
     virtual bool processInput(const input::BaseEvent& evt);
 
+    virtual CompiledWorldDataPtr createStaticContent();
+    virtual void createDynamicContent(World* world);
+
     void reportError(StringView msg);
 
-    MeshRef loadMesh(StringView meshName);
+    INLINE World* world() const { return m_world; }
 
 protected:
     WorldPtr m_world;
     bool m_failed = false;
 
-    RefPtr<FlyCamera> m_camera;
+    Vector3 m_initialCameraPosition;
+    Angles m_initialCameraRotation;
+
+    RefPtr<FreeCameraEntity> m_camera;
 
     //--
 
     void configureLocalAdjustments();
+    void recreateWorld();
 
     static rendering::FilterFlags st_FrameFilterFlags;
     static rendering::FrameRenderMode st_FrameMode;
@@ -149,26 +135,6 @@ protected:
 
     static rendering::FrameParams_ColorGrading st_GlobalColorGradingAdjust;
     static bool st_GlobalColorGradingAdjustEnabled;
-};
-
-///---
-
-/// a basic test with empty initial world
-class ISceneTestEmptyWorld : public ISceneTest
-{
-    RTTI_DECLARE_VIRTUAL_CLASS(ISceneTestEmptyWorld, ISceneTest);
-
-public:
-    ISceneTestEmptyWorld();
-
-    void recreateWorld();
-    virtual void createWorldContent();
-
-protected:
-    virtual void initialize() override;
-
-    Vector3 m_initialCameraPosition;
-    Angles m_initialCameraRotation;
 };
 
 ///---

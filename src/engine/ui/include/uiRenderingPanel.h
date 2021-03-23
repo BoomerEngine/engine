@@ -49,20 +49,11 @@ public:
 
     //--
 
-	struct ViewportParams
-	{
-		uint32_t width = 0;
-		uint32_t height = 0;
-
-        INLINE Size size() const { return Size(width, height); }
-
-		const gpu::RenderTargetView* colorBuffer = nullptr;
-		const gpu::RenderTargetView* depthBuffer = nullptr;
-		const rendering::FrameParams_Capture* capture = nullptr;
-	};
+    // calculate camera camera
+    virtual void handleCamera(CameraSetup& outCamera) const = 0;
 
 	// render the panel, when done submit work to the device
-	virtual void renderContent(const ViewportParams& params, Camera* outCameraUsedToRender = nullptr);
+	virtual void handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& camera, const rendering::FrameParams_Capture* capture = nullptr) = 0;
 
 protected:
     virtual void handleHoverEnter(const Position& pos) override;
@@ -75,7 +66,7 @@ protected:
     Point m_renderTargetOffset = Point(0, 0);
     int m_renderTargetZoom = 0;
 
-    void renderCaptureScene(const rendering::FrameParams_Capture* capture, Camera* outCameraUsedToRender = nullptr);
+    void renderCaptureScene(const CameraSetup& camera, const rendering::FrameParams_Capture* capture = nullptr);
 
 private:
     NativeTimePoint m_lastRenderTime;
@@ -101,7 +92,7 @@ private:
 
 	canvas::Geometry* m_quadGeometry;
 
-	void parepareRenderTargets(ViewportParams& viewport);
+	bool parepareRenderTargets(Point requiredSize, gpu::AcquiredOutput& outOutput);
 
 	//--
 };

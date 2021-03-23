@@ -37,9 +37,6 @@ class SceneContentFileNode; // layer file
 class SceneContentEntityNode; // entity node
 typedef RefPtr<SceneContentEntityNode> SceneContentEntityNodePtr; // entity node
 
-class SceneContentBehaviorNode; // component node
-typedef RefPtr<SceneContentBehaviorNode> SceneContentBehaviorNodePtr;
-
 class SceneContentClipboardNode;
 typedef RefPtr<SceneContentClipboardNode> SceneContentClipboardNodePtr;
 
@@ -51,6 +48,15 @@ typedef RefPtr<SceneContentWorldLayer> SceneContentWorldLayerPtr;
 
 class SceneContentWorldDir;
 typedef RefPtr<SceneContentWorldDir> SceneContentWorldDirPtr;
+
+class SceneContentTreeItem;
+typedef RefPtr<SceneContentTreeItem> SceneContentTreeItemPtr;
+
+class SceneContentTreeView;
+typedef RefPtr<SceneContentTreeView> SceneContentTreeViewPtr;
+
+class ScenePlayInEditorPanel;
+typedef RefPtr<ScenePlayInEditorPanel> ScenePlayInEditorPanelPtr;
 
 //--
 
@@ -98,7 +104,6 @@ enum class SceneContentNodeType : uint8_t
     WorldRoot,
     PrefabRoot,
     Entity,
-    Behavior,
 };
 
 //--

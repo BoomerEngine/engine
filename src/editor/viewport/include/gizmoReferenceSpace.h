@@ -15,8 +15,8 @@ struct EDITOR_VIEWPORT_API GizmoReferenceSpace
 {
 public:
     GizmoReferenceSpace();
-    GizmoReferenceSpace(GizmoSpace space, const AbsolutePosition& rootPoint);
-    GizmoReferenceSpace(GizmoSpace space, const AbsoluteTransform& transform);
+    GizmoReferenceSpace(GizmoSpace space, const ExactPosition& rootPoint);
+    GizmoReferenceSpace(GizmoSpace space, const Transform& transform);
     GizmoReferenceSpace(const GizmoReferenceSpace& other) = default;
     GizmoReferenceSpace(GizmoReferenceSpace&& other) = default;
     GizmoReferenceSpace& operator=(const GizmoReferenceSpace& other) = default;
@@ -28,10 +28,10 @@ public:
     INLINE GizmoSpace space() const { return m_space; }
 
     /// get the reference space origin
-    INLINE const AbsolutePosition& origin() const { return m_transform.position();}
+    INLINE const ExactPosition& origin() const { return m_transform.T;}
 
     /// get the reference transform
-    INLINE const AbsoluteTransform& absoluteTransform() const { return m_transform; }
+    INLINE const Transform& absoluteTransform() const { return m_transform; }
 
     /// get transform axis
     INLINE const Vector3& axis(uint32_t index) const { ASSERT(index<3); return m_axes[index]; }
@@ -39,16 +39,16 @@ public:
     //---
 
     /// compute a absolute space location for given position in the reference frame
-    AbsolutePosition calcAbsolutePositionForLocal(const Vector3& localPosition) const;
+    ExactPosition calcAbsolutePositionForLocal(const Vector3& localPosition) const;
 
     /// apply transform in this gizmo space
-    AbsoluteTransform transform(const AbsoluteTransform& original, const Transform& transform) const;
+    Transform transform(const Transform& original, const Transform& transform) const;
 
     //---
 
 private:
     /// reference root position for the space (origin)
-    AbsoluteTransform m_transform;
+    Transform m_transform;
 
     /// axes (X,Y,Z)
     Vector3 m_axes[3];

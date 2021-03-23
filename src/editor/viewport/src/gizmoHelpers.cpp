@@ -35,12 +35,12 @@ void GizmoLineShape::transfom(const GizmoReferenceSpace& space, float scaleFacto
     m_cachedRenderPoints.allocateUninitialized(pointCount);
     m_cachedPointsValid = true;
 
-    const auto& localToWorld = space.absoluteTransform();
+    Transformation t(space.absoluteTransform());
 
     for (uint32_t i = 0; i < pointCount; ++i)
     {
-        m_cachedPoints.typedData()[i] = localToWorld.transformPointFromSpace(m_lines.typedData()[i] * scaleFactor);
-        m_cachedRenderPoints.typedData()[i] = m_cachedPoints.typedData()[i].approximate();
+        m_cachedPoints.typedData()[i] = t.transformPoint(m_lines.typedData()[i] * scaleFactor);
+        m_cachedRenderPoints.typedData()[i] = m_cachedPoints.typedData()[i];
     }
 }
 

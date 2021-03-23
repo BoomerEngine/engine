@@ -340,4 +340,96 @@ INLINE Vector4 Vector2::xyzw(float z, float w) const
 
 //--
 
+INLINE Vector2 Vector2::normalPart(const Vector2& normal) const
+{
+    return normal * dot(normal);;
+}
+
+INLINE Vector2 Vector2::tangentPart(const Vector2& normal) const
+{
+    return *this - normalPart(normal);
+}
+
+INLINE std::pair<Vector2, Vector2> Vector2::decompose(const Vector2& normal) const
+{
+    auto np = normal * dot(normal);;
+    return std::make_pair(np, *this - np);
+}
+
+INLINE float Vector2::dot(const Vector2& other) const
+{
+    return (x * other.x) + (y * other.y);
+}
+
+INLINE void Vector2::clampLength(float val)
+{
+    auto sqlen = squareLength();
+    if (sqlen > (val * val))
+    {
+        auto len = std::sqrt(sqlen);
+        if (len > FLT_EPSILON)
+        {
+            auto scale = val / len;
+            x *= scale;
+            y *= scale;
+        }
+    }
+}
+
+INLINE void Vector2::setLength(float val)
+{
+    auto len = length();
+    if (len > FLT_EPSILON)
+    {
+        auto scale = val / len;
+        x *= scale;
+        y *= scale;        
+    }
+}
+
+//--
+
+INLINE void Vector2::snap(float grid)
+{
+    x = Snap(x, grid);
+    y = Snap(y, grid);
+}
+
+INLINE Vector2 Vector2::snapped(float grid) const
+{
+    return Vector2(
+        Snap(x, grid),
+        Snap(y, grid));
+}
+
+INLINE Vector2 Vector2::min(const Vector2& b) const
+{
+    return Vector2(
+        std::min(x, b.x),
+        std::min(y, b.y));
+}
+
+INLINE Vector2 Vector2::min(float val) const
+{
+    return Vector2(
+        std::min(x, val),
+        std::min(y, val));
+}
+
+INLINE Vector2 Vector2::max(const Vector2& b) const
+{
+    return Vector2(
+        std::max(x, b.x),
+        std::max(y, b.y));
+}
+
+INLINE Vector2 Vector2::max(float val) const
+{
+    return Vector2(
+        std::max(x, val),
+        std::max(y, val));
+}
+
+//--
+
 END_BOOMER_NAMESPACE()

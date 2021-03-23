@@ -69,7 +69,7 @@ void MeshEditor::createInterface()
         auto tab = RefNew<ui::DockPanel>("[img:tree] Structure", "StructurePanel");
         tab->layoutVertical();
 
-        m_structurePanel = tab->createChild<MeshStructurePanel>();
+        m_structurePanel = tab->createChild<MeshStructurePanel>(actionHistory());
         m_structurePanel->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
         m_structurePanel->customVerticalAligment(ui::ElementVerticalLayout::Expand);
 
@@ -100,6 +100,7 @@ void MeshEditor::createInterface()
     {
         toolbar()->createButton(ui::ToolBarButtonInfo("ShowBounds"_id).caption("Bounds", "cube")) = [this]() {
             m_previewSettings.showBounds = !m_previewSettings.showBounds;
+            updateToolbar();
             updatePreviewSettings();
         };
     }
@@ -107,6 +108,7 @@ void MeshEditor::createInterface()
     {
         toolbar()->createButton(ui::ToolBarButtonInfo("ShowSkeleton"_id).caption("Skeleton", "skeleton")) = [this]() {
             m_previewSettings.showSkeleton = !m_previewSettings.showSkeleton;
+            updateToolbar();
             updatePreviewSettings();
         };
     }
@@ -114,6 +116,7 @@ void MeshEditor::createInterface()
     {
         toolbar()->createButton(ui::ToolBarButtonInfo("ShowBoneAxes"_id).caption("Bone axes", "bone_axis")) = [this]() {
             m_previewSettings.showBoneAxes = !m_previewSettings.showBoneAxes;
+            updateToolbar();
             updatePreviewSettings();
         };
     }
@@ -121,6 +124,7 @@ void MeshEditor::createInterface()
     {
         toolbar()->createButton(ui::ToolBarButtonInfo("ShowBoneNames"_id).caption("Bone names", "bone_name")) = [this]() {
             m_previewSettings.showBoneNames = !m_previewSettings.showBoneNames;
+            updateToolbar();
             updatePreviewSettings();
         };
     }
@@ -128,6 +132,7 @@ void MeshEditor::createInterface()
     {
         toolbar()->createButton(ui::ToolBarButtonInfo("ShowCollision"_id).caption("Show collision", "physics")) = [this]() {
             m_previewSettings.showCollision = !m_previewSettings.showCollision;
+            updateToolbar();
             updatePreviewSettings();
         };
     }
@@ -135,6 +140,7 @@ void MeshEditor::createInterface()
     {
         toolbar()->createButton(ui::ToolBarButtonInfo("ShowSnap"_id).caption("Snap", "snap")) = [this]() {
             m_previewSettings.showSnaps = !m_previewSettings.showSnaps;
+            updateToolbar();
             updatePreviewSettings();
         };
     }
@@ -233,6 +239,8 @@ void MeshEditor::updatePreviewSettings()
         for (const auto& node : nodes)
             node->setup(settings, nodes, nodes.back());
     }
+
+    m_previewPanel->previewSettings(settings);
 }
 
 //---

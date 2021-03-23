@@ -14,8 +14,6 @@
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 
-#pragma optimize("", off)
-
 //---
 
 RTTI_BEGIN_TYPE_CLASS(ITreeItem);
@@ -138,6 +136,9 @@ void ITreeItem::addChild(ITreeItem* child)
 
     internalCreateChildViewItem(child);
     invalidateDisplayList();
+
+    if (m_children.size() == 1)
+        updateButtonState();
 }
 
 void ITreeItem::removeChild(ITreeItem* child)
@@ -152,6 +153,9 @@ void ITreeItem::removeChild(ITreeItem* child)
     child->internalDestroyViewItem();
     m_children.erase(index);
     invalidateDisplayList();
+
+    if (m_children.size() == 0)
+        updateButtonState();
 }
 
 void ITreeItem::removeAllChildren()

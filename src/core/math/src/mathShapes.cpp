@@ -33,13 +33,14 @@ bool SolveQuadraticEquation(float a, float b, float c, float& x1, float& x2)
 
 void TranslatePlane(Plane& plane, const Vector3& offset)
 {
-    plane.d = -Dot(offset + (plane.n * -plane.d), plane.n);
+    plane.d = -(plane.n | (offset + (plane.n * -plane.d)));
 }
 
 void TransformPlane(Plane& plane, const Matrix& transform)
 {
-    auto pointOnPlane = transform.transformPoint(plane.n * -plane.d);
-    auto pointInFront = transform.transformPoint(pointOnPlane + plane.n);
+    BaseTransformation t(transform);
+    auto pointOnPlane = t.transformPoint(plane.n * -plane.d);
+    auto pointInFront = t.transformPoint(pointOnPlane + plane.n);
 
     auto newNormal = (pointOnPlane - pointInFront).normalized();
     plane = Plane(pointOnPlane, newNormal);
@@ -121,7 +122,7 @@ bool PointInPlaneList(const Plane* planes, uint32_t numPlanes, const Vector3& po
         return false;
 
     for (uint32_t i=0; i<numPlanes; ++i, ++planes)
-        if (Dot(point, planes->n) + planes->d > 0.0f)
+        if ((point | planes->n) + planes->d > 0.0f)
             return false;
 
     return true;
@@ -140,8 +141,8 @@ bool IntersectPlaneList(const Plane* planes, uint32_t numPlanes, const Vector3& 
     {
         auto& plane = *planes++;
 
-        auto proj = -Dot(plane.n, direction);
-        auto dist = Dot(origin, plane.n) + plane.d;
+        auto proj = -(plane.n | direction);
+        auto dist = (origin | plane.n) + plane.d;
         if (proj == 0.0f)
         {
             if (dist < 0.0f)
@@ -209,10 +210,10 @@ bool IntersectTriangleRay(const Vector3& origin, const Vector3& dir, const Vecto
     auto edge2 = v2 - v0;
 
     // Begin calculating determinant - also used to calculate U parameter
-    auto pvec = Cross(dir, edge2);
+    auto pvec = (dir ^ edge2);
 
     // If determinant is near zero, ray lies in plane of triangle
-    auto det = Dot(edge1, pvec);
+    auto det = (edge1 | pvec);
 
     // Cull/NoCull
     if (cull)
@@ -225,7 +226,7 @@ bool IntersectTriangleRay(const Vector3& origin, const Vector3& dir, const Vecto
         auto tvec = origin - v0;
 
         // Calculate U parameter and test bounds
-        auto u = Dot(tvec, pvec);
+        auto u = (tvec | pvec);
 
         // Compute the UV limits
         auto enlargeCoeff = additionalEpsilon * det;
@@ -235,15 +236,15 @@ bool IntersectTriangleRay(const Vector3& origin, const Vector3& dir, const Vecto
             return false;
 
         // Prepare to test V parameter
-        auto qvec = Cross(tvec, edge1);
+        auto qvec = (tvec ^ edge1);
 
         // Calculate V parameter and test bounds
-        auto v = Dot(dir, qvec);
+        auto v = (dir | qvec);
         if (v<uvlimit || (u+v)>uvlimit2)
             return false;
 
         // Calculate t, scale parameters, ray intersects triangle
-        auto t = Dot(edge2, qvec);
+        auto t = (edge2 | qvec);
         if (t >= maxDist * det)
             return false;
 
@@ -277,20 +278,20 @@ bool IntersectTriangleRay(const Vector3& origin, const Vector3& dir, const Vecto
         Vector3 tvec = origin - v0; // error ~ |orig-v0|
 
         // Calculate U parameter and test bounds
-        auto u = Dot(tvec, pvec) * inv_det;
+        auto u = (tvec | pvec) * inv_det;
         if(u<-additionalEpsilon || u>1.0f+additionalEpsilon)
             return false;
 
         // prepare to test V parameter
-        auto qvec = Cross(tvec, edge1);
+        auto qvec = (tvec ^ edge1);
 
         // Calculate V parameter and test bounds
-        auto v = Dot(dir, qvec) * inv_det;
+        auto v = (dir | qvec) * inv_det;
         if(v<-additionalEpsilon || (u+v)>1.0f+additionalEpsilon)
             return false;
 
         // Calculate t, ray intersects triangle
-        auto t = Dot(edge2, qvec) * inv_det;
+        auto t = (edge2 | qvec) * inv_det;
         if (t >= maxDist)
             return false;
 

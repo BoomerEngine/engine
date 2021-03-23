@@ -55,60 +55,97 @@ typedef ResourceRef<Prefab> PrefabRef;
 
 struct PrefabDependencies;
 
-class CompiledWorld;
-typedef RefPtr<CompiledWorld> CompiledWorldPtr;
+class CompiledWorldData;
+typedef RefPtr<CompiledWorldData> CompiledWorldPtr;
 
-class NodeTemplate;
-typedef RefPtr<NodeTemplate> NodeTemplatePtr;
+class RawEntity;
+typedef RefPtr<RawEntity> RawEntityPtr;
 
-typedef uint64_t NodeGlobalID;
+typedef uint64_t EntityStaticID;
+typedef uint32_t EntityRuntimeID;
 
-class NodePathBuilder;
+class EntityStaticIDBuilder;
 
 //--
+
+struct WorldRenderingContext;
 
 class World;
 typedef RefPtr<World> WorldPtr;
 
+class IWorldParameters;
+typedef RefPtr<IWorldParameters> WorldParametersPtr;
+
 class IWorldSystem;
 typedef RefPtr<IWorldSystem> WorldSystemPtr;
+
+class IWorldViewEntity;
+typedef RefPtr<IWorldViewEntity> WorldViewEntityPtr;
+
+class IWorldStreaming;
+typedef RefPtr<IWorldStreaming> WorldStreamingPtr;
+
+class IWorldStreamingTask;
+typedef RefPtr<IWorldStreamingTask> WorldStreamingTaskPtr;
+
+class WorldPersistentObserver;
+typedef RefPtr<WorldPersistentObserver> WorldPersistentObserverPtr;
+
+/// source of parameters
+class ENGINE_WORLD_API IWorldParametersSource : public NoCopy
+{
+public:
+    virtual ~IWorldParametersSource();
+
+    virtual Array<WorldParametersPtr> compileWorldParameters() const = 0;
+};
+
+enum class WorldUpdatePhase : uint8_t
+{
+    None, // not in world update, entities can be changed at will
+    PreTick,
+    PostTick,
+};
+
+typedef BitFlags<WorldUpdatePhase> WorldUpdateMask;
 
 //--
 
 class RawLayer;
 typedef RefPtr<RawLayer> RawLayerPtr;
 
-class RawScene;
-typedef RefPtr<RawScene> RawScenePtr;
+class RawWorldData;
+typedef RefPtr<RawWorldData> RawWorldDataPtr;
 
 //--
 
-class StreamingTask;
+class CompiledStreamingIslandInstance;
+typedef RefPtr<CompiledStreamingIslandInstance> CompiledStreamingIslandInstancePtr;
 
-class StreamingIslandInstance;
-typedef RefPtr<StreamingIslandInstance> StreamingIslandInstancePtr;
+class CompiledStreamingIsland;
+typedef RefPtr<CompiledStreamingIsland> CompiledStreamingIslandPtr;
 
-class StreamingIsland;
-typedef RefPtr<StreamingIsland> StreamingIslandPtr;
+class CompiledStreamingTask;
+class CompiledWorldStreaming;
 
 //---
 
-class CompiledScene;
-typedef RefPtr<CompiledScene> CompiledScenePtr;
-typedef ResourceRef<CompiledScene> CompiledSceneRef;
-typedef ResourceAsyncRef<CompiledScene> CompiledSceneAsyncRef;
+class CompiledWorldData;
+typedef RefPtr<CompiledWorldData> CompiledWorldDataPtr;
+typedef ResourceRef<CompiledWorldData> CompiledWorldDataRef;
+typedef ResourceAsyncRef<CompiledWorldData> CompiledWorldDataAsyncRef;
 
 //---
 
 // information about streaming observer
-struct ENGINE_WORLD_API StreamingObserverInfo
+struct ENGINE_WORLD_API WorldObserverInfo
 {
-    RTTI_DECLARE_NONVIRTUAL_CLASS(StreamingObserverInfo);
+    RTTI_DECLARE_NONVIRTUAL_CLASS(WorldObserverInfo);
 
     Vector3 position;
     Vector3 velocity;
 
-    StreamingObserverInfo();
+    WorldObserverInfo();
 };
 
 //--

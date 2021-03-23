@@ -10,7 +10,7 @@
 
 #include "sceneEditMode.h"
 
-#include "engine/ui/include/uiSimpleListModel.h"
+#include "engine/ui/include/uiListViewEx.h"
 #include "engine/ui/include/uiElement.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
@@ -179,7 +179,6 @@ protected:
 
     //--
 
-    RefPtr<SceneEditPrefabListModel> m_prefabListModel;
     RefPtr<SceneEditPrefabList> m_prefabList;
 
     //--

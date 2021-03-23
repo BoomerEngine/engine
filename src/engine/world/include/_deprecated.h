@@ -99,7 +99,7 @@
             ComponentTransformLink(Component* source, Component* target);
 
             // calculate new absolute transform for component
-            virtual void calculateNewAbsoluteTransform(const Transform& componentRelativeTransform, ComponentFlags componentFlags, const AbsoluteTransform& parentTransform, const Matrix& parentToWorld,   AbsoluteTransform& outNewAbsoluteTransform, Matrix& outNewLocalToWorldMatrix) const;
+            virtual void calculateNewAbsoluteTransform(const Transform& componentRelativeTransform, ComponentFlags componentFlags, const Transform& parentTransform, const Matrix& parentToWorld,   Transform& outNewAbsoluteTransform, Matrix& outNewLocalToWorldMatrix) const;
         };
 
         //---
@@ -113,7 +113,7 @@
             ComponentTransformLinkEx(Component* source, Component* target, const Transform& relativeTransform, bool updateRotation, bool updateScale);
 
             // calculate new absolute transform for component
-            virtual void calculateNewAbsoluteTransform(const Transform& componentRelativeTransform, ComponentFlags componentFlags, const AbsoluteTransform& parentTransform, const Matrix& parentToWorld, AbsoluteTransform& outNewAbsoluteTransform, Matrix& outNewLocalToWorldMatrix) const override final;
+            virtual void calculateNewAbsoluteTransform(const Transform& componentRelativeTransform, ComponentFlags componentFlags, const Transform& parentTransform, const Matrix& parentToWorld, Transform& outNewAbsoluteTransform, Matrix& outNewLocalToWorldMatrix) const override final;
 
         private:
             Transform m_additionalTransform;
@@ -145,7 +145,7 @@
             INLINE const Transform& relativeTransform() const { return m_relativeTransform; }
 
             /// get absolute placement of the component
-            INLINE const AbsoluteTransform& absoluteTransform() const { return m_absoluteTransform; }
+            INLINE const Transform& absoluteTransform() const { return m_absoluteTransform; }
 
             /// get matrix representing placement of the component in the world
             INLINE const Matrix& localToWorld() const { return m_localToWorld; }
@@ -170,7 +170,7 @@
             void requestTransformUpdate();
 
             // update transform of this component, called after it's transform parent is updated or directly from entity if component has no parent transform
-            virtual void handleTransformUpdate(const Component* source, const AbsoluteTransform& parentTransform, const Matrix& parentToWorld);
+            virtual void handleTransformUpdate(const Component* source, const Transform& parentTransform, const Matrix& parentToWorld);
 
             //--
 
@@ -289,7 +289,7 @@
             //--
 
             Transform m_relativeTransform;
-            AbsoluteTransform m_absoluteTransform;
+            Transform m_absoluteTransform;
             Matrix m_localToWorld;
 
             //--
@@ -316,7 +316,7 @@
             void detachFromWorld(World* scene);
             void attachToWorld(World* scene);
 
-            void recalculateTransform(const AbsoluteTransform& parentTransform, const Matrix& parentToWorld);
+            void recalculateTransform(const Transform& parentTransform, const Matrix& parentToWorld);
 
             void updateRelativeTransformFlags();
         };

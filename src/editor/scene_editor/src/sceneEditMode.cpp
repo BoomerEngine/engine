@@ -104,7 +104,7 @@ void ISceneEditMode::handlePointSelection(ScenePreviewPanel* panel, bool ctrl, b
 void ISceneEditMode::handleAreaSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables)
 {}
 
-void ISceneEditMode::handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const AbsolutePosition* positionUnderCursor)
+void ISceneEditMode::handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const ExactPosition* positionUnderCursor)
 {}
 
 ui::DragDropHandlerPtr ISceneEditMode::handleDragDrop(ScenePreviewPanel* panel, const ui::DragDropDataPtr& data, const ui::Position& absolutePosition, const Point& clientPosition)
@@ -133,7 +133,7 @@ void ISceneEditMode::handleTreeCopyNodes(const Array<SceneContentNodePtr>& selec
 void ISceneEditMode::handleTreePasteNodes(const SceneContentNodePtr& target, SceneContentNodePasteMode mode)
 {}
 
-bool ISceneEditMode::handleTreeResourceDrop(const SceneContentNodePtr& target, const ManagedFile* file)
+bool ISceneEditMode::handleTreeResourceDrop(const SceneContentNodePtr& target, StringView depotFilePath)
 {
     return false;
 }
@@ -236,7 +236,7 @@ void CreateDefaultGridButtons(ScenePreviewContainer* container, ui::ToolBar* too
 
         PrintGridSize(txt, gridSettings.positionGridSize);
 
-        toolbar->createCallback(ui::ToolbarButtonSetup().caption(txt.view())) = [container](ui::Button* button)
+        toolbar->createButton(ui::ToolBarButtonInfo().caption(txt.view())) = [container](ui::Button* button)
         {
             static const float GridSizes[] = { 0.01f, 0.02f, 0.05f, 0.1f, 0.25f, 0.5f, 1.0f, 2.0f, 5.0f, 10.0f, 25.0f, 50.0f, 100.0f };
 
@@ -280,7 +280,7 @@ void CreateDefaultGridButtons(ScenePreviewContainer* container, ui::ToolBar* too
 
         PrintRotationSize(txt, gridSettings.rotationGridSize);
 
-        toolbar->createCallback(ui::ToolbarButtonSetup().caption(txt.view())) = [container](ui::Button* button)
+        toolbar->createButton(ui::ToolBarButtonInfo().caption(txt.view())) = [container](ui::Button* button)
         {
             static const float GridSizes[] = { 1.0f, 3.0f, 4.5f, 6.0f, 7.5f, 10.0f, 12.25f, 15.0f, 22.5f, 30.0f, 45.0f, 60.0f, 90.0f };
 
@@ -315,7 +315,7 @@ void CreateDefaultGridButtons(ScenePreviewContainer* container, ui::ToolBar* too
 
     // snapping to features
     {
-        toolbar->createCallback(ui::ToolbarButtonSetup().caption("[img:snap] Snap")) = [container](ui::Button* button)
+        toolbar->createButton(ui::ToolBarButtonInfo().caption("[img:snap] Snap")) = [container](ui::Button* button)
         {
             auto menu = RefNew<ui::MenuButtonContainer>();
 
@@ -348,7 +348,7 @@ void CreateDefaultSelectionButtons(ScenePreviewContainer* container, ui::ToolBar
 
     // snapping to features
     {
-        toolbar->createCallback(ui::ToolbarButtonSetup().caption("[img:selection_point] Selection")) = [container](ui::Button* button)
+        toolbar->createButton(ui::ToolBarButtonInfo().caption("[img:selection_point] Selection")) = [container](ui::Button* button)
         {
             auto menu = RefNew<ui::MenuButtonContainer>();
 
@@ -403,7 +403,7 @@ void CreateDefaultGizmoButtons(ScenePreviewContainer* container, ui::ToolBar* to
 
     {
         const auto title = (data.mode == SceneGizmoMode::Translation) ? "[img:gizmo_translate16]" : "[color:#8888][img:gizmo_translate16]";
-        toolbar->createCallback(ui::ToolbarButtonSetup().caption(title)) = [container](ui::Button* button)
+        toolbar->createButton(ui::ToolBarButtonInfo().caption(title)) = [container](ui::Button* button)
             {
                 auto data = container->gizmoSettings();
                 data.mode = SceneGizmoMode::Translation;
@@ -413,7 +413,7 @@ void CreateDefaultGizmoButtons(ScenePreviewContainer* container, ui::ToolBar* to
 
     {
         const auto title = (data.mode == SceneGizmoMode::Rotation) ? "[img:gizmo_rotate16]" : "[color:#8888][img:gizmo_rotate16]";
-        toolbar->createCallback(ui::ToolbarButtonSetup().caption(title)) = [container](ui::Button* button)
+        toolbar->createButton(ui::ToolBarButtonInfo().caption(title)) = [container](ui::Button* button)
         {
             auto data = container->gizmoSettings();
             data.mode = SceneGizmoMode::Rotation;
@@ -423,7 +423,7 @@ void CreateDefaultGizmoButtons(ScenePreviewContainer* container, ui::ToolBar* to
 
     {
         const auto title = (data.mode == SceneGizmoMode::Scale) ? "[img:gizmo_scale16]" : "[color:#8888][img:gizmo_scale16]";
-        toolbar->createCallback(ui::ToolbarButtonSetup().caption(title)) = [container](ui::Button* button)
+        toolbar->createButton(ui::ToolBarButtonInfo().caption(title)) = [container](ui::Button* button)
         {
             auto data = container->gizmoSettings();
             data.mode = SceneGizmoMode::Scale;
@@ -439,7 +439,7 @@ void CreateDefaultGizmoButtons(ScenePreviewContainer* container, ui::ToolBar* to
 
         PrintGizmoSpace(txt, data.space);
 
-        toolbar->createCallback(ui::ToolbarButtonSetup().caption(txt.view())) = [container](ui::Button* button)
+        toolbar->createButton(ui::ToolBarButtonInfo().caption(txt.view())) = [container](ui::Button* button)
         {
             static const GizmoSpace GizmoSpaces[] = { GizmoSpace::World, GizmoSpace::Local, GizmoSpace::Parent, GizmoSpace::View };
 
@@ -470,7 +470,7 @@ void CreateDefaultGizmoButtons(ScenePreviewContainer* container, ui::ToolBar* to
 
         PrintGizmoTarget(txt, data.target);
 
-        toolbar->createCallback(ui::ToolbarButtonSetup().caption(txt.view())) = [container](ui::Button* button)
+        toolbar->createButton(ui::ToolBarButtonInfo().caption(txt.view())) = [container](ui::Button* button)
         {
             static const SceneGizmoTarget GizmoSpaces[] = { SceneGizmoTarget::WholeHierarchy, SceneGizmoTarget::SelectionOnly };
 
@@ -499,7 +499,7 @@ void CreateDefaultGizmoButtons(ScenePreviewContainer* container, ui::ToolBar* to
 
     {
         const auto title = data.enableX ? "[img:lock_x]" : "[color:#8888][img:lock_x]";
-        toolbar->createCallback(ui::ToolbarButtonSetup().caption(title)) = [container](ui::Button* button)
+        toolbar->createButton(ui::ToolBarButtonInfo().caption(title)) = [container](ui::Button* button)
         {
             auto data = container->gizmoSettings();
             data.enableX = !data.enableX;
@@ -509,7 +509,7 @@ void CreateDefaultGizmoButtons(ScenePreviewContainer* container, ui::ToolBar* to
 
     {
         const auto title = data.enableY ? "[img:lock_y]" : "[color:#8888][img:lock_y]";
-        toolbar->createCallback(ui::ToolbarButtonSetup().caption(title)) = [container](ui::Button* button)
+        toolbar->createButton(ui::ToolBarButtonInfo().caption(title)) = [container](ui::Button* button)
         {
             auto data = container->gizmoSettings();
             data.enableY = !data.enableY;
@@ -519,7 +519,7 @@ void CreateDefaultGizmoButtons(ScenePreviewContainer* container, ui::ToolBar* to
 
     {
         const auto title = data.enableZ ? "[img:lock_z]" : "[color:#8888][img:lock_z]";
-        toolbar->createCallback(ui::ToolbarButtonSetup().caption(title)) = [container](ui::Button* button)
+        toolbar->createButton(ui::ToolBarButtonInfo().caption(title)) = [container](ui::Button* button)
         {
             auto data = container->gizmoSettings();
             data.enableZ = !data.enableZ;

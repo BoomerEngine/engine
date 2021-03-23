@@ -9,19 +9,18 @@
 #include "core_app_glue.inl"
 #include "core/system/include/timing.h"
 
-//--
-
 BEGIN_BOOMER_NAMESPACE()
 
-class IService;
-class IRemoteService;
+//--
 
 class App;
-class ServiceContainer;
-
-class IFramework;
 
 class CommandLine;
+
+class IService;
+class ServiceContainer;
+
+//--
 
 class ICommand;
 typedef RefPtr<ICommand> CommandPtr;
@@ -29,11 +28,15 @@ typedef RefPtr<ICommand> CommandPtr;
 class CommandHost;
 typedef RefPtr<CommandHost> CommandHostPtr;
 
-END_BOOMER_NAMESPACE();
-
 //--
 
-BEGIN_BOOMER_NAMESPACE()
+class IProjectSettings;
+typedef RefPtr<IProjectSettings> ProjectSettingsPtr;
+
+class ProjectSettingsFile;
+typedef RefPtr<ProjectSettingsFile> ProjectSettingsFilePtr;
+
+//--
 
 /// get service
 extern CORE_APP_API void* GetServicePtr(int serviceIndex);
@@ -45,6 +48,8 @@ INLINE T* GetService()
     static auto ptr  = (T*)GetServicePtr(ClassID<T>()->userIndex());
     return ptr;
 }
+
+//--
 
 END_BOOMER_NAMESPACE()
 

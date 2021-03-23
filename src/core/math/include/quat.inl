@@ -51,7 +51,7 @@ INLINE void Quat::normalize()
 
 INLINE void Quat::align(const Quat& other)
 {
-    if (Dot(*this, other) < 0.0f)
+    if ((*this | other) < 0.0f)
     {
         x = -x;
         y = -y;
@@ -65,17 +65,6 @@ INLINE Quat Quat::operator-() const
     return inverted();
 }
 
-INLINE Quat& Quat::operator*=(const Quat &other)
-{
-    *this = Concat(*this, other);
-    return *this;
-};
-
-INLINE Quat Quat::operator*(const Quat &other) const
-{
-    return Concat(*this, other);
-}
-
 INLINE bool Quat::operator==(const Quat &other) const
 {
     return (x == other.x) && (y == other.y) && (z == other.z) && (w == other.w);
@@ -87,5 +76,26 @@ INLINE bool Quat::operator!=(const Quat &other) const
 }
 
 //---
+
+INLINE float Quat::operator|(const Quat& b) const
+{
+    return (x * b.x) + (y * b.y) + (z * b.z) + (w * b.w);
+}
+
+INLINE Quat Quat::operator*(const Quat& b) const
+{
+    return Quat(w * b.x + x * b.w + y * b.z - z * b.y,
+        w * b.y - x * b.z + y * b.w + z * b.x,
+        w * b.z + x * b.y - y * b.x + z * b.w,
+        w * b.w - x * b.x - y * b.y - z * b.z);
+}
+
+INLINE Quat& Quat::operator*=(const Quat& b)
+{
+    *this = Quat(*this) * b;
+    return *this;
+}
+
+//--
 
 END_BOOMER_NAMESPACE()

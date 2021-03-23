@@ -10,7 +10,8 @@
 #include "sceneTest.h"
 
 #include "engine/world/include/world.h"
-#include "engine/world/include/entity.h"
+#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/worldRendering.h"
 #include "engine/mesh/include/mesh.h"
 #include "engine/rendering/include/cameraContext.h"
 
@@ -76,100 +77,6 @@ void ISceneTest::GlobalLightingParams::pack(rendering::FrameParams_GlobalLightin
 
 //--
 
-FlyCamera::FlyCamera()
-{
-    m_context = RefNew<rendering::CameraContext>();
-}
-
-FlyCamera::~FlyCamera()
-{}
-
-bool FlyCamera::processRawInput(const input::BaseEvent& evt)
-{
-    if (const auto* key = evt.toKeyEvent())
-    {
-        if (key->pressed() || key->released())
-        {
-            float value = key->pressed() ? 1.0f : -1.0f;
-            switch (key->keyCode())
-            {
-            case input::KeyCode::KEY_A: m_buttonLeftRight -= value; return true;
-            case input::KeyCode::KEY_D: m_buttonLeftRight += value; return true;
-            case input::KeyCode::KEY_W: m_buttonForwardBackward += value; return true;
-            case input::KeyCode::KEY_S: m_buttonForwardBackward -= value; return true;
-            case input::KeyCode::KEY_Q: m_buttonUpDown -= value; return true;
-            case input::KeyCode::KEY_E: m_buttonUpDown += value; return true;
-            }
-        }
-    }
-    else if (const auto* axis = evt.toAxisEvent())
-    {
-        switch (axis->axisCode())
-        {
-        case input::AxisCode::AXIS_MOUSEX: m_mouseDeltaX = axis->displacement() * 0.25f; return true;
-        case input::AxisCode::AXIS_MOUSEY: m_mouseDeltaY = axis->displacement() * 0.25f; return true;
-        }
-    }
-
-    return false;
-}
-
-void FlyCamera::compute(rendering::FrameParams& params) const
-{
-    CameraSetup cameraParams;
-    cameraParams.position = m_position;
-    cameraParams.rotation = m_rotation.toQuat();
-    cameraParams.fov = 75.0f;
-    cameraParams.aspect = params.resolution.aspect();
-    cameraParams.nearPlane = 0.01f;
-    cameraParams.farPlane = 500.0f;
-
-    params.camera.camera.setup(cameraParams);
-    params.camera.cameraContext = m_context;
-}
-
-void FlyCamera::place(const Vector3& initialPos, const Angles& initialRotation)
-{
-    m_position = initialPos;
-    m_rotation = initialRotation;
-}
-
-
-void FlyCamera::update(float dt)
-{
-    Vector3 cameraMoveLocalDir(0, 0, 0);
-    cameraMoveLocalDir.x = m_buttonForwardBackward;
-    cameraMoveLocalDir.y = m_buttonLeftRight;
-    cameraMoveLocalDir.z = m_buttonUpDown;
-
-    float cameraSpeed = 5.0f;
-    //if (m_keys[KEY_FAST]) cameraSpeed = 10.0f;
-    //if (m_keys[KEY_SLOW]) cameraSpeed = 1.0f;
-
-    if (!cameraMoveLocalDir.isZero())
-    {
-        cameraMoveLocalDir.normalize();
-        cameraMoveLocalDir *= cameraSpeed;
-    }
-
-    Vector3 cameraDirForward, cameraDirRight, cameraDirUp;
-    m_rotation.angleVectors(cameraDirForward, cameraDirRight, cameraDirUp);
-
-    Vector3 deltaPosition(0, 0, 0);
-    deltaPosition += cameraDirForward * cameraMoveLocalDir.x * dt;
-    deltaPosition += cameraDirRight * cameraMoveLocalDir.y * dt;
-    deltaPosition += cameraDirUp * cameraMoveLocalDir.z * dt;
-
-    m_rotation.pitch = std::clamp<float>(m_rotation.pitch + m_mouseDeltaY, -90.0f, 90.0f);
-    m_rotation.yaw += m_mouseDeltaX;
-    m_mouseDeltaX = 0.0f;
-    m_mouseDeltaY = 0.0f;
-
-    m_position += deltaPosition;
-}
-
-//--
-
 rendering::FilterFlags ISceneTest::st_FrameFilterFlags = rendering::FilterFlags::DefaultEditor();
 rendering::FrameRenderMode ISceneTest::st_FrameMode = rendering::FrameRenderMode::Default;
 Angles ISceneTest::st_GlobalLightingRotation(70.0f, 40.0f, 0.0f);
@@ -196,17 +103,13 @@ RTTI_END_TYPE();
 ISceneTest::ISceneTest()
     : m_failed(false)
 {
+    m_initialCameraRotation = Angles(30.0f, -15.0f, 0.0f);
+    m_initialCameraPosition = Vector3(0, 0, 0.5f) - (m_initialCameraRotation.forward() * 3.0f);
 }
 
 bool ISceneTest::processInitialization()
 {
-    m_camera = RefNew<FlyCamera>();
-
-    const auto angles = Angles(30.0f, -15.0f, 0.0f);
-    m_camera->place(Vector3(0, 0, 0.5f) - angles.forward() * 3.0f, angles);
-
     initialize();
-
     return !m_failed;
 }
 
@@ -220,10 +123,42 @@ void ISceneTest::configure()
 
 void ISceneTest::initialize()
 {
-    // scenes usually create world here
+    recreateWorld();
 }
 
-void ISceneTest::render(rendering::FrameParams& info)
+CompiledWorldDataPtr ISceneTest::createStaticContent()
+{
+    return nullptr;
+}
+
+void ISceneTest::createDynamicContent(World* world)
+{
+}
+
+void ISceneTest::recreateWorld()
+{
+    if (m_world)
+        m_world->detachEntity(m_camera);
+
+    m_world.reset();
+
+    if (auto content = createStaticContent())
+        m_world = World::CreateCompiledWorld(content);
+    else
+        m_world = World::CreatePreviewWorld();
+
+    createDynamicContent(m_world);
+
+    if (!m_camera)
+    {
+        m_camera = RefNew<FreeCameraEntity>();
+        m_camera->place(m_initialCameraPosition, m_initialCameraRotation);
+    }
+
+    m_world->attachEntity(m_camera);
+}
+
+void ISceneTest::prepareFrame(rendering::FrameParams& info)
 {
     info.filters = st_FrameFilterFlags;
     info.mode = st_FrameMode;
@@ -248,19 +183,24 @@ void ISceneTest::render(rendering::FrameParams& info)
 
     if (st_GlobalColorGradingAdjustEnabled)
         info.colorGrading = st_GlobalColorGradingAdjust;
+}
 
-    if (m_camera)
-        m_camera->compute(info);
-
+void ISceneTest::renderFrame(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, rendering::FrameStats& outStats, CameraSetup& outCamera)
+{
     if (m_world)
-        m_world->render(info);
+    {
+        /*WorldRenderingContext context;
+        context.colorTarget = output.color;
+        context.depthTarget = output.depth;
+        context.viewportWidth = output.width;
+        context.viewportHeight = output.height;
+        context.viewEntity = m_camera;
+        m_world->renderViewport(cmd, context, outStats, outCamera);*/
+    }
 }
 
 void ISceneTest::update(float dt)
 {
-    if (m_camera)
-        m_camera->update(dt);
-
     if (m_world)
         m_world->update(dt);
 }
@@ -276,18 +216,6 @@ void ISceneTest::reportError(StringView msg)
 {
     TRACE_ERROR("SceneTest initialization error: {}", msg);
     m_failed = true;
-}
-
-MeshRef ISceneTest::loadMesh(StringView assetFile)
-{
-    auto meshPtr = LoadResource<Mesh>(assetFile);
-    if (!meshPtr)
-    {
-        reportError(TempString("Failed to load mesh '{}'", meshPtr));
-        return nullptr;
-    }
-
-    return MeshRef(ResourceID(), meshPtr);
 }
 
 //--
@@ -431,40 +359,7 @@ void ISceneTest::configureLocalAdjustments()
         ImGui::End();
     }
 }
-        
-//--
 
-RTTI_BEGIN_TYPE_ABSTRACT_CLASS(ISceneTestEmptyWorld);
-        
-RTTI_END_TYPE();
-
-ISceneTestEmptyWorld::ISceneTestEmptyWorld()
-{
-    m_initialCameraPosition = Vector3(-2, 0, 1);
-    m_initialCameraRotation = Angles(20.0f, 0.0f, 0.0f);
-}
-
-void ISceneTestEmptyWorld::recreateWorld()
-{
-    m_world.reset();
-    m_world = RefNew<World>();
-
-    createWorldContent();
-}
-
-void ISceneTestEmptyWorld::createWorldContent()
-{
-    // TODO
-}
-
-//--
-
-void ISceneTestEmptyWorld::initialize()
-{
-    TBaseClass::initialize();
-    recreateWorld();
-}
-
-//--
+//---
 
 END_BOOMER_NAMESPACE_EX(test)

@@ -186,8 +186,8 @@ public:
     INLINE Vector3 &operator*=(float value);
     INLINE Vector3 &operator/=(const Vector3 &other);
     INLINE Vector3 &operator/=(float value);
-    INLINE float operator|(const Vector3 &other) const;
-    INLINE Vector3 operator^(const Vector3 &other) const;
+    INLINE float operator|(const Vector3 &other) const; // dot
+    INLINE Vector3 operator^(const Vector3 &other) const; // cross
     INLINE float operator[](int index) const;
     INLINE float& operator[](int index);
 
@@ -215,6 +215,46 @@ public:
     //--
 
     void print(IFormatStream& f) const;
+
+    //--
+
+    // minimum values per component
+    INLINE Vector3 min(const Vector3& other) const;
+
+    // minimum value per component
+    INLINE Vector3 min(float val) const;
+
+    // maximum values
+    INLINE Vector3 max(const Vector3& other) const;
+
+    // maximum values
+    INLINE Vector3 max(float val) const;
+
+    // snap to grid
+    INLINE void snap(float grid);
+
+    // snap to grid
+    INLINE Vector3 snapped(float grid) const;
+
+    //! get a normal component of this vector as projected on given normal vector
+    INLINE Vector3 normalPart(const Vector3& normal) const;
+
+    //! get tangent component of this vector as projected on given normal vector
+    INLINE Vector3 tangentPart(const Vector3& normal) const;
+
+    //! decompose vector into normal and tangent part, first:normal, second:tangent
+    INLINE std::pair<Vector3, Vector3> decompose(const Vector3& normal) const;
+
+    //! dot product with other vector
+    INLINE float dot(const Vector3& other) const;
+
+    //! limit vector length
+    INLINE void clampLength(float length);
+
+    //! set vector length
+    INLINE void setLength(float length);
+
+    //--
 
 private:
     INLINE Vector2 _xy() const;

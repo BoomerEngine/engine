@@ -31,6 +31,8 @@ public:
     virtual void handleItemExpand() override;
     virtual void handleItemCollapse() override;
 
+    virtual void printDetails(IFormatStream& f) const;
+
 protected:
     MeshPtr m_mesh;
 };

@@ -148,7 +148,7 @@ class EDITOR_SCENE_EDITOR_API ScenePreviewContainer : public ui::IElement
     RTTI_DECLARE_VIRTUAL_CLASS(ScenePreviewContainer, ui::IElement);
 
 public:
-    ScenePreviewContainer(SceneContentStructure* content, ISceneEditMode* initialEditMode = nullptr);
+    ScenePreviewContainer(SceneContentStructure* content, ISceneEditMode* initialEditMode = nullptr, RawWorldData* worldData = nullptr);
     virtual ~ScenePreviewContainer();
 
     //--
@@ -174,7 +174,7 @@ public:
     INLINE const SceneSelectionSettings& selectionSettings() const { return m_selectionSettings; }
 
     // viewport layout settings
-    INLINE const SceneLayoutSettings& layoutSettings() const { return m_layoutSettings; }        
+    INLINE const SceneLayoutSettings& layoutSettings() const { return m_layoutSettings; }
 
     //--
 
@@ -260,7 +260,7 @@ private:
 
     //--
 
-    void createWorld();
+    void createWorld(RawWorldData* data);
     void updateWorld();
 
     void createPanels();

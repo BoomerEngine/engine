@@ -242,7 +242,7 @@ void Renderer::runModalLoop(Window* window, IElement* focusElement)
             childRenderer.updateAndRender(dt);
         }
 
-        // note: it's important to Enable back the previous windows before destroying the 
+        // note: it's important to Enable back the previous windows before destroying the renderer
         returnFromModalLoop();
     }
 }
@@ -908,6 +908,8 @@ void Renderer::updateAndRender(float dt)
                 processKeyEvent(*evt);
             else if (const auto* evt = ptr->toCharEvent())
                 processCharEvent(*evt);
+            else if (const auto* evt = ptr->toAxisEvent())
+                processAxisEvent(*evt);
                 
         }
     }
@@ -1520,6 +1522,21 @@ void Renderer::processCharEvent(const input::CharEvent& evt)
     // send the char event to the focused control stack
     for (ElementChildToParentIterator it(m_currentFocusElement); it; ++it)
         if (it->handleCharEvent(evt))
+            break;
+}
+
+void Renderer::processAxisEvent(const input::AxisEvent& evt)
+{
+    // during active input action the chars are ignored
+    if (m_currentInputAction)
+    {
+        m_currentInputAction->onAxisEvent(evt);
+        return;
+    }
+
+    // send the char event to the focused control stack
+    for (ElementChildToParentIterator it(m_currentFocusElement); it; ++it)
+        if (it->handleAxisEvent(evt))
             break;
 }
 

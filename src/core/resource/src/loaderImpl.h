@@ -81,6 +81,7 @@ protected:
         FileKey key;
         StringBuf loadPath;
         TimeStamp timestamp;
+        NativeTimePoint nextAllowedValidationCheck;
 
         RefWeakPtr<IResource> loadedResource;
     };

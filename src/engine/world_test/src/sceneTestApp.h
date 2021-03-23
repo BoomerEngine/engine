@@ -11,6 +11,7 @@
 #include "core/app/include/application.h"
 
 #include "engine/rendering/include/stats.h"
+#include "gpu/device/include/commandWriter.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
 
@@ -33,8 +34,8 @@ protected:
     bool handleInputEvent(const input::BaseEvent& evt);
     bool handleAppInputEvent(const input::BaseEvent& evt);
 
-    void prepareSceneCommandBuffers(gpu::CommandWriter& cmd, const rendering::FrameCompositionTarget& target);
-    void prepareCanvasCommandBuffers(gpu::CommandWriter& cmd, const rendering::FrameCompositionTarget& target);
+    void prepareSceneCommandBuffers(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output);
+    void prepareCanvasCommandBuffers(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output);
     void renderCanvas(canvas::Canvas& c);
 
     //--
@@ -57,10 +58,8 @@ protected:
     gpu::OutputObjectPtr m_renderingOutput;
     bool m_exitRequested;
 
-    rendering::CameraContextPtr m_cameraContext;
-    Camera m_lastCamera;
-
     rendering::FrameStats m_lastFrameStats;
+    CameraSetup m_lastCamera;
 
     gpu::ImageObjectPtr m_flippedColorTarget;
     gpu::RenderTargetViewPtr m_flippedColorTargetRTV;

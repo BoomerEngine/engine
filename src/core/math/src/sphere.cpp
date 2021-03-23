@@ -45,9 +45,9 @@ bool Sphere::intersect(const Vector3& origin, const Vector3& direction, float ma
 {
     auto vec  = origin - position();
 
-    auto a  = Dot(direction, direction);
-    auto b  = 2.0f * Dot(vec, direction);
-    auto c  = Dot(vec, vec) - (radius() * radius());
+    auto a  = (direction | direction);
+    auto b  = 2.0f * (vec | direction);
+    auto c  = (vec | vec) - (radius() * radius());
 
     float tMin=0.0f, tMax=0.0f;
     if (!SolveQuadraticEquation(a, b, c, tMin, tMax))

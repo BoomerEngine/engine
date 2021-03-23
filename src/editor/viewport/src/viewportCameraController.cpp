@@ -110,7 +110,7 @@ void ViewportCameraControllerSettings::computeRenderingCamera(ui::Size viewportS
 
     if (perspective())
     {
-        outCamera.position = position.approximate();
+        outCamera.position = position;
         outCamera.rotation = rotation.toQuat();
         outCamera.fov = std::clamp<float>(perspectiveFov, 1.0f, 179.0f);
         outCamera.zoom = 1.0f;
@@ -128,7 +128,7 @@ void ViewportCameraControllerSettings::computeRenderingCamera(ui::Size viewportS
             {
                 case CameraMode::Top:
                 {
-                    outCamera.position = origin.approximate();
+                    outCamera.position = origin;
                     outCamera.position.z = 0.0f;
                     outCamera.rotation = Angles(90.0f, 0.0f, 0.0f).toQuat();
                     break;
@@ -136,7 +136,7 @@ void ViewportCameraControllerSettings::computeRenderingCamera(ui::Size viewportS
 
                 case CameraMode::Bottom:
                 {
-                    outCamera.position = origin.approximate();
+                    outCamera.position = origin;
                     outCamera.position.z = 0.0f;
                     outCamera.rotation = Angles(-90.0f, 0.0f, 0.0f).toQuat();
                     break;
@@ -144,7 +144,7 @@ void ViewportCameraControllerSettings::computeRenderingCamera(ui::Size viewportS
 
                 case CameraMode::Back:
                 {
-                    outCamera.position = origin.approximate();
+                    outCamera.position = origin;
                     outCamera.position.x = 0.0f;
                     outCamera.rotation = Angles(0.0f, 0.0f, 0.0f).toQuat();
                     break;
@@ -152,7 +152,7 @@ void ViewportCameraControllerSettings::computeRenderingCamera(ui::Size viewportS
 
                 case CameraMode::Front:
                 {
-                    outCamera.position = origin.approximate();
+                    outCamera.position = origin;
                     outCamera.position.x = 0.0f;
                     outCamera.rotation = Angles(0.0f, 180.0f, 0.0f).toQuat();
                     break;
@@ -160,7 +160,7 @@ void ViewportCameraControllerSettings::computeRenderingCamera(ui::Size viewportS
 
                 case CameraMode::Left:
                 {
-                    outCamera.position = origin.approximate();
+                    outCamera.position = origin;
                     outCamera.position.y = 0.0f;
                     outCamera.rotation = Angles(0.0f, 90.0f, 0.0f).toQuat();
                     break;
@@ -168,7 +168,7 @@ void ViewportCameraControllerSettings::computeRenderingCamera(ui::Size viewportS
 
                 case CameraMode::Right:
                 {
-                    outCamera.position = origin.approximate();
+                    outCamera.position = origin;
                     outCamera.position.y = 0.0f;
                     outCamera.rotation = Angles(0.0f, -90.0f, 0.0f).toQuat();
                     break;
@@ -180,7 +180,7 @@ void ViewportCameraControllerSettings::computeRenderingCamera(ui::Size viewportS
             outCamera.nearPlane = -1.0f;
             outCamera.farPlane = 8000.0f;
             outCamera.rotation = rotation.toQuat();
-            outCamera.position = origin.approximate();
+            outCamera.position = origin;
             outCamera.position.z = 0.0f;
             outCamera.position -= rotation.forward() * outCamera.farPlane * 0.5f;
                 
@@ -394,7 +394,9 @@ namespace helper
 
                 // limit the maximum velocity change
                 auto acc = targetVelocity.isZero() ? config::cvCameraMaxDeacceleration.get() : config::cvCameraMaxAcceleration.get();
-                m_inputVelocity += ClampLength(delta, acc * timeDelta * (cameraSpeed / config::cvCameraNormalSpeed.get()));
+                delta.clampLength(acc * timeDelta * (cameraSpeed / config::cvCameraNormalSpeed.get()));
+
+                m_inputVelocity += delta;
             }
 
             // move the camera
@@ -449,7 +451,7 @@ namespace helper
             {
                 runtime::SolidGeometryBuilder solid;
                 solid.color(Color::LIGHTGREEN);
-                solid.addSphere(m_orbitCenter.approximate(), 0.1f);
+                solid.addSphere(m_orbitCenter, 0.1f);
                 frame.addGeometry(solid);
             }
         }*/

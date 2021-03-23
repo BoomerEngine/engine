@@ -31,11 +31,15 @@ private:
     NativeTimePoint m_lastTickTime;
 
     // game host
-    RefPtr<Host> m_gameHost;
+    GameScreenStackPtr m_screenStack;
 
     //--
 
-    bool createWindow(const CommandLine& commandline);
+    bool parseWindowParams(const CommandLine& commandline);
+
+    void toggleFullscreen();
+
+    bool createWindow();
     bool createGame(const CommandLine& commandline);
 
     void updateWindow();
@@ -44,8 +48,6 @@ private:
     bool processInput(const input::BaseEvent& evt);
 
     void renderFrame();
-    void renderGame(gpu::CommandWriter& cmd, const HostViewport& viewport);
-    void renderOverlay(gpu::CommandWriter& cmd, const HostViewport& viewport);
 };
 
 END_BOOMER_NAMESPACE()

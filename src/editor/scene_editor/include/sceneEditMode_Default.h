@@ -47,7 +47,7 @@ public:
     virtual void handleRender(ScenePreviewPanel* panel, rendering::FrameParams& frame) override;
     virtual ui::InputActionPtr handleMouseClick(ScenePreviewPanel* panel, const input::MouseClickEvent& evt) override;
     virtual bool handleKeyEvent(ScenePreviewPanel* panel, const input::KeyEvent& evt) override;
-    virtual void handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const AbsolutePosition* positionUnderCursor) override;
+    virtual void handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const ExactPosition* positionUnderCursor) override;
     virtual void handlePointSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables) override;
     virtual void handleAreaSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables) override;
     virtual ui::DragDropHandlerPtr handleDragDrop(ScenePreviewPanel* panel, const ui::DragDropDataPtr& data, const ui::Position& absolutePosition, const Point& clientPosition) override;
@@ -59,7 +59,7 @@ public:
     virtual void handleTreeCutNodes(const Array<SceneContentNodePtr>& selection) override;
     virtual void handleTreeCopyNodes(const Array<SceneContentNodePtr>& selection) override;
     virtual void handleTreePasteNodes(const SceneContentNodePtr& target, SceneContentNodePasteMode mode) override;
-    virtual bool handleTreeResourceDrop(const SceneContentNodePtr& target, const ManagedFile* file) override;
+    virtual bool handleTreeResourceDrop(const SceneContentNodePtr& target, StringView depotFilePath) override;
     virtual bool handleTreeNodeDrop(const SceneContentNodePtr& target, const SceneContentNodePtr& source) override;
 
     //--
@@ -111,12 +111,12 @@ public:
 
     //--
 
-    void cmdAddPrefabFile(const Array<SceneContentNodePtr>& nodes, const ManagedFile* file);
-    void cmdRemovePrefabFile(const Array<SceneContentNodePtr>& nodes, const Array<const ManagedFile*>& files);
-    void cmdMovePrefabFileUp(const Array<SceneContentNodePtr>& nodes, const ManagedFile* file);
-    void cmdMovePrefabFileDown(const Array<SceneContentNodePtr>& nodes, const ManagedFile* file);
-    void cmdEnablePrefabFile(const Array<SceneContentNodePtr>& nodes, const Array<const ManagedFile*>& files);
-    void cmdDisablePrefabFile(const Array<SceneContentNodePtr>& nodes, const Array<const ManagedFile*>& files);
+    void cmdAddPrefabFile(const Array<SceneContentNodePtr>& nodes, StringView depotPath);
+    void cmdRemovePrefabFile(const Array<SceneContentNodePtr>& nodes, const Array<ResourceID>& files);
+    void cmdMovePrefabFileUp(const Array<SceneContentNodePtr>& nodes, StringView depotPath);
+    void cmdMovePrefabFileDown(const Array<SceneContentNodePtr>& nodes, StringView depotPath);
+    void cmdEnablePrefabFile(const Array<SceneContentNodePtr>& nodes, const Array<ResourceID>& files);
+    void cmdDisablePrefabFile(const Array<SceneContentNodePtr>& nodes, const Array<ResourceID>& files);
 
     //--
 
@@ -131,7 +131,7 @@ protected:
     void processObjectDeletion(const Array<SceneContentNodePtr>& selection);
     void processObjectCopy(const Array<SceneContentNodePtr>& selection);
     void processObjectCut(const Array<SceneContentNodePtr>& selection);
-    void processObjectPaste(const SceneContentNodePtr& context, const SceneContentClipboardDataPtr& data, SceneContentNodePasteMode mode, const AbsoluteTransform* worldPlacement=nullptr);
+    void processObjectPaste(const SceneContentNodePtr& context, const SceneContentClipboardDataPtr& data, SceneContentNodePasteMode mode, const Transform* worldPlacement=nullptr);
     void processObjectDuplicate(const Array<SceneContentNodePtr>& selection);
     void processObjectHide(const Array<SceneContentNodePtr>& selection);
     void processObjectShow(const Array<SceneContentNodePtr>& selection);
@@ -142,7 +142,7 @@ protected:
     void processUnwrapPrefab(const Array<SceneContentNodePtr>& selection, bool explode);
     void processReplaceWithClipboard(const Array<SceneContentNodePtr>& selection);
 
-    void processGenericPrefabAction(const Array<SceneContentNodePtr>& nodes, const std::function<NodeTemplatePtr(NodeTemplate* currentData)>& func);
+    void processGenericPrefabAction(const Array<SceneContentNodePtr>& nodes, const std::function<RawEntityPtr(RawEntity* currentData)>& func);
 
     void processCreateLayer(const Array<SceneContentNodePtr>& selection);
     void processCreateDirectory(const Array<SceneContentNodePtr>& selection);
@@ -171,10 +171,10 @@ protected:
 
     void processVisualSelection(bool ctrl, bool shift, const Array<Selectable>& selectables);
 
-    void createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass, const AbsoluteTransform* initialPlacement = nullptr, const ManagedFile* resourceFile = nullptr);
-    //void createEntityWithComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const AbsoluteTransform* initialPlacement = nullptr, const ManagedFile* resourceFile = nullptr);
-    //void createComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const AbsoluteTransform* initialPlacement = nullptr, const ManagedFile* resourceFile = nullptr);
-    void createPrefabAtNodes(const Array<SceneContentNodePtr>& selection, const ManagedFile* prefab, const AbsoluteTransform* initialPlacement = nullptr);
+    void createEntityAtNodes(const Array<SceneContentNodePtr>& selection, ClassType entityClass, const Transform* initialPlacement = nullptr, StringView depotPath = "");
+    //void createEntityWithComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const Transform* initialPlacement = nullptr, const ManagedFile* resourceFile = nullptr);
+    //void createComponentAtNodes(const Array<SceneContentNodePtr>& selection, ClassType componentClass, const Transform* initialPlacement = nullptr, const ManagedFile* resourceFile = nullptr);
+    void createPrefabAtNodes(const Array<SceneContentNodePtr>& selection, StringView prefabDepotPath, const Transform* initialPlacement = nullptr);
         
     void changeGizmo(SceneGizmoMode mode);
     void changeGizmoNext();
@@ -192,7 +192,7 @@ protected:
 
         SceneContentNodePtr contextTreeItem;
         SceneContentNodePtr contextClickedItem;
-        AbsolutePosition contextWorldPosition;
+        ExactPosition contextWorldPosition;
         bool contextWorldPositionValid = false;
     };
 
@@ -207,7 +207,7 @@ protected:
     void buildContextMenu_Resources(ui::MenuButtonContainer* menu, const ContextMenuSetup& setup);
 
     Array<SceneContentNodePtr> m_contextMenuContextNodes;
-    AbsoluteTransform m_contextMenuPlacementTransform; // hack - this should be passed via capture but there's no nice way to wire it
+    Transform m_contextMenuPlacementTransform; // hack - this should be passed via capture but there's no nice way to wire it
     bool m_contextMenuPlacementTransformValid = false;
 
     SceneObjectPalettePanel* m_objectPalette = nullptr;

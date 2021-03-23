@@ -42,7 +42,7 @@ void GizmoGroup::alignGizmos()
         const auto& viewportCamera = m_host->gizmoHost_camera();
         const ui::ViewportCameraSetup viewport(viewportCamera, viewportSize.x, viewportSize.y);
 
-        const auto scaleFactor = viewport.calculateViewportScaleFactor(space.absoluteTransform().position());
+        const auto scaleFactor = viewport.calculateViewportScaleFactor(space.absoluteTransform().T);
 
         for (auto& gizmo : m_gizmos)
             gizmo->transfom(space, scaleFactor);

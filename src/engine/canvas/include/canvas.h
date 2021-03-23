@@ -210,8 +210,18 @@ public:
 
 	//---
 
-	/// quick text print
-	void debugPrint(float x, float y, StringView text, Color color = Color::WHITE, int size = 16, font::FontAlignmentHorizontal align = font::FontAlignmentHorizontal::Left, bool bold = false);
+	struct DebugTextBounds
+	{
+		Vector2 min;
+		Vector2 max;
+		Vector2 size;
+	};
+
+	/// quick (debug mostly) text print - measure the text
+	DebugTextBounds debugPrintMeasure(StringView text, int size = 16, font::FontAlignmentHorizontal align = font::FontAlignmentHorizontal::Left, bool bold = false) const;
+
+	/// quick (debug mostly) text print
+	DebugTextBounds debugPrint(float x, float y, StringView text, Color color = Color::WHITE, int size = 16, font::FontAlignmentHorizontal align = font::FontAlignmentHorizontal::Left, bool bold = false);
 
 	//--
 

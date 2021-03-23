@@ -23,7 +23,7 @@ public:
 
     ObjectID contentNodeObjectId = 0;
 
-    AbsoluteTransform placement;
+    Transform placement;
 
     std::atomic<uint32_t> version = 0;
     EntityPtr entity;
@@ -85,7 +85,7 @@ private:
 
     static bool CheckProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex);
     static void ApplyProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex, const EntityPtr& entity);
-    static CAN_YIELD void CompileEntityData(const RefWeakPtr<SceneNodeVisualizationHandler>& self, const NodeTemplatePtr& data, uint32_t versionIndex, uint32_t proxyIndex, uint32_t proxyGeneration);
+    static CAN_YIELD void CompileEntityData(const RefWeakPtr<SceneNodeVisualizationHandler>& self, const RawEntityPtr& data, uint32_t versionIndex, uint32_t proxyIndex, uint32_t proxyGeneration);
 };
 
 //--

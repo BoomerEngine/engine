@@ -59,7 +59,7 @@ static Color Rainbow(float x)
     auto i = (int)floor(fabs(x));
     auto f = fabs(x) - (float)i;
 
-    return Lerp(colors[i % numSegs], colors[(i + 1) % numSegs], f);
+    return LinearInterpolation(f).lerpGamma(colors[i % numSegs], colors[(i + 1) % numSegs]);
 }
 
 static void PrepareRainbowVertices(float x, float y, float w, float h, VertexIndexBunch<>& outGeometry)

@@ -93,6 +93,9 @@ ObjectProxyMeshPtr ObjectProxyMesh::Compile(const Setup& setup)
         if (!chunk.proxy) // not renderable
             continue;
 
+		if (setup.focedSingleChunk != -1 && setup.focedSingleChunk != i)
+			continue;
+
         chunksToCreate.pushBack(i);
     }
 
@@ -783,13 +786,41 @@ void ObjectManagerMesh::handleMaterialProxyChanges(const MaterialDataProxyChange
 
 //--
 
-void ObjectManagerMesh::attachProxy(ObjectProxyMeshPtr meshProxy)
+void ObjectManagerMesh::commandAttachProxy(IObjectProxy* object)
+{
+	auto meshObject = rtti_cast<ObjectProxyMesh>(object);
+	DEBUG_CHECK_RETURN_EX(meshObject, "Invalid object");
+	commandAttachProxy(ObjectProxyMeshPtr(AddRef(meshObject)));
+}
+
+void ObjectManagerMesh::commandDetachProxy(IObjectProxy* object)
+{
+    auto meshObject = rtti_cast<ObjectProxyMesh>(object);
+    DEBUG_CHECK_RETURN_EX(meshObject, "Invalid object");
+	commandDetachProxy(ObjectProxyMeshPtr(AddRef(meshObject)));
+}
+
+void ObjectManagerMesh::commandMoveProxy(IObjectProxy* object, Matrix newLocation)
+{
+    auto meshObject = rtti_cast<ObjectProxyMesh>(object);
+    DEBUG_CHECK_RETURN_EX(meshObject, "Invalid object");
+	commandMoveProxy(ObjectProxyMeshPtr(AddRef(meshObject)), newLocation);
+}
+
+void ObjectManagerMesh::commandUpdateProxyFlag(IObjectProxy* object, ObjectProxyFlags clearFlags, ObjectProxyFlags setFlags)
+{
+    auto meshObject = rtti_cast<ObjectProxyMesh>(object);
+    DEBUG_CHECK_RETURN_EX(meshObject, "Invalid object");
+	commandUpdateProxyFlag(ObjectProxyMeshPtr(AddRef(meshObject)), clearFlags, setFlags);
+}
+
+void ObjectManagerMesh::commandAttachProxy(ObjectProxyMeshPtr meshProxy)
 {
 	runNowOrBuffer([this, meshProxy]() {
 		DEBUG_CHECK_RETURN_EX(meshProxy, "No mesh proxy");
 		DEBUG_CHECK_RETURN_EX(!m_localObjects.contains(meshProxy), "Proxy already registered");
 
-		const auto box = meshProxy->m_localToWorld.transformBox(meshProxy->m_localBox);
+		const auto box = BaseTransformation(meshProxy->m_localToWorld).transformBox(meshProxy->m_localBox);
 
 		LocalObject obj;
 		obj.box.setup(box);
@@ -801,7 +832,7 @@ void ObjectManagerMesh::attachProxy(ObjectProxyMeshPtr meshProxy)
 		});
 }
 
-void ObjectManagerMesh::detachProxy(ObjectProxyMeshPtr meshProxy)
+void ObjectManagerMesh::commandDetachProxy(ObjectProxyMeshPtr meshProxy)
 {
 	runNowOrBuffer([this, meshProxy]() {
 		DEBUG_CHECK_RETURN_EX(m_localObjects.contains(meshProxy), "Proxy not registered");
@@ -809,7 +840,7 @@ void ObjectManagerMesh::detachProxy(ObjectProxyMeshPtr meshProxy)
 		});
 }
 
-void ObjectManagerMesh::moveProxy(ObjectProxyMeshPtr meshProxy, Matrix localToWorld)
+void ObjectManagerMesh::commandMoveProxy(ObjectProxyMeshPtr meshProxy, Matrix localToWorld)
 {
 	runNowOrBuffer([this, meshProxy, localToWorld]() {
 		meshProxy->m_localToWorld = localToWorld;
@@ -818,13 +849,13 @@ void ObjectManagerMesh::moveProxy(ObjectProxyMeshPtr meshProxy, Matrix localToWo
 		DEBUG_CHECK_RETURN_EX(localObject != nullptr, "Proxy not registered");
 
 		const auto* proxy = localObject->data.get();
-		const auto box = proxy->m_localToWorld.transformBox(proxy->m_localBox);
+		const auto box = BaseTransformation(proxy->m_localToWorld).transformBox(proxy->m_localBox);
 		localObject->box.setup(box);
 		localObject->distanceRefPoint = box.center();
 		});
 }
 
-void ObjectManagerMesh::updateProxyFlag(ObjectProxyMeshPtr meshProxy, ObjectProxyFlags clearFlags, ObjectProxyFlags setFlags)
+void ObjectManagerMesh::commandUpdateProxyFlag(ObjectProxyMeshPtr meshProxy, ObjectProxyFlags clearFlags, ObjectProxyFlags setFlags)
 {
 	runNowOrBuffer([this, meshProxy, clearFlags, setFlags]() {
 		auto* localObject = m_localObjects.find(meshProxy);

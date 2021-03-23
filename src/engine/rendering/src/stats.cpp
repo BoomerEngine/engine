@@ -217,31 +217,127 @@ void RenderStatsGui(const FrameViewStats& frameView, const SceneViewStats& scene
 }*/
 #endif
 
-void RenderStatsGui(const FrameStats& frameStats)
+ConfigProperty<bool> cvShowRenderingFrameStats("DebugPage.Rendering.FrameStats", "IsVisible", false);
+
+ConfigProperty<uint32_t> cvRenderingMainDrawCallBudget("Rendering.Budget.Main", "MaxDrawCalls", 5000);
+ConfigProperty<uint32_t> cvRenderingMainTrianglesBudget("Rendering.Budget.Main", "MaxTriangles", 30000000);
+ConfigProperty<uint32_t> cvRenderingShadowDrawCallBudget("Rendering.Budget.Shadows", "MaxDrawCalls", 3000);
+ConfigProperty<uint32_t> cvRenderingShadowTrianglesBudget("Rendering.Budget.Shadows", "MaxTriangles", 20000000);
+
+struct FrameViewBudget
 {
-    ImGui::Checkbox("PerViews", &GGuiSettings.breakDownPerViewType);
-    ImGui::SameLine();
-    ImGui::Checkbox("PerBucket", &GGuiSettings.breakDownPerBucketType);
-    ImGui::SameLine();
-    ImGui::Checkbox("PerProxy", &GGuiSettings.breakDownPerProxyType);
-    ImGui::SameLine();
-    ImGui::Checkbox("PerFragment", &GGuiSettings.breakDownPerFragmentType);
+    uint32_t maxTriangles = 0;
+    uint32_t maxDrawCalls = 0;
+};
+
+void RenderViewStatsGui(const FrameViewStats& viewStats, const FrameViewBudget& budgets)
+{
+    ImGui::Text("Culling [us]: %1.0f", viewStats.cullingTime * 1000000.0f);
+    ImGui::Text("Recording [us]: %1.0f", viewStats.recordingTime * 1000000.0f);
     ImGui::Separator();
 
-    if (GGuiSettings.breakDownPerViewType)
+    if (budgets.maxDrawCalls > 0)
     {
-        bool opened = ImGui::TreeNodeEx("##All views", ImGuiTreeNodeFlags_DefaultOpen);
-        ImGui::SameLine();
-        ImGui::TextColored(ImVec4(0.5, 1, 1, 1), "All views");
-        if (opened)
-        {
-            //RenderStatsGui(mergedFrameViews, mergedSceneViews);
-            ImGui::TreePop();
-        }
+        ImGui::ProgressBar(viewStats.numDrawCalls / (float)budgets.maxDrawCalls);
     }
-    else
+
+    if (budgets.maxTriangles > 0)
     {
-        //RenderStatsGui(mergedFrameViews, mergedSceneViews);
+        ImGui::ProgressBar(viewStats.numTriangles / (float)budgets.maxTriangles);
+    }
+
+    ImGui::Separator();
+
+    ImGui::Text("%d draw calls", viewStats.numDrawCalls);
+    ImGui::Text("%d triangles", viewStats.numTriangles);
+    ImGui::Separator();
+
+    ImGui::Text("%d chunk groups", viewStats.numChunks);
+    ImGui::Text("%d shader groups", viewStats.numShaders);
+    ImGui::Text("%d material groups", viewStats.numMaterials);
+    ImGui::Separator();
+}
+
+void RenderStatsGui(const FrameStats& frameStats)
+{
+    if (cvShowRenderingFrameStats.get() && ImGui::Begin("Frame stats", &cvShowRenderingFrameStats.get()))
+    {
+        ImGui::Checkbox("PerViews", &GGuiSettings.breakDownPerViewType);
+        ImGui::SameLine();
+
+        if (GGuiSettings.breakDownPerViewType)
+        {
+            {
+                bool opened = ImGui::TreeNodeEx("##Main", ImGuiTreeNodeFlags_DefaultOpen);
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0.5, 0, 1, 1), "Main view");
+                if (opened)
+                {
+                    FrameViewBudget budgets;
+                    budgets.maxDrawCalls = cvRenderingMainDrawCallBudget.get();
+                    budgets.maxTriangles = cvRenderingMainTrianglesBudget.get();
+                    RenderViewStatsGui(frameStats.mainView, budgets);
+                    ImGui::TreePop();
+                }
+            }
+
+            {
+                bool opened = ImGui::TreeNodeEx("##DP", 0);
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0.5, 0, 1, 1), "Depth prepass");
+                if (opened)
+                {
+                    FrameViewBudget budgets;
+                    RenderViewStatsGui(frameStats.depthView, budgets);
+                    ImGui::TreePop();
+                }
+            }
+
+            {
+                bool opened = ImGui::TreeNodeEx("##GShadow", 0);
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0.5, 0, 1, 1), "Global shadows");
+                if (opened)
+                {
+                    FrameViewBudget budgets;
+                    budgets.maxDrawCalls = cvRenderingShadowDrawCallBudget.get();
+                    budgets.maxTriangles = cvRenderingShadowTrianglesBudget.get();
+                    RenderViewStatsGui(frameStats.globalShadowView, budgets);
+                    ImGui::TreePop();
+                }
+            }
+
+            {
+                bool opened = ImGui::TreeNodeEx("##LShadow", 0);
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0.5, 0, 1, 1), "Local shadows");
+                if (opened)
+                {
+                    FrameViewBudget budgets;
+                    budgets.maxDrawCalls = cvRenderingShadowDrawCallBudget.get();
+                    budgets.maxTriangles = cvRenderingShadowTrianglesBudget.get();
+                    RenderViewStatsGui(frameStats.localShadowView, budgets);
+                    ImGui::TreePop();
+                }
+            }
+
+            {
+                bool opened = ImGui::TreeNodeEx("##All views", 0);
+                ImGui::SameLine();
+                ImGui::TextColored(ImVec4(0.5, 1, 1, 1), "All views");
+                if (opened)
+                {
+                    RenderViewStatsGui(frameStats.totals, FrameViewBudget());
+                    ImGui::TreePop();
+                }
+            }
+        }
+        else
+        {
+            RenderViewStatsGui(frameStats.totals, FrameViewBudget());
+        }
+
+        ImGui::End();
     }
 }
 

@@ -177,7 +177,7 @@ struct Position
     Vector3 vector;
 };
 
-static void ExtractStreamElement(const ofbx::Vec3& source, Position& writeTo, const Matrix& localToWorld)
+static void ExtractStreamElement(const ofbx::Vec3& source, Position& writeTo, const BaseTransformation& localToWorld)
 {
     writeTo.vector.x = source.x;
     writeTo.vector.y = source.y;
@@ -185,7 +185,7 @@ static void ExtractStreamElement(const ofbx::Vec3& source, Position& writeTo, co
     writeTo.vector = localToWorld.transformPoint(writeTo.vector);
 }
 
-static void ExtractStreamElement(const ofbx::Vec3& source, NormalVector& writeTo, const Matrix& localToWorld)
+static void ExtractStreamElement(const ofbx::Vec3& source, NormalVector& writeTo, const BaseTransformation& localToWorld)
 {
     writeTo.vector.x = source.x;
     writeTo.vector.y = source.y;
@@ -194,7 +194,7 @@ static void ExtractStreamElement(const ofbx::Vec3& source, NormalVector& writeTo
     writeTo.vector.normalize();
 }
 
-static void ExtractStreamElement(const ofbx::Vec4& source, Position& writeTo, const Matrix& localToWorld)
+static void ExtractStreamElement(const ofbx::Vec4& source, Position& writeTo, const BaseTransformation& localToWorld)
 {
     writeTo.vector.x = source.x;
     writeTo.vector.y = source.y;
@@ -202,7 +202,7 @@ static void ExtractStreamElement(const ofbx::Vec4& source, Position& writeTo, co
     writeTo.vector = localToWorld.transformPoint(writeTo.vector);
 }
 
-static void ExtractStreamElement(const ofbx::Vec4& source, NormalVector& writeTo, const Matrix& localToWorld)
+static void ExtractStreamElement(const ofbx::Vec4& source, NormalVector& writeTo, const BaseTransformation& localToWorld)
 {
     writeTo.vector.x = source.x;
     writeTo.vector.y = source.y;
@@ -211,27 +211,27 @@ static void ExtractStreamElement(const ofbx::Vec4& source, NormalVector& writeTo
     writeTo.vector.normalize();
 }
 
-static void ExtractStreamElement(const ofbx::Vec4& source, Vector3& writeTo, const Matrix& localToWorld)
+static void ExtractStreamElement(const ofbx::Vec4& source, Vector3& writeTo, const BaseTransformation& localToWorld)
 {
     writeTo.x = source.x;
     writeTo.y = source.y;
     writeTo.z = source.z;
 }
 
-static void ExtractStreamElement(const ofbx::Vec3& source, Vector3& writeTo, const Matrix& localToWorld)
+static void ExtractStreamElement(const ofbx::Vec3& source, Vector3& writeTo, const BaseTransformation& localToWorld)
 {
     writeTo.x = source.x;
     writeTo.y = source.y;
     writeTo.z = source.z;
 }
 
-static void ExtractStreamElement(const ofbx::Vec2& source, Vector2& writeTo, const Matrix& localToWorld)
+static void ExtractStreamElement(const ofbx::Vec2& source, Vector2& writeTo, const BaseTransformation& localToWorld)
 {
     writeTo.x = source.x;
     writeTo.y = source.y;
 }
 
-static void ExtractStreamElement(const ofbx::Vec4& source, Color& writeTo, const Matrix& localToWorld)
+static void ExtractStreamElement(const ofbx::Vec4& source, Color& writeTo, const BaseTransformation& localToWorld)
 {
     writeTo.r = FloatTo255(source.x);
     writeTo.g = FloatTo255(source.y);
@@ -244,14 +244,14 @@ static void ExtractStreamElement(const ofbx::Vec4& source, Color& writeTo, const
 }*/
 
 template< typename T, typename DataType >
-static void ExtractStreamData(const T* stream, const Matrix& localToWorld, uint32_t vertexIndex, DataType& writeTo)
+static void ExtractStreamData(const T* stream, const BaseTransformation& localToWorld, uint32_t vertexIndex, DataType& writeTo)
 {
     if (stream)
         ExtractStreamElement(stream[vertexIndex], writeTo, localToWorld);
 }
 
 template< typename T, typename DataType >
-static void ExtractStreamDataUV(const T* stream, const Matrix& localToWorld, uint32_t vertexIndex, DataType& writeTo, bool flipUV, const Vector2& uvScale)
+static void ExtractStreamDataUV(const T* stream, const BaseTransformation& localToWorld, uint32_t vertexIndex, DataType& writeTo, bool flipUV, const Vector2& uvScale)
 {
     if (stream)
     {
@@ -412,7 +412,7 @@ struct GeometryFaceList
     uint32_t count = 0;
 };
 
-static void ExtractFace(const FBXMeshStreams& streams, const Matrix& localToWorld, const GeometryFace& face, MeshWriteStreams& outWriter, bool normalOrder)
+static void ExtractFace(const FBXMeshStreams& streams, const BaseTransformation& localToWorld, const GeometryFace& face, MeshWriteStreams& outWriter, bool normalOrder)
 {
     auto ri = outWriter.numVerticesPerFace - 1;
     for (uint32_t i = 0; i < outWriter.numVerticesPerFace; ++i, --ri)

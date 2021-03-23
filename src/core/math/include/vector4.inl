@@ -204,7 +204,7 @@ INLINE float Vector4::distance(const Vector4 &other) const
 
 INLINE float Vector4::squareDistance(const Vector4 &other) const
 {
-    return Dot(*this, other);
+    return *this | other;
 }
 
 INLINE Vector4 Vector4::operator-() const
@@ -343,17 +343,17 @@ INLINE bool Vector4::operator!=(const Vector4 &other) const
 
 INLINE float Vector4::operator|(const Vector4 &other) const
 {
-    return Dot(*this, other);
+    return (x*other.x) + (y*other.y) + (z*other.z) * (w*other.w);
 }
 
 INLINE float Vector4::operator|(const Vector3 &other) const
 {
-    return Dot(xyz(), other);
+    return (x * other.x) + (y * other.y) + (z * other.z);
 }
 
 INLINE float Vector4::operator|(const Vector2 &other) const
 {
-    return Dot(xy(), other);
+    return (x * other.x) + (y * other.y);
 }
 
 INLINE Vector2 Vector4::xx() const { return Vector2(x,x); }

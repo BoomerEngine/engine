@@ -736,6 +736,9 @@ public:
     // handle long hover, if not handled a tooltip as attempted
     virtual bool handleHoverDuration(const ui::Position& absolutePosition);
 
+    /// axis
+    virtual bool handleAxisEvent(const input::AxisEvent& evt);
+
     // handle gaining focus state
     virtual void handleFocusGained();
 
@@ -747,7 +750,7 @@ public:
 
     /// handle drag&drop action with given data that enters this item at given position
     /// if a drag&drop handler is returned it will be used to coordinate all dragging, returning NULL continues the search
-    virtual DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition);
+    virtual ui::DragDropHandlerPtr handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition);
 
     /// generic drag&drop behavior - accept drag&drop data, called by the generic handler only
     /// NOTE: there's no cancel event in the generic behavior because we assume that the simple handling will not create a complicated preview
@@ -837,12 +840,12 @@ public:
     virtual StringBuf queryTooltipString() const;
 
     /// query the tooltip element
-    virtual ElementPtr queryTooltipElement(const Position& absolutePosition, ElementArea& outTooltipArea) const;
+    virtual ui::ElementPtr queryTooltipElement(const ui::Position& absolutePosition, ui::ElementArea& outTooltipArea) const;
 
     /// query the drag&drop data this element can produce
     /// NOTE: if this is not null than we will have a D&D action generated once we start dragging this time
     /// NOTE: the type of drag&drop data may depend on the location within the UI element as well as the control keys
-    virtual DragDropDataPtr queryDragDropData(const input::BaseKeyFlags& keys, const Position& position) const;
+    virtual ui::DragDropDataPtr queryDragDropData(const input::BaseKeyFlags& keys, const ui::Position& position) const;
 
     //---
 

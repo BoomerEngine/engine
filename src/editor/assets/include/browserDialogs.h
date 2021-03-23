@@ -24,7 +24,7 @@ extern EDITOR_ASSETS_API void ShowOpenedEditorsList(ui::IElement* owner, const R
 //--
 
 /// ask about file name in given directory (used for "Save As Prefab..." etc)
-extern EDITOR_ASSETS_API bool ShowSaveAsFileDialog(ui::IElement* owner, StringView specificDirectory, StringView message, StringView initialFileName, StringBuf& outDepotPath, StringView extension);
+extern EDITOR_ASSETS_API bool ShowSaveAsFileDialog(ui::IElement* owner, StringView specificDirectory, StringView message, StringView initialFileName, StringBuf& outDepotPath, StringView extension="");
 
 //--
 

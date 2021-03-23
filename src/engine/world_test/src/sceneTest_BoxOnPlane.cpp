@@ -8,19 +8,16 @@
 
 #include "build.h"
 #include "sceneTest.h"
-
-//#include "game/world/include/meshEntity.h"
-#include "engine/world/include/entity.h"
-#include "engine/world/include/world.h"
+#include "sceneTestUtil.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
 
 //---
 
 /// a simple box on plane test, can be upscaled to more shapes
-class SceneTest_BoxOnPlane : public ISceneTestEmptyWorld
+class SceneTest_BoxOnPlane : public ISceneTest
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_BoxOnPlane, ISceneTestEmptyWorld);
+    RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_BoxOnPlane, ISceneTest);
 
 public:
     virtual void configure() override
@@ -30,38 +27,37 @@ public:
 
     virtual void update(float dt) override
     {
-        if (m_mesh)
+        if (auto mesh = world()->findEntityByStaticPath("/box"))
         {
             m_meshYaw += dt * 90.0f;
 
-            auto transform = m_mesh->absoluteTransform();
-            transform.rotation(Angles(0, m_meshYaw, 0));
-            m_mesh->requestTransform(transform);
+            auto transform = mesh->cachedWorldTransform();
+            transform.R = Angles(0, m_meshYaw, 0).toQuat();
+            mesh->requestTransformChange(transform);
         }
 
         TBaseClass::update(dt);
     }
 
-    virtual void createWorldContent() override
+    virtual CompiledWorldDataPtr createStaticContent()
     {
-        /*if (auto mesh = loadMesh("/engine/meshes/plane.xfile"))
+        SceneBuilder b;
+
         {
-            auto mc = RefNew<game::MeshEntity>();
-            mc->mesh(mesh);
-            m_world->attachEntity(mc);
+            const auto plane = b.mapResource("/engine/meshes/plane.xmeta");
+            b.buildMeshNode(plane);
         }
 
-        if (auto mesh = loadMesh("/engine/meshes/cube.xfile"))
         {
-            auto mc = RefNew<game::MeshEntity>();
-            mc->requestMove(Vector3(0, 0, 0.5f));
-            mc->mesh(mesh);
-            m_world->attachEntity(mc);
-        }*/
-    }
+            const auto box = b.mapResource("/engine/meshes/cube.xmeta");
+            b.deltaTranslate(0, 0, 0.5f);
+            b.buildMeshNode(box, "box");
+        }
 
+        return b.extractWorld();
+    }
+    
 protected:
-    EntityPtr m_mesh;
     float m_meshYaw = 0.0f;
 };
 

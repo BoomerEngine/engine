@@ -91,79 +91,68 @@ void ImageCubePreviewPanel::previewSettings(const ImageCubePreviewPanelSettings&
     m_previewSettings = settings;
 }
 
-void ImageCubePreviewPanel::renderContent(const ViewportParams& params, Camera* outCameraUsedToRender)
+void ImageCubePreviewPanel::handleCamera(CameraSetup& outCamera) const
 {
-    CameraSetup setup;
-    m_cameraController.settings().computeRenderingCamera(params.size(), setup);
-    setup.farPlane = 1500.0f;
+    m_cameraController.settings().computeRenderingCamera(cachedDrawArea().size(), outCamera);
+    outCamera.farPlane = 1500.0f;
+}
 
-    Camera camera;
-    camera.setup(setup);
+void ImageCubePreviewPanel::handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& cameraSetup, const rendering::FrameParams_Capture* capture)
+{
+    const Camera camera(cameraSetup);
 
-    if (outCameraUsedToRender)
-        *outCameraUsedToRender = camera;
+    gpu::FrameBuffer fb;
+    fb.color[0].view(output.color).clear(Vector4(0.1f, 0.1f, 0.1f, 1.0f));
+    fb.depth.view(output.depth).clearDepth(1.0f).clearStencil(0);
 
-    //--
+    const Rect drawArea(0, 0, output.width, output.height);
+    cmd.opBeingPass(fb, 1, drawArea);
 
-    gpu::CommandWriter cmd(TempString("PreviewPanel"));
-
+    if (m_imageSRV)
     {
-        gpu::FrameBuffer fb;
-        fb.color[0].view(params.colorBuffer).clear(Vector4(0.1f, 0.1f, 0.1f, 1.0f));
-        fb.depth.view(params.depthBuffer).clearDepth(1.0f).clearStencil(0);
+        GPUCubeParams params;
+        params.worldToScreen = camera.worldToScreen().transposed();
 
-        const Rect drawArea(0, 0, params.width, params.height);
-        cmd.opBeingPass(fb, 1, drawArea);
+        if (m_previewSettings.mode == ed::ImageCubePreviewMode::Skybox)
+            params.localToWorld = Matrix::BuildScale(1000.0f);
+        else
+            params.localToWorld = Matrix::IDENTITY().transposed();
 
-        if (m_imageSRV)
+        params.colorSelector.x = m_previewSettings.showRed ? 1.0f : 0.0f;
+        params.colorSelector.y = m_previewSettings.showGreen ? 1.0f : 0.0f;
+        params.colorSelector.z = m_previewSettings.showBlue ? 1.0f : 0.0f;
+        params.colorSelector.w = m_previewSettings.showAlpha ? 1.0f : 0.0f;
+        params.mip = m_previewSettings.selectedMip;
+        params.slice = m_previewSettings.selectedCube;
+
+        if (m_previewSettings.colorSpace == assets::ImageContentColorSpace::SRGB)
         {
-            GPUCubeParams params;
-            params.worldToScreen = camera.worldToScreen().transposed();
-
-            if (m_previewSettings.mode == ed::ImageCubePreviewMode::Skybox)
-                params.localToWorld = Matrix::BuildScale(1000.0f);
-            else
-                params.localToWorld = Matrix::IDENTITY().transposed();
-
-            params.colorSelector.x = m_previewSettings.showRed ? 1.0f : 0.0f;
-            params.colorSelector.y = m_previewSettings.showGreen ? 1.0f : 0.0f;
-            params.colorSelector.z = m_previewSettings.showBlue ? 1.0f : 0.0f;
-            params.colorSelector.w = m_previewSettings.showAlpha ? 1.0f : 0.0f;
-            params.mip = m_previewSettings.selectedMip;
-            params.slice = m_previewSettings.selectedCube;
-
-            if (m_previewSettings.colorSpace == assets::ImageContentColorSpace::SRGB)
-            {
-                params.colorSpace = 1;
-                params.colorSpaceScale = 1.0f;
-            }
-            else if (m_previewSettings.colorSpace == assets::ImageContentColorSpace::Linear)
-            {
-                params.colorSpace = 0;
-                params.colorSpaceScale = 1.0f;
-            }
-            else if (m_previewSettings.colorSpace == assets::ImageContentColorSpace::HDR)
-            {
-                params.colorSpace = 2;
-                params.toneMapMode = m_previewSettings.toneMapMode;
-                params.colorSpaceScale = m_previewSettings.exposureAdj;
-            }
-
-            gpu::DescriptorEntry desc[3];
-            desc[0].constants(params);
-            desc[1] = m_previewSettings.pointFilter ? gpu::Globals().SamplerClampPoint : gpu::Globals().SamplerClampBiLinear;
-            desc[2] = m_imageSRV;
-            cmd.opBindDescriptor("CubePreviewParams"_id, desc);
-
-            cmd.opBindVertexBuffer("CubePreviewVertex"_id, m_cubeVertices);
-            cmd.opDraw(m_shaderSkybox, 0, 36);
+            params.colorSpace = 1;
+            params.colorSpaceScale = 1.0f;
+        }
+        else if (m_previewSettings.colorSpace == assets::ImageContentColorSpace::Linear)
+        {
+            params.colorSpace = 0;
+            params.colorSpaceScale = 1.0f;
+        }
+        else if (m_previewSettings.colorSpace == assets::ImageContentColorSpace::HDR)
+        {
+            params.colorSpace = 2;
+            params.toneMapMode = m_previewSettings.toneMapMode;
+            params.colorSpaceScale = m_previewSettings.exposureAdj;
         }
 
-        cmd.opEndPass();
+        gpu::DescriptorEntry desc[3];
+        desc[0].constants(params);
+        desc[1] = m_previewSettings.pointFilter ? gpu::Globals().SamplerClampPoint : gpu::Globals().SamplerClampBiLinear;
+        desc[2] = m_imageSRV;
+        cmd.opBindDescriptor("CubePreviewParams"_id, desc);
+
+        cmd.opBindVertexBuffer("CubePreviewVertex"_id, m_cubeVertices);
+        cmd.opDraw(m_shaderSkybox, 0, 36);
     }
 
-    auto device = GetService<DeviceService>()->device();
-    device->submitWork(cmd.release());
+    cmd.opEndPass();
 }
 
 bool ImageCubePreviewPanel::handleMouseWheel(const input::MouseMovementEvent& evt, float delta)

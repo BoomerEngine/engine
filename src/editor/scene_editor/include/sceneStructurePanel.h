@@ -15,52 +15,6 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
-// view model for a scene structure tree
-class EDITOR_SCENE_EDITOR_API SceneContentTreeModel : public ui::IAbstractItemModel
-{
-public:
-    SceneContentTreeModel(SceneContentStructure* structure, ScenePreviewContainer* preview);
-    virtual ~SceneContentTreeModel();
-
-    // IAbstractItemModel
-    virtual ui::ModelIndex parent(const ui::ModelIndex& item = ui::ModelIndex()) const override final;
-    virtual bool hasChildren(const ui::ModelIndex& parent = ui::ModelIndex()) const override final;
-    virtual void children(const ui::ModelIndex& parent, Array<ui::ModelIndex>& outChildrenIndices) const override final;
-    virtual bool compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex = 0) const override final;
-    virtual bool filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex = 0) const override final;
-    virtual StringBuf displayContent(const ui::ModelIndex& id, int colIndex = 0) const override final;
-
-    virtual ui::PopupPtr contextMenu(ui::AbstractItemView* view, const Array<ui::ModelIndex>& indices) const override final;
-    virtual ui::ElementPtr tooltip(ui::AbstractItemView* view, ui::ModelIndex id) const override final;
-
-    virtual ui::DragDropDataPtr queryDragDropData(const input::BaseKeyFlags& keys, const ui::ModelIndex& item) override final;
-    virtual ui::DragDropHandlerPtr handleDragDropData(ui::AbstractItemView* view, const ui::ModelIndex& item, const ui::DragDropDataPtr& data, const ui::Position& pos) override final;
-    virtual bool handleDragDropCompletion(ui::AbstractItemView* view, const ui::ModelIndex& item, const ui::DragDropDataPtr& data) override final;
-    virtual bool handleIconClick(const ui::ModelIndex& item, int columnIndex) const override final;
-
-    virtual void visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const override final;
-
-    SceneContentNodePtr nodeForIndex(const ui::ModelIndex& index) const;
-    ui::ModelIndex indexForNode(const SceneContentNode* node) const;
-
-private:
-    SceneContentStructure* m_structure = nullptr;
-    ScenePreviewContainer* m_preview = nullptr; // TOOD: remove? 
-
-    SceneContentNodePtr m_root;
-
-    GlobalEventTable m_contentEvents;
-
-    void handleChildNodeAttached(SceneContentNode* child);
-    void handleChildNodeDetached(SceneContentNode* child);
-    void handleNodeVisualFlagsChanged(SceneContentNode* child);
-    void handleNodeModifiedFlagsChanged(SceneContentNode* child);
-    void handleNodeVisibilityChanged(SceneContentNode* child);
-    void handleNodeNameChanged(SceneContentNode* child);
-};
-
-//--
-
 // scene structure panel (tree)
 class EDITOR_SCENE_EDITOR_API SceneStructurePanel : public ui::IElement
 {
@@ -115,8 +69,7 @@ private:
 
     ui::SearchBarPtr m_searchBar;
 
-    ui::TreeViewPtr m_tree;
-    RefPtr<SceneContentTreeModel> m_treeModel;
+    RefPtr<SceneContentTreeView> m_tree;
 
     void treeSelectionChanged();
 

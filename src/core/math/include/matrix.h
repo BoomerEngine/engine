@@ -190,50 +190,6 @@ public:
 
     //---
 
-    //! Transform point by matrix
-    Vector3 transformPoint(const Vector3 &point) const;
-
-    //! Transform point by matrix
-    void transformPoint(const Vector3 &point, Vector3 &out) const;
-
-    //! Transform point by matrix, output also W component
-    void transformPoint(const Vector3 &point, Vector3 &out, float &w) const;
-
-    //! Transform point by inverted matrix (only TR matrices are supported)
-    Vector3 transformInvPoint(const Vector3 &point) const;
-
-    //! Transform point by inverted matrix (only TR matrices are supported)
-    void transformInvPoint(const Vector3 &point, Vector3 &out) const;
-
-    //! Transform vector by matrix
-    Vector3 transformVector(const Vector3 &point) const;
-
-    //! Transform vector by matrix
-    void transformVector(const Vector3 &point, Vector3 &out) const;
-
-    //! Transform vector by transposed matrix
-    Vector3 transformInvVector(const Vector3 &point) const;
-
-    //! Transform vector by transposed matrix
-    void transformInvVector(const Vector3 &point, Vector3 &out) const;
-
-    //! Transform vector4 by matrix
-    Vector4 transformVector4(const Vector4 &point) const;
-
-    //! Transform vector4 by transposed matrix
-    Vector4 transformInvVector4(const Vector4 &point) const;
-
-    //! Transform plane
-    Plane transformPlane(const Plane &plane) const;
-
-    //! Transform plane
-    void transformPlane(const Plane &plane, Plane &out) const;
-
-    //! Transform box
-    Box transformBox(const Box &box) const;
-
-    //! Transform box
-    void transformBox(const Box &box, Box &out) const;
 
     ///---
 

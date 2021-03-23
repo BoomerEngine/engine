@@ -99,8 +99,8 @@ public:
     /// get input context for the window
     virtual input::ContextPtr windowGetInputContext() = 0;
 
-	/// bind owner to window
-	virtual void windowBindOwner(ObjectID id) = 0;
+    /// bind owner to window
+    virtual void windowBindOwner(ObjectID id) = 0;
 };
 
     
@@ -173,7 +173,7 @@ public:
     /// get the "window like" interface for given output, allows for tighter UI integration
     /// NOTE: callable and usable from main thread only and valid only for outputs with windows
     INLINE INativeWindowInterface* window() const { return m_window; }
-
+    
     //--
 
 	/// Query output status and rendering parameters (format/resolution)

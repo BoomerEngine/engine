@@ -212,7 +212,7 @@ void SearchBar::clearSearchPattern()
 {
     if (m_currentSearchPattern.pattern)
     {
-        m_currentSearchPattern.pattern = "";
+        m_text->text("");
         updateSearchPattern();
     }
 }

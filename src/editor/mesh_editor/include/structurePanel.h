@@ -28,7 +28,7 @@ class EDITOR_MESH_EDITOR_API MeshStructurePanel : public ui::IElement
     RTTI_DECLARE_VIRTUAL_CLASS(MeshStructurePanel, ui::IElement);
 
 public:
-    MeshStructurePanel();
+    MeshStructurePanel(ActionHistory* ah);
     virtual ~MeshStructurePanel();
 
     void bindResource(const MeshPtr& mesh);
@@ -38,7 +38,11 @@ public:
 private:
     MeshPtr m_mesh;
 
+    ActionHistory* m_actionHistory;
+
     ui::TreeViewExPtr m_tree;
+    ui::TextLabelPtr m_details;
+
     MeshStructureNodePtr m_root;
 
     Array<MeshStructureNodePtr> m_nodeStack;

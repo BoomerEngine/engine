@@ -110,6 +110,7 @@ public:
     struct Setup
     {
         char forcedLodLevel = -1;
+        int focedSingleChunk = -1;
         bool staticGeometry = true;
 
         const Mesh* mesh = nullptr;
@@ -164,10 +165,15 @@ public:
 
 	//--
 
-    void attachProxy(ObjectProxyMeshPtr mesh);
-    void detachProxy(ObjectProxyMeshPtr mesh);
-    void moveProxy(ObjectProxyMeshPtr mesh, Matrix newLocation);
-	void updateProxyFlag(ObjectProxyMeshPtr mesh, ObjectProxyFlags clearFlags, ObjectProxyFlags setFlags);
+    virtual void commandAttachProxy(IObjectProxy* object) override;
+    virtual void commandDetachProxy(IObjectProxy* object) override;
+    virtual void commandMoveProxy(IObjectProxy* object, Matrix newLocation) override;
+    virtual void commandUpdateProxyFlag(IObjectProxy* object, ObjectProxyFlags clearFlags, ObjectProxyFlags setFlags) override;
+
+    void commandAttachProxy(ObjectProxyMeshPtr mesh);
+    void commandDetachProxy(ObjectProxyMeshPtr mesh);
+    void commandMoveProxy(ObjectProxyMeshPtr mesh, Matrix newLocation);
+    void commandUpdateProxyFlag(ObjectProxyMeshPtr mesh, ObjectProxyFlags clearFlags, ObjectProxyFlags setFlags);
 
 	//--
 

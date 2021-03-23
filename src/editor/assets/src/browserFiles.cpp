@@ -362,19 +362,16 @@ void AssetBrowserTabFiles::configSave(const ui::ConfigBlock& block) const
     block.write<bool>("Locked", tabLocked());
     block.write<StringBuf>("Path", m_depotPath);
 
-    /*{
+    {
         StringBuf currentStringBuf;
-        if (auto file = selectedItem())
-            currentStringBuf = file->name();
+        if (auto file = m_files->current<IAssetBrowserDepotVisItem>())
+            currentStringBuf = file->depotPath();
         block.write<StringBuf>("CurrentFile", currentStringBuf);
     }
 
     {
-        Array<StringBuf> selectedFiles;
-        for (auto& file : selectedItems())
-            selectedFiles.pushBack(file->name());
-        block.write("SelectedFile", selectedFiles);
-    }*/
+        block.write("SelectedFiles", selectedFiles());
+    }
 }
 
 void AssetBrowserTabFiles::configLoad(const ui::ConfigBlock& block)
@@ -383,37 +380,34 @@ void AssetBrowserTabFiles::configLoad(const ui::ConfigBlock& block)
 
     m_setup.configLoad(block);
 
-    /*if (m_dir)
     {
+        auto selectedFiles = block.readOrDefault<Array<StringBuf>>("SelectedFile");
+
+        ui::CollectionItems items;
+        for (const auto& depotPath : selectedFiles)
+            if (auto file = m_files->find<IAssetBrowserDepotVisItem>([depotPath](const IAssetBrowserDepotVisItem* item) { return item->depotPath() == depotPath; }))
+                items.add(file);
+
+        m_files->select(items, ui::ItemSelectionMode(ui::ItemSelectionModeBit::Clear) | ui::ItemSelectionModeBit::Select, false);
+    }
+
+    {
+        auto currentFile = block.readOrDefault<StringBuf>("CurrentFile");
+
+        if (auto file = m_files->find<IAssetBrowserDepotVisItem>([currentFile](const IAssetBrowserDepotVisItem* item) { return item->depotPath() == currentFile; }))
         {
-            Array<ui::ModelIndex> indices;
-            auto selectedFiles = block.readOrDefault<Array<StringBuf>>("SelectedFile");
-            for (auto& name : selectedFiles)
-            {
-                if (auto file = m_dir->file(name))
-                    if (auto index = m_filesModel->index(file))
-                        indices.pushBack(index);
-            }
-
-            m_files->select(indices, ui::ItemSelectionMode(ui::ItemSelectionModeBit::Clear) | ui::ItemSelectionModeBit::Select, false);
+            m_files->select(file, ui::ItemSelectionModeBit::UpdateCurrent, false);
+            m_files->ensureVisible(file);
         }
+    }
 
+    if (m_files->selection().empty())
+    {
+        if (const auto first = m_files->find<IAssetBrowserDepotVisItem>([](const IAssetBrowserDepotVisItem* vis) { return true; }))
         {
-            auto currentFile = block.readOrDefault<StringBuf>("CurrentFile");
-
-            if (auto file = m_dir->file(currentFile))
-            {
-                if (auto index = m_filesModel->index(file))
-                {
-                    m_files->select(index, ui::ItemSelectionModeBit::UpdateCurrent, false);
-                    m_files->ensureVisible(index);
-                }
-            }
+            m_files->select(first);
         }
-
-        if (m_files->selection().empty() && m_filesModel)
-            m_files->select(m_filesModel->first());
-    }*/
+    }
 
     tabLocked(locked);
     updateTitle();

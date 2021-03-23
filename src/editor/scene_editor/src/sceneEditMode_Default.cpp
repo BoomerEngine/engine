@@ -13,6 +13,7 @@
 #include "sceneEditMode_Default_Transform.h"
 
 #include "sceneContentNodes.h"
+#include "sceneContentNodesEntity.h"
 #include "sceneContentStructure.h"
 
 #include "scenePreviewContainer.h"
@@ -21,8 +22,7 @@
 #include "engine/ui/include/uiMenuBar.h"
 #include "engine/ui/include/uiClassPickerBox.h"
 #include "core/object/include/actionHistory.h"
-#include "engine/world/include/entity.h"
-#include "engine/world/include/entityBehavior.h"
+#include "engine/world/include/worldEntity.h"
 #include "engine/ui/include/uiElementConfig.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
@@ -38,7 +38,7 @@ SceneEditMode_Default::SceneEditMode_Default(ActionHistory* actionHistory)
     m_panel = RefNew<SceneDefaultPropertyInspectorPanel>(this);
 
     m_entityClassSelector = RefNew<ui::ClassPickerBox>(Entity::GetStaticClass(), nullptr, false, false, "", false);
-    m_behaviorClassSelector = RefNew<ui::ClassPickerBox>(IEntityBehavior::GetStaticClass(), nullptr, false, false, "", false);
+    //m_behaviorClassSelector = RefNew<ui::ClassPickerBox>(IEntityBehavior::GetStaticClass(), nullptr, false, false, "", false);
 
     m_entityClassSelector->bind(ui::EVENT_CLASS_SELECTED) = [this](ClassType type)
     {
@@ -46,11 +46,11 @@ SceneEditMode_Default::SceneEditMode_Default(ActionHistory* actionHistory)
         createEntityAtNodes(m_contextMenuContextNodes, type, placement);
     };
 
-    m_behaviorClassSelector->bind(ui::EVENT_CLASS_SELECTED) = [this](ClassType type)
+    /*m_behaviorClassSelector->bind(ui::EVENT_CLASS_SELECTED) = [this](ClassType type)
     {
         const auto* placement = m_contextMenuPlacementTransformValid ? &m_contextMenuPlacementTransform : nullptr;
         //createComponentAtNodes(m_contextMenuContextNodes, type, placement);
-    };
+    };*/
 }
 
 SceneEditMode_Default::~SceneEditMode_Default()
@@ -161,7 +161,7 @@ void SceneEditMode_Default::updateSelectionFlags()
         bool hasEntity = false;
         for (const auto& data : m_selection.keys())
         {
-            if (data->type() == SceneContentNodeType::Entity || data->type() == SceneContentNodeType::Behavior)
+            if (data->type() == SceneContentNodeType::Entity /*|| data->type() == SceneContentNodeType::Behavior*/)
             {
                 if (data->type() == SceneContentNodeType::Entity)
                     hasEntity = true;
@@ -385,8 +385,7 @@ GizmoReferenceSpace SceneEditMode_Default::calculateGizmoReferenceSpace() const
                     return GizmoReferenceSpace(settings.space, rootParent->cachedLocalToWorldTransform());
             }
                 
-            const auto rootPosition = transform.position();
-            return GizmoReferenceSpace(GizmoSpace::World, rootPosition);
+            return GizmoReferenceSpace(GizmoSpace::World, transform.T);
         }
     }
 
@@ -504,8 +503,8 @@ void SceneEditMode_Default::ExtractSelectionHierarchy(const SceneContentDataNode
 {
     outNodes.pushBack(AddRef(node));
 
-    for (const auto& comp : node->behaviors())
-        outNodes.pushBack(comp);
+    /*for (const auto& comp : node->behaviors())
+        outNodes.pushBack(comp);*/
 
     for (const auto& child : node->entities())
         ExtractSelectionHierarchy(child, outNodes);
@@ -516,8 +515,8 @@ void SceneEditMode_Default::ExtractSelectionHierarchyWithFilter(const SceneConte
     if (depth == 0 || !coreSet.contains(node))
         outNodes.pushBack(AddRef(node));
 
-    for (const auto& child : node->behaviors())
-        ExtractSelectionHierarchyWithFilter(child, outNodes, coreSet, depth + 1);
+    /*for (const auto& child : node->behaviors())
+        ExtractSelectionHierarchyWithFilter(child, outNodes, coreSet, depth + 1);*/
 
     for (const auto& child : node->entities())
         ExtractSelectionHierarchyWithFilter(child, outNodes, coreSet, depth + 1);
@@ -528,8 +527,8 @@ void SceneEditMode_Default::ExtractSelectionHierarchyWithFilter2(const SceneCont
     if (!coreSet.contains(node))
         outNodes.pushBack(AddRef(node));
 
-    for (const auto& child : node->behaviors())
-        ExtractSelectionHierarchyWithFilter2(child, outNodes, coreSet);
+    /*for (const auto& child : node->behaviors())
+        ExtractSelectionHierarchyWithFilter2(child, outNodes, coreSet);*/
 
     for (const auto& child : node->entities())
         ExtractSelectionHierarchyWithFilter2(child, outNodes, coreSet);

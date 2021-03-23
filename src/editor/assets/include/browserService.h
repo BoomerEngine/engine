@@ -141,6 +141,11 @@ private:
 
     //--
 
+    Array<StringBuf> m_openedFiles;
+    NativeTimePoint m_openedFilesTimeout;
+
+    //--
+
     virtual bool onInitializeService(const CommandLine& cmdLine) override;
     virtual void onShutdownService() override;
     virtual void onSyncUpdate() override;

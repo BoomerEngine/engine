@@ -200,7 +200,7 @@ void BCCApp::update()
 
     if (!m_commandHost)
     {
-        platform::GetLaunchPlatform().requestExit("Command finished");
+        GetLaunchPlatform().requestExit("Command finished");
     }
 }
 

@@ -32,7 +32,7 @@ float IGizmo::CalcDistanceToSegment(const Vector2& p, const Vector2& a, const Ve
     if (len >= SMALL_EPSILON)
     {
         auto n = dir.normalized();
-        auto d = Dot(n, p - a);
+        auto d = n | (p - a);
 
         if (d <= 0.0f)
         {

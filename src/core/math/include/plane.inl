@@ -28,14 +28,14 @@ INLINE Plane::Plane(const Vector3 &normal, float dist)
 
 INLINE Plane::Plane(const Vector3 &normal, const Vector3 &point)
     : n(normal)
-    , d(-Dot(normal, point))
+    , d(-(normal | point))
 {}
 
 INLINE Plane::Plane(const Vector3 &a, const Vector3 &b, const Vector3 &c)
     : d(0)
 {
     if (SafeTriangleNormal(a, b, c, n))
-        d = -Dot(n, a);
+        d = -(n | a);
 }
 
 INLINE float Plane::distance(const Vector3 &point) const

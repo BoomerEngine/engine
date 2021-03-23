@@ -329,7 +329,7 @@ Point RawMouse::GetMousePositionInWindow(HWND hWnd)
     return Point(point.x, point.y);
 }
         
-void RawMouse::interpretRawInput(HWND hWnd, const RID_DEVICE_INFO* deviceInfo, const RAWINPUT* inputData)
+void RawMouse::interpretRawInput(HWND hWnd, const RID_DEVICE_INFO* deviceInfo, const RAWINPUT* inputData, bool& outGotClick)
 {
     const RAWMOUSE& rawMouse = inputData->data.mouse;
 
@@ -383,6 +383,9 @@ void RawMouse::interpretRawInput(HWND hWnd, const RID_DEVICE_INFO* deviceInfo, c
         mouseDown(4, windowPos, absolutePos);
     else if (rawMouse.ulButtons & RI_MOUSE_BUTTON_5_UP)
         mouseUp(4, windowPos, absolutePos);
+
+    if (rawMouse.ulButtons & RI_MOUSE_BUTTON_1_DOWN && inWindow)
+        outGotClick = true;
 }
 ///--
 
@@ -446,7 +449,10 @@ void ContextWinApi::releaseCapture()
         if (m_activeCaptureMode == 2)
         {
             ::SetCursorPos(m_activeCaptureInitialMousePos.x, m_activeCaptureInitialMousePos.y);
-            while (::ShowCursor(TRUE) < 0) {};
+
+            if (m_useRawInput)
+                while (::ShowCursor(TRUE) < 0) {};
+
             ::ReleaseCapture();
         }
         else if (m_activeCaptureMode == 1)
@@ -477,7 +483,8 @@ void ContextWinApi::requestCapture(int captureMode)
             releaseCapture();
 
             // start new capture
-            if (captureMode == 1 || captureMode == 2)
+            const auto canCapture = (::GetActiveWindow() == m_hWnd) && !m_captureWaitingForClick;
+            if (captureMode == 1 && canCapture)
             {
                 ::GetCursorPos(&m_activeCaptureInitialMousePos);
                 m_activeCaptureLastMousePos = m_activeCaptureInitialMousePos;
@@ -485,8 +492,26 @@ void ContextWinApi::requestCapture(int captureMode)
 
                 ::SetCapture(m_hWnd);
 
-                if (m_activeCaptureMode == 2)
+                TRACE_INFO("Mouse capture enabled: {} at {}x{}", m_activeCaptureMode, m_activeCaptureInitialMousePos.x, m_activeCaptureInitialMousePos.y);
+            }
+            else if (captureMode == 2 && canCapture)
+            {
+                RECT windowRect;
+                ::GetWindowRect(m_hWnd, &windowRect);
+
+                POINT pos;
+                pos.x = (windowRect.left + windowRect.right) / 2;
+                pos.y = (windowRect.top + windowRect.bottom) / 2;
+                ::SetCursorPos(pos.x, pos.y);
+
+                if (m_useRawInput)
                     while (::ShowCursor(FALSE) >= 0) {};
+
+                m_activeCaptureInitialMousePos = pos;
+                m_activeCaptureLastMousePos = m_activeCaptureInitialMousePos;
+                m_activeCaptureMode = captureMode;
+
+                ::SetCapture(m_hWnd);
 
                 TRACE_INFO("Mouse capture enabled: {} at {}x{}", m_activeCaptureMode, m_activeCaptureInitialMousePos.x, m_activeCaptureInitialMousePos.y);
             }
@@ -517,10 +542,18 @@ void ContextWinApi::processRawInput(HWND hWnd, HRAWINPUT hRawInput)
     UINT bufferSizeTemp = sizeof(RID_DEVICE_INFO);
     ::GetRawInputDeviceInfo(deviceHandle, RIDI_DEVICEINFO, &deviceInfo, &bufferSizeTemp);
 
+    bool gotClicked = false;
+
     if (deviceInfo.dwType == RIM_TYPEKEYBOARD)
         m_keyboard.interpretRawInput(hWnd, &deviceInfo, &rawInput);
     else if (deviceInfo.dwType == RIM_TYPEMOUSE)
-        m_mouse.interpretRawInput(hWnd, &deviceInfo, &rawInput);
+        m_mouse.interpretRawInput(hWnd, &deviceInfo, &rawInput, gotClicked);
+
+    if (m_captureWaitingForClick && gotClicked)
+        m_captureWaitingForClick = false;
+
+    if (m_activeCaptureMode == 2)
+        ::SetCursorPos(m_activeCaptureInitialMousePos.x, m_activeCaptureInitialMousePos.y);
 }
 
 static MouseButtonIndex DecodeButtonIndex(UINT uMsg)
@@ -562,6 +595,17 @@ uint64_t ContextWinApi::windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
                 return 0;
             }
             break;
+        }
+
+        case WM_SETCURSOR:
+        {
+            if (m_activeCaptureMode != 0)
+            {
+                SetCursor(NULL);
+                processed = true;
+                return 1;
+            }
+            return 0;
         }
 
         case WM_MOUSEMOVE:
@@ -678,6 +722,7 @@ uint64_t ContextWinApi::windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
                 }
 
                 m_mouse.mouseDown(DecodeButtonIndex(uMsg), Point(pos.x, pos.y), Point(screenPoint.x, screenPoint.y));
+                m_captureWaitingForClick = false;
 
                 processed = true;
                 return 0;
@@ -771,6 +816,7 @@ uint64_t ContextWinApi::windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
             TRACE_INFO("WM_CAPTURECHANGED");
             releaseCapture();
             m_mouse.reset(false); // prevent sending the "release" until next "click" is registered
+            m_captureWaitingForClick = true;
             processed = true;
             return 0;
         }
@@ -782,10 +828,10 @@ uint64_t ContextWinApi::windowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM l
                 m_keyboard.reset();
                 m_mouse.reset(false);
             }
-            else if (m_useRawInput)
+            /*else if (m_useRawInput)
             {
                 requestCapture(2);
-            }
+            }*/
 
             break;
         }

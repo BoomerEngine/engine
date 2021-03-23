@@ -160,6 +160,48 @@ public:
 
     void print(IFormatStream& f) const;
 
+    //--
+
+    // snap to grid
+    INLINE void snap(float grid);
+
+    // snap to grid
+    INLINE Vector2 snapped(float grid) const;
+
+    //! get a normal component of this vector as projected on given normal vector
+    INLINE Vector2 normalPart(const Vector2& normal) const;
+
+    //! get tangent component of this vector as projected on given normal vector
+    INLINE Vector2 tangentPart(const Vector2& normal) const;
+
+    //! decompose vector into normal and tangent part, first:normal, second:tangent
+    INLINE std::pair<Vector2, Vector2> decompose(const Vector2& normal) const;
+
+    //! dot product with other vector
+    INLINE float dot(const Vector2& other) const;
+
+    //! limit vector length
+    INLINE void clampLength(float length);
+
+    //! set vector length
+    INLINE void setLength(float length);
+
+    //--
+
+    // minimum values
+    INLINE Vector2 min(const Vector2& b) const;
+
+    // minimum values
+    INLINE Vector2 min(float val) const;
+
+    // maximum values
+    INLINE Vector2 max(const Vector2& b) const;
+
+    // maximum values
+    INLINE Vector2 max(float val) const;
+
+    //--
+
 private:
     INLINE Vector2 _xy() const;
 };

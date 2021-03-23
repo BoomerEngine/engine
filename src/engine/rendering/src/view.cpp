@@ -49,7 +49,7 @@ static Point CovertMouseCoords(Point coords, const FrameRenderer& frame)
     return ret;
 }
 
-void PackFrameParams(GPUFrameParameters& outParams, const FrameRenderer& frame, const FrameCompositionTarget& targets)
+void PackFrameParams(GPUFrameParameters& outParams, const FrameRenderer& frame, const gpu::AcquiredOutput& output)
 {
     const auto& data = frame.frame();
 
@@ -57,8 +57,8 @@ void PackFrameParams(GPUFrameParameters& outParams, const FrameRenderer& frame, 
 
     outParams.ViewportSize.x = data.resolution.width;
     outParams.ViewportSize.y = data.resolution.height;
-    outParams.ViewportRTSize.x = targets.targetColorRTV->width();
-    outParams.ViewportRTSize.y = targets.targetColorRTV->height();
+    outParams.ViewportRTSize.x = output.color->width();
+    outParams.ViewportRTSize.y = output.color->height();
     outParams.InvViewportSize.x = outParams.ViewportSize.x ? (1.0f / outParams.ViewportSize.x) : 0.0f;
     outParams.InvViewportSize.y = outParams.ViewportSize.y ? (1.0f / outParams.ViewportSize.y) : 0.0f;
     outParams.InvViewportRTSize.x = outParams.ViewportRTSize.x ? (1.0f / outParams.ViewportRTSize.x) : 0.0f;
@@ -205,8 +205,8 @@ void PackCascadeParams(GPUCascadeInfo& outData, const CascadeData& src)
             auto& camera = src.cascades[i].camera;
 
             auto cameraOffset = camera.position() - basePos;
-            paramOffsetsRight[i] = Dot(baseRight, cameraOffset);
-            paramOffsetsUp[i] = Dot(baseUp, cameraOffset);
+            paramOffsetsRight[i] = (baseRight | cameraOffset);
+            paramOffsetsUp[i] = (baseUp | cameraOffset);
             paramHalfSizes[i] = 0.5f * camera.zoom();
             paramDepthRanges[i] = camera.farPlane() - camera.nearPlane();
         }
@@ -285,7 +285,7 @@ static Vector3 CalculateLimitedShadowDirection(const Vector3& shadowDir, float d
 
 static float ProjectZ(const Camera& camera, float zDist)
 {
-    auto projZ = camera.viewToScreen().transformVector4(Vector4(0, 0, zDist, 1));
+    auto projZ = BaseTransformation(camera.viewToScreen()).transformVector4(Vector4(0, 0, zDist, 1));
     return projZ.z / projZ.w;
 }
 
@@ -296,10 +296,10 @@ static void CalculateBestCascadeFit(uint32_t resolution, const Vector3* corners,
     auto& v2 = corners[3];
     auto& v3 = corners[5];
 
-    auto denom = 1.0f / (2.0f * Cross(v1 - v2, v2 - v3).squareLength());
-    auto bary0 = denom * (v2 - v3).squareLength() * Dot(v1 - v2, v1 - v3);
-    auto bary1 = denom * (v1 - v3).squareLength() * Dot(v2 - v1, v2 - v3);
-    auto bary2 = denom * (v1 - v2).squareLength() * Dot(v3 - v1, v3 - v2);
+    auto denom = 1.0f / (2.0f * ((v1 - v2) ^ (v2 - v3)).squareLength());
+    auto bary0 = denom * (v2 - v3).squareLength() * ((v1 - v2) | (v1 - v3));
+    auto bary1 = denom * (v1 - v3).squareLength() * ((v2 - v1) | (v2 - v3));
+    auto bary2 = denom * (v1 - v2).squareLength() * ((v3 - v1) | (v3 - v2));
 
     auto sliceCenter = v1 * bary0 + v2 * bary1 + v3 * bary2;
     auto sliceRadius = (v1 - sliceCenter).length();
@@ -314,8 +314,8 @@ static void CalculateBestCascadeFit(uint32_t resolution, const Vector3* corners,
 
 static Quat CalculateShadowmapCameraRotation(const Vector3& dir)
 {
-    auto right = Cross(Vector3::EZ(), dir).normalized();
-    auto up = Cross(dir, right).normalized();
+    auto right = (Vector3::EZ() ^ dir).normalized();
+    auto up = (dir ^ right).normalized();
 
     auto lookAtMatrix = Matrix(dir, right, up);
     return lookAtMatrix.transposed().toQuat();
@@ -395,7 +395,7 @@ void CalculateCascadeSettings(const Vector3& globalLightDirection, uint32_t dept
     float cascadeDistancesMax = -std::numeric_limits<float>::max();
     for (uint32_t i = 0; i < numCascades; ++i)
     {
-        cascadeDistances[i] = Dot(shadowDir, cascadeSphereCenter[i]);
+        cascadeDistances[i] = (shadowDir | cascadeSphereCenter[i]);
         cascadeDistancesMin = std::min(cascadeDistancesMin, cascadeDistances[i]);
         cascadeDistancesMax = std::max(cascadeDistancesMax, cascadeDistances[i]);
     }

@@ -104,6 +104,8 @@ public:
     CollectionItems& operator=(const CollectionItems& other);
     CollectionItems& operator=(CollectionItems&& other);
 
+    INLINE bool empty() const { return m_items.empty(); }
+
     ICollectionItem* head() const;
 
     ICollectionItem* tail() const;
@@ -132,14 +134,16 @@ public:
     }
 
     template< typename T >
-    INLINE Array<RefPtr<T>> all(const std::function<bool(T*)>& func = nullptr) const
+    INLINE Array<RefPtr<T>> collect(const std::function<bool(T*)>& func = nullptr) const
     {
+        Array<RefPtr<T>> ret;
+
         for (const auto& item : m_items.keys())
             if (auto typedItem = rtti_cast<T>(item.get()))
                 if (!func || func(typedItem))
-                    return RefPtr<T>(AddRef(typedItem));
+                    ret.pushBack(AddRef(typedItem));
 
-        return nullptr;
+        return ret;
     }
 
     template< typename T >

@@ -9,45 +9,78 @@
 #pragma once
 
 #include "engine/world/include/world.h"
-#include "engine/world/include/prefab.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
 
 //---
 
-struct PlaneGround
+class SceneBuilder : public NoCopy
 {
 public:
-    PlaneGround(World* world, const MeshRef& planeMesh);
+    SceneBuilder();
+    ~SceneBuilder();
 
-    void ensureGroundUnder(float x, float y);
+    //--
 
-private:
-    HashSet<uint32_t> m_planeCoordinatesSet;
+    void transform(const EulerTransform& placement);
+    void pushTransform();
+    void popTransform();
 
-    World* m_world;
+    void deltaTranslate(Vector3 delta);
+    void deltaTranslate(float x = 0.0f, float y = 0.0f, float z = 0.0f);
+    void deltaRotate(Angles delta);
+    void deltaRotate(float pitch = 0.0f, float yaw = 0.0f, float roll = 0.0f);
 
-    MeshRef m_planeMesh;
-    float m_planeSize = 1.0f;
-};
+    void color(Color color);
 
-//---
+    void pushParent(RawEntity* entity);
+    void popParent();
 
-class PrefabBuilder
-{
-public:
-    PrefabBuilder();
+    void ensureGroundUnder(Vector3 pos);
 
-    static NodeTemplatePtr BuildMeshNode(const MeshRef& mesh, const EulerTransform& placement, Color color = Color::WHITE);
-    static NodeTemplatePtr BuildPrefabNode(const PrefabPtr& prefab, const EulerTransform& placement);
+    EulerTransform transform();
 
-    int addNode(const NodeTemplatePtr& node, int parentNode = -1);
+    ResourceID mapResource(StringView path);
+
+    void toggleTransformParent(bool flag);
+
+    RawEntityPtr buildMeshNode(ResourceID id, StringView customName="");
+    RawEntityPtr buildPrefabNode(const PrefabPtr& prefab, StringView customName = "");
+
+    //--
 
     PrefabPtr extractPrefab();
 
+    CompiledWorldPtr extractWorld();
+
+    //--
+
 private:
-    NodeTemplatePtr m_root;
-    Array<NodeTemplatePtr> m_nodes;
+    Array<RawEntityPtr> m_rootNodes;
+    Array<RawEntityPtr> m_allNodes;
+
+    Array<RawEntityPtr> m_parentStack;
+    Array<EulerTransform> m_transformStack;
+
+    EulerTransform m_transform;
+
+    HashSet<uint32_t> m_planeCoordinatesSet;
+
+    bool m_flagTransformParent = false;
+    
+    Color m_color;
+
+    MeshRef m_planeMesh;
+    Vector2 m_planeSize;
+
+    RawEntityPtr createCommonNode(ObjectIndirectTemplate* data, StringView customName);
+    void commonProcessNode(RawEntity* entity);
+
+    uint32_t m_nameCounter = 0;
+
+    Array<PrefabPtr> m_capturedPrefabs;
+
+    HashMap<StringBuf, ResourceID> m_localResourceLookup;
 };
 
 //---

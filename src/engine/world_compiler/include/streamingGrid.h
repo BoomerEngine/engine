@@ -9,12 +9,14 @@
 
 #pragma once
 
-#include "engine/world/include/entity.h"
-#include "engine/world/include/nodeTemplate.h"
+#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/rawEntity.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
 //---
+
+class SourceIsland;
 
 // cell in the streaming grid
 struct ENGINE_WORLD_COMPILER_API SourceStreamingGridCell
@@ -64,7 +66,7 @@ extern ENGINE_WORLD_COMPILER_API void DumpGrid(const SourceStreamingGrid& grid);
 extern ENGINE_WORLD_COMPILER_API void CollectFinalCells(const SourceStreamingGrid& grid, Array<const SourceStreamingGridCell*>& outCells);
 
 // build island from data
-extern ENGINE_WORLD_COMPILER_API RefPtr<StreamingIsland> BuildIsland(const SourceIsland* island);
+extern ENGINE_WORLD_COMPILER_API RefPtr<CompiledStreamingIsland> BuildIsland(const SourceIsland* island);
 
 // build cell data
 //extern ENGINE_WORLD_COMPILER_API RefPtr<StreamingSector> BuildSectorFromCell(const SourceStreamingGridCell& cell);

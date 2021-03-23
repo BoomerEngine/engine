@@ -58,7 +58,7 @@ void DataInspectorColumnHeader::prepareDynamicSizing(const ElementArea& drawArea
     m_cachedColumnAreas.reset();
     m_cachedColumnAreas.reserve(2);
 
-    auto splitPos = Lerp(std::clamp<float>(m_splitFraction, 0.0f, 1.0f), drawArea.left(), drawArea.right());
+    auto splitPos = LinearInterpolation(std::clamp<float>(m_splitFraction, 0.0f, 1.0f)).lerp(drawArea.left(), drawArea.right());
 
     {
         auto& info = m_cachedColumnAreas.emplaceBack();

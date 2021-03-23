@@ -30,6 +30,7 @@
 #include "gpu/device/include/device.h"
 #include "gpu/device/include/deviceService.h"
 #include "gpu/device/include/resources.h"
+#include "gpu/device/include/commandWriter.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 
@@ -236,7 +237,7 @@ float RenderingPanelDepthBufferQuery::linearDepthValueAtPixel(int x, int y, bool
     return m_camera.projectedZToLinearZ(projectedZ);
 }
 
-bool RenderingPanelDepthBufferQuery::calcWorldPosition(int x, int y, AbsolutePosition& outPos) const
+bool RenderingPanelDepthBufferQuery::calcWorldPosition(int x, int y, ExactPosition& outPos) const
 {
     // query (projected) depth under the cursor
     auto projectedZ = projectedDepthValueAtPixel(x, y);
@@ -250,11 +251,11 @@ bool RenderingPanelDepthBufferQuery::calcWorldPosition(int x, int y, AbsolutePos
 
     // convert to world position
     Vector4 screenPos(sx, sy, projectedZ, 1.0f);
-    auto worldPos = m_camera.screenToWorld().transformVector4(screenPos);
+    auto worldPos = BaseTransformation(m_camera.screenToWorld()).transformVector4(screenPos);
     if (worldPos.w == 0.0f)
         return false;
 
-    outPos = AbsolutePosition(worldPos.projected().xyz());
+    outPos = ExactPosition(worldPos.projected().xyz());
     return true;
 }
 
@@ -363,7 +364,8 @@ void RenderingScenePanel::focusOnBounds(const Box& bounds, float distanceFactor 
             settings.rotation = *newRotation;
 
         // compute the maximum object size
-        auto distance = bounds.extents().length() * 3.0f * distanceFactor;
+        const auto extentsSize = std::min<float>(200.0f, bounds.extents().length());
+        auto distance = extentsSize * 3.0f * distanceFactor;
         settings.position = bounds.center() - distance * settings.rotation.forward();
         settings.origin = bounds.center();
 
@@ -689,7 +691,7 @@ InputActionPtr RenderingScenePanel::createMiddleMouseButtonCameraAction(const El
     if (evt.keyMask().isAltDown())
     {
         // orbit around point
-        AbsolutePosition worldOrbitPosition;
+        ExactPosition worldOrbitPosition;
         auto viewportPos = (evt.absolutePosition() - cachedDrawArea().absolutePosition());
         if (queryWorldPositionUnderCursor(viewportPos, worldOrbitPosition))
         {
@@ -768,7 +770,7 @@ bool RenderingScenePanel::handleMouseWheel(const input::MouseMovementEvent& evt,
     return true;
 }
 
-void RenderingScenePanel::handleCamera(CameraSetup& outCamera)
+void RenderingScenePanel::handleCamera(CameraSetup& outCamera) const
 {
     const auto& renderArea = cachedDrawArea(); // TODO: would be perfect not to use cached shit
     m_cameraController.settings().computeRenderingCamera(renderArea.size(), outCamera);
@@ -786,7 +788,7 @@ void RenderingScenePanel::handleAreaSelection(bool ctrl, bool shift, const Rect&
     // nothing
 }
 
-void RenderingScenePanel::handleContextMenu(bool ctrl, bool shift, const Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const AbsolutePosition* positionUnderCursor)
+void RenderingScenePanel::handleContextMenu(bool ctrl, bool shift, const Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const ExactPosition* positionUnderCursor)
 {
     // nothing
 }
@@ -878,7 +880,7 @@ bool RenderingScenePanel::handleContextMenu(const ElementArea& area, const Posit
 
     // determine the click position
     bool clickPositionValid = false;
-    AbsolutePosition clickPosition;
+    ExactPosition clickPosition;
     if (selectable.object && selectable.depth)
     {
         // render area not cached
@@ -894,10 +896,10 @@ bool RenderingScenePanel::handleContextMenu(const ElementArea& area, const Posit
 
         // convert to world position
         Vector4 screenPos(sx, sy, sz, 1.0f);
-        auto worldPos = selectionData->camera().screenToWorld().transformVector4(screenPos);
+        auto worldPos = BaseTransformation(selectionData->camera().screenToWorld()).transformVector4(screenPos);
         if (worldPos.w > 0.0f)
         {
-            clickPosition = AbsolutePosition(worldPos.projected().xyz());
+            clickPosition = ExactPosition(worldPos.projected().xyz());
             clickPositionValid = true;
         }
     }
@@ -910,7 +912,7 @@ bool RenderingScenePanel::handleContextMenu(const ElementArea& area, const Posit
     return true;
 }
 
-void RenderingScenePanel::handleRender(rendering::FrameParams& frame)
+void RenderingScenePanel::handleFrame(rendering::FrameParams& frame)
 {
     // draw grid
     if (m_panelSettings.drawInternalGrid && (frame.filters & rendering::FilterBit::ViewportWorldGrid))
@@ -1053,9 +1055,10 @@ void RenderingScenePanel::drawViewAxes(uint32_t width, uint32_t height, renderin
     auto orientationMatrix = frame.camera.camera.worldToCamera() * CameraSetup::CameraToView;
 
     // project the view axes
-    auto ex = orientationMatrix.transformVector(Vector3::EX()) * scale;
-    auto ey = orientationMatrix.transformVector(Vector3::EY()) * scale;
-    auto ez = orientationMatrix.transformVector(Vector3::EZ()) * scale;
+    BaseTransformation t(orientationMatrix);
+    auto ex = t.transformVector(Vector3::EX()) * scale;
+    auto ey = t.transformVector(Vector3::EY()) * scale;
+    auto ez = t.transformVector(Vector3::EZ()) * scale;
 
     // render the axes with orthographic projection
     InplaceArray<Vector2, 8> vertices;
@@ -1088,7 +1091,7 @@ void RenderingScenePanel::drawCameraInfo(uint32_t width, uint32_t height, render
     auto bx = width - 20;
     auto by = height - 20;
 
-    auto pos = m_cameraController.settings().position.approximate();
+    auto pos = m_cameraController.settings().position;
     auto rot = m_cameraController.settings().rotation;
 
     auto params = rendering::DebugTextParams().right().bottom().color(Color::WHITE);
@@ -1186,8 +1189,9 @@ RefPtr<RenderingPanelSelectionQuery> RenderingScenePanel::querySelection(const R
     capture.mode = rendering::FrameCaptureMode::SelectionRect;
 
     // render the capture frame
-    Camera captureCamera;
-    renderCaptureScene(&capture, &captureCamera);
+    CameraSetup camera;
+    handleCamera(camera);
+    renderCaptureScene(camera, &capture);
 
     // flush GPU
     // TODO: proper sync with GPU
@@ -1196,10 +1200,10 @@ RefPtr<RenderingPanelSelectionQuery> RenderingScenePanel::querySelection(const R
     GetService<DeviceService>()->sync();
 
     // wait for data and return it
-    return captureBuffer->waitAndFetch(captureCamera);
+    return captureBuffer->waitAndFetch(camera);
 }
 
-bool RenderingScenePanel::queryWorldPositionUnderCursor(const Point& localPoint, AbsolutePosition& outPosition)
+bool RenderingScenePanel::queryWorldPositionUnderCursor(const Point& localPoint, ExactPosition& outPosition)
 {
     // query the depth
     const Rect captureArea(localPoint.x, localPoint.y, localPoint.x + 1, localPoint.y + 1);
@@ -1282,15 +1286,10 @@ RefPtr<RenderingPanelDepthBufferQuery> RenderingScenePanel::queryDepth(const Rec
     capture.mode = rendering::FrameCaptureMode::DepthRect;
 
     // render the capture frame
-    Camera captureCamera;
-    renderCaptureScene(&capture, &captureCamera);
-
-    // flush GPU
-    // TODO: proper sync with GPU
-    GetService<DeviceService>()->sync();
-    GetService<DeviceService>()->sync();
-    GetService<DeviceService>()->sync();
-
+    CameraSetup captureCamera;
+    handleCamera(captureCamera);
+    renderCaptureScene(captureCamera, &capture);
+        
     // wait for data and return it
     return captureImage->waitAndFetch(captureCamera, renderAreaWidth, renderAreaHeight, false);
 }
@@ -1302,24 +1301,16 @@ void RenderingScenePanel::handlePostRenderContent()
 
 }
 
-void RenderingScenePanel::renderContent(const ViewportParams& viewport, Camera* outCameraUsedToRender)
+void RenderingScenePanel::handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& cameraSetup, const rendering::FrameParams_Capture* capture)
 {
-    // compute camera
-    CameraSetup cameraSetup;
-    handleCamera(cameraSetup);
-
     // create camera
-    Camera camera;
-    camera.setup(cameraSetup);
-
-    // report computed camera
-    if (outCameraUsedToRender)
-        *outCameraUsedToRender = camera;
+    Camera cameraData;
+    cameraData.setup(cameraSetup);
 
     // create frame and render scene content into it
-    rendering::FrameParams frame(viewport.width, viewport.height, camera);
-    if (viewport.capture)
-        frame.capture = *viewport.capture;
+    rendering::FrameParams frame(output.width, output.height, cameraData);
+    if (capture)
+        frame.capture = *capture;
 
     // setup params
     frame.index = m_frameIndex++;
@@ -1334,24 +1325,15 @@ void RenderingScenePanel::renderContent(const ViewportParams& viewport, Camera* 
     calculateCurrentPixelUnderCursor(frame.debug.mouseHoverPixel);
 
     // render to frame
-    handleRender(frame);
-
-	// setup render targets for scene rendering
-	rendering::FrameCompositionTarget target;
-	target.targetColorRTV = viewport.colorBuffer;
-	target.targetDepthRTV = viewport.depthBuffer;
-	target.targetRect = Rect(0, 0, viewport.width, viewport.height);
+    handleFrame(frame);
 
     // generate command buffers
     m_frameStats = rendering::FrameStats();
-    if (auto* commandBuffer = GetService<rendering::FrameRenderingService>()->render(frame, target, scene(), m_frameStats))
-    {
-        auto device = GetService<DeviceService>()->device();
-        device->submitWork(commandBuffer);
-    }
+    if (auto* childCmd = GetService<rendering::FrameRenderingService>()->render(frame, output, scene(), m_frameStats))
+        cmd.opAttachChildCommandBuffer(childCmd);
 
     // update 
-    if (!viewport.capture)
+    if (!capture)
         handlePostRenderContent();
 }
 

@@ -9,22 +9,37 @@
 
 #include "core/app/include/configProperty.h"
 #include "core/app/include/launcherPlatform.h"
+#include "core/app/include/projectSettingsService.h"
 #include "core/input/include/inputContext.h"
 #include "core/containers/include/path.h"
+
+#ifdef HAS_ENGINE_WORLD_COMPILER
+    #include "engine/world/include/rawWorldData.h"
+#endif
+
+#include "engine/world/include/compiledWorldData.h"
 
 #include "gpu/device/include/device.h"
 #include "gpu/device/include/deviceService.h"
 #include "gpu/device/include/output.h"
+#include "gpu/device/include/framebuffer.h"
 #include "gpu/device/include/commandWriter.h"
 
-#include "engine/game/include/game.h"
-#include "engine/game/include/gameHost.h"
+#include "game/common/include/screenStack.h"
+#include "game/common/include/screenSinglePlayerGame.h"
+#include "game/common/include/settings.h"
+#include "game/common/include/platformService.h"
+#include "core/app/include/configService.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
 //--
 
 ConfigProperty<StringBuf> cvGameStartupGamePath("Game", "StartupGame", "");
+
+ConfigProperty<bool> cvGameViewportFullscreen("Game.Viewport", "Fullscreen", false);
+ConfigProperty<uint32_t> cvGameViewportWidth("Game.Viewport", "Width", 1920);
+ConfigProperty<uint32_t> cvGameViewportHeight("Game.Viewport", "Height", 1080);
 
 //--
 
@@ -34,7 +49,10 @@ LauncherApp::LauncherApp(StringView title)
     
 bool LauncherApp::initialize(const CommandLine& commandline)
 {
-    if (!createWindow(commandline))
+    if (!parseWindowParams(commandline))
+        return false;
+
+    if (!createWindow())
         return false;
 
     if (!createGame(commandline))
@@ -46,7 +64,7 @@ bool LauncherApp::initialize(const CommandLine& commandline)
 void LauncherApp::cleanup()
 {
     // destroy game
-    m_gameHost.reset();
+    m_screenStack.reset();
 
     // close rendering window
     m_renderingOutput.reset();
@@ -74,7 +92,53 @@ void LauncherApp::update()
 
 //--
 
-bool LauncherApp::createWindow(const CommandLine& commandline)
+bool LauncherApp::parseWindowParams(const CommandLine& commandline)
+{
+    // fullscreen/windowed
+    if (commandline.hasParam("fullscreen"))
+        cvGameViewportFullscreen.set(true);
+    else if (commandline.hasParam("windowed") || commandline.hasParam("window"))
+        cvGameViewportFullscreen.set(false);
+
+    // resolution
+    if (commandline.hasParam("width") && commandline.hasParam("height"))
+    {
+        int newWidth = commandline.singleValueInt("width", -1);
+        int newHeight = commandline.singleValueInt("height", -1);
+        if (newWidth != -1 && newHeight != -1)
+        {
+            cvGameViewportWidth.set(newWidth);
+            cvGameViewportHeight.set(newHeight);
+        }
+    }
+
+    return true;
+}
+
+void LauncherApp::toggleFullscreen()
+{
+    const auto flag = cvGameViewportFullscreen.get();
+    cvGameViewportFullscreen.set(!flag);
+
+    TRACE_INFO("Toggling fullscreen {}", cvGameViewportFullscreen.get() ? "ON" : "OFF");
+    if (!createWindow())
+    {
+        TRACE_ERROR("Failed to toggle fullscreen!");
+
+        cvGameViewportFullscreen.set(flag);
+
+        if (!createWindow())
+        {
+            TRACE_ERROR("Window lost");
+        }
+    }
+    else
+    {
+        GetService<ConfigService>()->requestSave();
+    }
+}
+
+bool LauncherApp::createWindow()
 {
     // we need the rendering service for any of stuff to work, get the current instance of the rendering service from local service container
     auto renderingService = GetService<DeviceService>();
@@ -84,35 +148,25 @@ bool LauncherApp::createWindow(const CommandLine& commandline)
         return false;
     }
 
+    // close current output
+    if (m_renderingOutput)
+    {
+        m_renderingOutput.reset();
+        renderingService->device()->sync(true);
+        renderingService->device()->sync(true);
+    }
+
     // setup rendering output as a window
     gpu::OutputInitInfo setup;
-    setup.m_width = 1920;
-    setup.m_height = 1080;
+    setup.m_width = cvGameViewportWidth.get();
+    setup.m_height = cvGameViewportHeight.get();
+    setup.m_class = gpu::OutputClass::Window;
     setup.m_windowMaximized = false;
     setup.m_windowTitle = m_title ? m_title : "BoomerEngine - Game Launcher"; // TODO: allow game to override this
-    //setup.m_windowInputContextGameMode = true;
     setup.m_windowShowOnTaskBar = true;
     setup.m_windowCreateInputContext = true;
     setup.m_windowInputContextGameMode = true;
-    setup.m_class = gpu::OutputClass::Window; // render to native window on given OS
-        
-    // switch fullscreen/windowed
-	if (commandline.hasParam("fullscreen"))
-		setup.m_windowStartInFullScreen = true;
-    else if (commandline.hasParam("window") || commandline.hasParam("windowed"))
-		setup.m_windowStartInFullScreen = false;
-
-    // resolution
-    if (commandline.hasParam("width") && commandline.hasParam("height"))
-    {
-        int newWidth = commandline.singleValueInt("width", -1);
-        int newHeight = commandline.singleValueInt("height", -1);
-        if (newWidth != -1 && newHeight != -1)
-        {
-            setup.m_width = newWidth;
-            setup.m_height = newHeight;
-        }
-    }
+    setup.m_windowStartInFullScreen = cvGameViewportFullscreen.get();
 
     // create rendering output
     m_renderingOutput = renderingService->device()->createOutput(setup);
@@ -127,38 +181,116 @@ bool LauncherApp::createWindow(const CommandLine& commandline)
     return true;
 }
 
-bool ParseGameStartInfo(const CommandLine& commandline, GameStartInfo& outData)
+bool ParseGameStartInfo(const CommandLine& commandline, GameScreenSinglePlayerSetup& outData)
 {
-    bool validInfo = false;
-
-    const auto& startuScenePath = commandline.singleValue("cookedScenePath");
-    if (ValidateDepotFilePath(startuScenePath))
+    const auto& worldPath = commandline.singleValue("worldPath");
+    if (ValidateDepotFilePath(worldPath))
     {
-        outData.scenePath = startuScenePath;
-        TRACE_INFO("Using override startup scene: '{}'", outData.scenePath);
-        validInfo = true;
+        const auto cls = LoadClass(worldPath);
+        if (cls == CompiledWorldData::GetStaticClass())
+        {
+            TRACE_INFO("Using compiled world: '{}'", worldPath);
+            outData.worldPath = worldPath;
+        }
+#ifdef HAS_ENGINE_WORLD_COMPILER
+        else if (cls == RawWorldData::GetStaticClass())
+        {
+            TRACE_INFO("Using raw world: '{}'", worldPath);
+            outData.worldPath = worldPath;
+        }
+#endif
+        else
+        {
+            TRACE_ERROR("Invalid startup resource: '{}'", worldPath);
+            return false;
+        }
     }
 
-    // TODO: initial spawn position,rotation
+    if (const auto& spawnPosTxt = commandline.singleValue("spawnPos"))
+    {
+        InplaceArray<StringView, 3> parts;
+        spawnPosTxt.view().slice(";", false, parts);
 
-    return validInfo;
+        if (parts.size() == 3)
+        {
+            outData.overrideSpawnPosition = true;
+            parts[0].match(outData.spawnPosition.x);
+            parts[1].match(outData.spawnPosition.y);
+            parts[2].match(outData.spawnPosition.z);
+        }
+    }
+
+    if (const auto& spawnRotTxt = commandline.singleValue("spawnRot"))
+    {
+        InplaceArray<StringView, 3> parts;
+        spawnRotTxt.view().slice(";", false, parts);
+
+        if (parts.size() >= 2)
+        {
+            parts[0].match(outData.spawnRotation.yaw);
+            parts[1].match(outData.spawnRotation.pitch);
+        }
+        else if (parts.size() == 1)
+        {
+            parts[0].match(outData.spawnRotation.yaw);
+        }
+    }
+
+    return true;
 }
 
 bool LauncherApp::createGame(const CommandLine& commandline)
 {
-    // create the game host with the created game
-    const auto game = RefNew<Game>();
-    m_gameHost = RefNew<Host>(HostType::Standalone, game);
+    // parse parameters
+    GameScreenSinglePlayerSetup spawnParams;
+    if (!ParseGameStartInfo(commandline, spawnParams))
+        return false;
 
-    // schedule first transition using commandline arguments
-    GameStartInfo initData;
-    if (ParseGameStartInfo(commandline, initData))
+    // create the screen stack
+    const auto platform = GetService<GamePlatformService>()->platform();
+    m_screenStack = RefNew<GameScreenStack>(platform);
+
+    // should we skip all the logo BS
+    const auto noSplash = commandline.hasParam("nosplash");
+
+    // enter either the start menu or the initial panel
+    const auto settings = GetSettings<GameProjectSettingScreens>();
+    if (spawnParams.worldPath)
     {
-        game->scheduleNewGameWorldTransition(initData);
+        if (!settings->m_singlePlayerGameScreen)
+        {
+            TRACE_ERROR("No single player game screen has been defined");
+            return false;
+        }
+
+        const auto worldScreen = settings->m_singlePlayerGameScreen->create<IGameScreenSinglePlayer>();
+        if (!worldScreen->initialize(spawnParams))
+        {
+            TRACE_ERROR("Unable to initialize world screen");
+            return false;
+        }
+
+        m_screenStack->pushTransition(worldScreen, GameTransitionMode::ReplaceAll, true);
+    }
+    else if (!noSplash && settings->m_initialScreen)
+    {
+        auto screen = settings->m_initialScreen->create<IGameScreen>();
+        m_screenStack->pushTransition(screen, GameTransitionMode::ReplaceAll, true);
+    }
+    else if (settings->m_startScreen)
+    {
+        auto screen = settings->m_startScreen->create<IGameScreen>();
+        m_screenStack->pushTransition(screen, GameTransitionMode::ReplaceAll, true);
+    }
+    else if (settings->m_mainMenuScreen)
+    {
+        auto screen = settings->m_mainMenuScreen->create<IGameScreen>();
+        m_screenStack->pushTransition(screen, GameTransitionMode::ReplaceAll, true);
     }
     else
     {
-        // TODO: load project's startup world
+        TRACE_ERROR("No initial screen defined for project!");
+        return false;
     }
 
     return true;
@@ -166,7 +298,16 @@ bool LauncherApp::createGame(const CommandLine& commandline)
 
 bool LauncherApp::processInput(const input::BaseEvent& evt)
 {
-    if (m_gameHost->input(evt))
+    if (const auto* key = evt.toKeyEvent())
+    {
+        if (key->pressed() && key->keyCode() == input::KeyCode::KEY_RETURN && key->keyMask().isLeftAltDown())
+        {
+            toggleFullscreen();
+            return true;
+        }
+    }
+
+    if (m_screenStack->input(evt))
         return true;
 
     return false;
@@ -176,7 +317,7 @@ void LauncherApp::updateWindow()
 {
     // if the window wants to be closed allow it and close our app as well
     if (m_renderingOutput->window()->windowHasCloseRequest())
-        platform::GetLaunchPlatform().requestExit("Main window closed");
+        GetLaunchPlatform().requestExit("Main window closed");
 
     // process input from the window
     if (auto inputContext = m_renderingOutput->window()->windowGetInputContext())
@@ -186,29 +327,18 @@ void LauncherApp::updateWindow()
             processInput(*inputEvent);
 
         // capture input to the window if required
-        inputContext->requestCapture(m_gameHost->shouldCaptureInput() ? 1 : 0);
+        inputContext->requestCapture(m_screenStack->shouldCaptureInput() ? 2 : 0);
     }
 }
 
 void LauncherApp::updateGame(double dt)
 {
     // update the game state stack
-    if (!m_gameHost->update(dt))
-        platform::GetLaunchPlatform().requestExit("Game stack empty");
+    if (!m_screenStack->update(dt))
+        GetLaunchPlatform().requestExit("Game stack empty");
 }
 
 //--
-
-void LauncherApp::renderGame(gpu::CommandWriter& parentCmd, const HostViewport& viewport)
-{
-    gpu::CommandWriter cmd(parentCmd.opCreateChildCommandBuffer());
-    m_gameHost->render(cmd, viewport);
-}
-
-void LauncherApp::renderOverlay(gpu::CommandWriter& cmd, const HostViewport& viewport)
-{
-    // TODO: imgui debug panels 
-}
 
 void LauncherApp::renderFrame()
 {
@@ -216,19 +346,23 @@ void LauncherApp::renderFrame()
 
     if (auto output = cmd.opAcquireOutput(m_renderingOutput))
     {
-        HostViewport gameViewport;
-        gameViewport.width = output.width;
-        gameViewport.height = output.height;
-        gameViewport.backBufferColor = output.color;
-        gameViewport.backBufferDepth = output.depth;
+        //cmd.opClearRenderTarget(output.color, Vector4(0.05f, 0.05f, 0.05f, 1.0f));
+        //cmd.opClearDepthStencil(output.depth, true, true, 1.0f, 0);
 
-        renderGame(cmd, gameViewport); // game itself
-        renderOverlay(cmd, gameViewport); // debug panels
+        {
+            gpu::FrameBuffer fb;
+            fb.color[0].view(output.color).clear(0.05f, 0.05f, 0.05f, 1.0f);
+            fb.depth.view(output.depth).clearDepth().clearStencil();
+
+            cmd.opBeingPass(fb);
+            cmd.opEndPass();
+        }
+
+        m_screenStack->render(cmd, output);
 
         cmd.opSwapOutput(m_renderingOutput);
     }
 
-    // submit new work to rendering device
     GetService<DeviceService>()->device()->submitWork(cmd.release());
 }
 

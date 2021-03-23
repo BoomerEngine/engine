@@ -49,6 +49,11 @@ InputActionResult IInputAction::onKeyEvent(const input::KeyEvent& evt)
     return InputActionResult();
 }
 
+InputActionResult IInputAction::onAxisEvent(const input::AxisEvent& evt)
+{
+    return InputActionResult();
+}
+
 InputActionResult IInputAction::onMouseEvent(const input::MouseClickEvent& evt, const ElementWeakPtr& hoverStack)
 {
     return InputActionResult();

@@ -9,14 +9,15 @@
 #include "build.h"
 #include "scenePreviewStreaming.h"
 #include "sceneContentNodes.h"
+#include "sceneContentNodesEntity.h"
 
 #include "engine/rendering/include/scene.h"
 #include "engine/rendering/include/debug.h"
 #include "engine/rendering/include/params.h"
 
-#include "engine/world/include/nodeTemplate.h"
+#include "engine/world/include/rawEntity.h"
 #include "engine/world/include/world.h"
-#include "engine/world/include/entity.h"
+#include "engine/world/include/worldEntity.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -194,14 +195,14 @@ bool SceneNodeVisualizationHandler::CheckProxy(const RefWeakPtr<SceneNodeVisuali
 
 static void ApplySelectionFlagToEntity(Entity* entity, bool flag)
 {
-    if (entity)
-        entity->requestSelectionChange(flag);
+    /*if (entity)
+        entity->requestSelectionChange(flag);*/
 }
 
 static void ApplySelectables(Entity* entity, uint32_t nodeObjectID)
 {
-    if (entity)
-        entity->bindSelectionOwner(nodeObjectID);
+    /*if (entity)
+        entity->bindSelectionOwner(nodeObjectID);*/
 }
 
 void SceneNodeVisualizationHandler::ApplyProxy(const RefWeakPtr<SceneNodeVisualizationHandler>& self, uint32_t proxyIndex, uint32_t proxyGeneration, uint32_t versionIndex, const EntityPtr& entity)
@@ -219,7 +220,7 @@ void SceneNodeVisualizationHandler::ApplyProxy(const RefWeakPtr<SceneNodeVisuali
                 {
                     if (proxy->version.load() == versionIndex)
                     {
-                        entity->requestTransform(proxy->placement);
+                        entity->requestTransformChangeWorldSpace(proxy->placement);
 
                         ApplySelectables(entity, proxy->contentNodeObjectId);
                         ApplySelectionFlagToEntity(entity, proxy->effectSelection);
@@ -235,18 +236,18 @@ void SceneNodeVisualizationHandler::ApplyProxy(const RefWeakPtr<SceneNodeVisuali
     }
 }
 
-CAN_YIELD void SceneNodeVisualizationHandler::CompileEntityData(const RefWeakPtr<SceneNodeVisualizationHandler>& self, const NodeTemplatePtr& data, uint32_t versionIndex, uint32_t proxyIndex, uint32_t proxyGeneration)
+CAN_YIELD void SceneNodeVisualizationHandler::CompileEntityData(const RefWeakPtr<SceneNodeVisualizationHandler>& self, const RawEntityPtr& data, uint32_t versionIndex, uint32_t proxyIndex, uint32_t proxyGeneration)
 {
     DEBUG_CHECK_RETURN(data);
 
     // check if should even start
     if (CheckProxy(self, proxyIndex, proxyGeneration, versionIndex))
     {
-        InplaceArray<const NodeTemplate*, 1> sourceTemplates;
+        InplaceArray<const RawEntity*, 1> sourceTemplates;
         sourceTemplates.pushBack(data);
 
         // compile entity - this may load resources
-        if (auto entity = CompileEntity(sourceTemplates))
+        if (auto entity = CompileEntity(sourceTemplates, true))
         {
             ApplyProxy(self, proxyIndex, proxyGeneration, versionIndex, entity);
         }
@@ -381,7 +382,7 @@ void SceneNodeVisualizationHandler::updateProxy(const SceneContentNode* node, Sc
             proxy->placement = dataNode->cachedLocalToWorldTransform();
 
             if (proxy->entity)
-                proxy->entity->requestTransform(proxy->placement);
+                proxy->entity->requestTransformChangeWorldSpace(proxy->placement);
 
             flags -= SceneContentNodeDirtyBit::Transform;
         }

@@ -43,19 +43,19 @@ BaseReference LoadResourceRef(StringView depotPath, ClassType cls)
     if (!metadata)
     {
         TRACE_WARNING("Invalid metadata at '{}'", metadataPath);
-        return false;
+        return BaseReference();
     }
 
     if (!metadata->resourceClassType.is(cls))
     {
         TRACE_WARNING("Metadata resource class '{}' doest not match target '{}' at '{}'", metadata->resourceClassType, cls, metadataPath);
-        return false;
+        return BaseReference();
     }
 
     if (metadata->ids.empty())
     {
         TRACE_WARNING("Metadata '{}' has no IDs", metadataPath);
-        return false;
+        return BaseReference();
     }
 
     ResourcePtr data;
@@ -90,19 +90,19 @@ BaseAsyncReference BuildAsyncResourceRef(StringView depotPath, ClassType cls)
     if (!metadata)
     {
         TRACE_WARNING("Invalid metadata at '{}'", metadataPath);
-        return false;
+        return BaseAsyncReference();
     }
 
     if (!metadata->resourceClassType.is(cls))
     {
         TRACE_WARNING("Metadata resource class '{}' doest not match target '{}' at '{}'", metadata->resourceClassType, cls, metadataPath);
-        return false;
+        return BaseAsyncReference();
     }
 
     if (metadata->ids.empty())
     {
         TRACE_WARNING("Metadata '{}' has no IDs", metadataPath);
-        return false;
+        return BaseAsyncReference();
     }
 
     ResourcePtr data;
@@ -115,6 +115,36 @@ BaseAsyncReference BuildAsyncResourceRef(StringView depotPath, ClassType cls)
 
     const auto id = metadata->ids[0];
     return BaseAsyncReference(id);
+}
+
+//--
+
+ResourceClass LoadClass(StringView depotPath)
+{
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", nullptr);
+
+    auto metadataPath = ReplaceExtension(depotPath, ResourceMetadata::FILE_EXTENSION);
+    auto metadata = GetService<DepotService>()->loadFileToXMLObject<ResourceMetadata>(metadataPath);
+    if (!metadata)
+        return nullptr;
+
+    return metadata->resourceClassType;
+}
+
+bool CanLoadAsClass(StringView depotPath, ClassType cls)
+{
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Invalid path", false);
+
+    auto metadataPath = ReplaceExtension(depotPath, ResourceMetadata::FILE_EXTENSION);
+    auto metadata = GetService<DepotService>()->loadFileToXMLObject<ResourceMetadata>(metadataPath);
+    if (!metadata)
+        return false;
+
+    if (!metadata->resourceClassType.is(cls))
+        return false;
+
+    auto resourcePath = ReplaceExtension(depotPath, metadata->loadExtension);
+    return GetService<DepotService>()->fileExists(resourcePath);
 }
 
 //--

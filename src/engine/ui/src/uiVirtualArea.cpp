@@ -792,8 +792,8 @@ void VirtualArea::processScheduledZoomChange()
             {
                 if (proxy->sizeCached)
                 {
-                    virtualMinPos = Min(proxy->virtualPosition, virtualMinPos);
-                    virtualMaxPos = Max(proxy->virtualPosition + proxy->virtualSize, virtualMaxPos);
+                    virtualMinPos = virtualMinPos.min(proxy->virtualPosition);
+                    virtualMaxPos = virtualMaxPos.max(proxy->virtualPosition + proxy->virtualSize);
                 }
                 else
                 {

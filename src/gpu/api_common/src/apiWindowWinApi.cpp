@@ -174,7 +174,7 @@ WindowWinApi* WindowWinApi::Create(const OutputInitInfo& creationInfo)
 	int sizeX = creationInfo.m_width;
 	int sizeY = creationInfo.m_height;
 	DWORD dwStyle = 0, dwExStyle = 0;
-	/*if (creationInfo.m_class == OutputClass::Fullscreen)
+	if (creationInfo.m_windowStartInFullScreen)
 	{
 		dwStyle |= WS_POPUP | WS_MAXIMIZE;
 
@@ -184,7 +184,7 @@ WindowWinApi* WindowWinApi::Create(const OutputInitInfo& creationInfo)
 		sizeX = GetSystemMetrics(SM_CXSCREEN);
 		sizeY = GetSystemMetrics(SM_CYSCREEN);
 	}
-	else*/
+	else
 	{
 		// child window style
 		if (creationInfo.m_windowPopup)
@@ -408,40 +408,6 @@ LRESULT WindowWinApi::windowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 			break;
 		}
 
-		case WM_SETCURSOR:
-		{
-			// we only pass this in case we are asking about stuff inside the client area
-			if ((LOWORD(lParam) == HTCLIENT) && m_callback)
-			{
-				auto pos = GetAbsoluteMousePosition();
-
-				auto cursorType = input::CursorType::Default;
-				m_callback->onOutputWindowSelectCursor(m_owner, pos, cursorType);
-
-				switch (cursorType)
-				{
-					case input::CursorType::Hidden: SetCursor(NULL); break;
-					case input::CursorType::Default: SetCursor(LoadCursor(NULL, IDC_ARROW)); break;
-					case input::CursorType::Cross: SetCursor(LoadCursor(NULL, IDC_CROSS)); break;
-					case input::CursorType::Hand: SetCursor(LoadCursor(NULL, IDC_HAND)); break;
-					case input::CursorType::Help: SetCursor(LoadCursor(NULL, IDC_HELP)); break;
-					case input::CursorType::TextBeam: SetCursor(LoadCursor(NULL, IDC_IBEAM)); break;
-					case input::CursorType::No: SetCursor(LoadCursor(NULL, IDC_NO)); break;
-					case input::CursorType::SizeAll: SetCursor(LoadCursor(NULL, IDC_SIZEALL)); break;
-					case input::CursorType::SizeNS: SetCursor(LoadCursor(NULL, IDC_SIZENS)); break;
-					case input::CursorType::SizeWE: SetCursor(LoadCursor(NULL, IDC_SIZEWE)); break;
-					case input::CursorType::SizeNESW: SetCursor(LoadCursor(NULL, IDC_SIZENESW)); break;
-					case input::CursorType::SizeNWSE: SetCursor(LoadCursor(NULL, IDC_SIZENWSE)); break;
-					case input::CursorType::UpArrow: SetCursor(LoadCursor(NULL, IDC_UPARROW)); break;
-					case input::CursorType::Wait: SetCursor(LoadCursor(NULL, IDC_WAIT)); break;
-					default: ASSERT(!"Invalid window cursor");
-				}
-
-				return TRUE;
-			}
-			break;
-		}
-
 		case WM_NCHITTEST:
 		{
 			if (m_callback != nullptr && !m_hasSystemBorder)
@@ -583,7 +549,7 @@ LRESULT WindowWinApi::windowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case WM_WINDOWPOSCHANGED:
 		{
 			auto* data = (WINDOWPOS*)lParam;
-			TRACE_INFO("WM_WINDOWPOSCHANGED: [{},{}] [{},{}]", data->x, data->y, data->cx, data->cy);
+			//TRACE_INFO("WM_WINDOWPOSCHANGED: [{},{}] [{},{}]", data->x, data->y, data->cx, data->cy);
 
 			Rect rect;
 			rect.min.x = data->x;
@@ -593,7 +559,7 @@ LRESULT WindowWinApi::windowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 			GetClientRect(m_hWnd, (RECT*)&m_lastSizeMoveRect);
 			m_lastSizeMoveRect = rect;
-			TRACE_INFO("Sizing size: [{}x{}]", m_lastSizeMoveRect.width(), m_lastSizeMoveRect.height());
+			//TRACE_INFO("Sizing size: [{}x{}]", m_lastSizeMoveRect.width(), m_lastSizeMoveRect.height());
 
 			if (m_callback)
 				m_callback->onOutputWindowPlacementChanged(m_owner, rect, m_currentPixelScale, m_duringSizeMove);
@@ -603,7 +569,7 @@ LRESULT WindowWinApi::windowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		case WM_ENTERSIZEMOVE:
 		{
-			TRACE_INFO("WM_ENTERSIZEMOVE");
+			//TRACE_INFO("WM_ENTERSIZEMOVE");
 			m_duringSizeMove = true;
 			GetClientRect(m_hWnd, (RECT*)&m_lastSizeMoveRect);
 			break;
@@ -611,7 +577,7 @@ LRESULT WindowWinApi::windowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		case WM_EXITSIZEMOVE:
 		{
-			TRACE_INFO("WM_EXITSIZEMOVE");
+			//TRACE_INFO("WM_EXITSIZEMOVE");
 			m_duringSizeMove = false;
 			break;
 		}
@@ -672,6 +638,44 @@ LRESULT WindowWinApi::windowProc(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		if (msg.processed)
 			return msg.returnValue;
+	}
+
+	// post-filtered messages
+	switch (uMsg)
+	{
+		case WM_SETCURSOR:
+		{
+			// we only pass this in case we are asking about stuff inside the client area
+			if ((LOWORD(lParam) == HTCLIENT) && m_callback)
+			{
+				auto pos = GetAbsoluteMousePosition();
+
+				auto cursorType = input::CursorType::Default;
+				m_callback->onOutputWindowSelectCursor(m_owner, pos, cursorType);
+
+				switch (cursorType)
+				{
+				case input::CursorType::Hidden: SetCursor(NULL); break;
+				case input::CursorType::Default: SetCursor(LoadCursor(NULL, IDC_ARROW)); break;
+				case input::CursorType::Cross: SetCursor(LoadCursor(NULL, IDC_CROSS)); break;
+				case input::CursorType::Hand: SetCursor(LoadCursor(NULL, IDC_HAND)); break;
+				case input::CursorType::Help: SetCursor(LoadCursor(NULL, IDC_HELP)); break;
+				case input::CursorType::TextBeam: SetCursor(LoadCursor(NULL, IDC_IBEAM)); break;
+				case input::CursorType::No: SetCursor(LoadCursor(NULL, IDC_NO)); break;
+				case input::CursorType::SizeAll: SetCursor(LoadCursor(NULL, IDC_SIZEALL)); break;
+				case input::CursorType::SizeNS: SetCursor(LoadCursor(NULL, IDC_SIZENS)); break;
+				case input::CursorType::SizeWE: SetCursor(LoadCursor(NULL, IDC_SIZEWE)); break;
+				case input::CursorType::SizeNESW: SetCursor(LoadCursor(NULL, IDC_SIZENESW)); break;
+				case input::CursorType::SizeNWSE: SetCursor(LoadCursor(NULL, IDC_SIZENWSE)); break;
+				case input::CursorType::UpArrow: SetCursor(LoadCursor(NULL, IDC_UPARROW)); break;
+				case input::CursorType::Wait: SetCursor(LoadCursor(NULL, IDC_WAIT)); break;
+				default: ASSERT(!"Invalid window cursor");
+				}
+
+				return TRUE;
+			}
+			break;
+		}
 	}
 
 	// default case

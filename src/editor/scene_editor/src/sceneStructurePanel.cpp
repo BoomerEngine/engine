@@ -10,13 +10,12 @@
 #include "sceneStructurePanel.h"
 #include "sceneContentStructure.h"
 #include "sceneContentNodes.h"
+#include "sceneContentNodesEntity.h"
+#include "sceneContentNodesTree.h"
 #include "scenePreviewContainer.h"
 #include "sceneEditMode.h"
 
-#include "engine/world/include/prefab.h"
-#include "editor/common/include/assetBrowser.h"
-#include "editor/common/include/managedFile.h"
-#include "editor/common/include/assetFormat.h"
+#include "engine/world/include/rawPrefab.h"
 #include "engine/ui/include/uiTextLabel.h"
 #include "engine/ui/include/uiSearchBar.h"
 #include "engine/ui/include/uiComboBox.h"
@@ -27,367 +26,9 @@
 #include "engine/ui/include/uiMenuBar.h"
 #include "engine/ui/include/uiColumnHeaderBar.h"
 #include "core/object/include/object.h"
+#include "engine/ui/include/uiDragDrop.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
-
-//--
-
-SceneContentTreeModel::SceneContentTreeModel(SceneContentStructure* structure, ScenePreviewContainer* preview)
-    : m_structure(structure)
-    , m_preview(preview)
-    , m_contentEvents(this)
-    , m_root(m_structure->root())
-{
-    m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_ADDED) = [this](SceneContentNodePtr node)
-    {
-        handleChildNodeAttached(node);
-    };
-
-    m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_REMOVED) = [this](SceneContentNodePtr node)
-    {
-        handleChildNodeDetached(node);
-    };
-
-    m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_VISUAL_FLAG_CHANGED) = [this](SceneContentNodePtr node)
-    {
-        handleNodeVisualFlagsChanged(node);
-    };
-
-    m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_VISIBILITY_CHANGED) = [this](SceneContentNodePtr node)
-    {
-        handleNodeVisibilityChanged(node);
-    };
-
-    m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_MODIFIED_FLAG_CHANGED) = [this](SceneContentNodePtr node)
-    {
-        handleNodeModifiedFlagsChanged(node);
-    };
-
-    m_contentEvents.bind(m_structure->eventKey(), EVENT_CONTENT_STRUCTURE_NODE_RENAMED) = [this](SceneContentNodePtr node)
-    {
-        handleNodeNameChanged(node);
-    };
-
-}
-
-SceneContentTreeModel::~SceneContentTreeModel()
-{
-    m_root.reset();
-}
-
-bool SceneContentTreeModel::hasChildren(const ui::ModelIndex& parent /*= ui::ModelIndex()*/) const
-{
-    if (!parent)
-        return m_root;
-
-    if (parent.model() == this)
-        if (auto* proxy = parent.unsafe<SceneContentNode>())
-            return !proxy->children().empty();
-
-    return false;
-}
-
-void SceneContentTreeModel::children(const ui::ModelIndex& parent, Array<ui::ModelIndex>& outChildrenIndices) const
-{
-    if (!parent)
-    {
-        if (m_root)
-        {
-            auto rootIndex = ui::ModelIndex(this, m_root, m_root->uniqueModelIndex());
-            outChildrenIndices.pushBack(rootIndex);
-        }
-    }
-    else if (parent.model() == this)
-    {
-        if (auto* proxy = parent.unsafe<SceneContentNode>())
-        {
-            outChildrenIndices.reserve(proxy->children().size());
-
-            for (const auto& child : proxy->children())
-            {
-                auto childIndex = ui::ModelIndex(this, child, child->uniqueModelIndex());
-                outChildrenIndices.pushBack(childIndex);
-            }
-        }
-    }
-}
-
-ui::ModelIndex SceneContentTreeModel::parent(const ui::ModelIndex& item /*= ui::ModelIndex()*/) const
-{
-    if (item.model() == this)
-        if (auto* proxy = item.unsafe<SceneContentNode>())
-            if (auto* parentNode = proxy->parent())
-                return ui::ModelIndex(this, parentNode, parentNode->uniqueModelIndex());
-
-    return ui::ModelIndex();
-}
-
-bool SceneContentTreeModel::compare(const ui::ModelIndex& first, const ui::ModelIndex& second, int colIndex /*= 0*/) const
-{
-    if (first.model() == this && second.model() == this)
-    {
-        const auto* firstProxy = first.unsafe<SceneContentNode>();
-        const auto* secondProxy = second.unsafe<SceneContentNode>();
-        if (firstProxy && secondProxy)
-            return firstProxy->name() < secondProxy->name();
-    }
-
-    return first < second;
-}
-
-bool SceneContentTreeModel::filter(const ui::ModelIndex& id, const ui::SearchPattern& filter, int colIndex /*= 0*/) const
-{
-    if (id.model() == this)
-        if (auto* proxy = id.unsafe<SceneContentNode>())
-            return filter.testString(proxy->name());
-
-    return true;
-}
-
-StringBuf SceneContentTreeModel::displayContent(const ui::ModelIndex& id, int colIndex /*= 0*/) const
-{
-    if (id.model() == this)
-    {
-        if (auto* node = id.unsafe<SceneContentNode>())
-        {
-            switch (colIndex)
-            {
-                case 0:
-                {
-                    StringBuilder txt;
-                    node->displayText(txt);
-                    return txt.toString();
-                }
-
-                case 1:
-                {
-                    if (node->visible())
-                    {
-                        if (node->visibilityFlagRaw() == SceneContentNodeLocalVisibilityState::Default)
-                            return node->defaultVisibilityFlag() ? "[color:#aaa][img:eye][/color]" : "[color:#aaa][img:eye_cross][/color]";
-                        else if (node->visibilityFlagRaw() == SceneContentNodeLocalVisibilityState::Visible)
-                            return "[img:eye]";
-                        else
-                            return "[img:eye_cross]";
-                    }
-                    else
-                    {
-                        return node->visibilityFlagBool() ? "[color:#555][img:eye][/color]" : "[color:#555][img:eye_cross][/color]";
-                    }
-                }
-
-                case 2:
-                {
-                    if (node->type() == SceneContentNodeType::LayerFile)
-                        return node->modified() ? "[img:save]" : "";
-                }
-            }
-        }
-    }
-
-    return StringBuf::EMPTY();
-}
-
-ui::ModelIndex SceneContentTreeModel::indexForNode(const SceneContentNode* node) const
-{
-    if (node)
-        return ui::ModelIndex(this, node, node->uniqueModelIndex());
-
-    return ui::ModelIndex();
-}
-
-SceneContentNodePtr SceneContentTreeModel::nodeForIndex(const ui::ModelIndex& id) const
-{
-    return id.lock<SceneContentNode>();
-}
-
-ui::PopupPtr SceneContentTreeModel::contextMenu(ui::AbstractItemView* view, const Array<ui::ModelIndex>& indices) const
-{
-    if (m_preview)
-    {
-        if (auto mode = m_preview->mode())
-        {
-            // resolve current item (under cursor)
-            const auto currentNode = nodeForIndex(view->current());
-
-            // gather selected indices
-            InplaceArray<SceneContentNodePtr, 10> selectedNodes;
-            for (const auto& id : indices)
-                if (auto node = nodeForIndex(id))
-                    selectedNodes.pushBack(node);
-
-            auto menu = RefNew<ui::MenuButtonContainer>();
-            mode->handleTreeContextMenu(menu, currentNode, selectedNodes);
-            return menu->convertToPopup();
-        }
-    }
-
-    return nullptr;
-}
-
-ui::ElementPtr SceneContentTreeModel::tooltip(ui::AbstractItemView* view, ui::ModelIndex id) const
-{
-    return nullptr;
-}
-
-//--
-
-/// drag&drop data with scene node
-class SceneNodeDragDropData : public ui::IDragDropData
-{
-    RTTI_DECLARE_VIRTUAL_CLASS(SceneNodeDragDropData, ui::IDragDropData);
-
-public:
-    SceneNodeDragDropData(const SceneContentNode* node)
-        : m_node(AddRef(node))
-    {}
-
-    INLINE const SceneContentNodePtr& data() const { return m_node; }
-
-private:
-    virtual ui::ElementPtr createPreview() const
-    {
-        StringBuilder caption;
-        caption << SceneContentNode::IconTextForType(m_node->type());
-        caption << " ";
-        caption << m_node->buildHierarchicalName();
-
-        return RefNew<ui::TextLabel>(caption.view());
-    }
-
-    SceneContentNodePtr m_node;
-};
-
-RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneNodeDragDropData);
-RTTI_END_TYPE();
-
-//--
-
-ui::DragDropDataPtr SceneContentTreeModel::queryDragDropData(const input::BaseKeyFlags& keys, const ui::ModelIndex& id)
-{
-    if (id.model() == this)
-        if (auto* node = id.unsafe<SceneContentNode>())
-            if (node->type() == SceneContentNodeType::Entity)
-                return RefNew<SceneNodeDragDropData>(node);
-
-    return nullptr;
-}
-
-ui::DragDropHandlerPtr SceneContentTreeModel::handleDragDropData(ui::AbstractItemView* view, const ui::ModelIndex& id, const ui::DragDropDataPtr& data, const ui::Position& pos)
-{
-    if (id.model() == this)
-    {
-        if (auto* node = id.unsafe<SceneContentNode>())
-        {
-            if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
-            {
-                if (auto file = fileData->file())
-                    if (node->canAttach(SceneContentNodeType::Entity))
-                        return RefNew<ui::DragDropHandlerGeneric>(data, view, pos);
-            }
-            else if (auto nodeData = rtti_cast<SceneNodeDragDropData>(data))
-            {
-                if (node->canAttach(nodeData->data()->type()))
-                    return RefNew<ui::DragDropHandlerGeneric>(data, view, pos);
-            }
-        }
-    }
-
-    return nullptr;
-}
-
-bool SceneContentTreeModel::handleDragDropCompletion(ui::AbstractItemView* view, const ui::ModelIndex& id, const ui::DragDropDataPtr& data)
-{
-    if (id.model() == this)
-    {
-        if (auto* node = id.unsafe<SceneContentNode>())
-        {
-            if (m_preview)
-            {
-                if (auto mode = m_preview->mode())
-                {
-                    if (auto fileData = rtti_cast<AssetBrowserFileDragDrop>(data))
-                    {
-                        if (auto file = fileData->file())
-                            return mode->handleTreeResourceDrop(AddRef(node), file);
-                    }
-                    else if (auto nodeData = rtti_cast<SceneNodeDragDropData>(data))
-                    {
-                        return mode->handleTreeNodeDrop(AddRef(node), nodeData->data());
-                    }
-                }
-            }
-        }
-    }
-
-    return false;
-}
-
-bool SceneContentTreeModel::handleIconClick(const ui::ModelIndex& id, int columnIndex) const
-{
-    if (columnIndex == 1)
-    {
-        if (id.model() == this)
-        {
-            if (auto* node = id.unsafe<SceneContentNode>())
-            {
-                if (node->visibilityFlagBool())
-                    node->visibility(SceneContentNodeLocalVisibilityState::Hidden);
-                else
-                    node->visibility(SceneContentNodeLocalVisibilityState::Visible);
-
-                return true;
-            }
-        }
-    }
-
-    return false;
-}
-
-void SceneContentTreeModel::visualize(const ui::ModelIndex& item, int columnCount, ui::ElementPtr& content) const
-{
-    TBaseClass::visualize(item, columnCount, content);
-}
-
-//--
-
-void SceneContentTreeModel::handleChildNodeAttached(SceneContentNode* child)
-{
-    if (const auto childIndex = indexForNode(child))
-        if (const auto parentIndex = indexForNode(child->parent()))
-            notifyItemAdded(parentIndex, childIndex);
-}
-
-void SceneContentTreeModel::handleChildNodeDetached(SceneContentNode* child)
-{
-    if (const auto childIndex = indexForNode(child))
-        if (const auto parentIndex = indexForNode(child->parent()))
-            notifyItemRemoved(parentIndex, childIndex);
-}
-
-void SceneContentTreeModel::handleNodeVisibilityChanged(SceneContentNode* child)
-{
-    if (auto index = indexForNode(child))
-        requestItemUpdate(index);
-}
-
-void SceneContentTreeModel::handleNodeVisualFlagsChanged(SceneContentNode* child)
-{
-    if (auto index = indexForNode(child))
-        requestItemUpdate(index);
-}
-
-void SceneContentTreeModel::handleNodeModifiedFlagsChanged(SceneContentNode* child)
-{
-    if (auto index = indexForNode(child))
-        requestItemUpdate(index);
-}
-
-void SceneContentTreeModel::handleNodeNameChanged(SceneContentNode* child)
-{
-    if (auto index = indexForNode(child))
-        requestItemUpdate(index);
-}    
 
 //--
 
@@ -402,17 +43,11 @@ SceneStructurePanel::SceneStructurePanel(SceneContentStructure* scene, ScenePrev
 
     //--
 
-    actions().bindCommand("Tree.Copy"_id) = [this]() { handleTreeObjectCopy(); };
-    actions().bindCommand("Tree.Cut"_id) = [this]() { handleTreeObjectCut(); };
-    actions().bindCommand("Tree.Delete"_id) = [this]() { handleTreeObjectDeletion(); };
-    actions().bindCommand("Tree.Paste"_id) = [this]() { handleTreeObjectPaste(false); };
-    actions().bindCommand("Tree.PasteRelative"_id) = [this]() { handleTreeObjectPaste(true); };
-
-    actions().bindShortcut("Tree.Copy"_id, "Ctrl+C");
-    actions().bindShortcut("Tree.Cut"_id, "Ctrl+X");
-    actions().bindShortcut("Tree.Delete"_id, "Delete");
-    actions().bindShortcut("Tree.Paste"_id, "Ctrl+V");
-    actions().bindShortcut("Tree.PasteRelative"_id, "Ctrl+Shift+V");
+    bindShortcut("Ctrl+C") = [this]() { handleTreeObjectCopy(); };
+    bindShortcut("Ctrl+X") = [this]() { handleTreeObjectCut(); };
+    bindShortcut("Delete") = [this]() { handleTreeObjectDeletion(); };
+    bindShortcut("Ctrl+V") = [this]() { handleTreeObjectPaste(false); };
+    bindShortcut("Ctrl+Shift+V") = [this]() { handleTreeObjectPaste(true); };
 
     //--
 
@@ -465,15 +100,16 @@ SceneStructurePanel::SceneStructurePanel(SceneContentStructure* scene, ScenePrev
     //--
 
     auto columns = createChild<ui::ColumnHeaderBar>();
-    columns->addColumn("Name", 450, false, false, true);
+    columns->addColumn("Name", 400, false, false, true);
     columns->addColumn("[img:eye]", 30, true, false, false);
-    columns->addColumn("[img:save]", 30, true, false, false);
+    //columns->addColumn("[img:save]", 30, true, false, false);
+    columns->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
 
-    m_tree = createChild<ui::TreeView>();
+    m_tree = createChild<SceneContentTreeView>(m_scene, m_preview);
     m_tree->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
     m_tree->customVerticalAligment(ui::ElementVerticalLayout::Expand);
-    m_tree->columnCount(3);
-
+    m_tree->sort(0);
+    
     m_tree->bind(ui::EVENT_ITEM_SELECTION_CHANGED) = [this]()
     {
         treeSelectionChanged();
@@ -481,8 +117,7 @@ SceneStructurePanel::SceneStructurePanel(SceneContentStructure* scene, ScenePrev
 
     //--
 
-    m_treeModel = RefNew<SceneContentTreeModel>(scene, preview);
-    m_tree->model(m_treeModel);
+    m_tree->addRoot(scene->root()->treeItem());
 
     //--
 }
@@ -573,20 +208,15 @@ void SceneStructurePanel::presetLoad(const ui::ConfigBlock& block)
     }
 }
 
-static void CollectExpandedNodes(ui::TreeView* tree, SceneContentTreeModel* model, const ui::ModelIndex& index, Array<StringBuf>& expandedNodesPaths)
+static void CollectExpandedNodes(SceneContentNode* node, Array<StringBuf>& expandedNodesPaths)
 {
-    if (tree->isExpanded(index))
+    if (node->treeItem()->expanded() && !node->treeItem()->children().empty())
     {
-        InplaceArray<ui::ModelIndex, 100> children;
-        model->children(index, children);
+        if (auto path = node->buildHierarchicalName())
+            expandedNodesPaths.pushBack(path);
 
-        if (!children.empty())
-            if (auto node = model->nodeForIndex(index))
-                if (auto path = node->buildHierarchicalName())
-                    expandedNodesPaths.pushBack(path);
-
-        for (const auto& childIndex : children)
-            CollectExpandedNodes(tree, model, childIndex, expandedNodesPaths);
+        for (const auto& child : node->children())
+            CollectExpandedNodes(child, expandedNodesPaths);
     }
 }
 
@@ -597,8 +227,7 @@ void SceneStructurePanel::configSave(const ui::ConfigBlock& block) const
     presetSave(block.tag("Presets"));
 
     Array<StringBuf> expandedNodes;
-    if (auto rootIndex = m_treeModel->indexForNode(m_scene->root()))
-        CollectExpandedNodes(m_tree, m_treeModel, rootIndex, expandedNodes);
+    CollectExpandedNodes(m_scene->root(), expandedNodes);
     block.write("ExpandedNodes", expandedNodes);
 }
 
@@ -667,16 +296,14 @@ void SceneStructurePanel::configLoad(const ui::ConfigBlock& block)
         if (block.read("ExpandedNodes", expandedNodes))
         {
             for (const auto& path : expandedNodes)
-                if (const auto* node = m_scene->findNodeByPath(path))
-                    if (auto index = m_treeModel->indexForNode(node))
-                        m_tree->expandItem(index);
+                if (auto* node = m_scene->findNodeByPath(path))
+                    node->treeItem()->expand();
         }
         else
         {
             for (const auto& rootChild : m_scene->root()->children())
                 if (rootChild->type() == SceneContentNodeType::LayerDir || rootChild->type() == SceneContentNodeType::Entity)
-                    if (auto index = m_treeModel->indexForNode(rootChild))
-                        m_tree->expandItem(index);
+                    rootChild->treeItem()->expand();
         }
     }
 }
@@ -714,7 +341,7 @@ static void ApplyVisibilityState(SceneContentNode* node, const HashMap<const Sce
     node->visibility(nodeVisState);
 
     for (const auto& child : node->children())
-        ApplyVisibilityState(child, visibilityState);        
+        ApplyVisibilityState(child, visibilityState);
 }
 
 void SceneStructurePanel::applyPresetState(const ScenePreset& state)
@@ -804,101 +431,57 @@ void SceneStructurePanel::presetSelect()
 
 void SceneStructurePanel::syncExternalSelection(const Array<SceneContentNodePtr>& nodes)
 {
-    if (m_treeModel)
-    {
-        Array<ui::ModelIndex> indices;
-        indices.reserve(nodes.size());
+    ui::CollectionItems items;
+    for (const auto& node : nodes)
+        if (node->treeItem())
+            items.add(node->treeItem());
 
-        for (const auto& node : nodes)
-        {
-            if (auto index = m_treeModel->indexForNode(node))
-            {
-                m_tree->expandItem(index.parent());
-                indices.pushBack(index);
-            }
-        }
-
-        if (!indices.empty())
-            m_tree->ensureVisible(indices.back());
-
-        m_tree->select(indices, ui::ItemSelectionModeBit::DefaultNoFocus, false);
-    }
+    m_tree->TreeViewEx::select(items, ui::ItemSelectionModeBit::DefaultNoFocus, false);
 }
 
 void SceneStructurePanel::treeSelectionChanged()
 {
-    if (m_treeModel)
+    if (auto mode = m_preview ? m_preview->mode() : nullptr)
     {
-        if (auto mode = m_preview ? m_preview->mode() : nullptr)
-        {
-            Array<SceneContentNodePtr> selection;
-            for (const auto& id : m_tree->selection())
-                if (auto node = m_treeModel->nodeForIndex(id))
-                    selection.pushBack(node);
-
-            auto current = m_treeModel->nodeForIndex(m_tree->current());
-            mode->handleTreeSelectionChange(current, selection);
-        }
+        auto current = m_tree->current();
+        auto selection = m_tree->selection();
+        mode->handleTreeSelectionChange(current, selection);
     }
 }
 
 void SceneStructurePanel::handleTreeObjectDeletion()
 {
-    if (m_treeModel)
+    if (auto mode = m_preview ? m_preview->mode() : nullptr)
     {
-        if (auto mode = m_preview ? m_preview->mode() : nullptr)
-        {
-            Array<SceneContentNodePtr> selection;
-            for (const auto& id : m_tree->selection())
-                if (auto node = m_treeModel->nodeForIndex(id))
-                    selection.pushBack(node);
-
-            mode->handleTreeDeleteNodes(selection);
-        }
+        auto selection = m_tree->selection();
+        mode->handleTreeDeleteNodes(selection);
     }
 }
 
 void SceneStructurePanel::handleTreeObjectCopy()
 {
-    if (m_treeModel)
+    if (auto mode = m_preview ? m_preview->mode() : nullptr)
     {
-        if (auto mode = m_preview ? m_preview->mode() : nullptr)
-        {
-            Array<SceneContentNodePtr> selection;
-            for (const auto& id : m_tree->selection())
-                if (auto node = m_treeModel->nodeForIndex(id))
-                    selection.pushBack(node);
-
-            mode->handleTreeCopyNodes(selection);
-        }
+        auto selection = m_tree->selection();
+        mode->handleTreeCopyNodes(selection);
     }
 }
 
 void SceneStructurePanel::handleTreeObjectCut()
 {
-    if (m_treeModel)
+    if (auto mode = m_preview ? m_preview->mode() : nullptr)
     {
-        if (auto mode = m_preview ? m_preview->mode() : nullptr)
-        {
-            Array<SceneContentNodePtr> selection;
-            for (const auto& id : m_tree->selection())
-                if (auto node = m_treeModel->nodeForIndex(id))
-                    selection.pushBack(node);
-
-            mode->handleTreeCutNodes(selection);
-        }
+        auto selection = m_tree->selection();
+        mode->handleTreeCutNodes(selection);
     }
 }
 
 void SceneStructurePanel::handleTreeObjectPaste(bool relative)
 {
-    if (m_treeModel)
+    if (auto mode = m_preview ? m_preview->mode() : nullptr)
     {
-        if (auto mode = m_preview ? m_preview->mode() : nullptr)
-        {
-            auto current = m_treeModel->nodeForIndex(m_tree->current());
-            mode->handleTreePasteNodes(current, relative ? SceneContentNodePasteMode::Relative : SceneContentNodePasteMode::Absolute);
-        }
+        auto current = m_tree->current();
+        mode->handleTreePasteNodes(current, relative ? SceneContentNodePasteMode::Relative : SceneContentNodePasteMode::Absolute);
     }
 }
 

@@ -112,8 +112,16 @@ ResourcePtr LoadingServiceImpl::loadResource(StringView path, ClassType expected
         {
             existingLoadedResource = entry->loadedResource.lock();
 
+            // do not check resources to often
+            bool assumeValidationPassed = true;
+            if (!entry->nextAllowedValidationCheck || entry->nextAllowedValidationCheck.reached())
+            {
+                assumeValidationPassed = false;
+                entry->nextAllowedValidationCheck = NativeTimePoint::Now() + 0.2;
+            }
+
             // use existing resource only if timestamp hasn't change since last load
-            if (existingLoadedResource && validateResource(entry->loadPath, entry->timestamp))
+            if (existingLoadedResource && (assumeValidationPassed || validateResource(entry->loadPath, entry->timestamp)))
             {
                 addRetainedFile(existingLoadedResource);
                 return existingLoadedResource;

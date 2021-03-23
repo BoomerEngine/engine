@@ -46,7 +46,7 @@ public:
     RawMouse(ContextWinApi* context, RawKeyboard* keyboard);
     ~RawMouse();
 
-    void interpretRawInput(HWND hWnd, const RID_DEVICE_INFO* deviceInfo, const RAWINPUT* inputData);
+    void interpretRawInput(HWND hWnd, const RID_DEVICE_INFO* deviceInfo, const RAWINPUT* inputData, bool& outGotClick);
 
 private:
     static Point GetMousePositionInWindow(HWND hWnd);
@@ -83,6 +83,8 @@ protected:
     POINT m_activeCaptureInitialMousePos = { 0,0 };
     POINT m_activeCaptureLastMousePos = { 0,0 };
     int m_activeCaptureMode = 0;
+
+    bool m_captureWaitingForClick = false;
 
     RawKeyboard m_keyboard;
     RawMouse m_mouse;

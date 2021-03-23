@@ -179,19 +179,17 @@ const XForm2D& XForm2D::ONEEIGHTY() { return FLIP_XF; }
 
 //--
 
-XForm2D Concat(const XForm2D& a, const XForm2D& b)
+void XForm2D::Concat(const XForm2D& a, const XForm2D& b, XForm2D& ret)
 {
     float ret0 = a.t[0] * b.t[0] + a.t[1] * b.t[2];
     float ret2 = a.t[2] * b.t[0] + a.t[3] * b.t[2];
     float ret4 = a.t[4] * b.t[0] + a.t[5] * b.t[2] + b.t[4];
-    XForm2D ret;
     ret.t[1] = a.t[0] * b.t[1] + a.t[1] * b.t[3];
     ret.t[3] = a.t[2] * b.t[1] + a.t[3] * b.t[3];
     ret.t[5] = a.t[4] * b.t[1] + a.t[5] * b.t[3] + b.t[5];
     ret.t[0] = ret0;
     ret.t[2] = ret2;
     ret.t[4] = ret4;
-    return ret;
 }
 
 //--

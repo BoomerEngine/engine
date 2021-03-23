@@ -89,45 +89,6 @@ void Vector2::print(IFormatStream& f) const
     f.appendf("[{},{}]", x, y);
 }
 
-//-----
-
-float Dot(const Vector2 &a, const Vector2 &b)
-{
-    return (a.x * b.x) + (a.y * b.y);
-}
-
-Vector2 Snap(const Vector2 &a, float grid)
-{
-    return Vector2(Snap(a.x, grid), Snap(a.y, grid));
-}
-
-Vector2 Lerp(const Vector2 &a, const Vector2 &b, float frac)
-{
-    return Vector2(Lerp(a.x, b.x, frac), Lerp(a.y, b.y, frac));
-}
-
-Vector2 Max(const Vector2 &a, const Vector2 &b)
-{
-    return Vector2(std::max(a.x, b.x), std::max(a.y, b.y));
-}
-
-Vector2 Min(const Vector2 &a, const Vector2 &b)
-{
-    return Vector2(std::min(a.x, b.x), std::min(a.y, b.y));
-}
-
-Vector2 Clamp(const Vector2 &a, const Vector2 &minV, const Vector2 &maxV)
-{
-    return Vector2(std::clamp(a.x, minV.x, maxV.x), std::clamp(a.y, minV.y, maxV.y));
-}
-
-Vector2 Clamp(const Vector2 &a, float minF, float maxF)
-{
-    return Vector2(std::clamp(a.x, minF, maxF), std::clamp(a.y, minF, maxF));
-}
-
-//--
-
 //--
 
 static Vector2 opNegV2(const Vector2& a) { return -a; }
@@ -155,7 +116,7 @@ static Vector2 opDivV2F(const Vector2& a, float b) { return a / b; }
 static Vector2 opMulFV2(float a, const Vector2& b) { return b * a; }
 
 static Vector2 AbsV2(const Vector2& a) { return a.abs(); }
-static Vector2 MinV2(const Vector2& a, const Vector2& b) { return Min(a,b); }
+/*static Vector2 MinV2(const Vector2& a, const Vector2& b) { return Min(a,b); }
 static Vector2 MaxV2(const Vector2& a, const Vector2& b) { return Max(a,b); }
 static float DotV2(const Vector2& a, const Vector2& b) { return Dot(a,b); }
 static Vector2 SnapV2(const Vector2& a, float b) { return Snap(a,b); }
@@ -165,10 +126,10 @@ static Vector2 ClampV2F(const Vector2& a, float minV, float maxV) { return Clamp
 static Vector2 NormalV2(const Vector2 &a, const Vector2 &normal) { return NormalPart(a, normal); }
 static Vector2 TangentV2(const Vector2 &a, const Vector2 &normal) { return TangentPart(a, normal); }
 static Vector2 ClampLengthV2(const Vector2& a, float maxLength) { return ClampLength(a, maxLength); }
-static Vector2 SetLengthV2(const Vector2& a, float maxLength) { return SetLength(a, maxLength); }
+static Vector2 SetLengthV2(const Vector2& a, float maxLength) { return SetLength(a, maxLength); }*/
 
 RTTI_GLOBAL_FUNCTION(AbsV2, "Core.AbsV2");
-RTTI_GLOBAL_FUNCTION(MinV2, "Core.MinV2");
+/*RTTI_GLOBAL_FUNCTION(MinV2, "Core.MinV2");
 RTTI_GLOBAL_FUNCTION(MaxV2, "Core.MaxV2");
 RTTI_GLOBAL_FUNCTION(DotV2, "Core.DotV2");
 RTTI_GLOBAL_FUNCTION(SnapV2, "Core.SnapV2");
@@ -178,7 +139,7 @@ RTTI_GLOBAL_FUNCTION(LerpV2, "Core.LerpV2");
 RTTI_GLOBAL_FUNCTION(NormalV2, "Core.NormalV2");
 RTTI_GLOBAL_FUNCTION(TangentV2, "Core.TangentV2");
 RTTI_GLOBAL_FUNCTION(ClampLengthV2, "Core.ClampLengthV2");
-RTTI_GLOBAL_FUNCTION(SetLengthV2, "Core.SetLengthV2");
+RTTI_GLOBAL_FUNCTION(SetLengthV2, "Core.SetLengthV2");*/
 RTTI_GLOBAL_FUNCTION(opNegV2, "Core.opNegate_ref_Vector2_Vector2");
 RTTI_GLOBAL_FUNCTION(opPrepV2, "Core.opBinaryNot_ref_Vector2_Vector2");
 RTTI_GLOBAL_FUNCTION(opAddV2, "Core.opAdd_ref_Vector2_ref_Vector2_Vector2");

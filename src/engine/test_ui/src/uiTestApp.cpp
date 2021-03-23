@@ -69,7 +69,7 @@ void UIApp::update()
     m_renderer->updateAndRender(dt);
 
     if (m_renderer->windows().empty())
-        platform::GetLaunchPlatform().requestExit("All windows closed");
+        GetLaunchPlatform().requestExit("All windows closed");
 }
 
 END_BOOMER_NAMESPACE_EX(test)

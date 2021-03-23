@@ -57,7 +57,7 @@ Box Capsule::bounds() const
     auto pb = position2();
 
     auto a = pb - pa;
-    auto aDot = Dot(a,a);
+    auto aDot = a | a;
     auto ex = radius() * sqrtf(1.0f - a.x * a.x / aDot);
     auto ey = radius() * sqrtf(1.0f - a.y * a.y / aDot);
     auto ez = radius() * sqrtf(1.0f - a.z * a.z / aDot);
@@ -74,15 +74,15 @@ Box Capsule::bounds() const
 
 bool Capsule::contains(const Vector3& point) const
 {
-    auto d = Dot(point, normal());
-    auto p = Dot(position(), normal());
+    auto d = point | normal();
+    auto p = position() | normal();
 
     auto t = position() - point;
     auto sqRadius = radius() * radius();
 
     if (d >= p &&  d <= p + height())
     {
-        auto tProj = normal() * Dot(t, normal());
+        auto tProj = normal() * (t | normal());
         if (t.squareDistance(tProj) <= sqRadius)
             return true;
     }

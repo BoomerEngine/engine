@@ -8,7 +8,8 @@
 
 #pragma once
 
-#include "engine/world/include/nodeTemplate.h"
+#include "engine/world/include/rawEntity.h"
+#include "engine/ui/include/uiTreeViewEx.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -72,20 +73,20 @@ public:
     // child nodes that are entities (helper)
     INLINE const Array<SceneContentEntityNodePtr>& entities() const { return m_entities; }
 
-    // child nodes that are components (helper)
-    INLINE const Array<SceneContentBehaviorNodePtr>& behaviors() const { return m_behaviors; }
+    /*// child nodes that are components (helper)
+    INLINE const Array<SceneContentBehaviorNodePtr>& behaviors() const { return m_behaviors; }*/
 
     // visual flags
     INLINE SceneContentNodeVisualFlags visualFlags() const { return m_visualFlags; }
-
-    // model index for tree view
-    INLINE uint64_t uniqueModelIndex() const { return m_uniqueModelIndex; }
 
     // was the node marked as modified
     INLINE bool modified() const { return m_modified; }
 
     // dirty flags - what has changed since last sync
     INLINE SceneContentNodeDirtyFlags dirtyFlags() const { return m_dirtyFlags; }
+
+    // tree element (for tree view)
+    INLINE SceneContentTreeItem* treeItem() const { return m_treeItem; }
 
     //--
 
@@ -158,9 +159,6 @@ public:
     // change node name
     void name(const StringBuf& name);
 
-    // get the UI icon for given node type
-    static StringView IconTextForType(SceneContentNodeType type);
-
     //--
 
     // collect parent nodes (roots first)
@@ -193,10 +191,13 @@ public:
 
     //--
 
-    virtual void displayText(IFormatStream& f) const;
     virtual void markModified() override;
 
     //--
+
+    virtual void displayTags(IFormatStream& f) const;
+
+    void updateDisplayElement();
 
 private:
     SceneContentStructure* m_structure = nullptr;
@@ -208,16 +209,16 @@ private:
 
     Array<SceneContentNodePtr> m_children; // objects just in this file
     Array<SceneContentEntityNodePtr> m_entities; // specific list of just entities
-    Array<SceneContentBehaviorNodePtr> m_behaviors; // specific list of just scripts
+    //Array<SceneContentBehaviorNodePtr> m_behaviors; // specific list of just scripts
 
     SceneContentNodeVisualFlags m_visualFlags;
     SceneContentNodeDirtyFlags m_dirtyFlags;
 
     StringBuf m_name;
 
-    uint64_t m_uniqueModelIndex = 0;
-
     mutable HashSet<StringBuf> m_childrenNames;
+
+    SceneContentTreeItemPtr m_treeItem;
         
     //--
 
@@ -292,153 +293,6 @@ public:
     virtual bool canAttach(SceneContentNodeType type) const override final;
     virtual bool canDelete() const override final;
     virtual bool canCopy() const override final;
-};
-
-//--
-
-/// general node with editable content (component/entity)
-class EDITOR_SCENE_EDITOR_API SceneContentDataNode : public SceneContentNode
-{
-    RTTI_DECLARE_VIRTUAL_CLASS(SceneContentDataNode, SceneContentNode);
-
-public:
-    SceneContentDataNode(SceneContentNodeType nodeType, const StringBuf& name, const ObjectIndirectTemplate* editableData);
-
-    // do we have override content defined at this node (coming from prefab)
-    INLINE bool hasBaseContent() const { return !m_baseData.empty(); }
-
-    // base data of this node, always valid if we come from prefab - NOTE: we might have more than one base node (if so, data is stacked)
-    INLINE const Array<ObjectIndirectTemplatePtr>& baseData() const { return m_baseData; }
-
-    // editable data of this node, always valid, stacked on top of any base nodes
-    INLINE const ObjectIndirectTemplatePtr& editableData() const { return m_editableData; }
-
-    // get current local to parent transform (it's always the placement from editable data)
-    INLINE const EulerTransform& localToParent() const { return m_localToWorld; }
-
-    // get the cached "local to world" for this node
-    INLINE const AbsoluteTransform& cachedLocalToWorldTransform() const { return m_cachedLocalToWorldPlacement; }
-
-    // get the cached "local to world" for this node
-    INLINE const Matrix& cachedLocalToWorldMatrix() const { return m_cachedLocalToWorldMatrix; }
-
-    //--
-
-    // get parent transform
-    const AbsoluteTransform& cachedParentToWorldTransform() const;
-
-    // change local to parent placement
-    // NOTE: placement of child nodes is NOT changed
-    void changeLocalPlacement(const EulerTransform& localToParent, bool force = false);
-
-    // change class of data
-    void changeClass(ClassType templateClass);
-
-    // determine data class
-    ClassType dataClass() const;
-
-    // flatten template data
-    ObjectIndirectTemplatePtr compileFlatData() const;
-
-    //--
-
-protected:
-    void cacheTransformData();
-    void updateBaseTemplates(const Array<const ObjectIndirectTemplate*>& baseTemplates);
-
-    virtual void handleTransformUpdated();
-    virtual void handleDebugRender(rendering::FrameParams& frame) const override;
-    virtual void handleParentChanged() override;
-    virtual void handleDataPropertyChanged(const StringBuf& data);
-    virtual void displayText(IFormatStream& txt) const override;
-
-private:
-    AbsoluteTransform m_cachedLocalToWorldPlacement; // local to world placement for the node
-    Matrix m_cachedLocalToWorldMatrix; // changed whenever parent changes as well
-
-    ObjectIndirectTemplatePtr m_editableData; // always valid
-    InplaceArray<ObjectIndirectTemplatePtr, 2> m_baseData; // valid only if we are instanced from a prefab
-    EulerTransform m_baseLocalToTransform;
-
-    EulerTransform m_localToWorld; // editable + base
-
-    GlobalEventTable m_dataEvents;
-};
-
-//--
-
-struct SceneContentEntityInstancedContent
-{
-    Array<NodeTemplatePrefabSetup> localPrefabs;
-    Array<SceneContentNodePtr> childNodes;
-};
-
-/// general entity node (always in a file, can be parented to other entity)
-class EDITOR_SCENE_EDITOR_API SceneContentEntityNode : public SceneContentDataNode
-{
-    RTTI_DECLARE_VIRTUAL_CLASS(SceneContentEntityNode, SceneContentDataNode);
-
-public:
-    SceneContentEntityNode(const StringBuf& name, const NodeTemplatePtr& node, const Array<NodeTemplatePtr>& inheritedTemplated = Array<NodeTemplatePtr>());
-
-    INLINE const Array<NodeTemplatePrefabSetup>& localPrefabs() const { return m_localPrefabs; }
-
-    NodeTemplatePtr compileDifferentialData() const;
-
-    NodeTemplatePtr compileSnapshot() const;
-
-    NodeTemplatePtr compiledForCopy() const;
-
-    void invalidateData();
-
-    //--
-
-    void extractCurrentInstancedContent(SceneContentEntityInstancedContent& outInstancedContent); // NOTE: destructive !
-    void createInstancedContent(const NodeTemplate* dataTemplate, SceneContentEntityInstancedContent& outInstancedContent) const;
-    void applyInstancedContent(const SceneContentEntityInstancedContent& content);
-
-    //--
-
-    virtual bool canAttach(SceneContentNodeType type) const override final;
-    virtual bool canDelete() const override final;
-    virtual bool canCopy() const override final;
-
-    bool canExplodePrefab() const;
-
-private:
-    Array<NodeTemplatePtr> m_inheritedTemplates;
-    Array<NodeTemplatePrefabSetup> m_localPrefabs;
-
-    bool m_dirtyVisualData = false;
-    bool m_dirtyVisualTransform = false;
-
-    virtual void handleDataPropertyChanged(const StringBuf& data) override;
-    virtual void handleChildAdded(SceneContentNode* child) override;
-    virtual void handleChildRemoved(SceneContentNode* child) override;
-    virtual void handleVisibilityChanged() override;
-
-    void updateBaseTemplates();
-    void collectBaseNodes(const Array<NodeTemplatePrefabSetup>& localPrefabs, Array<const NodeTemplate*>& outBaseNodes) const;
-};
-
-//--
-
-/// general behavior node 
-class EDITOR_SCENE_EDITOR_API SceneContentBehaviorNode : public SceneContentDataNode
-{
-    RTTI_DECLARE_VIRTUAL_CLASS(SceneContentBehaviorNode, SceneContentDataNode);
-
-public:
-    SceneContentBehaviorNode(const StringBuf& name, const ObjectIndirectTemplate* editableData, const Array<const ObjectIndirectTemplate*>& baseData = Array<const ObjectIndirectTemplate*>());
-
-    virtual bool canAttach(SceneContentNodeType type) const override final;
-    virtual bool canDelete() const override final;
-    virtual bool canCopy() const override final;
-
-protected:
-    virtual void handleDataPropertyChanged(const StringBuf& data) override;
-    virtual void handleTransformUpdated() override;
-    virtual void handleLocalVisibilityChanged() override;
 };
 
 //--

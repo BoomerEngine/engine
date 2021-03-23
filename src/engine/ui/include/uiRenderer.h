@@ -302,6 +302,7 @@ protected:
     void processMouseClick(const input::MouseClickEvent& evt);
     void processMouseCaptureLostEvent(const input::MouseCaptureLostEvent& evt);
     void processKeyEvent(const input::KeyEvent& evt);
+    void processAxisEvent(const input::AxisEvent& evt);
     void processCharEvent(const input::CharEvent& evt);
 
     bool processInputActionResult(const InputActionResult& result);

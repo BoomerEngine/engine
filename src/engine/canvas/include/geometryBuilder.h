@@ -440,4 +440,26 @@ private:
 
 //--
 
+/// helper geometry builder that is easier for immediate geometry building and draving
+class ENGINE_CANVAS_API InplaceGeometryBuilder : public GeometryBuilder
+{
+public:
+    InplaceGeometryBuilder(Canvas& c);
+
+    void reset();
+
+    void render(float alpha = 1.0f);
+    void render(Vector2 pos, float alpha = 1.0f);
+    void render(float x, float y, float alpha=1.0f);
+
+    void solidRect(Color color, float x, float y, float w, float h);
+    void solidRectWithBorder(Color fillColor, Color lineColor, float x, float y, float w, float h);
+
+private:
+    Geometry m_geometry;
+    Canvas& m_canvas;
+};
+
+//--
+
 END_BOOMER_NAMESPACE_EX(canvas)

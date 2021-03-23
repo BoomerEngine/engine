@@ -8,16 +8,14 @@
 ***/
 
 #include "build.h"
-#include "entitySoup.h"
-#include "islandGeneration.h"
-#include "streamingGrid.h"
+#include "worldCompiler.h"
 
 #include "core/app/include/command.h"
 #include "core/app/include/commandline.h"
 #include "core/resource/include/loader.h"
 #include "core/resource/include/loader.h"
-#include "engine/world/include/rawScene.h"
-#include "engine/world/include/compiledScene.h"
+#include "engine/world/include/rawWorldData.h"
+#include "engine/world/include/compiledWorldData.h"
 #include "core/resource/include/fileSaver.h"
 #include "core/io/include/fileHandle.h"
 #include "core/resource/include/depot.h"
@@ -40,47 +38,6 @@ public:
 RTTI_BEGIN_TYPE_CLASS(CommandCompileScene);
     RTTI_METADATA(CommandNameMetadata).name("compileScene");
 RTTI_END_TYPE();
-
-static void DistributeIslandsIntoGrid(const SourceIslands& islands, SourceStreamingGrid& outGrid)
-{
-    for (const auto& island : islands.rootIslands)
-        InsertIslandIntoGrid(island, outGrid);
-}
-
-static bool SaveFileToDepot(StringView path, IObject* data)
-{
-    ScopeTimer timer;
-
-    auto file = GetService<DepotService>()->createFileWriter(path);
-    if (!file)
-    {
-        TRACE_ERROR("Unable to open '{}' for saving", path);
-        return false;
-    }
-
-    FileSavingContext context;
-    context.rootObjects.pushBack(data);
-
-    FileSavingResult result;
-    if (!SaveFile(file, context, result))
-    {
-        TRACE_ERROR("Unable to save '{}'", path);
-        file->discardContent();
-        return false;
-    }
-
-    TRACE_INFO("Saved '{}' in {}", path, timer);
-    return true;
-}
-
-/*static StringBuf BuildCellSavePath(StringView outputDirectoryPath, const SourceStreamingGridCell& cell)
-{
-    const auto extension = IResource::GetResourceExtensionForClass(StreamingSector::GetStaticClass());
-    return StringBuf(TempString("{}sectors/sector_{}_({}x{}).{}",
-        outputDirectoryPath,
-        cell.level, cell.cellX, cell.cellY,
-        extension));
-}*/
 
 bool CommandCompileScene::run(IProgressTracker* progress, const CommandLine& commandline)
 {
@@ -109,84 +66,21 @@ bool CommandCompileScene::run(IProgressTracker* progress, const CommandLine& com
         }
     }
 
-    TRACE_INFO("Loading scene '{}'", depotPath);
+    TRACE_INFO("Compiling world '{}'", depotPath);
 
-    auto rawScene = LoadResource<RawScene>(depotPath);
-    if (!rawScene)
+    auto compiledScene = CompileRawWorld(depotPath, *progress);
+    if (!compiledScene)
     {
-        TRACE_ERROR("Unable to load '{}'", depotPath);
+        TRACE_ERROR("Unable to compile '{}'", depotPath);
         return false;
     }
 
-    //--
-
-    // extract entity source
-    SourceEntitySoup soup;
-    ExtractSourceEntities(depotPath, soup);
-
-    // build entity islands
-    SourceIslands islands;
-    ExtractSourceIslands(soup, islands);
-
-    /*
-    // build streaming grid
-    SourceStreamingGrid grid;
-    InitializeGrid(islands.totalStreamingArea, 16.0f, islands.largestStreamingDistance, grid);
-
-    // distribute islands
-    DistributeIslandsIntoGrid(islands, grid);
-
-    // dump grid info
-    DumpGrid(grid);
-
-    // collect cells that are not empty
-    Array<const SourceStreamingGridCell*> finalCells;
-    CollectFinalCells(grid, finalCells);
-    TRACE_INFO("Collected {} final cells", finalCells.size());
-
-    // save sectors
-    CompiledScene::Setup setup;
-    for (const auto* cell : finalCells)
+    if (!GetService<DepotService>()->saveFileFromResource(outputDepotPath, compiledScene))
     {
-        if (const auto cellData = BuildSectorFromCell(*cell))
-        {
-            const auto savePath = BuildCellSavePath(outputDirectoryPath, *cell);
-            TRACE_INFO("Saving cell to '{}'...", savePath);
-
-            if (!SaveFileToDepot(savePath, cellData))
-            {
-                TRACE_ERROR("Failed to save compiled scene file");
-                return false;
-            }
-
-            auto& cellInfo = setup.cells.emplaceBack();
-            cellInfo.streamingBox = cellData->streamingBounds();
-            cellInfo.data = StreamingSectorAsyncRef(ResourcePath(savePath));
-        }
-    }*/
-
-    // build final islands
-    Array<StreamingIslandPtr> finalIslands;
-    finalIslands.reserve(islands.rootIslands.size());
-    for (const auto& sourceRootIsland : islands.rootIslands)
-    {
-        if (auto finalIsland = BuildIsland(sourceRootIsland))
-            finalIslands.pushBack(finalIsland);
+        TRACE_ERROR("Unable to save compiled world to '{}'", outputDepotPath);
+        return false;
     }
-
-    // prepare compiled scene object
-    {
-        auto compiledScene = RefNew<CompiledScene>(std::move(finalIslands));
-        if (!SaveFileToDepot(outputDepotPath, compiledScene))
-        {
-            TRACE_ERROR("Failed to save compiled scene file");
-            return false;
-        }
-    }
-
-    // TODO: update embedded resource grid
-
-    // done
+    
     return true;
 }
 

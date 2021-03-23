@@ -235,14 +235,14 @@ void CanvasTestProject::update()
     if (m_renderingOutput->window()->windowHasCloseRequest())
     {
         TRACE_INFO("Main window closed, exiting");
-        platform::GetLaunchPlatform().requestExit("Window closed");
+        GetLaunchPlatform().requestExit("Window closed");
         return;
     }
 
     // user exit requested
     if (m_exitRequested)
     {
-        platform::GetLaunchPlatform().requestExit("User exit");
+        GetLaunchPlatform().requestExit("User exit");
         return;
     }
 

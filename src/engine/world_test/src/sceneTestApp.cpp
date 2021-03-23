@@ -26,6 +26,7 @@
 #include "engine/rendering/include/params.h"
 #include "engine/rendering/include/cameraContext.h"
 #include "engine/canvas/include/service.h"
+#include "../../world/include/world.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
 
@@ -40,7 +41,6 @@ SceneTestProject::SceneTestProject()
 void SceneTestProject::cleanup()
 {
     m_currentTest.reset();
-    m_cameraContext.reset();
 
 	delete m_imguiHelper;
 	m_imguiHelper = nullptr;
@@ -108,8 +108,6 @@ bool SceneTestProject::initialize(const CommandLine& cmdLine)
 
 	m_imguiHelper = new ImGui::ImGUICanvasHelper();
 
-    m_cameraContext = RefNew<rendering::CameraContext>();
-
     m_lastUpdateTime.resetToNow();
     return true;
 }
@@ -162,14 +160,14 @@ void SceneTestProject::update()
     if (m_renderingOutput->window()->windowHasCloseRequest())
     {
         TRACE_INFO("Main window closed, exiting");
-        platform::GetLaunchPlatform().requestExit("Window closed");
+        GetLaunchPlatform().requestExit("Window closed");
         return;
     }
 
     // user exit requested
     if (m_exitRequested)
     {
-        platform::GetLaunchPlatform().requestExit("User exit");
+        GetLaunchPlatform().requestExit("User exit");
         return;
     }
 
@@ -220,50 +218,10 @@ void SceneTestProject::update()
 
         if (auto output = cmd.opAcquireOutput(m_renderingOutput))
         {
-			rendering::FrameCompositionTarget target;
-			target.targetColorRTV = output.color;
-			target.targetDepthRTV = output.depth;
-			target.targetRect = Rect(0, 0, output.width, output.height);
+            if (m_currentTest)
+                m_currentTest->renderFrame(cmd, output, m_lastFrameStats, m_lastCamera);
 
-            if (output.color->flipped())
-            {
-                if (m_flippedColorTarget && (m_flippedColorTarget->width() != output.color->width() || m_flippedColorTarget->height() != output.color->height()))
-                {
-                    m_flippedColorTarget.reset();
-                    m_flippedDepthTarget.reset();
-                }
-
-                if (!m_flippedColorTarget)
-                {
-                    gpu::ImageCreationInfo info;
-                    info.allowRenderTarget = true;
-                    info.width = output.color->width();
-                    info.height = output.color->height();
-                    info.format = output.color->format();
-                    info.label = "FlippedColorOutput";
-                    m_flippedColorTarget = GetService<DeviceService>()->device()->createImage(info);
-                    m_flippedColorTargetRTV = m_flippedColorTarget->createRenderTargetView();
-
-                    info.format = output.depth->format();
-                    m_flippedDepthTarget = GetService<DeviceService>()->device()->createImage(info);
-                    m_flippedDepthTargetRTV = m_flippedDepthTarget->createRenderTargetView();
-                }
-
-                rendering::FrameCompositionTarget flippedTarget;
-                flippedTarget.targetColorRTV = m_flippedColorTargetRTV;
-                flippedTarget.targetDepthRTV = m_flippedDepthTargetRTV;
-                flippedTarget.targetRect = Rect(0, 0, output.width, output.height);
-
-                prepareSceneCommandBuffers(cmd, flippedTarget);
-
-                cmd.opCopyRenderTarget(m_flippedColorTargetRTV, output.color, 0, 0, true);
-            }
-            else
-            {
-                prepareSceneCommandBuffers(cmd, target);
-            }
-
-			prepareCanvasCommandBuffers(cmd, target);
+			prepareCanvasCommandBuffers(cmd, output);
 
             cmd.opSwapOutput(m_renderingOutput);
         }
@@ -361,36 +319,16 @@ void SceneTestProject::handleInput(input::IContext& context)
     const auto shouldCapture = m_timeAdvance && !DebugPagesVisible();
     context.requestCapture(shouldCapture ? 2 : 0);
 }
-        
-void SceneTestProject::prepareSceneCommandBuffers(gpu::CommandWriter& cmd, const rendering::FrameCompositionTarget& target)
+
+void SceneTestProject::prepareCanvasCommandBuffers(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output)
 {
-    rendering::FrameParams frame(target.targetRect.width(), target.targetRect.height(), Camera());
-    frame.filters = rendering::FilterFlags::DefaultGame();
-    frame.mode = rendering::FrameRenderMode::Default;
-    frame.time.engineRealTime = m_lastGameTime;
-    frame.time.gameTime = m_lastGameTime;
-    frame.camera.cameraContext = m_cameraContext;
-
-    if (m_currentTest)
-        m_currentTest->render(frame);
-
-    m_lastCamera = frame.camera.camera;
-    m_lastFrameStats = rendering::FrameStats();
-
-    // generate command buffers
-    if (auto sceneRenderingCommands = GetService<rendering::FrameRenderingService>()->render(frame, target, nullptr, m_lastFrameStats))
-        cmd.opAttachChildCommandBuffer(sceneRenderingCommands);
-}
-
-void SceneTestProject::prepareCanvasCommandBuffers(gpu::CommandWriter& cmd, const rendering::FrameCompositionTarget& target)
-{
-    canvas::Canvas canvas(target.targetRect.width(), target.targetRect.height());
+    canvas::Canvas canvas(output.width, output.height);
 	renderCanvas(canvas);
 
 	{
         gpu::FrameBuffer fb;
-        fb.color[0].view(target.targetColorRTV);
-        fb.depth.view(target.targetDepthRTV);
+        fb.color[0].view(output.color);
+        fb.depth.view(output.depth);
 
         cmd.opBeingPass(fb);
         GetService<canvas::CanvasService>()->render(cmd, canvas);
@@ -398,16 +336,10 @@ void SceneTestProject::prepareCanvasCommandBuffers(gpu::CommandWriter& cmd, cons
 	}
 }
 
-ConfigProperty<bool> cvShowSceneStats("DebugPage.Rendering.FrameStats", "IsVisible", false);
-
 void SceneTestProject::renderCanvas(canvas::Canvas& canvas)
 {
     // Local stuff
     {
-        canvas.debugPrint(canvas.width() - 20, canvas.height() - 60,
-            TempString("Camera Position: [X={}, Y={}, Z={}]", Prec(m_lastCamera.position().x, 2), Prec(m_lastCamera.position().y, 2), Prec(m_lastCamera.position().z, 2)),
-            Color::WHITE, 16, font::FontAlignmentHorizontal::Right);
-
         if (DebugPagesVisible())
         {
             canvas.debugPrint(canvas.width() - 20, canvas.height() - 40,
@@ -450,11 +382,7 @@ void SceneTestProject::renderCanvas(canvas::Canvas& canvas)
         if (m_currentTest)
             m_currentTest->configure();
 
-        if (cvShowSceneStats.get() && ImGui::Begin("Frame stats", &cvShowSceneStats.get()))
-        {
-            rendering::RenderStatsGui(m_lastFrameStats);
-            ImGui::End();
-        }
+        rendering::RenderStatsGui(m_lastFrameStats);
 
 		m_imguiHelper->endFrame(canvas);
     }

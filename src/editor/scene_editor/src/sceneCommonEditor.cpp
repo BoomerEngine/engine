@@ -17,9 +17,6 @@
 #include "sceneEditMode_Default.h"
 
 #include "core/object/include/actionHistory.h"
-#include "editor/common/include/managedFile.h"
-#include "editor/common/include/assetFormat.h"
-#include "editor/common/include/managedFileNativeResource.h"
 #include "engine/ui/include/uiDockPanel.h"
 #include "engine/ui/include/uiDockLayout.h"
 #include "engine/ui/include/uiDataInspector.h"
@@ -30,7 +27,8 @@
 #include "engine/ui/include/uiMenuBar.h"
 #include "engine/ui/include/uiElementConfig.h"
 #include "engine/world/include/world.h"
-#include "engine/world/include/prefab.h"
+#include "engine/world/include/rawPrefab.h"
+#include "engine/world/include/rawWorldData.h"
 #include "core/resource/include/indirectTemplate.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
@@ -40,14 +38,17 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 RTTI_BEGIN_TYPE_NATIVE_CLASS(SceneCommonEditor);
 RTTI_END_TYPE();
 
-SceneCommonEditor::SceneCommonEditor(ManagedFileNativeResource* file, SceneContentNodeType rootContentType, StringView defaultEditorTag)
-    : ResourceEditorNativeFile(file, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::CopyPaste }, defaultEditorTag)
+SceneCommonEditor::SceneCommonEditor(const ResourceInfo& info, SceneContentNodeType rootContentType, StringView defaultEditorTag)
+    : ResourceEditor(info, { ResourceEditorFeatureBit::Save, ResourceEditorFeatureBit::UndoRedo, ResourceEditorFeatureBit::CopyPaste }, defaultEditorTag)
     , m_rootContentType(rootContentType)
 {
     m_content = RefNew<SceneContentStructure>(rootContentType);
     m_defaultEditMode = RefNew<SceneEditMode_Default>(actionHistory());
 
     createInterface();
+
+    m_defaultEditMode->reset();
+    m_previewContainer->actionSwitchMode(m_defaultEditMode);
 }
 
 SceneCommonEditor::~SceneCommonEditor()
@@ -63,7 +64,9 @@ void SceneCommonEditor::createInterface()
         auto tab = RefNew<ui::DockPanel>("[img:world] Preview", "PreviewPanel");
         tab->layoutVertical();
 
-        m_previewContainer = tab->createChild<ScenePreviewContainer>(m_content, m_defaultEditMode);
+        auto worldData = rtti_cast<RawWorldData>(info().resource);
+
+        m_previewContainer = tab->createChild<ScenePreviewContainer>(m_content, m_defaultEditMode, worldData);
         m_previewContainer->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
         m_previewContainer->customVerticalAligment(ui::ElementVerticalLayout::Expand);
 
@@ -142,20 +145,6 @@ void SceneCommonEditor::fillViewMenu(ui::MenuButtonContainer* menu)
     m_previewContainer->fillViewConfigMenu(menu);
 }
 
-bool SceneCommonEditor::initialize()
-{
-    if (!TBaseClass::initialize())
-        return false;
-
-    recreateContent();
-
-    m_defaultEditMode->reset();
-    m_previewContainer->actionSwitchMode(m_defaultEditMode);
-
-    refreshEditMode();
-    return true;
-}
-
 void SceneCommonEditor::refreshEditMode()
 {
     m_inspectorPanel->removeAllChildren();
@@ -169,6 +158,11 @@ void SceneCommonEditor::refreshEditMode()
             ui->customVerticalAligment(ui::ElementVerticalLayout::Top);
         }
     }
+}
+
+bool SceneCommonEditor::modified() const
+{
+    return TBaseClass::modified() || m_content->root()->modified();
 }
 
 void SceneCommonEditor::update()

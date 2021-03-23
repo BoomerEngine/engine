@@ -33,7 +33,7 @@ RTTI_END_TYPE();
 ///---
 
 static const StringView ENGINE_PREFIX = "/engine/";
-static const StringView PROJECT_PREFIX = "/engine/";
+static const StringView PROJECT_PREFIX = "/project/";
 
 DepotService::DepotService()
 {}
@@ -54,6 +54,16 @@ bool DepotService::removeDirectory(StringView depotPath) const
     DEBUG_CHECK_RETURN_EX_V(queryFileAbsolutePath(depotPath, absolutePath), "Invalid depot path", false);
 
     return boomer::DeleteDir(absolutePath);
+}
+
+bool DepotService::removeFile(StringView depotPath) const
+{
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotFilePath(depotPath), "Not a file path", false);
+
+    StringBuf absolutePath;
+    DEBUG_CHECK_RETURN_EX_V(queryFileAbsolutePath(depotPath, absolutePath), "Invalid depot path", false);
+
+    return boomer::DeleteFile(absolutePath);
 }
 
 StringBuf DepotService::queryDepotAbsolutePath(DepotType type) const
@@ -196,6 +206,26 @@ void DepotService::enumFilesAtPath(StringView depotPath, const std::function<voi
             depot.structure->enumFiles(remainingPath, enumFunc);
         }
     }
+}
+
+bool DepotService::enumFilesAtPathRecursive(StringView depotPath, uint32_t maxDepth, const std::function<bool(StringView dirDepotPath, StringView fileName)>& enumFunc) const
+{
+    DEBUG_CHECK_RETURN_EX_V(ValidateDepotDirPath(depotPath), "Invalid directory path", false);
+
+    for (const auto& depot : m_depots)
+    {
+        if (depot.prefix && depotPath.beginsWith(depot.prefix))
+        {
+            const auto remainingPath = depotPath.subString(depot.prefix.length());
+
+            return depot.structure->enumFilesRecrusive(remainingPath, maxDepth, [&enumFunc](StringView localDirPath, StringView localFileName)
+                {
+                    return enumFunc(localDirPath, localFileName);
+                });
+        }
+    }
+
+    return false;
 }
 
 //--

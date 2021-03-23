@@ -20,18 +20,20 @@ class EDITOR_SCENE_EDITOR_API SceneWorldEditor : public SceneCommonEditor
     RTTI_DECLARE_VIRTUAL_CLASS(SceneWorldEditor, SceneCommonEditor);
 
 public:
-    SceneWorldEditor(ManagedFileNativeResource* file);
+    SceneWorldEditor(const ResourceInfo& info);
     virtual ~SceneWorldEditor();
 
 protected:
     virtual bool checkGeneralSave() const override;
     virtual bool save() override;
+    virtual void cleanup() override;
 
     virtual void recreateContent() override;
 
-    void cmdShowAssetBrowser();
+    void cmdBuildWorld();
 
     SceneContentWorldDirPtr m_rootLayersGroup;
+    ScenePlayInEditorPanelPtr m_piePanel;
 };
 
 //--

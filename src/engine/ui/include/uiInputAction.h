@@ -85,6 +85,9 @@ public:
     /// Handle key event
     virtual InputActionResult onKeyEvent(const input::KeyEvent& evt);
 
+    /// Handle axis event
+    virtual InputActionResult onAxisEvent(const input::AxisEvent& evt);
+
     /// Handle mouse click
     virtual InputActionResult onMouseEvent(const input::MouseClickEvent& evt, const ElementWeakPtr& hoveredElement);
 

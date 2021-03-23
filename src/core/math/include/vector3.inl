@@ -354,7 +354,7 @@ INLINE float Vector3::operator|(const Vector3 &other) const
 
 INLINE Vector3 Vector3::operator^(const Vector3 &other) const
 {
-    return Cross(*this, other);
+    return *this, other;
 }
 
 INLINE float Vector3::operator[](int index) const
@@ -387,6 +387,106 @@ INLINE int Vector3::smallestAxis() const
     if (ax < ay && ax < az) return 0;
     if (ay < ax && ay < az) return 1;
     return 2;
+}
+
+//--
+
+INLINE Vector3 Vector3::normalPart(const Vector3& normal) const
+{
+    return normal * dot(normal);;
+}
+
+INLINE Vector3 Vector3::tangentPart(const Vector3& normal) const
+{
+    return *this - normalPart(normal);
+}
+
+INLINE std::pair<Vector3, Vector3> Vector3::decompose(const Vector3& normal) const
+{
+    auto np = normal * dot(normal);;
+    return std::make_pair(np, *this - np);
+}
+
+INLINE float Vector3::dot(const Vector3& other) const
+{
+    return (x * other.x) + (y * other.y) + (z * other.z);
+}
+
+INLINE void Vector3::clampLength(float val)
+{
+    auto sqlen = squareLength();
+    if (sqlen > (val * val))
+    {
+        auto len = std::sqrt(sqlen);
+        if (len > FLT_EPSILON)
+        {
+            auto scale = val / len;
+            x *= scale;
+            y *= scale;
+            z *= scale;
+        }
+    }
+}
+
+INLINE void Vector3::setLength(float val)
+{
+    auto len = length();
+    if (len > FLT_EPSILON)
+    {
+        auto scale = val / len;
+        x *= scale;
+        y *= scale;
+        z *= scale;
+    }
+}
+
+//--
+
+INLINE void Vector3::snap(float grid)
+{
+    x = Snap(x, grid);
+    y = Snap(y, grid);
+    z = Snap(z, grid);
+}
+
+INLINE Vector3 Vector3::snapped(float grid) const
+{
+    return Vector3(
+        Snap(x, grid),
+        Snap(y, grid),
+        Snap(z, grid));
+}
+
+INLINE Vector3 Vector3::min(const Vector3& b) const
+{
+    return Vector3(
+        std::min(x, b.x),
+        std::min(y, b.y),
+        std::min(z, b.z));
+}
+
+INLINE Vector3 Vector3::min(float val) const
+{
+    return Vector3(
+        std::min(x, val),
+        std::min(y, val),
+        std::min(z, val));
+}
+
+INLINE Vector3 Vector3::max(const Vector3& b) const
+{
+    return Vector3(
+        std::max(x, b.x),
+        std::max(y, b.y),
+        std::max(z, b.z));
+}
+
+INLINE Vector3 Vector3::max(float val) const
+{
+    return Vector3(
+        std::max(x, val),
+        std::max(y, val),
+        std::max(z, val));
 }
 
 //--

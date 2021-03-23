@@ -13,71 +13,34 @@ BEGIN_BOOMER_NAMESPACE()
 //--
 
 INLINE Transform::Transform()
-    : T(Translation::ZERO())
-    , R(Rotation::IDENTITY())
-    , S(Scale::ONE())
+    : T(ExactPosition::ZERO())
+    , R(Quat::IDENTITY())
+    , S(Vector3::ONE())
 {}
 
-INLINE Transform::Transform(const Translation& pos)
+INLINE Transform::Transform(const ExactPosition& pos)
     : T(pos)
-    , R(Rotation::IDENTITY())
-    , S(Scale::ONE())
+    , R(Quat::IDENTITY())
+    , S(Vector3::ONE())
 {}
 
-INLINE Transform::Transform(const Translation& pos, const Rotation& rot)
+INLINE Transform::Transform(const ExactPosition& pos, const Quat& rot)
     : T(pos)
     , R(rot)
-    , S(Scale::ONE())
+    , S(Vector3::ONE())
 {}
 
-INLINE Transform::Transform(const Translation& pos, const Rotation& rot, const Scale& scale)
+INLINE Transform::Transform(const ExactPosition& pos, const Quat& rot, const Vector3& scale)
     : T(pos)
     , R(rot)
     , S(scale)
 {}
 
-INLINE Transform& Transform::identity()
+INLINE void Transform::reset()
 {
-    T = Translation::ZERO();
-    R = Rotation::IDENTITY();
-    S = Scale::ONE();
-    return *this;
-}
-
-INLINE Transform& Transform::shiftParent(const Translation& translationInParentSpace)
-{
-    T += translationInParentSpace;
-    return *this;
-}
-
-INLINE Transform& Transform::shiftLocal(const Translation& translationInLocalSpace)
-{
-    T += R.transformVector(translationInLocalSpace * S);
-    return *this;
-}
-
-INLINE Transform& Transform::rotateParent(float pitch, float yaw, float roll)
-{
-    R = R * Angles(pitch, yaw, roll).toQuat();
-    return *this;
-}
-
-INLINE Transform& Transform::rotateParent(const Quat& quat)
-{
-    R = R * quat;
-    return *this;
-}
-
-INLINE Transform& Transform::rotateLocal(float pitch, float yaw, float roll)
-{
-    R = Angles(pitch, yaw, roll).toQuat() * R;
-    return *this;
-}
-
-INLINE Transform& Transform::rotateLocal(const Quat& quat)
-{
-    R = quat * R;
-    return *this;
+    T = ExactPosition::ZERO();
+    R = Quat::IDENTITY();
+    S = Vector3::ONE();
 }
 
 INLINE bool Transform::operator==(const Transform& other) const

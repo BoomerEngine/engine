@@ -93,53 +93,6 @@ const Vector4& Vector4::EZ() { return EZ_V4; }
 const Vector4& Vector4::EW() { return EW_V4; }
 const Vector4& Vector4::INF() { return INF_V4; }
 
-/*Vector4 Vector4::Rand(float min, float max)
-{
-    return Vector4(RandRange(min, max), RandRange(min, max), RandRange(min, max), RandRange(min, max));
-}*/
-
-//--
-
-float Dot(const Vector4 &a, const Vector4 &b)
-{
-    return (a.x * b.x) + (a.y * b.y) + (a.z * b.z) + (a.w * b.w);
-}
-
-Vector3 Cross(const Vector4 &a, const Vector4 &b)
-{
-    return Cross((const Vector3&)a, (const Vector3&)b);
-}
-
-Vector4 Snap(const Vector4 &a, float grid)
-{
-    return Vector4(Snap(a.x, grid), Snap(a.y, grid), Snap(a.z, grid), Snap(a.w, grid));
-}
-
-Vector4 Lerp(const Vector4 &a, const Vector4 &b, float frac)
-{
-    return Vector4(Lerp(a.x, b.x, frac), Lerp(a.y, b.y, frac), Lerp(a.z, b.z, frac), Lerp(a.w, b.w, frac));
-}
-
-Vector4 Min(const Vector4 &a, const Vector4 &b)
-{
-    return Vector4(std::min(a.x, b.x), std::min(a.y, b.y), std::min(a.z, b.z), std::min(a.w, b.w));
-}
-
-Vector4 Max(const Vector4 &a, const Vector4 &b)
-{
-    return Vector4(std::max(a.x, b.x), std::max(a.y, b.y), std::max(a.z, b.z), std::max(a.w, b.w));
-}
-
-Vector4 Clamp(const Vector4 &a, const Vector4 &minV, const Vector4 &maxV)
-{
-    return Vector4(std::clamp(a.x, minV.x, maxV.x), std::clamp(a.y, minV.y, maxV.y), std::clamp(a.z, minV.z, maxV.z), std::clamp(a.w, minV.w, maxV.w));
-}
-
-Vector4 Clamp(const Vector4 &a, float minF, float maxF)
-{
-    return Vector4(std::clamp(a.x, minF, maxF), std::clamp(a.y, minF, maxF), std::clamp(a.z, minF, maxF), std::clamp(a.w, minF, maxF));
-}
-
 //--
 
 void Vector4::print(IFormatStream& f) const
@@ -154,7 +107,7 @@ static Vector4 opAddV4(const Vector4& a, const Vector4& b) { return a + b; }
 static Vector4 opSubV4(const Vector4& a, const Vector4& b) { return a - b; }
 static Vector4 opMulV4(const Vector4& a, const Vector4& b) { return a * b; }
 static Vector4 opDivV4(const Vector4& a, const Vector4& b) { return a / b; }
-static float opDotV4(const Vector4& a, const Vector4& b) { return Dot(a,b); }
+static float opDotV4(const Vector4& a, const Vector4& b) { return a | b; }
 
 static Vector4 opAsssignAddV4(Vector4& a, const Vector4& b) { return a += b; }
 static Vector4 opAsssignSubV4(Vector4& a, const Vector4& b) { return a -= b; }
@@ -173,7 +126,7 @@ static Vector4 opDivV4F(const Vector4& a, float b) { return a / b; }
 static Vector4 opMulFV4(float a, const Vector4& b) { return b * a; }
 
 static Vector4 AbsV4(const Vector4& a) { return a.abs(); }
-static Vector4 MinV4(const Vector4& a, const Vector4& b) { return Min(a,b); }
+/*static Vector4 MinV4(const Vector4& a, const Vector4& b) { return Min(a,b); }
 static Vector4 MaxV4(const Vector4& a, const Vector4& b) { return Max(a,b); }
 static float DotV4(const Vector4& a, const Vector4& b) { return Dot(a,b); }
 static Vector4 SnapV4(const Vector4& a, float b) { return Snap(a,b); }
@@ -183,10 +136,10 @@ static Vector4 ClampV4F(const Vector4& a, float minF, float maxF) { return Clamp
 static Vector4 NormalV4(const Vector4 &a, const Vector4 &normal) { return NormalPart(a, normal); }
 static Vector4 TangentV4(const Vector4 &a, const Vector4 &normal) { return TangentPart(a, normal); }
 static Vector4 ClampLengthV4(const Vector4& a, float maxLength) { return ClampLength(a, maxLength); }
-static Vector4 SetLengthV4(const Vector4& a, float maxLength) { return SetLength(a, maxLength); }
+static Vector4 SetLengthV4(const Vector4& a, float maxLength) { return SetLength(a, maxLength); }*/
 
 RTTI_GLOBAL_FUNCTION(AbsV4, "Core.AbsV4");
-RTTI_GLOBAL_FUNCTION(DotV4, "Core.DotV4");
+/*RTTI_GLOBAL_FUNCTION(DotV4, "Core.DotV4");
 RTTI_GLOBAL_FUNCTION(SnapV4, "Core.SnapV4");
 RTTI_GLOBAL_FUNCTION(MinV4, "Core.MinV4");
 RTTI_GLOBAL_FUNCTION(MaxV4, "Core.MaxV4");
@@ -196,7 +149,7 @@ RTTI_GLOBAL_FUNCTION(ClampV4F, "Core.ClampV4F");
 RTTI_GLOBAL_FUNCTION(NormalV4, "Core.NormalV4");
 RTTI_GLOBAL_FUNCTION(TangentV4, "Core.TangentV4");
 RTTI_GLOBAL_FUNCTION(ClampLengthV4, "Core.ClampLengthV4");
-RTTI_GLOBAL_FUNCTION(SetLengthV4, "Core.SetLengthV4");
+RTTI_GLOBAL_FUNCTION(SetLengthV4, "Core.SetLengthV4");*/
 RTTI_GLOBAL_FUNCTION(opNegV4, "Core.opNegate_ref_Vector4_Vector4");
 RTTI_GLOBAL_FUNCTION(opAddV4, "Core.opAdd_ref_Vector4_ref_Vector4_Vector4");
 RTTI_GLOBAL_FUNCTION(opSubV4, "Core.opSubtract_ref_Vector4_ref_Vector4_Vector4");

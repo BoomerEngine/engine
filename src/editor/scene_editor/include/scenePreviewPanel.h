@@ -40,10 +40,10 @@ public:
     virtual void configLoad(const ui::ConfigBlock& block);
 
 private:
-    virtual void handleRender(rendering::FrameParams& frame) override;
+    virtual void handleFrame(rendering::FrameParams& frame) override;
     virtual void handlePointSelection(bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables) override;
     virtual void handleAreaSelection(bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables) override;
-    virtual void handleContextMenu(bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const AbsolutePosition* positionUnderCursor) override;
+    virtual void handleContextMenu(bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const ExactPosition* positionUnderCursor) override;
     virtual ui::InputActionPtr handleMouseClick(const ui::ElementArea& area, const input::MouseClickEvent& evt) override;
     virtual bool handleMouseMovement(const input::MouseMovementEvent& evt) override;
     virtual bool handleCursorQuery(const ui::ElementArea& area, const ui::Position& absolutePosition, input::CursorType& outCursorType) const override;

@@ -136,6 +136,22 @@ public:
     //--
 
     void print(IFormatStream& f) const;
+
+    //--
+
+    // snap to grid
+    INLINE void snap(float grid);
+
+    // snap to grid
+    INLINE Angles snapped(float grid) const;
+
+    // compute "dot product" between rotations - dot of the foward vectors
+    INLINE float dot(const Angles& other) const;
+
+    // compute "dot product" between rotations - dot of the foward vectors
+    INLINE float dot(const Vector3& other) const;
+
+    //--
 };
 
 END_BOOMER_NAMESPACE()

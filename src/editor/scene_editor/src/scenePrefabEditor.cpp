@@ -10,12 +10,11 @@
 
 #include "scenePrefabEditor.h"
 #include "sceneContentNodes.h"
+#include "sceneContentNodesEntity.h"
 #include "sceneContentStructure.h"
 #include "sceneEditMode_Default.h"
 
-#include "engine/world/include/prefab.h"
-#include "editor/common/include/assetFormat.h"
-#include "editor/common/include/managedFileNativeResource.h"
+#include "engine/world/include/rawPrefab.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -24,9 +23,11 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 RTTI_BEGIN_TYPE_NATIVE_CLASS(ScenePrefabEditor);
 RTTI_END_TYPE();
 
-ScenePrefabEditor::ScenePrefabEditor(ManagedFileNativeResource* file)
-    : SceneCommonEditor(file, SceneContentNodeType::PrefabRoot, "Prefabs")
+ScenePrefabEditor::ScenePrefabEditor(const ResourceInfo& info)
+    : SceneCommonEditor(info, SceneContentNodeType::PrefabRoot, "Prefabs")
 {
+    recreateContent();
+    refreshEditMode();
 }
 
 ScenePrefabEditor::~ScenePrefabEditor()
@@ -39,7 +40,7 @@ void ScenePrefabEditor::recreateContent()
         rootNode->detachAllChildren();
 
         SceneContentNodePtr editableNode;
-        if (const auto prefabData = rtti_cast<Prefab>(resource()))
+        if (const auto prefabData = rtti_cast<Prefab>(info().resource))
         {
             if (auto root = prefabData->root())
             {
@@ -69,9 +70,9 @@ bool ScenePrefabEditor::save()
 {
     if (const auto& root = m_content->root())
     {
-        if (const auto prefabData = rtti_cast<Prefab>(resource()))
+        if (const auto prefabData = rtti_cast<Prefab>(info().resource))
         {
-            NodeTemplatePtr rootNode;
+            RawEntityPtr rootNode;
 
             if (!root->entities().empty())
             {
@@ -99,17 +100,15 @@ class ScenePrefabResourceEditorOpener : public IResourceEditorOpener
     RTTI_DECLARE_VIRTUAL_CLASS(ScenePrefabResourceEditorOpener, IResourceEditorOpener);
 
 public:
-    virtual bool canOpen(const AssetFormat& format) const override
+    virtual bool createEditor(ui::IElement* owner, const ResourceInfo& context, ResourceEditorPtr& outEditor) const override final
     {
-        return format.nativeResourceClass() == Prefab::GetStaticClass();
-    }
+        if (auto texture = rtti_cast<Prefab>(context.resource))
+        {
+            outEditor = RefNew<ScenePrefabEditor>(context);
+            return true;
+        }
 
-    virtual RefPtr<ResourceEditor> createEditor(ManagedFile* file) const override
-    {
-        if (auto nativeFile = rtti_cast<ManagedFileNativeResource>(file))
-            return RefNew<ScenePrefabEditor>(nativeFile);
-
-        return nullptr;
+        return false;
     }
 };
 

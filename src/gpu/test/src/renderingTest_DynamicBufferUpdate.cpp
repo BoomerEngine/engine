@@ -66,7 +66,7 @@ static void PrepareTestGeometry(uint32_t count, float x, float y, float r, float
         outVertices[i].y = y + dy * displ;
 
         // calc color
-        outColors[i] = Lerp(Color(Color::RED), Color(Color::GREEN), (0.5f + 0.5f*displPhase));
+        outColors[i] = LinearInterpolation(0.5f + 0.5f * displPhase).lerpGamma(Color::RED, Color::GREEN);
     }
 }
 

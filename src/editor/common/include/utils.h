@@ -36,17 +36,5 @@ static INLINE RefPtr<T> LoadFromXML(ui::IElement* owner, StringView category)
 
 //---
 
-/// check if depot file can be loaded into given class
-extern EDITOR_COMMON_API bool CanLoadAsClass(StringView depotPath, ClassType cls);
-
-/// check if depot file can be loaded into given class
-template< typename T >
-INLINE bool CanLoadAsClass(StringView depotPath)
-{
-    return CanLoadAsClass(depotPath, T::GetStaticClass());
-}
-
-//---
-
 END_BOOMER_NAMESPACE_EX(ed)
 

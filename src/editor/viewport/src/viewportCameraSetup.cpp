@@ -46,14 +46,15 @@ Vector3 ViewportCameraSetup::normalizedScreenPosition(int x, int y, float z) con
     return Vector3(wx, wy, z);
 }
 
-bool ViewportCameraSetup::worldSpaceRayForClientPixelExact(int x, int y, AbsolutePosition& outStart, Vector3& outDir) const
+bool ViewportCameraSetup::worldSpaceRayForClientPixelExact(int x, int y, ExactPosition& outStart, Vector3& outDir) const
 {
     auto coords = normalizedScreenPosition(x, y, 0.5f);
+
     Vector3 start;
     if (!m_camera.calcWorldSpaceRay(coords, start, outDir))
         return false;
 
-    outStart = AbsolutePosition(start, Vector3());
+    outStart = start;
     return true;
 }
 
@@ -63,7 +64,7 @@ bool ViewportCameraSetup::worldSpaceRayForClientPixel(int x, int y, Vector3& out
     return m_camera.calcWorldSpaceRay(coords, outStart, outDir);
 }
 
-bool ViewportCameraSetup::screenToWorld(const Vector3* normalizedScreenPos, AbsolutePosition* outWorldPosition, uint32_t count) const
+bool ViewportCameraSetup::screenToWorld(const Vector3* normalizedScreenPos, ExactPosition* outWorldPosition, uint32_t count) const
 {
     for (uint32_t i = 0; i < count; ++i)
     {
@@ -71,18 +72,18 @@ bool ViewportCameraSetup::screenToWorld(const Vector3* normalizedScreenPos, Abso
         if (!m_camera.projectWorldToScreen(normalizedScreenPos[i], worldPos))
             return false;
 
-        outWorldPosition[i] = AbsolutePosition(worldPos, Vector3::ZERO());
+        outWorldPosition[i] = worldPos;
     }
 
     return true;
 }
 
-bool ViewportCameraSetup::worldToScreen(const AbsolutePosition* worldPosition, Vector3* outScreenPosition, uint32_t count) const
+bool ViewportCameraSetup::worldToScreen(const ExactPosition* worldPosition, Vector3* outScreenPosition, uint32_t count) const
 {
     for (uint32_t i = 0; i < count; ++i)
     {
         Vector3 screenPos;
-        auto simpleWorldPos = worldPosition[i].approximate();
+        auto simpleWorldPos = worldPosition[i];
         if (!m_camera.projectWorldToScreen(simpleWorldPos, screenPos))
             return false;
 
@@ -92,12 +93,12 @@ bool ViewportCameraSetup::worldToScreen(const AbsolutePosition* worldPosition, V
     return true;
 }
 
-bool ViewportCameraSetup::worldToClient(const AbsolutePosition* worldPosition, Vector3* outClientPosition, uint32_t count) const
+bool ViewportCameraSetup::worldToClient(const ExactPosition* worldPosition, Vector3* outClientPosition, uint32_t count) const
 {
     for (uint32_t i = 0; i < count; ++i)
     {
         Vector3 screenPos;
-        auto simpleWorldPos = worldPosition[i].approximate();
+        auto simpleWorldPos = worldPosition[i];
         if (!m_camera.projectWorldToScreen(simpleWorldPos, screenPos))
             return false;
 
@@ -109,9 +110,9 @@ bool ViewportCameraSetup::worldToClient(const AbsolutePosition* worldPosition, V
     return true;
 }
 
-float ViewportCameraSetup::calculateViewportScaleFactor(const AbsolutePosition& worldPosition, bool useDPI) const
+float ViewportCameraSetup::calculateViewportScaleFactor(const ExactPosition& worldPosition, bool useDPI) const
 {
-    auto approximateWorldPos = worldPosition.approximate();
+    auto approximateWorldPos = worldPosition;
     return m_camera.calcScreenSpaceScalingFactor(approximateWorldPos, m_width, m_height) * 1.0f;// cachedStyleParams().m_scale;
 }
 

@@ -35,29 +35,4 @@ const Range& Range::EMPTY() { return EMPTY_R; }
 
 //--
 
-Range Snap(const Range &a, float grid)
-{
-    return Range(Snap(a.min, grid), Snap(a.max, grid));
-}
-
-Range Lerp(const Range &a, const Range &b, float frac)
-{
-    return Range(Lerp(a.min, b.min, frac), Lerp(a.max, b.max, frac));
-}
-
-Range Min(const Range &a, const Range &b)
-{
-    return Range(std::min(a.min, b.min), std::min(a.max, b.max));
-}
-
-Range Max(const Range &a, const Range &b)
-{
-    return Range(std::max(a.min, b.min), std::max(a.max, b.max));
-}
-
-Range Clamp(const Range &a, const Range &minV, const Range &maxV);
-Range Clamp(const Range &a, float minF, float maxF);
-
-//--
-
 END_BOOMER_NAMESPACE()

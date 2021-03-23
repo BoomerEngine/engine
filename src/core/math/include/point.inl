@@ -90,11 +90,53 @@ INLINE Point Point::operator-(const Point &other) const
     return Point(*this) -= other;
 }
 
+INLINE void Point::snap(int grid)
+{
+    if (grid)
+    {
+        x = (x / grid) * grid;
+        y = (y / grid) * grid;
+    }    
+}
+
+INLINE Point Point::snapped(int grid) const
+{
+    if (grid)
+    {
+        return Point((x / grid) * grid,
+            (y / grid) * grid);
+    }
+    else
+    {
+        return *this;
+    }
+}
+
+INLINE Vector2 Point::operator-(const Vector2& other) const
+{
+    return Vector2((float)x - other.x, (float)y - other.y);
+}
+
+INLINE Vector2 Point::operator*(float scale) const
+{
+    return Vector2((float)x * scale, (float)y * scale);
+}
+
+INLINE Point::operator Vector2() const
+{
+    return Vector2((float)x, (float)y);
+}
+
+INLINE Vector2 Point::toVector() const
+{
+    return Vector2((float)x, (float)y);
+}
+
 //-----------------------------------------------------------------------------
 
 INLINE float Point::distanceTo(const Point& other) const
 {
-    return sqrt(squaredDistanceTo(other));
+    return std::sqrtf(squaredDistanceTo(other));
 }
 
 INLINE float Point::squaredDistanceTo(const Point& other) const
@@ -102,6 +144,18 @@ INLINE float Point::squaredDistanceTo(const Point& other) const
     auto dx = (float)x - (float)other.x;
     auto dy = (float)y - (float)other.y;
     return dx*dx + dy*dy;
+}
+
+INLINE float Point::distanceTo(const Vector2& other) const
+{
+    return std::sqrtf(squaredDistanceTo(other));
+}
+
+INLINE float Point::squaredDistanceTo(const Vector2& other) const
+{
+    auto dx = (float)x - other.x;
+    auto dy = (float)y - other.y;
+    return dx * dx + dy * dy;
 }
 
 //-----------------------------------------------------------------------------

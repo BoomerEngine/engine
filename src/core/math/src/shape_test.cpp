@@ -1835,7 +1835,7 @@ struct Scene
         auto height = length * 0.7f;
         auto radius = length * 0.15f;
 
-        auto dir = transform.transformVector(Vector3::EZ());
+        auto dir = BaseTransformation(transform).transformVector(Vector3::EZ());
 
         m_capsules.emplaceBack(pos + dir * radius, dir, radius, height);
 

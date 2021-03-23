@@ -9,20 +9,20 @@
 #pragma once
 
 #include "params.h"
+#include "stats.h"
 
 #include "gpu/device/include/framebuffer.h"
+#include "gpu/device/include/commandWriter.h"
 
 #include "core/memory/include/linearAllocator.h"
 #include "core/reflection/include/variantTable.h"
 #include "core/memory/include/pageCollection.h"
-#include "stats.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(rendering)
 
 ///---
 
 struct FragmentRenderContext;
-struct FrameCompositionTarget;
 class FrameResources;
 
 ///---
@@ -64,7 +64,7 @@ public:
 class ENGINE_RENDERING_API FrameRenderer : public NoCopy
 {
 public:
-    FrameRenderer(const FrameParams& frame, const FrameCompositionTarget& target, const FrameResources& resources, const FrameHelper& helpers, const Scene* scene);
+    FrameRenderer(const FrameParams& frame, const gpu::AcquiredOutput& output, const FrameResources& resources, const FrameHelper& helpers, const Scene* scene);
     ~FrameRenderer();
 
     //--
@@ -73,7 +73,7 @@ public:
 
     INLINE const FrameParams& frame() const { return m_frame; }
 
-	INLINE const FrameCompositionTarget& target() const { return m_target; }
+	INLINE const gpu::AcquiredOutput& output() const { return m_output; }
 
     INLINE const FrameResources& resources() const { return m_resources; }
 	INLINE const FrameHelper& helpers() const { return m_helpers; }
@@ -104,8 +104,9 @@ private:
 
     LinearAllocator m_allocator;
 
+    const gpu::AcquiredOutput& m_output;
+
     const FrameParams& m_frame;
-	const FrameCompositionTarget& m_target;
 	const FrameResources& m_resources;
 	const FrameHelper& m_helpers;
 

@@ -109,7 +109,7 @@ public:
     float linearDepthValueAtPixel(int x, int y, bool* withinRect = nullptr) const;
 
     /// calculate world position for given pixel
-    bool calcWorldPosition(int x, int y, AbsolutePosition& outPos) const;
+    bool calcWorldPosition(int x, int y, ExactPosition& outPos) const;
 
 private:
     uint32_t m_width;
@@ -228,8 +228,9 @@ protected:
     virtual void handleFocusLost() override;
 
     virtual void handleUpdate(float dt);
-    virtual void handleCamera(CameraSetup& outCamera);
-    virtual void handleRender(rendering::FrameParams& frame);
+    virtual void handleCamera(CameraSetup& outCamera) const override;
+    virtual void handleFrame(rendering::FrameParams& frame);
+    virtual void handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& camera, const rendering::FrameParams_Capture* capture) override;
     virtual void handlePointSelection(bool ctrl, bool shift, const Point& clientPosition);
     virtual void handleAreaSelection(bool ctrl, bool shift, const Rect& clientRect);
     virtual bool handleContextMenu(const ElementArea& area, const Position& absolutePosition, input::KeyMask controlKeys) override;
@@ -237,21 +238,19 @@ protected:
 
     virtual void handlePointSelection(bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables);
     virtual void handleAreaSelection(bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables);
-    virtual void handleContextMenu(bool ctrl, bool shift, const Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const AbsolutePosition* positionUnderCursor);
+    virtual void handleContextMenu(bool ctrl, bool shift, const Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const ExactPosition* positionUnderCursor);
 
     virtual void buildRenderModePopup(MenuButtonContainer* menu);
     virtual void buildFilterPopup(MenuButtonContainer* menu);
     virtual void buildCameraPopup(MenuButtonContainer* menu);
 
-	virtual void renderContent(const ViewportParams& viewport, Camera* outCameraUsedToRender = nullptr) override;
-
-    void drawViewAxes(uint32_t width, uint32_t height, rendering::FrameParams& frame);
+	void drawViewAxes(uint32_t width, uint32_t height, rendering::FrameParams& frame);
     void drawCameraInfo(uint32_t width, uint32_t height, rendering::FrameParams& frame);
     void drawGrid(rendering::FrameParams& frame);
 
     void rotateGlobalLight(float deltaPitch, float deltaYaw);
 
-    bool queryWorldPositionUnderCursor(const Point& localPoint, AbsolutePosition& outPosition);
+    bool queryWorldPositionUnderCursor(const Point& localPoint, ExactPosition& outPosition);
 
     //-
        
@@ -271,7 +270,7 @@ private:
 
     uint32_t m_frameIndex = 0;
 
-    Camera m_cachedCamera;
+    mutable Camera m_cachedCamera;
 
     rendering::CameraContextPtr m_cameraContext;
 

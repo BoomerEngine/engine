@@ -8,25 +8,41 @@
 
 #include "build.h"
 #include "structureNodes.h"
-
 #include "structurePanel.h"
-#include "engine/ui/include/uiTreeView.h"
+
+#include "engine/ui/include/uiTreeViewEx.h"
+#include "engine/ui/include/uiTextLabel.h"
+#include "engine/ui/include/uiSplitter.h"
 #include "engine/mesh/include/mesh.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //--
 
-RTTI_BEGIN_TYPE_CLASS(MeshStructurePanel);
+RTTI_BEGIN_TYPE_NATIVE_CLASS(MeshStructurePanel);
 RTTI_END_TYPE();
 
-MeshStructurePanel::MeshStructurePanel()
+MeshStructurePanel::MeshStructurePanel(ActionHistory* ah)
+    : m_actionHistory(ah)
 {
     layoutVertical();
 
-    m_tree = createChild<ui::TreeViewEx>();
-    m_tree->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
-    m_tree->customVerticalAligment(ui::ElementVerticalLayout::Expand);
+    {
+        auto split = createChild<ui::Splitter>(ui::Direction::Horizontal, 0.5f);
+
+        m_tree = split->createChild<ui::TreeViewEx>();
+        m_tree->customHorizontalAligment(ui::ElementHorizontalLayout::Expand);
+        m_tree->customVerticalAligment(ui::ElementVerticalLayout::Expand);
+
+        auto area = split->createChild<ui::ScrollArea>(ui::ScrollMode::Always);
+        area->expand();
+
+        m_details = area->createChild<ui::TextLabel>();
+        m_details->customPadding(5, 5, 5, 5);
+
+        /*m_properties = split->createChild<ui::DataInspector>();
+        m_properties->bindActionHistory(m_actionHistory);*/
+    }
 
     m_tree->bind(ui::EVENT_ITEM_SELECTION_CHANGED) = [this]()
     {
@@ -63,7 +79,12 @@ void MeshStructurePanel::bindResource(const MeshPtr& meshPtr)
 
 void MeshStructurePanel::updateSelection()
 {
+    StringBuilder txt;
 
+    if (auto selection = m_tree->current<IMeshStructureNode>())
+        selection->printDetails(txt);
+
+    m_details->text(txt.view());
 }
 
 //--

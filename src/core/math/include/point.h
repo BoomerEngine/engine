@@ -45,6 +45,12 @@ public:
     INLINE Point operator+(const Point &other) const;
     INLINE Point operator-(const Point &other) const;
 
+    INLINE Vector2 operator+(const Vector2& other) const;
+    INLINE Vector2 operator-(const Vector2& other) const;
+    INLINE Vector2 operator*(float scale) const;
+
+    INLINE operator Vector2() const;
+
     //---
 
     //! Get distance to other point
@@ -55,8 +61,24 @@ public:
 
     //---
 
+    //! Get distance to other point
+    INLINE float distanceTo(const Vector2& other) const;
+
+    //! Get squared distance to other point
+    INLINE float squaredDistanceTo(const Vector2& other) const;
+
+    //---
+
     //! Convert to 2 component floating point vector
-    Vector2 toVector() const;
+    INLINE Vector2 toVector() const;
+
+    //---
+
+    // snap to grid
+    INLINE void snap(int grid);
+
+    // snap to grid
+    INLINE Point snapped(int grid) const;
 
     //---
 

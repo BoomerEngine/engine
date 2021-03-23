@@ -130,8 +130,8 @@ public:
             // LINE
             {
                 const auto& space = m_action->capturedReferenceSpace();
-                auto startPos = space.calcAbsolutePositionForLocal(Vector3::ZERO()).approximate();
-                auto endPos = space.calcAbsolutePositionForLocal(m_lastComputedTransform.T).approximate();
+                auto startPos = space.calcAbsolutePositionForLocal(Vector3::ZERO());
+                auto endPos = space.calcAbsolutePositionForLocal(m_lastComputedTransform.T);
 
                 rendering::DebugDrawer dd(frame.geometry.overlay);
                 dd.color(Color::WHITE);
@@ -188,13 +188,13 @@ public:
     static bool CalcBestReferencePlane(const Vector3& origin, const Vector3& cameraDir, const Vector3& cameraPos, const Vector3& movementAxis, Plane& outPlane)
     {
         // find the orientation that contains the movement axis
-        auto dot = Dot(movementAxis, cameraDir);
+        auto dot = movementAxis | cameraDir;
         if (abs(dot) > (1.0f - SMALL_EPSILON))
             return false;
 
         // calculate the normal
-        auto planeSide = Cross(cameraDir, movementAxis);
-        auto planeNormal = Cross(movementAxis, planeSide);
+        auto planeSide = cameraDir ^ movementAxis;
+        auto planeNormal = movementAxis ^ planeSide;
         planeNormal.normalize();
 
         // calculate the plane
@@ -228,7 +228,7 @@ public:
         // camera direction
         const auto cameraPos = m_action->host()->gizmoHost_camera().position();
         const auto cameraDir = m_action->host()->gizmoHost_camera().directionForward();
-        auto origin = m_action->capturedReferenceSpace().origin().approximate();
+        auto origin = m_action->capturedReferenceSpace().origin();
 
         // calculate the position in viewport
         auto clientPos = evt.absolutePosition() - element()->cachedDrawArea().absolutePosition();
@@ -255,8 +255,8 @@ public:
                 if (referencePlane.intersect(rayStart, rayDir, 1000.0f, &intersectionDistance, &intersectionPoint))
                 {
                     // calculate the projected distance along the axis
-                    float movementAlign = Dot(movementAxis, cameraDir);
-                    float movementDelta = Dot(movementAxis, intersectionPoint - origin);
+                    float movementAlign = movementAxis | cameraDir;
+                    float movementDelta = movementAxis | (intersectionPoint - origin);
 
                     // remember the first offset as the reference point (since we can click on the gizmo anywhere)
                     if (!m_initialOffsetSaved)

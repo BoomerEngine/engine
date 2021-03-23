@@ -473,9 +473,9 @@ namespace prv
                     {
                         Color valA = colorA->color();
                         Color valB = colorB->color();
-                        float f = perc->number();
-                        TRACE_INFO("Mixing: '{}' '{}' {} => {}", valA, valB, f, Lerp(valA, valB, f));
-                        return pc.library().alloc<RawValue>(Lerp(valA, valB, f));
+
+                        LinearInterpolation lerp(perc->number());
+                        return pc.library().alloc<RawValue>(lerp.lerpGamma(valA, valB));
                     }
                     else
                     {

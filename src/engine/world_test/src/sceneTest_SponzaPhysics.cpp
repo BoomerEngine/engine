@@ -9,18 +9,14 @@
 #include "build.h"
 #include "sceneTest.h"
 
-//#include "game/world/include/meshEntity.h"
-#include "engine/world/include/entity.h"
-#include "engine/world/include/world.h"
-
 BEGIN_BOOMER_NAMESPACE_EX(test)
 
 //---
 
 /// a simple box on plane test, can be upscaled to more shapes
-class SceneTest_SponzaPhysics : public ISceneTestEmptyWorld
+class SceneTest_SponzaPhysics : public ISceneTest
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_SponzaPhysics, ISceneTestEmptyWorld);
+    RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_SponzaPhysics, ISceneTest);
 
 public:
     virtual void configure() override
@@ -32,29 +28,6 @@ public:
     {
         TBaseClass::update(dt);
     }
-
-    virtual void createWorldContent() override
-    {
-        if (auto mesh = loadMesh("/engine/scene/sponza/meshes/sponza.xfile"))
-        {
-            /*auto mc = RefNew<game::MeshEntity>();
-            mc->mesh(mesh);
-            m_world->attachEntity(mc);*/
-        }
-
-        if (auto mesh = loadMesh("/engine/meshes/cube.xfile"))
-        {
-            /*auto mc = RefNew<game::MeshEntity>();
-            mc->mesh(mesh);
-            mc->requestMove(Vector3(0, 0, 0.5f));
-            m_mesh = mc;
-            m_world->attachEntity(mc);*/
-        }
-    }
-
-protected:
-    EntityPtr m_mesh;
-    float m_meshYaw = 0.0f;
 };
 
 RTTI_BEGIN_TYPE_CLASS(SceneTest_SponzaPhysics);

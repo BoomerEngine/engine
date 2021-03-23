@@ -470,6 +470,7 @@ struct DisplayInfo;
 struct ResolutionInfo;
 struct ResolutionSyncInfo;
 struct OutputInitInfo;
+struct AcquiredOutput;
 
 //--
 

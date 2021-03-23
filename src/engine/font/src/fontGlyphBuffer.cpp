@@ -21,7 +21,7 @@ void GlyphBuffer::addFont(const RefPtr<Font>& font)
     m_fonts.pushBackUnique(font);
 }
 
-void GlyphBuffer::addGlyph(uint32_t ch, const Glyph* glyph, float x, float y, int textPosition)
+void GlyphBuffer::addGlyph(uint32_t ch, const Glyph* glyph, float x, float y, int textPosition, Color color)
 {
     if (glyph != nullptr)
     {
@@ -29,7 +29,7 @@ void GlyphBuffer::addGlyph(uint32_t ch, const Glyph* glyph, float x, float y, in
         renderPos.x = (float)(int)(x) + glyph->offset().x;
         renderPos.y = (float)(int)(y) + glyph->offset().y;
 
-        m_glyphs.pushBack({ glyph, renderPos, Color::WHITE, textPosition });
+        m_glyphs.pushBack({ glyph, renderPos, color, textPosition });
 
         Rect drawRect;
         drawRect.min.x = (int)(renderPos.x);

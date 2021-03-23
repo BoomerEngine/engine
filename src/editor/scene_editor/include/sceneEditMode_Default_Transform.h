@@ -42,8 +42,8 @@ private:
         SceneContentDataNodePtr node;
         SceneContentDataNodePtr parent;
         EulerTransform initialLocalTransform;
-        AbsoluteTransform initialWorldTransform;
-        AbsoluteTransform initialParentWorldTransform;
+        Transform initialWorldTransform;
+        Transform initialParentWorldTransform;
 
         EulerTransform lastTransform;
     };
@@ -76,8 +76,8 @@ private:
     {
         SceneContentDataNodePtr node;
         EulerTransform initialLocalTransform;
-        AbsoluteTransform initialWorldTransform;
-        AbsoluteTransform initialParentWorldTransform;
+        Transform initialWorldTransform;
+        Transform initialParentWorldTransform;
 
         EulerTransform calculatedTransform;
     };
@@ -102,9 +102,9 @@ private:
 //--
 
 extern EDITOR_SCENE_EDITOR_API void ApplyLocalTransformField(EulerTransform& data, SceneNodeTransformValueFieldType field, double value, bool delta);
-extern EDITOR_SCENE_EDITOR_API void ApplyWorldTransformField(AbsoluteTransform& data, SceneNodeTransformValueFieldType field, double value, bool delta);
+extern EDITOR_SCENE_EDITOR_API void ApplyWorldTransformField(Transform& data, SceneNodeTransformValueFieldType field, double value, bool delta);
 extern EDITOR_SCENE_EDITOR_API void ResetLocalTransformField(EulerTransform& data, SceneNodeTransformValueFieldType field);
-extern EDITOR_SCENE_EDITOR_API void ResetWorldTransformField(AbsoluteTransform& data, SceneNodeTransformValueFieldType field);
+extern EDITOR_SCENE_EDITOR_API void ResetWorldTransformField(Transform& data, SceneNodeTransformValueFieldType field);
 
 //--
 

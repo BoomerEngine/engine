@@ -92,9 +92,10 @@ uint32_t DebugDrawerBase::appendVertices(const DebugVertex* vertex, uint32_t num
 	auto* writePtr = m_verticesData.allocateUninitialized(numVertices);
 	if (m_localToWorldSet)
 	{
+        Transformation t(m_localToWorld);
 		while (readPtr < readEndPtr)
 		{
-			writePtr->p = m_localToWorld.transformPoint(readPtr->p);
+			writePtr->p = t.transformPoint(readPtr->p);
 			writePtr->c = readPtr->c;
 			writePtr->t = readPtr->t;
 
@@ -154,9 +155,10 @@ uint32_t DebugDrawerBase::appendVertices(const Vector3* points, uint32_t numVert
 	auto* writePtr = m_verticesData.allocateUninitialized(numVertices);
     if (m_localToWorldSet)
     {
+        Transformation t(m_localToWorld);
 		while (readPtr < readEndPtr)
         {
-            writePtr->p = m_localToWorld.transformPoint(*readPtr);
+            writePtr->p = t.transformPoint(*readPtr);
             writePtr->c = color;
             writePtr->t.x = 0.0f;
             writePtr->t.y = 0.0f;
@@ -586,8 +588,8 @@ void MakeArrow(const Vector3& start, const Vector3& end, Color color, Array<Debu
         // compute arrow vectors
         auto len = dir.length();
         auto dirX = dir.normalized();
-        auto dirY = Cross(dirX, space).normalized();
-        auto dirZ = Cross(dirY, dirX).normalized();
+        auto dirY = (dirX ^ space).normalized();
+        auto dirZ = (dirY ^ dirX).normalized();
 
         auto head = end;
         auto base = start + dir * 0.8f;
@@ -786,8 +788,8 @@ void DebugDrawer::wireCylinder(const Vector3& center1, const Vector3& center2, f
     if (dir.largestAxis() == 0)
         side = Vector3::EZ();
 
-    auto dirX = Cross(dir, side).normalized();
-    auto dirY = Cross(dir, dirX).normalized();
+    auto dirX = (dir ^ side).normalized();
+    auto dirY = (dir ^ dirX).normalized();
 
     // generate vertices
     auto circleCount = sphere.m_circle.size() - 1;
@@ -823,8 +825,8 @@ void DebugDrawer::wireCone(const Vector3& top, const Vector3& dir, float radius,
     if (dir.largestAxis() == 0)
         side = Vector3::EZ();
 
-    auto dirX = Cross(dir, side).normalized();
-    auto dirY = Cross(dir, dirX).normalized();
+    auto dirX = (dir ^ side).normalized();
+    auto dirY = (dir ^ dirX).normalized();
 
     // compute the circle sizes
     auto bottom = top + dir * radius * cos(DEG2RAD * angleDeg);
@@ -850,8 +852,8 @@ void DebugDrawer::wirePlane(const Vector3& pos, const Vector3& normal, float siz
     if (normal.largestAxis() == 0)
         side = Vector3::EZ();
 
-    auto dirX = Cross(normal, side).normalized();
-    auto dirY = Cross(normal, dirX).normalized();
+    auto dirX = (normal ^ side).normalized();
+    auto dirY = (normal ^ dirX).normalized();
 
     auto spacing = size / (float)gridSize;
 
@@ -886,6 +888,7 @@ void DebugDrawer::wireFrustum(const Matrix& frustumMatrix, float farPlaneScale /
 
     // compute frustum vertices
     Vector3 unprojected[8];
+    Transformation t(frustumMatrix);
     for (uint32_t i = 0; i < 8; ++i)
     {
         // Calculate vertex in screen space
@@ -896,7 +899,7 @@ void DebugDrawer::wireFrustum(const Matrix& frustumMatrix, float farPlaneScale /
         pos.w/* = 1.0f */;
 
         // Unprojected to world space
-        auto temp = frustumMatrix.transformVector4(pos);
+        auto temp = t.transformVector4(pos);
         unprojected[i] = Vector3(temp.x / temp.w, temp.y / temp.w, temp.z / temp.w);
     }
 
@@ -925,8 +928,8 @@ void DebugDrawer::wireCircle(const Vector3& center, const Vector3& normal, float
     if (normal.largestAxis() == 0)
         side = Vector3::EZ();
 
-    auto dirX = Cross(normal, side).normalized() * radius;
-    auto dirY = Cross(normal, dirX).normalized() * radius;
+    auto dirX = (normal ^ side).normalized() * radius;
+    auto dirY = (normal ^ dirX).normalized() * radius;
 
     // full circle
     if (startAngle == 0.0f && endAngle == 360.0f) // exact comparison to detect the default parameters
@@ -1156,8 +1159,8 @@ void DebugDrawer::solidCylinder(const Vector3& center1, const Vector3& center2, 
     if (dir.largestAxis() == 0)
         side = Vector3::EZ();
 
-    auto dirX = Cross(dir, side).normalized();
-    auto dirY = Cross(dir, dirX).normalized();
+    auto dirX = (dir ^ side).normalized();
+    auto dirY = (dir ^ dirX).normalized();
 
     // generate vertices
     auto circleCount = sphere.m_circle.size() - 1;
@@ -1200,8 +1203,8 @@ void DebugDrawer::solidCone(const Vector3& top, const Vector3& dir, float radius
     if (dir.largestAxis() == 0)
         side = Vector3::EZ();
 
-    auto dirX = Cross(dir, side).normalized();
-    auto dirY = Cross(dir, dirX).normalized();
+    auto dirX = (dir ^ side).normalized();
+    auto dirY = (dir ^ dirX).normalized();
 
     // compute the circle sizes
     auto bottom = top + dir * radius * cos(DEG2RAD * angleDeg);
@@ -1233,8 +1236,8 @@ void DebugDrawer::solidPlane(const Vector3& pos, const Vector3& normal, float si
     if (normal.largestAxis() == 0)
         side = Vector3::EZ();
 
-    auto dirX = Cross(normal, side).normalized();
-    auto dirY = Cross(normal, dirX).normalized();
+    auto dirX = (normal ^ side).normalized();
+    auto dirY = (normal ^ dirX).normalized();
 
     auto minX = -dirX * size;
     auto maxX = dirX * size;
@@ -1261,6 +1264,7 @@ void DebugDrawer::solidFrustum(const Matrix& frustumMatrix, float farPlaneScale 
     Vector3 frustumMax(+1.0f, +1.0f, farPlaneScale);
 
     Vector3 unprojected[8];
+    Transformation t(frustumMatrix);
     for (uint32_t i = 0; i < 8; ++i)
     {
         Vector4 pos;
@@ -1269,7 +1273,7 @@ void DebugDrawer::solidFrustum(const Matrix& frustumMatrix, float farPlaneScale 
         pos.z = (i & 4) ? frustumMax.z : frustumMax.z;
         pos.w/* = 1.0f */;
 
-        auto temp = frustumMatrix.transformVector4(pos);
+        auto temp = t.transformVector4(pos);
         unprojected[i] = Vector3(temp.x / temp.w, temp.y / temp.w, temp.z / temp.w);
     }
 
@@ -1297,8 +1301,8 @@ void DebugDrawer::solidCircle(const Vector3& center, const Vector3& normal, floa
     if (normal.largestAxis() == 0)
         side = Vector3::EZ();
 
-    auto dirX = Cross(normal, side).normalized() * radius;
-    auto dirY = Cross(normal, dirX).normalized() * radius;
+    auto dirX = (normal ^ side).normalized() * radius;
+    auto dirY = (normal ^ dirX).normalized() * radius;
 
     // full circle
     if (startAngle == 0.0f && endAngle == 360.0f) // exact comparison to detect the default parameters

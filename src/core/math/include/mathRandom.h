@@ -10,11 +10,68 @@
 
 BEGIN_BOOMER_NAMESPACE()
 
+//--
+
+// generic random utilities
+struct CORE_MATH_API RandomBase
+{
+    // convert 2 uniform random variables to a random 2D point in a rectangle with uniform distribution
+    INLINE static Vector2 RandRectPoint(const Vector2& rand, const Vector2& min, const Vector2& max);
+
+    // convert 2 uniform random variables to a random 2D point in a circle with uniform distribution, NOTE: circle boundary is excluded
+    INLINE static Vector2 RandCirclePoint(const Vector2& rand, const Vector2& center, float radius);
+
+    // convert 3 uniform random variables to a random 3D point inside a box
+    INLINE static Vector3 RandBoxPoint(const Vector3& rand, const Vector3& min, const Vector3& max);
+
+    // convert 3 uniform random variables to a random 3D point inside a box
+    INLINE static Vector3 RandBoxPoint(const Vector3& rand, const Box& box);
+
+    // convert 3 uniform random variables to a random 3D point inside a box
+    INLINE static Vector3 RandBoxPoint(const Vector3& rand, const OBB& box);
+
+    // convert 3 uniform random variables to a random 3D point inside an sphere
+    INLINE static Vector3 RandSpherePoint(const Vector3& rand);
+
+    // convert 3 uniform random variables to a random 3D point inside a sphere
+    INLINE static Vector3 RandSpherePoint(const Vector3& rand, const Vector3& center, float radius);
+
+    // convert 3 uniform random variables to a random 3D point inside a sphere
+    INLINE static Vector3 RandSpherePoint(const Vector3& rand, const Sphere& sphere);
+
+    // convert 2 (TWO) uniform random variables to a random 3D point ON A SURFACE of the unit sphere
+    INLINE static Vector3 RandSphereSurfacePoint(const Vector2& rand);
+
+    // convert 2 (TWO) uniform random variables to a random 3D point ON A SURFACE of the sphere
+    INLINE static Vector3 RandSphereSurfacePoint(const Vector2& rand, const Vector3& center, float radius);
+
+    // convert 3 uniform random variables to a random 3D point inside a sphere
+    INLINE static Vector3 RandSphereSurfacePoint(const Vector2& rand, const Sphere& sphere);
+
+    // convert 2 (TWO) uniform random variables to a random 3D point on a unit hemi-sphere at 0,0,0 and with N=0,0,1 (standard tangent-space hemisphere)
+    INLINE static Vector3 RandHemiSphereSurfacePoint(Vector2 rand);
+
+    // convert 2 (TWO)
+    INLINE static Vector3 RandSphereSurfacePointFast(Vector2 rand);
+
+    // convert 2 (TWO) uniform random variables to a random 3D point on a unit hemi-sphere at 0,0,0 with specified N
+    INLINE static Vector3 RandHemiSphereSurfacePoint(const Vector2& rand, const Vector3& N);
+
+    // convert 2 (TWO) uniform random variables to a random 3D point on a hemi-sphere facing given direction
+    INLINE static Vector3 RandHemiSphereSurfacePoint(const Vector2& rand, const Vector3& center, float radius, const Vector3& normal);
+
+    // convert 2 (TWO) uniform random variables to a random point inside a unit triangle (basically we return the barycentric coordinates)
+    INLINE static Vector3 RandTrianglePoint(const Vector2& rand);
+
+    // convert 2 (TWO) uniform random variables to a random point inside a triangle
+    INLINE static Vector3 RandTrianglePoint(const Vector2& rand, const Vector3& a, const Vector3& b, const Vector3& c);
+};
+
 //----------------------------------------
 //-- Random number generator interface
 //-- NOTE: some applications require abstract class
     
-struct CORE_MATH_API IRandom
+struct CORE_MATH_API IRandom : public RandomBase
 {
     virtual ~IRandom();
 
@@ -43,6 +100,32 @@ struct CORE_MATH_API IRandom
 
     // [0, max-1], returns 0 if max is 0
     ALWAYS_INLINE uint32_t range(uint32_t max);
+
+    //--
+
+    INLINE Vector2 rectPoint(const Vector2& min, const Vector2& max);
+    INLINE Vector2 circlePoint(const Vector2& center, float radius);
+
+    INLINE Vector3 boxPoint(const Vector3& min, const Vector3& max);
+    INLINE Vector3 boxPoint(const Box& box);
+    INLINE Vector3 boxPoint(const OBB& box);
+
+    INLINE Vector3 spherePoint();
+    INLINE Vector3 spherePoint(const Vector3& center, float radius);
+    INLINE Vector3 spherePoint(const Sphere& sphere);
+
+    INLINE Vector3 sphereSurfacePoint();
+    INLINE Vector3 sphereSurfacePoint(const Vector3& center, float radius);
+    INLINE Vector3 sphereSurfacePoint(const Sphere& sphere);
+
+    INLINE Vector3 hemiSphereSurfacePoint();
+    INLINE Vector3 hemiSphereSurfacePoint(const Vector3& N);
+    INLINE Vector3 hemiSphereSurfacePoint(const Vector3& center, float radius, const Vector3& normal);
+
+    INLINE Vector3 trianglePoint();
+    INLINE Vector3 trianglePoint(const Vector3& a, const Vector3& b, const Vector3& c);
+
+    //--
 };
 
 //----------------------------------------
@@ -79,125 +162,6 @@ private:
     void generate();
 };
 
-//----------------------------------------
-//-- Common stuff
-
-// convert 2 uniform random variables to a random 2D point in a rectangle with uniform distribution
-extern CORE_MATH_API Vector2 RandRectPoint(const Vector2& rand, const Vector2& min, const Vector2& max);
-
-// convert 2 uniform random variables to a random 2D point in a circle with uniform distribution, NOTE: circle boundary is excluded
-extern CORE_MATH_API Vector2 RandCirclePoint(const Vector2& rand, const Vector2& center, float radius);
-
-// convert 3 uniform random variables to a random 3D point inside a box
-extern CORE_MATH_API Vector3 RandBoxPoint(const Vector3& rand, const Vector3& min, const Vector3& max);
-
-// convert 3 uniform random variables to a random 3D point inside a box
-extern CORE_MATH_API Vector3 RandBoxPoint(const Vector3& rand, const Box& box);
-
-// convert 3 uniform random variables to a random 3D point inside a box
-extern CORE_MATH_API Vector3 RandBoxPoint(const Vector3& rand, const OBB& box);
-
-// convert 3 uniform random variables to a random 3D point inside an sphere
-extern CORE_MATH_API Vector3 RandSpherePoint(const Vector3& rand);
-
-// convert 3 uniform random variables to a random 3D point inside a sphere
-extern CORE_MATH_API Vector3 RandSpherePoint(const Vector3& rand, const Vector3& center, float radius);
-
-// convert 3 uniform random variables to a random 3D point inside a sphere
-extern CORE_MATH_API Vector3 RandSpherePoint(const Vector3& rand, const Sphere& sphere);
-
-// convert 2 (TWO) uniform random variables to a random 3D point ON A SURFACE of the unit sphere
-extern CORE_MATH_API Vector3 RandSphereSurfacePoint(const Vector2& rand);
-
-// convert 2 (TWO) uniform random variables to a random 3D point ON A SURFACE of the sphere
-extern CORE_MATH_API Vector3 RandSphereSurfacePoint(const Vector2& rand, const Vector3& center, float radius);
-
-// convert 3 uniform random variables to a random 3D point inside a sphere
-extern CORE_MATH_API Vector3 RandSphereSurfacePoint(const Vector2& rand, const Sphere& sphere);
-
-// convert 2 (TWO) uniform random variables to a random 3D point on a unit hemi-sphere at 0,0,0 and with N=0,0,1 (standard tangent-space hemisphere)
-extern CORE_MATH_API Vector3 RandHemiSphereSurfacePoint(Vector2 rand);
-
-// convert 2 (TWO)
-extern CORE_MATH_API Vector3 RandSphereSurfacePointFast(Vector2 rand);
-
-// convert 2 (TWO) uniform random variables to a random 3D point on a unit hemi-sphere at 0,0,0 with specified N
-extern CORE_MATH_API Vector3 RandHemiSphereSurfacePoint(const Vector2& rand, const Vector3& N);
-
-// convert 2 (TWO) uniform random variables to a random 3D point on a hemi-sphere facing given direction
-extern CORE_MATH_API Vector3 RandHemiSphereSurfacePoint(const Vector2& rand, const Vector3& center, float radius, const Vector3& normal);
-
-// convert 2 (TWO) uniform random variables to a random point inside a unit triangle (basically we return the barycentric coordinates)
-extern CORE_MATH_API Vector3 RandTrianglePoint(const Vector2& rand);
-
-// convert 2 (TWO) uniform random variables to a random point inside a triangle
-extern CORE_MATH_API Vector3 RandTrianglePoint(const Vector2& rand, const Vector3& a, const Vector3& b, const Vector3& c);
-
-//---
-
-// get random 2D point in a rectangle with uniform distribution
-template< typename T >
-INLINE Vector2 RandRectPoint(T& rand, const Vector2& min, const Vector2& max);
-
-// get random 2D point in a circle with uniform distribution, NOTE: circle boundary is excluded
-template< typename T >
-INLINE Vector2 RandCirclePoint(T& rand, const Vector2& center, float radius);
-
-// convert 3 uniform random variables to a random 3D point inside a box
-template< typename T >
-INLINE Vector3 RandBoxPoint(T& rand, const Vector3& min, const Vector3& max);
-
-// convert 3 uniform random variables to a random 3D point inside a box
-template< typename T >
-INLINE Vector3 RandBoxPoint(T& rand, const Box& box);
-
-// convert 3 uniform random variables to a random 3D point inside a box
-template< typename T >
-INLINE Vector3 RandBoxPoint(T& rand, const OBB& box);
-
-// convert 3 uniform random variables to a random 3D point inside an sphere
-template< typename T >
-INLINE Vector3 RandSpherePoint(T& rand);
-
-// convert 3 uniform random variables to a random 3D point inside a sphere
-template< typename T >
-INLINE Vector3 RandSpherePoint(T& rand, const Vector3& center, float radius);
-
-// convert 3 uniform random variables to a random 3D point inside a sphere
-template< typename T >
-INLINE Vector3 RandSpherePoint(T& rand, const Sphere& sphere);
-
-// convert 2 (TWO) uniform random variables to a random 3D point ON A SURFACE of the unit sphere
-template< typename T >
-INLINE Vector3 RandSphereSurfacePoint(T& rand);
-
-// convert 2 (TWO) uniform random variables to a random 3D point ON A SURFACE of the sphere
-template< typename T >
-INLINE Vector3 RandSphereSurfacePoint(T& rand, const Vector3& center, float radius);
-
-// convert 3 uniform random variables to a random 3D point inside a sphere
-template< typename T >
-INLINE Vector3 RandSphereSurfacePoint(T& rand, const Sphere& sphere);
-
-// convert 2 (TWO) uniform random variables to a random 3D point on a unit hemi-sphere at 0,0,0 and with N=0,0,1 (standard tangent-space hemisphere)
-template< typename T >
-INLINE Vector3 RandHemiSphereSurfacePoint(T& rand);
-
-// convert 2 (TWO) uniform random variables to a random 3D point on a unit hemi-sphere at 0,0,0 with specified N
-template< typename T >
-INLINE Vector3 RandHemiSphereSurfacePoint(T& rand, const Vector3& N);
-
-// convert 2 (TWO) uniform random variables to a random 3D point on a hemi-sphere facing given direction
-template< typename T >
-INLINE Vector3 RandHemiSphereSurfacePoint(T& rand, const Vector3& center, float radius, const Vector3& normal);
-
-// convert 2 (TWO) uniform random variables to a random point inside a unit triangle (basically we return the barycentric coordinates)
-template< typename T >
-INLINE Vector3 RandTrianglePoint(T& rand);
-
-// convert 2 (TWO) uniform random variables to a random point inside a triangle
-template< typename T >
-INLINE Vector3 RandTrianglePoint(T& rand, const Vector3& a, const Vector3& b, const Vector3& c);
 
 //---
 

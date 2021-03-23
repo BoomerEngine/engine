@@ -12,26 +12,25 @@
 #include "sceneEditMode_Default_Clipboard.h"
 
 #include "sceneContentNodes.h"
+#include "sceneContentNodesEntity.h"
 #include "sceneContentStructure.h"
 #include "scenePreviewContainer.h"
 #include "scenePreviewPanel.h"
 #include "sceneObjectPalettePanel.h"
 
-#include "engine/world/include/entity.h"
-#include "engine/world/include/entityBehavior.h"
-#include "engine/world/include/nodeTemplate.h"
-#include "engine/world/include/prefab.h"
-#include "editor/common/include/assetFormat.h"
-#include "editor/common/include/managedDirectory.h"
-#include "editor/common/include/editorService.h"
-#include "editor/common/src/assetBrowserDialogs.h"
-#include "editor/common/include/managedDepot.h"
+#include "editor/assets/include/browserService.h"
+#include "editor/common/include/utils.h"
+
+#include "engine/world/include/worldEntity.h"
+#include "engine/world/include/rawEntity.h"
+#include "engine/world/include/rawPrefab.h"
 #include "engine/ui/include/uiMenuBar.h"
 #include "engine/ui/include/uiClassPickerBox.h"
 #include "engine/ui/include/uiRenderer.h"
 #include "core/object/include/actionHistory.h"
 #include "core/object/include/action.h"
 #include "core/resource/include/indirectTemplate.h"
+#include "core/resource/include/depot.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -48,7 +47,7 @@ void SceneEditMode_Default::buildContextMenu(ui::MenuButtonContainer* menu, cons
     else
     {
         m_contextMenuPlacementTransformValid = false;
-        m_contextMenuPlacementTransform = AbsoluteTransform();
+        m_contextMenuPlacementTransform = Transform();
     }
 
     if (setup.viewportBased)
@@ -154,15 +153,14 @@ void SceneEditMode_Default::buildContextMenu_ShowHide(ui::MenuButtonContainer* m
 void SceneEditMode_Default::buildContextMenu_Create(ui::MenuButtonContainer* menu, const ContextMenuSetup& setup)
 {
     // active file
-    const auto* activeFile = GetEditor()->selectedFile();
-    const auto activeFileResourceClass = activeFile ? activeFile->fileFormat().nativeResourceClass() : nullptr;
+    const auto activeFile = GetService<AssetBrowserService>()->selectedFile();
+    const auto activeFileResourceClass = activeFile ? LoadClass(activeFile) : nullptr;
 
     // "add" 
     bool canAddDir = false;
     bool canAddLayer = false;
     bool canAddEntity = false;
     bool canAddEmptyEntity = false;
-    bool canAddBehavior = false;
     for (const auto& node : m_contextMenuContextNodes)
     {
         if (node->canAttach(SceneContentNodeType::Entity))
@@ -172,9 +170,6 @@ void SceneEditMode_Default::buildContextMenu_Create(ui::MenuButtonContainer* men
             if (node->type() == SceneContentNodeType::Entity)
                 canAddEmptyEntity = true;
         }
-
-        if (node->canAttach(SceneContentNodeType::Behavior))
-            canAddBehavior = true;
 
         if (node->canAttach(SceneContentNodeType::LayerFile))
             canAddLayer = true;
@@ -197,7 +192,7 @@ void SceneEditMode_Default::buildContextMenu_Create(ui::MenuButtonContainer* men
         {
             if (activeFileResourceClass.is<Prefab>())
             {
-                menu->createCallback(TempString("Add prefab '{}'", activeFile->name().view().fileStem()), "[img:add]") = [this, activeFile]()
+                menu->createCallback(TempString("Add prefab '{}'", activeFile.view().fileStem()), "[img:add]") = [this, activeFile]()
                 {
                     createPrefabAtNodes(m_contextMenuContextNodes, activeFile);
                 };
@@ -206,7 +201,7 @@ void SceneEditMode_Default::buildContextMenu_Create(ui::MenuButtonContainer* men
             {
                 if (auto entityClass = m_objectPalette->selectedEntityClass(activeFileResourceClass))
                 {
-                    menu->createCallback(TempString("Add {} using '{}'", entityClass, activeFile->name().view().fileStem()), "[img:add]") = [this, activeFile, entityClass]()
+                    menu->createCallback(TempString("Add {} using '{}'", entityClass, activeFile.view().fileStem()), "[img:add]") = [this, activeFile, entityClass]()
                     {
                         const auto* placement = m_contextMenuPlacementTransformValid ? &m_contextMenuPlacementTransform : nullptr;
                         createEntityAtNodes(m_contextMenuContextNodes, entityClass, placement, activeFile);
@@ -216,11 +211,6 @@ void SceneEditMode_Default::buildContextMenu_Create(ui::MenuButtonContainer* men
         }
 
         menu->createSubMenu(m_entityClassSelector, "Add entity", "[img:add]");
-    }
-
-    if (canAddBehavior)
-    {
-        menu->createSubMenu(m_behaviorClassSelector, "Add behavior", "[img:add]");
     }
 
     if (canAddLayer)
@@ -282,40 +272,37 @@ void SceneEditMode_Default::buildContextMenu_Clipboard(ui::MenuButtonContainer* 
     }
 
     // paste
-    if (m_panel->renderer())
+    auto data = m_panel->clipboard().loadObject<SceneContentClipboardData>();
+    if (data && !data->data.empty())
     {
-        SceneContentClipboardDataPtr data;
-        if (m_panel->renderer()->loadObjectFromClipboard(data) && !data->data.empty())
+        StringBuilder caption;
+        caption << "Paste ";
+
+        if (setup.contextWorldPositionValid)
+            caption << "here ";
+
+        const auto activeNode = m_activeNode.lock();
+
+        if (setup.contextTreeItem)
         {
-            StringBuilder caption;
-            caption << "Paste ";
-
-            if (setup.contextWorldPositionValid)
-                caption << "here ";
-
-            const auto activeNode = m_activeNode.lock();
-
-            if (setup.contextTreeItem)
+            if (setup.contextTreeItem->canAttach(data->type))
             {
-                if (setup.contextTreeItem->canAttach(data->type))
+                auto pasteMode = SceneContentNodePasteMode::Relative;
+                menu->createCallback(caption.toString(), "[img:paste]", "Ctrl+V") = [this, setup, data, pasteMode]()
                 {
-                    auto pasteMode = SceneContentNodePasteMode::Relative;
-                    menu->createCallback(caption.toString(), "[img:paste]", "Ctrl+V") = [this, setup, data, pasteMode]()
-                    {
-                        processObjectPaste(setup.contextTreeItem, data, pasteMode);
-                    };
-                }
+                    processObjectPaste(setup.contextTreeItem, data, pasteMode);
+                };
             }
-            else if (setup.contextWorldPositionValid && activeNode)
+        }
+        else if (setup.contextWorldPositionValid && activeNode)
+        {
+            if (activeNode->canAttach(data->type))
             {
-                if (activeNode->canAttach(data->type))
+                auto pasteMode = SceneContentNodePasteMode::Absolute;
+                menu->createCallback(caption.toString(), "[img:paste]", "") = [this, setup, activeNode, data, pasteMode]()
                 {
-                    auto pasteMode = SceneContentNodePasteMode::Absolute;
-                    menu->createCallback(caption.toString(), "[img:paste]", "") = [this, setup, activeNode, data, pasteMode]()
-                    {
-                        processObjectPaste(activeNode, data, pasteMode, &m_contextMenuPlacementTransform);
-                    };
-                }
+                    processObjectPaste(activeNode, data, pasteMode, &m_contextMenuPlacementTransform);
+                };
             }
         }
     }
@@ -373,7 +360,7 @@ void SceneEditMode_Default::buildContextMenu_ContextNode(ui::MenuButtonContainer
             const auto* node = setup.contextClickedItem.get();
             while (node)
             {
-                if (node->type() != SceneContentNodeType::Entity && node->type() != SceneContentNodeType::Behavior && node->type() != SceneContentNodeType::LayerFile)
+                if (node->type() != SceneContentNodeType::Entity && node->type() != SceneContentNodeType::LayerFile)
                     break;
                 possibleActiveRoots.pushBack(AddRef(node));
                 node = node->parent();
@@ -387,8 +374,6 @@ void SceneEditMode_Default::buildContextMenu_ContextNode(ui::MenuButtonContainer
 
             StringBuilder caption;
             caption << "Activate ";
-            caption << SceneContentNode::IconTextForType(node->type());
-            caption << " ";
             caption << node->buildHierarchicalName();
 
             const auto alreadyActive = (m_activeNode == node);
@@ -411,7 +396,7 @@ void SceneEditMode_Default::buildContextMenu_ContextNode(ui::MenuButtonContainer
 
 static void ExtractResourcesFromNode(const SceneContentNode* node, HashMap<ResourceID, uint32_t>& outResources)
 {
-    if (node->type() != SceneContentNodeType::Entity && node->type() != SceneContentNodeType::Behavior)
+    if (node->type() != SceneContentNodeType::Entity)
         return;
 
     if (auto entityNode = rtti_cast<SceneContentEntityNode>(node))
@@ -459,17 +444,13 @@ void SceneEditMode_Default::buildContextMenu_Resources(ui::MenuButtonContainer* 
 
         for (const auto& pair : tempPairs)
         {
-            if (auto* file = GetEditor()->managedDepot().findManagedFile(pair.path))
-            {
-                StringBuilder txt;
-                file->fileFormat().printTags(txt, " ");
-                txt << file->depotPath();
+            StringBuilder txt;
+            txt << pair.path;
 
-                subMenu->createCallback(txt.toString(), "[img:page_up]", "") = [this, file]()
-                {
-                    GetEditor()->showFile(file);
-                };
-            }
+            subMenu->createCallback(txt.toString(), "[img:page_up]", "") = [pair]()
+            {
+                GetService<AssetBrowserService>()->showFile(pair.path);
+            };            
         }
 
         menu->createSubMenu(subMenu->convertToPopup(), "Resources", "[img:page_zoom]");                

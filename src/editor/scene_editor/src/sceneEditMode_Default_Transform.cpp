@@ -9,6 +9,7 @@
 #include "build.h"
 #include "scenePreviewPanel.h"
 #include "sceneContentNodes.h"
+#include "sceneContentNodesEntity.h"
 
 #include "sceneEditMode.h"
 #include "sceneEditMode_Default.h"
@@ -141,18 +142,15 @@ bool SceneEditModeDefaultTransformAction::filterTranslation(const Vector3& delta
 
     if (m_referenceSpace.space() == GizmoSpace::World)
     {
-        auto fullWorldPos = m_referenceSpace.absoluteTransform().position() + deltaTranslationInSpace;
+        auto fullWorldPos = m_referenceSpace.absoluteTransform().T + deltaTranslationInSpace;
 
-        double x, y, z;
-        fullWorldPos.expand(x, y, z);
-
-        auto snappedX = Snap(x, m_grid.positionGridSize, !IsNearZero(deltaTranslationInSpace.x) && m_gizmo.enableX && m_grid.positionGridEnabled);
-        auto snappedY = Snap(y, m_grid.positionGridSize, !IsNearZero(deltaTranslationInSpace.y) && m_gizmo.enableY && m_grid.positionGridEnabled);
-        auto snappedZ = Snap(z, m_grid.positionGridSize, !IsNearZero(deltaTranslationInSpace.z) && m_gizmo.enableZ && m_grid.positionGridEnabled);
-        fullWorldPos = AbsolutePosition(snappedX, snappedY, snappedZ);
+        auto snappedX = Snap(fullWorldPos.x, m_grid.positionGridSize, !IsNearZero(deltaTranslationInSpace.x) && m_gizmo.enableX && m_grid.positionGridEnabled);
+        auto snappedY = Snap(fullWorldPos.y, m_grid.positionGridSize, !IsNearZero(deltaTranslationInSpace.y) && m_gizmo.enableY && m_grid.positionGridEnabled);
+        auto snappedZ = Snap(fullWorldPos.z, m_grid.positionGridSize, !IsNearZero(deltaTranslationInSpace.z) && m_gizmo.enableZ && m_grid.positionGridEnabled);
+        fullWorldPos = ExactPosition(snappedX, snappedY, snappedZ);
 
         // compute final delta
-        auto finalDelta = fullWorldPos - m_referenceSpace.absoluteTransform().position();
+        auto finalDelta = fullWorldPos - m_referenceSpace.absoluteTransform().T;
         outTransform = Transform(finalDelta);
     }
     else
@@ -379,7 +377,7 @@ static Quat RotationDeltaVector(SceneNodeTransformValueFieldType field, double v
     return Quat::IDENTITY();
 }
 
-void ApplyWorldTransformField(AbsoluteTransform& data, SceneNodeTransformValueFieldType field, double value, bool delta)
+void ApplyWorldTransformField(Transform& data, SceneNodeTransformValueFieldType field, double value, bool delta)
 {
     switch (field)
     {
@@ -387,10 +385,7 @@ void ApplyWorldTransformField(AbsoluteTransform& data, SceneNodeTransformValueFi
         case SceneNodeTransformValueFieldType::TranslationY:
         case SceneNodeTransformValueFieldType::TranslationZ:
             {
-                double x, y, z;
-                data.position().expand(x, y, z);
-                ApplyAbsolutePositionChange(x, y, z, field, value, delta);
-                data.position(x, y, z);
+                ApplyAbsolutePositionChange(data.T.x, data.T.y, data.T.z, field, value, delta);
             }
             break;
 
@@ -399,11 +394,11 @@ void ApplyWorldTransformField(AbsoluteTransform& data, SceneNodeTransformValueFi
         case SceneNodeTransformValueFieldType::RotationZ:
             if (delta)
             {
-                data.rotation(data.rotation() * RotationDeltaVector(field, value));
+                data.R = data.R * RotationDeltaVector(field, value);
             }
             else
             {
-                auto rotation = data.rotation().toRotator();
+                auto rotation = data.R.toRotator();
 
                 switch (field)
                 {
@@ -418,57 +413,51 @@ void ApplyWorldTransformField(AbsoluteTransform& data, SceneNodeTransformValueFi
                     break;
                 }
 
-                data.rotation(rotation);
+                data.R = rotation.toQuat();
             }
 
             break;
 
         case SceneNodeTransformValueFieldType::ScaleX:
         {
-            auto val = data.scale();
-            val.x = ApplyScaleDelta(val.x, value, delta);
-            data.scale(val);
+            ApplyScaleDelta(data.S.x, value, delta);
             break;
         }
 
         case SceneNodeTransformValueFieldType::ScaleY:
         {
-            auto val = data.scale();
-            val.y = ApplyScaleDelta(val.y, value, delta);
-            data.scale(val);
+            ApplyScaleDelta(data.S.y, value, delta);
             break;
         }
 
         case SceneNodeTransformValueFieldType::ScaleZ:
         {
-            auto val = data.scale();
-            val.z = ApplyScaleDelta(val.z, value, delta);
-            data.scale(val);
+            ApplyScaleDelta(data.S.z, value, delta);
             break;
         }
     }
 }
 
-void ResetWorldTransformField(AbsoluteTransform& data, SceneNodeTransformValueFieldType field)
+void ResetWorldTransformField(Transform& data, SceneNodeTransformValueFieldType field)
 {
     switch (field)
     {
     case SceneNodeTransformValueFieldType::TranslationX:
     case SceneNodeTransformValueFieldType::TranslationY:
     case SceneNodeTransformValueFieldType::TranslationZ:
-        data.position(0, 0, 0);
+        data.T = Vector3::ZERO();
         break;
 
     case SceneNodeTransformValueFieldType::RotationX:
     case SceneNodeTransformValueFieldType::RotationY:
     case SceneNodeTransformValueFieldType::RotationZ:
-        data.rotation(Quat::IDENTITY());
+        data.R = Quat::IDENTITY();
         break;
 
     case SceneNodeTransformValueFieldType::ScaleX:
     case SceneNodeTransformValueFieldType::ScaleY:
     case SceneNodeTransformValueFieldType::ScaleZ:
-        data.scale(1.0f);
+        data.S = Vector3::ONE();
         break;
     }
 }

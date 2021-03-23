@@ -146,7 +146,7 @@ extern ENGINE_RENDERING_API void CalculateCascadeSettings(const Vector3& lightDi
 //--
 
 // pack frame parameters
-extern ENGINE_RENDERING_API void PackFrameParams(GPUFrameParameters& outParams, const FrameRenderer& frame, const FrameCompositionTarget& targets);
+extern ENGINE_RENDERING_API void PackFrameParams(GPUFrameParameters& outParams, const FrameRenderer& frame, const gpu::AcquiredOutput& output);
 
 // pack camera setup for GPU
 extern ENGINE_RENDERING_API void PackSingleCameraParams(GPUCameraInfo& outInfo, const Camera& camera, const Camera* prevCamera = nullptr);

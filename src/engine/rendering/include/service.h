@@ -24,20 +24,6 @@ class FrameHelper;
 
 ///---
 
-/// composition target for the frame
-struct ENGINE_RENDERING_API FrameCompositionTarget
-{
-	const gpu::RenderTargetView* targetColorRTV = nullptr;
-	const gpu::RenderTargetView* targetDepthRTV = nullptr;
-	Rect targetRect;
-
-    uint32_t width() const;
-    uint32_t height() const;
-    float aspectRatio() const;
-};
-
-///---
-
 /// service that facilitates rendering a single scene frame
 class ENGINE_RENDERING_API FrameRenderingService : public IService
 {
@@ -50,7 +36,7 @@ public:
     //--
 
     /// render given scene
-    gpu::CommandBuffer* render(const FrameParams& frame, const FrameCompositionTarget& target, Scene* scene, FrameStats& outStats);
+    gpu::CommandBuffer* render(const FrameParams& frame, const gpu::AcquiredOutput& output, Scene* scene, FrameStats& outStats);
 
     //--
 

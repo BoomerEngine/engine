@@ -25,6 +25,10 @@ struct ENGINE_RENDERING_API FrameViewStats
 
     void merge(const FrameViewStats& stats);
     void print(StringView prefix, IFormatStream& f) const;
+
+    FrameViewStats() = default;
+    FrameViewStats(const FrameViewStats& other) = default;
+    FrameViewStats& operator=(const FrameViewStats& other) = default;
 };
 
 struct ENGINE_RENDERING_API FrameStats
@@ -36,6 +40,10 @@ struct ENGINE_RENDERING_API FrameStats
     FrameViewStats depthView;
     FrameViewStats globalShadowView;
     FrameViewStats localShadowView;
+
+    FrameStats() = default;
+    FrameStats(const FrameStats& other) = default;
+    FrameStats& operator=(const FrameStats& other) = default;
 };
 
 //--

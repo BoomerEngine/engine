@@ -32,6 +32,9 @@ public:
     // get UNCOMPRESSED size of the data in this buffer
     INLINE uint64_t size() const { return m_size; }
 
+    // compressed size (stats only)
+    INLINE uint64_t compressedSize() const { return m_data.size(); }
+
     // get the CRC of the data stored in the buffer (without loading it)
     // NOTE: the CRC can act as a hash in some other data structures
     INLINE uint64_t crc() const { return m_crc; }

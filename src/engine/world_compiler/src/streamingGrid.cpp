@@ -8,9 +8,11 @@
 ***/
 
 #include "build.h"
-#include "islandGeneration.h"
+
+#include "streamingIslandGeneration.h"
 #include "streamingGrid.h"
-#include "engine/world/include/streamingIsland.h"
+
+#include "engine/world/include/compiledIsland.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -196,20 +198,27 @@ void DumpGrid(const SourceStreamingGrid& grid)
 
 //---
 
-RefPtr<StreamingIsland> BuildIsland(const SourceIsland* island)
+RefPtr<CompiledStreamingIsland> BuildIsland(const SourceIsland* island)
 {
-    StreamingIsland::Setup setup;
+    CompiledStreamingIsland::Setup setup;
     setup.streamingBox = island->localStreamingBox;
     //setup.alwaysLoaded = island->alwaysLoaded;
 
-    for (const auto& entity : island->flatEntities)
+    for (const auto& flatEntity : island->flatEntities)
     {
         auto& entry = setup.entities.emplaceBack();
-        entry.id = entity->id;
-        entry.data = entity->entity;
+        entry.id = flatEntity.data->id;
+        entry.name = flatEntity.data->name;
+        entry.worldPlacement = flatEntity.data->localToWorld;
+        entry.data = flatEntity.data->entity;
+
+        if (flatEntity.data->attachTransformToParentEntity)
+            entry.parentTransform = flatEntity.parentIndex;
+
+        TRACE_INFO("Island build: '{}', index {}, id {}, parent transform {}", entry.name, setup.entities.lastValidIndex(), entry.id, entry.parentTransform);
     }
 
-    auto ret = RefNew<StreamingIsland>(setup);
+    auto ret = RefNew<CompiledStreamingIsland>(setup);
 
     for (const auto& child : island->children)
         if (auto childEntry = BuildIsland(child))

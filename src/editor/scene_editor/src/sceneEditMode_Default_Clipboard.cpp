@@ -9,6 +9,7 @@
 #include "build.h"
 
 #include "sceneContentNodes.h"
+#include "sceneContentNodesEntity.h"
 #include "sceneContentStructure.h"
 
 #include "sceneEditMode_Default_Clipboard.h"

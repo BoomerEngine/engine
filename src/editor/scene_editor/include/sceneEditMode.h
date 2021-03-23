@@ -89,7 +89,7 @@ public:
     virtual void handleAreaSelection(ScenePreviewPanel* panel, bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables);
 
     // handle viewport context menu
-    virtual void handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const AbsolutePosition* positionUnderCursor);
+    virtual void handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const ExactPosition* positionUnderCursor);
 
     // handle viewport drag&drop
     virtual ui::DragDropHandlerPtr handleDragDrop(ScenePreviewPanel* panel, const ui::DragDropDataPtr& data, const ui::Position& absolutePosition, const Point& clientPosition);
@@ -118,7 +118,7 @@ public:
     virtual void handleTreePasteNodes(const SceneContentNodePtr& target, SceneContentNodePasteMode mode);
 
     // handle a resource drop on a scene node
-    virtual bool handleTreeResourceDrop(const SceneContentNodePtr& target, const ManagedFile* file);
+    virtual bool handleTreeResourceDrop(const SceneContentNodePtr& target, StringView depotFilePath);
 
     // handle a drag&drop of another node
     virtual bool handleTreeNodeDrop(const SceneContentNodePtr& target, const SceneContentNodePtr& source);

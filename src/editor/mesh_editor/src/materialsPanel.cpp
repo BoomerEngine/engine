@@ -232,16 +232,17 @@ void MeshMaterialsPanel::collectSelectedMaterialNames(HashSet<StringID>& outName
 
 void MeshMaterialsPanel::showMaterials(const Array<StringID>& names)
 {
-    /*Array<ui::ModelIndex> selection;
+    ui::CollectionItems items;
+    m_list->iterate<MeshMaterialParameters>([&items, &names](MeshMaterialParameters* param)
+        {
+            if (names.contains(param->name()))
+                items.add(param);
+        });
 
-    for (auto name : names)
-        if (auto index = m_listModel->findMaterial(name))
-            selection.pushBack(index);
+    m_list->select(items);
 
-    m_list->select(selection);
-
-    if (!selection.empty())
-        m_list->ensureVisible(selection[0]);*/
+    if (items.first<MeshMaterialParameters>())
+        m_list->ensureVisible(items.first<MeshMaterialParameters>());
 }
 
 void MeshMaterialsPanel::refreshMaterialProperties()

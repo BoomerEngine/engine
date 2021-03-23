@@ -61,28 +61,6 @@ Rect& Rect::merge(int x, int y)
 
 //--
 
-Rect Min(const Rect& a, const Rect& b)
-{
-    return Rect(Min(a.min, b.min), Min(a.max, b.max));
-}
-
-Rect Max(const Rect& a, const Rect& b)
-{
-    return Rect(Max(a.min, b.min), Max(a.max, b.max));
-}
-
-Rect Clamp(const Rect& a, const Rect& limit)
-{
-    return Rect(Clamp(a.min, limit.min, limit.max), Clamp(a.max, limit.min, limit.max));
-}
-
-Rect Clamp(const Rect& a, int minF, int maxF)
-{
-    return Rect(Clamp(a.min, minF, maxF), Clamp(a.max, minF, maxF));
-}
-
-//--
-
 static Rect EMPTY_R(std::numeric_limits<int>::max(), std::numeric_limits<int>::max(), std::numeric_limits<int>::min(), std::numeric_limits<int>::min());
 static Rect ZERO_R(0,0,0,0);
 static Rect UNIT_R(0,0,1,1);

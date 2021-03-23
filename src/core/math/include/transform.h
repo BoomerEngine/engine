@@ -10,23 +10,17 @@
 
 BEGIN_BOOMER_NAMESPACE()
 
-/// TRS (translation-rotation-scale) transform of a node in the node chain
-/// NOTE: this is preferred over the matrix because of easy and readable component separation
-/// NOTE: the transform concatenation is done in a way that always maps back to TRS space (so TRS * TRS -> TRS
-/// this means that not all possible actual 3D transformations can be encoded, especially we cannot encode anything with sheering
-/// NOTE: the translation is NOT a POSITION - the position may require much higher precision
+/// TRS (translation-rotation-scale) transform, usually used for entity system
+/// NOTE: this is preferred over the matrix because of easy and readable component separation and accuracy (especially position)
+/// BEWARE!: the transform concatenation is done in a way that always maps back to TRS space (so TRS * TRS -> TRS
+/// this means that not all possible actual 3D transformations can be encoded, especially we cannot encode anything with sheering :( :( BEWARE!
 TYPE_ALIGN(16, class) CORE_MATH_API Transform
 {
 public:
-    /// base types for the transform class
-    typedef Vector3 Translation;
-    typedef Vector3 Scale;
-    typedef Quat Rotation;
-
     INLINE Transform();
-    INLINE Transform(const Translation& pos);
-    INLINE Transform(const Translation& pos, const Rotation& rot);
-    INLINE Transform(const Translation& pos, const Rotation& rot, const Scale& scale);
+    INLINE Transform(const ExactPosition& pos);
+    INLINE Transform(const ExactPosition & pos, const Quat& rot);
+    INLINE Transform(const ExactPosition & pos, const Quat& rot, const Vector3& scale);
 
     INLINE Transform(const Transform& other) = default;
     INLINE Transform(Transform&& other) = default;
@@ -39,37 +33,19 @@ public:
 
     //--
 
-    Rotation R;
-    Translation T;
-    Scale S;
+    Quat R; // 16
+    ExactPosition T; // 24
+    Vector3 S; // 12
 
     //---
 
     /// reset to identity
-    INLINE Transform& identity();
-
-    /// get transform created by shifting this transform in parent space
-    INLINE Transform& shiftParent(const Translation& translationInParentSpace);
-
-    /// get transform created by shifting this transform in local space (added shift is transformed by rotation and scale first)
-    INLINE Transform& shiftLocal(const Translation& translationInLocalSpace);
-
-    /// get transform created by applying a rotation in parent space
-    INLINE Transform& rotateParent(float pitch, float yaw, float roll);
-
-    /// get transform created by applying a rotation in parent space
-    INLINE Transform& rotateParent(const Quat& quat);
-
-    /// get transform created by applying a rotation in parent space
-    INLINE Transform& rotateLocal(float pitch, float yaw, float roll);
-
-    /// get transform created by applying a rotation in parent space
-    INLINE Transform& rotateLocal(const Quat& quat);
+    INLINE void reset();
 
     //---
 
     /// is transform and identity
-    bool isIdentity() const;
+    bool checkIdentity() const;
 
     /// get an inversion of this transformation
     Transform inverted() const;
@@ -77,28 +53,14 @@ public:
     /// get the simple TR only inverse, scale is not included
     Transform invertedWithNoScale() const;
 
+    ///--
+
     /// get transform created by applying this transform to the base transform
-    /// NOTE: some combinations of scaling and rotation are not exactly representable back in the TRS, beware
-    Transform applyTo(const Transform& baseTransform) const;
+    /// NOTE: some combinations of scaling and rotation are not exactly representable back in the TRS, beware!
+    Transform operator*(const Transform& baseTransform) const;
 
-    /// get transform in space of given node
-    Transform relativeTo(const Transform& baseTransform) const;
-
-    //---
-
-    /// transform vector by the transform
-    /// NOTE: vectors are not affected by translations
-    Vector3 transformVector(const Vector3& point) const;
-
-    /// transform position by the transform
-    Vector3 transformPoint(const Vector3& point) const;
-
-    /// transform vector by the transform
-    /// NOTE: vectors are not affected by translations
-    Vector3 invTransformVector(const Vector3& point) const;
-
-    /// transform position by the transform
-    Vector3 invTransformPoint(const Vector3& point) const;
+    /// express this transform in space of given other transform
+    Transform operator/(const Transform& baseTransform) const;
 
     //---
 
@@ -128,7 +90,7 @@ public:
     void writeBinary(SerializationWriter& stream) const;
     void readBinary(SerializationReader& stream);
 
-    //---        
+    //---
 };
 
 END_BOOMER_NAMESPACE()

@@ -98,7 +98,7 @@ void MaterialPreviewPanel::destroyVisualization()
 {
     if (m_previewProxy)
     {
-        scene()->manager<rendering::ObjectManagerMesh>()->detachProxy(m_previewProxy);
+        scene()->manager<rendering::ObjectManagerMesh>()->commandDetachProxy(m_previewProxy);
         m_previewProxy.reset();
     }
 }
@@ -175,7 +175,7 @@ void MaterialPreviewPanel::createVisualization()
                     proxy->m_localToWorld.translation(offset);
 
                     m_previewProxy = proxy;
-                    scene()->manager<rendering::ObjectManagerMesh>()->attachProxy(m_previewProxy);
+                    scene()->manager<rendering::ObjectManagerMesh>()->commandAttachProxy(m_previewProxy);
 
                     focusOnBounds(mesh->bounds() + offset, 1.0f, nullptr);
                 }

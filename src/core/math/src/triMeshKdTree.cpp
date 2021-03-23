@@ -39,8 +39,8 @@ namespace kd
             auto& tri = m_triangles[i];
 
             Vector3 triMin, triMax;
-            triMin = Min(tri.v0, Min(tri.v1, tri.v2));
-            triMax = Max(tri.v0, Max(tri.v1, tri.v2));
+            triMin = tri.v0.min(tri.v1.min(tri.v2));
+            triMax = tri.v0.max(tri.v1.max(tri.v2));
             tri.center = (triMin + triMax) * 0.5f;
         }
 

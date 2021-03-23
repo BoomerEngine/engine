@@ -38,6 +38,7 @@ public:
     INLINE Quat operator-() const;
     INLINE Quat &operator*=(const Quat &other);
     INLINE Quat operator*(const Quat &other) const;
+    INLINE float operator|(const Quat & other) const;
 
     //--
 
@@ -56,18 +57,6 @@ public:
 
     //! align this quaternion with another
     INLINE void align(const Quat& other);
-
-    //! transform vector by this quaternion
-    Vector3 transformVector(const Vector3& v) const;
-
-    //! transform vector by this quaternion
-    void transformVector(const Vector3& v, Vector3& ret) const;
-
-    //! transform vector by inverse of this quaternion
-    Vector3 transformInvVector(const Vector3& v) const;
-
-    //! transform vector by inverse of this quaternion
-    void transformInvVector(const Vector3& v, Vector3& ret) const;
 
     //--
 

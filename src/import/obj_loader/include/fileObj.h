@@ -148,7 +148,7 @@ public:
     //--
 
     // transform all vertices and normals by given matrix
-    void transfom(const Matrix& globalTransform);
+    void transfom(const BaseTransformation& globalTransform);
 
     // transform all vertices and normals (coordinate adjustment)
     void transformSimple(float scale, bool flipYZ);

@@ -25,11 +25,11 @@ public:
     StringBuf name;
 
     EulerTransform localPlacement; // original placement with respect to parent
-    AbsoluteTransform worldPlacement; // original placement in the world space
+    Transform worldPlacement; // original placement in the world space
 
     //--
 
-    NodeTemplatePtr packedEntityData;
+    RawEntityPtr packedEntityData;
     ObjectIndirectTemplatePtr packedComponentData;
 
     //--

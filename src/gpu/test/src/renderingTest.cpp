@@ -890,8 +890,8 @@ SimpleRenderMeshPtr IRenderingTest::loadMesh(StringView assetFile, const MeshSet
     {
         for (auto& v : vertices)
         {
-            v.VertexPosition = setup.m_loadTransform.transformPoint(v.VertexPosition);
-            v.VertexNormal = setup.m_loadTransform.transformVector(v.VertexNormal).normalized();
+            v.VertexPosition = BaseTransformation(setup.m_loadTransform).transformPoint(v.VertexPosition);
+            v.VertexNormal = BaseTransformation(setup.m_loadTransform).transformVector(v.VertexNormal).normalized();
         }
     }
 

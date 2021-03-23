@@ -12,8 +12,10 @@
 #include "service.h"
 #include "geometry.h"
 #include "geometryBuilder.h"
+
 #include "engine/font/include/fontGlyphBuffer.h"
 #include "engine/font/include/fontInputText.h"
+#include "engine/font/include/fontGlyph.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(canvas)
 
@@ -121,7 +123,59 @@ void Canvas::pixelPlacement(float pixelOffsetX, float pixelOffsetY, float pixelS
 
 //--
 
-void Canvas::debugPrint(float x, float y, StringView text, Color color /*= Color::WHITE*/, int size /*= 16*/, font::FontAlignmentHorizontal align /*= font::FontAlignmentHorizontal::Left*/, bool bold /*= false*/)
+Canvas::DebugTextBounds Canvas::debugPrintMeasure(StringView text, int size /*= 16*/, font::FontAlignmentHorizontal align /*= font::FontAlignmentHorizontal::Left*/, bool bold /*= false*/) const
+{
+    static const auto normalFont = LoadFontFromDepotPath("/engine/interface/fonts/aileron_regular.otf");
+    static const auto boldFont = LoadFontFromDepotPath("/engine/interface/fonts/aileron_bold.otf");
+
+    auto font = bold ? boldFont : normalFont;
+
+	if (font)
+	{
+		font::FontStyleParams params;
+		params.size = size;
+
+		font::GlyphBuffer glyphs;
+		font::FontAssemblyParams assemblyParams;
+		assemblyParams.horizontalAlignment = align;
+		font->renderText(params, assemblyParams, font::FontInputText(text.data(), text.length()), glyphs);
+
+		DebugTextBounds bounds;
+
+		if (glyphs.size())
+		{
+            bounds.min = Vector2::INF();
+			bounds.max = -Vector2::INF();
+
+			const auto* glyph = glyphs.glyphs();
+			const auto* glyphEnd = glyph + glyphs.size();
+			while (glyph < glyphEnd)
+			{
+				float x0 = glyph->pos.x + glyph->glyph->offset().x;
+				float y0 = glyph->pos.y + glyph->glyph->offset().y;
+                float x1 = x0 + glyph->glyph->size().x;
+                float y1 = y0 + glyph->glyph->size().y;
+
+				bounds.min.x = std::min(bounds.min.x, x0);
+				bounds.min.y = std::min(bounds.min.y, y0);
+                bounds.max.x = std::max(bounds.max.x, x1);
+                bounds.max.y = std::max(bounds.max.y, y1);
+
+				++glyph;
+			}
+		}
+
+		bounds.size.x = bounds.max.x - bounds.min.x;
+		bounds.min.y = font->relativeAscender() * size;
+		bounds.max.y = font->relativeDescender() * size;
+		bounds.size.y = font->relativeLineHeight() * size;
+		return bounds;
+	}
+
+	return DebugTextBounds();
+}
+
+Canvas::DebugTextBounds Canvas::debugPrint(float x, float y, StringView text, Color color /*= Color::WHITE*/, int size /*= 16*/, font::FontAlignmentHorizontal align /*= font::FontAlignmentHorizontal::Left*/, bool bold /*= false*/)
 {
     static const auto normalFont = LoadFontFromDepotPath("/engine/interface/fonts/aileron_regular.otf");
 	static const auto boldFont = LoadFontFromDepotPath("/engine/interface/fonts/aileron_bold.otf");
@@ -136,17 +190,27 @@ void Canvas::debugPrint(float x, float y, StringView text, Color color /*= Color
 		font::GlyphBuffer glyphs;
 		font::FontAssemblyParams assemblyParams;
 		assemblyParams.horizontalAlignment = align;
-		font->renderText(params, assemblyParams, font::FontInputText(text.data(), text.length()), glyphs);
+		font->renderText(params, assemblyParams, font::FontInputText(text.data(), text.length()), glyphs, color);
 
 		canvas::Geometry g;
 		{
 			canvas::GeometryBuilder b(g);
-			b.fillColor(color);
 			b.print(glyphs);
 		}
 
 		place(x, y, g);
+
+		DebugTextBounds bounds;
+		bounds.min.x = g.boundsMin.x;
+		bounds.max.x = g.boundsMax.x;
+        bounds.size.x = bounds.max.x - bounds.min.x;
+        bounds.min.y = font->relativeAscender() * size;
+        bounds.max.y = font->relativeDescender() * size;
+        bounds.size.y = font->relativeLineHeight() * size;
+		return bounds;
 	}
+
+	return DebugTextBounds();
 }
 
 //--
@@ -293,20 +357,20 @@ void Canvas::transformBounds(const Placement& transform, const Vector2& localMin
 
 		{
 			auto v = transform.placement.transformPoint(localMax);
-			globalMax = Max(globalMax, v);
-			globalMin = Min(globalMin, v);
+			globalMax = globalMax.min(v);
+			globalMin = globalMin.max(v);
 		}
 
 		{
 			auto v = transform.placement.transformPoint(Vector2(localMax.x, localMin.y));
-			globalMax = Max(globalMax, v);
-			globalMin = Min(globalMin, v);
+            globalMax = globalMax.min(v);
+            globalMin = globalMin.max(v);
 		}
 
 		{
 			auto v = transform.placement.transformPoint(Vector2(localMin.x, localMax.y));
-			globalMax = Max(globalMax, v);
-			globalMin = Min(globalMin, v);
+            globalMax = globalMax.min(v);
+            globalMin = globalMin.max(v);
 		}
 	}
 }

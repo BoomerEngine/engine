@@ -57,13 +57,13 @@ PlaneSide Plane::testBox(const Box &box, float epsilon/*=std::numeric_limits<flo
 
 bool Plane::contains(const Vector3& point, float epsilon) const
 {
-    auto dist = Dot(n, point) - d;
+    auto dist = (n | point) - d;
     return (dist >= -epsilon) && (dist <= epsilon);
 }
 
 bool Plane::intersect(const Vector3& origin, const Vector3& direction, float maxLength /*= VERY_LARGE_FLOAT*/, float* outEnterDistFromOrigin /*= nullptr*/, Vector3* outEntryPoint /*= nullptr*/, Vector3* outEntryNormal /*= nullptr*/) const
 {
-    auto dot = -Dot(n, direction);
+    auto dot = -(n | direction);
     if (dot > 0.0f)
     {
         auto dist = distance(origin) / dot;

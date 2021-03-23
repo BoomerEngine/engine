@@ -9,6 +9,7 @@
 #include "build.h"
 #include "sceneContentStructure.h"
 #include "sceneContentNodes.h"
+#include "sceneContentNodesEntity.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -36,7 +37,7 @@ void SceneContentStructure::handleDebugRender(rendering::FrameParams& frame) con
         ent->handleDebugRender(frame);
 }
 
-const SceneContentNode* SceneContentStructure::findNodeByPath(StringView path) const
+SceneContentNode* SceneContentStructure::findNodeByPath(StringView path) const
 {
     if (path.empty())
         return nullptr;

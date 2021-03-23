@@ -59,7 +59,7 @@ Box Cylinder::bounds() const
     auto pb  = position2();
 
     auto a  = pb - pa;
-    auto aDot  = Dot(a,a);
+    auto aDot  = a | a;
     auto ex  = radius() * sqrtf(1.0f - a.x * a.x / aDot);
     auto ey = radius() * sqrtf(1.0f - a.y * a.y / aDot);
     auto ez = radius() * sqrtf(1.0f - a.z * a.z / aDot);
@@ -76,35 +76,35 @@ Box Cylinder::bounds() const
 
 bool Cylinder::contains(const Vector3& point) const
 {
-    auto d = Dot(point, normal());
-    auto p = Dot(position(), normal());
+    auto d = point | normal();
+    auto p = position() | normal();
 
     if (d <= p || d >= p + height())
         return false;
 
     auto t = position() - point;
     auto sqRadius = radius() * radius();
-    auto tProj = normal() * Dot(t, normal());
+    auto tProj = normal() * (t | normal());
     return t.squareDistance(tProj) < sqRadius;
 }
 
 bool Cylinder::intersect(const Vector3& origin, const Vector3& direction, float maxLength, float* outEnterDistFromOrigin, Vector3* outEntryPoint, Vector3* outEntryNormal) const
 {
-    auto t1 = Cross(normal(), origin - position());
-    auto t2 = Cross(normal(), direction);
+    auto t1 = normal() ^ (origin - position());
+    auto t2 = normal() ^ direction;
     if (t1 == t2)
         return false;
 
     float tMin = 0.0f, tMax = 0.0f;
-    auto a = Dot(t2, t2);
-    auto b = 2 * Dot(t1, t2);
-    auto c = Dot(t1, t1) - (radius() * radius());
+    auto a = t2 | t2;
+    auto b = 2 * (t1 | t2);
+    auto c = (t1 | t1) - (radius() * radius());
     if (!SolveQuadraticEquation(a, b, c, tMin, tMax))
         return false;
 
-    auto o = Dot(position(), normal());
-    auto s = Dot(origin, normal());
-    auto v = Dot(direction, normal());
+    auto o = position() | normal();
+    auto s = origin | normal();
+    auto v = direction | normal();
 
     auto tMinOrg = tMin;
     if (v == 0)
@@ -135,7 +135,7 @@ bool Cylinder::intersect(const Vector3& origin, const Vector3& direction, float 
     if (outEntryNormal)
     {
         auto pos = origin + (direction * tMin);
-        auto proj = Dot(pos - position(), normal());
+        auto proj = (pos - position()) | normal();
         if (tMin > tMinOrg)
         {
             if (proj+proj < height())

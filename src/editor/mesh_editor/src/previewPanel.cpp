@@ -198,9 +198,9 @@ void MeshPreviewPanel::handlePostRenderContent()
     }
 }
 
-void MeshPreviewPanel::handleRender(rendering::FrameParams& frame)
+void MeshPreviewPanel::handleFrame(rendering::FrameParams& frame)
 {
-    TBaseClass::handleRender(frame);
+    TBaseClass::handleFrame(frame);
 
     if (m_mesh)
     {
@@ -244,7 +244,7 @@ void MeshPreviewPanel::handleAreaSelection(bool ctrl, bool shift, const Rect& cl
 void MeshPreviewPanel::destroyPreviewElements()
 {
     for (const auto& proxy : m_proxies)
-        scene()->manager<rendering::ObjectManagerMesh>()->detachProxy(proxy);
+        scene()->manager<rendering::ObjectManagerMesh>()->commandDetachProxy(proxy);
     m_proxies.clear();
 }
 
@@ -257,6 +257,7 @@ void MeshPreviewPanel::createPreviewElements()
 		rendering::ObjectProxyMesh::Setup desc;
         desc.mesh = m_mesh;
         desc.forcedLodLevel = m_previewSettings.forceLod;
+        desc.focedSingleChunk = m_previewSettings.forceChunk;
 			
         bool drawSplit = (m_previewSettings.isolateMaterials || m_previewSettings.highlightMaterials) && !m_previewSettings.selectedMaterials.empty();
         if (drawSplit)
@@ -296,7 +297,7 @@ void MeshPreviewPanel::createPreviewElements()
     }
 
     for (auto& proxy : m_proxies)
-        scene()->manager<rendering::ObjectManagerMesh>()->attachProxy(proxy);
+        scene()->manager<rendering::ObjectManagerMesh>()->commandAttachProxy(proxy);
 }
 
 //--

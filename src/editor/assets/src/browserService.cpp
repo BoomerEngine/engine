@@ -51,6 +51,7 @@ bool AssetBrowserService::onInitializeService(const CommandLine& cmdLine)
 
     configLoad(config());
 
+    m_openedFilesTimeout = NativeTimePoint::Now() + 0.5;
     return true;
 }
 
@@ -60,6 +61,14 @@ void AssetBrowserService::onShutdownService()
 
 void AssetBrowserService::onSyncUpdate()
 {
+    if (m_openedFilesTimeout && m_openedFilesTimeout.reached())
+    {
+        m_openedFilesTimeout = NativeTimePoint();
+        auto fileList = std::move(m_openedFiles);
+
+        for (const auto& path : fileList)
+            openEditor(nullptr, path, false);
+    }
 }
 
 //--
@@ -74,12 +83,29 @@ void AssetBrowserService::configLoad(const ui::ConfigBlock& block)
         for (const auto& path : bookmarks)
             m_bookmarkedDirectories.insert(path);
     }
+
+    // load list of opened files
+    block.write<Array<StringBuf>>("OpenedFiles", m_openedFiles);
+
 }
 
 void AssetBrowserService::configSave(const ui::ConfigBlock& block) const
 {
     // save bookmarks
     block.write<Array<StringBuf>>("BookmarkedDirectories", m_bookmarkedDirectories.keys());
+
+    // save currently opened files
+    Array<StringBuf> openedFilesPaths;
+    auto ed = GetService<EditorService>();
+    ed->iterateWindows<IResourceContainerWindow>([&openedFilesPaths](IResourceContainerWindow* w)
+        {
+            w->iterateEditors([&openedFilesPaths](ResourceEditor* editor)
+                {
+                    openedFilesPaths.pushBack(editor->info().metadataDepotPath);
+                }, nullptr);
+        });
+
+    block.write<Array<StringBuf>>("OpenedFiles", openedFilesPaths);
 }
 
 //--

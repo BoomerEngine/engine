@@ -73,11 +73,11 @@ FrameHelper::~FrameHelper()
 
 //--
 
-FrameRenderer::FrameRenderer(const FrameParams& frame, const FrameCompositionTarget& target, const FrameResources& resources, const FrameHelper& helpers, const Scene* scene)
+FrameRenderer::FrameRenderer(const FrameParams& frame, const gpu::AcquiredOutput& output, const FrameResources& resources, const FrameHelper& helpers, const Scene* scene)
     : m_frame(frame)
     , m_resources(resources)
 	, m_helpers(helpers)
-	, m_target(target)
+	, m_output(output)
     , m_allocator(POOL_RENDERING_FRAME)
     , m_scene(scene)
 {
@@ -95,7 +95,7 @@ bool FrameRenderer::usesMultisamping() const
 void FrameRenderer::bindFrameParameters(gpu::CommandWriter& cmd) const
 {
     GPUFrameParameters params;
-    PackFrameParams(params, *this, m_target);
+    PackFrameParams(params, *this, m_output);
 
     gpu::DescriptorEntry desc[1];
     desc[0].constants(params);

@@ -21,8 +21,8 @@ Dependency("core_input")
 Dependency("core_graph")
 
 Dependency("editor_common")
-Dependency("editor_viewport")
 Dependency("editor_assets")
+Dependency("editor_viewport")
 
 Dependency("engine_ui")
 Dependency("engine_rendering")
@@ -33,6 +33,11 @@ Dependency("engine_mesh")
 Dependency("engine_texture")
 Dependency("engine_world")
 Dependency("engine_world_compiler")
+
+Dependency("game_common")
+Dependency("game_templates")
+
+Dependency("gpu_device")
 
 ProjectOption("devonly")
 

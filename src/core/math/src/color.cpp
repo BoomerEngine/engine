@@ -73,44 +73,6 @@ Color Lerp256(const Color &a, const Color &b, uint32_t alpha) // alpha is from 0
     return ((rb1 | rb2) & 0xFF00FF) + ((g1 | g2) & 0x00FF00) + 0xFF000000;
 }
 
-/*Color BlendPreMultiplied(const Color &a, const Color &b, uint32_t alpha)
-{
-    uint32_t rb = (a.toNative() & 0xFF00FF) + ((alpha * (b.toNative() & 0xFF00FF)) >> 8);
-    uint32_t g = (a.toNative() & 0x00FF00) + ((alpha * (b.toNative() & 0x00FF00)) >> 8);
-    return (rb & 0xFF00FF) + (g & 0x00FF00);
-}*/
-
-Color Lerp(const Color &a, const Color &b, float frac)
-{
-    //return Blend(a, b, FloatTo256(frac));
-    return Color::FromVectorLinear(Lerp(a.toVectorLinear(), b.toVectorLinear(), frac));
-}
-
-/*Color LerpPreMultiplied(const Color &a, const Color &b, float frac)
-{
-    return BlendPreMultiplied(a, b, FloatTo256(frac));
-}*/
-
-Color Min(const Color &a, const Color &b)
-{
-    return Color(std::min(a.r, b.r), std::min(a.g, b.g), std::min(a.b, b.b), std::min(a.a, b.a));
-}
-
-Color Max(const Color &a, const Color &b)
-{
-    return Color(std::max(a.r, b.r), std::max(a.g, b.g), std::max(a.b, b.b), std::max(a.a, b.a));
-}
-
-Color Clamp(const Color &a, const Color &minV, const Color &maxV)
-{
-    return Color(std::clamp(a.r, minV.r, maxV.r), std::clamp(a.g, minV.g, maxV.g), std::clamp(a.b, minV.b, maxV.b), std::clamp(a.a, minV.a, maxV.a));
-}
-
-Color Clamp(const Color &a, uint8_t minF, uint8_t maxF)
-{
-    return Color(std::clamp(a.r, minF, maxF), std::clamp(a.g, minF, maxF), std::clamp(a.b, minF, maxF), std::clamp(a.a, minF, maxF));
-}
-
 Vector4 Color::toVectorLinear() const
 {
     Vector4 ret;

@@ -22,14 +22,20 @@ class ENGINE_WORLD_API RawLayer : public IResource
     RTTI_DECLARE_VIRTUAL_CLASS(RawLayer, IResource);
 
 public:
+    //--
+
+    static inline StringView FILE_EXTENSION = "xlayer";
+
+    //--
+
     RawLayer();
 
-    INLINE const Array<NodeTemplatePtr>& nodes() const { return m_nodes; }
+    INLINE const Array<RawEntityPtr>& nodes() const { return m_nodes; }
 
-    void setup(const Array<NodeTemplatePtr>& sourceNodes);
+    void setup(const Array<RawEntityPtr>& sourceNodes);
 
 private:
-    Array<NodeTemplatePtr> m_nodes;
+    Array<RawEntityPtr> m_nodes;
 };
 
 //---

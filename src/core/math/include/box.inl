@@ -31,14 +31,22 @@ INLINE Box::Box(const Vector3 &center, float radius)
 
 INLINE Box::Box(const Vector3 &start, const Vector3 &end, const Vector3 &extents)
 {
-    min = Min(start - extents, end - extents);
-    max = Max(start + extents, end + extents);
+    min.x = std::min(start.x - extents.x, end.x - extents.x);
+    min.y = std::min(start.y - extents.y, end.x - extents.y);
+    min.z = std::min(start.z - extents.z, end.x - extents.z);
+    max.x = std::max(start.x + extents.x, end.x + extents.x);
+    max.y = std::max(start.y + extents.y, end.x + extents.y);
+    max.z = std::max(start.z + extents.z, end.x + extents.z);
 }
 
 INLINE Box::Box(const Vector3 &start, const Vector3 &end, const Box &extents)
 {
-    min = Min(start + extents.min, end + extents.min);
-    max = Max(start + extents.max, end + extents.max);
+    min.x = std::min(start.x - extents.min.x, end.x - extents.min.x);
+    min.y = std::min(start.y - extents.min.y, end.x - extents.min.y);
+    min.z = std::min(start.z - extents.min.z, end.x - extents.min.z);
+    max.x = std::max(start.x + extents.max.x, end.x + extents.max.x);
+    max.y = std::max(start.y + extents.max.y, end.x + extents.max.y);
+    max.z = std::max(start.z + extents.max.z, end.x + extents.max.z);
 }
 
 INLINE void Box::clear()
@@ -130,15 +138,15 @@ INLINE Box Box::extruded(float margin) const
 
 INLINE Box& Box::merge(const Vector3 &point)
 {
-    min = Min(min, point);
-    max = Max(max, point);
+    min = min.min(point);
+    max = max.max(point);
     return *this;
 }
 
 INLINE Box& Box::merge(const Box &box)
 {
-    min = Min(min, box.min);
-    max = Max(max, box.max);
+    min = min.min(box.min);
+    max = max.max(box.max);
     return *this;
 }
 

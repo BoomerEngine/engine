@@ -61,7 +61,7 @@ public:
     }
 
     /// add glyph to buffer
-    void addGlyph(uint32_t ch, const Glyph* glyph, float x, float y, int textPosition);
+    void addGlyph(uint32_t ch, const Glyph* glyph, float x, float y, int textPosition, Color color = Color::WHITE);
 
     /// add font
     void addFont(const RefPtr<Font>& font);
