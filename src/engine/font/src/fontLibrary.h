@@ -10,7 +10,7 @@
 
 #include "core/system/include/mutex.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
 /// internal font library, contains code and data shared between ALL fonts
 /// mostly needed because of free type 
@@ -37,4 +37,4 @@ private:
     void conditionalShutdown_NoLock();
 };
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

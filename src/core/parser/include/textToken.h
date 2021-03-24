@@ -10,29 +10,29 @@
 
 #include "core/containers/include/stringBuf.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(parser)
+BEGIN_BOOMER_NAMESPACE()
 
 ///----
 
 /// location information for a token
-class CORE_PARSER_API Location
+class CORE_PARSER_API TextTokenLocation
 {
 public:
-    INLINE Location()
+    INLINE TextTokenLocation()
         : m_line(0)
         , m_pos(0)
     {}
 
-    INLINE Location(const StringBuf& contextName, const uint32_t& line=0, const uint32_t& pos=0)
+    INLINE TextTokenLocation(const StringBuf& contextName, const uint32_t& line=0, const uint32_t& pos=0)
         : m_contextName(contextName)
         , m_line(line)
         , m_pos(pos)
     {}
 
-    INLINE Location(const Location& txt) = default;
-    INLINE Location(Location&& txt) = default;
-    INLINE Location& operator=(const Location& txt) = default;
-    INLINE Location& operator=(Location&& txt) = default;
+    INLINE TextTokenLocation(const TextTokenLocation& txt) = default;
+    INLINE TextTokenLocation(TextTokenLocation&& txt) = default;
+    INLINE TextTokenLocation& operator=(const TextTokenLocation& txt) = default;
+    INLINE TextTokenLocation& operator=(TextTokenLocation&& txt) = default;
 
     //--
 
@@ -84,7 +84,7 @@ public:
 
     // bind token to location
     // NOTE: this is a separate function because location comes from other source than the token itself
-    INLINE void assignLocation(const Location& loc) { m_location = loc; }
+    INLINE void assignLocation(const TextTokenLocation& loc) { m_location = loc; }
 
     /// is this a valid token ?
     INLINE bool valid() const { return m_type != TextTokenType::Invalid; }
@@ -122,7 +122,7 @@ public:
 	INLINE uint32_t length() const { return range_cast<uint32_t>(m_end - m_str); }
 
     /// get location of ths token
-    INLINE const Location& location() const { return m_location; }
+    INLINE const TextTokenLocation& location() const { return m_location; }
 
     /// get the keyword ID (as registered previously in the parser)
     INLINE int keywordID() const { return m_keywordID; }
@@ -171,7 +171,7 @@ private:
     int m_keywordID = -1;
     const char* m_str = nullptr;
     const char* m_end = nullptr;
-    Location m_location;
+    TextTokenLocation m_location;
     Token* m_next = nullptr;
     Token* m_prev = nullptr;
 
@@ -241,4 +241,4 @@ private:
 
 ///----
 
-END_BOOMER_NAMESPACE_EX(parser)
+END_BOOMER_NAMESPACE()

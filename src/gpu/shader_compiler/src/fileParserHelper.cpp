@@ -28,7 +28,7 @@ ParsingNode& ParsingNode::link(const ParsingNode& child)
 
 //----
 
-ParsingFileContext::ParsingFileContext(LinearAllocator& mem, parser::IErrorReporter& errHandler, ParsingNode& result)
+ParsingFileContext::ParsingFileContext(LinearAllocator& mem, ITextErrorReporter& errHandler, ParsingNode& result)
     : m_mem(mem)
     , m_errHandler(errHandler)
     , m_result(result)
@@ -37,14 +37,14 @@ ParsingFileContext::ParsingFileContext(LinearAllocator& mem, parser::IErrorRepor
 ParsingFileContext::~ParsingFileContext()
 {}
 
-void ParsingFileContext::reportError(const parser::Location& loc, StringView err)
+void ParsingFileContext::reportError(const TextTokenLocation& loc, StringView err)
 {
     m_errHandler.reportError(loc, err);
 }
 
 //----
 
-ParserTokenStream::ParserTokenStream(parser::TokenList& tokens)
+ParserTokenStream::ParserTokenStream(TokenList& tokens)
     : m_tokens(std::move(tokens))
 {}
 
@@ -104,7 +104,7 @@ int ParserTokenStream::readToken(ParsingNode& outNode)
     return outNode.tokenID;
 }
 
-void ParserTokenStream::extractInnerTokenStream(char delimiter, Array<parser::Token*>& outTokens)
+void ParserTokenStream::extractInnerTokenStream(char delimiter, Array<Token*>& outTokens)
 {
     uint32_t level = 0;
 
@@ -168,7 +168,7 @@ int ParserCodeTokenStream::readToken(CodeParsingNode& outNode)
 
 //----
 
-ParsingCodeContext::ParsingCodeContext(LinearAllocator& mem, parser::IErrorReporter& errHandler, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram)
+ParsingCodeContext::ParsingCodeContext(LinearAllocator& mem, ITextErrorReporter& errHandler, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram)
     : m_mem(mem)
     , m_errHandler(errHandler)
     , m_lib(lib)
@@ -180,7 +180,7 @@ ParsingCodeContext::ParsingCodeContext(LinearAllocator& mem, parser::IErrorRepor
 ParsingCodeContext::~ParsingCodeContext()
 {}
 
-void ParsingCodeContext::reportError(const parser::Location& loc, StringView err)
+void ParsingCodeContext::reportError(const TextTokenLocation& loc, StringView err)
 {
     m_errHandler.reportError(loc, err);
 }
@@ -216,7 +216,7 @@ static void ExtractNodesIntoSingleScope(CodeNode* scopeNode, CodeNode* child)
 CodeNode* ParsingCodeContext::createScope(CodeNode* src, bool explicitScope)
 {
 	if (!src)
-		return m_mem.create<CodeNode>(parser::Location(), OpCode::Nop);
+		return m_mem.create<CodeNode>(TextTokenLocation(), OpCode::Nop);
 
 	if (!explicitScope && !src->extraData().m_nextStatement)
 		return src;
@@ -328,7 +328,7 @@ CodeNode* ParsingCodeContext::extractAttributes(const CodeNode* attributeList, C
 	return target;
 }
 
-CodeNode* ParsingCodeContext::createFunctionCall(const parser::Location& loc, const StringView name, CodeNode* a, CodeNode* b, CodeNode* c)
+CodeNode* ParsingCodeContext::createFunctionCall(const TextTokenLocation& loc, const StringView name, CodeNode* a, CodeNode* b, CodeNode* c)
 {
     if (name.empty())
         return a;

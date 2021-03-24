@@ -10,7 +10,7 @@
 #include "fontLibrary.h"
 #include "core/system/include/scopeLock.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -99,4 +99,4 @@ void FontLibrary::freeFace(FT_Face face)
     }
 }
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

@@ -199,7 +199,7 @@ enum class StyleVarType
 };
 
 // compile the final style value from a raw value
-extern ENGINE_UI_API bool CompileStyleValue(const parser::Location& loc, StyleVarType type, const RawValue& value, ContentLoader& loader, Variant& outValue, parser::IErrorReporter& err);
+extern ENGINE_UI_API bool CompileStyleValue(const TextTokenLocation& loc, StyleVarType type, const RawValue& value, ContentLoader& loader, Variant& outValue, ITextErrorReporter& err);
 
 // get style var type for name
 extern ENGINE_UI_API StyleVarType StyleVarTypeForParamName(StringID name);

@@ -14,7 +14,7 @@
 
 #include "core/containers/include/stringParser.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(parser)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -22,40 +22,40 @@ namespace prv
 {
 
     /// a simple implementation of the error reporter that prints the errors in the log
-    class LogTextParserErrorReporter : public IErrorReporter
+    class LogTextParserErrorReporter : public ITextErrorReporter
     {
     public:
         LogTextParserErrorReporter()
         {}
 
-        virtual void reportError(const Location& loc, StringView message) override
+        virtual void reportError(const TextTokenLocation& loc, StringView message) override
         {
             TRACE_ERROR("{}: error: {}", loc, message);
         }
 
-        virtual void reportWarning(const Location& loc, StringView message) override
+        virtual void reportWarning(const TextTokenLocation& loc, StringView message) override
         {
             TRACE_WARNING("{}: warning: {}", loc, message);
         }
     };
 
     /// a simple implementation of the error reporter that prints the errors in the log
-    class DevNullErrorReporter : public IErrorReporter
+    class DevNullErrorReporter : public ITextErrorReporter
     {
     public:
         DevNullErrorReporter()
         {}
 
-        virtual void reportError(const Location& loc, StringView message) override
+        virtual void reportError(const TextTokenLocation& loc, StringView message) override
         {
         }
 
-        virtual void reportWarning(const Location& loc, StringView message) override
+        virtual void reportWarning(const TextTokenLocation& loc, StringView message) override
         {
         }
     };
 
-    class NoIncludesHandler : public IIncludeHandler
+    class NoIncludesHandler : public ITextIncludeHandler
     {
     private:
         virtual bool loadInclude(bool global, StringView path, StringView referencePath, Buffer& outContent, StringBuf& outPath) override final
@@ -68,16 +68,16 @@ namespace prv
 
 //--
 
-IErrorReporter::~IErrorReporter()
+ITextErrorReporter::~ITextErrorReporter()
 {}
 
-IErrorReporter& IErrorReporter::GetDefault()
+ITextErrorReporter& ITextErrorReporter::GetDefault()
 {
     static prv::LogTextParserErrorReporter theReporter;
     return theReporter;
 }
 
-IErrorReporter& IErrorReporter::GetDevNull()
+ITextErrorReporter& ITextErrorReporter::GetDevNull()
 {
     static prv::DevNullErrorReporter theReporter;
     return theReporter;            
@@ -85,10 +85,10 @@ IErrorReporter& IErrorReporter::GetDevNull()
 
 //--
 
-IIncludeHandler::~IIncludeHandler()
+ITextIncludeHandler::~ITextIncludeHandler()
 {}
 
-IIncludeHandler& IIncludeHandler::GetEmptyHandler()
+ITextIncludeHandler& ITextIncludeHandler::GetEmptyHandler()
 {
     static prv::NoIncludesHandler theHandler;
     return theHandler;
@@ -96,7 +96,7 @@ IIncludeHandler& IIncludeHandler::GetEmptyHandler()
 
 //--
 
-TextParser::TextParser(StringView context /*= StringBuf::EMPTY()*/, IErrorReporter& errorReporter /*= IErrorReporter::GetDefault()*/, ICommentEater& commentEater /*= ICommentEater::NoComments()*/)
+TextParser::TextParser(StringView context /*= StringBuf::EMPTY()*/, ITextErrorReporter& errorReporter /*= ITextErrorReporter::GetDefault()*/, ITextCommentEater& commentEater /*= ITextCommentEater::NoComments()*/)
     : m_start(nullptr)
     , m_end(nullptr)
     , m_lineEnd(nullptr)
@@ -170,14 +170,14 @@ void TextParser::rewind()
 
 bool TextParser::error(StringView txt)
 {
-    Location location(m_context, m_lineIndex);
+    TextTokenLocation location(m_context, m_lineIndex);
     m_errorReporter.reportError(location, txt);
     return false;
 }
 
 void TextParser::warning(StringView txt)
 {
-    Location location(m_context, m_lineIndex);
+    TextTokenLocation location(m_context, m_lineIndex);
     m_errorReporter.reportWarning(location, txt);
 }
 
@@ -549,7 +549,7 @@ static uint32_t CountCharsTillLineStart(const char* pos, const char* docStart)
     return start - pos;
 }
 
-Token* TextParser::parseToken(LinearAllocator& mem, const ILanguageDefinition& language)
+Token* TextParser::parseToken(LinearAllocator& mem, const ITextLanguageDefinition& language)
 {
     auto curLineIndex = m_lineIndex;
 
@@ -562,11 +562,11 @@ Token* TextParser::parseToken(LinearAllocator& mem, const ILanguageDefinition& l
     // return parsed text
     m_pos = cur;
     auto charPos = CountCharsTillLineStart(token->view().data(), m_start);
-    token->assignLocation(Location(m_context, curLineIndex, charPos));
+    token->assignLocation(TextTokenLocation(m_context, curLineIndex, charPos));
     return token;
 }
 
-Token TextParser::parseToken(const ILanguageDefinition& language)
+Token TextParser::parseToken(const ITextLanguageDefinition& language)
 {
     // go to content
     if (!findNextContent())
@@ -583,8 +583,8 @@ Token TextParser::parseToken(const ILanguageDefinition& language)
     // return parsed text
     m_pos = cur;
     auto charPos = CountCharsTillLineStart(token.view().data(), m_start);
-    token.assignLocation(Location(m_context, curLineIndex, charPos));
+    token.assignLocation(TextTokenLocation(m_context, curLineIndex, charPos));
     return std::move(token);
 }
 
-END_BOOMER_NAMESPACE_EX(parser)
+END_BOOMER_NAMESPACE()

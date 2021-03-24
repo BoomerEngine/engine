@@ -54,7 +54,7 @@ class FunctionTextureLoad : public INativeFunction
 	RTTI_DECLARE_VIRTUAL_CLASS(FunctionTextureLoad, INativeFunction);
 
 public:
-	virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+	virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
 	{
 		if (numArgs < 3)
 		{
@@ -95,7 +95,7 @@ class FunctionTextureLoadSample : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionTextureLoadSample, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         if (numArgs < 3)
         {
@@ -143,7 +143,7 @@ class FunctionTextureStore : public INativeFunction
 	RTTI_DECLARE_VIRTUAL_CLASS(FunctionTextureStore, INativeFunction);
 
 public:
-	virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+	virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
 	{
 		if (numArgs < 4)
 		{
@@ -183,7 +183,7 @@ class FunctionTextureStoreSample : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionTextureStoreSample, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         if (numArgs < 4)
         {
@@ -230,7 +230,7 @@ class FunctionTextureSize : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionTextureSize, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         if (numArgs != 1)
         {

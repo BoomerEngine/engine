@@ -25,7 +25,7 @@ namespace prv
     struct ParsingContext : public NoCopy
     {
     public:
-        ParsingContext(parser::IErrorReporter& err, parser::IIncludeHandler& inc, RawLibraryData& library)
+        ParsingContext(ITextErrorReporter& err, ITextIncludeHandler& inc, RawLibraryData& library)
             : m_err(err)
             , m_inc(inc)
             , m_library(library)
@@ -36,24 +36,24 @@ namespace prv
             return m_library;
         }
 
-        INLINE parser::IErrorReporter& errorHandler() const
+        INLINE ITextErrorReporter& errorHandler() const
         {
             return m_err;
         }
 
-        INLINE parser::IIncludeHandler& includeHelper() const
+        INLINE ITextIncludeHandler& includeHelper() const
         {
             return m_inc;
         }
 
-        parser::Location extractLocation(const parser::TextParser& ctx)
+        TextTokenLocation extractLocation(const TextParser& ctx)
         {
-            return parser::Location(ctx.contextName(), ctx.line());
+            return TextTokenLocation(ctx.contextName(), ctx.line());
         }
 
     private:
-        parser::IErrorReporter& m_err;
-        parser::IIncludeHandler& m_inc;
+        ITextErrorReporter& m_err;
+        ITextIncludeHandler& m_inc;
         RawLibraryData& m_library;
 
         HashMap<uint64_t, StringBuf> m_fileNames;
@@ -67,7 +67,7 @@ namespace prv
             return powf((srgb + 0.055f) / 1.055f, 2.4f);
     }
 
-    const RawValue* ParseValue(parser::TextParser& p, ParsingContext& pc)
+    const RawValue* ParseValue(TextParser& p, ParsingContext& pc)
     {
         StringView token;
 
@@ -230,7 +230,7 @@ namespace prv
         return nullptr;
     }
 
-    const RawValue* ReduceValue(const parser::Location& loc, const RawValue* p, ParsingContext& pc)
+    const RawValue* ReduceValue(const TextTokenLocation& loc, const RawValue* p, ParsingContext& pc)
     {
         if (p->type() == RawValueType::Variable)
         {
@@ -601,7 +601,7 @@ namespace prv
         return p;
     }
 
-    RawSelector* ParseSelector(parser::TextParser& p, ParsingContext& pc, const RawSelector* topSelector, bool& outPopTopSelector)
+    RawSelector* ParseSelector(TextParser& p, ParsingContext& pc, const RawSelector* topSelector, bool& outPopTopSelector)
     {
         // get combinator for the selector
         auto combinator = SelectorCombinatorType::AnyParent;
@@ -685,7 +685,7 @@ namespace prv
         return retSelector;
     }
 
-    const RawRule* ProcessRule(parser::TextParser& p, ParsingContext& pc, const RawRule* parentRule)
+    const RawRule* ProcessRule(TextParser& p, ParsingContext& pc, const RawRule* parentRule)
     {
         // create new rule
         auto* rule = pc.library().alloc<RawRule>(pc.extractLocation(p));
@@ -733,7 +733,7 @@ namespace prv
         return rule;
     }
 
-    RawRuleSet* ParseRuleSetHeader(parser::TextParser &p, ParsingContext &pc, const RawRule *parentRule)
+    RawRuleSet* ParseRuleSetHeader(TextParser &p, ParsingContext &pc, const RawRule *parentRule)
     {
         bool valid = true;
 
@@ -770,7 +770,7 @@ namespace prv
         return ruleSet;
     }
 
-    bool ParseRuleSetContent(parser::TextParser& p, ParsingContext& pc, RawRuleSet* ruleSet)
+    bool ParseRuleSetContent(TextParser& p, ParsingContext& pc, RawRuleSet* ruleSet)
     {
         // parse until we reached '}'
         while (!p.parseKeyword("}"))
@@ -868,7 +868,7 @@ namespace prv
         bool valid = true;
 
         // initialize parser
-        parser::TextParser parser(context, pc.errorHandler(), parser::ICommentEater::StandardComments());
+        TextParser parser(context, pc.errorHandler(), ITextCommentEater::StandardComments());
         parser.reset(data);
 
         // process the file
@@ -968,15 +968,15 @@ namespace prv
 //--
 
 // parsing error reporter for cooker based shader compilation
-class LocalErrorReporter : public parser::IErrorReporter
+class LocalErrorReporter : public ITextErrorReporter
 {
 public:
-    virtual void reportError(const parser::Location& loc, StringView message) override
+    virtual void reportError(const TextTokenLocation& loc, StringView message) override
     {
         logging::Log::Print(logging::OutputLevel::Error, loc.contextName().c_str(), loc.line(), "", "", TempString("{}", message));
     }
 
-    virtual void reportWarning(const parser::Location& loc, StringView message) override
+    virtual void reportWarning(const TextTokenLocation& loc, StringView message) override
     {
         logging::Log::Print(logging::OutputLevel::Warning, loc.contextName().c_str(), loc.line(), "", "", TempString("{}", message));
     }
@@ -985,7 +985,7 @@ public:
 //---
 
 // include handler that loads appropriate dependencies
-class LocalIncludeHandler : public parser::IIncludeHandler
+class LocalIncludeHandler : public ITextIncludeHandler
 {
 public:
     LocalIncludeHandler(StringView baseDirectory)

@@ -11,27 +11,27 @@
 #include "core/math/include/point.h"
 #include "core/image/include/image.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
 /// glyph identification data
-struct GlyphID
+struct FontGlyphKey
 {
     FontID fontId = 0; // id of the font itself, we don't have that many fonts so this is just a number
     FontGlyphID glyphId = 0;  // glyph ID, usually this is just the wchar_t
     FontStyleHash style = 0; // render hash of the parameters the glyph was rendered with
 
-    INLINE GlyphID(FontID fontId, FontGlyphID glyphId, FontStyleHash style)
+    INLINE FontGlyphKey(FontID fontId, FontGlyphID glyphId, FontStyleHash style)
         : fontId(fontId)
         , glyphId(glyphId)
         , style(style)
     {}
 
-    INLINE bool operator==(const GlyphID& other) const
+    INLINE bool operator==(const FontGlyphKey& other) const
     {
         return (fontId == other.fontId) && (glyphId == other.glyphId) && (style == other.style);
     }
 
-    INLINE bool operator<(const GlyphID& other) const
+    INLINE bool operator<(const FontGlyphKey& other) const
     {
         if (fontId < other.fontId) return true;
         if (fontId > other.fontId) return false;
@@ -40,7 +40,7 @@ struct GlyphID
         return style < other.style;
     }
 
-    INLINE static uint32_t CalcHash(const GlyphID& id) 
+    INLINE static uint32_t CalcHash(const FontGlyphKey& id) 
     {
         uint64_t ret = id.fontId;
         ret ^= id.glyphId;
@@ -52,15 +52,15 @@ struct GlyphID
 /// renderable font glyph, managed by the glyph cache
 /// internally the glyph is just a simple image bitmap and sizing information
 /// NOTE: for performance reasons the glyphs are not memory managed via the SharedPtr, do not store pointers to them
-class ENGINE_FONT_API Glyph : public NoCopy
+class ENGINE_FONT_API FontGlyph : public NoCopy
 {
     RTTI_DECLARE_POOL(POOL_FONTS)
 
 public:
-    Glyph(const GlyphID& id, const ImagePtr& imagePtr, const Point& offset, const Point& size, const Vector2& advance, const Rect& logicalRect);
+    FontGlyph(const FontGlyphKey& id, const ImagePtr& imagePtr, const Point& offset, const Point& size, const Vector2& advance, const Rect& logicalRect);
 
     // get the ID of this glyph
-    INLINE const GlyphID& id() const { return m_id; }
+    INLINE const FontGlyphKey& id() const { return m_id; }
 
     // get the generated glyph image
     INLINE const ImagePtr& bitmap() const { return m_bitmap; }
@@ -83,7 +83,7 @@ public:
     uint32_t calcMemoryUsage() const;
 
 private:
-    GlyphID m_id; // id of the glyph, unique in the system
+    FontGlyphKey m_id; // id of the glyph, unique in the system
             
     Point m_offset; // placement offset for the bitmap content with respect to the cursor position
     Point m_size; // size of the renderable area of the glyph (NOTE: this is the size of the bitmap)
@@ -93,4 +93,4 @@ private:
     ImagePtr m_bitmap; // rendered glyph bitmap
 };
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

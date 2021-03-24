@@ -1385,13 +1385,13 @@ namespace helper
 
     //--
 
-    //StaticResource<font::BitmapFont> resScreenFontNormal("/engine/fonts/DejaVuSansMono.ttf:size=16");
-    //StaticResource<font::BitmapFont> resScreenFontBold("/engine/fonts/DejaVuSansMono-Bold.ttf:size=16");
-    //StaticResource<font::BitmapFont> resScreenFontItalic("/engine/fonts/DejaVuSansMono-Oblique.ttf:size=16");
-    //StaticResource<font::BitmapFont> resScreenFontBig("/engine/fonts/DejaVuSansMono.ttf:size=32");
-    //StaticResource<font::BitmapFont> resScreenFontTiny("/engine/fonts/DejaVuSansMono.ttf:size=12");
+    //StaticResource<BitmapFont> resScreenFontNormal("/engine/fonts/DejaVuSansMono.ttf:size=16");
+    //StaticResource<BitmapFont> resScreenFontBold("/engine/fonts/DejaVuSansMono-Bold.ttf:size=16");
+    //StaticResource<BitmapFont> resScreenFontItalic("/engine/fonts/DejaVuSansMono-Oblique.ttf:size=16");
+    //StaticResource<BitmapFont> resScreenFontBig("/engine/fonts/DejaVuSansMono.ttf:size=32");
+    //StaticResource<BitmapFont> resScreenFontTiny("/engine/fonts/DejaVuSansMono.ttf:size=12");
 
-    static const font::BitmapFont* GetFont(DebugFont font)
+    static const BitmapFont* GetFont(DebugFont font)
     {
         /*switch (font)
         {
@@ -1426,7 +1426,7 @@ namespace helper
         TextPage m_pageData[MAX_PAGES];
         uint32_t m_pageCount = 0;
 
-        void buildGeometry(float ox, float oy, float s, StringView txt, const Array<font::BitmapFontPrintableGlyph>& glyphs)
+        void buildGeometry(float ox, float oy, float s, StringView txt, const Array<BitmapFontPrintableGlyph>& glyphs)
         {
             /*for (auto& g : glyphs)
             {
@@ -1494,7 +1494,7 @@ Point DebugDrawer::text(int x, int y, StringView txt, const DebugTextParams& par
     if (auto fontPtr = helper::GetFont(params._font))
     {
         // compute glyph placements and the whole text size
-        InplaceArray<font::BitmapFontPrintableGlyph, 256> glyphs;
+        InplaceArray<BitmapFontPrintableGlyph, 256> glyphs;
         auto measure = fontPtr->render(txt, params._color, glyphs);
 
         // align horizontally

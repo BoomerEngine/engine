@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
 /// rendering parameters for the font
 class ENGINE_FONT_API FontRenderingParams
@@ -23,4 +23,4 @@ public:
     FontRenderingParams();
 };
         
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

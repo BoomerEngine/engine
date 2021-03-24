@@ -47,7 +47,7 @@ public:
     Function* foldFunction(const Function* original,  // code
         const ProgramInstance* thisVars,  // "this vars" - parameterization of program instance 
         const ProgramConstants& localArgs,  // local arguments for calls
-        parser::IErrorReporter& err);
+        ITextErrorReporter& err);
 
 private:
     LinearAllocator& m_mem;
@@ -56,7 +56,7 @@ private:
     HashMap<FoldedFunctionKey, Function*> m_foldedFunctionsMap;
     HashMap<StringID, uint32_t> m_functionNameCounter;
 
-    CodeNode* foldCode(Function* func, const CodeNode* node, const ProgramInstance* thisArgs, const ProgramConstants& localArgs, parser::IErrorReporter& err);
+    CodeNode* foldCode(Function* func, const CodeNode* node, const ProgramInstance* thisArgs, const ProgramConstants& localArgs, ITextErrorReporter& err);
 };
 
 //---

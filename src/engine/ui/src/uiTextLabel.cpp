@@ -117,7 +117,7 @@ namespace helper
 {
     struct GlyphBufferEntryEx
     {
-        GlyphBufferEntryEx(const font::GlyphBufferEntry &entry, const font::Font* font, float fontSize)
+        GlyphBufferEntryEx(const FontGlyphBufferEntry &entry, const Font* font, float fontSize)
         {
             // determine the line bounding box
             auto ascenderLine = font->relativeAscender() * fontSize;

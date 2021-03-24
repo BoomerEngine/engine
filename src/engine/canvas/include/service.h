@@ -36,7 +36,7 @@ public:
 	const CanvasImageEntryInfo* findRenderDataForAtlasEntry(const CanvasImageEntry& entry) const;
 
 	// find placement of given font glyph
-	const CanvasImageEntryInfo* findRenderDataForGlyph(const font::Glyph* glyph) const;
+	const CanvasImageEntryInfo* findRenderDataForGlyph(const FontGlyph* glyph) const;
 
 	//--
 

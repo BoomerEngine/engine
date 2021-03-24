@@ -21,7 +21,7 @@ class FunctionAssign : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionAssign, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         if (numArgs != 2)
             return DataType();
@@ -49,7 +49,7 @@ class FunctionSelect : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionSelect, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         argTypes[1] = argTypes[1].unmakePointer(); // we need to load before select :(
         argTypes[2] = argTypes[1];

@@ -47,11 +47,11 @@ struct TextSizeHelper
 
     Rect measureText(StringView text) const
     {
-        font::FontStyleParams params;
+        FontStyleParams params;
         params.size = m_size;
-        font::FontAssemblyParams aparams;
-        font::FontInputText fontText(text.data(), text.length());
-        font::FontMetrics metrics;
+        FontAssemblyParams aparams;
+        FontInputText fontText(text.data(), text.length());
+        FontMetrics metrics;
         m_font.normal->measureText(params, aparams, fontText, metrics);
 
         Rect rect;
@@ -64,13 +64,13 @@ struct TextSizeHelper
 
     void print(CanvasGeometryBuilder& builder, StringView text) const
     {
-        font::FontStyleParams params;
+        FontStyleParams params;
         params.size = m_size;
-        font::FontAssemblyParams aparams;
-        aparams.verticalAlignment = font::FontAlignmentVertical::Baseline;
-        font::FontInputText fontText(text.data(), text.length());
+        FontAssemblyParams aparams;
+        aparams.verticalAlignment = FontAlignmentVertical::Baseline;
+        FontInputText fontText(text.data(), text.length());
 
-        font::GlyphBuffer glyphs;
+        FontGlyphBuffer glyphs;
         m_font.normal->renderText(params, aparams, fontText, glyphs);
 
         builder.print(glyphs);

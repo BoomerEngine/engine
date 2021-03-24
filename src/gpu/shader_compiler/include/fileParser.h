@@ -62,23 +62,23 @@ enum class StatementType : uint8_t
 
 struct GPU_SHADER_COMPILER_API TypeReference
 {
-    parser::Location location;
+    TextTokenLocation location;
     StringView name;
     StringView innerType;
     InplaceArray<int, 4> arraySizes;
 
     TypeReference();
-    TypeReference(const parser::Location& loc, StringView name);
+    TypeReference(const TextTokenLocation& loc, StringView name);
 };
 
 struct GPU_SHADER_COMPILER_API Element
 {
     ElementType type = ElementType::Invalid;
-    parser::Location location;
+    TextTokenLocation location;
     StringView name;
     Array<Element*> children;
     Array<Element*> attributes;
-    Array<parser::Token*> tokens; // inner content
+    Array<Token*> tokens; // inner content
     CodeNode* code = nullptr; // resolved code
     TypeReference* typeRef = nullptr; // type reference
     ElementFlags flags = ElementFlags();
@@ -89,7 +89,7 @@ struct GPU_SHADER_COMPILER_API Element
 
     //---
 
-    Element(const parser::Location& loc, ElementType type, StringView name = StringView(), ElementFlags flags=ElementFlags());
+    Element(const TextTokenLocation& loc, ElementType type, StringView name = StringView(), ElementFlags flags=ElementFlags());
 
     //--
 
@@ -101,14 +101,14 @@ struct GPU_SHADER_COMPILER_API Element
 ///----
 
 // get the parser language to tokenize text for shader compilation
-extern GPU_SHADER_COMPILER_API const parser::ILanguageDefinition& GetlanguageDefinition();
+extern GPU_SHADER_COMPILER_API const ITextLanguageDefinition& GetlanguageDefinition();
 
 /// analyze structure of the shader file
 /// NOTE: all memory is allocated from the linear allocator
-extern GPU_SHADER_COMPILER_API Element* Analyzefile(LinearAllocator& mem, parser::IErrorReporter& errHandler, parser::TokenList& tokens);
+extern GPU_SHADER_COMPILER_API Element* Analyzefile(LinearAllocator& mem, ITextErrorReporter& errHandler, TokenList& tokens);
 
 /// analyze structure of the shader function
-extern GPU_SHADER_COMPILER_API CodeNode* Analyzecode(LinearAllocator& mem, parser::IErrorReporter& errHandler, const Array<parser::Token*>& tokens, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram);
+extern GPU_SHADER_COMPILER_API CodeNode* Analyzecode(LinearAllocator& mem, ITextErrorReporter& errHandler, const Array<Token*>& tokens, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram);
 
 ///----
 

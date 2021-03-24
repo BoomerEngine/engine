@@ -11,7 +11,7 @@
 #include "core/containers/include/stringParser.h"
 #include "core/containers/include/utf8StringFunctions.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
 FontInputText::FontInputText()
 {}
@@ -58,4 +58,4 @@ void FontInputText::build(const wchar_t* txt, const wchar_t* endTxt)
     }
 }
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

@@ -1920,9 +1920,9 @@ struct ImFontBuildSrcData
     const ImWchar*      SrcRanges;          // Ranges as requested by user (user is allowed to request too much, e.g. 0x0020..0xFFFF)
     int                 DstIndex;           // Index into atlas->Fonts[] and dst_tmp_array[]
     int                 GlyphsHighest;      // Highest requested codepoint
-    int                 GlyphsCount;        // Glyph count (excluding missing glyphs and glyphs already set by an earlier source font)
-    ImBoolVector        GlyphsSet;          // Glyph bit map (random access, 1-bit per codepoint. This will be a maximum of 8KB)
-    ImVector<int>       GlyphsList;         // Glyph codepoints list (flattened version of GlyphsMap)
+    int                 GlyphsCount;        // FontGlyph count (excluding missing glyphs and glyphs already set by an earlier source font)
+    ImBoolVector        GlyphsSet;          // FontGlyph bit map (random access, 1-bit per codepoint. This will be a maximum of 8KB)
+    ImVector<int>       GlyphsList;         // FontGlyph codepoints list (flattened version of GlyphsMap)
 };
 
 // Temporary data for one destination ImFont* (multiple source fonts can be merged into one destination ImFont)

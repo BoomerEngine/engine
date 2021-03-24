@@ -47,7 +47,7 @@ static void CollectBasePrograms(const Program* program, Array<const Program*>& b
     }
 }
 
-bool CodeLibrary::parseContent(parser::TokenList& tokens, parser::IErrorReporter &err)
+bool CodeLibrary::parseContent(TokenList& tokens, ITextErrorReporter &err)
 {
     // load file content
     if (!loadFile(tokens, err))
@@ -71,7 +71,7 @@ bool CodeLibrary::parseContent(parser::TokenList& tokens, parser::IErrorReporter
     return true;
 }
 
-const Program* CodeLibrary::createProgram(const StringID programName, const parser::Location& loc, AttributeList&& attributes)
+const Program* CodeLibrary::createProgram(const StringID programName, const TextTokenLocation& loc, AttributeList&& attributes)
 {
     ASSERT(!m_programs.contains(programName));
 
@@ -130,7 +130,7 @@ static void CollectConstants(const Program* program, Array<const DataParameter*>
             outParams.pushBackUnique(param);
 }
 
-const ProgramInstance* CodeLibrary::createProgramInstance(const parser::Location& loc, const Program* program, const ProgramConstants& sourceParams, parser::IErrorReporter& err)
+const ProgramInstance* CodeLibrary::createProgramInstance(const TextTokenLocation& loc, const Program* program, const ProgramConstants& sourceParams, ITextErrorReporter& err)
 {
     auto key = CalcProgramInstanceKey(program, sourceParams);
 

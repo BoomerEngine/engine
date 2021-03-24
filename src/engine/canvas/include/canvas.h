@@ -218,10 +218,10 @@ public:
 	};
 
 	/// quick (debug mostly) text print - measure the text
-	DebugTextBounds debugPrintMeasure(StringView text, int size = 16, font::FontAlignmentHorizontal align = font::FontAlignmentHorizontal::Left, bool bold = false) const;
+	DebugTextBounds debugPrintMeasure(StringView text, int size = 16, FontAlignmentHorizontal align = FontAlignmentHorizontal::Left, bool bold = false) const;
 
 	/// quick (debug mostly) text print
-	DebugTextBounds debugPrint(float x, float y, StringView text, Color color = Color::WHITE, int size = 16, font::FontAlignmentHorizontal align = font::FontAlignmentHorizontal::Left, bool bold = false);
+	DebugTextBounds debugPrint(float x, float y, StringView text, Color color = Color::WHITE, int size = 16, FontAlignmentHorizontal align = FontAlignmentHorizontal::Left, bool bold = false);
 
 	//--
 

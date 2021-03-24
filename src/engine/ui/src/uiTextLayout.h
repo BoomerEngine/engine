@@ -92,7 +92,7 @@ namespace prv
 
     struct LayoutDisplayGlyph
     {
-        font::GlyphBufferEntry data;
+        FontGlyphBufferEntry data;
     };
 
     struct LayoutDisplayImage

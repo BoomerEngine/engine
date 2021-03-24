@@ -123,7 +123,7 @@ void Canvas::pixelPlacement(float pixelOffsetX, float pixelOffsetY, float pixelS
 
 //--
 
-Canvas::DebugTextBounds Canvas::debugPrintMeasure(StringView text, int size /*= 16*/, font::FontAlignmentHorizontal align /*= font::FontAlignmentHorizontal::Left*/, bool bold /*= false*/) const
+Canvas::DebugTextBounds Canvas::debugPrintMeasure(StringView text, int size /*= 16*/, FontAlignmentHorizontal align /*= FontAlignmentHorizontal::Left*/, bool bold /*= false*/) const
 {
     static const auto normalFont = LoadFontFromDepotPath("/engine/interface/fonts/aileron_regular.otf");
     static const auto boldFont = LoadFontFromDepotPath("/engine/interface/fonts/aileron_bold.otf");
@@ -132,13 +132,13 @@ Canvas::DebugTextBounds Canvas::debugPrintMeasure(StringView text, int size /*= 
 
 	if (font)
 	{
-		font::FontStyleParams params;
+		FontStyleParams params;
 		params.size = size;
 
-		font::GlyphBuffer glyphs;
-		font::FontAssemblyParams assemblyParams;
+		FontGlyphBuffer glyphs;
+		FontAssemblyParams assemblyParams;
 		assemblyParams.horizontalAlignment = align;
-		font->renderText(params, assemblyParams, font::FontInputText(text.data(), text.length()), glyphs);
+		font->renderText(params, assemblyParams, FontInputText(text.data(), text.length()), glyphs);
 
 		DebugTextBounds bounds;
 
@@ -175,7 +175,7 @@ Canvas::DebugTextBounds Canvas::debugPrintMeasure(StringView text, int size /*= 
 	return DebugTextBounds();
 }
 
-Canvas::DebugTextBounds Canvas::debugPrint(float x, float y, StringView text, Color color /*= Color::WHITE*/, int size /*= 16*/, font::FontAlignmentHorizontal align /*= font::FontAlignmentHorizontal::Left*/, bool bold /*= false*/)
+Canvas::DebugTextBounds Canvas::debugPrint(float x, float y, StringView text, Color color /*= Color::WHITE*/, int size /*= 16*/, FontAlignmentHorizontal align /*= FontAlignmentHorizontal::Left*/, bool bold /*= false*/)
 {
     static const auto normalFont = LoadFontFromDepotPath("/engine/interface/fonts/aileron_regular.otf");
 	static const auto boldFont = LoadFontFromDepotPath("/engine/interface/fonts/aileron_bold.otf");
@@ -184,13 +184,13 @@ Canvas::DebugTextBounds Canvas::debugPrint(float x, float y, StringView text, Co
 
 	if (font)
 	{
-		font::FontStyleParams params;
+		FontStyleParams params;
 		params.size = size;
 
-		font::GlyphBuffer glyphs;
-		font::FontAssemblyParams assemblyParams;
+		FontGlyphBuffer glyphs;
+		FontAssemblyParams assemblyParams;
 		assemblyParams.horizontalAlignment = align;
-		font->renderText(params, assemblyParams, font::FontInputText(text.data(), text.length()), glyphs, color);
+		font->renderText(params, assemblyParams, FontInputText(text.data(), text.length()), glyphs, color);
 
 		CanvasGeometry g;
 		{

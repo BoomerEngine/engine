@@ -63,7 +63,7 @@ static DataType GetRequiredCoordinateType(TypeLibrary& typeLibrary, const DataTy
         return typeLibrary.integerType(numComponents);
 }
 
-static bool BuildParamSetup(TypeLibrary& typeLibrary, const char* functionName, uint32_t numArgs, const ResourceType& imageType, TextureModeFlags flags, TextureParamSetup& outSetup, const parser::Location& loc, parser::IErrorReporter& err)
+static bool BuildParamSetup(TypeLibrary& typeLibrary, const char* functionName, uint32_t numArgs, const ResourceType& imageType, TextureModeFlags flags, TextureParamSetup& outSetup, const TextTokenLocation& loc, ITextErrorReporter& err)
 {
     outSetup.textureIndex = 0;
     //outSetup.m_samplerIndex = 1;
@@ -298,7 +298,7 @@ public:
         return cls()->findMetadataRef<FunctionNameMetadata>().name();
     }
 
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         // get the image setup
         if (numArgs < 1)
@@ -571,7 +571,7 @@ class FunctionTextureSizeLod : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionTextureSizeLod, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         if (numArgs != 2)
         {

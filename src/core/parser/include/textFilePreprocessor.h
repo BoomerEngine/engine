@@ -16,7 +16,7 @@
 #include "core/containers/include/hashSet.h"
 #include "core/containers/include/inplaceArray.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(parser)
+BEGIN_BOOMER_NAMESPACE()
 
 ///----
 
@@ -25,7 +25,7 @@ BEGIN_BOOMER_NAMESPACE_EX(parser)
 class CORE_PARSER_API TextFilePreprocessor : public NoCopy
 {
 public:
-    TextFilePreprocessor(LinearAllocator& mem, IIncludeHandler& includeHandler, IErrorReporter& errorHandler, ICommentEater& commentEater, const ILanguageDefinition& parentLanguage);
+    TextFilePreprocessor(LinearAllocator& mem, ITextIncludeHandler& includeHandler, ITextErrorReporter& errorHandler, ITextCommentEater& commentEater, const ITextLanguageDefinition& parentLanguage);
     ~TextFilePreprocessor();
 
     //--
@@ -44,11 +44,11 @@ public:
 protected:
     LinearAllocator& m_allocator;
 
-    IIncludeHandler& m_includeHandler;
-    IErrorReporter& m_errorHandler;
-    ICommentEater& m_commentEater;
+    ITextIncludeHandler& m_includeHandler;
+    ITextErrorReporter& m_errorHandler;
+    ITextCommentEater& m_commentEater;
 
-    const ILanguageDefinition& m_parentLanguage;
+    const ITextLanguageDefinition& m_parentLanguage;
 
     bool processFileContent(StringView content, StringView contextPath, TokenList& outTokenList);
 
@@ -76,7 +76,7 @@ protected:
     struct MacroDefinition
     {
         StringBuf m_name;
-        Location m_definedAt;
+        TextTokenLocation m_definedAt;
         Array<StringBuf> m_arguments;
         Array<StringBuf> m_values;
         TokenList m_replacement;
@@ -150,7 +150,7 @@ protected:
         void shiftNumber(int num);
     };
     
-    bool evaluateExpressionRecursive_Reduce(const Location& loc, ExprStack& stack, int top);
+    bool evaluateExpressionRecursive_Reduce(const TextTokenLocation& loc, ExprStack& stack, int top);
 
     //--
 
@@ -166,4 +166,4 @@ protected:
 
 ///----
 
-END_BOOMER_NAMESPACE_EX(parser)
+END_BOOMER_NAMESPACE()

@@ -62,7 +62,7 @@ StringID CompositeType::memberName(uint32_t index) const
     return StringID();
 }
 
-void CompositeType::addMember(const parser::Location& loc, StringID memberName, DataType memberType, AttributeList&& attributes, const Array<parser::Token*>& initializationTokens)
+void CompositeType::addMember(const TextTokenLocation& loc, StringID memberName, DataType memberType, AttributeList&& attributes, const Array<Token*>& initializationTokens)
 {
     ASSERT(!memberName.empty());
     ASSERT(memberType.valid());
@@ -149,7 +149,7 @@ static ImageFormat FindPackedTypeForDataType(const DataType& dataType)
     return ImageFormat::UNKNOWN;
 }
 
-bool CompositeType::packLayoutVertex(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, parser::IErrorReporter& err) const
+bool CompositeType::packLayoutVertex(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, ITextErrorReporter& err) const
 {
     // arrays are not allowed as members
     if (prop.type.isArray())
@@ -227,7 +227,7 @@ bool CompositeType::packLayoutVertex(const CompositeType::Member& prop, uint32_t
     return true;
 }
 
-bool CompositeType::packLayoutStd140(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, parser::IErrorReporter& err) const
+bool CompositeType::packLayoutStd140(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, ITextErrorReporter& err) const
 {
     // if we are packing an array use the array inner type
     // NOTE: we only support native arrays here
@@ -350,13 +350,13 @@ bool CompositeType::packLayoutStd140(const CompositeType::Member& prop, uint32_t
     return true;
 }
 
-bool CompositeType::packLayoutStd430(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, parser::IErrorReporter& err) const
+bool CompositeType::packLayoutStd430(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, ITextErrorReporter& err) const
 {
     // TODO!
     return packLayoutStd140(prop, inOutPackingOffset, outLayout, err);
 }
 
-bool CompositeType::computeMemoryLayout(bool& outNeedsMorePasses, bool& outUpdated, parser::IErrorReporter& err)
+bool CompositeType::computeMemoryLayout(bool& outNeedsMorePasses, bool& outUpdated, ITextErrorReporter& err)
 {
     if (m_layoutComputed)
         return true;
@@ -484,7 +484,7 @@ StringID ResourceTable::memberName(uint32_t index) const
     return StringID();
 }
 
-void ResourceTable::addMember(const parser::Location& loc, const StringID name, const DataType& type, const AttributeList& attributes, char localSampler, const StaticSampler* staticSampler)
+void ResourceTable::addMember(const TextTokenLocation& loc, const StringID name, const DataType& type, const AttributeList& attributes, char localSampler, const StaticSampler* staticSampler)
 {
     ASSERT(name);
     ASSERT(memberIndex(name) == -1);
@@ -766,7 +766,7 @@ namespace helper
         auto t = mem.createNoCleanup<CompositeType>(StringID(name.c_str()), CompositePackingRules::Std140, typeHint);
 
         for (uint32_t i = 0; i < numComponents; ++i)
-            t->addMember(parser::Location(), memberNames[i], memberType, AttributeList());
+            t->addMember(TextTokenLocation(), memberNames[i], memberType, AttributeList());
 
         return t;
     }
@@ -799,7 +799,7 @@ void TypeLibrary::createDefaultTypes()
     }
 }
 
-bool TypeLibrary::calculateCompositeLayouts(parser::IErrorReporter& err)
+bool TypeLibrary::calculateCompositeLayouts(ITextErrorReporter& err)
 {
     uint32_t passes = 10;
     while (passes--)

@@ -2193,7 +2193,7 @@ struct ImFontGlyph
     unsigned int    Codepoint : 31;     // 0x0000..0xFFFF
     unsigned int    Visible : 1;        // Flag to allow early out when rendering
     float           AdvanceX;           // Distance to next character (= data from font + ImFontConfig::GlyphExtraSpacing.x baked in)
-    float           X0, Y0, X1, Y1;     // Glyph corners
+    float           X0, Y0, X1, Y1;     // FontGlyph corners
     float           U0, V0, U1, V1;     // Texture coordinates
 };
 
@@ -2277,7 +2277,7 @@ struct ImFontAtlas
     void                        SetTexID(ImTextureID id)    { TexID = id; }
 
     //-------------------------------------------
-    // Glyph Ranges
+    // FontGlyph Ranges
     //-------------------------------------------
 
     // Helpers to retrieve list of common Unicode ranges (2 value per range, values are inclusive, zero-terminated list)

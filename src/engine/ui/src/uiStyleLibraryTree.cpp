@@ -18,13 +18,13 @@ namespace prv
 
     //--
 
-    RawBaseElement::RawBaseElement(const parser::Location& location)
+    RawBaseElement::RawBaseElement(const TextTokenLocation& location)
         : m_fileLocation(location)
     {}
 
     //---
 
-    RawProperty::RawProperty(const parser::Location& location, const StringID name, uint32_t numValues, const RawValue** values)
+    RawProperty::RawProperty(const TextTokenLocation& location, const StringID name, uint32_t numValues, const RawValue** values)
         : RawBaseElement(location)
         , m_name(name)
         , m_values(values)
@@ -52,7 +52,7 @@ namespace prv
 
     //---
 
-    RawVariable::RawVariable(const parser::Location& location, const StringID name, const RawValue* value)
+    RawVariable::RawVariable(const TextTokenLocation& location, const StringID name, const RawValue* value)
         : RawBaseElement(location)
         , m_name(name)
         , m_value(value)
@@ -93,7 +93,7 @@ namespace prv
 
     //---
 
-    RawSelector::RawSelector(const parser::Location& location, SelectorCombinatorType combinator)
+    RawSelector::RawSelector(const TextTokenLocation& location, SelectorCombinatorType combinator)
         : RawBaseElement(location)
         , m_combinator(combinator)
     {}
@@ -150,7 +150,7 @@ namespace prv
 
     //---
 
-    RawRule::RawRule(const parser::Location& location)
+    RawRule::RawRule(const TextTokenLocation& location)
         : RawBaseElement(location)
     {}
 
@@ -176,7 +176,7 @@ namespace prv
 
     //---
 
-    RawRuleSet::RawRuleSet(const parser::Location& location)
+    RawRuleSet::RawRuleSet(const TextTokenLocation& location)
         : RawBaseElement(location)
     {}
 

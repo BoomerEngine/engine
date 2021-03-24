@@ -13,7 +13,7 @@
 #include "core/image/include/image.h"
 #include "core/resource/include/tags.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -198,4 +198,4 @@ void BitmapFont::rebuildGlyphMap()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

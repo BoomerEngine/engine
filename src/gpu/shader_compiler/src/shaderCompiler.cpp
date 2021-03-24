@@ -33,15 +33,15 @@ BEGIN_BOOMER_NAMESPACE_EX(gpu::compiler)
 //---
 
 // parsing error reporter for cooker based shader compilation
-class LocalErrorReporter : public parser::IErrorReporter
+class LocalErrorReporter : public ITextErrorReporter
 {
 public:
-    virtual void reportError(const parser::Location& loc, StringView message) override
+    virtual void reportError(const TextTokenLocation& loc, StringView message) override
     {
         logging::Log::Print(logging::OutputLevel::Error, loc.contextName().c_str(), loc.line(), "", "", TempString("{}", message));
     }
 
-    virtual void reportWarning(const parser::Location& loc, StringView message) override
+    virtual void reportWarning(const TextTokenLocation& loc, StringView message) override
     {
         logging::Log::Print(logging::OutputLevel::Warning, loc.contextName().c_str(), loc.line(), "", "", TempString("{}", message));
     }
@@ -50,7 +50,7 @@ public:
 //---
 
 // include handler that loads appropriate dependencies
-class LocalIncludeHandler : public parser::IIncludeHandler
+class LocalIncludeHandler : public ITextIncludeHandler
 {
 public:
 	LocalIncludeHandler(ShaderCompiler* compiler, Array<ShaderDependency>* outDependencies)
@@ -220,7 +220,7 @@ ShaderDataPtr ShaderCompiler::compileInternal(StringView filePath, StringView co
 
 	{
 		// setup preprocessor
-		parser::TextFilePreprocessor parser(mem, includeHandler, errorReporter, parser::ICommentEater::StandardComments(), GetlanguageDefinition());
+		TextFilePreprocessor parser(mem, includeHandler, errorReporter, ITextCommentEater::StandardComments(), GetlanguageDefinition());
 
 		// inject given defines
 		if (nullptr != defines)

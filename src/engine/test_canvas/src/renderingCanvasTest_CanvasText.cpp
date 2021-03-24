@@ -31,15 +31,15 @@ public:
 
     void print(Canvas& c, float x, float y, float scale, const FontPtr& fontPtr, int size, bool bold, bool italic, const StringBuf& text)
     {
-        font::FontStyleParams params;
+        FontStyleParams params;
         params.italic = italic;
         params.bold = bold;
         params.size = size;
         params.blur = blur;
 
-        font::GlyphBuffer glyphs;
-        font::FontAssemblyParams assemblyParams;
-        fontPtr->renderText(params, assemblyParams, font::FontInputText(text.c_str()), glyphs);
+        FontGlyphBuffer glyphs;
+        FontAssemblyParams assemblyParams;
+        fontPtr->renderText(params, assemblyParams, FontInputText(text.c_str()), glyphs);
 
 		CanvasGeometry g;
 		{

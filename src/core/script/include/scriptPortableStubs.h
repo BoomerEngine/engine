@@ -434,7 +434,7 @@ struct CORE_SCRIPT_API StubFunction : public Stub
     const StubFunction* baseFunction = nullptr; // matching function in base class
     const StubFunction* parentFunction = nullptr; // matching function in parent class
 
-    Array<parser::Token*> tokens; // in case it's coming from local file (NOT SAVED)
+    Array<Token*> tokens; // in case it's coming from local file (NOT SAVED)
 
     Array<const StubOpcode*> opcodes; // function generated opcodes
     uint64_t codeHash = 0;

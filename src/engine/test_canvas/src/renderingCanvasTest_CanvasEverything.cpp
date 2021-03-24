@@ -67,8 +67,8 @@ struct FontHelper
 public:
     FontHelper()
         : m_size(10)
-        , m_verticalAlignment(font::FontAlignmentVertical::Top)
-        , m_horizontalAlignment(font::FontAlignmentHorizontal::Left)
+        , m_verticalAlignment(FontAlignmentVertical::Top)
+        , m_horizontalAlignment(FontAlignmentHorizontal::Left)
     {
     }
 
@@ -106,20 +106,20 @@ public:
     void textAlign(uint32_t flags)
     {
         if (flags & NVG_ALIGN_LEFT)
-            m_horizontalAlignment = font::FontAlignmentHorizontal::Left;
+            m_horizontalAlignment = FontAlignmentHorizontal::Left;
         else if (flags & NVG_ALIGN_CENTER)
-            m_horizontalAlignment = font::FontAlignmentHorizontal::Center;
+            m_horizontalAlignment = FontAlignmentHorizontal::Center;
         else if (flags & NVG_ALIGN_RIGHT)
-            m_horizontalAlignment = font::FontAlignmentHorizontal::Right;
+            m_horizontalAlignment = FontAlignmentHorizontal::Right;
 
         if (flags & NVG_ALIGN_TOP)
-            m_verticalAlignment = font::FontAlignmentVertical::Top;
+            m_verticalAlignment = FontAlignmentVertical::Top;
         else if (flags & NVG_ALIGN_MIDDLE)
-            m_verticalAlignment = font::FontAlignmentVertical::Middle;
+            m_verticalAlignment = FontAlignmentVertical::Middle;
         else if (flags & NVG_ALIGN_BOTTOM)
-            m_verticalAlignment = font::FontAlignmentVertical::Bottom;
+            m_verticalAlignment = FontAlignmentVertical::Bottom;
         else if (flags & NVG_ALIGN_BASELINE)
-            m_verticalAlignment = font::FontAlignmentVertical::Baseline;
+            m_verticalAlignment = FontAlignmentVertical::Baseline;
     }
 
     void fontBlur(uint32_t blur)
@@ -128,43 +128,43 @@ public:
 
     float textBounds(float x, float y, const char* string, const char* end, float* bounds)
     {
-        font::FontStyleParams params;
+        FontStyleParams params;
         params.size = m_size;
 
-        font::GlyphBuffer glyphs;
-        font::FontAssemblyParams assemblyParams;
-        font::FontMetrics metrics;
+        FontGlyphBuffer glyphs;
+        FontAssemblyParams assemblyParams;
+        FontMetrics metrics;
         if (m_currentFace)
-            m_currentFace->measureText(params, assemblyParams, font::FontInputText(string), metrics);
+            m_currentFace->measureText(params, assemblyParams, FontInputText(string), metrics);
 
         return (float)metrics.textWidth;
     }
 
     float textBounds(float x, float y, const wchar_t* string, const wchar_t* end, float* bounds)
     {
-        font::FontStyleParams params;
+        FontStyleParams params;
         params.size = m_size;
 
-        font::GlyphBuffer glyphs;
-        font::FontAssemblyParams assemblyParams;
-        font::FontMetrics metrics;
+        FontGlyphBuffer glyphs;
+        FontAssemblyParams assemblyParams;
+        FontMetrics metrics;
         if (m_currentFace)
-            m_currentFace->measureText(params, assemblyParams, font::FontInputText(string), metrics);
+            m_currentFace->measureText(params, assemblyParams, FontInputText(string), metrics);
 
         return (float)metrics.textWidth;
     }
 
     void text(CanvasGeometryBuilder& vg, float x, float y, const char* txt, void* ptr)
     {
-        font::FontStyleParams params;
+        FontStyleParams params;
         params.size = m_size;
 
-        font::GlyphBuffer glyphs;
-        font::FontAssemblyParams assemblyParams;
+        FontGlyphBuffer glyphs;
+        FontAssemblyParams assemblyParams;
         assemblyParams.verticalAlignment = m_verticalAlignment;
         assemblyParams.horizontalAlignment = m_horizontalAlignment;
         if (m_currentFace)
-            m_currentFace->renderText(params, assemblyParams, font::FontInputText(txt), glyphs);
+            m_currentFace->renderText(params, assemblyParams, FontInputText(txt), glyphs);
 
         vg.pushTransform();
         vg.translate(x, y);
@@ -174,15 +174,15 @@ public:
 
     void text2(CanvasGeometryBuilder& vg, float x, float y, const char* txt, const char* endTxt)
     {
-        font::FontStyleParams params;
+        FontStyleParams params;
         params.size = m_size;
 
-        font::GlyphBuffer glyphs;
-        font::FontAssemblyParams assemblyParams;
+        FontGlyphBuffer glyphs;
+        FontAssemblyParams assemblyParams;
         assemblyParams.verticalAlignment = m_verticalAlignment;
         assemblyParams.horizontalAlignment = m_horizontalAlignment;
         if (m_currentFace)
-            m_currentFace->renderText(params, assemblyParams, font::FontInputText(txt, endTxt - txt), glyphs);
+            m_currentFace->renderText(params, assemblyParams, FontInputText(txt, endTxt - txt), glyphs);
 
         vg.pushTransform();
         vg.translate(x, y);
@@ -192,15 +192,15 @@ public:
 
     void text(CanvasGeometryBuilder& vg, float x, float y, const wchar_t* txt, void* ptr)
     {
-        font::FontStyleParams params;
+        FontStyleParams params;
         params.size = m_size;
 
-        font::GlyphBuffer glyphs;
-        font::FontAssemblyParams assemblyParams;
+        FontGlyphBuffer glyphs;
+        FontAssemblyParams assemblyParams;
         assemblyParams.verticalAlignment = m_verticalAlignment;
         assemblyParams.horizontalAlignment = m_horizontalAlignment;
         if (m_currentFace)
-            m_currentFace->renderText(params, assemblyParams, font::FontInputText(txt), glyphs);
+            m_currentFace->renderText(params, assemblyParams, FontInputText(txt), glyphs);
 
         vg.pushTransform();
         vg.translate(x, y);
@@ -219,7 +219,7 @@ public:
         float x, y, nextx, nexty, scale, spacing;
         unsigned int codepoint;
         short isize, iblur;
-        const font::Font* font;
+        const Font* font;
         int ch;
         const char* str;
         const char* next;
@@ -234,7 +234,7 @@ public:
         float x1, y1, s1, t1;
     };
 
-    static void fons__getQuad(const font::Font* font, int prevGlyphIndex, const font::Glyph* glyph, float scale, float spacing, float* x, float* y, FONSquad* q)
+    static void fons__getQuad(const Font* font, int prevGlyphIndex, const FontGlyph* glyph, float scale, float spacing, float* x, float* y, FONSquad* q)
     {
         q->x0 = *x + glyph->offset().x;
         q->y0 = *y + glyph->offset().y;
@@ -246,14 +246,14 @@ public:
 
     int fonsTextIterNext(FONStextIter* iter, FONSquad* quad)
     {
-        const font::Glyph* glyph = NULL;
+        const FontGlyph* glyph = NULL;
         const char* str = iter->next;
         iter->str = iter->next;
 
         if (str >= iter->end)
             return 0;
 
-        font::FontStyleParams style;
+        FontStyleParams style;
         style.size = iter->isize;
 
         while (str < iter->end)
@@ -657,13 +657,13 @@ private:
     FontPtr m_iconFont;
     FontPtr m_emojiFont;
 
-    font::GlyphCache m_glyphCache;
+    FontGlyphCache m_glyphCache;
 
     uint32_t m_size;
     FontPtr m_currentFace;
 
-    font::FontAlignmentVertical m_verticalAlignment;
-    font::FontAlignmentHorizontal m_horizontalAlignment;
+    FontAlignmentVertical m_verticalAlignment;
+    FontAlignmentHorizontal m_horizontalAlignment;
 };
 
 /// test of all of the canvas feature

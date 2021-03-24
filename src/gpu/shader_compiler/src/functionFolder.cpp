@@ -86,7 +86,7 @@ FunctionFolder::FunctionFolder(LinearAllocator& mem, CodeLibrary& code)
 FunctionFolder::~FunctionFolder()
 {}
 
-CodeNode* FunctionFolder::foldCode(Function* func, const CodeNode* node, const ProgramInstance* thisVars, const ProgramConstants& localVars, parser::IErrorReporter& err)
+CodeNode* FunctionFolder::foldCode(Function* func, const CodeNode* node, const ProgramInstance* thisVars, const ProgramConstants& localVars, ITextErrorReporter& err)
 {
     PC_SCOPE_LVL2(FoldCode);
 
@@ -834,7 +834,7 @@ CodeNode* FunctionFolder::foldCode(Function* func, const CodeNode* node, const P
     return ret;
 }
 
-Function* FunctionFolder::foldFunction(const Function* original, const ProgramInstance* thisArgs, const ProgramConstants& localArgs, parser::IErrorReporter& err)
+Function* FunctionFolder::foldFunction(const Function* original, const ProgramInstance* thisArgs, const ProgramConstants& localArgs, ITextErrorReporter& err)
 {
     PC_SCOPE_LVL1(FoldFunction);
 

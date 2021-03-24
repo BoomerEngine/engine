@@ -10,7 +10,7 @@
 
 #include "core/containers/include/inplaceArray.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -39,4 +39,4 @@ private:
     void build(const wchar_t* txt, const wchar_t* endTxt);
 };
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

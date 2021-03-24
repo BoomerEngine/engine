@@ -10,7 +10,7 @@
 #include "textToken.h"
 #include "textLanguageDefinition.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(parser)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -18,7 +18,7 @@ namespace prv
     //--
 
     // no comments
-    class NoCommentsParserCommentEater : public ICommentEater
+    class NoCommentsParserCommentEater : public ITextCommentEater
     {
     public:
         virtual void eatWhiteSpaces(const char*& str, const char* endStr, uint32_t& lineIndex) const override
@@ -208,28 +208,28 @@ namespace prv
 
 //--
 
-ICommentEater::~ICommentEater()
+ITextCommentEater::~ITextCommentEater()
 {}
 
-ICommentEater& ICommentEater::NoComments()
+ITextCommentEater& ITextCommentEater::NoComments()
 {
     static prv::NoCommentsParserCommentEater theEater;
     return theEater;
 }
 
-ICommentEater& ICommentEater::StandardComments()
+ITextCommentEater& ITextCommentEater::StandardComments()
 {
     static prv::StandardCommentsParserCommentEater theEater;
     return theEater;
 }
 
-ICommentEater& ICommentEater::LuaComments()
+ITextCommentEater& ITextCommentEater::LuaComments()
 {
     static prv::LUACommentsParserCommentEater theEater;
     return theEater;
 }
 
-ICommentEater& ICommentEater::HashComments()
+ITextCommentEater& ITextCommentEater::HashComments()
 {
     static prv::HashCommentsParserCommentEater theEater;
     return theEater;
@@ -237,12 +237,12 @@ ICommentEater& ICommentEater::HashComments()
 
 //--
 
-ILanguageDefinition::ILanguageDefinition()
+ITextLanguageDefinition::ITextLanguageDefinition()
 {}
 
-ILanguageDefinition::~ILanguageDefinition()
+ITextLanguageDefinition::~ITextLanguageDefinition()
 {}
 
 //--
 
-END_BOOMER_NAMESPACE_EX(parser)
+END_BOOMER_NAMESPACE()

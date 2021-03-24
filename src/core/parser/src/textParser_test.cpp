@@ -17,9 +17,9 @@ BEGIN_BOOMER_NAMESPACE()
 
 DECLARE_TEST_FILE(TextParser);
 
-UniquePtr<parser::ILanguageDefinition> BuildLanguage()
+UniquePtr<ITextLanguageDefinition> BuildLanguage()
 {
-    parser::SimpleLanguageDefinitionBuilder defs;
+    SimpleLanguageDefinitionBuilder defs;
     defs.enableIntegerNumbers(true);
     defs.enableFloatNumbers(true);
     defs.enableStrings(true);
@@ -131,11 +131,11 @@ TEST(ComplexParser, FullTest)
 {
     auto lang = BuildLanguage();
 
-    parser::TextParser p;
+    TextParser p;
     auto str  = "void function Test() { return new Dupa(123, \"Test\", 'Ident', 3.14); }";
     p.reset(str);
 
-    parser::Token token;
+    Token token;
 
     {
         auto t = p.parseToken(*lang);

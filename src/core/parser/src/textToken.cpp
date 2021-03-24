@@ -10,11 +10,11 @@
 #include "textToken.h"
 #include "core/containers/include/stringParser.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(parser)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
-void Location::print(IFormatStream& f) const
+void TextTokenLocation::print(IFormatStream& f) const
 {
     if (m_contextName.empty())
         f << "unknown";
@@ -358,4 +358,4 @@ void TokenList::print(IFormatStream& f) const
         
 //--
 
-END_BOOMER_NAMESPACE_EX(parser)
+END_BOOMER_NAMESPACE()

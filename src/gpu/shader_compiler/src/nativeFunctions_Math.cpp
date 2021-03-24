@@ -16,7 +16,7 @@ BEGIN_BOOMER_NAMESPACE_EX(gpu::compiler)
 
 // promote types to the most common one (precedence order int -> float), changes the input types if needed (for casting)
 // if this function fails there's no common type
-static DataType DetermineMathType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err)
+static DataType DetermineMathType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err)
 {
     // math uses const values
     argTypes[0] = argTypes[0].unmakePointer();
@@ -87,7 +87,7 @@ static DataType DetermineMathType(TypeLibrary& typeLibrary, uint32_t numArgs, Da
     return retType;
 }
 
-static DataType DetermineUnaryMathType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err)
+static DataType DetermineUnaryMathType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err)
 {
     argTypes[0] = argTypes[0].unmakePointer();
     if (numArgs != 1)
@@ -107,7 +107,7 @@ static DataType DetermineUnaryMathType(TypeLibrary& typeLibrary, uint32_t numArg
     return argTypes[0];
 }
 
-static DataType DetermineUnaryMathTypeFloat(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err)
+static DataType DetermineUnaryMathTypeFloat(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err)
 {
     argTypes[0] = argTypes[0].unmakePointer();
     if (numArgs != 1)
@@ -135,7 +135,7 @@ class FunctionAdd : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionAdd, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineMathType(typeLibrary, numArgs, argTypes, loc, err);
     }
@@ -168,7 +168,7 @@ class FunctionDiv : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionDiv, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineMathType(typeLibrary, numArgs, argTypes, loc, err);
     }
@@ -201,7 +201,7 @@ class FunctionMod : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionMod, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineMathType(typeLibrary, numArgs, argTypes, loc, err);
     }
@@ -234,7 +234,7 @@ class FunctionMul : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionMul, INativeFunction);
 
 public:
-    virtual const INativeFunction* mutateFunction(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual const INativeFunction* mutateFunction(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         if (numArgs == 2)
         {
@@ -274,7 +274,7 @@ public:
         return this;
     }
 
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineMathType(typeLibrary, numArgs, argTypes, loc, err);
     }
@@ -307,7 +307,7 @@ class FunctionSub : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionSub, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineMathType(typeLibrary, numArgs, argTypes, loc, err);
     }
@@ -340,7 +340,7 @@ class FunctionLerp : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionLerp, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         if (numArgs != 3)
         {
@@ -377,7 +377,7 @@ class FunctionNeg : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionNeg, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineUnaryMathType(typeLibrary, numArgs, argTypes, loc, err);
     }
@@ -410,7 +410,7 @@ class FunctionSqrt : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionSqrt, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineUnaryMathTypeFloat(typeLibrary, numArgs, argTypes, loc, err);
     }
@@ -436,7 +436,7 @@ class FunctionRsqrt : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionRsqrt, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineUnaryMathTypeFloat(typeLibrary, numArgs, argTypes, loc, err);
     }
@@ -462,7 +462,7 @@ class FunctionAtan2 : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionAtan2, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineMathType(typeLibrary, numArgs, argTypes, loc, err);
     }
@@ -488,7 +488,7 @@ class FunctionPow : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionPow, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineMathType(typeLibrary, numArgs, argTypes, loc, err);
     }
@@ -514,7 +514,7 @@ class FunctionMod2 : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionMod2, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineMathType(typeLibrary, numArgs, argTypes, loc, err);
     }
@@ -540,7 +540,7 @@ class FunctionLog : public INativeFunction
 RTTI_DECLARE_VIRTUAL_CLASS(FunctionLog, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineUnaryMathTypeFloat(typeLibrary, numArgs, argTypes, loc, err);
     }
@@ -566,7 +566,7 @@ class FunctionLog2 : public INativeFunction
 RTTI_DECLARE_VIRTUAL_CLASS(FunctionLog2, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineUnaryMathTypeFloat(typeLibrary, numArgs, argTypes, loc, err);
     }
@@ -592,7 +592,7 @@ class FunctionExp : public INativeFunction
 RTTI_DECLARE_VIRTUAL_CLASS(FunctionExp, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineUnaryMathTypeFloat(typeLibrary, numArgs, argTypes, loc, err);
     }
@@ -618,7 +618,7 @@ class FunctionExp2 : public INativeFunction
 RTTI_DECLARE_VIRTUAL_CLASS(FunctionExp2, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineUnaryMathTypeFloat(typeLibrary, numArgs, argTypes, loc, err);
     }

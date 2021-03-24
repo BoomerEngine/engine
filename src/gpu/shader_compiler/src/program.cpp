@@ -16,7 +16,7 @@
 
 BEGIN_BOOMER_NAMESPACE_EX(gpu::compiler)
 
-Program::Program(const CodeLibrary& library, StringID name, const parser::Location& loc, AttributeList&& attributes)
+Program::Program(const CodeLibrary& library, StringID name, const TextTokenLocation& loc, AttributeList&& attributes)
     : m_name(name)
     , m_library(&library)
     , m_attributes(attributes)

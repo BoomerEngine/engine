@@ -10,18 +10,18 @@
 #include "fontGlyph.h"
 #include "fontGlyphBuffer.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
-GlyphBuffer::GlyphBuffer()
+FontGlyphBuffer::FontGlyphBuffer()
     : m_bounds(Rect::EMPTY())
 {}
 
-void GlyphBuffer::addFont(const RefPtr<Font>& font)
+void FontGlyphBuffer::addFont(const RefPtr<Font>& font)
 {
     m_fonts.pushBackUnique(font);
 }
 
-void GlyphBuffer::addGlyph(uint32_t ch, const Glyph* glyph, float x, float y, int textPosition, Color color)
+void FontGlyphBuffer::addGlyph(uint32_t ch, const FontGlyph* glyph, float x, float y, int textPosition, Color color)
 {
     if (glyph != nullptr)
     {
@@ -40,4 +40,4 @@ void GlyphBuffer::addGlyph(uint32_t ch, const Glyph* glyph, float x, float y, in
     }
 }
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

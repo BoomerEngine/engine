@@ -9,7 +9,7 @@
 #include "build.h"
 #include "bitmapFontImportConfig.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -62,4 +62,4 @@ RTTI_BEGIN_TYPE_CLASS(BitmapFontImportConfig);
 
 //---
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

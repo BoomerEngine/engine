@@ -32,7 +32,7 @@ public:
 	//--
 
 	// find placement of given image in the atlas
-	const CanvasImageEntryInfo* findRenderDataForGlyph(const font::Glyph* glyph);
+	const CanvasImageEntryInfo* findRenderDataForGlyph(const FontGlyph* glyph);
 
 	//--
 
@@ -59,12 +59,12 @@ private:
 
 	struct Entry
 	{
-		const font::Glyph* glyph = nullptr;
+		const FontGlyph* glyph = nullptr;
 		CanvasImageEntryInfo placement;
 	};
 
 	Array<Page> m_pages;
-	HashMap<font::GlyphID, Entry> m_entriesMap;
+	HashMap<FontGlyphKey, Entry> m_entriesMap;
 
     //--
 

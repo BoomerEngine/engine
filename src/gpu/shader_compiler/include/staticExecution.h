@@ -110,7 +110,7 @@ private:
 class ExecutionStack
 {
 public:
-    ExecutionStack(LinearAllocator& mem, CodeLibrary& code, parser::IErrorReporter& err, const Function* function, const ProgramInstance* thisVars);
+    ExecutionStack(LinearAllocator& mem, CodeLibrary& code, ITextErrorReporter& err, const Function* function, const ProgramInstance* thisVars);
     ~ExecutionStack();
 
     //---
@@ -122,7 +122,7 @@ public:
     INLINE CodeLibrary& code() const { return m_code; }
 
     /// get error reporter
-    INLINE parser::IErrorReporter& errorReporter() const { return m_err; }
+    INLINE ITextErrorReporter& errorReporter() const { return m_err; }
 
     /// get the context of program we are executing, does not have to be defined (for example global functions don't have it)
     INLINE const ProgramInstance* contextThis() const { return m_contextThisVars; }
@@ -149,11 +149,11 @@ public:
     //---
 
     /// error exit
-    ExecutionResult returnCode(const parser::Location& loc, ExecutionResult error);
+    ExecutionResult returnCode(const TextTokenLocation& loc, ExecutionResult error);
 
 private:
     LinearAllocator& m_mem;
-    parser::IErrorReporter& m_err;
+    ITextErrorReporter& m_err;
     CodeLibrary& m_code;
 
     // all evaluated global constants
@@ -198,7 +198,7 @@ private:
 
     //--            
 
-    DataValueRef resolveGlobalConstantValue(const DataParameter* val, parser::IErrorReporter& err);
+    DataValueRef resolveGlobalConstantValue(const DataParameter* val, ITextErrorReporter& err);
 };
 
 ///---

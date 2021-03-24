@@ -60,7 +60,7 @@ FontPtr ICanvasTest::loadFont(StringView assetFile)
     if (!imagePtr)
     {
         reportError(TempString("Failed to load font '{}'", assetFile));
-        return RefNew<font::Font>();
+        return RefNew<Font>();
     }
 
     return imagePtr;

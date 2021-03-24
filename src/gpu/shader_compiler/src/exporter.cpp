@@ -41,13 +41,13 @@ struct bunderSetup
 		const ProgramInstance* pi = nullptr;
 	};
 
-	parser::Location location;
+	TextTokenLocation location;
 	Entry stages[MAX_s];
 };
 
 //--
 
-static bool Extractbundle(const Exporteds& exports, CodeLibrary& code, bunderSetup& outBundleSetup, parser::IErrorReporter& err)
+static bool Extractbundle(const Exporteds& exports, CodeLibrary& code, bunderSetup& outBundleSetup, ITextErrorReporter& err)
 {
 	bool valid = true;
 
@@ -113,7 +113,7 @@ public:
 			stage = StageContext();
 	}
 
-	shader::StubProgram* exportProgram(const bunderSetup& bundle, StringView contextPath, StringView contextOptions, parser::IErrorReporter& err)
+	shader::StubProgram* exportProgram(const bunderSetup& bundle, StringView contextPath, StringView contextOptions, ITextErrorReporter& err)
 	{
 		clear();
 
@@ -336,7 +336,7 @@ private:
 
 	//--
 
-	shader::StubLocation exportLocation(const parser::Location& location)
+	shader::StubLocation exportLocation(const TextTokenLocation& location)
 	{
 		shader::StubLocation ret;
 		ret.line = location.line();
@@ -1782,7 +1782,7 @@ static void DumpShader(const shader::StubProgram* program, const AssembledShader
 	TRACE_INFO("Saved shader dump to '{}'", targetPath);
 }
 
-extern bool Assemblestubs(LinearAllocator& mem, CodeLibrary& lib, AssembledShader& outAssembledShader, StringView contextPath, StringView contextOptions, parser::IErrorReporter& err)
+extern bool Assemblestubs(LinearAllocator& mem, CodeLibrary& lib, AssembledShader& outAssembledShader, StringView contextPath, StringView contextOptions, ITextErrorReporter& err)
 {
 	// extract s
 	bunderSetup bundle;

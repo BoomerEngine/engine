@@ -253,7 +253,7 @@ bool ComponentMask::Parse(const char* txt, ComponentMask& outSwizzle)
         
 //---
 
-Function::Function(const CodeLibrary& library, const Program* program, const parser::Location& loc, /*const FunctionFlags flags, */const StringID name, const DataType& retType, const Array<DataParameter*>& params, const Array<parser::Token*>& tokens, AttributeList&& attributes)
+Function::Function(const CodeLibrary& library, const Program* program, const TextTokenLocation& loc, /*const FunctionFlags flags, */const StringID name, const DataType& retType, const Array<DataParameter*>& params, const Array<Token*>& tokens, AttributeList&& attributes)
     : m_loc(loc)
     , m_name(name)
     //, flags(flags)

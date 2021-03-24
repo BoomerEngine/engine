@@ -114,8 +114,8 @@ namespace Scintilla
         RTTI_DECLARE_POOL(POOL_FONTS)
 
     public:
-        boomer::font::FontStyleParams m_style;
-        boomer::font::FontAssemblyParams m_assembly;
+        boomer::FontStyleParams m_style;
+        boomer::FontAssemblyParams m_assembly;
         boomer::FontPtr m_font;
     };
 

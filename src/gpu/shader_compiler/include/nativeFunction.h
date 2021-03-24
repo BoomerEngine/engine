@@ -63,11 +63,11 @@ public:
 
     /// determine if this function should mutate into something else (simpler or specialized version for example)
     /// this is mostly used for various flavors of the multiplication function but was made generic
-    virtual const INativeFunction* mutateFunction(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const;
+    virtual const INativeFunction* mutateFunction(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const;
 
     /// determine output type for function based based on the input parameters, can fail 
     /// NOTE: the function may change the input types (and if so, the casting nodes are inserted)
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const = 0;
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const = 0;
 
     /// partial evaluation
     virtual bool partialEvaluate(ExecutionValue& retData, uint32_t numArgs, const ExecutionValue* argValues) const { return false; };

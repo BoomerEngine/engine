@@ -26,10 +26,10 @@ public:
     void font(const FontPtr& fontPtr);
 
     // Set vertical text alignment mode
-    void textVerticalAlignment(const font::FontAlignmentVertical alignment);
+    void textVerticalAlignment(const FontAlignmentVertical alignment);
 
     // Set horizontal text alignment mode
-    void textHorizontalAlignment(const font::FontAlignmentHorizontal alignment);
+    void textHorizontalAlignment(const FontAlignmentHorizontal alignment);
 
     // Select font size
     void fontSize(uint32_t size);
@@ -38,17 +38,17 @@ public:
     uint32_t textLineHeight() const;
 
     // Get width of line of text under currently selected fonts
-    uint32_t textLineWidth(const font::FontInputText& text) const;
+    uint32_t textLineWidth(const FontInputText& text) const;
 
     // Print text, uses only the fill color and current
-    void drawText(const font::FontInputText& text);
+    void drawText(const FontInputText& text);
 
     //---
 
 private:
     FontPtr m_currentFont; // current font
-    font::FontAlignmentVertical m_currentVerticalAlignment;
-    font::FontAlignmentHorizontal m_currentHorizontalAlignment;
+    FontAlignmentVertical m_currentVerticalAlignment;
+    FontAlignmentHorizontal m_currentHorizontalAlignment;
     uint32_t m_currentSize;
 };
 

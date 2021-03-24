@@ -74,10 +74,10 @@ namespace rapidxml
 	///////////////////////////////////////////////////////////////////////
 	// Error reporting
 
-	class IErrorReporter
+	class ITextErrorReporter
 	{
 	public:
-		virtual ~IErrorReporter() {};
+		virtual ~ITextErrorReporter() {};
 
 		virtual void onError(const int line, const int pos, const char* txt) = 0;
 	};
@@ -759,7 +759,7 @@ namespace rapidxml
         std::size_t m_name_size;            // Length of node name, or undefined of no name
         std::size_t m_value_size;           // Length of node value, or undefined if no value
         xml_node<Ch> *m_parent;             // Pointer to parent node, or 0 if none
-		xml_location<Ch> m_location;		// Location of the node in file
+		xml_location<Ch> m_location;		// TextTokenLocation of the node in file
     };
 
     //! Class representing attribute node of XML document. 
@@ -1351,7 +1351,7 @@ namespace rapidxml
         //! Each new call to parse removes previous nodes and attributes (if any), but does not clear memory pool.
         //! \param text XML data to parse; pointer is non-const to denote fact that this data may be modified by the parser.
         template<int Flags>
-        const bool parse(Ch *text, IErrorReporter& err)
+        const bool parse(Ch *text, ITextErrorReporter& err)
         {
             assert(text);
             
@@ -1501,7 +1501,7 @@ namespace rapidxml
 
         // Insert coded character, using UTF8 or 8-bit ASCII
         template<int Flags>
-        void insert_coded_character(Ch *&text, unsigned long code, IErrorReporter& err)
+        void insert_coded_character(Ch *&text, unsigned long code, ITextErrorReporter& err)
         {
             if (Flags & parse_no_utf8)
             {
@@ -1560,7 +1560,7 @@ namespace rapidxml
         // - replacing XML character entity references with proper characters (&apos; &amp; &quot; &lt; &gt; &#...;)
         // - condensing whitespace sequences to single space character
         template<class StopPred, class StopPredPure, int Flags>
-        Ch *skip_and_expand_character_refs(Ch *&text, IErrorReporter& err)
+        Ch *skip_and_expand_character_refs(Ch *&text, ITextErrorReporter& err)
         {
             // If entity translation, whitespace condense and whitespace trimming is disabled, use plain skip
             if (Flags & parse_no_entity_translation && 
@@ -1728,7 +1728,7 @@ namespace rapidxml
 
         // Parse XML declaration (<?xml...)
         template<int Flags>
-        xml_node<Ch> *parse_xml_declaration(Ch *&text, IErrorReporter& err)
+        xml_node<Ch> *parse_xml_declaration(Ch *&text, ITextErrorReporter& err)
         {
             // If parsing of declaration is disabled
             if (!(Flags & parse_declaration_node))
@@ -1771,7 +1771,7 @@ namespace rapidxml
 
         // Parse XML comment (<!--...)
         template<int Flags>
-        xml_node<Ch> *parse_comment(Ch *&text, IErrorReporter& err)
+        xml_node<Ch> *parse_comment(Ch *&text, ITextErrorReporter& err)
         {
             // If parsing of comments is disabled
             if (!(Flags & parse_comment_nodes))
@@ -1818,7 +1818,7 @@ namespace rapidxml
 
         // Parse DOCTYPE
         template<int Flags>
-        xml_node<Ch> *parse_doctype(Ch *&text, IErrorReporter& err)
+        xml_node<Ch> *parse_doctype(Ch *&text, ITextErrorReporter& err)
         {
             // Remember value start
             Ch *value = text;
@@ -1891,7 +1891,7 @@ namespace rapidxml
 
         // Parse PI
         template<int Flags>
-        xml_node<Ch> *parse_pi(Ch *&text, IErrorReporter& err)
+        xml_node<Ch> *parse_pi(Ch *&text, ITextErrorReporter& err)
         {
             // If creation of PI nodes is enabled
             if (Flags & parse_pi_nodes)
@@ -1960,7 +1960,7 @@ namespace rapidxml
         // Return character that ends data.
         // This is necessary because this character might have been overwritten by a terminating 0
         template<int Flags>
-        Ch parse_and_append_data(xml_node<Ch> *node, Ch *&text, Ch *contents_start, IErrorReporter& err)
+        Ch parse_and_append_data(xml_node<Ch> *node, Ch *&text, Ch *contents_start, ITextErrorReporter& err)
         {
             // Backup to contents start if whitespace trimming is disabled
             if (!(Flags & parse_trim_whitespace))
@@ -2018,7 +2018,7 @@ namespace rapidxml
 
         // Parse CDATA
         template<int Flags>
-        xml_node<Ch> *parse_cdata(Ch *&text, IErrorReporter& err)
+        xml_node<Ch> *parse_cdata(Ch *&text, ITextErrorReporter& err)
         {
             // If CDATA is disabled
             if (Flags & parse_no_data_nodes)
@@ -2082,7 +2082,7 @@ namespace rapidxml
 
         // Parse element node
         template<int Flags>
-        xml_node<Ch> *parse_element(Ch *&text, IErrorReporter& err)
+        xml_node<Ch> *parse_element(Ch *&text, ITextErrorReporter& err)
         {
             // Create element node
             xml_node<Ch> *element = this->allocate_node(node_element);
@@ -2141,7 +2141,7 @@ namespace rapidxml
 
         // Determine node type, and parse it
 		template<int Flags>
-        xml_node<Ch> *parse_node(Ch *&text, IErrorReporter& err)
+        xml_node<Ch> *parse_node(Ch *&text, ITextErrorReporter& err)
         {
             // Parse proper node type
             switch (text[0])
@@ -2230,7 +2230,7 @@ namespace rapidxml
 
         // Parse contents of the node - children, data etc.
         template<int Flags>
-        bool parse_node_contents(Ch *&text, xml_node<Ch> *node, IErrorReporter& err)
+        bool parse_node_contents(Ch *&text, xml_node<Ch> *node, ITextErrorReporter& err)
         {
             // For all children and text
             while (1)
@@ -2316,7 +2316,7 @@ namespace rapidxml
         
         // Parse XML attributes of the node
         template<int Flags>
-        bool parse_node_attributes(Ch *&text, xml_node<Ch> *node, IErrorReporter& err)
+        bool parse_node_attributes(Ch *&text, xml_node<Ch> *node, ITextErrorReporter& err)
         {
             // For all attributes 
             while (attribute_name_pred::test(*text))

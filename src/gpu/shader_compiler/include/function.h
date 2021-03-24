@@ -49,9 +49,9 @@ struct GPU_SHADER_COMPILER_API DataParameter
     DataType dataType; // data type defined for parameter
 	bool assignable = false;
 
-    parser::Location loc; // location in source file
+    TextTokenLocation loc; // location in source file
 
-    Array<parser::Token*> initalizationTokens; // initialization tokens (can be a full expression)
+    Array<Token*> initalizationTokens; // initialization tokens (can be a full expression)
     CodeNode* initializerCode = nullptr; // parsed initialization code for the value
 	bool constant = false;
 
@@ -69,7 +69,7 @@ struct GPU_SHADER_COMPILER_API DataParameter
 class GPU_SHADER_COMPILER_API Function : public NoCopy
 {
 public:
-    Function(const CodeLibrary& library, const Program* program, const parser::Location& loc, const StringID name, const DataType& retType, const Array<DataParameter*>& params, const Array<parser::Token*>& tokens, AttributeList&& attributes);
+    Function(const CodeLibrary& library, const Program* program, const TextTokenLocation& loc, const StringID name, const DataType& retType, const Array<DataParameter*>& params, const Array<Token*>& tokens, AttributeList&& attributes);
 	Function(const Function& func, const ProgramConstants* localConstantArgs = nullptr);
     ~Function();
 
@@ -80,10 +80,10 @@ public:
     INLINE const Program* program() const { return m_program; }
 
     // get location of function in the file
-    INLINE const parser::Location& location() const { return m_loc; }
+    INLINE const TextTokenLocation& location() const { return m_loc; }
 
     // get source tokens
-    INLINE const Array<parser::Token*>& tokens() const { return m_codeTokens; }
+    INLINE const Array<Token*>& tokens() const { return m_codeTokens; }
             
     // attributes (from source code) + dynamic
     // NOTE: we mostly care about attributes on main() function in s
@@ -122,7 +122,7 @@ private:
     DataType m_returnType; // type of value returned by function
 
     CodeNode* m_code; // code the function generates
-    Array<parser::Token*> m_codeTokens; // code tokens
+    Array<Token*> m_codeTokens; // code tokens
 
     Array<DataParameter*> m_inputParameters; // input parameters of the function
 	Array<StringID> m_staticParameters;
@@ -131,7 +131,7 @@ private:
 
     uint64_t m_foldedKey = 0; // unique identifier of function's code
 
-    parser::Location m_loc; // location in source file
+    TextTokenLocation m_loc; // location in source file
 
     const CodeLibrary* m_library; // source library this function was compiled as part of
     const Program* m_program; // program this function belongs to

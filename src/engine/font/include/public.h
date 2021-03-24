@@ -14,7 +14,9 @@ extern "C"
     typedef struct FT_FaceRec_*  FT_Face;
 }
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
+
+//--
 
 class Font;
 class FontInputText;
@@ -22,20 +24,18 @@ class FontInputText;
 struct FontStyleParams;
 struct FontAssemblyParams;
 
-class Glyph;
-class GlyphCache;
-class GlyphBuffer;
+class FontGlyph;
+class FontGlyphCache;
+class FontGlyphBuffer;
 
 typedef uint8_t FontID; // id of the font itself, we don't have that many fonts so this is just a number
 typedef uint32_t FontGlyphID; // glyph ID, usually this is just the wchar_t
 typedef uint32_t FontStyleHash; // render hash of the parameters the glyph was rendered with
 
-END_BOOMER_NAMESPACE_EX(font)
+//--
 
-BEGIN_BOOMER_NAMESPACE()
-
-typedef RefPtr<font::Font> FontPtr;
-typedef ResourceRef<font::Font> FontRef;
+typedef RefPtr<Font> FontPtr;
+typedef ResourceRef<Font> FontRef;
 
 //--
 

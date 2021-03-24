@@ -31,9 +31,9 @@ struct ParsingNode
 {
     int tokenID = -1;
     ElementFlags flags = ElementFlags();
-    parser::Location location;
+    TextTokenLocation location;
     StringView stringData;
-    Array<parser::Token*> tokens;
+    Array<Token*> tokens;
     double floatData = 0.0;
     int64_t intData = 0;
     Element* element = nullptr;
@@ -43,19 +43,19 @@ struct ParsingNode
     INLINE explicit ParsingNode()
     {}
 
-    INLINE explicit ParsingNode(const parser::Location& loc, StringView txt)
+    INLINE explicit ParsingNode(const TextTokenLocation& loc, StringView txt)
         : stringData(txt), location(loc)
     {}
 
-    INLINE explicit ParsingNode(const parser::Location& loc, double val)
+    INLINE explicit ParsingNode(const TextTokenLocation& loc, double val)
         : floatData(val), location(loc)
     {}
 
-    INLINE explicit ParsingNode(const parser::Location& loc, int64_t val)
+    INLINE explicit ParsingNode(const TextTokenLocation& loc, int64_t val)
         : intData(val), location(loc)
     {}
 
-    INLINE explicit ParsingNode(const parser::Location& loc, const ParsingNode& prevFlags, uint64_t flags)
+    INLINE explicit ParsingNode(const TextTokenLocation& loc, const ParsingNode& prevFlags, uint64_t flags)
         : flags(prevFlags.flags | ElementFlag(flags)), location(loc)
     {}
 
@@ -86,24 +86,24 @@ struct ParsingNode
 class ParserTokenStream : public NoCopy
 {
 public:
-    ParserTokenStream(parser::TokenList& tokens);
+    ParserTokenStream(TokenList& tokens);
 
     /// read a token from the stream (used as yylex)
     int readToken(ParsingNode& outNode);
 
     /// extract inner tokens
-    void extractInnerTokenStream(char delimiter, Array<parser::Token*>& outTokens);
+    void extractInnerTokenStream(char delimiter, Array<Token*>& outTokens);
 
     //--
 
-    INLINE const parser::Location& location() const { return m_lastTokenLocation; }
+    INLINE const TextTokenLocation& location() const { return m_lastTokenLocation; }
     INLINE StringView text() const { return m_lastTokenText; }
 
 private:
-    parser::TokenList m_tokens;
+    TokenList m_tokens;
                 
     StringView m_lastTokenText;
-    parser::Location m_lastTokenLocation;
+    TextTokenLocation m_lastTokenLocation;
 };
 
 //---
@@ -112,7 +112,7 @@ private:
 class ParsingFileContext : public NoCopy
 {
 public:
-    ParsingFileContext(LinearAllocator& mem, parser::IErrorReporter& errHandler, ParsingNode& result);
+    ParsingFileContext(LinearAllocator& mem, ITextErrorReporter& errHandler, ParsingNode& result);
     ~ParsingFileContext();
 
     /// allocate some memory
@@ -137,11 +137,11 @@ public:
     }
 
     /// report error
-    void reportError(const parser::Location& loc, StringView err);
+    void reportError(const TextTokenLocation& loc, StringView err);
 
 private:
     LinearAllocator& m_mem;
-    parser::IErrorReporter& m_errHandler;
+    ITextErrorReporter& m_errHandler;
     ParsingNode& m_result;
 };
 
@@ -150,7 +150,7 @@ private:
 /// parser node for code parsing
 struct CodeParsingNode
 {
-	parser::Location m_location;
+	TextTokenLocation m_location;
 	int m_tokenID = -1;
     StringView m_string;
 	DataType m_type;
@@ -175,7 +175,7 @@ public:
 
     //--
 
-    INLINE const parser::Location& location() const { return m_lastTokenLocation; }
+    INLINE const TextTokenLocation& location() const { return m_lastTokenLocation; }
     INLINE StringView text() const { return m_lastTokenText; }
 
 private:
@@ -183,7 +183,7 @@ private:
     int m_currentIndex;
 
     StringView m_lastTokenText;
-    parser::Location m_lastTokenLocation;
+    TextTokenLocation m_lastTokenLocation;
 };
 
 //---
@@ -192,7 +192,7 @@ private:
 class ParsingCodeContext : public NoCopy
 {
 public:
-    ParsingCodeContext(LinearAllocator& mem, parser::IErrorReporter& errHandler, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram);
+    ParsingCodeContext(LinearAllocator& mem, ITextErrorReporter& errHandler, const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram);
     ~ParsingCodeContext();
 
     /// allocate some memory
@@ -223,12 +223,12 @@ public:
 	}
 
     /// report error
-    void reportError(const parser::Location& loc, StringView err);
+    void reportError(const TextTokenLocation& loc, StringView err);
 
     ///---
 
     /// create a function class node
-    CodeNode* createFunctionCall(const parser::Location& loc, const StringView name, CodeNode* a = nullptr, CodeNode* b=nullptr, CodeNode* c=nullptr);
+    CodeNode* createFunctionCall(const TextTokenLocation& loc, const StringView name, CodeNode* a = nullptr, CodeNode* b=nullptr, CodeNode* c=nullptr);
 
 	///---
 
@@ -251,7 +251,7 @@ public:
 
 private:
     LinearAllocator& m_mem;
-    parser::IErrorReporter& m_errHandler;
+    ITextErrorReporter& m_errHandler;
 	CodeNode* m_result = nullptr;
 
     uint32_t m_currentAttribute;

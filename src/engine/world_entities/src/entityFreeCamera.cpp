@@ -187,11 +187,11 @@ void FreeCameraEntity::renderDebugCanvas(Canvas& c) const
         TempString("FC location: [X={}, Y={}, Z={}, Pitch={}, Yaw={}]",
             Prec(pos.x, 2), Prec(pos.y, 2), Prec(pos.z, 2),
             Prec(m_freeCamera.m_rotation.pitch, 1), Prec(m_freeCamera.m_rotation.yaw, 1)),
-        Color::WHITE, 16, font::FontAlignmentHorizontal::Right);
+        Color::WHITE, 16, FontAlignmentHorizontal::Right);
 
     c.debugPrint(c.width() - 20, c.height() - 40,
         TempString("FC streaming: {}", m_modeUpdateStreaming),
-        m_modeUpdateStreaming ? Color::WHITE : Color::RED, 16, font::FontAlignmentHorizontal::Right);
+        m_modeUpdateStreaming ? Color::WHITE : Color::RED, 16, FontAlignmentHorizontal::Right);
 }
 
 void FreeCameraEntity::handleUpdate(const EntityThreadContext& tc, WorldUpdatePhase phase, float dt)

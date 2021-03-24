@@ -478,14 +478,14 @@ namespace prv
             }
         }
 
-        INLINE const font::Glyph* findGlyph(uint32_t code) const
+        INLINE const FontGlyph* findGlyph(uint32_t code) const
         {
             return m_currentFont ? m_currentFont->renderGlyph(m_currentStyleParams, code) : nullptr;
         }
 
     private:
-        const font::Font* m_currentFont = nullptr;
-        font::FontStyleParams m_currentStyleParams;
+        const Font* m_currentFont = nullptr;
+        FontStyleParams m_currentStyleParams;
 
         const style::FontFamily& m_family;
         float m_baseSizeScale;

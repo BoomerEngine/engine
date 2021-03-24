@@ -69,7 +69,7 @@ namespace prv
         return crc.crc();
     }
 
-    int RawValueTable::resolveAndMap(const parser::Location& loc, StringID paramId, const RawValue& value, parser::IErrorReporter& err)
+    int RawValueTable::resolveAndMap(const TextTokenLocation& loc, StringID paramId, const RawValue& value, ITextErrorReporter& err)
     {
         // get name of the parameter
         auto hash = CalcParamHash(paramId, value);
@@ -153,7 +153,7 @@ namespace prv
     }
 
 
-    void RawSelectorTree::mapSelectorParams(const RawSelector* selector, Array<SelectorMatchParams>& outParams, parser::IErrorReporter& err)
+    void RawSelectorTree::mapSelectorParams(const RawSelector* selector, Array<SelectorMatchParams>& outParams, ITextErrorReporter& err)
     {
         // get possible types at this selector
         auto typeEntries = selector->types().entries();
@@ -210,7 +210,7 @@ namespace prv
         }
     }
 
-    void RawSelectorTree::mapRuleTrace(const Array<const RawSelector*>& selectors, uint32_t selectorIndex, SelectorID parentNodeId, Array<SelectorID>& outTerminalSelectors, parser::IErrorReporter& err)
+    void RawSelectorTree::mapRuleTrace(const Array<const RawSelector*>& selectors, uint32_t selectorIndex, SelectorID parentNodeId, Array<SelectorID>& outTerminalSelectors, ITextErrorReporter& err)
     {
         // end of the road
         if (selectorIndex == selectors.size())
@@ -284,7 +284,7 @@ namespace prv
         return false;
     }
 
-    bool RawSelectorTree::mapRuleSet(const RawRuleSet& ruleSet, parser::IErrorReporter& err)
+    bool RawSelectorTree::mapRuleSet(const RawRuleSet& ruleSet, ITextErrorReporter& err)
     {
         bool valid = true;
 

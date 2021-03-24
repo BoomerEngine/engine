@@ -49,7 +49,7 @@ const CanvasImageEntryInfo* CanvasService::findRenderDataForAtlasEntry(const Can
 
 }
 
-const CanvasImageEntryInfo* CanvasService::findRenderDataForGlyph(const font::Glyph* glyph) const
+const CanvasImageEntryInfo* CanvasService::findRenderDataForGlyph(const FontGlyph* glyph) const
 {
 	return m_glyphCache->findRenderDataForGlyph(glyph);
 }

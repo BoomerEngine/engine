@@ -604,7 +604,7 @@ bool TextBuffer::lookupGlyphs()
     if (!m_font)
         return false;
 
-    font::FontStyleParams styleParams;
+    FontStyleParams styleParams;
     styleParams.size = m_fontSize;
 
     for (auto& ch : m_chars)

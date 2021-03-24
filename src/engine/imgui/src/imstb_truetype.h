@@ -142,15 +142,15 @@
 //         uppercase A, 231 is lowercase c with a cedilla, 0x7e30 is
 //         the hiragana for "ma".
 //
-//      Glyph
+//      FontGlyph
 //         A visual character shape (every codepoint is rendered as
 //         some glyph)
 //
-//      Glyph index
+//      FontGlyph index
 //         A font-specific integer ID representing a glyph
 //
 //      Baseline
-//         Glyph shapes are defined relative to a baseline, which is the
+//         FontGlyph shapes are defined relative to a baseline, which is the
 //         bottom of uppercase characters. Characters extend both above
 //         and below the baseline.
 //

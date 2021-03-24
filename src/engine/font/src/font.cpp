@@ -17,7 +17,7 @@
 #include "core/system/include/scopeLock.h"
 #include "core/resource/include/tags.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -52,7 +52,7 @@ Font::Font()
     , m_descender(8.0f)
     , m_lineHeight(16.0f)
 {
-    m_glyphCache = CreateUniquePtr<GlyphCache>();
+    m_glyphCache = CreateUniquePtr<FontGlyphCache>();
 }
 
 Font::Font(const Buffer& data)
@@ -63,7 +63,7 @@ Font::Font(const Buffer& data)
     , m_lineHeight(16.0f)
     , m_packedData(data)
 {
-    m_glyphCache = CreateUniquePtr<GlyphCache>();
+    m_glyphCache = CreateUniquePtr<FontGlyphCache>();
     registerFont();
 }
 
@@ -147,13 +147,13 @@ void Font::measureText(const FontStyleParams& styleParams, const FontAssemblyPar
     outMetrics.textWidth = (uint32_t)maxXPos;
 }
 
-const Glyph* Font::renderGlyph(const FontStyleParams& styleParams, uint32_t glyphcode) const
+const FontGlyph* Font::renderGlyph(const FontStyleParams& styleParams, uint32_t glyphcode) const
 {
     auto styleHash = styleParams.calcHash();
     return m_glyphCache->fetchGlyph(styleParams, styleHash, m_face, m_id, glyphcode);
 }
 
-void Font::renderText(const FontStyleParams& styleParams, const FontAssemblyParams& textParams, const FontInputText& str, GlyphBuffer& outBuffer, Color color) const
+void Font::renderText(const FontStyleParams& styleParams, const FontAssemblyParams& textParams, const FontInputText& str, FontGlyphBuffer& outBuffer, Color color) const
 {
     // no data to process
     if (str.empty() || !m_face)
@@ -210,4 +210,4 @@ void Font::renderText(const FontStyleParams& styleParams, const FontAssemblyPara
 
 //---
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

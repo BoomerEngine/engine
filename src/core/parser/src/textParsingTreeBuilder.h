@@ -13,7 +13,7 @@
 #include "core/memory/include/linearAllocator.h"
 #include "core/containers/include/hashMap.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(parser)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -98,7 +98,7 @@ namespace prv
         //--
 
         // create a language definition from the parser tree
-        UniquePtr<ILanguageDefinition> buildLanguageDefinition() const;
+        UniquePtr<ITextLanguageDefinition> buildLanguageDefinition() const;
 
     private:
         LinearAllocator m_mem;
@@ -122,4 +122,4 @@ namespace prv
 
 } // prv
 
-END_BOOMER_NAMESPACE_EX(parser)
+END_BOOMER_NAMESPACE()

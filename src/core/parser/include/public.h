@@ -8,7 +8,7 @@
 
 #include "core_parser_glue.inl"
 
-BEGIN_BOOMER_NAMESPACE_EX(parser)
+BEGIN_BOOMER_NAMESPACE()
 
 ///----
 
@@ -30,13 +30,13 @@ enum class TextTokenType : uint8_t
 
 ///----
 
-class Location;
+class TextTokenLocation;
 class Token;
 class TokenList;
 
-class ICommentEater;
-class ILanguageDefinition;
-class IErrorReporter;
+class ITextCommentEater;
+class ITextLanguageDefinition;
+class ITextErrorReporter;
 
 class SimpleLanguageDefinitionBuilder;
 
@@ -45,26 +45,26 @@ class TextParser;
 //-----
 
 /// error reporter for the text parser
-class CORE_PARSER_API IErrorReporter : public NoCopy
+class CORE_PARSER_API ITextErrorReporter : public NoCopy
 {
 public:
-    virtual ~IErrorReporter();
-    virtual void reportError(const Location& loc, StringView message) = 0;
-    virtual void reportWarning(const Location& loc, StringView message) = 0;
+    virtual ~ITextErrorReporter();
+    virtual void reportError(const TextTokenLocation& loc, StringView message) = 0;
+    virtual void reportWarning(const TextTokenLocation& loc, StringView message) = 0;
 
     //--
 
-    static IErrorReporter& GetDevNull();
-    static IErrorReporter& GetDefault();
+    static ITextErrorReporter& GetDevNull();
+    static ITextErrorReporter& GetDefault();
 };
 
 //-----
 
 // a handler for including files
-class CORE_PARSER_API IIncludeHandler : public NoCopy
+class CORE_PARSER_API ITextIncludeHandler : public NoCopy
 {
 public:
-    virtual ~IIncludeHandler();
+    virtual ~ITextIncludeHandler();
 
     //----
 
@@ -80,9 +80,9 @@ public:
     //--
 
     /// get the default "NoIncludes" handler
-    static IIncludeHandler& GetEmptyHandler();
+    static ITextIncludeHandler& GetEmptyHandler();
 };
 
 //-----
 
-END_BOOMER_NAMESPACE_EX(parser)
+END_BOOMER_NAMESPACE()

@@ -18,7 +18,7 @@ BEGIN_BOOMER_NAMESPACE()
 
 FontPtr LoadFontFromMemory(Buffer ptr)
 {
-    return RefNew<font::Font>(ptr);
+    return RefNew<Font>(ptr);
 }
 
 FontPtr LoadFontFromFile(IReadFileHandle* file)

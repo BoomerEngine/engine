@@ -384,7 +384,7 @@ bool ImageReference::operator!=(const ImageReference& other) const
 
 //--
 
-bool CompileStyleValue(const parser::Location& loc, StyleVarType type, const RawValue& value, ContentLoader& loader, Variant& outValue, parser::IErrorReporter& err)
+bool CompileStyleValue(const TextTokenLocation& loc, StyleVarType type, const RawValue& value, ContentLoader& loader, Variant& outValue, ITextErrorReporter& err)
 {
     switch (type)
     {

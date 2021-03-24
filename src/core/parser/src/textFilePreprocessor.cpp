@@ -14,11 +14,11 @@
 //#define TRACE_DEEP(txt, ...) TRACE_INFO(txt, __VA_ARGS__)
 #define TRACE_DEEP(txt, ...) 
 
-BEGIN_BOOMER_NAMESPACE_EX(parser)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
-static UniquePtr<ILanguageDefinition> BuildPreprocessorLanguageDefinition()
+static UniquePtr<ITextLanguageDefinition> BuildPreprocessorLanguageDefinition()
 {
     SimpleLanguageDefinitionBuilder langBuilder;
     langBuilder.addChar('#');
@@ -44,7 +44,7 @@ static UniquePtr<ILanguageDefinition> BuildPreprocessorLanguageDefinition()
 
 //---
 
-TextFilePreprocessor::TextFilePreprocessor(LinearAllocator& allocator, IIncludeHandler& includeHandler, IErrorReporter& errorHandler, ICommentEater& commentEater, const ILanguageDefinition& parentLanguage)
+TextFilePreprocessor::TextFilePreprocessor(LinearAllocator& allocator, ITextIncludeHandler& includeHandler, ITextErrorReporter& errorHandler, ITextCommentEater& commentEater, const ITextLanguageDefinition& parentLanguage)
     : m_includeHandler(includeHandler)
     , m_errorHandler(errorHandler)
     , m_commentEater(commentEater)
@@ -64,7 +64,7 @@ bool TextFilePreprocessor::defineSymbol(StringView name, StringView value)
 {
     if (name.empty())
     {
-        m_errorHandler.reportWarning(Location(), "Invalid define name");
+        m_errorHandler.reportWarning(TextTokenLocation(), "Invalid define name");
         return false;
     }
 
@@ -73,12 +73,12 @@ bool TextFilePreprocessor::defineSymbol(StringView name, StringView value)
     TokenList replacements;
     if (!createTokens(nullptr, valueStr.view(), replacements))
     {
-        m_errorHandler.reportWarning(Location(), TempString("Unable to parse macro value from '{}'", value));
+        m_errorHandler.reportWarning(TextTokenLocation(), TempString("Unable to parse macro value from '{}'", value));
         return false;
     }
 
     auto macro  = createDefine(name);
-    macro->m_definedAt = Location();
+    macro->m_definedAt = TextTokenLocation();
     macro->m_defined = true;
     macro->m_arguments.clear();
     macro->m_replacement = std::move(replacements);
@@ -165,7 +165,7 @@ bool TextFilePreprocessor::processFileContent(StringView content, StringView con
         }
         else
         {
-            Location location(parser.contextName(), parser.line(), 0);
+            TextTokenLocation location(parser.contextName(), parser.line(), 0);
 
             auto lookAhead  = parser.view().leftPart(20).trim().beforeFirstOrFull(" ").beforeFirstOrFull("\n").beforeFirstOrFull("\r").beforeFirstOrFull("\t");
 
@@ -316,7 +316,7 @@ bool TextFilePreprocessor::processUndef(const Token* head, TokenList& line)
         return true; // continue
     }
 
-    macro->m_definedAt = Location();
+    macro->m_definedAt = TextTokenLocation();
     macro->m_defined = false;
     macro->m_arguments.clear();
     macro->m_replacement.clear();
@@ -779,7 +779,7 @@ int TextFilePreprocessor::ExprElement::precedence() const
     return -1;
 }
 
-bool TextFilePreprocessor::evaluateExpressionRecursive_Reduce(const Location& loc, ExprStack& stack, int top)
+bool TextFilePreprocessor::evaluateExpressionRecursive_Reduce(const TextTokenLocation& loc, ExprStack& stack, int top)
 {
     if (stack[top - 3].text == "defined" 
         && stack[top - 2].text == "("
@@ -1342,4 +1342,4 @@ bool TextFilePreprocessor::expandMacro(const MacroPlacement& macro, TokenList& o
 
 //---
 
-END_BOOMER_NAMESPACE_EX(parser)
+END_BOOMER_NAMESPACE()

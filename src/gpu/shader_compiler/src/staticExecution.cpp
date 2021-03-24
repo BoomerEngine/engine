@@ -288,7 +288,7 @@ void ExecutionStack::ParamMap::storeConstantValue(LinearAllocator& mem, const Da
 
 //---
 
-ExecutionStack::ExecutionStack(LinearAllocator& mem, CodeLibrary& code, parser::IErrorReporter& err, const Function* function, const ProgramInstance* thisVars)
+ExecutionStack::ExecutionStack(LinearAllocator& mem, CodeLibrary& code, ITextErrorReporter& err, const Function* function, const ProgramInstance* thisVars)
     : m_mem(mem)
     , m_code(code)
     , m_err(err)
@@ -308,7 +308,7 @@ ExecutionStack::~ExecutionStack()
 {
 }
 
-ExecutionResult ExecutionStack::returnCode(const parser::Location& loc, ExecutionResult error)
+ExecutionResult ExecutionStack::returnCode(const TextTokenLocation& loc, ExecutionResult error)
 {
     if (error == ExecutionResult::Error)
     {
@@ -454,7 +454,7 @@ void ExecutionStack::storeConstantValue(const DataParameter* param, const Execut
     m_functionParams.storeConstantValue(m_mem, param, value);            
 }
 
-DataValueRef ExecutionStack::resolveGlobalConstantValue(const DataParameter* param, parser::IErrorReporter& err)
+DataValueRef ExecutionStack::resolveGlobalConstantValue(const DataParameter* param, ITextErrorReporter& err)
 {
     PC_SCOPE_LVL3(ResolveGlobalConstantValue);
     ASSERT(param->scope == DataParameterScope::StaticConstant);

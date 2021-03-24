@@ -1670,43 +1670,43 @@ void CanvasGeometryBuilder::fill()
 	applyPaintColor(firstVertex, vertexWriter.numWrittenVertices(), (m_style.cachedFillStyleIndex == 0) ? m_style.fillStyle.innerColor : Color::WHITE);
 }
 
-void CanvasGeometryBuilder::print(const font::Font* font, int fontSize, StringView txt, int hcenter/* = -1*/, int vcenter /*= -1*/, bool bold /*= false*/)
+void CanvasGeometryBuilder::print(const Font* font, int fontSize, StringView txt, int hcenter/* = -1*/, int vcenter /*= -1*/, bool bold /*= false*/)
 {
     if (font)
     {
-        font::GlyphBuffer buffer;
+        FontGlyphBuffer buffer;
 
-        font::FontStyleParams styleParams;
+        FontStyleParams styleParams;
         styleParams.size = fontSize;
         styleParams.bold = bold;
 
-        font::FontAssemblyParams assemblyParams;
+        FontAssemblyParams assemblyParams;
         if (hcenter == 0)
-            assemblyParams.horizontalAlignment = font::FontAlignmentHorizontal::Center;
+            assemblyParams.horizontalAlignment = FontAlignmentHorizontal::Center;
         else if (hcenter == 1)
-            assemblyParams.horizontalAlignment = font::FontAlignmentHorizontal::Right;
+            assemblyParams.horizontalAlignment = FontAlignmentHorizontal::Right;
         else 
-            assemblyParams.horizontalAlignment = font::FontAlignmentHorizontal::Left;
+            assemblyParams.horizontalAlignment = FontAlignmentHorizontal::Left;
 
         if (vcenter == 0)
-            assemblyParams.verticalAlignment = font::FontAlignmentVertical::Middle;
+            assemblyParams.verticalAlignment = FontAlignmentVertical::Middle;
         else if (vcenter == 1)
-            assemblyParams.verticalAlignment = font::FontAlignmentVertical::Bottom;
+            assemblyParams.verticalAlignment = FontAlignmentVertical::Bottom;
         else if (vcenter == 2)
-            assemblyParams.verticalAlignment = font::FontAlignmentVertical::Baseline;
+            assemblyParams.verticalAlignment = FontAlignmentVertical::Baseline;
         else
-            assemblyParams.verticalAlignment = font::FontAlignmentVertical::Top;
+            assemblyParams.verticalAlignment = FontAlignmentVertical::Top;
                 
-        font::FontInputText inputText(txt.data(), txt.length());
+        FontInputText inputText(txt.data(), txt.length());
         font->renderText(styleParams, assemblyParams, inputText, buffer);
 
         print(buffer);
     }
 }
 
-void CanvasGeometryBuilder::print(const font::GlyphBuffer& glyphs)
+void CanvasGeometryBuilder::print(const FontGlyphBuffer& glyphs)
 {
-    return print(glyphs.glyphs(), glyphs.size(), sizeof(font::GlyphBufferEntry));
+    return print(glyphs.glyphs(), glyphs.size(), sizeof(FontGlyphBufferEntry));
 }
 
 void CanvasGeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, uint32_t dataStride)
@@ -1720,7 +1720,7 @@ void CanvasGeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, 
 	auto writeVertex = m_outVertices.allocateUninitialized(numGlyphs * 4);
 
 	// convert glyphs to vertices
-    auto readPtr  = (const font::GlyphBufferEntry*)glyphEntries;
+    auto readPtr  = (const FontGlyphBufferEntry*)glyphEntries;
     Vector2 boundsMin(FLT_MAX, FLT_MAX);
     Vector2 boundsMax(-FLT_MAX, -FLT_MAX);
     uint32_t numGlyphsWritten = 0;

@@ -81,7 +81,7 @@ namespace Scintilla
         return crc.crc();
     }
 
-    static boomer::RefPtr<boomer::font::Font> SelectFont(bool bold, bool italic)
+    static boomer::RefPtr<boomer::Font> SelectFont(bool bold, bool italic)
     {
         static const auto resFontNormal = boomer::LoadFontFromDepotPath("/engine/interface/fonts/DejaVuSansMono.ttf");
         static const auto resFontBold = boomer::LoadFontFromDepotPath("/engine/interface/fonts/DejaVuSansMono-Bold.ttf");
@@ -451,8 +451,8 @@ namespace Scintilla
         if (nullptr != fontInfo)
         {
             // prepare the text
-            auto inputText = boomer::font::FontInputText(text.data(), text.length());
-            boomer::font::GlyphBuffer glyphs;
+            auto inputText = boomer::FontInputText(text.data(), text.length());
+            boomer::FontGlyphBuffer glyphs;
             fontInfo->m_font->renderText(fontInfo->m_style, fontInfo->m_assembly, inputText, glyphs);
 
             // vertical offset
@@ -476,8 +476,8 @@ namespace Scintilla
         if (nullptr != fontInfo)
         {
             // measure the text
-            auto inputText = boomer::font::FontInputText(text.data(), text.length());
-            boomer::font::GlyphBuffer glyphs;
+            auto inputText = boomer::FontInputText(text.data(), text.length());
+            boomer::FontGlyphBuffer glyphs;
             fontInfo->m_font->renderText(fontInfo->m_style, fontInfo->m_assembly, inputText, glyphs);
 
             int lastTextPosition = 0;
@@ -509,8 +509,8 @@ namespace Scintilla
         {
 
             // measure the text
-            boomer::font::FontMetrics metrics;
-            auto inputText = boomer::font::FontInputText(text.data(), text.length());
+            boomer::FontMetrics metrics;
+            auto inputText = boomer::FontInputText(text.data(), text.length());
             fontInfo->m_font->measureText(fontInfo->m_style, fontInfo->m_assembly, inputText, metrics);
 
             return metrics.textWidth;

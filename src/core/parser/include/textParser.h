@@ -15,7 +15,7 @@
 #include "core/containers/include/inplaceArray.h"
 #include "core/memory/include/linearAllocator.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(parser)
+BEGIN_BOOMER_NAMESPACE()
 
 ///----
 
@@ -25,7 +25,7 @@ BEGIN_BOOMER_NAMESPACE_EX(parser)
 class CORE_PARSER_API TextParser : public NoCopy
 {
 public:
-    TextParser(StringView context = StringView(), IErrorReporter& errorReporter = IErrorReporter::GetDefault(), ICommentEater& commentEater = ICommentEater::NoComments());
+    TextParser(StringView context = StringView(), ITextErrorReporter& errorReporter = ITextErrorReporter::GetDefault(), ITextCommentEater& commentEater = ITextCommentEater::NoComments());
     ~TextParser();
 
     //--
@@ -132,10 +132,10 @@ public:
 
     // parse a general token using a language definition, will capture strings and numbers as well
     // NOTE: resulting token will be allocated from memory pool
-    Token* parseToken(LinearAllocator& mem, const ILanguageDefinition& language);
+    Token* parseToken(LinearAllocator& mem, const ITextLanguageDefinition& language);
 
     // parse a general token using a language definition, will capture strings and numbers as well
-    Token parseToken(const ILanguageDefinition& language);
+    Token parseToken(const ITextLanguageDefinition& language);
 
     //--
 
@@ -167,10 +167,10 @@ private:
     InplaceArray<HistoryState, 6> m_stateHistory;
 
     StringBuf m_context;
-    IErrorReporter& m_errorReporter;
-    ICommentEater& m_commentEater;
+    ITextErrorReporter& m_errorReporter;
+    ITextCommentEater& m_commentEater;
 };
 
 //---
 
-END_BOOMER_NAMESPACE_EX(parser)
+END_BOOMER_NAMESPACE()

@@ -10,7 +10,7 @@
 
 #include "core/containers/include/stringBuf.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(parser)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -61,7 +61,7 @@ public:
     //--
 
     /// extract a language definition
-    UniquePtr<ILanguageDefinition> buildLanguageDefinition() const;
+    UniquePtr<ITextLanguageDefinition> buildLanguageDefinition() const;
 
 private:
     struct Keyword
@@ -85,4 +85,4 @@ private:
 
 //---
 
-END_BOOMER_NAMESPACE_EX(parser)
+END_BOOMER_NAMESPACE()

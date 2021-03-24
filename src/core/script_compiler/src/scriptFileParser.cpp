@@ -33,7 +33,7 @@ class LanguageDefinition : public ISingleton
 public:
     LanguageDefinition()
     {
-        parser::SimpleLanguageDefinitionBuilder defs;
+        SimpleLanguageDefinitionBuilder defs;
 
         //auto IdentFirstChars  = "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01"; // NOTE: added 01 for swizzles
         //auto IdentNextChars  = "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -152,13 +152,13 @@ public:
         m_language = defs.buildLanguageDefinition();
     }
 
-    INLINE const parser::ILanguageDefinition& definitions() const
+    INLINE const ITextLanguageDefinition& definitions() const
     {
         return *m_language;
     }
 
 private:
-    UniquePtr<parser::ILanguageDefinition> m_language;
+    UniquePtr<ITextLanguageDefinition> m_language;
 
     virtual void deinit() override
     {
@@ -169,19 +169,19 @@ private:
 ///---
 
 // adapter for error interface
-class ParserErrorHandler : public parser::IErrorReporter
+class ParserErrorHandler : public ITextErrorReporter
 {
 public:
     ParserErrorHandler(IErrorHandler& err)
         : m_err(err)
     {}
 
-    virtual void reportError(const parser::Location& loc, StringView message) override final
+    virtual void reportError(const TextTokenLocation& loc, StringView message) override final
     {
         m_err.reportError(loc.contextName(), loc.line(), message);
     }
 
-    virtual void reportWarning(const parser::Location& loc, StringView message) override final
+    virtual void reportWarning(const TextTokenLocation& loc, StringView message) override final
     {
         m_err.reportWarning(loc.contextName(), loc.line(), message);
     }
@@ -213,7 +213,7 @@ bool FileParser::processCode(const StubFile* fileStub, const Buffer& code)
 
     // tokenize
     ParserErrorHandler parserErrorHandler(m_err);
-    auto fileParser  = m_mem.create<parser::TextFilePreprocessor>(m_mem, parser::IIncludeHandler::GetEmptyHandler(), parserErrorHandler, parser::ICommentEater::StandardComments(), lang);
+    auto fileParser  = m_mem.create<TextFilePreprocessor>(m_mem, ITextIncludeHandler::GetEmptyHandler(), parserErrorHandler, ITextCommentEater::StandardComments(), lang);
     if (!fileParser->processContent(code, fileStub->depotPath))
         return true; // errors will be reported via the interface
 

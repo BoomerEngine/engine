@@ -16,7 +16,7 @@ BEGIN_BOOMER_NAMESPACE_EX(script)
 
 //---
 
-FunctionParsingTokenStream::FunctionParsingTokenStream(const Array<parser::Token*>& tokens, FunctionParsingContext& ctx)
+FunctionParsingTokenStream::FunctionParsingTokenStream(const Array<Token*>& tokens, FunctionParsingContext& ctx)
     : m_ctx(ctx)
 {
     for (auto tok  : tokens)
@@ -156,7 +156,7 @@ FunctionParsingContext::FunctionParsingContext(LinearAllocator& mem, FunctionPar
 {
 }
 
-StubLocation FunctionParsingContext::mapLocation(const parser::Location& location)
+StubLocation FunctionParsingContext::mapLocation(const TextTokenLocation& location)
 {
     StubLocation ret;
     ret.file = m_function->location.file;
@@ -164,7 +164,7 @@ StubLocation FunctionParsingContext::mapLocation(const parser::Location& locatio
     return ret;
 }
 
-FunctionNode* FunctionParsingContext::createNode(const parser::Location& location, FunctionNodeOp op)
+FunctionNode* FunctionParsingContext::createNode(const TextTokenLocation& location, FunctionNodeOp op)
 {
     auto ret  = m_mem.create<FunctionNode>();
     ret->location = mapLocation(location);
@@ -172,7 +172,7 @@ FunctionNode* FunctionParsingContext::createNode(const parser::Location& locatio
     return ret;
 }
 
-FunctionNode* FunctionParsingContext::createNode(const parser::Location& location, FunctionNodeOp op, FunctionNode* a)
+FunctionNode* FunctionParsingContext::createNode(const TextTokenLocation& location, FunctionNodeOp op, FunctionNode* a)
 {
     auto ret  = m_mem.create<FunctionNode>();
     ret->location = mapLocation(location);
@@ -181,7 +181,7 @@ FunctionNode* FunctionParsingContext::createNode(const parser::Location& locatio
     return ret;
 }
 
-FunctionNode* FunctionParsingContext::createNode(const parser::Location& location, FunctionNodeOp op, FunctionNode* a, FunctionNode* b)
+FunctionNode* FunctionParsingContext::createNode(const TextTokenLocation& location, FunctionNodeOp op, FunctionNode* a, FunctionNode* b)
 {
     auto ret  = m_mem.create<FunctionNode>();
     ret->location = mapLocation(location);
@@ -191,7 +191,7 @@ FunctionNode* FunctionParsingContext::createNode(const parser::Location& locatio
     return ret;
 }
 
-FunctionNode* FunctionParsingContext::createNode(const parser::Location& location, FunctionNodeOp op, FunctionNode* a, FunctionNode* b, FunctionNode* c)
+FunctionNode* FunctionParsingContext::createNode(const TextTokenLocation& location, FunctionNodeOp op, FunctionNode* a, FunctionNode* b, FunctionNode* c)
 {
     auto ret  = m_mem.create<FunctionNode>();
     ret->location = mapLocation(location);
@@ -242,7 +242,7 @@ FunctionTypeInfo FunctionParsingContext::resolveTypeFromName(StringID name)
     return m_parser.stubs().resolveSimpleTypeReference(name, m_function);
 }
 
-FunctionTypeInfo FunctionParsingContext::createClassType(const parser::Location& location, StringID className)
+FunctionTypeInfo FunctionParsingContext::createClassType(const TextTokenLocation& location, StringID className)
 {
     auto typeDecl  = m_parser.stubs().resolveSimpleTypeReference(className, m_function);
     if (!typeDecl)
@@ -259,7 +259,7 @@ FunctionTypeInfo FunctionParsingContext::createClassType(const parser::Location&
     return m_parser.stubs().createClassType(mapLocation(location), typeDecl->referencedType->resolvedStub);
 }
 
-FunctionTypeInfo FunctionParsingContext::createPtrType(const parser::Location& location, StringID className)
+FunctionTypeInfo FunctionParsingContext::createPtrType(const TextTokenLocation& location, StringID className)
 {
     auto typeDecl  = m_parser.stubs().resolveSimpleTypeReference(className, m_function);
     if (!typeDecl)
@@ -276,7 +276,7 @@ FunctionTypeInfo FunctionParsingContext::createPtrType(const parser::Location& l
     return m_parser.stubs().createSharedPointerType(mapLocation(location), typeDecl->referencedType->resolvedStub);
 }
 
-FunctionTypeInfo FunctionParsingContext::createWeakPtrType(const parser::Location& location, StringID className)
+FunctionTypeInfo FunctionParsingContext::createWeakPtrType(const TextTokenLocation& location, StringID className)
 {
     auto typeDecl  = m_parser.stubs().resolveSimpleTypeReference(className, m_function);
     if (!typeDecl)
@@ -293,7 +293,7 @@ FunctionTypeInfo FunctionParsingContext::createWeakPtrType(const parser::Locatio
     return m_parser.stubs().createWeakPointerType(mapLocation(location), typeDecl->referencedType->resolvedStub);
 }
 
-FunctionNode* FunctionParsingContext::createIntConst(const parser::Location& location, int64_t val)
+FunctionNode* FunctionParsingContext::createIntConst(const TextTokenLocation& location, int64_t val)
 {
     auto ret  = createNode(location, FunctionNodeOp::Const);
     ret->data.number = FunctionNumber(val);
@@ -310,7 +310,7 @@ FunctionNode* FunctionParsingContext::createIntConst(const parser::Location& loc
     return ret;
 }
 
-FunctionNode* FunctionParsingContext::createUintConst(const parser::Location& location, uint64_t val)
+FunctionNode* FunctionParsingContext::createUintConst(const TextTokenLocation& location, uint64_t val)
 {
     auto ret  = createNode(location, FunctionNodeOp::Const);
     ret->data.number = FunctionNumber(val);
@@ -327,7 +327,7 @@ FunctionNode* FunctionParsingContext::createUintConst(const parser::Location& lo
     return ret;
 }
 
-FunctionNode* FunctionParsingContext::createFloatConst(const parser::Location& location, double val)
+FunctionNode* FunctionParsingContext::createFloatConst(const TextTokenLocation& location, double val)
 {
     auto ret  = createNode(location, FunctionNodeOp::Const);
     ret->data.number = FunctionNumber(val);
@@ -335,7 +335,7 @@ FunctionNode* FunctionParsingContext::createFloatConst(const parser::Location& l
     return ret;
 }
 
-FunctionNode* FunctionParsingContext::createBoolConst(const parser::Location& location, bool val)
+FunctionNode* FunctionParsingContext::createBoolConst(const TextTokenLocation& location, bool val)
 {
     auto ret  = createNode(location, FunctionNodeOp::Const);
     ret->data.number = FunctionNumber((int64_t)(val ? 1 : 0));
@@ -343,7 +343,7 @@ FunctionNode* FunctionParsingContext::createBoolConst(const parser::Location& lo
     return ret;
 }
 
-FunctionNode* FunctionParsingContext::createStringConst(const parser::Location& location, StringView val)
+FunctionNode* FunctionParsingContext::createStringConst(const TextTokenLocation& location, StringView val)
 {
     auto ret  = createNode(location, FunctionNodeOp::Const);
     ret->data.text = val;
@@ -351,7 +351,7 @@ FunctionNode* FunctionParsingContext::createStringConst(const parser::Location& 
     return ret;
 }
 
-FunctionNode* FunctionParsingContext::createNameConst(const parser::Location& location, StringID val)
+FunctionNode* FunctionParsingContext::createNameConst(const TextTokenLocation& location, StringID val)
 {
     auto ret  = createNode(location, FunctionNodeOp::Const);
     ret->data.name = val;
@@ -359,13 +359,13 @@ FunctionNode* FunctionParsingContext::createNameConst(const parser::Location& lo
     return ret;
 }
 
-FunctionNode* FunctionParsingContext::createNullConst(const parser::Location& location)
+FunctionNode* FunctionParsingContext::createNullConst(const TextTokenLocation& location)
 {
     auto ret  = createNode(location, FunctionNodeOp::Null);
     return ret;
 }
 
-FunctionNode* FunctionParsingContext::createClassTypeConst(const parser::Location& location, StringID className)
+FunctionNode* FunctionParsingContext::createClassTypeConst(const TextTokenLocation& location, StringID className)
 {
     auto typeDecl  = m_parser.stubs().resolveSimpleTypeReference(className, m_function);
     if (!typeDecl)
@@ -423,7 +423,7 @@ FunctionNode* FunctionParsingContext::findContinueContextNode()
     return nullptr;
 }
 
-void FunctionParsingContext::reportError(const parser::Location& location, StringView message)
+void FunctionParsingContext::reportError(const TextTokenLocation& location, StringView message)
 {
     m_parser.errorHandler().reportError(mapLocation(location).file->absolutePath, location.line(), message);
 }

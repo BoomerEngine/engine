@@ -32,7 +32,7 @@ INativeFunction::INativeFunction()
 INativeFunction::~INativeFunction()
 {}
 
-const INativeFunction* INativeFunction::mutateFunction(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const
+const INativeFunction* INativeFunction::mutateFunction(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const
 {
     // function is not mutated
     return this;

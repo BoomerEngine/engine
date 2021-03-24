@@ -27,14 +27,14 @@ struct ResolvedDescriptorEntry;
 class GPU_SHADER_COMPILER_API Program : public NoCopy
 {
 public:
-    Program(const CodeLibrary& library, StringID name, const parser::Location& loc, AttributeList&& attributes);
+    Program(const CodeLibrary& library, StringID name, const TextTokenLocation& loc, AttributeList&& attributes);
     ~Program();
 
     // get shader library this function is coming from
     INLINE const CodeLibrary& library() const { return *m_library; }
 
     // get location of function in the file
-    INLINE const parser::Location& location() const { return m_loc; }
+    INLINE const TextTokenLocation& location() const { return m_loc; }
 
     // get general attributes (from parser)
     INLINE const AttributeList& attributes() const { return m_attributes; }
@@ -122,11 +122,11 @@ private:
 	TStaticRenderStates m_staticRenderStates; // static graphics pipeline configuration
     AttributeList m_attributes; // as defined in the shader code
 
-    parser::Location m_loc; // location in source file
+    TextTokenLocation m_loc; // location in source file
 
     const CodeLibrary* m_library; // source library this function was compiled as part of
 
-    Array<parser::Location> m_refLocs;
+    Array<TextTokenLocation> m_refLocs;
 
 	mutable HashMap<StringBuf, DataParameter*> m_descriptorConstantBufferEntriesMap;
 	mutable HashMap<StringBuf, DataParameter*> m_descriptorResourceMap;

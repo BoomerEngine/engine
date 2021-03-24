@@ -22,7 +22,7 @@ class FunctionMulStub : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionMulStub, INativeFunction);
 
 public:
-    virtual const INativeFunction* mutateFunction(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual const INativeFunction* mutateFunction(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         if (numArgs == 2)
         {
@@ -68,7 +68,7 @@ public:
         }
     }
 
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         err.reportError(loc, "Unable to determine the nature of multiplication in this expression");
         return DataType();
@@ -94,7 +94,7 @@ class FunctionMatrixMulMatrix : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionMatrixMulMatrix, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         // math uses const values
         argTypes[0] = argTypes[0].unmakePointer();
@@ -202,7 +202,7 @@ class FunctionVectorMulMatrix : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionVectorMulMatrix, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         // math uses const values
         argTypes[0] = argTypes[0].unmakePointer();
@@ -299,7 +299,7 @@ class FunctionMatrixMulVector : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionMatrixMulVector, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         // math uses const values
         argTypes[0] = argTypes[0].unmakePointer();
@@ -393,7 +393,7 @@ class FunctionVectorMulScalar : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionVectorMulScalar, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         // math uses const values
         argTypes[0] = argTypes[0].unmakePointer();
@@ -473,7 +473,7 @@ class FunctionScalarMulVector : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionScalarMulVector, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         // math uses const values
         argTypes[0] = argTypes[0].unmakePointer();
@@ -553,7 +553,7 @@ class FunctionMatrixMulScalar : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionMatrixMulScalar, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         // math uses const values
         argTypes[0] = argTypes[0].unmakePointer();
@@ -630,7 +630,7 @@ class FunctionScalarMulMatrix : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionScalarMulMatrix, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         // math uses const values
         argTypes[0] = argTypes[0].unmakePointer();
@@ -707,7 +707,7 @@ class FunctionVectorDot : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionVectorDot, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         // math uses const values
         argTypes[0] = argTypes[0].unmakePointer();
@@ -782,7 +782,7 @@ class FunctionVectorCross : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionVectorCross, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         // math uses const values
         argTypes[0] = argTypes[0].unmakePointer();
@@ -836,7 +836,7 @@ class FunctionVectorLength : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionVectorLength, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         // math uses const values
         argTypes[0] = argTypes[0].unmakePointer();
@@ -902,7 +902,7 @@ class FunctionVectorNormalize : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionVectorNormalize, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         // math uses const values
         argTypes[0] = argTypes[0].unmakePointer();
@@ -981,7 +981,7 @@ class FunctionVectorDistance : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionVectorDistance, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         // math uses const values
         argTypes[0] = argTypes[0].unmakePointer();
@@ -1051,7 +1051,7 @@ class FunctionVectorTranspose : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionVectorTranspose, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         // math uses const values
         argTypes[0] = argTypes[0].unmakePointer();

@@ -9,21 +9,21 @@
 #pragma once
 
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
-class Glyph;
+class FontGlyph;
 
 /// container for cached glyphs
 /// NOTE: the glyphs in the cache live untill the cache is flushed
 /// NOTE: when the cache is flushed the glyphs cannot be in use anywhere (dangling pointers..)
 /// NOTE: glyph cache is NOT THREADSAFE and requires external synchronization
-class ENGINE_FONT_API GlyphCache : public NoCopy
+class ENGINE_FONT_API FontGlyphCache : public NoCopy
 {
     RTTI_DECLARE_POOL(POOL_FONTS)
 
 public:
-    GlyphCache();
-    ~GlyphCache();
+    FontGlyphCache();
+    ~FontGlyphCache();
 
     /// get total memory consumed by glyphs
     INLINE uint32_t totalMemoryBytes() const { return m_totalGlyphMemory; }
@@ -39,7 +39,7 @@ public:
 
     /// get or generate glyph 
     /// NOTE: may fail
-    const Glyph* fetchGlyph(const FontStyleParams& styleParams, uint32_t styleHash, FT_Face faceData, FontID fontId, uint32_t glyph);
+    const FontGlyph* fetchGlyph(const FontStyleParams& styleParams, uint32_t styleHash, FT_Face faceData, FontID fontId, uint32_t glyph);
 
 private:
     typedef uint64_t GlyphKey;
@@ -48,13 +48,13 @@ private:
     static GlyphKey ComputeKey(FontID fontId, FontGlyphID glyphId, FontStyleHash styleHash);
 
     // build a glyph data
-    Glyph* buildGlyph(const FontStyleParams& styleParams, FT_Face faceData, FontID fontId, uint32_t glyph);
+    FontGlyph* buildGlyph(const FontStyleParams& styleParams, FT_Face faceData, FontID fontId, uint32_t glyph);
 
     //---
 
     struct GlyphEntry
     {
-        Glyph* glyph = nullptr;
+        FontGlyph* glyph = nullptr;
         uint32_t lastGeneration = 0; // LRU
     };
 
@@ -72,4 +72,4 @@ private:
     SpinLock m_lock;
 };
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

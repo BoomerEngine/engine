@@ -23,7 +23,7 @@ class FunctionParser;
 struct FunctionParsingNode
 {
     int tokenID = -1;
-    parser::Location location;
+    TextTokenLocation location;
     StringView stringValue;
     StringID name;
     double floatValue = 0.0f;
@@ -41,19 +41,19 @@ class FunctionParsingContext;
 class FunctionParsingTokenStream : public NoCopy
 {
 public:
-    FunctionParsingTokenStream(const Array<parser::Token*>& tokens, FunctionParsingContext& ctx);
+    FunctionParsingTokenStream(const Array<Token*>& tokens, FunctionParsingContext& ctx);
 
     int readToken(FunctionParsingNode& outNode);
 
-    INLINE const parser::Location& location() const { return m_lastTokenLocation; }
+    INLINE const TextTokenLocation& location() const { return m_lastTokenLocation; }
     INLINE StringView text() const { return m_lastTokenText; }
 
 private:
-    parser::TokenList m_tokens;
+    TokenList m_tokens;
     FunctionParsingContext& m_ctx;
 
     StringView m_lastTokenText;
-    parser::Location m_lastTokenLocation;
+    TextTokenLocation m_lastTokenLocation;
 
     uint32_t matchTypeName(StringID& outTypeName, FunctionTypeInfo& outTypeInfo) const;
 };
@@ -66,31 +66,31 @@ public:
 
     //--
 
-    StubLocation mapLocation(const parser::Location& location);
+    StubLocation mapLocation(const TextTokenLocation& location);
 
-    FunctionNode* createNode(const parser::Location& location, FunctionNodeOp op);
-    FunctionNode* createNode(const parser::Location& location, FunctionNodeOp op, FunctionNode* a);
-    FunctionNode* createNode(const parser::Location& location, FunctionNodeOp op, FunctionNode* a, FunctionNode* b);
-    FunctionNode* createNode(const parser::Location& location, FunctionNodeOp op, FunctionNode* a, FunctionNode* b, FunctionNode* c);
+    FunctionNode* createNode(const TextTokenLocation& location, FunctionNodeOp op);
+    FunctionNode* createNode(const TextTokenLocation& location, FunctionNodeOp op, FunctionNode* a);
+    FunctionNode* createNode(const TextTokenLocation& location, FunctionNodeOp op, FunctionNode* a, FunctionNode* b);
+    FunctionNode* createNode(const TextTokenLocation& location, FunctionNodeOp op, FunctionNode* a, FunctionNode* b, FunctionNode* c);
 
     FunctionNode* makeBreakpoint(FunctionNode* node);
 
     FunctionTypeInfo createStaticArrayType(FunctionTypeInfo innerType, uint32_t arraySize);
     FunctionTypeInfo createDynamicArrayType(FunctionTypeInfo innerType);
-    FunctionTypeInfo createClassType(const parser::Location& location, StringID className);
-    FunctionTypeInfo createPtrType(const parser::Location& location, StringID className);
-    FunctionTypeInfo createWeakPtrType(const parser::Location& location, StringID className);
+    FunctionTypeInfo createClassType(const TextTokenLocation& location, StringID className);
+    FunctionTypeInfo createPtrType(const TextTokenLocation& location, StringID className);
+    FunctionTypeInfo createWeakPtrType(const TextTokenLocation& location, StringID className);
 
     FunctionTypeInfo resolveTypeFromName(StringID name);
 
-    FunctionNode* createIntConst(const parser::Location& location, int64_t val);
-    FunctionNode* createUintConst(const parser::Location& location, uint64_t val);
-    FunctionNode* createFloatConst(const parser::Location& location, double val);
-    FunctionNode* createBoolConst(const parser::Location& location, bool val);
-    FunctionNode* createStringConst(const parser::Location& location, StringView val);
-    FunctionNode* createNameConst(const parser::Location& location, StringID val);
-    FunctionNode* createNullConst(const parser::Location& location);
-    FunctionNode* createClassTypeConst(const parser::Location& location, StringID className);
+    FunctionNode* createIntConst(const TextTokenLocation& location, int64_t val);
+    FunctionNode* createUintConst(const TextTokenLocation& location, uint64_t val);
+    FunctionNode* createFloatConst(const TextTokenLocation& location, double val);
+    FunctionNode* createBoolConst(const TextTokenLocation& location, bool val);
+    FunctionNode* createStringConst(const TextTokenLocation& location, StringView val);
+    FunctionNode* createNameConst(const TextTokenLocation& location, StringID val);
+    FunctionNode* createNullConst(const TextTokenLocation& location);
+    FunctionNode* createClassTypeConst(const TextTokenLocation& location, StringID className);
 
     void rootStatement(FunctionNode* node);
 
@@ -101,7 +101,7 @@ public:
     FunctionNode* findBreakContextNode();
     FunctionNode* findContinueContextNode();
 
-    void reportError(const parser::Location& location, StringView message);
+    void reportError(const TextTokenLocation& location, StringView message);
 
     FunctionTypeInfo currentType;
 

@@ -15,19 +15,19 @@
 #include "core/image/include/imageUtils.h"
 #include "core/image/include/imageView.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
-GlyphCache::GlyphCache()
+FontGlyphCache::FontGlyphCache()
     : m_generationIndex(0)
 {
 }
 
-GlyphCache::~GlyphCache()
+FontGlyphCache::~FontGlyphCache()
 {
     clear();
 }
 
-void GlyphCache::clear()
+void FontGlyphCache::clear()
 {
     auto lock = CreateLock(m_lock);
 
@@ -37,7 +37,7 @@ void GlyphCache::clear()
     m_glyphs.clear();
 }
 
-void GlyphCache::purge(uint32_t relativeGeneration)
+void FontGlyphCache::purge(uint32_t relativeGeneration)
 {
     PC_SCOPE_LVL1(PurgeGlyphCache);
 
@@ -51,7 +51,7 @@ void GlyphCache::purge(uint32_t relativeGeneration)
             m_glyphs.set(pair.key, pair.value);
 }
 
-GlyphCache::GlyphKey GlyphCache::ComputeKey(FontID fontId, FontGlyphID glyphId, FontStyleHash styleHash)
+FontGlyphCache::GlyphKey FontGlyphCache::ComputeKey(FontID fontId, FontGlyphID glyphId, FontStyleHash styleHash)
 {
     GlyphKey key = styleHash;
     key |= (GlyphKey)fontId << 32;
@@ -133,7 +133,7 @@ namespace helper
 
 } // helper
 
-Glyph* GlyphCache::buildGlyph(const FontStyleParams& styleParams, FT_Face faceData, FontID fontId, uint32_t ch)
+FontGlyph* FontGlyphCache::buildGlyph(const FontStyleParams& styleParams, FT_Face faceData, FontID fontId, uint32_t ch)
 {
     // set font size
     auto adjustedSize = (FT_UInt)(styleParams.size * (float)faceData->units_per_EM / (float)(faceData->ascender - faceData->descender));
@@ -199,19 +199,19 @@ Glyph* GlyphCache::buildGlyph(const FontStyleParams& styleParams, FT_Face faceDa
         auto rect = Rect(faceData->glyph->bitmap_left, -faceData->glyph->bitmap_top, faceData->glyph->bitmap_left + faceData->glyph->bitmap.width, -faceData->glyph->bitmap_top + faceData->glyph->bitmap.rows);
 
         // create glyph
-        GlyphID glyphId(fontId, ch, styleParams.calcHash());
-        return new Glyph(glyphId, ptr, bitmapOffset, bitmapSize, advance, rect);
+        FontGlyphKey glyphId(fontId, ch, styleParams.calcHash());
+        return new FontGlyph(glyphId, ptr, bitmapOffset, bitmapSize, advance, rect);
     }
     else
     {
         // create glyph with no bitmap
         auto advance = Vector2(faceData->glyph->advance.x / 64.0f, faceData->glyph->advance.y / 64.0f);
-        GlyphID glyphId(fontId, ch, styleParams.calcHash());
-        return new Glyph(glyphId, ptr, Point(0,0), Point(0, 0), advance, Rect(0,0,0,0));
+        FontGlyphKey glyphId(fontId, ch, styleParams.calcHash());
+        return new FontGlyph(glyphId, ptr, Point(0,0), Point(0, 0), advance, Rect(0,0,0,0));
     }
 }
 
-const Glyph* GlyphCache::fetchGlyph(const FontStyleParams& styleParams, uint32_t styleHash, FT_Face faceData, FontID fontId, uint32_t glyph)
+const FontGlyph* FontGlyphCache::fetchGlyph(const FontStyleParams& styleParams, uint32_t styleHash, FT_Face faceData, FontID fontId, uint32_t glyph)
 {
     // compute the unique glyph key to look up
     auto key = ComputeKey(fontId, (FontGlyphID)glyph, styleHash);
@@ -234,4 +234,4 @@ const Glyph* GlyphCache::fetchGlyph(const FontStyleParams& styleParams, uint32_t
     return newEntry.glyph;
 }
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

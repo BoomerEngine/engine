@@ -23,20 +23,20 @@ namespace prv
     class RawBaseElement : public NoCopy
     {
     public:
-        RawBaseElement(const parser::Location& location);
+        RawBaseElement(const TextTokenLocation& location);
 
         /// get location in file this element was declared at
-        INLINE const parser::Location& location() const { return m_fileLocation; }
+        INLINE const TextTokenLocation& location() const { return m_fileLocation; }
 
     private:
-        parser::Location m_fileLocation;
+        TextTokenLocation m_fileLocation;
     };          
 
     /// variable
     struct RawVariable : public RawBaseElement
     {
     public:
-        RawVariable(const parser::Location& location, const StringID name, const RawValue* value);
+        RawVariable(const TextTokenLocation& location, const StringID name, const RawValue* value);
 
         /// get name of the property
         INLINE StringID name() const { return m_name; }
@@ -58,7 +58,7 @@ namespace prv
     struct RawProperty : public RawBaseElement
     {
     public:
-        RawProperty(const parser::Location& location, const StringID name, uint32_t numValues, const RawValue** values);
+        RawProperty(const TextTokenLocation& location, const StringID name, uint32_t numValues, const RawValue** values);
 
         /// get name of the property
         INLINE StringID name() const { return m_name; }
@@ -114,7 +114,7 @@ namespace prv
     class RawSelector : public RawBaseElement
     {
     public:
-        RawSelector(const parser::Location& location, SelectorCombinatorType combinator);
+        RawSelector(const TextTokenLocation& location, SelectorCombinatorType combinator);
 
         /// get combinator type for selector
         INLINE SelectorCombinatorType combinator() const { return m_combinator; }
@@ -152,7 +152,7 @@ namespace prv
     class RawRule : public RawBaseElement
     {
     public:
-        RawRule(const parser::Location& location);
+        RawRule(const TextTokenLocation& location);
 
         /// get selector
         typedef Array<const RawSelector*> TSelectors;
@@ -177,7 +177,7 @@ namespace prv
     class RawRuleSet : public RawBaseElement
     {
     public:
-        RawRuleSet(const parser::Location& location);
+        RawRuleSet(const TextTokenLocation& location);
 
         /// get selector chains for this rule, any must match for this rule to match
         typedef Array<const RawRule*> TRules;

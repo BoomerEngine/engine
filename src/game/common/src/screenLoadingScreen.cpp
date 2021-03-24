@@ -83,7 +83,7 @@ void GameLoadingScreenSimple::handleRender(Canvas& c, float visibility)
     g.solidRect(Color::BLACK, 0, 0, c.width(), c.height());
     g.render();
 
-    c.debugPrint(c.width() - 50.0f, c.height() - 50.0f, "Loading...", 20, Color::WHITE, font::FontAlignmentHorizontal::Right);
+    c.debugPrint(c.width() - 50.0f, c.height() - 50.0f, "Loading...", 20, Color::WHITE, FontAlignmentHorizontal::Right);
 }
 
 //--

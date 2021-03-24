@@ -182,7 +182,7 @@ private:
 
     void copy(const SourceAssetOBJ& other);
 
-    friend SourceAssetOBJPtr parser::LoadFromBuffer(StringView contextName, const void* data, uint64_t dataSize, bool allowThreads);
+    friend SourceAssetOBJPtr LoadFromBuffer(StringView contextName, const void* data, uint64_t dataSize, bool allowThreads);
 };
 
 //--

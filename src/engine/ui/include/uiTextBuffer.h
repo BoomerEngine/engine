@@ -213,7 +213,7 @@ public:
     void invalidateGeometry();
 
 private:
-    struct CharInfo : public font::GlyphBufferEntry
+    struct CharInfo : public FontGlyphBufferEntry
     {
         // char code of the text
         uint32_t m_code;

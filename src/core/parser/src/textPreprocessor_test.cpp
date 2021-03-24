@@ -15,11 +15,11 @@ DECLARE_TEST_FILE(TextPreprocessor);
 
 BEGIN_BOOMER_NAMESPACE()
 
-extern UniquePtr<parser::ILanguageDefinition> BuildLanguage();
+extern UniquePtr<ITextLanguageDefinition> BuildLanguage();
 
-static parser::ILanguageDefinition& GetTestLanguage()
+static ITextLanguageDefinition& GetTestLanguage()
 {
-    static UniquePtr<parser::ILanguageDefinition> ret = BuildLanguage();
+    static UniquePtr<ITextLanguageDefinition> ret = BuildLanguage();
     return *ret;
 }
 
@@ -28,7 +28,7 @@ TEST(Preprocessor, SimpleTokensPassthrough)
     const char* code = "ident class 1.05f ## - \"string\" 'name'";
 
     LinearAllocator allocator(POOL_TEMP);
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), parser::IErrorReporter::GetDefault(), parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), ITextErrorReporter::GetDefault(), ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -100,7 +100,7 @@ TEST(Preprocessor, PragmaEaten)
     const char* code = "line\n#pragma test\nline";
 
     LinearAllocator allocator(POOL_TEMP);
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), parser::IErrorReporter::GetDefault(), parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), ITextErrorReporter::GetDefault(), ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -128,7 +128,7 @@ TEST(Preprocessor, SimpleReplacement)
     const char* code = "X";
 
     LinearAllocator allocator(POOL_TEMP);
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), parser::IErrorReporter::GetDefault(), parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), ITextErrorReporter::GetDefault(), ITextCommentEater::StandardComments(), GetTestLanguage());
     test.defineSymbol("X", "test");
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
@@ -148,7 +148,7 @@ TEST(Preprocessor, ReplacementFromDefine)
     const char* code = "#define X test\nX";
 
     LinearAllocator allocator(POOL_TEMP);
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), parser::IErrorReporter::GetDefault(), parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), ITextErrorReporter::GetDefault(), ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -162,19 +162,19 @@ TEST(Preprocessor, ReplacementFromDefine)
     }
 }
 
-class HelperErrorReporter : public parser::IErrorReporter
+class HelperErrorReporter : public ITextErrorReporter
 {
 public:
     uint32_t m_numErrors = 0;
     uint32_t m_numWarnings = 0;
 
-    virtual void reportError(const parser::Location& loc, StringView message) override final
+    virtual void reportError(const TextTokenLocation& loc, StringView message) override final
     {
         TRACE_ERROR("{}: {}", loc, message);
         m_numErrors += 1;
     }
 
-    virtual void reportWarning(const parser::Location& loc, StringView message) override final
+    virtual void reportWarning(const TextTokenLocation& loc, StringView message) override final
     {
         TRACE_WARNING("{}: {}", loc, message);
         m_numWarnings += 1;
@@ -188,7 +188,7 @@ TEST(Preprocessor, DefinieRedefinitionWarns)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
     EXPECT_EQ(1, errorReporter.m_numWarnings);
 
@@ -209,7 +209,7 @@ TEST(Preprocessor, UndefOfUnknownMacroWarns)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
     EXPECT_EQ(1, errorReporter.m_numWarnings);
 }
@@ -220,7 +220,7 @@ TEST(Preprocessor, UndefOfGlobalMacro)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     test.defineSymbol("X", "test");
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
@@ -249,7 +249,7 @@ TEST(Preprocessor, NoArgPassing)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -269,7 +269,7 @@ TEST(Preprocessor, EmptyArgPassing)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_TRUE(test.tokens().empty());
@@ -281,7 +281,7 @@ TEST(Preprocessor, SingleArgPassing)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -301,7 +301,7 @@ TEST(Preprocessor, SignleArgGluedTokensBoth)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -321,7 +321,7 @@ TEST(Preprocessor, SignleArgGluedTokensLeft)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -349,7 +349,7 @@ TEST(Preprocessor, SignleArgGluedTokensRight)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -386,7 +386,7 @@ TEST(Preprocessor, SingleArgPassingTokenSpecifiedTwice)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -423,7 +423,7 @@ TEST(Preprocessor, SingleArgPassingMultipleTokenArguments)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -460,7 +460,7 @@ TEST(Preprocessor, MultiArgPassing)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -488,7 +488,7 @@ TEST(Preprocessor, MultiEmptyArgs)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_TRUE(test.tokens().empty());
@@ -500,7 +500,7 @@ TEST(Preprocessor, MultiArgNoFirstArg)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -520,7 +520,7 @@ TEST(Preprocessor, MultiArgNoSecondArg)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -540,7 +540,7 @@ TEST(Preprocessor, WrappedArgs)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -592,7 +592,7 @@ TEST(Preprocessor, StringifySimple)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -612,7 +612,7 @@ TEST(Preprocessor, StringifyComplex)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -632,7 +632,7 @@ TEST(Preprocessor, StringifyVeryComplex)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -652,7 +652,7 @@ TEST(Preprocessor, MergeTwoTokens)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -672,7 +672,7 @@ TEST(Preprocessor, MergeMutlipleTokens)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -692,7 +692,7 @@ TEST(Preprocessor, NestedMacro)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -735,7 +735,7 @@ TEST(Preprocessor, UltimateTest1)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -761,7 +761,7 @@ TEST(Preprocessor, UltimateTest2)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -787,7 +787,7 @@ TEST(Preprocessor, UltimateTest3)
 
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, parser::IIncludeHandler::GetEmptyHandler(), errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, ITextIncludeHandler::GetEmptyHandler(), errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     ASSERT_TRUE(test.processContent(code, "TestFile"));
 
     ASSERT_FALSE(test.tokens().empty());
@@ -800,7 +800,7 @@ TEST(Preprocessor, UltimateTest3)
     }
 }
 
-class TestIncluder1 : public parser::IIncludeHandler
+class TestIncluder1 : public ITextIncludeHandler
 {
 public:
     virtual bool loadInclude(bool global, StringView path, StringView referencePath, Buffer& outContent, StringBuf& outPath) override
@@ -821,14 +821,14 @@ TEST(Preprocessor, IncludeForwardPath)
     TestIncluder1 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     EXPECT_TRUE(test.processContent(code, "TestFile"));
     EXPECT_TRUE(test.tokens().empty());
     EXPECT_TRUE(includer.m_called);
     EXPECT_TRUE(includer.m_path == "other");
 }
 
-class TestIncluder2 : public parser::IIncludeHandler
+class TestIncluder2 : public ITextIncludeHandler
 {
 public:
     virtual bool loadInclude(bool global, StringView path, StringView referencePath, Buffer& outContent, StringBuf& outPath) override
@@ -849,7 +849,7 @@ TEST(Preprocessor, IncludeCanFail)
     TestIncluder2 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     EXPECT_FALSE(test.processContent(code, "TestFile"));
     EXPECT_EQ(1, errorReporter.m_numErrors);
     EXPECT_TRUE(test.tokens().empty());
@@ -857,7 +857,7 @@ TEST(Preprocessor, IncludeCanFail)
     EXPECT_TRUE(includer.m_path == "other");
 }
 
-class TestIncluder3 : public parser::IIncludeHandler
+class TestIncluder3 : public ITextIncludeHandler
 {
 public:
     virtual bool loadInclude(bool global, StringView path, StringView referencePath, Buffer& outContent, StringBuf& outPath) override
@@ -880,7 +880,7 @@ TEST(Preprocessor, IncludeCanEmitContent)
     TestIncluder3 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     EXPECT_TRUE(test.processContent(code, "TestFile"));
     EXPECT_FALSE(test.tokens().empty());
 
@@ -899,7 +899,7 @@ TEST(Preprocessor, IncludeHasProperContext)
     TestIncluder3 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     EXPECT_TRUE(test.processContent(code, "TestFile"));
     EXPECT_FALSE(test.tokens().empty());
 
@@ -919,7 +919,7 @@ TEST(Preprocessor, IncludeTwice)
     TestIncluder3 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     EXPECT_TRUE(test.processContent(code, "TestFile"));
     EXPECT_FALSE(test.tokens().empty());
 
@@ -940,7 +940,7 @@ TEST(Preprocessor, IncludeTwice)
     }
 }
 
-class TestIncluder4 : public parser::IIncludeHandler
+class TestIncluder4 : public ITextIncludeHandler
 {
 public:
     virtual bool loadInclude(bool global, StringView path, StringView referencePath, Buffer& outContent, StringBuf& outPath) override
@@ -964,11 +964,11 @@ TEST(Preprocessor, IncludeRecursiveProtected)
     TestIncluder4 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     EXPECT_FALSE(test.processContent(code, "TestFile"));
 }
 
-class TestIncluder5 : public parser::IIncludeHandler
+class TestIncluder5 : public ITextIncludeHandler
 {
 public:
     virtual bool loadInclude(bool global, StringView path, StringView referencePath, Buffer& outContent, StringBuf& outPath) override
@@ -992,7 +992,7 @@ TEST(Preprocessor, IncludeRecursivePragmaOnce)
     TestIncluder5 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     
     EXPECT_TRUE(test.processContent(code, "TestFile"));
     EXPECT_FALSE(test.tokens().empty());
@@ -1014,7 +1014,7 @@ TEST(Preprocessor, IfDefExpectsEndif)
     TestIncluder5 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
 
     EXPECT_FALSE(test.processContent(code, "TestFile"));
     EXPECT_EQ(1, errorReporter.m_numErrors);
@@ -1027,7 +1027,7 @@ TEST(Preprocessor, IfDefExpectsSymbolName)
     TestIncluder5 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
 
     EXPECT_FALSE(test.processContent(code, "TestFile"));
     EXPECT_EQ(1, errorReporter.m_numErrors);
@@ -1040,7 +1040,7 @@ TEST(Preprocessor, StrayEndifError)
     TestIncluder5 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
 
     EXPECT_FALSE(test.processContent(code, "TestFile"));
     EXPECT_EQ(1, errorReporter.m_numErrors);
@@ -1053,7 +1053,7 @@ TEST(Preprocessor, StrayElseError)
     TestIncluder5 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
 
     EXPECT_FALSE(test.processContent(code, "TestFile"));
     EXPECT_EQ(1, errorReporter.m_numErrors);
@@ -1066,7 +1066,7 @@ TEST(Preprocessor, IfDefSimpleFilter_FilterAway)
     TestIncluder5 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
 
     EXPECT_TRUE(test.processContent(code, "TestFile"));
     EXPECT_TRUE(test.tokens().empty());
@@ -1079,7 +1079,7 @@ TEST(Preprocessor, IfDefSimpleFilter_FilterInWithGlobalDef)
     TestIncluder5 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     test.defineSymbol("X", "");
 
     EXPECT_TRUE(test.processContent(code, "TestFile"));
@@ -1100,7 +1100,7 @@ TEST(Preprocessor, IfDefSimpleFilter_FilterWithLocalDef)
     TestIncluder5 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
 
     EXPECT_TRUE(test.processContent(code, "TestFile"));
     EXPECT_FALSE(test.tokens().empty());
@@ -1120,7 +1120,7 @@ TEST(Preprocessor, IfDefElseNotTaken)
     TestIncluder5 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     test.defineSymbol("X", "");
 
     EXPECT_TRUE(test.processContent(code, "TestFile"));
@@ -1141,7 +1141,7 @@ TEST(Preprocessor, IfDefElseTaken)
     TestIncluder5 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     //test.defineSymbol("X", "");
 
     EXPECT_TRUE(test.processContent(code, "TestFile"));
@@ -1162,7 +1162,7 @@ TEST(Preprocessor, IfDefDoubleElseInvalid)
     TestIncluder5 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     //test.defineSymbol("X", "");
 
     EXPECT_FALSE(test.processContent(code, "TestFile"));
@@ -1176,7 +1176,7 @@ TEST(Preprocessor, IfDefUndef)
     TestIncluder5 includer;
     LinearAllocator allocator(POOL_TEMP);
     HelperErrorReporter errorReporter;
-    parser::TextFilePreprocessor test(allocator, includer, errorReporter, parser::ICommentEater::StandardComments(), GetTestLanguage());
+    TextFilePreprocessor test(allocator, includer, errorReporter, ITextCommentEater::StandardComments(), GetTestLanguage());
     //test.defineSymbol("X", "");
 
     EXPECT_TRUE(test.processContent(code, "TestFile"));

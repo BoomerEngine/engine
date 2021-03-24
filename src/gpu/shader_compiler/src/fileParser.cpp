@@ -125,7 +125,7 @@ class LanguageDefinition : public ISingleton
 public:
     LanguageDefinition()
     {
-        parser::SimpleLanguageDefinitionBuilder defs;
+        SimpleLanguageDefinitionBuilder defs;
 
         //auto IdentFirstChars  = "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01"; // NOTE: added 01 for swizzles
         //auto IdentNextChars  = "_abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -214,13 +214,13 @@ public:
         m_language = defs.buildLanguageDefinition();
     }
 
-    INLINE const parser::ILanguageDefinition& definitions() const
+    INLINE const ITextLanguageDefinition& definitions() const
     {
         return *m_language;
     }
 
 private:
-    UniquePtr<parser::ILanguageDefinition> m_language;
+    UniquePtr<ITextLanguageDefinition> m_language;
 
     virtual void deinit() override
     {
@@ -233,14 +233,14 @@ private:
 TypeReference::TypeReference()
 {}
 
-TypeReference::TypeReference(const parser::Location& loc, StringView name)
+TypeReference::TypeReference(const TextTokenLocation& loc, StringView name)
     : location(loc)
     , name(name)
 {}
 
 //----------
 
-Element::Element(const parser::Location& loc, ElementType type, StringView name, ElementFlags flags)
+Element::Element(const TextTokenLocation& loc, ElementType type, StringView name, ElementFlags flags)
     : type(type)
     , location(loc)
     , name(name)
@@ -271,7 +271,7 @@ const Element* Element::findAttribute(StringView name) const
 
 //----------
 
-static bool ResolveType(parser::Token**& stream, parser::Token** streamEnd, CodeParsingNode& outNode, const CodeLibrary& lib, parser::IErrorReporter& err)
+static bool ResolveType(Token**& stream, Token** streamEnd, CodeParsingNode& outNode, const CodeLibrary& lib, ITextErrorReporter& err)
 {
     if (stream[0]->isIdentifier() || stream[0]->isKeyword())
     {
@@ -355,7 +355,7 @@ static bool ResolveType(parser::Token**& stream, parser::Token** streamEnd, Code
 
 //----------
 
-const parser::ILanguageDefinition& GetlanguageDefinition()
+const ITextLanguageDefinition& GetlanguageDefinition()
 {
     return LanguageDefinition::GetInstance().definitions();
 }
@@ -381,9 +381,9 @@ static void CheckNoLeftOvers(const CodeNode* node)
 
 //----------
 
-static void ConvertTokens(ParsingCodeContext& ctx, const CodeLibrary& lib, const Array<parser::Token*>& tokens, Array<CodeParsingNode>& outTokens, parser::IErrorReporter& err)
+static void ConvertTokens(ParsingCodeContext& ctx, const CodeLibrary& lib, const Array<Token*>& tokens, Array<CodeParsingNode>& outTokens, ITextErrorReporter& err)
 {
-    auto stream = (parser::Token**)tokens.typedData();
+    auto stream = (Token**)tokens.typedData();
     auto streamEnd = stream + tokens.size();
     while (stream < streamEnd)
     {
@@ -463,13 +463,13 @@ static void ConvertTokens(ParsingCodeContext& ctx, const CodeLibrary& lib, const
 
 CodeNode* Analyzecode(
     LinearAllocator& mem,
-    parser::IErrorReporter& errHandler,
-    const Array<parser::Token*>& tokens,
+    ITextErrorReporter& errHandler,
+    const Array<Token*>& tokens,
     const CodeLibrary& lib, const Function* contextFunction, const Program* contextProgram)
 {
     // nothing to compile
     if (tokens.empty())
-        return mem.create<CodeNode>(parser::Location(), OpCode::Nop);
+        return mem.create<CodeNode>(TextTokenLocation(), OpCode::Nop);
 
     // setup the context
     ParsingCodeContext ctx(mem, errHandler, lib, contextFunction, contextProgram);
@@ -519,7 +519,7 @@ CodeNode* Analyzecode(
 
 //----------
 
-Element* Analyzefile(LinearAllocator& mem, parser::IErrorReporter& errHandler, parser::TokenList& tokens)
+Element* Analyzefile(LinearAllocator& mem, ITextErrorReporter& errHandler, TokenList& tokens)
 {
     // create context
     ParsingNode result;

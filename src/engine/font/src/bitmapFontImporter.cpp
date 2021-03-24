@@ -22,7 +22,7 @@
 #include "engine/font/include/fontGlyph.h"
 #include "core/containers/include/rectAllocator.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
 /*
 //---
@@ -76,7 +76,7 @@ ResourcePtr BitmapFontCooker::cook(IResourceCookerInterface& cooker) const
     //fontPath.params.remove("size");
 
     // load the font
-    auto baseFont = cooker.loadDependencyResource<font::Font>(fontPath.toPath());
+    auto baseFont = cooker.loadDependencyResource<Font>(fontPath.toPath());
     if (!baseFont)
     {
         TRACE_ERROR("Unable to load font from '{}' so no bitmap font can be cooked");
@@ -96,7 +96,7 @@ ResourcePtr BitmapFontCooker::cook(IResourceCookerInterface& cooker) const
     }
 
     // setup font styling
-    font::FontStyleParams styleParams;
+    FontStyleParams styleParams;
     styleParams.size = fontSize;
 
     // generate glyphs
@@ -227,4 +227,4 @@ ResourcePtr BitmapFontCooker::cook(IResourceCookerInterface& cooker) const
 */
 //---
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

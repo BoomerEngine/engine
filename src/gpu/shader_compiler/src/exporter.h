@@ -36,7 +36,7 @@ extern bool Assemblestubs(
     AssembledShader& outAssembledShader,
     StringView contextPath, // copied into program data, debug source file location, can be empty
     StringView contextOptions, // copied into program data, debug source file compilation options, can be empty
-    parser::IErrorReporter& err);
+    ITextErrorReporter& err);
 
 //--
 

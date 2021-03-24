@@ -16,7 +16,7 @@ BEGIN_BOOMER_NAMESPACE_EX(script)
 
 //---
 
-FileParsingTokenStream::FileParsingTokenStream(parser::TokenList&& tokens)
+FileParsingTokenStream::FileParsingTokenStream(TokenList&& tokens)
     : m_tokens(std::move(tokens))
 {}
 
@@ -76,7 +76,7 @@ int FileParsingTokenStream::readToken(FileParsingNode& outNode)
     return outNode.tokenID;
 }
 
-void FileParsingTokenStream::extractInnerTokenStream(char delimiter, Array<parser::Token*>& outList)
+void FileParsingTokenStream::extractInnerTokenStream(char delimiter, Array<Token*>& outList)
 {
     uint32_t level = 0;
 
@@ -109,12 +109,12 @@ FileParsingContext::FileParsingContext(FileParser& fileParser, const StubFile* f
     currentObjects.pushBack(const_cast<StubFile*>(file));
 }
 
-void FileParsingContext::reportError(const parser::Location& location, StringView message)
+void FileParsingContext::reportError(const TextTokenLocation& location, StringView message)
 {
     m_parser.errorHandler().reportError(mapLocation(location).file->absolutePath, location.line(), message);
 }
 
-void FileParsingContext::reportWarning(const parser::Location& location, StringView message)
+void FileParsingContext::reportWarning(const TextTokenLocation& location, StringView message)
 {
     m_parser.errorHandler().reportWarning(mapLocation(location).file->absolutePath, location.line(), message);
 }
@@ -124,7 +124,7 @@ Stub* FileParsingContext::contextObject()
     return currentObjects.back();
 }
 
-StubLocation FileParsingContext::mapLocation(const parser::Location& location)
+StubLocation FileParsingContext::mapLocation(const TextTokenLocation& location)
 {
     StubLocation ret;
     ret.file = m_file;
@@ -132,7 +132,7 @@ StubLocation FileParsingContext::mapLocation(const parser::Location& location)
     return ret;
 }
 
-StubClass* FileParsingContext::beginCompound(const parser::Location& location, StringID name, const StubFlags& flags)
+StubClass* FileParsingContext::beginCompound(const TextTokenLocation& location, StringID name, const StubFlags& flags)
 {
     ASSERT(!name.empty());
 
@@ -143,7 +143,7 @@ StubClass* FileParsingContext::beginCompound(const parser::Location& location, S
     return compound;
 }
 
-StubEnum* FileParsingContext::beginEnum(const parser::Location& location, StringID name, const StubFlags& flags)
+StubEnum* FileParsingContext::beginEnum(const TextTokenLocation& location, StringID name, const StubFlags& flags)
 {
     ASSERT(!name.empty());
 
@@ -161,7 +161,7 @@ void FileParsingContext::endObject()
         currentObjects.popBack();
 }
 
-StubModuleImport* FileParsingContext::createModuleImport(const parser::Location& location, StringID name)
+StubModuleImport* FileParsingContext::createModuleImport(const TextTokenLocation& location, StringID name)
 {
     ASSERT(!name.empty());
 
@@ -185,7 +185,7 @@ StubModuleImport* FileParsingContext::createModuleImport(const parser::Location&
     return ret;
 }
 
-StubTypeName* FileParsingContext::createTypeName(const parser::Location& location, StringID name, const StubTypeDecl* decl)
+StubTypeName* FileParsingContext::createTypeName(const TextTokenLocation& location, StringID name, const StubTypeDecl* decl)
 {
     ASSERT(!name.empty());
     ASSERT(decl);
@@ -193,7 +193,7 @@ StubTypeName* FileParsingContext::createTypeName(const parser::Location& locatio
     return m_parser.stubs().createTypeAlias(mapLocation(location), name, decl, contextObject());
 }
 
-StubTypeRef* FileParsingContext::createTypeRef(const parser::Location& location, StringID name)
+StubTypeRef* FileParsingContext::createTypeRef(const TextTokenLocation& location, StringID name)
 {
     ASSERT(name);
 
@@ -209,42 +209,42 @@ StubTypeRef* FileParsingContext::createTypeRef(const parser::Location& location,
     return ret;
 }
 
-StubTypeDecl* FileParsingContext::createWeakPointerType(const parser::Location& location, const StubTypeRef* classTypeRef)
+StubTypeDecl* FileParsingContext::createWeakPointerType(const TextTokenLocation& location, const StubTypeRef* classTypeRef)
 {
     return m_parser.stubs().createWeakPointerType(mapLocation(location), classTypeRef);
 }
 
-StubTypeDecl* FileParsingContext::createPointerType(const parser::Location& location, const StubTypeRef* classTypeRef)
+StubTypeDecl* FileParsingContext::createPointerType(const TextTokenLocation& location, const StubTypeRef* classTypeRef)
 {
     return m_parser.stubs().createSharedPointerType(mapLocation(location), classTypeRef);
 }
 
-StubTypeDecl* FileParsingContext::createClassType(const parser::Location& location, const StubTypeRef* classTypeRef)
+StubTypeDecl* FileParsingContext::createClassType(const TextTokenLocation& location, const StubTypeRef* classTypeRef)
 {
     return m_parser.stubs().createClassType(mapLocation(location), classTypeRef);
 }
 
-StubTypeDecl* FileParsingContext::createSimpleType(const parser::Location& location, const StubTypeRef* classTypeRef)
+StubTypeDecl* FileParsingContext::createSimpleType(const TextTokenLocation& location, const StubTypeRef* classTypeRef)
 {
     return m_parser.stubs().createSimpleType(mapLocation(location), classTypeRef);
 }
 
-StubTypeDecl* FileParsingContext::createEngineType(const parser::Location& location, StringID engineTypeAlias)
+StubTypeDecl* FileParsingContext::createEngineType(const TextTokenLocation& location, StringID engineTypeAlias)
 {
     return m_parser.stubs().createEngineType(mapLocation(location), engineTypeAlias);
 }
 
-StubTypeDecl* FileParsingContext::createStaticArrayType(const parser::Location& location, const StubTypeDecl* innerType, uint32_t arraySize)
+StubTypeDecl* FileParsingContext::createStaticArrayType(const TextTokenLocation& location, const StubTypeDecl* innerType, uint32_t arraySize)
 {
     return m_parser.stubs().createStaticArrayType(mapLocation(location), innerType, arraySize);
 }
 
-StubTypeDecl* FileParsingContext::createDynamicArrayType(const parser::Location& location, const StubTypeDecl* innerType)
+StubTypeDecl* FileParsingContext::createDynamicArrayType(const TextTokenLocation& location, const StubTypeDecl* innerType)
 {
     return m_parser.stubs().createDynamicArrayType(mapLocation(location), innerType);
 }
 
-StubFunction* FileParsingContext::addFunction(const parser::Location& location, StringID name, const StubFlags& flags)
+StubFunction* FileParsingContext::addFunction(const TextTokenLocation& location, StringID name, const StubFlags& flags)
 {
     ASSERT(!name.empty());
 
@@ -258,7 +258,7 @@ StubFunction* FileParsingContext::addFunction(const parser::Location& location, 
     return func;
 }
 
-StubProperty* FileParsingContext::addVar(const parser::Location& location, StringID name, const StubTypeDecl* typeDecl, const StubFlags& flags)
+StubProperty* FileParsingContext::addVar(const TextTokenLocation& location, StringID name, const StubTypeDecl* typeDecl, const StubFlags& flags)
 {
     ASSERT(!name.empty());
     ASSERT(typeDecl != nullptr);
@@ -270,7 +270,7 @@ StubProperty* FileParsingContext::addVar(const parser::Location& location, Strin
     return var;
 }
 
-StubFunctionArg* FileParsingContext::addFunctionArg(const parser::Location& location, StringID name, const StubTypeDecl* typeDecl, const StubFlags& flags)
+StubFunctionArg* FileParsingContext::addFunctionArg(const TextTokenLocation& location, StringID name, const StubTypeDecl* typeDecl, const StubFlags& flags)
 {
     ASSERT(!name.empty());
     ASSERT(typeDecl != nullptr);
@@ -290,7 +290,7 @@ StubFunctionArg* FileParsingContext::addFunctionArg(const parser::Location& loca
     return var;
 }
 
-StubEnumOption* FileParsingContext::addEnumOption(const parser::Location& location, StringID name, bool hasValue, int64_t value)
+StubEnumOption* FileParsingContext::addEnumOption(const TextTokenLocation& location, StringID name, bool hasValue, int64_t value)
 {
     ASSERT(!name.empty());
     auto owner  = contextObject();
@@ -313,43 +313,43 @@ StubEnumOption* FileParsingContext::addEnumOption(const parser::Location& locati
     return nullptr;
 }
 
-StubConstant* FileParsingContext::addConstant(const parser::Location& location, StringID name)
+StubConstant* FileParsingContext::addConstant(const TextTokenLocation& location, StringID name)
 {
     ASSERT(!name.empty());
     return m_parser.stubs().createConst(mapLocation(location), name, contextObject());
 }
 
-StubConstantValue* FileParsingContext::createConstValueInt(const parser::Location& location, int64_t value)
+StubConstantValue* FileParsingContext::createConstValueInt(const TextTokenLocation& location, int64_t value)
 {
     return  m_parser.stubs().createConstValueInt(mapLocation(location), value);
 }
 
-StubConstantValue* FileParsingContext::createConstValueUint(const parser::Location& location, uint64_t value)
+StubConstantValue* FileParsingContext::createConstValueUint(const TextTokenLocation& location, uint64_t value)
 {
     return  m_parser.stubs().createConstValueUint(mapLocation(location), value);
 }
 
-StubConstantValue* FileParsingContext::createConstValueFloat(const parser::Location& location, double value)
+StubConstantValue* FileParsingContext::createConstValueFloat(const TextTokenLocation& location, double value)
 {
     return  m_parser.stubs().createConstValueFloat(mapLocation(location), value);
 }
 
-StubConstantValue* FileParsingContext::createConstValueBool(const parser::Location& location, bool value)
+StubConstantValue* FileParsingContext::createConstValueBool(const TextTokenLocation& location, bool value)
 {
     return  m_parser.stubs().createConstValueBool(mapLocation(location), value);
 }
 
-StubConstantValue* FileParsingContext::createConstValueString(const parser::Location& location, StringView view)
+StubConstantValue* FileParsingContext::createConstValueString(const TextTokenLocation& location, StringView view)
 {
     return  m_parser.stubs().createConstValueString(mapLocation(location), view);
 }
 
-StubConstantValue* FileParsingContext::createConstValueName(const parser::Location& location, StringID name)
+StubConstantValue* FileParsingContext::createConstValueName(const TextTokenLocation& location, StringID name)
 {
     return  m_parser.stubs().createConstValueName(mapLocation(location), name);
 }
 
-StubConstantValue* FileParsingContext::createConstValueCompound(const parser::Location& location, const StubTypeDecl* typeRef)
+StubConstantValue* FileParsingContext::createConstValueCompound(const TextTokenLocation& location, const StubTypeDecl* typeRef)
 {
     return m_parser.stubs().createConstValueCompound(mapLocation(location), typeRef);
 }

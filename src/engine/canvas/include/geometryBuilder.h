@@ -294,7 +294,7 @@ public:
     // insert text from glyph buffer
     // NOTE: text is transformed by the current transform
     // NOTE: font should NOT be unloaded till the data is submitted for rendering
-    void print(const font::GlyphBuffer& glyphs);
+    void print(const FontGlyphBuffer& glyphs);
 
     // insert text from raw glyph table
     // NOTE: text is transformed by the current transform
@@ -302,7 +302,7 @@ public:
     void print(const void* glyphEntries, uint32_t numGlyphs, uint32_t dataStride);
 
     // print from font
-    void print(const font::Font* font, int fontSize, StringView txt, int hcenter=-1, int vcenter=-1, bool bold = false);
+    void print(const Font* font, int fontSize, StringView txt, int hcenter=-1, int vcenter=-1, bool bold = false);
 
     //---
 

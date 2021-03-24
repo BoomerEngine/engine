@@ -53,7 +53,7 @@ namespace prv
         INLINE TResolvedValues& values() { return m_resolvedValues; }
 
         /// resolve and map value, returns savable ValueID or 0 if something went wrong
-        int resolveAndMap(const parser::Location& loc, StringID paramId, const RawValue& value, parser::IErrorReporter& err);
+        int resolveAndMap(const TextTokenLocation& loc, StringID paramId, const RawValue& value, ITextErrorReporter& err);
 
     private:
         // mapping from original RawProperty hash to resolved value
@@ -110,7 +110,7 @@ namespace prv
         void extractSelectorNodes(Array<SelectorNode>& outSelectorNodes) const;
 
         // insert rule set
-        bool mapRuleSet(const RawRuleSet& ruleSet, parser::IErrorReporter& err);
+        bool mapRuleSet(const RawRuleSet& ruleSet, ITextErrorReporter& err);
 
     private:
         // mapped values
@@ -143,10 +143,10 @@ namespace prv
         SelectorID mapSelectorNode(const SelectorKey& key);
 
         // get a selector match data
-        void mapSelectorParams(const RawSelector* selector, Array<SelectorMatchParams>& outParams, parser::IErrorReporter& err);
+        void mapSelectorParams(const RawSelector* selector, Array<SelectorMatchParams>& outParams, ITextErrorReporter& err);
 
         // map a rule set
-        void mapRuleTrace(const Array<const RawSelector*>& selectors, uint32_t selectorIndex, SelectorID parentNodeId, Array<SelectorID>& outTerminalSelectors, parser::IErrorReporter& err);
+        void mapRuleTrace(const Array<const RawSelector*>& selectors, uint32_t selectorIndex, SelectorID parentNodeId, Array<SelectorID>& outTerminalSelectors, ITextErrorReporter& err);
 
     };
 

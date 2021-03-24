@@ -36,7 +36,7 @@ namespace helper
 
 namespace helper
 {
-    class RapidXMLErrorForwarder : public rapidxml::IErrorReporter
+    class RapidXMLErrorForwarder : public rapidxml::ITextErrorReporter
     {
     public:
         RapidXMLErrorForwarder(ILoadingReporter& ctx)

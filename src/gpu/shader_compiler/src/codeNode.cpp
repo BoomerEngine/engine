@@ -59,27 +59,27 @@ CodeNode::CodeNode()
 CodeNode::~CodeNode()
 {}
 
-CodeNode::CodeNode(const parser::Location& loc, const DataType& dataType, const DataValue& dataValue)
+CodeNode::CodeNode(const TextTokenLocation& loc, const DataType& dataType, const DataValue& dataValue)
     : m_loc(loc)
     , m_op(OpCode::Const)
     , m_dataType(dataType)
     , m_dataValue(dataValue)
 {}
 
-CodeNode::CodeNode(const parser::Location& loc, OpCode op)
+CodeNode::CodeNode(const TextTokenLocation& loc, OpCode op)
     : m_op(op)
     , m_loc(loc)
 {
 }
 
-CodeNode::CodeNode(const parser::Location& loc, OpCode op, const CodeNode* a)
+CodeNode::CodeNode(const TextTokenLocation& loc, OpCode op, const CodeNode* a)
     : m_op(op)
     , m_loc(loc)
 {
     m_children.pushBack(a);
 }
 
-CodeNode::CodeNode(const parser::Location& loc, OpCode op, const CodeNode* a, const CodeNode* b)
+CodeNode::CodeNode(const TextTokenLocation& loc, OpCode op, const CodeNode* a, const CodeNode* b)
     : m_op(op)
     , m_loc(loc)
 {
@@ -87,7 +87,7 @@ CodeNode::CodeNode(const parser::Location& loc, OpCode op, const CodeNode* a, co
     m_children.pushBack(b);
 }
 
-CodeNode::CodeNode(const parser::Location& loc, OpCode op, const CodeNode* a, const CodeNode* b, const CodeNode* c)
+CodeNode::CodeNode(const TextTokenLocation& loc, OpCode op, const CodeNode* a, const CodeNode* b, const CodeNode* c)
     : m_op(op)
     , m_loc(loc)
 {
@@ -96,7 +96,7 @@ CodeNode::CodeNode(const parser::Location& loc, OpCode op, const CodeNode* a, co
     m_children.pushBack(c);
 }
 
-CodeNode::CodeNode(const parser::Location& loc, OpCode op, const CodeNode* a, const CodeNode* b, const CodeNode* c, const CodeNode* d)
+CodeNode::CodeNode(const TextTokenLocation& loc, OpCode op, const CodeNode* a, const CodeNode* b, const CodeNode* c, const CodeNode* d)
     : m_op(op)
     , m_loc(loc)
 {
@@ -106,7 +106,7 @@ CodeNode::CodeNode(const parser::Location& loc, OpCode op, const CodeNode* a, co
     m_children.pushBack(d);
 }
 
-CodeNode::CodeNode(const parser::Location& loc, OpCode op, const CodeNode* a, const CodeNode* b, const CodeNode* c, const CodeNode* d, const CodeNode* e)
+CodeNode::CodeNode(const TextTokenLocation& loc, OpCode op, const CodeNode* a, const CodeNode* b, const CodeNode* c, const CodeNode* d, const CodeNode* e)
     : m_op(op)
     , m_loc(loc)
 {
@@ -117,7 +117,7 @@ CodeNode::CodeNode(const parser::Location& loc, OpCode op, const CodeNode* a, co
     m_children.pushBack(e);
 }
 
-CodeNode::CodeNode(const parser::Location& loc, OpCode op, const DataType& dataType)
+CodeNode::CodeNode(const TextTokenLocation& loc, OpCode op, const DataType& dataType)
     : m_op(op)
     , m_loc(loc)
 {

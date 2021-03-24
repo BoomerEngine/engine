@@ -13,7 +13,7 @@
 #include "textParsingTreeBuilder.h"
 #include "core/containers/include/stringBuilder.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(parser)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -108,7 +108,7 @@ void SimpleLanguageDefinitionBuilder::addPreprocessor(const char* txt)
     keyword.m_preprocesor = true;
 }
 
-UniquePtr<ILanguageDefinition> SimpleLanguageDefinitionBuilder::buildLanguageDefinition() const
+UniquePtr<ITextLanguageDefinition> SimpleLanguageDefinitionBuilder::buildLanguageDefinition() const
 {
     // create a parsing tree builder
     prv::ParsingTreeBuilder tree;
@@ -140,4 +140,4 @@ UniquePtr<ILanguageDefinition> SimpleLanguageDefinitionBuilder::buildLanguageDef
 
 //--
 
-END_BOOMER_NAMESPACE_EX(parser)
+END_BOOMER_NAMESPACE()

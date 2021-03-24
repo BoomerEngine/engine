@@ -27,8 +27,6 @@ typedef RefPtr<IDirectoryWatcher> DirectoryWatcherPtr;
 
 class DirectoryMonitor;
 
-class IIncludeHandler;
-
 class MemoryPool;
 
 class TimeStamp;

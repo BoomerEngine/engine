@@ -49,7 +49,7 @@ static bool ExtractVectorTypeSizes(StringView view, uint32_t& numCols, uint32_t&
     return true;
 }
 
-bool CodeLibrary::resolveType(const TypeReference* typeRef, DataType& outType, parser::IErrorReporter& err, bool reportErrors) const
+bool CodeLibrary::resolveType(const TypeReference* typeRef, DataType& outType, ITextErrorReporter& err, bool reportErrors) const
 {
     if (!resolveTypeInner(typeRef, outType, err, reportErrors))
         return false;
@@ -135,7 +135,7 @@ void CodeLibrary::findGlobalDescriptorEntry(StringID name, Array<ResolvedDescrip
         findUniformEntry(table, name, outEntries);
 }
 
-bool CodeLibrary::resolveTypeInner(const TypeReference* typeRef, DataType& outType, parser::IErrorReporter& err, bool reportErrors) const
+bool CodeLibrary::resolveTypeInner(const TypeReference* typeRef, DataType& outType, ITextErrorReporter& err, bool reportErrors) const
 {
     if (typeRef == nullptr)
     {
@@ -282,7 +282,7 @@ bool CodeLibrary::resolveTypeInner(const TypeReference* typeRef, DataType& outTy
     return false;
 }
 
-static bool ValidateFlags(const Element* elem, const ElementFlags flags, parser::IErrorReporter& err)
+static bool ValidateFlags(const Element* elem, const ElementFlags flags, ITextErrorReporter& err)
 {
     bool valid = true;
 
@@ -299,7 +299,7 @@ static bool ValidateFlags(const Element* elem, const ElementFlags flags, parser:
     return valid;
 }
 
-bool CodeLibrary::createStructureElements(const Element* parent, CompositeType* structType, parser::IErrorReporter& err)
+bool CodeLibrary::createStructureElements(const Element* parent, CompositeType* structType, ITextErrorReporter& err)
 {
     bool valid = true;
 
@@ -358,7 +358,7 @@ bool CodeLibrary::createStructureElements(const Element* parent, CompositeType* 
     return valid;
 }
         
-bool CodeLibrary::createDescriptorElements(const Element* parent, ResourceTable* table, parser::IErrorReporter& err)
+bool CodeLibrary::createDescriptorElements(const Element* parent, ResourceTable* table, ITextErrorReporter& err)
 {
     bool valid = true;
 
@@ -488,7 +488,7 @@ bool CodeLibrary::createDescriptorElements(const Element* parent, ResourceTable*
     return valid;
 }
 
-bool CodeLibrary::createProgramElementsPass1(const Element* parent, Program* program, parser::IErrorReporter& err)
+bool CodeLibrary::createProgramElementsPass1(const Element* parent, Program* program, ITextErrorReporter& err)
 {
     bool valid = true;
 
@@ -560,7 +560,7 @@ bool CodeLibrary::createProgramElementsPass1(const Element* parent, Program* pro
     return valid;
 }
 
-bool CodeLibrary::createProgramElementsPass2(const Element* parent, Program* program, parser::IErrorReporter& err)
+bool CodeLibrary::createProgramElementsPass2(const Element* parent, Program* program, ITextErrorReporter& err)
 {
     bool valid = true;
 
@@ -862,7 +862,7 @@ bool CodeLibrary::createProgramElementsPass2(const Element* parent, Program* pro
     return valid;
 }
 
-bool CodeLibrary::createElements(const Element* root, parser::IErrorReporter& err)
+bool CodeLibrary::createElements(const Element* root, ITextErrorReporter& err)
 {
     bool valid = true;
 
@@ -1289,18 +1289,18 @@ static const CodeNode* FindExpression(const CodeNode* node)
     return nullptr;
 }
 
-bool CodeLibrary::parseCode(parser::IErrorReporter& err)
+bool CodeLibrary::parseCode(ITextErrorReporter& err)
 {
     bool valid = true;
 
     struct CodeCompilationEntry
     {
-        parser::Location loc;
+        TextTokenLocation loc;
         DataParameter* param = nullptr;
         Function* function = nullptr;
         const Program* program = nullptr;
         StringID name;
-        Array<parser::Token*> tokens;
+        Array<Token*> tokens;
         CompositeType::Member* member = nullptr;
     };
 
@@ -1440,7 +1440,7 @@ bool CodeLibrary::parseCode(parser::IErrorReporter& err)
     return valid;
 }
         
-bool CodeLibrary::loadFile(parser::TokenList& tokens, parser::IErrorReporter& err)
+bool CodeLibrary::loadFile(TokenList& tokens, ITextErrorReporter& err)
 {
     ScopeTimer scope;
 

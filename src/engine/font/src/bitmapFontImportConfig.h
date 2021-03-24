@@ -11,7 +11,7 @@
 #include "core/resource/include/resource.h"
 #include "core/resource/include/metadata.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
 /// char set
 struct ENGINE_FONT_API BitmapFontCharset
@@ -51,4 +51,4 @@ public:
     void collectCharCodes(Array<uint32_t>& outCharCodes) const;
 };
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

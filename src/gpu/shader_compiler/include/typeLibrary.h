@@ -57,14 +57,14 @@ public:
 
     struct Member
     {
-        parser::Location location; // location of the member definition
+        TextTokenLocation location; // location of the member definition
         StringID name; // name of the member
         uint32_t firstComponent = 0; // first component in the scalar representation for this member
         DataType type; // type of the member
 
         AttributeList attributes; // all parsed attributes
 
-        Array<parser::Token*> initalizationTokens; // initialization tokens (can be a full expression)
+        Array<Token*> initalizationTokens; // initialization tokens (can be a full expression)
         CodeNode* initializerCode = nullptr; // parsed initialization code for the value
 
         //--
@@ -112,7 +112,7 @@ public:
     //--
 
     // add member, fails if member with that name already exists
-    void addMember(const parser::Location& loc, const StringID memberName, DataType memberType, AttributeList&& attributes, const Array<parser::Token*>& initializationTokens = Array<parser::Token*>());
+    void addMember(const TextTokenLocation& loc, const StringID memberName, DataType memberType, AttributeList&& attributes, const Array<Token*>& initializationTokens = Array<Token*>());
 
     //--
 
@@ -122,7 +122,7 @@ public:
     //--
 
     // compute data layout for the structure
-    bool computeMemoryLayout(bool& outNeedsMorePasses, bool& outUpdated, parser::IErrorReporter& err);
+    bool computeMemoryLayout(bool& outNeedsMorePasses, bool& outUpdated, ITextErrorReporter& err);
 
 private:
     StringID m_name; // name of the type
@@ -138,16 +138,16 @@ private:
 
     //--
 
-    bool packLayoutVertex(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, parser::IErrorReporter& err) const;
-    bool packLayoutStd140(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, parser::IErrorReporter& err) const;
-    bool packLayoutStd430(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, parser::IErrorReporter& err) const;
+    bool packLayoutVertex(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, ITextErrorReporter& err) const;
+    bool packLayoutStd140(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, ITextErrorReporter& err) const;
+    bool packLayoutStd430(const CompositeType::Member& prop, uint32_t& inOutPackingOffset, MemberLayoutInfo& outLayout, ITextErrorReporter& err) const;
 };
 
 ///---
 
 struct GPU_SHADER_COMPILER_API ResourceTableEntry
 {
-    parser::Location m_location; // location of the member definition
+    TextTokenLocation m_location; // location of the member definition
     StringID m_name; // name of the member
     DataType m_type; // type of the entry
     AttributeList m_attributes; // used provided attributes
@@ -179,7 +179,7 @@ public:
     //--
 
     // add member, fails if member with that name already exists
-	void addMember(const parser::Location& loc, const StringID name, const DataType& type, const AttributeList& attributes, char localSampler = -1, const StaticSampler* staticSampler = nullptr);
+	void addMember(const TextTokenLocation& loc, const StringID name, const DataType& type, const AttributeList& attributes, char localSampler = -1, const StaticSampler* staticSampler = nullptr);
 
 
     // get index of member, returns -1 if not found
@@ -331,7 +331,7 @@ public:
     //--
 
     /// compute sizes of composite types
-    bool calculateCompositeLayouts(parser::IErrorReporter& err);
+    bool calculateCompositeLayouts(ITextErrorReporter& err);
 
 private:
     static const uint32_t MAX_COMPONENTS = 4;

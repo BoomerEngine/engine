@@ -12,7 +12,7 @@
 #include "core/containers/include/hashMap.h"
 #include "core/containers/include/stringBuilder.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(parser)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -474,7 +474,7 @@ namespace prv
 
     //--
 
-    class CompiledParserTreeTextLanguageDefinition : public ILanguageDefinition
+    class CompiledParserTreeTextLanguageDefinition : public ITextLanguageDefinition
     {
     public:
 
@@ -619,7 +619,7 @@ namespace prv
         }
     }
 
-    UniquePtr<ILanguageDefinition> ParsingTreeBuilder::buildLanguageDefinition() const
+    UniquePtr<ITextLanguageDefinition> ParsingTreeBuilder::buildLanguageDefinition() const
     {
         auto ret  = CreateUniquePtr<CompiledParserTreeTextLanguageDefinition>();
 
@@ -653,4 +653,4 @@ namespace prv
 
 } // prv
 
-END_BOOMER_NAMESPACE_EX(parser)
+END_BOOMER_NAMESPACE()

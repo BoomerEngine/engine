@@ -11,12 +11,12 @@
 #include "core/math/include/point.h"
 #include "engine/font/include/font.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
 /// placement information for renderable glyph
-struct GlyphBufferEntry
+struct FontGlyphBufferEntry
 {
-    const Glyph* glyph = nullptr; // glyph to render, may be empty for white space/non renderable characters
+    const FontGlyph* glyph = nullptr; // glyph to render, may be empty for white space/non renderable characters
     Vector2 pos; // placement for rendering
     Color color = Color::WHITE;
     int textPosition = 0; // original text position for this glyph
@@ -24,10 +24,10 @@ struct GlyphBufferEntry
 
 /// glyph buffer - output of text rendering via font
 /// contains placement informations of individual glyphs that make up the font
-class ENGINE_FONT_API GlyphBuffer : public NoCopy
+class ENGINE_FONT_API FontGlyphBuffer : public NoCopy
 {
 public:
-    GlyphBuffer();
+    FontGlyphBuffer();
     
     /// reset content
     INLINE void reset(const Vector2& startPos)
@@ -49,7 +49,7 @@ public:
     }
 
     /// get the glyph data
-    INLINE const GlyphBufferEntry* glyphs() const
+    INLINE const FontGlyphBufferEntry* glyphs() const
     {
         return m_glyphs.typedData();
     }
@@ -61,13 +61,13 @@ public:
     }
 
     /// add glyph to buffer
-    void addGlyph(uint32_t ch, const Glyph* glyph, float x, float y, int textPosition, Color color = Color::WHITE);
+    void addGlyph(uint32_t ch, const FontGlyph* glyph, float x, float y, int textPosition, Color color = Color::WHITE);
 
     /// add font
     void addFont(const RefPtr<Font>& font);
 
 private:
-    typedef Array<GlyphBufferEntry> TGlyphs;
+    typedef Array<FontGlyphBufferEntry> TGlyphs;
     TGlyphs m_glyphs;
 
     typedef Array<RefPtr<Font>> TFonts;
@@ -76,4 +76,4 @@ private:
     Rect m_bounds;
 };
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

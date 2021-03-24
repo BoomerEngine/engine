@@ -211,7 +211,7 @@ CodeNode* CodeNode::InsertScalarExtensionNode(CodeLibrary& lib, CodeNode* nodePt
     return node;
 }
 
-CodeNode* CodeNode::Dereferece(CodeLibrary& lib, CodeNode* nodePtr, parser::IErrorReporter& err)
+CodeNode* CodeNode::Dereferece(CodeLibrary& lib, CodeNode* nodePtr, ITextErrorReporter& err)
 {
     // if the node is a reference make it a value by inserting a Load opcode
     if (nodePtr && nodePtr->m_dataType.isReference())
@@ -227,7 +227,7 @@ CodeNode* CodeNode::Dereferece(CodeLibrary& lib, CodeNode* nodePtr, parser::IErr
     return nodePtr;
 }
 
-bool CodeNode::MatchNodeType(CodeLibrary& lib, CodeNode*& nodePtr, DataType requiredType, bool userExplicitCast, parser::IErrorReporter& err)
+bool CodeNode::MatchNodeType(CodeLibrary& lib, CodeNode*& nodePtr, DataType requiredType, bool userExplicitCast, ITextErrorReporter& err)
 {
     // source type is 
     auto currentType = nodePtr->dataType();
@@ -336,7 +336,7 @@ CodeNode::ResolveResult::ResolveResult(const INativeFunction* func)
     , m_program(nullptr)
 {}
 
-CodeNode::ResolveResult CodeNode::ResolveIdent(CodeLibrary& lib, const Program* program, const Function* func, CodeNode* contextNode, const StringID name, parser::IErrorReporter& err)
+CodeNode::ResolveResult CodeNode::ResolveIdent(CodeLibrary& lib, const Program* program, const Function* func, CodeNode* contextNode, const StringID name, ITextErrorReporter& err)
 {
     // built-in ?
     if (name.view().beginsWith("gl_"))
@@ -429,7 +429,7 @@ CodeNode::ResolveResult CodeNode::ResolveIdent(CodeLibrary& lib, const Program* 
     return ResolveResult();
 }
 
-bool CodeNode::MutateNode(CodeLibrary& lib, const Program* program, const Function* func, CodeNode*& node, Array<CodeNode*>& parentStack, parser::IErrorReporter& err)
+bool CodeNode::MutateNode(CodeLibrary& lib, const Program* program, const Function* func, CodeNode*& node, Array<CodeNode*>& parentStack, ITextErrorReporter& err)
 {
     // replace null nodes with nodes
     if (!node)
@@ -729,7 +729,7 @@ bool CodeNode::MutateNode(CodeLibrary& lib, const Program* program, const Functi
     return true;
 }
 
-bool CodeNode::ResolveTypes(CodeLibrary& lib, const Program* program, const Function* func, CodeNode* node, parser::IErrorReporter& err)
+bool CodeNode::ResolveTypes(CodeLibrary& lib, const Program* program, const Function* func, CodeNode* node, ITextErrorReporter& err)
 {
     ASSERT(node != nullptr);
 
@@ -839,7 +839,7 @@ bool CodeNode::ResolveTypes(CodeLibrary& lib, const Program* program, const Func
     return true;
 }
 
-bool CodeNode::HandleResourceArrayAccess(CodeLibrary& lib, CodeNode* node, parser::IErrorReporter& err)
+bool CodeNode::HandleResourceArrayAccess(CodeLibrary& lib, CodeNode* node, ITextErrorReporter& err)
 {
     auto sourceType = node->m_children[0]->dataType();
 

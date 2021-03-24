@@ -11,7 +11,7 @@
 #include "core/resource/include/resource.h"
 #include "core/system/include/mutex.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -85,7 +85,7 @@ public:
     INLINE float relativeLineHeight() const { return m_lineHeight; }
 
     // get font glyph cache
-    INLINE const GlyphCache& glyphCache() const { return *m_glyphCache; }
+    INLINE const FontGlyphCache& glyphCache() const { return *m_glyphCache; }
 
     // get raw font data (for use with different font systems)
     INLINE const Buffer& data() const { return m_packedData; }
@@ -102,10 +102,10 @@ public:
     /// printable characters are written in the render buffer 
     /// the images for particular glyphs needed to render the text are maintained in the provided glyph cache
     /// returns size of the text (the same as measureText)
-    void renderText(const FontStyleParams& styleParams, const FontAssemblyParams& textParams, const FontInputText& str, GlyphBuffer& outBuffer, Color color = Color::WHITE) const;
+    void renderText(const FontStyleParams& styleParams, const FontAssemblyParams& textParams, const FontInputText& str, FontGlyphBuffer& outBuffer, Color color = Color::WHITE) const;
 
     /// fetch information about single character
-    const Glyph* renderGlyph(const FontStyleParams& styleParams, uint32_t glyphcode) const;
+    const FontGlyph* renderGlyph(const FontStyleParams& styleParams, uint32_t glyphcode) const;
 
 private:
     Buffer m_packedData; // packed font data
@@ -117,11 +117,11 @@ private:
     float m_descender; // lower part of the font (below baseline)
     float m_lineHeight; // relative line height scalar
 
-    UniquePtr<GlyphCache> m_glyphCache; // cache for glyphs created from this font
+    UniquePtr<FontGlyphCache> m_glyphCache; // cache for glyphs created from this font
 
     void unregisterFont();
     void registerFont();
     virtual void onPostLoad();
 };
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

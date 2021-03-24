@@ -10,7 +10,7 @@
 
 #include "core/resource/include/resource.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(font)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -93,4 +93,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(font)
+END_BOOMER_NAMESPACE()

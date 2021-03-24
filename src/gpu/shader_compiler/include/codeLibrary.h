@@ -52,7 +52,7 @@ public:
 
     /// process shader content that was already tokenized, parses tokens and creates internal structures: s, types, etc
     /// NOTE: can be called few times with parts of content
-    bool parseContent(parser::TokenList& tokens, parser::IErrorReporter& err);
+    bool parseContent(TokenList& tokens, ITextErrorReporter& err);
 
     //---
 
@@ -68,10 +68,10 @@ public:
     //---
 
     // create program declaration or a definition
-    const Program* createProgram(StringID programName, const parser::Location& loc, AttributeList&& attributes);
+    const Program* createProgram(StringID programName, const TextTokenLocation& loc, AttributeList&& attributes);
 
 	// create instance of program (program + parametrization)
-	const ProgramInstance* createProgramInstance(const parser::Location& loc, const Program* program, const ProgramConstants& sourceParams, parser::IErrorReporter& err);
+	const ProgramInstance* createProgramInstance(const TextTokenLocation& loc, const Program* program, const ProgramConstants& sourceParams, ITextErrorReporter& err);
 
     //---
 
@@ -101,8 +101,8 @@ public:
     void findGlobalDescriptorEntry(StringID name, Array<ResolvedDescriptorEntry>& outEntries) const;
     void findGlobalUniformEntry(StringID name, Array<ResolvedDescriptorEntry>& outEntries) const;
 
-    bool resolveTypeInner(const TypeReference* typeRef, DataType& outType, parser::IErrorReporter& err, bool reportErrors=true) const;
-    bool resolveType(const TypeReference* typeRef, DataType& outType, parser::IErrorReporter& err, bool reportErrors=true) const;
+    bool resolveTypeInner(const TypeReference* typeRef, DataType& outType, ITextErrorReporter& err, bool reportErrors=true) const;
+    bool resolveType(const TypeReference* typeRef, DataType& outType, ITextErrorReporter& err, bool reportErrors=true) const;
 
 private:
     // memory allocator for the parsing operations
@@ -137,17 +137,17 @@ private:
 
     // load shader file, if the file exists it's returned if the file does not exist it's loaded
     // used during library enumeration and in includes (as the file does not have to be a .frag)
-    bool loadFile(parser::TokenList& tokens, parser::IErrorReporter& err);
+    bool loadFile(TokenList& tokens, ITextErrorReporter& err);
 
     // create structure elements, programs, functions, constants
-    bool createElements(const Element* root, parser::IErrorReporter& err);
-    bool createProgramElementsPass1(const Element* elem, Program* program, parser::IErrorReporter& err);
-    bool createProgramElementsPass2(const Element* elem, Program* program, parser::IErrorReporter& err);
-    bool createDescriptorElements(const Element* elem, ResourceTable* program, parser::IErrorReporter& err);
-    bool createStructureElements(const Element* elem, CompositeType* program, parser::IErrorReporter& err);
+    bool createElements(const Element* root, ITextErrorReporter& err);
+    bool createProgramElementsPass1(const Element* elem, Program* program, ITextErrorReporter& err);
+    bool createProgramElementsPass2(const Element* elem, Program* program, ITextErrorReporter& err);
+    bool createDescriptorElements(const Element* elem, ResourceTable* program, ITextErrorReporter& err);
+    bool createStructureElements(const Element* elem, CompositeType* program, ITextErrorReporter& err);
 
     // process the code
-    bool parseCode(parser::IErrorReporter& err);
+    bool parseCode(ITextErrorReporter& err);
 };
 
 END_BOOMER_NAMESPACE_EX(gpu::compiler)

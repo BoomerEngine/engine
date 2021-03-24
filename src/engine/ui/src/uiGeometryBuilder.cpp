@@ -19,8 +19,8 @@ BEGIN_BOOMER_NAMESPACE_EX(ui)
 GeometryBuilder::GeometryBuilder(CanvasGeometry& outGeometry)
 	: CanvasGeometryBuilder(outGeometry)
 {
-    m_currentVerticalAlignment = font::FontAlignmentVertical::Top;
-    m_currentHorizontalAlignment = font::FontAlignmentHorizontal::Left;
+    m_currentVerticalAlignment = FontAlignmentVertical::Top;
+    m_currentHorizontalAlignment = FontAlignmentHorizontal::Left;
     m_currentSize = 12;
 }
 
@@ -29,12 +29,12 @@ void GeometryBuilder::font(const FontPtr& fontPtr)
     m_currentFont = fontPtr;
 }
 
-void GeometryBuilder::textVerticalAlignment(const font::FontAlignmentVertical alignment)
+void GeometryBuilder::textVerticalAlignment(const FontAlignmentVertical alignment)
 {
     m_currentVerticalAlignment = alignment;
 }
 
-void GeometryBuilder::textHorizontalAlignment(const font::FontAlignmentHorizontal alignment)
+void GeometryBuilder::textHorizontalAlignment(const FontAlignmentHorizontal alignment)
 {
     m_currentHorizontalAlignment = alignment;
 }
@@ -52,35 +52,35 @@ uint32_t GeometryBuilder::textLineHeight() const
     return (uint32_t)m_currentFont->lineSeparation(m_currentSize);
 }
 
-uint32_t GeometryBuilder::textLineWidth(const font::FontInputText& text) const
+uint32_t GeometryBuilder::textLineWidth(const FontInputText& text) const
 {
     if (m_currentSize < 2 || !m_currentFont)
         return 0;
 
-    font::FontStyleParams styleParams;
+    FontStyleParams styleParams;
     styleParams.size = m_currentSize;
-    font::FontAssemblyParams assemblyParams;
+    FontAssemblyParams assemblyParams;
     assemblyParams.verticalAlignment = m_currentVerticalAlignment;
     assemblyParams.horizontalAlignment = m_currentHorizontalAlignment;
 
-    font::FontMetrics metrics;
+    FontMetrics metrics;
     m_currentFont->measureText(styleParams, assemblyParams, text, metrics);
 
     return metrics.textWidth;
 }
 
-void GeometryBuilder::drawText(const font::FontInputText& text)
+void GeometryBuilder::drawText(const FontInputText& text)
 {
     if (m_currentSize < 2 || !m_currentFont)
         return;
 
-    font::FontStyleParams styleParams;
+    FontStyleParams styleParams;
     styleParams.size = m_currentSize;
-    font::FontAssemblyParams assemblyParams;
+    FontAssemblyParams assemblyParams;
     assemblyParams.verticalAlignment = m_currentVerticalAlignment;
     assemblyParams.horizontalAlignment = m_currentHorizontalAlignment;
 
-    font::GlyphBuffer glyphs;
+    FontGlyphBuffer glyphs;
     m_currentFont->renderText(styleParams, assemblyParams, text, glyphs);
 
     print(glyphs);      

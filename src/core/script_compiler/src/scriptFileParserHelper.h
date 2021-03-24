@@ -20,9 +20,9 @@ BEGIN_BOOMER_NAMESPACE_EX(script)
 struct FileParsingNode
 {
     int tokenID = -1;
-    parser::Location location;
+    TextTokenLocation location;
     StringView stringValue;
-    Array<parser::Token*> tokens;
+    Array<Token*> tokens;
     StubTypeDecl* typeDecl = nullptr;
     StubTypeRef* typeRef = nullptr;
     StubConstantValue* constValue = nullptr;
@@ -37,25 +37,25 @@ struct FileParsingNode
     INLINE FileParsingNode()
     {}
 
-    INLINE FileParsingNode(const parser::Location& loc, StringView txt)
+    INLINE FileParsingNode(const TextTokenLocation& loc, StringView txt)
     {
         stringValue = txt;
         location = loc;
     }
 
-    INLINE FileParsingNode(const parser::Location& loc, double val)
+    INLINE FileParsingNode(const TextTokenLocation& loc, double val)
     {
         floatValue = val;
         location = loc;
     }
 
-    INLINE FileParsingNode(const parser::Location& loc, int64_t val)
+    INLINE FileParsingNode(const TextTokenLocation& loc, int64_t val)
     {
         intValue = val;
         location = loc;
     }
 
-    INLINE FileParsingNode(const parser::Location& loc, uint64_t val)
+    INLINE FileParsingNode(const TextTokenLocation& loc, uint64_t val)
     {
         uintValue = val;
         location = loc;
@@ -68,24 +68,24 @@ struct FileParsingNode
 class FileParsingTokenStream : public NoCopy
 {
 public:
-    FileParsingTokenStream(parser::TokenList&& tokens);
+    FileParsingTokenStream(TokenList&& tokens);
 
     /// read a token from the stream (used as yylex)
     int readToken(FileParsingNode& outNode);
 
     /// extract inner tokens
-    void extractInnerTokenStream(char delimiter, Array<parser::Token*>& outList);
+    void extractInnerTokenStream(char delimiter, Array<Token*>& outList);
 
     //--
 
-    INLINE const parser::Location& location() const { return m_lastTokenLocation; }
+    INLINE const TextTokenLocation& location() const { return m_lastTokenLocation; }
     INLINE StringView text() const { return m_lastTokenText; }
 
 private:
-    parser::TokenList m_tokens;
+    TokenList m_tokens;
 
     StringView m_lastTokenText;
-    parser::Location m_lastTokenLocation;
+    TextTokenLocation m_lastTokenLocation;
 };
 
 //---
@@ -105,42 +105,42 @@ public:
 
     //--
 
-    StubLocation mapLocation(const parser::Location& location);
+    StubLocation mapLocation(const TextTokenLocation& location);
 
-    StubClass* beginCompound(const parser::Location& location, StringID name, const StubFlags& flags);
-    StubEnum* beginEnum(const parser::Location& location, StringID name, const StubFlags& flags);
+    StubClass* beginCompound(const TextTokenLocation& location, StringID name, const StubFlags& flags);
+    StubEnum* beginEnum(const TextTokenLocation& location, StringID name, const StubFlags& flags);
     void endObject();
 
-    StubFunction* addFunction(const parser::Location& location, StringID name, const StubFlags& flags);
-    StubProperty* addVar(const parser::Location& location, StringID name, const StubTypeDecl* typeDecl, const StubFlags& flags);
-    StubEnumOption* addEnumOption(const parser::Location& location, StringID name, bool hasValue = false, int64_t value = 0);
-    StubConstant* addConstant(const parser::Location& location, StringID name);
-    StubFunctionArg* addFunctionArg(const parser::Location& location, StringID name, const StubTypeDecl* typeDecl, const StubFlags& flags);
+    StubFunction* addFunction(const TextTokenLocation& location, StringID name, const StubFlags& flags);
+    StubProperty* addVar(const TextTokenLocation& location, StringID name, const StubTypeDecl* typeDecl, const StubFlags& flags);
+    StubEnumOption* addEnumOption(const TextTokenLocation& location, StringID name, bool hasValue = false, int64_t value = 0);
+    StubConstant* addConstant(const TextTokenLocation& location, StringID name);
+    StubFunctionArg* addFunctionArg(const TextTokenLocation& location, StringID name, const StubTypeDecl* typeDecl, const StubFlags& flags);
 
-    StubModuleImport* createModuleImport(const parser::Location& location, StringID name);
-    StubTypeName* createTypeName(const parser::Location& location, StringID name, const StubTypeDecl* decl);
-    StubTypeRef* createTypeRef(const parser::Location& location, StringID name);
+    StubModuleImport* createModuleImport(const TextTokenLocation& location, StringID name);
+    StubTypeName* createTypeName(const TextTokenLocation& location, StringID name, const StubTypeDecl* decl);
+    StubTypeRef* createTypeRef(const TextTokenLocation& location, StringID name);
 
-    StubTypeDecl* createEngineType(const parser::Location& location, StringID engineTypeAlias);
-    StubTypeDecl* createSimpleType(const parser::Location& location, const StubTypeRef* classTypeRef);
-    StubTypeDecl* createPointerType(const parser::Location& location, const StubTypeRef* classTypeRef);
-    StubTypeDecl* createWeakPointerType(const parser::Location& location, const StubTypeRef* classTypeRef);
-    StubTypeDecl* createClassType(const parser::Location& location, const StubTypeRef* classTypeRef);
-    StubTypeDecl* createStaticArrayType(const parser::Location& location, const StubTypeDecl* innerType, uint32_t arraySize);
-    StubTypeDecl* createDynamicArrayType(const parser::Location& location, const StubTypeDecl* innerType);
+    StubTypeDecl* createEngineType(const TextTokenLocation& location, StringID engineTypeAlias);
+    StubTypeDecl* createSimpleType(const TextTokenLocation& location, const StubTypeRef* classTypeRef);
+    StubTypeDecl* createPointerType(const TextTokenLocation& location, const StubTypeRef* classTypeRef);
+    StubTypeDecl* createWeakPointerType(const TextTokenLocation& location, const StubTypeRef* classTypeRef);
+    StubTypeDecl* createClassType(const TextTokenLocation& location, const StubTypeRef* classTypeRef);
+    StubTypeDecl* createStaticArrayType(const TextTokenLocation& location, const StubTypeDecl* innerType, uint32_t arraySize);
+    StubTypeDecl* createDynamicArrayType(const TextTokenLocation& location, const StubTypeDecl* innerType);
 
-    StubConstantValue* createConstValueInt(const parser::Location& location, int64_t value);
-    StubConstantValue* createConstValueUint(const parser::Location& location, uint64_t value);
-    StubConstantValue* createConstValueFloat(const parser::Location& location, double value);
-    StubConstantValue* createConstValueBool(const parser::Location& location, bool value);
-    StubConstantValue* createConstValueString(const parser::Location& location, StringView view);
-    StubConstantValue* createConstValueName(const parser::Location& location, StringID name);
-    StubConstantValue* createConstValueCompound(const parser::Location& location, const StubTypeDecl* typeRef);
+    StubConstantValue* createConstValueInt(const TextTokenLocation& location, int64_t value);
+    StubConstantValue* createConstValueUint(const TextTokenLocation& location, uint64_t value);
+    StubConstantValue* createConstValueFloat(const TextTokenLocation& location, double value);
+    StubConstantValue* createConstValueBool(const TextTokenLocation& location, bool value);
+    StubConstantValue* createConstValueString(const TextTokenLocation& location, StringView view);
+    StubConstantValue* createConstValueName(const TextTokenLocation& location, StringID name);
+    StubConstantValue* createConstValueCompound(const TextTokenLocation& location, const StubTypeDecl* typeRef);
 
     Stub* contextObject();
 
-    void reportError(const parser::Location& location, StringView message);
-    void reportWarning(const parser::Location& location, StringView message);
+    void reportError(const TextTokenLocation& location, StringView message);
+    void reportWarning(const TextTokenLocation& location, StringView message);
 
 private:
     FileParser& m_parser;

@@ -15,7 +15,7 @@
 BEGIN_BOOMER_NAMESPACE_EX(gpu::compiler)
 
 // both types must have equal component count
-static DataType DetermineCompareType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err, bool equalityTest)
+static DataType DetermineCompareType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err, bool equalityTest)
 {
     // math uses const values
     argTypes[0] = argTypes[0].unmakePointer();
@@ -109,7 +109,7 @@ class FunctionCompareEq : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionCompareEq, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineCompareType(typeLibrary, numArgs, argTypes, loc, err, true);
     }
@@ -160,7 +160,7 @@ class FunctionCompareNotEq : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionCompareNotEq, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineCompareType(typeLibrary, numArgs, argTypes, loc, err, true);
     }
@@ -211,7 +211,7 @@ class FunctionCompareLess : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionCompareLess, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineCompareType(typeLibrary, numArgs, argTypes, loc, err, false);
     }
@@ -254,7 +254,7 @@ class FunctionCompareLessEqual : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionCompareLessEqual, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineCompareType(typeLibrary, numArgs, argTypes, loc, err, false);
     }
@@ -297,7 +297,7 @@ class FunctionCompareGreater : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionCompareGreater, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineCompareType(typeLibrary, numArgs, argTypes, loc, err, false);
     }
@@ -340,7 +340,7 @@ class FunctionCompareGreaterEqual : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionCompareGreaterEqual, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         return DetermineCompareType(typeLibrary, numArgs, argTypes, loc, err, false);
     }
@@ -383,7 +383,7 @@ class FunctionAll : public INativeFunction
     RTTI_DECLARE_VIRTUAL_CLASS(FunctionAll, INativeFunction);
 
 public:
-    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const parser::Location& loc, parser::IErrorReporter& err) const override final
+    virtual DataType determineReturnType(TypeLibrary& typeLibrary, uint32_t numArgs, DataType* argTypes, const TextTokenLocation& loc, ITextErrorReporter& err) const override final
     {
         // we must have 1 arguments here
         if (numArgs != 1)

@@ -185,14 +185,14 @@ class GPU_SHADER_COMPILER_API CodeNode
 {
 public:
     CodeNode();
-    CodeNode(const parser::Location& loc, OpCode op);
-    CodeNode(const parser::Location& loc, OpCode op, const CodeNode* a);
-    CodeNode(const parser::Location& loc, OpCode op, const CodeNode* a, const CodeNode* b);
-    CodeNode(const parser::Location& loc, OpCode op, const CodeNode* a, const CodeNode* b, const CodeNode* c);
-    CodeNode(const parser::Location& loc, OpCode op, const CodeNode* a, const CodeNode* b, const CodeNode* c, const CodeNode* d);
-    CodeNode(const parser::Location& loc, OpCode op, const CodeNode* a, const CodeNode* b, const CodeNode* c, const CodeNode* d, const CodeNode* e);
-    CodeNode(const parser::Location& loc, OpCode op, const DataType& dataType);
-    CodeNode(const parser::Location& loc, const DataType& dataType, const DataValue& dataValue); // constant node
+    CodeNode(const TextTokenLocation& loc, OpCode op);
+    CodeNode(const TextTokenLocation& loc, OpCode op, const CodeNode* a);
+    CodeNode(const TextTokenLocation& loc, OpCode op, const CodeNode* a, const CodeNode* b);
+    CodeNode(const TextTokenLocation& loc, OpCode op, const CodeNode* a, const CodeNode* b, const CodeNode* c);
+    CodeNode(const TextTokenLocation& loc, OpCode op, const CodeNode* a, const CodeNode* b, const CodeNode* c, const CodeNode* d);
+    CodeNode(const TextTokenLocation& loc, OpCode op, const CodeNode* a, const CodeNode* b, const CodeNode* c, const CodeNode* d, const CodeNode* e);
+    CodeNode(const TextTokenLocation& loc, OpCode op, const DataType& dataType);
+    CodeNode(const TextTokenLocation& loc, const DataType& dataType, const DataValue& dataValue); // constant node
     ~CodeNode(); // never directly deleted
 
     //--
@@ -226,7 +226,7 @@ public:
     //--
 
     // get the location in file
-    INLINE const parser::Location& location() const { return m_loc; }
+    INLINE const TextTokenLocation& location() const { return m_loc; }
 
     // get the opcode
     INLINE OpCode opCode() const { return m_op; }
@@ -274,15 +274,15 @@ public:
     static void LinkScopes(CodeNode* node, CodeNode* parentScopeNode);
 
     // mutate the code tree
-    static bool MutateNode(CodeLibrary& lib, const Program* program, const Function* func, CodeNode*& node, Array<CodeNode*>& parentStack, parser::IErrorReporter& err);
+    static bool MutateNode(CodeLibrary& lib, const Program* program, const Function* func, CodeNode*& node, Array<CodeNode*>& parentStack, ITextErrorReporter& err);
 
     // resolve type at node
-    static bool ResolveTypes(CodeLibrary& lib, const Program* program, const Function* func, CodeNode* node, parser::IErrorReporter& err);
+    static bool ResolveTypes(CodeLibrary& lib, const Program* program, const Function* func, CodeNode* node, ITextErrorReporter& err);
 
 private:
     OpCode m_op; // operation
 
-    parser::Location m_loc; // location in source code
+    TextTokenLocation m_loc; // location in source code
     DataType m_dataType; // data type of this node
     DataValue m_dataValue; // data assigned to this node (NOTE: not necessary a const-expr data)
     ExtraData m_extraData; // value of the node
@@ -292,7 +292,7 @@ private:
 
 	//--
 
-#define SHADER_RESOLVE_FUNC CodeLibrary& lib, const Program* program, const Function* func, CodeNode* node, parser::IErrorReporter& err
+#define SHADER_RESOLVE_FUNC CodeLibrary& lib, const Program* program, const Function* func, CodeNode* node, ITextErrorReporter& err
 	static bool ResolveTypes_This(SHADER_RESOLVE_FUNC);
 	static bool ResolveTypes_Load(SHADER_RESOLVE_FUNC);
 	static bool ResolveTypes_Store(SHADER_RESOLVE_FUNC);
@@ -317,15 +317,15 @@ private:
 
     //--
 
-    static bool MatchNodeType(CodeLibrary& lib, CodeNode*& nodePtr, DataType requiredType, bool explicitCast, parser::IErrorReporter& err);
-    static CodeNode* Dereferece(CodeLibrary& lib, CodeNode* nodePtr, parser::IErrorReporter& err);
+    static bool MatchNodeType(CodeLibrary& lib, CodeNode*& nodePtr, DataType requiredType, bool explicitCast, ITextErrorReporter& err);
+    static CodeNode* Dereferece(CodeLibrary& lib, CodeNode* nodePtr, ITextErrorReporter& err);
 
     //--
 
     static CodeNode* InsertTypeCastNode(CodeLibrary& lib, CodeNode* nodePtr, TypeMatchTypeConv convType);
     static CodeNode* InsertScalarExtensionNode(CodeLibrary& lib, CodeNode* nodePtr, TypeMatchTypeExpand expandType);
 
-    static bool HandleResourceArrayAccess(CodeLibrary& lib, CodeNode* node, parser::IErrorReporter& err);
+    static bool HandleResourceArrayAccess(CodeLibrary& lib, CodeNode* node, ITextErrorReporter& err);
 
     struct ResolveResult
     {
@@ -345,7 +345,7 @@ private:
         ResolveResult(const INativeFunction* func);
     };
 
-    static ResolveResult ResolveIdent(CodeLibrary& lib, const Program* program, const Function* func, CodeNode* contextNode, const StringID name, parser::IErrorReporter& err);
+    static ResolveResult ResolveIdent(CodeLibrary& lib, const Program* program, const Function* func, CodeNode* contextNode, const StringID name, ITextErrorReporter& err);
 
     friend class FunctionFolder;
 };

@@ -86,7 +86,7 @@ CanvasGlyphCache::Page::Page(uint32_t size)
 	: image(size, size, 1)
 {}
 
-const CanvasImageEntryInfo* CanvasGlyphCache::findRenderDataForGlyph(const font::Glyph* glyph)
+const CanvasImageEntryInfo* CanvasGlyphCache::findRenderDataForGlyph(const FontGlyph* glyph)
 {
 	DEBUG_CHECK_RETURN_EX_V(glyph, "Invalid input glyph", nullptr);
 
