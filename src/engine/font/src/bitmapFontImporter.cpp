@@ -43,7 +43,7 @@ RTTI_END_TYPE();
 
 struct BitmapFontCookingGlyph
 {
-    image::ImagePtr glyphImage;
+    ImagePtr glyphImage;
     BitmapFontGlyph info;
 };
 
@@ -180,7 +180,7 @@ ResourcePtr BitmapFontCooker::cook(IResourceCookerInterface& cooker) const
     TRACE_INFO("Max size of atlas page: [{},{}]", page.maxWidth, page.maxHeight);
 
     // create target image to copy all the glyphs into, the image is alpha only
-    auto image = RefNew<image::Image>(image::PixelFormat::Uint8_Norm, 1, page.maxWidth, page.maxHeight);
+    auto image = RefNew<Image>(ImagePixelFormat::Uint8_Norm, 1, page.maxWidth, page.maxHeight);
 
     // copy glyphs
     Array<BitmapFontGlyph> finalGlyphs;
@@ -193,7 +193,7 @@ ResourcePtr BitmapFontCooker::cook(IResourceCookerInterface& cooker) const
         {
             // copy image
             auto targetView = image->view().subView((int)glyph.info.uv.x, (int)glyph.info.uv.y, glyph.glyphImage->width(), glyph.glyphImage->height());
-            image::Copy(glyph.glyphImage->view(), targetView);
+            Copy(glyph.glyphImage->view(), targetView);
 
             // update UV
             glyph.info.uv.x *= invWidth;
@@ -213,7 +213,7 @@ ResourcePtr BitmapFontCooker::cook(IResourceCookerInterface& cooker) const
     //{
     //  auto name = StringBuf(TempString("Z:\\font_atlas{}.png", i));
     //                auto path = AbsolutePath::Build(name.uni_str());
-    //image::Image::Save(path, *images[i]);
+    //Image::Save(path, *images[i]);
     //}
 
     // font data

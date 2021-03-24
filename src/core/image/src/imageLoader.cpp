@@ -19,23 +19,23 @@ BEGIN_BOOMER_NAMESPACE()
 
 //--
 
-image::ImagePtr LoadImageFromMemory(const void* memory, uint64_t size)
+ImagePtr LoadImageFromMemory(const void* memory, uint64_t size)
 {
-    auto loadedImage = image::LoadImageWithFreeImage(memory, size);
+    auto loadedImage = LoadImageWithFreeImage(memory, size);
     if (loadedImage)
-        return RefNew<image::Image>(loadedImage->view());
+        return RefNew<Image>(loadedImage->view());
 
     return nullptr;
 }
 
-image::ImagePtr LoadImageFromMemory(Buffer ptr)
+ImagePtr LoadImageFromMemory(Buffer ptr)
 {
     if (ptr)
         return LoadImageFromMemory(ptr.data(), ptr.size());
     return nullptr;
 }
 
-image::ImagePtr LoadImageFromFile(IReadFileHandle* file)
+ImagePtr LoadImageFromFile(IReadFileHandle* file)
 {
     if (file)
     {
@@ -62,14 +62,14 @@ image::ImagePtr LoadImageFromFile(IReadFileHandle* file)
     return nullptr;
 }
 
-image::ImagePtr LoadImageFromAbsolutePath(StringView absolutePath)
+ImagePtr LoadImageFromAbsolutePath(StringView absolutePath)
 {
     if (const auto file = OpenForReading(absolutePath))
         return LoadImageFromFile(file);
     return nullptr;
 }
 
-image::ImagePtr LoadImageFromDepotPath(StringView depotPath)
+ImagePtr LoadImageFromDepotPath(StringView depotPath)
 {
     if (const auto file = GetService<DepotService>()->createFileReader(depotPath))
         return LoadImageFromFile(file);

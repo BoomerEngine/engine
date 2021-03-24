@@ -57,13 +57,13 @@ class ENGINE_FONT_API Glyph : public NoCopy
     RTTI_DECLARE_POOL(POOL_FONTS)
 
 public:
-    Glyph(const GlyphID& id, const image::ImagePtr& imagePtr, const Point& offset, const Point& size, const Vector2& advance, const Rect& logicalRect);
+    Glyph(const GlyphID& id, const ImagePtr& imagePtr, const Point& offset, const Point& size, const Vector2& advance, const Rect& logicalRect);
 
     // get the ID of this glyph
     INLINE const GlyphID& id() const { return m_id; }
 
     // get the generated glyph image
-    INLINE const image::ImagePtr& bitmap() const { return m_bitmap; }
+    INLINE const ImagePtr& bitmap() const { return m_bitmap; }
 
     // get the placement offset for the bitmap content with respect to the cursor position
     INLINE const Point& offset() const { return m_offset; }
@@ -90,7 +90,7 @@ private:
     Vector2 m_advance; // advance to next rendering position after this glyph is rendered, NOTE: sub-pixel rendering and kerning is already accounted for here
     Rect m_logicalRect; // get the logical rectangle for the glyph
 
-    image::ImagePtr m_bitmap; // rendered glyph bitmap
+    ImagePtr m_bitmap; // rendered glyph bitmap
 };
 
 END_BOOMER_NAMESPACE_EX(font)

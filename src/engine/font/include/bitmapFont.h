@@ -46,13 +46,13 @@ class ENGINE_FONT_API BitmapFont : public IResource
 
 public:
     BitmapFont();
-    BitmapFont(const image::ImagePtr& imageData, int ascender, int descender, int lineHeight, Array<BitmapFontGlyph>&& glyphs);
+    BitmapFont(const ImagePtr& imageData, int ascender, int descender, int lineHeight, Array<BitmapFontGlyph>&& glyphs);
     virtual ~BitmapFont();
 
     //--
 
     /// get the compiled texture atlas image for this font
-    INLINE const image::ImagePtr& imageAtlas() const { return m_image; }
+    INLINE const ImagePtr& imageAtlas() const { return m_image; }
 
     // get size of the upper part of the font (above baseline)
     INLINE int ascender() const { return m_ascender; }
@@ -75,7 +75,7 @@ public:
 
 private:
     // image with all font glyphs
-    image::ImagePtr m_image;
+    ImagePtr m_image;
 
     // glyphs
     Array<BitmapFontGlyph> m_glyphs;

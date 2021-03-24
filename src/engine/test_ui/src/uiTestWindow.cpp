@@ -349,7 +349,7 @@ TestWindow::TestWindow()
         attachChild(box);
 
         {
-            auto image = RefNew< ui::Image>();
+            auto image = RefNew<ui::CustomImage>();
             image->styleType("TestCrap"_id);
             image->hitTest(true);
             image->tooltip("[size:+][b]H[/b][/size]ello World! [i]Text[/i] example :)\n"
@@ -360,7 +360,7 @@ TestWindow::TestWindow()
         }
 
         {
-            auto image = RefNew< ui::Image>();
+            auto image = RefNew< ui::CustomImage>();
             image->styleType("TestCrap"_id);
             image->hitTest(true);
             image->addStyleClass("test1"_id);
@@ -368,7 +368,7 @@ TestWindow::TestWindow()
         }
 
         {
-            auto image = RefNew< ui::Image>();
+            auto image = RefNew< ui::CustomImage>();
             image->styleType("TestCrap"_id);
             image->hitTest(true);
             image->customMaxSize(80, 80);
@@ -376,7 +376,7 @@ TestWindow::TestWindow()
         }
 
         {
-            auto image = RefNew< ui::Image>();
+            auto image = RefNew< ui::CustomImage>();
             image->styleType("TestCrap"_id);
             image->hitTest(true);
             image->customMaxSize(80, 80);
@@ -427,7 +427,7 @@ TestWindow::TestWindow()
             {
                 auto data = LoadImageFromDepotPath(("/engine/interface/images/honkler.png"));
 				auto entry = m_honklerAtlas->registerImage(data);
-                auto image = elem->createChild<ui::Image>(entry);
+                auto image = elem->createChild<ui::CustomImage>(entry);
             }
             else if (i == 2)
             {
@@ -442,7 +442,7 @@ TestWindow::TestWindow()
                     auto item = RefNew<ui::IListItem>();
                     item->layoutVertical();
 
-                    auto image = item->createChild<ui::Image>();
+                    auto image = item->createChild<ui::CustomImage>();
                     image->styleType("TestCrap"_id);
                     image->hitTest(true);
                     image->customMaxSize(80, 80);

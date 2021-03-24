@@ -26,7 +26,7 @@ extern GPU_API_GL4_API void DecomposeVertexFormat(GLenum format, GLenum& outBase
 extern GPU_API_GL4_API void DecomposeTextureFormat(GLenum format, GLenum& outBaseFormat, GLenum& outBaseType, bool* outCompressed = nullptr);
 
 // decompose format into parts
-extern GPU_API_GL4_API void DecomposeTextureFormat(image::PixelFormat format, uint32_t channels, GLenum& outBaseFormat, GLenum& outBaseType);
+extern GPU_API_GL4_API void DecomposeTextureFormat(ImagePixelFormat format, uint32_t channels, GLenum& outBaseFormat, GLenum& outBaseType);
 
 //--
 

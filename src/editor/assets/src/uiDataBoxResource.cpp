@@ -45,7 +45,7 @@ public:
         //--
 
         {
-            m_thumbnail = createChildWithType<ui::Image>("FileThumbnailBorder"_id);
+            m_thumbnail = createChildWithType<ui::CustomImage>("FileThumbnailBorder"_id);
         }
 
         //--
@@ -326,7 +326,7 @@ public:
     //--
 
 protected:
-    ui::ImagePtr m_thumbnail;
+    ui::CustomImagePtr m_thumbnail;
     ui::EditBoxPtr m_name;
     ui::ElementPtr m_buttonBar;
     ui::ElementPtr m_buttonShowInBrowser;

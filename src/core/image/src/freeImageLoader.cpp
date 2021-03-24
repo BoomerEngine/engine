@@ -20,7 +20,7 @@
 
 #include <freeimage/FreeImage.h>
 
-BEGIN_BOOMER_NAMESPACE_EX(image)
+BEGIN_BOOMER_NAMESPACE()
 
 #pragma optimize("", off)
 
@@ -362,7 +362,7 @@ static void SwapRedBlue(FIBITMAP* bitmap)
     }
 }
 
-static bool ConvertFormat(FIBITMAP*& bitmap, image::PixelFormat& outFormat, uint8_t& outNumChannels)
+static bool ConvertFormat(FIBITMAP*& bitmap, ImagePixelFormat& outFormat, uint8_t& outNumChannels)
 {
     auto width = FreeImage_GetWidth(bitmap);
     auto height = FreeImage_GetHeight(bitmap);
@@ -394,42 +394,42 @@ static bool ConvertFormat(FIBITMAP*& bitmap, image::PixelFormat& outFormat, uint
 
             // use the data directly
             outNumChannels = bpp / 8;
-            outFormat = image::PixelFormat::Uint8_Norm;
+            outFormat = ImagePixelFormat::Uint8_Norm;
             return true;
         }
 
         case FIT_FLOAT:
         {
             outNumChannels = 1;
-            outFormat = image::PixelFormat::Float32_Raw;
+            outFormat = ImagePixelFormat::Float32_Raw;
             return true;
         }
 
         case FIT_UINT16:
         {
             outNumChannels = bpp / 16;
-            outFormat = image::PixelFormat::Uint16_Norm;
+            outFormat = ImagePixelFormat::Uint16_Norm;
             return true;
         }
 
         case FIT_RGBF:
         {
             outNumChannels = 3;
-            outFormat = image::PixelFormat::Float32_Raw;
+            outFormat = ImagePixelFormat::Float32_Raw;
             return true;
         }
 
         case FIT_RGB16:
         {
             outNumChannels = 3;
-            outFormat = image::PixelFormat::Uint16_Norm;
+            outFormat = ImagePixelFormat::Uint16_Norm;
             return true;
         }
 
         case FIT_RGBA16:
         {
             outNumChannels = 4;
-            outFormat = image::PixelFormat::Uint16_Norm;
+            outFormat = ImagePixelFormat::Uint16_Norm;
             return true;
         }
     }
@@ -464,7 +464,7 @@ FreeImageLoadedData::FreeImageLoadedData(void* object_)
 
     ConvertFormat(dib, format, channels);
 
-    if (format == image::PixelFormat::Uint8_Norm)
+    if (format == ImagePixelFormat::Uint8_Norm)
         SwapRedBlue(dib);
 
     data = FreeImage_GetBits(dib);
@@ -571,7 +571,7 @@ public:
         BitmapPtr dib;
         switch (img.pixelFormat())
         {
-            case PixelFormat::Uint8_Norm:
+            case ImagePixelFormat::Uint8_Norm:
             {
                 if (img.size().m_channels == 1)
                 {
@@ -627,4 +627,4 @@ RTTI_END_TYPE();*/
 
 //---
 
-END_BOOMER_NAMESPACE_EX(image)
+END_BOOMER_NAMESPACE()

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "core/image/include/imageDynamicAtlas.h"
+#include "core/image/include/imageAtlas.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(canvas)
 
@@ -71,7 +71,7 @@ public:
 	//--
 
 	// place image in the atlas, this might fail if atlas is invalid or we run out of space in it
-	ImageEntry registerImage(const image::Image* ptr, bool supportWrapping = false, int additionalPixelBorder = 0);
+	ImageEntry registerImage(const Image* ptr, bool supportWrapping = false, int additionalPixelBorder = 0);
 
 	// remove image from the atlas
 	void unregisterImage(ImageEntry entry);
@@ -96,7 +96,7 @@ private:
 
 	struct Entry
 	{
-		image::ImagePtr data;
+		ImagePtr data;
 
 		uint8_t supportWrapping = 0;
 		uint8_t additionalPixelBorder = 0;
@@ -104,7 +104,7 @@ private:
 
 	struct Page
 	{
-		image::DynamicAtlas image;
+		ImageAtlas image;
 		Rect dirtyRect;
 
 		Page(uint32_t size);

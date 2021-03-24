@@ -91,7 +91,7 @@ ResourcePtr StaticTextureFromImageImporter::importResource(IResourceImporterInte
     }
 
     // load the image itself
-    auto imageData = image::LoadImageWithFreeImage(bufferData.data(), bufferData.size());
+    auto imageData = LoadImageWithFreeImage(bufferData.data(), bufferData.size());
     if (!imageData)
     {
         TRACE_ERROR("Unable to load image from '{}'", importer.queryImportPath());

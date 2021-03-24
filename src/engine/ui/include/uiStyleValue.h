@@ -116,7 +116,7 @@ struct ENGINE_UI_API RenderStyle
     Color innerColor = Color::WHITE;
     Color outerColor = Color::WHITE;
 
-    image::ImagePtr image; // locally stored
+    ImagePtr image; // locally stored
 
     mutable canvas::ImageEntry cachedImageEntry;
 };
@@ -133,7 +133,7 @@ struct ImageReference
 
 
     StringID name; // icon name to be loaded from data stash
-    image::ImagePtr image; // locally stored
+    ImagePtr image; // locally stored
 
 	mutable canvas::ImageEntry canvasImage; // not saved
 

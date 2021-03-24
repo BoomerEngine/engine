@@ -10,7 +10,7 @@
 #include "imageView.h"
 #include "imageUtils.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(image)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -65,4 +65,4 @@ void ImageView::copy(void* memPtr) const
 
 //--
 
-END_BOOMER_NAMESPACE_EX(image)
+END_BOOMER_NAMESPACE()

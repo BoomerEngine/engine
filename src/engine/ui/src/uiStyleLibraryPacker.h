@@ -24,7 +24,7 @@ class ContentLoader : public NoCopy
 public:
     ContentLoader(StringView directoryPath);
 
-    image::ImagePtr loadImage(StringView imageFileName);
+    ImagePtr loadImage(StringView imageFileName);
     FontPtr loadFont(StringView fontFileName);
 
 private:

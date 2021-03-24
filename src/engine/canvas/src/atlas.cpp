@@ -139,7 +139,7 @@ bool DynamicAtlas::allocateEntryIndex(uint32_t& outIndex)
 	return false;
 }
 
-ImageEntry DynamicAtlas::registerImage(const image::Image* ptr, bool supportWrapping /*= false*/, int additionalPixelBorder/*= 0*/)
+ImageEntry DynamicAtlas::registerImage(const Image* ptr, bool supportWrapping /*= false*/, int additionalPixelBorder/*= 0*/)
 {
 	DEBUG_CHECK_RETURN_EX_V(ptr, "Invalid image", canvas::ImageEntry());
 
@@ -165,7 +165,7 @@ ImageEntry DynamicAtlas::registerImage(const image::Image* ptr, bool supportWrap
 
 		// convert to 4 channels
 		if (entry.data->channels() != 4)
-			entry.data = image::ConvertChannels(entry.data->view(), 4, &Color::WHITE);
+			entry.data = ConvertChannels(entry.data->view(), 4, &Color::WHITE);
 
 		// add entry to dirty range so it's sent to GPU
 		m_dirtyEntryInfoMin = std::min<uint16_t>(m_dirtyEntryInfoMin, entryIndex);
@@ -212,7 +212,7 @@ bool DynamicAtlas::placeImage(const Entry& source, canvas::ImageAtlasEntryInfo& 
 		auto& page = m_pages[pageIndex];
 
 		// place the image
-		image::DynamicAtlasEntry placedImage;
+		ImageAtlasEntry placedImage;
 		if (page.image.placeImage(source.data->view(), padding, source.supportWrapping, placedImage))
 		{
 			m_dirty = true;

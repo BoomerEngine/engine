@@ -124,9 +124,9 @@ namespace helper
         //BlurCols(dst, w, h, dstStride, alpha);
     }
 
-    static void BlurImage(image::Image& img, float blur)
+    static void BlurImage(Image& img, float blur)
     {
-        ASSERT(img.format() == image::PixelFormat::Uint8_Norm);
+        ASSERT(img.format() == ImagePixelFormat::Uint8_Norm);
         ASSERT(img.channels() == 1);
         BlurImage((uint8_t*)img.data(), img.width(), img.height(), img.rowPitch(), blur);
     }
@@ -156,7 +156,7 @@ Glyph* GlyphCache::buildGlyph(const FontStyleParams& styleParams, FT_Face faceDa
     FT_Render_Glyph(faceData->glyph, FT_RENDER_MODE_NORMAL);// FT_RENDER_MODE_LCD);
 
     // note: whitespace characters have no bitmap
-    image::ImagePtr ptr;
+    ImagePtr ptr;
     if (faceData->glyph->bitmap.width > 0 && ch > ' ')
     {
         // compute image padding
@@ -170,24 +170,24 @@ Glyph* GlyphCache::buildGlyph(const FontStyleParams& styleParams, FT_Face faceDa
         auto height = range_cast<uint16_t>(faceData->glyph->bitmap.rows + imagePadding * 2);
 
         // create the image for the glyph, note: it has border
-        ptr = RefNew<image::Image>(image::PixelFormat::Uint8_Norm, 1, width, height);
+        ptr = RefNew<Image>(ImagePixelFormat::Uint8_Norm, 1, width, height);
 
         // fill to black
         memset(ptr->data(), 0, ptr->view().dataSize());
 
         // copy data from free type
         {
-            image::ImageView sourceView(image::NATIVE_LAYOUT, image::PixelFormat::Uint8_Norm, 1, faceData->glyph->bitmap.buffer, faceData->glyph->bitmap.width, faceData->glyph->bitmap.rows);
+            ImageView sourceView(NATIVE_LAYOUT, ImagePixelFormat::Uint8_Norm, 1, faceData->glyph->bitmap.buffer, faceData->glyph->bitmap.width, faceData->glyph->bitmap.rows);
             auto destView = ptr->view().subView(imagePadding, imagePadding, faceData->glyph->bitmap.width, faceData->glyph->bitmap.rows);
-            image::Copy(sourceView, destView);
+            Copy(sourceView, destView);
         }
 
         // apply effects on the glyph
         if (styleParams.blur > 1.0f)
         {
-            //image::Image::Save(AbsolutePath::Build(UTF16StringVector(L"Q:\\glyph_src.png")), *ptr);
+            //Image::Save(AbsolutePath::Build(UTF16StringVector(L"Q:\\glyph_src.png")), *ptr);
             helper::BlurImage(*ptr, styleParams.blur);
-            //image::Image::Save(AbsolutePath::Build(UTF16StringVector(L"Q:\\glyph_dest.png")), *ptr);
+            //Image::Save(AbsolutePath::Build(UTF16StringVector(L"Q:\\glyph_dest.png")), *ptr);
         }
 
         // compute glyph metrics

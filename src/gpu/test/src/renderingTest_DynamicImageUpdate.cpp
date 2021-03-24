@@ -29,7 +29,7 @@ public:
 private:
 	static const uint32_t IMAGE_SIZE = 512;
 
-	image::ImagePtr m_stage;
+	ImagePtr m_stage;
 
 	ImageObjectPtr m_sampledImage;
 	ImageSampledViewPtr m_sampledImageSRV;
@@ -66,8 +66,8 @@ void RenderingTest_DynamicImageUpdate::initialize()
             
     m_shaders = loadGraphicsShader("GenericGeometryWithTexture.csl");
 
-    m_stage = RefNew<image::Image>(image::PixelFormat::Uint8_Norm, 4, IMAGE_SIZE, IMAGE_SIZE);
-    image::Fill(m_stage->view(), &Vector4::ZERO());
+    m_stage = RefNew<Image>(ImagePixelFormat::Uint8_Norm, 4, IMAGE_SIZE, IMAGE_SIZE);
+    Fill(m_stage->view(), &Vector4::ZERO());
 }
 
 struct Params
@@ -100,9 +100,9 @@ void RenderingTest_DynamicImageUpdate::render(CommandWriter& cmd, float time, co
         auto maxX = std::min<int>(IMAGE_SIZE, std::ceil(posX + maxRadius));
         auto maxY = std::min<int>(IMAGE_SIZE, std::ceil(posY + maxRadius));
 
-        for (image::ImageViewRowIterator iy(m_stage->view(), minY, maxY); iy; ++iy)
+        for (ImageViewRowIterator iy(m_stage->view(), minY, maxY); iy; ++iy)
         {
-            for (image::ImageViewPixelIteratorT<Color> ix(iy, minX, maxX); ix; ++ix)
+            for (ImageViewPixelIteratorT<Color> ix(iy, minX, maxX); ix; ++ix)
             {
                 float px = (float)ix.pos();
                 float py = (float)iy.pos();

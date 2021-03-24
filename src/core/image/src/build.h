@@ -6,7 +6,7 @@
 
 #include "public.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(image)
+BEGIN_BOOMER_NAMESPACE()
 
 class PixelIterator;
 class PixelAccess;
@@ -15,6 +15,6 @@ class Image;
 typedef RefPtr<Image> ImagePtr;
 typedef ResourceRef<Image> ImageRef;
 
-class DynamicAtlas;
+class ImageAtlas;
 
-END_BOOMER_NAMESPACE_EX(image)
+END_BOOMER_NAMESPACE()

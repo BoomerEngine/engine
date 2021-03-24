@@ -89,7 +89,7 @@ public:
 protected:
     StringBuf m_displayName;
 
-    ui::ImagePtr m_icon;
+    ui::CustomImagePtr m_icon;
     ui::TextLabelPtr m_label;
     bool m_listItem = false;
 
@@ -118,7 +118,7 @@ protected:
     StringBuf m_displayName;
     bool m_listItem = false;
 
-    ui::ImagePtr m_icon;
+    ui::CustomImagePtr m_icon;
     ui::TextLabelPtr m_label;
 
     void updateLabel();
@@ -139,7 +139,7 @@ public:
     virtual void resizeIcon(uint32_t size) override;
 
 protected:
-    ui::ImagePtr m_icon;
+    ui::CustomImagePtr m_icon;
     ui::TextLabelPtr m_label;
 };
 
@@ -168,7 +168,7 @@ protected:
     StringBuf m_parentDepotPath;
     ResourceClass m_resourceClass;
 
-    ui::ImagePtr m_icon;
+    ui::CustomImagePtr m_icon;
     ui::EditBoxPtr m_label;
 };
 
@@ -191,7 +191,7 @@ public:
 protected:
     StringBuf m_parentDepotPath;
 
-    ui::ImagePtr m_icon;
+    ui::CustomImagePtr m_icon;
     ui::EditBoxPtr m_label;
 };
 

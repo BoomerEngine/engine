@@ -276,7 +276,7 @@ public:
 
     /// inlined (executed between other calls) update part of dynamic image
     /// the source data is provided in form of an image view
-    void opUpdateDynamicImage(const ImageObject* dynamicImage, const image::ImageView& updateData, uint8_t mipIndex = 0, uint32_t sliceIndex = 0, uint32_t offsetX=0, uint32_t offsetY=0, uint32_t offsetZ=0);
+    void opUpdateDynamicImage(const ImageObject* dynamicImage, const ImageView& updateData, uint8_t mipIndex = 0, uint32_t sliceIndex = 0, uint32_t offsetX=0, uint32_t offsetY=0, uint32_t offsetZ=0);
 
     /// update part of dynamic buffer
     /// the source data can be copied into the command buffer or kept as a separate buffer

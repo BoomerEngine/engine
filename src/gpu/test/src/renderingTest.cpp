@@ -293,9 +293,9 @@ SamplerObjectPtr IRenderingTest::createSampler(const SamplerState& info)
 
 using namespace image;
 
-static ImageFormat ConvertImageFormat(PixelFormat pixelFormat, uint32_t numChannels)
+static ImageFormat ConvertImageFormat(ImagePixelFormat pixelFormat, uint32_t numChannels)
 {
-    if (pixelFormat == PixelFormat::Uint8_Norm)
+    if (pixelFormat == ImagePixelFormat::Uint8_Norm)
     {
         switch (numChannels)
         {
@@ -305,7 +305,7 @@ static ImageFormat ConvertImageFormat(PixelFormat pixelFormat, uint32_t numChann
         case 4: return ImageFormat::RGBA8_UNORM;
         }
     }
-    else if (pixelFormat == PixelFormat::Float32_Raw)
+    else if (pixelFormat == ImagePixelFormat::Float32_Raw)
     {
         switch (numChannels)
         {
@@ -319,12 +319,12 @@ static ImageFormat ConvertImageFormat(PixelFormat pixelFormat, uint32_t numChann
     return ImageFormat::UNKNOWN;
 }
 
-static image::ImagePtr CreateMissingAlphaChannel(const image::ImagePtr& source)
+static ImagePtr CreateMissingAlphaChannel(const ImagePtr& source)
 {
     if (source->channels() != 4)
     {
-        auto biggerImage = RefNew<image::Image>(source->format(), 4, source->width(), source->height());
-        image::ConvertChannels(source->view(), biggerImage->view(), &Color::WHITE);
+        auto biggerImage = RefNew<Image>(source->format(), 4, source->width(), source->height());
+        ConvertChannels(source->view(), biggerImage->view(), &Color::WHITE);
         return biggerImage;
     }
     else
@@ -345,8 +345,8 @@ void TextureSlice::generateMipmaps()
         height = std::max<uint16_t>(1, height / 2);
         depth = std::max<uint16_t>(1, depth / 2);
 
-        auto newImage = RefNew<image::Image>(curImg->format(), curImg->channels(), width, height, depth);
-        image::Downsample(curImg->view(), newImage->view(), image::DownsampleMode::Average, image::ColorSpace::Linear);
+        auto newImage = RefNew<Image>(curImg->format(), curImg->channels(), width, height, depth);
+        Downsample(curImg->view(), newImage->view(), ImageDownsampleMode::Average, ImageColorSpace::Linear);
 
         mipmaps.pushBack(newImage);
         curImg = newImage;
@@ -475,8 +475,8 @@ ImageObjectPtr IRenderingTest::createMipmapTest2D(uint16_t initialSize, bool mar
     uint16_t level = 0;
     while (size > 0)
     {
-        auto mipImage = RefNew<image::Image>(PixelFormat::Uint8_Norm, 4, size, size);
-        image::Fill(mipImage->view(), &colors[level % ARRAY_COUNT(colors)]);
+        auto mipImage = RefNew<Image>(ImagePixelFormat::Uint8_Norm, 4, size, size);
+        Fill(mipImage->view(), &colors[level % ARRAY_COUNT(colors)]);
         slices.back().mipmaps.pushBack(mipImage);
 
         size = size / 2;
@@ -488,8 +488,8 @@ ImageObjectPtr IRenderingTest::createMipmapTest2D(uint16_t initialSize, bool mar
 
 ImageObjectPtr IRenderingTest::createChecker2D(uint16_t initialSize, uint32_t checkerSize, bool generateMipmaps /*= true*/, Color colorA /*= Color::WHITE*/, Color colorB /*= Color::BLACK*/)
 {
-    auto mipImage = RefNew<image::Image>(PixelFormat::Uint8_Norm, 4, initialSize, initialSize);
-    image::Fill(mipImage->view(), &colorA);
+    auto mipImage = RefNew<Image>(ImagePixelFormat::Uint8_Norm, 4, initialSize, initialSize);
+    Fill(mipImage->view(), &colorA);
 
     // create checker
     uint32_t flag = 0;
@@ -500,7 +500,7 @@ ImageObjectPtr IRenderingTest::createChecker2D(uint16_t initialSize, uint32_t ch
             if (flag)
             {
                 auto checkerView = mipImage->view().subView(x, y, checkerSize, checkerSize);
-                image::Fill(checkerView, &colorB);
+                Fill(checkerView, &colorB);
             }
         }
         flag = !flag;
@@ -514,10 +514,10 @@ ImageObjectPtr IRenderingTest::createChecker2D(uint16_t initialSize, uint32_t ch
     return createImage(slices, ImageViewType::View2D);
 }
 
-static image::ImagePtr CreateFilledImage(uint16_t size, Color color)
+static ImagePtr CreateFilledImage(uint16_t size, Color color)
 {
-    auto mipImage = RefNew<image::Image>(PixelFormat::Uint8_Norm, 4, size, size);
-    image::Fill(mipImage->view(), &color);
+    auto mipImage = RefNew<Image>(ImagePixelFormat::Uint8_Norm, 4, size, size);
+    Fill(mipImage->view(), &color);
     return mipImage;
 }
 
@@ -534,9 +534,9 @@ ImageObjectPtr IRenderingTest::createFlatCubemap(uint16_t size)
     return createImage(slices, ImageViewType::ViewCube);
 }
 
-static image::ImagePtr CreateCubeSide(uint16_t size, const Vector3& n, const Vector3& u, const Vector3& v)
+static ImagePtr CreateCubeSide(uint16_t size, const Vector3& n, const Vector3& u, const Vector3& v)
 {
-    auto mipImage = RefNew<image::Image>(PixelFormat::Uint8_Norm, 4, size, size);
+    auto mipImage = RefNew<Image>(ImagePixelFormat::Uint8_Norm, 4, size, size);
 
     // fill image
     /*CreateCubeKernel::Params params;
@@ -546,7 +546,7 @@ static image::ImagePtr CreateCubeSide(uint16_t size, const Vector3& n, const Vec
     params.u = u;
 
     PixelAccess access(*mipImage);
-    image::ProcessImageInplace<CreateCubeKernel>(access, mipImage->range(), &params);*/
+    ProcessImageInplace<CreateCubeKernel>(access, mipImage->range(), &params);*/
 
     return mipImage;
 }

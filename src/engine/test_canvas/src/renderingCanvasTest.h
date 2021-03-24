@@ -68,13 +68,13 @@ public:
 
     void reportError(StringView msg);
 
-    image::ImagePtr loadImage(StringView imageName);
+    ImagePtr loadImage(StringView imageName);
     FontPtr loadFont(StringView fontName);
 
 protected:
     bool m_hasErrors;
 
-    image::ImagePtr m_defaultImage;
+    ImagePtr m_defaultImage;
 };
 
 ///---

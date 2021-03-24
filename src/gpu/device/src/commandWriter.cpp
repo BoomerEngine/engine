@@ -658,7 +658,7 @@ void CommandWriter::opClearWritableBufferRects(const BufferWritableView* bufferV
 			DEBUG_CHECK_RETURN(r.buffer.size % clearValueSize == 0);
 		}
 
-		colorValuePayloadOffset = sizeof(image::ImageRect) * numRects;
+		colorValuePayloadOffset = sizeof(ImageRect) * numRects;
 		payloadDataSize += colorValuePayloadOffset;
 	}
 
@@ -668,7 +668,7 @@ void CommandWriter::opClearWritableBufferRects(const BufferWritableView* bufferV
 	op->numRects = numRects;
 
 	if (numRects)
-		memcpy(op->payload(), rects, sizeof(image::ImageRect) * numRects);
+		memcpy(op->payload(), rects, sizeof(ImageRect) * numRects);
 
 	if (clearValue)
 		memcpy(op->payload<uint8_t>() + colorValuePayloadOffset, clearValue, clearValueSize);
@@ -761,7 +761,7 @@ void CommandWriter::opClearWritableImageRects(const ImageWritableView* imageView
 			DEBUG_CHECK_RETURN(r.image.offsetZ + r.image.sizeZ <= mipDepth);
 		}
 
-		colorValuePayloadOffset = sizeof(image::ImageRect) * numRects;
+		colorValuePayloadOffset = sizeof(ImageRect) * numRects;
 		payloadDataSize += colorValuePayloadOffset;
 	}
 
@@ -771,7 +771,7 @@ void CommandWriter::opClearWritableImageRects(const ImageWritableView* imageView
 	op->numRects = numRects;
 
 	if (numRects)
-		memcpy(op->payload(), rects, sizeof(image::ImageRect) * numRects);
+		memcpy(op->payload(), rects, sizeof(ImageRect) * numRects);
 
 	if (clearValue)
 		memcpy(op->payload<uint8_t>() + colorValuePayloadOffset, clearValue, clearValueSize);
@@ -1975,7 +1975,7 @@ void* CommandWriter::opUpdateDynamicPtr(const IDeviceObject* dynamicObject, cons
 	return nullptr;
 }
 
-void CommandWriter::opUpdateDynamicImage(const ImageObject* dynamicImage, const image::ImageView& sourceData, uint8_t mipIndex /*= 0*/, uint32_t sliceIndex /*= 0*/, uint32_t offsetX /*= 0*/, uint32_t offsetY /*= 0*/, uint32_t offsetZ /*= 0*/)
+void CommandWriter::opUpdateDynamicImage(const ImageObject* dynamicImage, const ImageView& sourceData, uint8_t mipIndex /*= 0*/, uint32_t sliceIndex /*= 0*/, uint32_t offsetX /*= 0*/, uint32_t offsetY /*= 0*/, uint32_t offsetZ /*= 0*/)
 {
     DEBUG_CHECK_RETURN(!sourceData.empty());//, "Empty data for update");
 
@@ -1998,8 +1998,8 @@ void CommandWriter::opUpdateDynamicImage(const ImageObject* dynamicImage, const 
 		PC_SCOPE_LVL2(InternalImageCopy);
 
 		// NOTE: we assume that pixels in the payload buffer are packed tightly (hence the native layout)
-		auto targetRect = image::ImageView(image::NATIVE_LAYOUT, sourceData.format(), sourceData.channels(), targetUpdatePtr, sourceData.width(), sourceData.height(), sourceData.depth());
-		image::Copy(sourceData, targetRect);
+		auto targetRect = ImageView(NATIVE_LAYOUT, sourceData.format(), sourceData.channels(), targetUpdatePtr, sourceData.width(), sourceData.height(), sourceData.depth());
+		Copy(sourceData, targetRect);
 	}
 }
 

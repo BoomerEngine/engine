@@ -18,13 +18,13 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 
 //---
 
-void ComputeHistogramUint8(uint8_t channel, const image::ImageView& view, ImageHistogramData& outData)
+void ComputeHistogramUint8(uint8_t channel, const ImageView& view, ImageHistogramData& outData)
 {
-    for (image::ImageViewSliceIterator z(view); z; ++z)
+    for (ImageViewSliceIterator z(view); z; ++z)
     {
-        for (image::ImageViewRowIterator y(z); y; ++y)
+        for (ImageViewRowIterator y(z); y; ++y)
         {
-            for (image::ImageViewPixelIterator x(y); x; ++x)
+            for (ImageViewPixelIterator x(y); x; ++x)
             {
                 auto val = x.data()[channel];
                 outData.buckets[val] += 1;
@@ -33,13 +33,13 @@ void ComputeHistogramUint8(uint8_t channel, const image::ImageView& view, ImageH
     }
 }
 
-void ComputeHistogramUint16(uint8_t channel, const image::ImageView& view, ImageHistogramData& outData)
+void ComputeHistogramUint16(uint8_t channel, const ImageView& view, ImageHistogramData& outData)
 {
-    for (image::ImageViewSliceIterator z(view); z; ++z)
+    for (ImageViewSliceIterator z(view); z; ++z)
     {
-        for (image::ImageViewRowIterator y(z); y; ++y)
+        for (ImageViewRowIterator y(z); y; ++y)
         {
-            for (image::ImageViewPixelIterator x(y); x; ++x)
+            for (ImageViewPixelIterator x(y); x; ++x)
             {
                 auto val = ((const uint16_t*)x.data())[channel];
                 outData.buckets[val] += 1;
@@ -48,12 +48,12 @@ void ComputeHistogramUint16(uint8_t channel, const image::ImageView& view, Image
     }
 }
 
-RefPtr<ImageHistogramData> ComputeHistogram(uint8_t channel, const image::ImageView& view)
+RefPtr<ImageHistogramData> ComputeHistogram(uint8_t channel, const ImageView& view)
 {
     if (channel >= view.channels())
         return nullptr;
 
-    if (view.format() == image::PixelFormat::Uint8_Norm)
+    if (view.format() == ImagePixelFormat::Uint8_Norm)
     {
         auto ret = RefNew<ImageHistogramData>();
         ret->minValue = 0.0f;
@@ -68,7 +68,7 @@ RefPtr<ImageHistogramData> ComputeHistogram(uint8_t channel, const image::ImageV
 
         return ret;
     }
-    else if (view.format() == image::PixelFormat::Uint16_Norm)
+    else if (view.format() == ImagePixelFormat::Uint16_Norm)
     {
         auto ret = RefNew<ImageHistogramData>();
         ret->minValue = 0.0f;

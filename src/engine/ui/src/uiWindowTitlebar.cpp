@@ -30,7 +30,7 @@ WindowTitleBar::WindowTitleBar(WindowFeatureFlags flags, StringView title)
         addStyleClass("mini"_id);
 
     {
-        auto appIcon = createNamedChild<Image>("AppIcon"_id);
+        auto appIcon = createNamedChild<CustomImage>("AppIcon"_id);
         appIcon->hitTest(true);
         appIcon->customStyle("windowAreaType"_id, AreaType::SysMenu);
     }

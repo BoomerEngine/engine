@@ -173,7 +173,7 @@ namespace ImGui
 		}
 	}
 
-	ImTextureID ImGUICanvasHelper::registerImage(const boomer::image::ImagePtr& loadedImage)
+	ImTextureID ImGUICanvasHelper::registerImage(const boomer::ImagePtr& loadedImage)
 	{
 		if (auto ret = m_atlas->registerImage(loadedImage))
 		{
@@ -197,7 +197,7 @@ namespace ImGui
 		if (!m_iconMap.find(name, ret))
 		{
 			// look in the search paths
-			boomer::image::ImagePtr loadedImage;
+			boomer::ImagePtr loadedImage;
 			for (const auto& path : m_searchPaths)
 			{
 				loadedImage = boomer::LoadImageFromDepotPath(boomer::TempString("{}/{}.png", path, name));
@@ -340,8 +340,8 @@ namespace ImGui
 		int width, height, bytes_per_pixel;
 		m_context->IO.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height, &bytes_per_pixel);
 
-		boomer::image::ImageView sourceView(boomer::image::NATIVE_LAYOUT, boomer::image::PixelFormat::Uint8_Norm, bytes_per_pixel, pixels, width, height);
-		auto canvasImage = boomer::RefNew<boomer::image::Image>(sourceView);
+		boomer::ImageView sourceView(boomer::NATIVE_LAYOUT, boomer::ImagePixelFormat::Uint8_Norm, bytes_per_pixel, pixels, width, height);
+		auto canvasImage = boomer::RefNew<boomer::Image>(sourceView);
 
 		auto canvasImageId = registerImage(canvasImage);
 		m_context->IO.Fonts->SetTexID(canvasImageId);

@@ -122,10 +122,10 @@ struct IMPORT_TEXTURE_LOADER_API ImageCompressedResult : public IReferencable
 //--
 
 /// determine storage size needed for compressed data
-extern IMPORT_TEXTURE_LOADER_API uint32_t CalcCompressedImageDataSize(const image::ImageView& data, ImageCompressionFormat format);
+extern IMPORT_TEXTURE_LOADER_API uint32_t CalcCompressedImageDataSize(const ImageView& data, ImageCompressionFormat format);
 
 /// bake data for compressed texture (single slice)
-extern IMPORT_TEXTURE_LOADER_API RefPtr<ImageCompressedResult> CompressImage(const image::ImageView& data, const ImageCompressionSettings& settings, IProgressTracker& progress);
+extern IMPORT_TEXTURE_LOADER_API RefPtr<ImageCompressedResult> CompressImage(const ImageView& data, const ImageCompressionSettings& settings, IProgressTracker& progress);
 
 /// merge multiple compressed slices 
 extern IMPORT_TEXTURE_LOADER_API RefPtr<ImageCompressedResult> MergeCompressedImages(const Array<RefPtr<ImageCompressedResult>>& slices, ImageViewType viewType, bool compressFinalDataBuffer);

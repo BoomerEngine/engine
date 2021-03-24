@@ -172,7 +172,7 @@ public:
 
 struct TextureSlice
 {
-    Array<image::ImagePtr> mipmaps;
+    Array<ImagePtr> mipmaps;
     void generateMipmaps();
 };
 

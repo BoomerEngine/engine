@@ -13,7 +13,7 @@
 #include "imageView.h"
 #include "image.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(image)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -125,30 +125,30 @@ static uint16_t COLOR_DEFAULTS_UINT16[4] = { 0, 0, 0, 65535 };
 static uint16_t COLOR_DEFAULTS_FLOAT16[4] = { 0, 0, 0, 0 }; // TODO: 1
 static uint32_t COLOR_DEFAULTS_FLOAT32[4] = { 0, 0, 0, 0 }; // TODO: 1
 
-void ConvertChannelsLine(PixelFormat format, const void* srcMem, uint8_t srcChannelCount, void* destMem, uint8_t destChannelCount, uint32_t width, const void* defaults)
+void ConvertChannelsLine(ImagePixelFormat format, const void* srcMem, uint8_t srcChannelCount, void* destMem, uint8_t destChannelCount, uint32_t width, const void* defaults)
 {
-    if (format == PixelFormat::Uint8_Norm)
+    if (format == ImagePixelFormat::Uint8_Norm)
     {
         if (!defaults)
             defaults = COLOR_DEFAULTS_UINT8;
 
         ConvertChannelsLineWorker<uint8_t>((const uint8_t*)srcMem, srcChannelCount, (uint8_t*)destMem, destChannelCount, width, (const uint8_t*)defaults);
     }
-    else if (format == PixelFormat::Uint16_Norm)
+    else if (format == ImagePixelFormat::Uint16_Norm)
     {
         if (!defaults)
             defaults = COLOR_DEFAULTS_UINT16;
 
         ConvertChannelsLineWorker<uint16_t>((const uint16_t*)srcMem, srcChannelCount, (uint16_t*)destMem, destChannelCount, width, (const uint16_t*)defaults);
     }
-    else if (format == PixelFormat::Float16_Raw)
+    else if (format == ImagePixelFormat::Float16_Raw)
     {
         if (!defaults)
             defaults = COLOR_DEFAULTS_FLOAT16;
 
         ConvertChannelsLineWorker<uint16_t>((const uint16_t*)srcMem, srcChannelCount, (uint16_t*)destMem, destChannelCount, width, (const uint16_t*)defaults);
     }
-    else if (format == PixelFormat::Float32_Raw)
+    else if (format == ImagePixelFormat::Float32_Raw)
     {
         if (!defaults)
             defaults = COLOR_DEFAULTS_FLOAT32;
@@ -263,30 +263,30 @@ static void CopyChannelsLineWorker2(T* mem, uint8_t numChannels, uint32_t width,
     CopyChannelsLineWorker(mem, numChannels, width, mapping, temp);
 }
 
-void CopyChannelsLine(PixelFormat format, void* mem, uint8_t numChannels, const uint8_t* mapping, uint32_t width, const void* defaults)
+void CopyChannelsLine(ImagePixelFormat format, void* mem, uint8_t numChannels, const uint8_t* mapping, uint32_t width, const void* defaults)
 {
-    if (format == PixelFormat::Uint8_Norm)
+    if (format == ImagePixelFormat::Uint8_Norm)
     {
         if (!defaults)
             defaults = COLOR_DEFAULTS_UINT8;
 
         CopyChannelsLineWorker2<uint8_t>((uint8_t*)mem, numChannels, width, mapping, (const uint8_t*)defaults);
     }
-    else if (format == PixelFormat::Uint16_Norm)
+    else if (format == ImagePixelFormat::Uint16_Norm)
     {
         if (!defaults)
             defaults = COLOR_DEFAULTS_UINT16;
 
         CopyChannelsLineWorker2<uint16_t>((uint16_t*)mem, numChannels, width, mapping, (const uint16_t*)defaults);
     }
-    else if (format == PixelFormat::Float16_Raw)
+    else if (format == ImagePixelFormat::Float16_Raw)
     {
         if (!defaults)
             defaults = COLOR_DEFAULTS_FLOAT16;
 
         CopyChannelsLineWorker2<uint16_t>((uint16_t*)mem, numChannels, width, mapping, (const uint16_t*)defaults);
     }
-    else if (format == PixelFormat::Float32_Raw)
+    else if (format == ImagePixelFormat::Float32_Raw)
     {
         if (!defaults)
             defaults = COLOR_DEFAULTS_FLOAT32;
@@ -368,30 +368,30 @@ static void FillLineWorker(T* mem, uint8_t numChannels, uint32_t width, const T*
     }
 }
 
-void FillLine(PixelFormat format, void* mem, uint8_t numChannels, uint32_t width, const void* defaults)
+void FillLine(ImagePixelFormat format, void* mem, uint8_t numChannels, uint32_t width, const void* defaults)
 {
-    if (format == PixelFormat::Uint8_Norm)
+    if (format == ImagePixelFormat::Uint8_Norm)
     {
         if (!defaults)
             defaults = COLOR_DEFAULTS_UINT8;
 
         FillLineWorker<uint8_t>((uint8_t*)mem, numChannels, width, (const uint8_t*)defaults);
     }
-    else if (format == PixelFormat::Uint16_Norm)
+    else if (format == ImagePixelFormat::Uint16_Norm)
     {
         if (!defaults)
             defaults = COLOR_DEFAULTS_UINT16;
 
         FillLineWorker<uint16_t>((uint16_t*)mem, numChannels, width, (const uint16_t*)defaults);
     }
-    else if (format == PixelFormat::Float16_Raw)
+    else if (format == ImagePixelFormat::Float16_Raw)
     {
         if (!defaults)
             defaults = COLOR_DEFAULTS_FLOAT16;
 
         FillLineWorker<uint16_t>((uint16_t*)mem, numChannels, width, (const uint16_t*)defaults);
     }
-    else if (format == PixelFormat::Float32_Raw)
+    else if (format == ImagePixelFormat::Float32_Raw)
     {
         if (!defaults)
             defaults = COLOR_DEFAULTS_FLOAT32;
@@ -421,15 +421,15 @@ void Fill(const ImageView& dest, const void* defaults /*= nullptr*/)
 
 //---
 
-void CopyLine(PixelFormat format, const void* srcMem, void* destMem, uint8_t numChannels, uint32_t width)
+void CopyLine(ImagePixelFormat format, const void* srcMem, void* destMem, uint8_t numChannels, uint32_t width)
 {
     uint32_t dataSize = 0;
     switch (format)
     {
-        case PixelFormat::Uint8_Norm: dataSize = numChannels * width; break;
-        case PixelFormat::Uint16_Norm: dataSize = 2 * numChannels * width; break;
-        case PixelFormat::Float16_Raw: dataSize = 2 * numChannels * width; break;
-        case PixelFormat::Float32_Raw: dataSize = 4 * numChannels * width; break;
+        case ImagePixelFormat::Uint8_Norm: dataSize = numChannels * width; break;
+        case ImagePixelFormat::Uint16_Norm: dataSize = 2 * numChannels * width; break;
+        case ImagePixelFormat::Float16_Raw: dataSize = 2 * numChannels * width; break;
+        case ImagePixelFormat::Float32_Raw: dataSize = 4 * numChannels * width; break;
     }
 
     memcpy(destMem, srcMem, dataSize);
@@ -448,10 +448,10 @@ void Copy(const ImageView& src, const ImageView& dest)
     uint32_t dataSize = 0;
     switch (dest.format())
     {
-        case PixelFormat::Uint8_Norm: dataSize = dest.channels() * dest.width(); break;
-        case PixelFormat::Uint16_Norm: dataSize = 2 * dest.channels() * dest.width(); break;
-        case PixelFormat::Float16_Raw: dataSize = 2 * dest.channels() * dest.width(); break;
-        case PixelFormat::Float32_Raw: dataSize = 4 * dest.channels() * dest.width(); break;
+        case ImagePixelFormat::Uint8_Norm: dataSize = dest.channels() * dest.width(); break;
+        case ImagePixelFormat::Uint16_Norm: dataSize = 2 * dest.channels() * dest.width(); break;
+        case ImagePixelFormat::Float16_Raw: dataSize = 2 * dest.channels() * dest.width(); break;
+        case ImagePixelFormat::Float32_Raw: dataSize = 4 * dest.channels() * dest.width(); break;
     }
 
     auto readPtr  = (const uint8_t*)src.data();
@@ -527,15 +527,15 @@ static void FlipXLine(T* mem, uint8_t numChannels, uint32_t width)
     }
 }
 
-void FlipXLine(PixelFormat format, void* mem, uint8_t numChannels, uint32_t width)
+void FlipXLine(ImagePixelFormat format, void* mem, uint8_t numChannels, uint32_t width)
 {
-    if (format == PixelFormat::Uint8_Norm)
+    if (format == ImagePixelFormat::Uint8_Norm)
         FlipXLine<uint8_t>((uint8_t*)mem,  numChannels, width);
-    else if (format == PixelFormat::Uint16_Norm)
+    else if (format == ImagePixelFormat::Uint16_Norm)
         FlipXLine<uint16_t>((uint16_t*)mem, numChannels, width);
-    else if (format == PixelFormat::Float16_Raw)
+    else if (format == ImagePixelFormat::Float16_Raw)
         FlipXLine<uint16_t>((uint16_t*)mem, numChannels, width);
-    else if (format == PixelFormat::Float32_Raw)
+    else if (format == ImagePixelFormat::Float32_Raw)
         FlipXLine<uint32_t>((uint32_t*)mem, numChannels, width);
 }
 
@@ -726,12 +726,12 @@ struct UnpackerHDR
 template< int N, typename ST, typename Unpacker >
 void UnpackData(const ImageView& src, float* writePtr)
 {
-    for (image::ImageViewSliceIterator z(src); z; ++z)
+    for (ImageViewSliceIterator z(src); z; ++z)
     {
-        for (image::ImageViewRowIterator y(z); y; ++y)
+        for (ImageViewRowIterator y(z); y; ++y)
         {
             const auto* src = (const ST*)y.data();
-            for (image::ImageViewPixelIterator x(y); x; ++x, writePtr += N, src += N)
+            for (ImageViewPixelIterator x(y); x; ++x, writePtr += N, src += N)
             {
                 switch (N)
                 {
@@ -750,24 +750,24 @@ void UnpackDataN(const ImageView& src, float* writePtr)
 {
     switch (src.format())
     {
-        case PixelFormat::Uint8_Norm: UnpackData<N, uint8_t, Unpacker>(src, writePtr); break;
-        case PixelFormat::Uint16_Norm: UnpackData<N, uint16_t, Unpacker>(src, writePtr); break;
-        case PixelFormat::Float16_Raw: UnpackData<N, Half, Unpacker>(src, writePtr); break;
-        case PixelFormat::Float32_Raw: UnpackData<N, float, Unpacker>(src, writePtr); break;
+        case ImagePixelFormat::Uint8_Norm: UnpackData<N, uint8_t, Unpacker>(src, writePtr); break;
+        case ImagePixelFormat::Uint16_Norm: UnpackData<N, uint16_t, Unpacker>(src, writePtr); break;
+        case ImagePixelFormat::Float16_Raw: UnpackData<N, Half, Unpacker>(src, writePtr); break;
+        case ImagePixelFormat::Float32_Raw: UnpackData<N, float, Unpacker>(src, writePtr); break;
     }
 }
 
-void UnpackIntoFloats(const ImageView& src, const ImageView& dest, ColorSpace space)
+void UnpackIntoFloats(const ImageView& src, const ImageView& dest, ImageColorSpace space)
 {
     DEBUG_CHECK_EX(dest.width() == src.width(), "Invalid destination width");
     DEBUG_CHECK_EX(dest.height() == src.height(), "Invalid destination width");
     DEBUG_CHECK_EX(dest.depth() == src.depth(), "Invalid destination width");
     DEBUG_CHECK_EX(dest.channels() == src.channels(), "Channel count must match");
-    DEBUG_CHECK_EX(dest.format() == PixelFormat::Float32_Raw, "Destination format must be float array");
+    DEBUG_CHECK_EX(dest.format() == ImagePixelFormat::Float32_Raw, "Destination format must be float array");
     DEBUG_CHECK_EX(dest.rowPitch() == dest.width() * dest.pixelPitch(), "Destination row pitch must be native (no gaps)");
     DEBUG_CHECK_EX(dest.slicePitch() == dest.width() * dest.height() * dest.pixelPitch(), "Destination slice pitch must be native (no gaps)");
 
-    if (space == ColorSpace::SRGB)
+    if (space == ImageColorSpace::SRGB)
     {
         switch (dest.channels())
         {
@@ -777,7 +777,7 @@ void UnpackIntoFloats(const ImageView& src, const ImageView& dest, ColorSpace sp
             case 4: UnpackDataN<4, UnpackerSRGB>(src, (float*)dest.data()); break;
         }
     }
-    else if (space == ColorSpace::HDR)
+    else if (space == ImageColorSpace::HDR)
     {
         switch (dest.channels())
         {
@@ -846,12 +846,12 @@ struct PackerHDR
 template< int N, typename DT, typename Packer >
 void PackData(const ImageView& dest, const float* readPtr)
 {
-    for (image::ImageViewSliceIterator z(dest); z; ++z)
+    for (ImageViewSliceIterator z(dest); z; ++z)
     {
-        for (image::ImageViewRowIterator y(z); y; ++y)
+        for (ImageViewRowIterator y(z); y; ++y)
         {
             auto* dest = (DT*)y.data();
-            for (image::ImageViewPixelIterator x(y); x; ++x, readPtr += N, dest += N)
+            for (ImageViewPixelIterator x(y); x; ++x, readPtr += N, dest += N)
             {
                 switch (N)
                 {
@@ -870,24 +870,24 @@ void PackDataN(const ImageView& dest, const float* readPtr)
 {
     switch (dest.format())
     {
-    case PixelFormat::Uint8_Norm: PackData<N, uint8_t, Packer>(dest, readPtr); break;
-    case PixelFormat::Uint16_Norm: PackData<N, uint16_t, Packer>(dest, readPtr); break;
-    case PixelFormat::Float16_Raw: PackData<N, Half, Packer>(dest, readPtr); break;
-    case PixelFormat::Float32_Raw: PackData<N, float, Packer>(dest, readPtr); break;
+    case ImagePixelFormat::Uint8_Norm: PackData<N, uint8_t, Packer>(dest, readPtr); break;
+    case ImagePixelFormat::Uint16_Norm: PackData<N, uint16_t, Packer>(dest, readPtr); break;
+    case ImagePixelFormat::Float16_Raw: PackData<N, Half, Packer>(dest, readPtr); break;
+    case ImagePixelFormat::Float32_Raw: PackData<N, float, Packer>(dest, readPtr); break;
     }
 }
 
-void PackFromFloats(const ImageView& src, const ImageView& dest, ColorSpace space)
+void PackFromFloats(const ImageView& src, const ImageView& dest, ImageColorSpace space)
 {
     DEBUG_CHECK_EX(dest.width() == src.width(), "Invalid destination width");
     DEBUG_CHECK_EX(dest.height() == src.height(), "Invalid destination width");
     DEBUG_CHECK_EX(dest.depth() == src.depth(), "Invalid destination width");
     DEBUG_CHECK_EX(dest.channels() == src.channels(), "Channel count must match");
-    DEBUG_CHECK_EX(src.format() == PixelFormat::Float32_Raw, "Source format must be float array");
+    DEBUG_CHECK_EX(src.format() == ImagePixelFormat::Float32_Raw, "Source format must be float array");
     DEBUG_CHECK_EX(src.rowPitch() == src.width() * src.pixelPitch(), "Source row pitch must be native (no gaps)");
     DEBUG_CHECK_EX(src.slicePitch() == src.width() * src.height() * src.pixelPitch(), "Source slice pitch must be native (no gaps)");
 
-    if (space == ColorSpace::SRGB)
+    if (space == ImageColorSpace::SRGB)
     {
         switch (dest.channels())
         {
@@ -897,7 +897,7 @@ void PackFromFloats(const ImageView& src, const ImageView& dest, ColorSpace spac
         case 4: PackDataN<4, PackerSRGB>(dest, (float*)src.data()); break;
         }
     }
-    else if (space == ColorSpace::HDR)
+    else if (space == ImageColorSpace::HDR)
     {
         switch (dest.channels())
         {
@@ -921,16 +921,16 @@ void PackFromFloats(const ImageView& src, const ImageView& dest, ColorSpace spac
 
 //--
 
-void DownsampleStream(const float* base, const float* extra, float* write, uint32_t count, DownsampleMode mode)
+void DownsampleStream(const float* base, const float* extra, float* write, uint32_t count, ImageDownsampleMode mode)
 {
     auto* baseEnd = base + count;
 
-    if (mode == DownsampleMode::Average)
+    if (mode == ImageDownsampleMode::Average)
     {
         while (base < baseEnd)
             *write++ = (*base++ + *extra++) * 0.5f;
     }
-    else if (mode == DownsampleMode::AverageWithAlphaWeight)
+    else if (mode == ImageDownsampleMode::AverageWithAlphaWeight)
     {
         while (base < baseEnd)
         {
@@ -961,7 +961,7 @@ void DownsampleStream(const float* base, const float* extra, float* write, uint3
             write += 4;
         }
     }
-    else if (mode == DownsampleMode::AverageWithPremultipliedAlphaWeight)
+    else if (mode == ImageDownsampleMode::AverageWithPremultipliedAlphaWeight)
     {
         while (base < baseEnd)
         {
@@ -983,9 +983,9 @@ void DownsampleStream(const float* base, const float* extra, float* write, uint3
     }
 }
 
-ImageView DownsampleZ(const ImageView& data, DownsampleMode mode)
+ImageView DownsampleZ(const ImageView& data, ImageDownsampleMode mode)
 {
-    DEBUG_CHECK_EX(data.format() == PixelFormat::Float32_Raw, "Source format must be float array");
+    DEBUG_CHECK_EX(data.format() == ImagePixelFormat::Float32_Raw, "Source format must be float array");
     DEBUG_CHECK_EX(data.rowPitch() == data.width() * data.pixelPitch(), "Source row pitch must be native (no gaps)");
     DEBUG_CHECK_EX(data.slicePitch() == data.width() * data.height() * data.pixelPitch(), "Source slice pitch must be native (no gaps)");
 
@@ -993,8 +993,8 @@ ImageView DownsampleZ(const ImageView& data, DownsampleMode mode)
     const auto sliceElementCount = sliceDataSize / 4;
     const auto numSlicesToMerge = data.depth() / 2;
 
-    if (mode == DownsampleMode::AverageWithAlphaWeight && data.channels() != 4)
-        mode = DownsampleMode::Average;
+    if (mode == ImageDownsampleMode::AverageWithAlphaWeight && data.channels() != 4)
+        mode = ImageDownsampleMode::Average;
 
     auto* writePtr = (float*)data.data();
     auto* readPtr = (float*)data.data();
@@ -1020,9 +1020,9 @@ ImageView DownsampleZ(const ImageView& data, DownsampleMode mode)
     return ImageView(data.format(), data.channels(), data.data(), data.width(), data.height(), newDepth, data.pixelPitch(), data.rowPitch(), data.slicePitch());
 }
 
-ImageView DownsampleY(const ImageView& data, DownsampleMode mode)
+ImageView DownsampleY(const ImageView& data, ImageDownsampleMode mode)
 {
-    DEBUG_CHECK_EX(data.format() == PixelFormat::Float32_Raw, "Source format must be float array");
+    DEBUG_CHECK_EX(data.format() == ImagePixelFormat::Float32_Raw, "Source format must be float array");
     DEBUG_CHECK_EX(data.rowPitch() == data.width() * data.pixelPitch(), "Source row pitch must be native (no gaps)");
     DEBUG_CHECK_EX(data.slicePitch() == data.width() * data.height() * data.pixelPitch(), "Source slice pitch must be native (no gaps)");
 
@@ -1030,8 +1030,8 @@ ImageView DownsampleY(const ImageView& data, DownsampleMode mode)
     const auto rowElementCount = rowDataSize / 4;
     const auto numRowsToMerge = data.height() / 2;
 
-    if (mode == DownsampleMode::AverageWithAlphaWeight && data.channels() != 4)
-        mode = DownsampleMode::Average;
+    if (mode == ImageDownsampleMode::AverageWithAlphaWeight && data.channels() != 4)
+        mode = ImageDownsampleMode::Average;
 
     auto* writePtr = (float*)data.data();
     auto* readPtr = (float*)data.data();
@@ -1063,9 +1063,9 @@ ImageView DownsampleY(const ImageView& data, DownsampleMode mode)
     return ImageView(data.format(), data.channels(), data.data(), data.width(), newHeight, data.depth(), data.pixelPitch(), data.rowPitch(), newSlicePitch);
 }
 
-ImageView DownsampleX(const ImageView& data, DownsampleMode mode)
+ImageView DownsampleX(const ImageView& data, ImageDownsampleMode mode)
 {
-    DEBUG_CHECK_EX(data.format() == PixelFormat::Float32_Raw, "Source format must be float array");
+    DEBUG_CHECK_EX(data.format() == ImagePixelFormat::Float32_Raw, "Source format must be float array");
     DEBUG_CHECK_EX(data.rowPitch() == data.width() * data.pixelPitch(), "Source row pitch must be native (no gaps)");
     DEBUG_CHECK_EX(data.slicePitch() == data.width() * data.height() * data.pixelPitch(), "Source slice pitch must be native (no gaps)");
 
@@ -1073,8 +1073,8 @@ ImageView DownsampleX(const ImageView& data, DownsampleMode mode)
     const auto pixelElementCount = pixelDataSize / 4;
     const auto numPixelsToMerge = data.width() / 2;
 
-    if (mode == DownsampleMode::AverageWithAlphaWeight && data.channels() != 4)
-        mode = DownsampleMode::Average;
+    if (mode == ImageDownsampleMode::AverageWithAlphaWeight && data.channels() != 4)
+        mode = ImageDownsampleMode::Average;
 
     auto* writePtr = (float*)data.data();
     auto* readPtr = (float*)data.data();
@@ -1110,7 +1110,7 @@ ImageView DownsampleX(const ImageView& data, DownsampleMode mode)
     return ImageView(data.format(), data.channels(), data.data(), newWidth, data.height(), data.depth(), data.pixelPitch(), newRowPitch, newSlicePitch);
 }
 
-void Downsample(const ImageView& src, const ImageView& dest, DownsampleMode mode, ColorSpace space)
+void Downsample(const ImageView& src, const ImageView& dest, ImageDownsampleMode mode, ImageColorSpace space)
 {
     DEBUG_CHECK_EX(dest.width() == std::max<uint32_t>(1, src.width() / 2), "Invalid destination width");
     DEBUG_CHECK_EX(dest.height() == std::max<uint32_t>(1, src.height() / 2), "Invalid destination width");
@@ -1127,7 +1127,7 @@ void Downsample(const ImageView& src, const ImageView& dest, DownsampleMode mode
     const auto numFloats = src.channels() * src.width() * src.height() * src.depth();
     tempData.resize(numFloats);
 
-    ImageView tempDataView = ImageView(NATIVE_LAYOUT, PixelFormat::Float32_Raw, src.channels(), tempData.data(), src.width(), src.height(), src.depth());
+    ImageView tempDataView = ImageView(NATIVE_LAYOUT, ImagePixelFormat::Float32_Raw, src.channels(), tempData.data(), src.width(), src.height(), src.depth());
 
     // load source data
     UnpackIntoFloats(src, tempDataView, space);
@@ -1145,7 +1145,7 @@ void Downsample(const ImageView& src, const ImageView& dest, DownsampleMode mode
     PackFromFloats(tempDataView, dest, space);
 }
 
-ImagePtr Downsampled(const ImageView& src, DownsampleMode mode, ColorSpace space)
+ImagePtr Downsampled(const ImageView& src, ImageDownsampleMode mode, ImageColorSpace space)
 {
     if (src.empty())
         return nullptr;
@@ -1178,14 +1178,14 @@ void PremultiplyLine(T* destMem, uint32_t width, BT divisor = (BT)1)
     }
 }
 
-void PremultiplyLine(PixelFormat format, void* destMem, uint32_t width)
+void PremultiplyLine(ImagePixelFormat format, void* destMem, uint32_t width)
 {
     switch (format)
     {
-        case PixelFormat::Uint8_Norm: PremultiplyLine<uint8_t, uint16_t>((uint8_t*)destMem, width, 255); break;
-        case PixelFormat::Uint16_Norm: PremultiplyLine<uint16_t, uint32_t>((uint16_t*)destMem, width, 65535); break;
-        case PixelFormat::Float16_Raw: PremultiplyLine<uint16_t, uint32_t>((uint16_t*)destMem, width, 65535);  break;// TODO!
-        case PixelFormat::Float32_Raw: PremultiplyLine<float>((float*)destMem, width);  break;// TODO!
+        case ImagePixelFormat::Uint8_Norm: PremultiplyLine<uint8_t, uint16_t>((uint8_t*)destMem, width, 255); break;
+        case ImagePixelFormat::Uint16_Norm: PremultiplyLine<uint16_t, uint32_t>((uint16_t*)destMem, width, 65535); break;
+        case ImagePixelFormat::Float16_Raw: PremultiplyLine<uint16_t, uint32_t>((uint16_t*)destMem, width, 65535);  break;// TODO!
+        case ImagePixelFormat::Float32_Raw: PremultiplyLine<float>((float*)destMem, width);  break;// TODO!
     }
 }
 
@@ -1214,4 +1214,4 @@ void PremultiplyAlpha(const ImageView& dest)
 
 ///----------------------------
 
-END_BOOMER_NAMESPACE_EX(image)
+END_BOOMER_NAMESPACE()

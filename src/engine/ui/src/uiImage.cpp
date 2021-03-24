@@ -19,29 +19,29 @@ BEGIN_BOOMER_NAMESPACE_EX(ui)
 
 //--
 
-RTTI_BEGIN_TYPE_CLASS(Image);
-    RTTI_METADATA(ElementClassNameMetadata).name("Image");
+RTTI_BEGIN_TYPE_CLASS(CustomImage);
+    RTTI_METADATA(ElementClassNameMetadata).name("CustomImage");
 RTTI_END_TYPE();
 
-Image::Image()
+CustomImage::CustomImage()
 {}
 
-Image::Image(canvas::ImageEntry entry)
+CustomImage::CustomImage(canvas::ImageEntry entry)
 {
     image(entry);
 }
 
-Image::Image(StringID iconName)
+CustomImage::CustomImage(StringID iconName)
 {
     image(iconName);
 }
 
-Image::Image(const image::Image* customImage)
+CustomImage::CustomImage(const Image* customImage)
 {
     image(customImage);
 }
 
-void Image::image(const image::Image* customImage)
+void CustomImage::image(const Image* customImage)
 {
     if (customImage)
     {
@@ -55,7 +55,7 @@ void Image::image(const image::Image* customImage)
     }
 }
 
-void Image::image(canvas::ImageEntry customImage)
+void CustomImage::image(canvas::ImageEntry customImage)
 {
     if (customImage)
     {
@@ -69,7 +69,7 @@ void Image::image(canvas::ImageEntry customImage)
 	}
 }
 
-void Image::image(StringID iconName)
+void CustomImage::image(StringID iconName)
 {
     if (iconName)
     {
@@ -83,12 +83,12 @@ void Image::image(StringID iconName)
 	}
 }
 
-void Image::imageScale(float same)
+void CustomImage::imageScale(float same)
 {
     imageScale(same, same);
 }
 
-void Image::imageScale(float x, float y)
+void CustomImage::imageScale(float x, float y)
 {
     if (x == 1.0f)
         removeCustomStyle("image-scale-x"_id);
@@ -101,7 +101,7 @@ void Image::imageScale(float x, float y)
         customStyle("image-scale-y"_id, y);
 }
 
-canvas::ImageEntry Image::acquireImageEntry() const
+canvas::ImageEntry CustomImage::acquireImageEntry() const
 {
 	if (const auto* imageStylePtr = evalStyleValueIfPresentPtr<style::ImageReference>("image"_id))
 	{
@@ -123,7 +123,7 @@ canvas::ImageEntry Image::acquireImageEntry() const
 	return canvas::ImageEntry();
 }
 
-void Image::computeSize(Size& outSize) const
+void CustomImage::computeSize(Size& outSize) const
 {
     TBaseClass::computeSize(outSize);
 
@@ -160,7 +160,7 @@ void Image::computeSize(Size& outSize) const
     }
 }
 
-void Image::prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
+void CustomImage::prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
 {
     TBaseClass::prepareShadowGeometry(stash, drawArea, pixelScale, builder);
 
@@ -192,7 +192,7 @@ void Image::prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea,
     }*/
 }
 
-void Image::prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
+void CustomImage::prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
 {
     TBaseClass::prepareForegroundGeometry(stash, drawArea, pixelScale, builder);
 

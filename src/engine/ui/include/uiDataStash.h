@@ -46,7 +46,7 @@ public:
     canvas::ImageEntry loadImage(StringID key);
 
 	/// place already loaded image in the main canvas
-	canvas::ImageEntry cacheImage(const image::Image* img, bool supportWrapping=false, uint8_t additionalPadding=0);
+	canvas::ImageEntry cacheImage(const Image* img, bool supportWrapping=false, uint8_t additionalPadding=0);
 
 	//--
 

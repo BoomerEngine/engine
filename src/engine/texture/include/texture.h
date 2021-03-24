@@ -28,7 +28,7 @@ struct ENGINE_TEXTURE_API TextureInfo
     RTTI_DECLARE_NONVIRTUAL_CLASS(TextureInfo);
 
     // color space of the data in the texture, usually linear or sRGB
-    image::ColorSpace colorSpace = image::ColorSpace::Linear;
+    ImageColorSpace colorSpace = ImageColorSpace::Linear;
 
     // texture size information
     ImageViewType type = ImageViewType::View2D; // resource type

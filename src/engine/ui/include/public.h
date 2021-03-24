@@ -101,8 +101,8 @@ typedef RefPtr<TextLabel> TextLabelPtr;
 class Scrollbar;
 typedef RefPtr<Scrollbar> ScrollbarPtr;
 
-class Image;
-typedef RefPtr<Image> ImagePtr;
+class CustomImage;
+typedef RefPtr<CustomImage> CustomImagePtr;
 
 // message type
 enum class MessageType

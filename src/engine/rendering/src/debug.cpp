@@ -1455,7 +1455,7 @@ namespace helper
             }*/
         }
 
-        void submitGeometry(FrameParams& frame, const image::ImagePtr& texture)
+        void submitGeometry(FrameParams& frame, const ImagePtr& texture)
         {
             for (uint32_t i = 0; i < m_pageCount; ++i)
             {

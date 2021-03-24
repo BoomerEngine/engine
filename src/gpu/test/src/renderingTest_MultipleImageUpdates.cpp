@@ -124,7 +124,7 @@ void RenderingTest_MultipleImageUpdates::render(CommandWriter& cmd, float time, 
                     updateColors[i] = randomColor;
 
                 // send update
-                image::ImageView updateView(image::NATIVE_LAYOUT, image::PixelFormat::Uint8_Norm, 4, &updateColors, IMAGE_SIZE, IMAGE_SIZE);
+                ImageView updateView(NATIVE_LAYOUT, ImagePixelFormat::Uint8_Norm, 4, &updateColors, IMAGE_SIZE, IMAGE_SIZE);
 				cmd.opTransitionLayout(m_sampledImage, ResourceLayout::ShaderResource, ResourceLayout::CopyDest);
                 cmd.opUpdateDynamicImage(m_sampledImage, updateView);
 				cmd.opTransitionLayout(m_sampledImage, ResourceLayout::CopyDest, ResourceLayout::ShaderResource);

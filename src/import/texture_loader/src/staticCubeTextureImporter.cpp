@@ -103,7 +103,7 @@ struct CubemapImportSetup
     struct Face
     {
         StaticTextureCubeCompressionFace settings;
-        RefPtr<image::FreeImageLoadedData> loaded;
+        RefPtr<FreeImageLoadedData> loaded;
         RefPtr<ImageCompressedResult> compressed;
         StringBuf importPath;
     };
@@ -230,18 +230,18 @@ ResourcePtr StaticCubeTextureFromImageImporter::importResource(IResourceImporter
             // load the source data into memory
             if (auto bufferData = importer.loadSourceFileContent(face.importPath))
             {
-                if (auto imageData = image::LoadImageWithFreeImage(bufferData.data(), bufferData.size()))
+                if (auto imageData = LoadImageWithFreeImage(bufferData.data(), bufferData.size()))
                 {
                     face.loaded = imageData;
 
                     if (face.settings.swapXY)
-                        image::SwapXY(imageData->view());
+                        SwapXY(imageData->view());
 
                     if (face.settings.flipX)
-                        image::FlipX(imageData->view());
+                        FlipX(imageData->view());
 
                     if (face.settings.flipY)
-                        image::FlipY(imageData->view());
+                        FlipY(imageData->view());
                 }
                 else
                 {

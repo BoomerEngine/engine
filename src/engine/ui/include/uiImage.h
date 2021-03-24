@@ -17,20 +17,20 @@ BEGIN_BOOMER_NAMESPACE_EX(ui)
 
 /// a simple element dedicated to displaying images
 /// NOTE: we do not use any styling for the image itself (only the "color")
-class ENGINE_UI_API Image : public IElement
+class ENGINE_UI_API CustomImage : public IElement
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(Image, IElement);
+    RTTI_DECLARE_VIRTUAL_CLASS(CustomImage, IElement);
 
 public:
-    Image();
-    Image(canvas::ImageEntry customImage);
-    Image(const image::Image* customImage);
-    Image(StringID iconName);
+    CustomImage();
+    CustomImage(canvas::ImageEntry customImageWidget);
+    CustomImage(const Image* customImageWidget);
+    CustomImage(StringID iconName);
 
     //--
 
     // set image to display, sets the "image" sty
-    void image(const image::Image* customImage);
+    void image(const Image* customImageWidget);
     void image(canvas::ImageEntry ptr);
     void image(StringID iconName);
 

@@ -19,7 +19,7 @@ class IMPORT_TEXTURE_LOADER_API IImageProcessingStep : public IObject
 public:
     virtual ~IImageProcessingStep();
     virtual bool validate(IFormatStream& outErrors) const { return true; }
-    virtual void process(image::ImageView& view, image::ImagePtr& tempImagePtr) const = 0;
+    virtual void process(ImageView& view, ImagePtr& tempImagePtr) const = 0;
 };
 
 //--
@@ -51,7 +51,7 @@ public:
 
 protected:
     virtual bool validate(IFormatStream& outErrors) const override;
-    virtual void process(image::ImageView& view, image::ImagePtr& tempImagePtr) const override;
+    virtual void process(ImageView& view, ImagePtr& tempImagePtr) const override;
 };
 
 //--

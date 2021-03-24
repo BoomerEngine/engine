@@ -136,7 +136,7 @@ ImageCompressionSettings::ImageCompressionSettings()
 
 //--
 
-static image::PixelFormat GetImagePixelFormat(ImageFormat format)
+static ImagePixelFormat GetImagePixelFormat(ImageFormat format)
 {
     switch (format)
     {
@@ -152,20 +152,20 @@ static image::PixelFormat GetImagePixelFormat(ImageFormat format)
     case ImageFormat::RGBA16_UINT:
     case ImageFormat::RGBA16_UNORM:
     case ImageFormat::RGBA16_SNORM:
-        return image::PixelFormat::Uint8_Norm;
+        return ImagePixelFormat::Uint8_Norm;
 
     case ImageFormat::R16F:
     case ImageFormat::RG16F:
     case ImageFormat::RGBA16F:
-        return image::PixelFormat::Float16_Raw;
+        return ImagePixelFormat::Float16_Raw;
 
     case ImageFormat::R32F:
     case ImageFormat::RG32F:
     case ImageFormat::RGBA32F:
-        return image::PixelFormat::Float32_Raw;
+        return ImagePixelFormat::Float32_Raw;
     }
 
-    return image::PixelFormat::Uint8_Norm;
+    return ImagePixelFormat::Uint8_Norm;
 }
 
 static ImageFormat ChooseCompressedImageFormat(ImageCompressionFormat format, ImageContentColorSpace colorSpace)
@@ -205,7 +205,7 @@ static ImageFormat ChooseCompressedImageFormat(ImageCompressionFormat format, Im
     return ImageFormat::UNKNOWN;
 }
 
-static ImageFormat ChooseUncompressedFormat(image::PixelFormat format, uint8_t channels, ImageContentColorSpace colorSpace, uint8_t& outRequiredChannelCount)
+static ImageFormat ChooseUncompressedFormat(ImagePixelFormat format, uint8_t channels, ImageContentColorSpace colorSpace, uint8_t& outRequiredChannelCount)
 {
     outRequiredChannelCount = channels;
 
@@ -213,7 +213,7 @@ static ImageFormat ChooseUncompressedFormat(image::PixelFormat format, uint8_t c
 
     switch (format)
     {
-        case image::PixelFormat::Uint8_Norm:
+        case ImagePixelFormat::Uint8_Norm:
         {
             if (srgb)
             {
@@ -238,7 +238,7 @@ static ImageFormat ChooseUncompressedFormat(image::PixelFormat format, uint8_t c
             break;
         }
 
-        case image::PixelFormat::Uint16_Norm:
+        case ImagePixelFormat::Uint16_Norm:
         {
             switch (channels)
             {
@@ -250,7 +250,7 @@ static ImageFormat ChooseUncompressedFormat(image::PixelFormat format, uint8_t c
             break;
         }
 
-        case image::PixelFormat::Float16_Raw:
+        case ImagePixelFormat::Float16_Raw:
         {
             switch (channels)
             {
@@ -262,7 +262,7 @@ static ImageFormat ChooseUncompressedFormat(image::PixelFormat format, uint8_t c
             break;
         }
 
-        case image::PixelFormat::Float32_Raw:
+        case ImagePixelFormat::Float32_Raw:
         {
             switch (channels)
             {
@@ -279,9 +279,9 @@ static ImageFormat ChooseUncompressedFormat(image::PixelFormat format, uint8_t c
     return ImageFormat::UNKNOWN;
 }
 
-ImageCompressionFormat ChooseAutoCompressedFormat(image::PixelFormat format, uint8_t channels, ImageContentType type)
+ImageCompressionFormat ChooseAutoCompressedFormat(ImagePixelFormat format, uint8_t channels, ImageContentType type)
 {
-    if (format == image::PixelFormat::Float16_Raw || format == image::PixelFormat::Float32_Raw)
+    if (format == ImagePixelFormat::Float16_Raw || format == ImagePixelFormat::Float32_Raw)
     {
         if (channels == 4)
             return ImageCompressionFormat::None;
@@ -335,17 +335,17 @@ ImageValidPixelsMaskingMode ChooseAutoMaskingMode(ImageContentType content, Imag
     return ImageValidPixelsMaskingMode::None;
 }
 
-ImageMipmapGenerationMode ChooseAutoMipMode(image::PixelFormat format, uint8_t channels, ImageContentType type)
+ImageMipmapGenerationMode ChooseAutoMipMode(ImagePixelFormat format, uint8_t channels, ImageContentType type)
 {
     return ImageMipmapGenerationMode::BoxFilter;
 }
 
-ImageContentColorSpace ChooseAutoColorSpace(ImageContentType type, image::PixelFormat format)
+ImageContentColorSpace ChooseAutoColorSpace(ImageContentType type, ImagePixelFormat format)
 {
-    if (format == image::PixelFormat::Float16_Raw || format == image::PixelFormat::Float32_Raw)
+    if (format == ImagePixelFormat::Float16_Raw || format == ImagePixelFormat::Float32_Raw)
         return ImageContentColorSpace::HDR;
 
-    if (format == image::PixelFormat::Uint16_Norm)
+    if (format == ImagePixelFormat::Uint16_Norm)
         return ImageContentColorSpace::Linear;
 
     switch (type)
@@ -366,7 +366,7 @@ ImageContentColorSpace ChooseAutoColorSpace(ImageContentType type, image::PixelF
     return ImageContentColorSpace::SRGB;
 }
 
-ImageContentType ChooseAutoContentType(StringView suffix, image::PixelFormat format, uint32_t channels)
+ImageContentType ChooseAutoContentType(StringView suffix, ImagePixelFormat format, uint32_t channels)
 {
     if (!suffix.empty())
     {
@@ -401,25 +401,25 @@ ImageContentType ChooseAutoContentType(StringView suffix, image::PixelFormat for
     return ImageContentType::Generic;
 }
 
-image::ColorSpace TranslateColorSpace(ImageContentColorSpace colorSpace)
+ImageColorSpace TranslateColorSpace(ImageContentColorSpace colorSpace)
 {
     switch (colorSpace)
     {
-    case ImageContentColorSpace::HDR: return image::ColorSpace::HDR;
-    case ImageContentColorSpace::SRGB: return image::ColorSpace::SRGB;
-    case ImageContentColorSpace::Normals: return image::ColorSpace::Normals;
+    case ImageContentColorSpace::HDR: return ImageColorSpace::HDR;
+    case ImageContentColorSpace::SRGB: return ImageColorSpace::SRGB;
+    case ImageContentColorSpace::Normals: return ImageColorSpace::Normals;
     }
 
-    return image::ColorSpace::Linear;
+    return ImageColorSpace::Linear;
 }
 
-image::ImagePtr ChangeChannelCount(const image::ImageView& data, uint8_t targetChannelCount)
+ImagePtr ChangeChannelCount(const ImageView& data, uint8_t targetChannelCount)
 {
-    auto ret = RefNew<image::Image>(data.format(), targetChannelCount, data.width(), data.height(), data.depth());
+    auto ret = RefNew<Image>(data.format(), targetChannelCount, data.width(), data.height(), data.depth());
     if (!ret)
         return nullptr;
 
-    image::ConvertChannels(data, ret->view());
+    ConvertChannels(data, ret->view());
     return ret;
 }
 
@@ -430,7 +430,7 @@ struct TempMip
     Buffer data;
     StaticTextureMip mip;
 
-    void setupFromImage(const image::ImageView& view)
+    void setupFromImage(const ImageView& view)
     {
         mip.compressed = false;
         mip.dataOffset = 0;
@@ -488,7 +488,7 @@ static RefPtr<ImageCompressedResult> AssembleFinalResult(const Array<TempMip>& m
 
 //--
 
-uint32_t CalcCompressedImageDataSize(const image::ImageView& data, ImageCompressionFormat format)
+uint32_t CalcCompressedImageDataSize(const ImageView& data, ImageCompressionFormat format)
 {
     if (format == ImageCompressionFormat::None || format == ImageCompressionFormat::Auto)
         return data.pixelPitch() * data.width() * data.height() * data.depth();
@@ -544,12 +544,12 @@ INLINE void FillAlphaChannelToOne(float& to) { to = 1.0f; }
 INLINE void FillAlphaChannelToOne(double& to) { to = 255.0; }
 
 template< uint32_t N, typename ST, typename DT >
-void CopyBlockPixels(const image::ImageView& data, uint32_t& outMask, DT* writePtr)
+void CopyBlockPixels(const ImageView& data, uint32_t& outMask, DT* writePtr)
 {
-    for (image::ImageViewRowIterator y(data); y; ++y)
+    for (ImageViewRowIterator y(data); y; ++y)
     {
         auto rowPtr = writePtr;
-        for (image::ImageViewPixelIterator x(y); x; ++x, rowPtr += 4)
+        for (ImageViewPixelIterator x(y); x; ++x, rowPtr += 4)
         {
             auto* srcData = (const ST*)x.data();
             switch (N)
@@ -570,14 +570,14 @@ void CopyBlockPixels(const image::ImageView& data, uint32_t& outMask, DT* writeP
 }
 
 template< typename DT >
-void CopyBlockPixels(const image::ImageView& data, uint32_t& outMask, DT* targetMemory)
+void CopyBlockPixels(const ImageView& data, uint32_t& outMask, DT* targetMemory)
 {
     DEBUG_CHECK_EX(data.width() <= 4, "Invalid block size");
     DEBUG_CHECK_EX(data.height() <= 4, "Invalid block size");
 
     switch (data.format())
     {
-        case image::PixelFormat::Uint8_Norm:
+        case ImagePixelFormat::Uint8_Norm:
         {
             switch (data.channels())
             {
@@ -589,7 +589,7 @@ void CopyBlockPixels(const image::ImageView& data, uint32_t& outMask, DT* target
             break;
         }
 
-        case image::PixelFormat::Uint16_Norm:
+        case ImagePixelFormat::Uint16_Norm:
         {
             switch (data.channels())
             {
@@ -601,7 +601,7 @@ void CopyBlockPixels(const image::ImageView& data, uint32_t& outMask, DT* target
             break;
         }
 
-        case image::PixelFormat::Float16_Raw:
+        case ImagePixelFormat::Float16_Raw:
         {
             switch (data.channels())
             {
@@ -613,7 +613,7 @@ void CopyBlockPixels(const image::ImageView& data, uint32_t& outMask, DT* target
             break;
         }
 
-        case image::PixelFormat::Float32_Raw:
+        case ImagePixelFormat::Float32_Raw:
         {
             switch (data.channels())
             {
@@ -635,7 +635,7 @@ static Mutex GCompressionTableLock;
 class BlockCompressor
 {
 public:
-    BlockCompressor(uint32_t mipIndex, uint32_t totalMips, const image::ImageView& fullData, ImageFormat targetFormat, uint32_t squishFlags, ImageValidPixelsMaskingMode masking, uint8_t* targetMemory, IProgressTracker& progress)
+    BlockCompressor(uint32_t mipIndex, uint32_t totalMips, const ImageView& fullData, ImageFormat targetFormat, uint32_t squishFlags, ImageValidPixelsMaskingMode masking, uint8_t* targetMemory, IProgressTracker& progress)
         : m_progress(progress)
         , m_squishFlags(squishFlags)
         , m_masking(masking)
@@ -826,7 +826,7 @@ private:
     uint32_t m_blockWidth;
     uint32_t m_blockHeight;
 
-    image::ImageView m_fullData;
+    ImageView m_fullData;
 
     uint32_t m_squishFlags = 0;
     ImageValidPixelsMaskingMode m_masking = ImageValidPixelsMaskingMode::Auto;
@@ -854,7 +854,7 @@ private:
      
 //--
 
-static uint32_t CalcMipCount(const image::ImageView& data)
+static uint32_t CalcMipCount(const ImageView& data)
 {
     uint32_t w = data.width();
     uint32_t h = data.height();
@@ -874,50 +874,50 @@ static uint32_t CalcMipCount(const image::ImageView& data)
 
 //--
 
-static image::ImageView DownsampleImage(const image::ImageView& sourceView, image::ImagePtr& tempImage, ImageValidPixelsMaskingMode maskMode, ImageMipmapGenerationMode mode, ImageContentColorSpace space, bool hasPremultipliedAlpha)
+static ImageView DownsampleImage(const ImageView& sourceView, ImagePtr& tempImage, ImageValidPixelsMaskingMode maskMode, ImageMipmapGenerationMode mode, ImageContentColorSpace space, bool hasPremultipliedAlpha)
 {
     const auto mipW = std::max<uint32_t>(sourceView.width() / 2, 1);
     const auto mipH = std::max<uint32_t>(sourceView.height() / 2, 1);
     const auto mipD = std::max<uint32_t>(sourceView.depth() / 2, 1);
 
-    image::ColorSpace downsampleColorSpace = image::ColorSpace::Linear;
+    ImageColorSpace downsampleColorSpace = ImageColorSpace::Linear;
     if (space == ImageContentColorSpace::SRGB)
-        downsampleColorSpace = image::ColorSpace::SRGB;
+        downsampleColorSpace = ImageColorSpace::SRGB;
     else if (space == ImageContentColorSpace::HDR)
-        downsampleColorSpace = image::ColorSpace::HDR;
+        downsampleColorSpace = ImageColorSpace::HDR;
 
-    image::DownsampleMode downsampleMode = image::DownsampleMode::Average;
+    ImageDownsampleMode downsampleMode = ImageDownsampleMode::Average;
     if (space == ImageContentColorSpace::SRGB || space == ImageContentColorSpace::Linear || space == ImageContentColorSpace::HDR)
     {
         if (maskMode == ImageValidPixelsMaskingMode::ByAlpha)
             if (hasPremultipliedAlpha)
-                downsampleMode = image::DownsampleMode::Average;
+                downsampleMode = ImageDownsampleMode::Average;
             else 
-                downsampleMode = image::DownsampleMode::AverageWithAlphaWeight;
+                downsampleMode = ImageDownsampleMode::AverageWithAlphaWeight;
     }
 
     // create a compatible image with half the size
-    if (auto mipImage = RefNew<image::Image>(sourceView.format(), sourceView.channels(), mipW, mipH, mipD))
+    if (auto mipImage = RefNew<Image>(sourceView.format(), sourceView.channels(), mipW, mipH, mipD))
     {
         // downsample the image
-        image::Downsample(sourceView, mipImage->view(), downsampleMode, downsampleColorSpace);
+        Downsample(sourceView, mipImage->view(), downsampleMode, downsampleColorSpace);
 
         // return new data set
         tempImage = mipImage;
         return mipImage->view();
     }
 
-    return image::ImageView();
+    return ImageView();
 }
 
 template< typename T >
-static bool CheckIfImageHasAlphaData(const image::ImageView& data, T defaultAlphaValue)
+static bool CheckIfImageHasAlphaData(const ImageView& data, T defaultAlphaValue)
 {
-    for (image::ImageViewSliceIterator z(data); z; ++z)
+    for (ImageViewSliceIterator z(data); z; ++z)
     {
-        for (image::ImageViewRowIterator y(z); y; ++y)
+        for (ImageViewRowIterator y(z); y; ++y)
         {
-            for (image::ImageViewPixelIterator x(y); x; ++x)
+            for (ImageViewPixelIterator x(y); x; ++x)
             {
                 const auto* data = ((const T*)x.data());
                 if (data[3] != defaultAlphaValue)
@@ -929,7 +929,7 @@ static bool CheckIfImageHasAlphaData(const image::ImageView& data, T defaultAlph
     return false;
 }
 
-static bool CheckIfImageHasAlphaData(const image::ImageView& data)
+static bool CheckIfImageHasAlphaData(const ImageView& data)
 {
     if (data.channels() != 4)
         return false;
@@ -938,10 +938,10 @@ static bool CheckIfImageHasAlphaData(const image::ImageView& data)
 
     switch (data.format())
     {
-        case image::PixelFormat::Uint8_Norm: return CheckIfImageHasAlphaData<uint8_t>(data, 255);
-        case image::PixelFormat::Uint16_Norm: return CheckIfImageHasAlphaData<uint16_t>(data, 65535);
-        case image::PixelFormat::Float16_Raw: return CheckIfImageHasAlphaData<uint16_t>(data, HALF_ONE);
-        case image::PixelFormat::Float32_Raw: return CheckIfImageHasAlphaData<float>(data, 1.0f);
+        case ImagePixelFormat::Uint8_Norm: return CheckIfImageHasAlphaData<uint8_t>(data, 255);
+        case ImagePixelFormat::Uint16_Norm: return CheckIfImageHasAlphaData<uint16_t>(data, 65535);
+        case ImagePixelFormat::Float16_Raw: return CheckIfImageHasAlphaData<uint16_t>(data, HALF_ONE);
+        case ImagePixelFormat::Float32_Raw: return CheckIfImageHasAlphaData<float>(data, 1.0f);
     }
 
     return false;
@@ -949,7 +949,7 @@ static bool CheckIfImageHasAlphaData(const image::ImageView& data)
 
 //--
 
-RefPtr<ImageCompressedResult> CompressImage(const image::ImageView& data, const ImageCompressionSettings& settings, IProgressTracker& progress)
+RefPtr<ImageCompressedResult> CompressImage(const ImageView& data, const ImageCompressionSettings& settings, IProgressTracker& progress)
 {
     if (data.empty())
     {
@@ -991,7 +991,7 @@ RefPtr<ImageCompressedResult> CompressImage(const image::ImageView& data, const 
     auto uncomressedImageView = data;
     auto uncompressedFormat = ChooseUncompressedFormat(data.format(), requiredChannelCount, colorSpace, requiredChannelCount);
 
-    image::ImagePtr tempImage;
+    ImagePtr tempImage;
     if (requiredChannelCount != data.channels())
     {
         TRACE_WARNING("Compressing this image requires changing channel count {} -> {}", data.channels(), requiredChannelCount);
@@ -1013,12 +1013,12 @@ RefPtr<ImageCompressedResult> CompressImage(const image::ImageView& data, const 
         {
             if (!tempImage)
             {
-                tempImage = RefNew<image::Image>(data.format(), 4, data.width(), data.height(), data.depth());
-                image::Copy(uncomressedImageView, tempImage->view());
+                tempImage = RefNew<Image>(data.format(), 4, data.width(), data.height(), data.depth());
+                Copy(uncomressedImageView, tempImage->view());
                 uncomressedImageView = tempImage->view();
             }
 
-            image::PremultiplyAlpha(uncomressedImageView);
+            PremultiplyAlpha(uncomressedImageView);
         }
         else if (settings.m_contentAlphaMode == ImageAlphaMode::AlreadyPremultiplied)
         {

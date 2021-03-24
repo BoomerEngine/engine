@@ -11,7 +11,7 @@
 
 #include "imageRect.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(image)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -103,4 +103,4 @@ void ImageRect::print(IFormatStream& f) const
 
 //--
 
-END_BOOMER_NAMESPACE_EX(image)
+END_BOOMER_NAMESPACE()

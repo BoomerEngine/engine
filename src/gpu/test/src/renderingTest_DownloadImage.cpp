@@ -33,13 +33,13 @@ public:
 
 	//--
 
-	image::ImageView retrieveImage() const
+	ImageView retrieveImage() const
 	{
 		ASSERT(m_ready.load());
 
 		auto lock = CreateLock(m_lock);
 
-		image::ImageView srcView(image::NATIVE_LAYOUT, image::PixelFormat::Uint8_Norm, 4,
+		ImageView srcView(NATIVE_LAYOUT, ImagePixelFormat::Uint8_Norm, 4,
 			m_state.data.data(), m_state.region.image.sizeX, m_state.region.image.sizeY);
 
 		ASSERT(srcView.dataSize() == m_state.data.size());
@@ -114,7 +114,7 @@ private:
 
 	FastRandState m_rnd;
 
-	image::ImagePtr m_stage;
+	ImagePtr m_stage;
 
     static const uint32_t SIZE = 512;
 };
@@ -174,8 +174,8 @@ void RenderingTest_DownloadImage::initialize()
 	m_displayImage = createImage(info);
 	m_displayImageSRV = m_displayImage->createSampledView();
 
-	m_stage = RefNew<image::Image>(image::PixelFormat::Uint8_Norm, 4, SIZE, SIZE);
-	image::Fill(m_stage->view(), &Vector4::ZERO());
+	m_stage = RefNew<Image>(ImagePixelFormat::Uint8_Norm, 4, SIZE, SIZE);
+	Fill(m_stage->view(), &Vector4::ZERO());
 }
 
 void RenderingTest_DownloadImage::render(CommandWriter& cmd, float time, const RenderTargetView* backBufferView, const RenderTargetView* backBufferDepthView)
@@ -255,7 +255,7 @@ void RenderingTest_DownloadImage::render(CommandWriter& cmd, float time, const R
 		// copy image into stage (demo)
 		auto srcView = m_downloadSink->retrieveImage();
 		auto targetView = m_stage->view().subView(m_downloadSink->target().x, m_downloadSink->target().y, srcView.width(), srcView.height());
-		image::Copy(srcView, targetView);
+		Copy(srcView, targetView);
 
 		// update preview
 		{

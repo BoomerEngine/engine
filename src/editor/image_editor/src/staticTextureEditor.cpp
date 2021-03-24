@@ -32,14 +32,14 @@
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
-static assets::ImageContentColorSpace ConvertColorSpace(image::ColorSpace space)
+static assets::ImageContentColorSpace ConvertColorSpace(ImageColorSpace space)
 {
     switch (space)
     {
-        case image::ColorSpace::SRGB: return assets::ImageContentColorSpace::SRGB;
-        case image::ColorSpace::Linear: return assets::ImageContentColorSpace::Linear;
-        case image::ColorSpace::Normals: return assets::ImageContentColorSpace::Normals;
-        case image::ColorSpace::HDR: return assets::ImageContentColorSpace::HDR;
+        case ImageColorSpace::SRGB: return assets::ImageContentColorSpace::SRGB;
+        case ImageColorSpace::Linear: return assets::ImageContentColorSpace::Linear;
+        case ImageColorSpace::Normals: return assets::ImageContentColorSpace::Normals;
+        case ImageColorSpace::HDR: return assets::ImageContentColorSpace::HDR;
     }
 
     return assets::ImageContentColorSpace::Linear;
@@ -236,7 +236,7 @@ void StaticTextureEditor::updateImageInfoText()
     }
 }
 
-/*void StaticTextureEditor::updateImageInfo(const image::ImagePtr& image)
+/*void StaticTextureEditor::updateImageInfo(const ImagePtr& image)
 {
     StringBuilder txt;
 

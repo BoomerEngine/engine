@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(image)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -87,4 +87,4 @@ struct CORE_IMAGE_API ImageRect
 
 //--
 
-END_BOOMER_NAMESPACE_EX(image)
+END_BOOMER_NAMESPACE()

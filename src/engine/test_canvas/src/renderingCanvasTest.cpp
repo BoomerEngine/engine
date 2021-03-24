@@ -27,7 +27,7 @@ RTTI_END_TYPE();
 ICanvasTest::ICanvasTest()
     : m_hasErrors(false)
 {
-    m_defaultImage = RefNew<image::Image>(16, 16, Color::WHITE);
+    m_defaultImage = RefNew<Image>(16, 16, Color::WHITE);
 }
 
 bool ICanvasTest::processInitialization()
@@ -42,7 +42,7 @@ void ICanvasTest::reportError(StringView msg)
     m_hasErrors = true;
 }
 
-image::ImagePtr ICanvasTest::loadImage(StringView assetFile)
+ImagePtr ICanvasTest::loadImage(StringView assetFile)
 {
     auto imagePtr = LoadImageFromDepotPath(TempString("/engine/tests/textures/{}", assetFile));
     if (!imagePtr)

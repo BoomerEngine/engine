@@ -291,11 +291,11 @@ void DecomposeVertexFormat(GLenum format, GLenum& outBaseFormat, GLuint& outSize
 	}
 }
 
-void DecomposeTextureFormat(image::PixelFormat format, uint32_t channels, GLenum& outBaseFormat, GLenum& outBaseType)
+void DecomposeTextureFormat(ImagePixelFormat format, uint32_t channels, GLenum& outBaseFormat, GLenum& outBaseType)
 {
 	switch (format)
 	{
-	case image::PixelFormat::Uint8_Norm:
+	case ImagePixelFormat::Uint8_Norm:
 		switch (channels)
 		{
 		case 1: outBaseType = GL_UNSIGNED_BYTE; outBaseFormat = GL_RED; break;
@@ -307,7 +307,7 @@ void DecomposeTextureFormat(image::PixelFormat format, uint32_t channels, GLenum
 			break;
 		}
 		break;
-	case image::PixelFormat::Uint16_Norm:
+	case ImagePixelFormat::Uint16_Norm:
 		switch (channels)
 		{
 		case 1: outBaseType = GL_UNSIGNED_SHORT; outBaseFormat = GL_RED; break;
@@ -319,7 +319,7 @@ void DecomposeTextureFormat(image::PixelFormat format, uint32_t channels, GLenum
 			break;
 		}
 		break;
-	case image::PixelFormat::Float16_Raw:
+	case ImagePixelFormat::Float16_Raw:
 		switch (channels)
 		{
 		case 1: outBaseType = GL_HALF_FLOAT; outBaseFormat = GL_RED; break;
@@ -331,7 +331,7 @@ void DecomposeTextureFormat(image::PixelFormat format, uint32_t channels, GLenum
 			break;
 		}
 		break;
-	case image::PixelFormat::Float32_Raw:
+	case ImagePixelFormat::Float32_Raw:
 		switch (channels)
 		{
 		case 1: outBaseType = GL_FLOAT; outBaseFormat = GL_RED; break;

@@ -10,7 +10,7 @@
 
 #include "core/resource/include/resource.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(image)
+BEGIN_BOOMER_NAMESPACE()
 
 /// General image wrapper
 class CORE_IMAGE_API Image : public IResource
@@ -22,21 +22,21 @@ public:
     Image(const ImageView& copyFrom); // copy of image
 
     // empty image (unitialized DATA - random bytes)
-    Image(PixelFormat format, uint8_t channels, uint32_t width); // 1D
-    Image(PixelFormat format, uint8_t channels, uint32_t width, uint32_t height); // 2D
-    Image(PixelFormat format, uint8_t channels, uint32_t width, uint32_t height, uint32_t depth); // 3D
+    Image(ImagePixelFormat format, uint8_t channels, uint32_t width); // 1D
+    Image(ImagePixelFormat format, uint8_t channels, uint32_t width, uint32_t height); // 2D
+    Image(ImagePixelFormat format, uint8_t channels, uint32_t width, uint32_t height, uint32_t depth); // 3D
 
     // filled image (data intialized to copy of the provided fill value that depends on the pixel format)
-    Image(PixelFormat format, uint8_t channels, uint32_t width, const void* clearValue); // 1D
-    Image(PixelFormat format, uint8_t channels, uint32_t width, uint32_t height, const void* clearValue); // 2D
-    Image(PixelFormat format, uint8_t channels, uint32_t width, uint32_t height, uint32_t depth, const void* clearValue); // 3D
+    Image(ImagePixelFormat format, uint8_t channels, uint32_t width, const void* clearValue); // 1D
+    Image(ImagePixelFormat format, uint8_t channels, uint32_t width, uint32_t height, const void* clearValue); // 2D
+    Image(ImagePixelFormat format, uint8_t channels, uint32_t width, uint32_t height, uint32_t depth, const void* clearValue); // 3D
 
     // simple 2D color filled image (most common case)
     Image(uint32_t width, uint32_t height, Color color);
             
     //--
 
-    INLINE PixelFormat format() const { return m_format; }
+    INLINE ImagePixelFormat format() const { return m_format; }
 
     INLINE uint8_t channels() const { return m_channels; }
 
@@ -70,7 +70,7 @@ public:
 private:
     Buffer m_pixels;
 
-    PixelFormat m_format = PixelFormat::Uint8_Norm;
+    ImagePixelFormat m_format = ImagePixelFormat::Uint8_Norm;
 
     uint8_t m_channels = 0;
     uint32_t m_width = 0;
@@ -85,11 +85,11 @@ private:
     uint32_t m_rowPitch = 0;
     uint32_t m_slicePitch = 0;
 
-    void allocPixels(uint32_t width, uint32_t height, uint32_t depth, PixelFormat format, uint8_t channels);
+    void allocPixels(uint32_t width, uint32_t height, uint32_t depth, ImagePixelFormat format, uint8_t channels);
     void freePixels();
 
     virtual bool supportsReloading() const { return true; };
     virtual void onPostLoad() override;
 };
 
-END_BOOMER_NAMESPACE_EX(image)
+END_BOOMER_NAMESPACE()

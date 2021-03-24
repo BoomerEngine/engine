@@ -39,7 +39,7 @@ RTTI_END_TYPE();
 BitmapFont::BitmapFont()
 {}
 
-BitmapFont::BitmapFont(const image::ImagePtr& imageData, int ascender, int descender, int lineHeight, Array<BitmapFontGlyph>&& glyphs)
+BitmapFont::BitmapFont(const ImagePtr& imageData, int ascender, int descender, int lineHeight, Array<BitmapFontGlyph>&& glyphs)
     : m_image(imageData)
     , m_glyphs(std::move(glyphs))
     , m_ascender(ascender)

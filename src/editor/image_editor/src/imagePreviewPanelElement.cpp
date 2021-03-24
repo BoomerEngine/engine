@@ -270,11 +270,11 @@ RTTI_END_TYPE();*/
 
 //--
 
-static ImageFormat BestPreviewFormat(const image::Image& image)
+static ImageFormat BestPreviewFormat(const Image& image)
 {
     switch (image.format())
     {
-    case image::PixelFormat::Uint8_Norm:
+    case ImagePixelFormat::Uint8_Norm:
     {
         switch (image.channels())
         {
@@ -286,7 +286,7 @@ static ImageFormat BestPreviewFormat(const image::Image& image)
         break;
     }
 
-    case image::PixelFormat::Uint16_Norm:
+    case ImagePixelFormat::Uint16_Norm:
     {
         switch (image.channels())
         {
@@ -298,7 +298,7 @@ static ImageFormat BestPreviewFormat(const image::Image& image)
         break;
     }
 
-    case image::PixelFormat::Float16_Raw:
+    case ImagePixelFormat::Float16_Raw:
     {
         switch (image.channels())
         {
@@ -310,7 +310,7 @@ static ImageFormat BestPreviewFormat(const image::Image& image)
         break;
     }
 
-    case image::PixelFormat::Float32_Raw:
+    case ImagePixelFormat::Float32_Raw:
     {
         switch (image.channels())
         {

@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(image)
+BEGIN_BOOMER_NAMESPACE()
 
 enum ENativeLayout { NATIVE_LAYOUT };
 
@@ -17,14 +17,14 @@ class CORE_IMAGE_API ImageView
 {
 public:
     INLINE ImageView() = default; // empty
-    INLINE ImageView(PixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t pixelPitch); // 1D slice
-    INLINE ImageView(PixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height, uint32_t pixelPitch, uint32_t rowPitch); // 2D slice
-    INLINE ImageView(PixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height, uint32_t depth, uint32_t pixelPitch, uint32_t rowPitch, uint32_t slicePitch); // 3D slice
+    INLINE ImageView(ImagePixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t pixelPitch); // 1D slice
+    INLINE ImageView(ImagePixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height, uint32_t pixelPitch, uint32_t rowPitch); // 2D slice
+    INLINE ImageView(ImagePixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height, uint32_t depth, uint32_t pixelPitch, uint32_t rowPitch, uint32_t slicePitch); // 3D slice
 
     // build a "packed" view layout
-    INLINE ImageView(ENativeLayout, PixelFormat format, uint8_t channels, const void* data, uint32_t width); // 1D slice
-    INLINE ImageView(ENativeLayout, PixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height); // 2D slice
-    INLINE ImageView(ENativeLayout, PixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height, uint32_t depth); // 3D slice
+    INLINE ImageView(ENativeLayout, ImagePixelFormat format, uint8_t channels, const void* data, uint32_t width); // 1D slice
+    INLINE ImageView(ENativeLayout, ImagePixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height); // 2D slice
+    INLINE ImageView(ENativeLayout, ImagePixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height, uint32_t depth); // 3D slice
             
 
     INLINE ImageView(const ImageView& other) = default;
@@ -34,7 +34,7 @@ public:
 
     //--
 
-    INLINE PixelFormat format() const { return m_format; }
+    INLINE ImagePixelFormat format() const { return m_format; }
 
     INLINE uint8_t channels() const { return m_channels; }
 
@@ -89,25 +89,25 @@ private:
     uint32_t m_rowPitch = 0;
     uint32_t m_slicePitch = 0;
     uint8_t m_channels = 0;
-    PixelFormat m_format = PixelFormat::Uint8_Norm;
+    ImagePixelFormat m_format = ImagePixelFormat::Uint8_Norm;
 };
 
 //--
 
-static uint32_t PixelPitchForFormat(PixelFormat pf, uint8_t channels)
+static uint32_t PixelPitchForFormat(ImagePixelFormat pf, uint8_t channels)
 {
     switch (pf)
     {
-        case PixelFormat::Uint8_Norm: return channels; break;
-        case PixelFormat::Uint16_Norm: return 2 * channels; break;
-        case PixelFormat::Float16_Raw: return 2 * channels; break;
-        case PixelFormat::Float32_Raw: return 4 * channels; break;
+        case ImagePixelFormat::Uint8_Norm: return channels; break;
+        case ImagePixelFormat::Uint16_Norm: return 2 * channels; break;
+        case ImagePixelFormat::Float16_Raw: return 2 * channels; break;
+        case ImagePixelFormat::Float32_Raw: return 4 * channels; break;
     }
 
     return 0;
 }
 
-INLINE ImageView::ImageView(PixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t pixelPitch)
+INLINE ImageView::ImageView(ImagePixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t pixelPitch)
     : m_format(format)
     , m_channels(channels)
     , m_data((void*)data)
@@ -120,7 +120,7 @@ INLINE ImageView::ImageView(PixelFormat format, uint8_t channels, const void* da
     m_slicePitch = m_height * m_rowPitch;
 }
 
-INLINE ImageView::ImageView(PixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height, uint32_t pixelPitch, uint32_t rowPitch)
+INLINE ImageView::ImageView(ImagePixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height, uint32_t pixelPitch, uint32_t rowPitch)
     : m_format(format)
     , m_channels(channels)
     , m_data((void*)data)
@@ -133,7 +133,7 @@ INLINE ImageView::ImageView(PixelFormat format, uint8_t channels, const void* da
     m_slicePitch = m_height * m_rowPitch;
 }
 
-INLINE ImageView::ImageView(PixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height, uint32_t depth, uint32_t pixelPitch, uint32_t rowPitch, uint32_t slicePitch)
+INLINE ImageView::ImageView(ImagePixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height, uint32_t depth, uint32_t pixelPitch, uint32_t rowPitch, uint32_t slicePitch)
     : m_format(format)
     , m_channels(channels)
     , m_data((void*)data)
@@ -145,7 +145,7 @@ INLINE ImageView::ImageView(PixelFormat format, uint8_t channels, const void* da
     , m_slicePitch(slicePitch)
 {}
 
-INLINE ImageView::ImageView(ENativeLayout, PixelFormat format, uint8_t channels, const void* data, uint32_t width)
+INLINE ImageView::ImageView(ENativeLayout, ImagePixelFormat format, uint8_t channels, const void* data, uint32_t width)
     : m_format(format)
     , m_channels(channels)
     , m_data((void*)data)
@@ -158,7 +158,7 @@ INLINE ImageView::ImageView(ENativeLayout, PixelFormat format, uint8_t channels,
     m_slicePitch = m_rowPitch * m_height;
 }
 
-INLINE ImageView::ImageView(ENativeLayout, PixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height)
+INLINE ImageView::ImageView(ENativeLayout, ImagePixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height)
     : m_format(format)
     , m_channels(channels)
     , m_data((void*)data)
@@ -171,7 +171,7 @@ INLINE ImageView::ImageView(ENativeLayout, PixelFormat format, uint8_t channels,
     m_slicePitch = m_rowPitch * m_height;
 }
 
-INLINE ImageView::ImageView(ENativeLayout, PixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height, uint32_t depth)
+INLINE ImageView::ImageView(ENativeLayout, ImagePixelFormat format, uint8_t channels, const void* data, uint32_t width, uint32_t height, uint32_t depth)
     : m_format(format)
     , m_channels(channels)
     , m_data((void*)data)
@@ -580,6 +580,6 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(image)
+END_BOOMER_NAMESPACE()
 
 ///--------------------------------------------------------------------------

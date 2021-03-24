@@ -8,18 +8,12 @@
 
 #include "core_image_glue.inl"
 
-BEGIN_BOOMER_NAMESPACE_EX(image)
+BEGIN_BOOMER_NAMESPACE()
 
-class Image;
-typedef RefPtr<Image> ImagePtr;
-typedef ResourceRef<Image> ImageRef;
+//--
 
-class ImageView;
-
-struct ImageRect;
-
-/// Image formats (global)
-enum class PixelFormat : uint8_t
+// data format of single channel in the pixel
+enum class ImagePixelFormat : uint8_t
 {
     Uint8_Norm, // normalized to 0-1 range
     Uint16_Norm, // normalized to 0-1 range
@@ -27,12 +21,9 @@ enum class PixelFormat : uint8_t
     Float32_Raw, // raw format
 };
 
-class DynamicAtlas;
-class SpaceAllocator;
-
 /// color space, used by various filters that try to be a little bit more exact when filtering colors
 /// it's a good practice not to ignore this
-enum class ColorSpace : uint8_t
+enum class ImageColorSpace : uint8_t
 {
     // linear color space, values can be just merged together
     Linear,
@@ -47,8 +38,8 @@ enum class ColorSpace : uint8_t
     Normals,
 };
 
-/// downsampling mode
-enum class DownsampleMode : uint8_t
+/// downsampling mode, especially how are the values averaged together
+enum class ImageDownsampleMode : uint8_t
 {
     Average,
     AverageWithAlphaWeight,
@@ -66,27 +57,35 @@ enum class CubeSide : uint8_t
     NegativeZ,
 };
 
-END_BOOMER_NAMESPACE_EX(image)
+//--
+
+class Image;
+typedef RefPtr<Image> ImagePtr;
+typedef ResourceRef<Image> ImageRef;
+
+class ImageView;
+
+class ImageAtlas;
+
+struct ImageRect;
 
 //--
 
-BEGIN_BOOMER_NAMESPACE()
+// load image from file memory
+extern CORE_IMAGE_API ImagePtr LoadImageFromMemory(const void* memory, uint64_t size);
 
 // load image from file memory
-extern CORE_IMAGE_API image::ImagePtr LoadImageFromMemory(const void* memory, uint64_t size);
-
-// load image from file memory
-extern CORE_IMAGE_API image::ImagePtr LoadImageFromMemory(Buffer ptr);
+extern CORE_IMAGE_API ImagePtr LoadImageFromMemory(Buffer ptr);
 
 // load image from file
-extern CORE_IMAGE_API image::ImagePtr LoadImageFromFile(IReadFileHandle* file);
+extern CORE_IMAGE_API ImagePtr LoadImageFromFile(IReadFileHandle* file);
 
 // load image from absolute file
-extern CORE_IMAGE_API image::ImagePtr LoadImageFromAbsolutePath(StringView absolutePath);
+extern CORE_IMAGE_API ImagePtr LoadImageFromAbsolutePath(StringView absolutePath);
 
 // load image from absolute file
-extern CORE_IMAGE_API image::ImagePtr LoadImageFromDepotPath(StringView depotPath);
-
-END_BOOMER_NAMESPACE()
+extern CORE_IMAGE_API ImagePtr LoadImageFromDepotPath(StringView depotPath);
 
 //--
+
+END_BOOMER_NAMESPACE()

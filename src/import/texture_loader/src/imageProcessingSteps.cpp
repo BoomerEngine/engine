@@ -59,7 +59,7 @@ union ColorDefaults
     float FormatFloat32[4];
 };
 
-void ImageProcessingStep_ChannelRemap::process(image::ImageView& view, image::ImagePtr& tempImagePtr) const
+void ImageProcessingStep_ChannelRemap::process(ImageView& view, ImagePtr& tempImagePtr) const
 {
     auto sourceView = view;
 
@@ -69,8 +69,8 @@ void ImageProcessingStep_ChannelRemap::process(image::ImageView& view, image::Im
 
     if (channelCount != sourceView.channels())
     {
-        tempImagePtr = RefNew<image::Image>(view.format(), channelCount, sourceView.width(), sourceView.height(), sourceView.depth());
-        image::ConvertChannels(sourceView, tempImagePtr->view());
+        tempImagePtr = RefNew<Image>(view.format(), channelCount, sourceView.width(), sourceView.height(), sourceView.depth());
+        ConvertChannels(sourceView, tempImagePtr->view());
         view = tempImagePtr->view();
     }
 
@@ -78,28 +78,28 @@ void ImageProcessingStep_ChannelRemap::process(image::ImageView& view, image::Im
 
     switch (view.format())
     {
-        case image::PixelFormat::Uint8_Norm:
+        case ImagePixelFormat::Uint8_Norm:
             colorDefaults.FormatUint8[0] = 0;
             colorDefaults.FormatUint8[1] = 0;
             colorDefaults.FormatUint8[1] = 0;
             colorDefaults.FormatUint8[2] = 255;
             break;
 
-        case image::PixelFormat::Uint16_Norm:
+        case ImagePixelFormat::Uint16_Norm:
             colorDefaults.FormatUint16[0] = 0;
             colorDefaults.FormatUint16[1] = 0;
             colorDefaults.FormatUint16[1] = 0;
             colorDefaults.FormatUint16[2] = 65535;
             break;
 
-        case image::PixelFormat::Float16_Raw:
+        case ImagePixelFormat::Float16_Raw:
             colorDefaults.FormatFloat16[0] = Float16Helper::Compress(0.0f);
             colorDefaults.FormatFloat16[1] = Float16Helper::Compress(0.0f);
             colorDefaults.FormatFloat16[1] = Float16Helper::Compress(0.0f);
             colorDefaults.FormatFloat16[2] = Float16Helper::Compress(1.0f);
             break;
 
-        case image::PixelFormat::Float32_Raw:
+        case ImagePixelFormat::Float32_Raw:
             colorDefaults.FormatFloat32[0] = 0.0f;
             colorDefaults.FormatFloat32[1] = 0.0f;
             colorDefaults.FormatFloat32[1] = 0.0f;
@@ -121,7 +121,7 @@ void ImageProcessingStep_ChannelRemap::process(image::ImageView& view, image::Im
     channelMapping[2] = channelMappingValues[(int)m_blue];
     channelMapping[3] = channelMappingValues[(int)m_alpha];
 
-    image::CopyChannels(view, channelMapping, &colorDefaults);
+    CopyChannels(view, channelMapping, &colorDefaults);
 }
 
 //--

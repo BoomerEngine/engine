@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(image)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
       
@@ -40,4 +40,4 @@ INLINE uint8_t SRGBToLinear(uint8_t srgb)
 
 //--
 
-END_BOOMER_NAMESPACE_EX(image)
+END_BOOMER_NAMESPACE()

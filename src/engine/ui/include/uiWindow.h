@@ -115,7 +115,7 @@ struct WindowInitialPlacementSetup
     bool flagRelativeToCursor = false; // place window relative to current cursor position
 
     StringBuf title; // window title
-    image::ImagePtr icon; // window icon
+    ImagePtr icon; // window icon
 
     WindowWeakPtr owner = nullptr; // owner of this window, owner window is still considered "active" if one of it's children is, useful for Popup Windows
 

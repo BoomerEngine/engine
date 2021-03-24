@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(image)
+BEGIN_BOOMER_NAMESPACE()
 
 ///---
 
@@ -22,7 +22,7 @@ struct CORE_IMAGE_API FreeImageLoadedData : public IReferencable
     uint32_t rowPitch = 0;
 
     uint8_t channels = 0;
-    PixelFormat format = PixelFormat::Uint8_Norm;
+    ImagePixelFormat format = ImagePixelFormat::Uint8_Norm;
 
     uint8_t* data = nullptr;
 
@@ -43,4 +43,4 @@ extern CORE_IMAGE_API RefPtr<FreeImageLoadedData> LoadImageWithFreeImage(const v
 
 ///---
 
-END_BOOMER_NAMESPACE_EX(image)
+END_BOOMER_NAMESPACE()

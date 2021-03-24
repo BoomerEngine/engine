@@ -54,7 +54,7 @@ namespace ImGui
 		ImTextureID loadIcon(boomer::StringView name);
 
 		// Register image
-		ImTextureID registerImage(const boomer::image::ImagePtr& image);
+		ImTextureID registerImage(const boomer::ImagePtr& image);
 
 		//--
 

@@ -498,7 +498,7 @@ void FrameExecutor::runClearBuffer(const OpClearBuffer& op)
 	GLuint glType = 0;
 	DecomposeTextureFormat(glInternalFormat, glFormat, glType);
 
-	const void* clearData = (const uint8_t*)op.payload() + (op.numRects * sizeof(image::ImageRect));
+	const void* clearData = (const uint8_t*)op.payload() + (op.numRects * sizeof(ImageRect));
 
 	if (op.numRects == 0)
 	{
@@ -547,7 +547,7 @@ void FrameExecutor::runClearImage(const OpClearImage& op)
 	auto imageResolved = imageViewPtr->resolve();
 	DEBUG_CHECK_RETURN_EX(imageResolved, "Internal OOM"); // OOM between recording and execution
 
-	const void* clearData = (const uint8_t*)op.payload() + (op.numRects * sizeof(image::ImageRect));
+	const void* clearData = (const uint8_t*)op.payload() + (op.numRects * sizeof(ImageRect));
 	const auto* clearRects = (const ResourceClearRect*)op.payload();
 
 	if (op.numRects == 0)

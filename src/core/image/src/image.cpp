@@ -12,18 +12,18 @@
 #include "imageUtils.h"
 #include "core/resource/include/tags.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(image)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
-RTTI_BEGIN_TYPE_ENUM(PixelFormat);
+RTTI_BEGIN_TYPE_ENUM(ImagePixelFormat);
     RTTI_ENUM_OPTION(Uint8_Norm);
     RTTI_ENUM_OPTION(Uint16_Norm);
     RTTI_ENUM_OPTION(Float16_Raw);
     RTTI_ENUM_OPTION(Float32_Raw);
 RTTI_END_TYPE();
 
-RTTI_BEGIN_TYPE_ENUM(ColorSpace);
+RTTI_BEGIN_TYPE_ENUM(ImageColorSpace);
     RTTI_ENUM_OPTION(Linear);
     RTTI_ENUM_OPTION(SRGB);
     RTTI_ENUM_OPTION(HDR);
@@ -66,34 +66,34 @@ Image::Image(const ImageView& copyFrom)
     Copy(copyFrom, view());
 }
 
-Image::Image(PixelFormat format, uint8_t channels, uint32_t width)
+Image::Image(ImagePixelFormat format, uint8_t channels, uint32_t width)
 {
     allocPixels(width, 1, 1, format, channels);
 }
 
-Image::Image(PixelFormat format, uint8_t channels, uint32_t width, uint32_t height)
+Image::Image(ImagePixelFormat format, uint8_t channels, uint32_t width, uint32_t height)
 {
     allocPixels(width, height, 1, format, channels);
 }
 
-Image::Image(PixelFormat format, uint8_t channels, uint32_t width, uint32_t height, uint32_t depth)
+Image::Image(ImagePixelFormat format, uint8_t channels, uint32_t width, uint32_t height, uint32_t depth)
 {
     allocPixels(width, height, depth, format, channels);
 }
 
-Image::Image(PixelFormat format, uint8_t channels, uint32_t width, const void* fillColor)
+Image::Image(ImagePixelFormat format, uint8_t channels, uint32_t width, const void* fillColor)
 {
     allocPixels(width, 1, 1, format, channels);
     Fill(view(), fillColor);
 }
 
-Image::Image(PixelFormat format, uint8_t channels, uint32_t width, uint32_t height, const void* fillColor)
+Image::Image(ImagePixelFormat format, uint8_t channels, uint32_t width, uint32_t height, const void* fillColor)
 {
     allocPixels(width, height, 1, format, channels);
     Fill(view(), fillColor);
 }
 
-Image::Image(PixelFormat format, uint8_t channels, uint32_t width, uint32_t height, uint32_t depth, const void* fillColor)
+Image::Image(ImagePixelFormat format, uint8_t channels, uint32_t width, uint32_t height, uint32_t depth, const void* fillColor)
 {
     allocPixels(width, height, depth, format, channels);
     Fill(view(), fillColor);
@@ -101,13 +101,13 @@ Image::Image(PixelFormat format, uint8_t channels, uint32_t width, uint32_t heig
 
 Image::Image(uint32_t width, uint32_t height, Color color)
 {
-    allocPixels(width, height, 1, PixelFormat::Uint8_Norm, 4);
+    allocPixels(width, height, 1, ImagePixelFormat::Uint8_Norm, 4);
     Fill(view(), &color);
 }
 
 //--
 
-void Image::allocPixels(uint32_t width, uint32_t height, uint32_t depth, PixelFormat format, uint8_t channels)
+void Image::allocPixels(uint32_t width, uint32_t height, uint32_t depth, ImagePixelFormat format, uint8_t channels)
 {
     DEBUG_CHECK(width >= 1);
     DEBUG_CHECK(height >= 1);
@@ -118,10 +118,10 @@ void Image::allocPixels(uint32_t width, uint32_t height, uint32_t depth, PixelFo
     {
         switch (format)
         {
-            case PixelFormat::Uint8_Norm: m_pixelPitch = channels; break;
-            case PixelFormat::Uint16_Norm: m_pixelPitch = channels * 2; break;
-            case PixelFormat::Float16_Raw: m_pixelPitch = channels * 2; break;
-            case PixelFormat::Float32_Raw: m_pixelPitch = channels * 4; break;
+            case ImagePixelFormat::Uint8_Norm: m_pixelPitch = channels; break;
+            case ImagePixelFormat::Uint16_Norm: m_pixelPitch = channels * 2; break;
+            case ImagePixelFormat::Float16_Raw: m_pixelPitch = channels * 2; break;
+            case ImagePixelFormat::Float32_Raw: m_pixelPitch = channels * 4; break;
         }
 
         m_width = width;
@@ -179,4 +179,4 @@ void Image::onPostLoad()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(image)
+END_BOOMER_NAMESPACE()

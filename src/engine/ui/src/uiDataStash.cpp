@@ -75,7 +75,7 @@ void DataStash::conditionalRebuildAtlases()
 		
 }
 
-canvas::ImageEntry DataStash::cacheImage(const image::Image* img, bool supportWrapping /*= false*/, uint8_t additionalPadding /*= 0*/)
+canvas::ImageEntry DataStash::cacheImage(const Image* img, bool supportWrapping /*= false*/, uint8_t additionalPadding /*= 0*/)
 {
 	if (!img)
 		return canvas::ImageEntry();

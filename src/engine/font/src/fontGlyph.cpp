@@ -14,7 +14,7 @@
 
 BEGIN_BOOMER_NAMESPACE_EX(font)
 
-Glyph::Glyph(const GlyphID& id, const image::ImagePtr& imagePtr, const Point& offset, const Point& size, const Vector2& advance, const Rect& logicalRect)
+Glyph::Glyph(const GlyphID& id, const ImagePtr& imagePtr, const Point& offset, const Point& size, const Vector2& advance, const Rect& logicalRect)
     : m_id(id)
     , m_offset(offset)
     , m_size(size)

@@ -8,7 +8,7 @@
 
 #pragma once
 
-#include "core/image/include/imageDynamicAtlas.h"
+#include "core/image/include/imageAtlas.h"
 #include "engine/font/include/fontGlyph.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(canvas)
@@ -51,7 +51,7 @@ private:
 
 	struct Page
 	{
-		image::DynamicAtlas image;
+		ImageAtlas image;
 		Rect dirtyRect;
 
 		Page(uint32_t size);

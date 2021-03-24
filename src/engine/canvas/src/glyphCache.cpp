@@ -104,7 +104,7 @@ const ImageAtlasEntryInfo* GlyphCache::findRenderDataForGlyph(const font::Glyph*
 			auto& page = m_pages[pageIndex];
 
 			// place the image
-			image::DynamicAtlasEntry placedImage;
+			ImageAtlasEntry placedImage;
 			if (page.image.placeImage(glyph->bitmap()->view(), 4, false, placedImage))
 			{
 				// remember placement

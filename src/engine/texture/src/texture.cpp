@@ -91,7 +91,7 @@ TRuntimeObjectPtr<Texture> Texture::CreateFromData(const ImageCreationInfo& setu
     return ret;
 }
 
-TRuntimeObjectPtr<Texture> Texture::CreateFromUserData(IDevice* drv, TextureType type, const image::ImagePtr* images, uint8_t numMips, uint16_t numSlices)
+TRuntimeObjectPtr<Texture> Texture::CreateFromUserData(IDevice* drv, TextureType type, const ImagePtr* images, uint8_t numMips, uint16_t numSlices)
 {
     // we need to have at least one mip and slice
     uint32_t numTotalImages = numMips * numSlices;
@@ -133,7 +133,7 @@ TRuntimeObjectPtr<Texture> Texture::CreateFromUserData(IDevice* drv, TextureType
 
     // setup source data
     Array<SourceData> sourceMips;
-    Array<image::ImagePtr> sourceImages;
+    Array<ImagePtr> sourceImages;
     sourceMips.reserve(numTotalImages);
     sourceImages.reserve(numTotalImages);
     uint32_t totalMemorySize = 0;
@@ -162,8 +162,8 @@ TRuntimeObjectPtr<Texture> Texture::CreateFromUserData(IDevice* drv, TextureType
             }
 
             // conform to format
-            auto convertedImage = image::ConvertPixelFormat(sourceImage, baseImage.pixelFormat());
-            convertedImage = image::ConvertChannels(sourceImage, baseImage.size().m_channels, nullptr, Vector4(1, 1, 1, 1));
+            auto convertedImage = ConvertPixelFormat(sourceImage, baseImage.pixelFormat());
+            convertedImage = ConvertChannels(sourceImage, baseImage.size().m_channels, nullptr, Vector4(1, 1, 1, 1));
 
             // keep image around
             sourceImages.emplaceBack(sourceImage);

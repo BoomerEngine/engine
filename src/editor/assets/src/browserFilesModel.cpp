@@ -83,7 +83,7 @@ AssetBrowserFileVis::AssetBrowserFileVis(const AssetBrowserTabFilesSetup& setup,
     {
         static const auto defaultThumbnail = LoadImageFromDepotPath("/engine/interface/thumbnails/file.png");
 
-        m_icon = createChild<ui::Image>(defaultThumbnail);
+        m_icon = createChild<ui::CustomImage>(defaultThumbnail);
         m_icon->customMargins(3.0f);
         m_icon->customMaxSize(m_size, m_size);
         m_icon->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
@@ -178,7 +178,7 @@ AssetBrowserDirectoryVis::AssetBrowserDirectoryVis(const AssetBrowserTabFilesSet
     {
         static const auto thumbnail = LoadImageFromDepotPath("/engine/interface/thumbnails/directory.png");
 
-        m_icon = createChild<ui::Image>(thumbnail);
+        m_icon = createChild<ui::CustomImage>(thumbnail);
         m_icon->customMargins(3.0f);
         m_icon->customMaxSize(m_size, m_size);
         m_icon->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
@@ -244,7 +244,7 @@ AssetBrowserParentDirectoryVis::AssetBrowserParentDirectoryVis(const AssetBrowse
     {
         static const auto thumbnail = LoadImageFromDepotPath("/engine/interface/thumbnails/directory.png");
 
-        m_icon = createChild<ui::Image>(thumbnail);
+        m_icon = createChild<ui::CustomImage>(thumbnail);
         m_icon->customMargins(3.0f);
         m_icon->customMaxSize(m_size, m_size);
         m_icon->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
@@ -287,7 +287,7 @@ AssetBrowserPlaceholderFileVis::AssetBrowserPlaceholderFileVis(const AssetBrowse
     {
         static const auto defaultThumbnail = LoadImageFromDepotPath("/engine/interface/thumbnails/file.png");
 
-        m_icon = createChild<ui::Image>(defaultThumbnail);
+        m_icon = createChild<ui::CustomImage>(defaultThumbnail);
         m_icon->customMargins(3.0f);
         m_icon->customMaxSize(m_size, m_size);
         m_icon->customHorizontalAligment(ui::ElementHorizontalLayout::Center);
@@ -362,7 +362,7 @@ AssetBrowserPlaceholderDirectoryVis::AssetBrowserPlaceholderDirectoryVis(const A
     {
         static const auto thumbnail = LoadImageFromDepotPath("/engine/interface/thumbnails/directory.png");
 
-        m_icon = createChild<ui::Image>(thumbnail);
+        m_icon = createChild<ui::CustomImage>(thumbnail);
         m_icon->customMargins(3.0f);
         m_icon->customMaxSize(m_size, m_size);
         m_icon->customHorizontalAligment(ui::ElementHorizontalLayout::Center);

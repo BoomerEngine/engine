@@ -23,7 +23,7 @@ ContentLoader::ContentLoader(StringView directoryPath)
 {
 }
 
-image::ImagePtr ContentLoader::loadImage(StringView imageFileName)
+ImagePtr ContentLoader::loadImage(StringView imageFileName)
 {
     auto dir = m_baseDirectory;
     for (uint32_t i = 0; i < 2; ++i)
