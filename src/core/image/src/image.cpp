@@ -17,6 +17,7 @@ BEGIN_BOOMER_NAMESPACE()
 //--
 
 RTTI_BEGIN_TYPE_ENUM(ImagePixelFormat);
+    RTTI_OLD_NAME("image::PixelFormat");
     RTTI_ENUM_OPTION(Uint8_Norm);
     RTTI_ENUM_OPTION(Uint16_Norm);
     RTTI_ENUM_OPTION(Float16_Raw);
@@ -24,6 +25,7 @@ RTTI_BEGIN_TYPE_ENUM(ImagePixelFormat);
 RTTI_END_TYPE();
 
 RTTI_BEGIN_TYPE_ENUM(ImageColorSpace);
+    RTTI_OLD_NAME("image::ColorSpace");
     RTTI_ENUM_OPTION(Linear);
     RTTI_ENUM_OPTION(SRGB);
     RTTI_ENUM_OPTION(HDR);
@@ -31,6 +33,7 @@ RTTI_BEGIN_TYPE_ENUM(ImageColorSpace);
 RTTI_END_TYPE();
 
 RTTI_BEGIN_TYPE_ENUM(CubeSide);
+    RTTI_OLD_NAME("image::CubeSide");
     RTTI_ENUM_OPTION(PositiveX);
     RTTI_ENUM_OPTION(NegativeX);
     RTTI_ENUM_OPTION(PositiveY);
@@ -42,6 +45,7 @@ RTTI_END_TYPE();
 //--
 
 RTTI_BEGIN_TYPE_CLASS(Image);
+    RTTI_OLD_NAME("image::Image");
     RTTI_METADATA(ResourceDescriptionMetadata).description("Image");
     RTTI_PROPERTY(m_format);
     RTTI_PROPERTY(m_channels);

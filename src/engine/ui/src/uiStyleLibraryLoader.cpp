@@ -475,7 +475,8 @@ namespace prv
                         Color valB = colorB->color();
 
                         LinearInterpolation lerp(perc->number());
-                        return pc.library().alloc<RawValue>(lerp.lerpGamma(valA, valB));
+                        //return pc.library().alloc<RawValue>(lerp.lerpGamma(valA, valB));
+                        return pc.library().alloc<RawValue>(lerp.lerpLinear(valA, valB));
                     }
                     else
                     {

@@ -18,11 +18,14 @@
     <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
     <sourceImportedOn>132600383922240000</sourceImportedOn>
   </importBaseConfiguration>
-  <importUserConfiguration class="assets::OBJMeshImportConfig"/>
+  <importUserConfiguration class="assets::OBJMeshImportConfig">
+    <space>LeftHandZUp</space>
+  </importUserConfiguration>
   <importFullConfiguration class="assets::OBJMeshImportConfig">
     <sourceImportedBy>RexDex</sourceImportedBy>
     <sourceImportedAt>DESKTOP-3O2DE7V</sourceImportedAt>
     <sourceImportedOn>132600383922240000</sourceImportedOn>
+    <space>LeftHandZUp</space>
   </importFullConfiguration>
-  <internalRevision>1</internalRevision>
+  <internalRevision>3</internalRevision>
 </object>
