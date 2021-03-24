@@ -1,0 +1,10 @@
+<?xml version="1.0" standalone="yes"?>
+<object class="ProjectSettingsFile">
+  <settings>
+    <element class="GameProjectSettingDebugWorlds">
+      <worldPaths>
+        <element>/engine/test/import/tes54/scene/sponza.xfile</element>
+      </worldPaths>
+    </element>
+  </settings>
+</object>
