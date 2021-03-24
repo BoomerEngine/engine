@@ -23,9 +23,9 @@ class SceneTest_CanvasTexture : public ICanvasTest
     RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_CanvasTexture, ICanvasTest);
 
 public:
-	RefPtr<canvas::DynamicAtlas> m_atlas;
+	RefPtr<CanvasDynamicAtlas> m_atlas;
 
-	canvas::ImageEntry m_atlasEntry;
+	CanvasImageEntry m_atlasEntry;
 
 	NativeTimePoint m_time;
 
@@ -35,7 +35,7 @@ public:
 
 		auto lena = loadImage("lena.png");
 
-		m_atlas = RefNew<canvas::DynamicAtlas>(1024, 1);
+		m_atlas = RefNew<CanvasDynamicAtlas>(1024, 1);
 		m_atlasEntry = m_atlas->registerImage(lena, true);
     }
 
@@ -44,11 +44,11 @@ public:
 		m_atlas.reset();
 	}
 
-    virtual void render(canvas::Canvas& c) override
+    virtual void render(Canvas& c) override
     {
-		canvas::Geometry g;
+		CanvasGeometry g;
 		{
-			canvas::GeometryBuilder b(g);
+			CanvasGeometryBuilder b(g);
 
 			CanvasGridBuilder grid(3, 3, 30, 1024, 1024);
 
@@ -61,10 +61,10 @@ public:
 				b.resetTransform();
 				b.translatei(r.left(), r.top());
 
-				b.blending(canvas::BlendOp::Copy);
+				b.blending(CanvasBlendOp::Copy);
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::ImagePattern(m_atlasEntry));
+				b.fillPaint(CanvasStyle_ImagePattern(m_atlasEntry));
 				b.fill();
 			}
 
@@ -75,10 +75,10 @@ public:
 				b.resetTransform();
 				b.translatei(r.left(), r.top());
 
-				b.blending(canvas::BlendOp::Copy);
+				b.blending(CanvasBlendOp::Copy);
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::ImagePattern(canvas::ImagePatternSettings(m_atlasEntry).scale(2.0f)));
+				b.fillPaint(CanvasStyle_ImagePattern(ImagePatternSettings(m_atlasEntry).scale(2.0f)));
 				b.fill();
 			}
 
@@ -89,10 +89,10 @@ public:
 				b.resetTransform();
 				b.translatei(r.left(), r.top());
 
-				b.blending(canvas::BlendOp::Copy);
+				b.blending(CanvasBlendOp::Copy);
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::ImagePattern(canvas::ImagePatternSettings(m_atlasEntry).scale(2.0f).offset(20.f, 20.0f)));
+				b.fillPaint(CanvasStyle_ImagePattern(ImagePatternSettings(m_atlasEntry).scale(2.0f).offset(20.f, 20.0f)));
 				b.fill();
 			}
 
@@ -103,10 +103,10 @@ public:
 				b.resetTransform();
 				b.translatei(r.left(), r.top());
 
-				b.blending(canvas::BlendOp::Copy);
+				b.blending(CanvasBlendOp::Copy);
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::ImagePattern(canvas::ImagePatternSettings(m_atlasEntry).scale(2.0f).angle(1.0f * time)));
+				b.fillPaint(CanvasStyle_ImagePattern(ImagePatternSettings(m_atlasEntry).scale(2.0f).angle(1.0f * time)));
 				b.fill();
 			}
 
@@ -120,10 +120,10 @@ public:
 				float cx = m_atlasEntry.width / 2;
 				float cy = m_atlasEntry.height / 2;
 
-				b.blending(canvas::BlendOp::Copy);
+				b.blending(CanvasBlendOp::Copy);
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::ImagePattern(canvas::ImagePatternSettings(m_atlasEntry).scale(2.0f).pivot(cx, cy).angle(1.0f * time)));
+				b.fillPaint(CanvasStyle_ImagePattern(ImagePatternSettings(m_atlasEntry).scale(2.0f).pivot(cx, cy).angle(1.0f * time)));
 				b.fill();
 			}
 
@@ -140,10 +140,10 @@ public:
 				float ox = (m_atlasEntry.width / 1.5f) - r.width();
 				float oy = (m_atlasEntry.height / 1.5f) - r.height();
 
-				b.blending(canvas::BlendOp::Copy);
+				b.blending(CanvasBlendOp::Copy);
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::ImagePattern(canvas::ImagePatternSettings(m_atlasEntry).scale(1.5f).pivot(cx, cy).offset(-ox, -oy).angle(1.0f * time)));
+				b.fillPaint(CanvasStyle_ImagePattern(ImagePatternSettings(m_atlasEntry).scale(1.5f).pivot(cx, cy).offset(-ox, -oy).angle(1.0f * time)));
 				b.fill();
 			}
 
@@ -154,10 +154,10 @@ public:
 				b.resetTransform();
 				b.translatei(r.left(), r.top());
 
-				b.blending(canvas::BlendOp::Copy);
+				b.blending(CanvasBlendOp::Copy);
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::ImagePattern(canvas::ImagePatternSettings(m_atlasEntry).scale(3.0f).angle(-1.0f * time).wrap()));
+				b.fillPaint(CanvasStyle_ImagePattern(ImagePatternSettings(m_atlasEntry).scale(3.0f).angle(-1.0f * time).wrap()));
 				b.fill();
 			}
 
@@ -171,10 +171,10 @@ public:
 				float cx = m_atlasEntry.width / 2;
 				float cy = m_atlasEntry.height / 2;
 
-				b.blending(canvas::BlendOp::Copy);
+				b.blending(CanvasBlendOp::Copy);
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::ImagePattern(canvas::ImagePatternSettings(m_atlasEntry).scale(2.0f).pivot(cx, cy).angle(1.0f * time).wrap()));
+				b.fillPaint(CanvasStyle_ImagePattern(ImagePatternSettings(m_atlasEntry).scale(2.0f).pivot(cx, cy).angle(1.0f * time).wrap()));
 				b.fill();
 			}
 
@@ -191,10 +191,10 @@ public:
 				float ox = (m_atlasEntry.width / 1.5f) - r.width();
 				float oy = (m_atlasEntry.height / 1.5f) - r.height();
 
-				b.blending(canvas::BlendOp::Copy);
+				b.blending(CanvasBlendOp::Copy);
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::ImagePattern(canvas::ImagePatternSettings(m_atlasEntry).scale(1.5f).pivot(cx, cy).offset(-ox, -oy).angle(1.0f * time).wrap()));
+				b.fillPaint(CanvasStyle_ImagePattern(ImagePatternSettings(m_atlasEntry).scale(1.5f).pivot(cx, cy).offset(-ox, -oy).angle(1.0f * time).wrap()));
 				b.fill();
 			}
 		}

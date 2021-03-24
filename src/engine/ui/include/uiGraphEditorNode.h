@@ -156,7 +156,7 @@ public:
     RefPtr<GraphEditorBlockSocketTracker> createSocketTracker(const graph::Socket* socket);
 
     // draw connections of this block
-    void drawConnections(const ElementArea& outerArea, const ElementArea& outerClipArea, canvas::Canvas& canvas, float mergedOpacity);
+    void drawConnections(const ElementArea& outerArea, const ElementArea& outerClipArea, Canvas& canvas, float mergedOpacity);
 
     //--
 
@@ -180,15 +180,15 @@ private:
     virtual void updateActualPosition(const Vector2& pos) override;
 
     virtual void computeSize(Size& outSize) const override;
-    virtual void prepareBoundaryGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder, float inset) const override;
-    virtual void prepareBackgroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const override;
-    virtual void prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const override;
-    virtual void renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual void prepareBoundaryGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder, float inset) const override;
+    virtual void prepareBackgroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const override;
+    virtual void prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const override;
+    virtual void renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, Canvas& canvas, float mergedOpacity) override;
 
-    virtual bool adjustBackgroundStyle(canvas::RenderStyle& outStyle, float& outBorderWidth) const override;
-    virtual bool adjustBorderStyle(canvas::RenderStyle& outStyle, float& outBorderWidth) const override;
+    virtual bool adjustBackgroundStyle(CanvasRenderStyle& outStyle, float& outBorderWidth) const override;
+    virtual bool adjustBorderStyle(CanvasRenderStyle& outStyle, float& outBorderWidth) const override;
 
-    void prepareBlockOutline(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder, float inset, float titleHeightLimit) const;
+    void prepareBlockOutline(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder, float inset, float titleHeightLimit) const;
     Size computeLayoutWithTitle(const Size& innerContentSize, float innerPadding, GraphEditorNodeInternalLayout& outLayout) const;
     Size computeLayoutNoTitle(const Size& innerContentSize, float innerPadding, bool adjustForSlant, GraphEditorNodeInternalLayout& outLayout) const;
     Size computeLayoutCircleLike(const Size& innerContentSize, float innerPadding, GraphEditorNodeInternalLayout& outLayout) const;

@@ -474,15 +474,15 @@ namespace helper
             }
         }
 
-        virtual void onRender(canvas::Canvas& canvas) override
+        virtual void onRender(Canvas& canvas) override
         {
             auto rect = calcSelectionRect();
             if (!rect.empty())
             {
-				canvas::Geometry g;
+				CanvasGeometry g;
 
 				{
-					canvas::GeometryBuilder b(g);
+					CanvasGeometryBuilder b(g);
 					b.fillColor(Color(50, 50, 180, 100));
 					b.rect(0.0f, 0.0f, rect.width(), rect.height());
 					b.fill();

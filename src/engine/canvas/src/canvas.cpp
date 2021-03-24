@@ -17,7 +17,7 @@
 #include "engine/font/include/fontInputText.h"
 #include "engine/font/include/fontGlyph.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -192,9 +192,9 @@ Canvas::DebugTextBounds Canvas::debugPrint(float x, float y, StringView text, Co
 		assemblyParams.horizontalAlignment = align;
 		font->renderText(params, assemblyParams, font::FontInputText(text.data(), text.length()), glyphs, color);
 
-		canvas::Geometry g;
+		CanvasGeometry g;
 		{
-			canvas::GeometryBuilder b(g);
+			CanvasGeometryBuilder b(g);
 			b.print(glyphs);
 		}
 
@@ -332,7 +332,7 @@ bool Canvas::testScissorBounds(float x0, float y0, float x1, float y1) const
 
 //--
 
-void Canvas::transformBounds(const Placement& transform, const Vector2& localMin, const Vector2& localMax, Vector2& globalMin, Vector2& globalMax) const
+void Canvas::transformBounds(const CanvasPlacement& transform, const Vector2& localMin, const Vector2& localMax, Vector2& globalMin, Vector2& globalMax) const
 {
 	if (transform.simple)
 	{
@@ -375,12 +375,12 @@ void Canvas::transformBounds(const Placement& transform, const Vector2& localMin
 	}
 }
 
-void Canvas::place(float x, float y, const Geometry& geometry, float alpha /*= 1.0f*/)
+void Canvas::place(float x, float y, const CanvasGeometry& geometry, float alpha /*= 1.0f*/)
 {
-	place(Placement(x, y), geometry, alpha);
+	place(CanvasPlacement(x, y), geometry, alpha);
 }
 
-void Canvas::place(const Placement& placement, const Geometry& geometry, float alpha)
+void Canvas::place(const CanvasPlacement& placement, const CanvasGeometry& geometry, float alpha)
 {
 	if (alpha > 0.0f)
 	{
@@ -411,20 +411,20 @@ void Canvas::place(const Placement& placement, const Geometry& geometry, float a
 	}
 }
 
-static uint32_t CalcFlattenedVertexCount(uint32_t numVertices, BatchPacking packing)
+static uint32_t CalcFlattenedVertexCount(uint32_t numVertices, CanvasBatchPacking packing)
 {
 	switch (packing)
 	{
-		case BatchPacking::TriangleList:
+		case CanvasBatchPacking::TriangleList:
 			ASSERT(numVertices >= 3 && (numVertices % 3) == 0);
 			return numVertices;
 				
-		case BatchPacking::TriangleStrip:
-		case BatchPacking::TriangleFan:
+		case CanvasBatchPacking::TriangleStrip:
+		case CanvasBatchPacking::TriangleFan:
 			ASSERT(numVertices >= 3);
 			return (numVertices - 2) * 3;
 
-		case BatchPacking::Quads:
+		case CanvasBatchPacking::Quads:
 			ASSERT(numVertices >= 4 && (numVertices % 4) == 0);
 			return (numVertices / 4) * 6;
 	}
@@ -433,7 +433,7 @@ static uint32_t CalcFlattenedVertexCount(uint32_t numVertices, BatchPacking pack
 	return 0;
 }
 
-void Canvas::placeVertex(const Placement& placement, const Vertex* vertexPtr, Vertex*& writePtr, uint32_t firstAttributeIndex)
+void Canvas::placeVertex(const CanvasPlacement& placement, const CanvasVertex* vertexPtr, CanvasVertex*& writePtr, uint32_t firstAttributeIndex)
 {
 	if (placement.simple)
 	{
@@ -459,7 +459,7 @@ void Canvas::placeVertex(const Placement& placement, const Vertex* vertexPtr, Ve
 	++writePtr;
 }
 
-void Canvas::placeInternal(const Placement& placement, const Vertex* vertices, uint32_t numVertices, uint32_t firstAttributeIndex, uint32_t firstDataOffset, const Batch& batch, float alpha)
+void Canvas::placeInternal(const CanvasPlacement& placement, const CanvasVertex* vertices, uint32_t numVertices, uint32_t firstAttributeIndex, uint32_t firstDataOffset, const CanvasBatch& batch, float alpha)
 {
 	// nothing to place
 	if (numVertices <= 2 || !vertices)
@@ -483,14 +483,14 @@ void Canvas::placeInternal(const Placement& placement, const Vertex* vertices, u
 	// process topology
 	switch (batch.packing)
 	{
-		case BatchPacking::TriangleList:
+		case CanvasBatchPacking::TriangleList:
 		{
 			while (readPtr < readEndPtr)
 				placeVertex(placement, readPtr++, writePtr, firstAttributeIndex);
 			break;
 		}
 
-		case BatchPacking::Quads:
+		case CanvasBatchPacking::Quads:
 		{
 			while (readPtr < readEndPtr)
 			{
@@ -524,7 +524,7 @@ void Canvas::placeInternal(const Placement& placement, const Vertex* vertices, u
 			break;
 		}
 
-		case BatchPacking::TriangleFan:
+		case CanvasBatchPacking::TriangleFan:
 		{
 			const auto* firstPtr = readPtr + 0;
 			const auto* prevPtr = readPtr + 1;
@@ -540,7 +540,7 @@ void Canvas::placeInternal(const Placement& placement, const Vertex* vertices, u
 			break;
 		}
 
-		case BatchPacking::TriangleStrip:
+		case CanvasBatchPacking::TriangleStrip:
 		{
 			const auto* basePtr = readPtr + 0;
 			const auto* prevPtr = readPtr + 1;
@@ -585,14 +585,14 @@ void Canvas::placeInternal(const Placement& placement, const Vertex* vertices, u
 	outBatch.renderDataSize = batch.renderDataSize;
 
 	// push vertices as well
-	m_gatheredVertices.writeLarge(m_tempVertices, sizeof(Vertex)* targetVertexCount);
+	m_gatheredVertices.writeLarge(m_tempVertices, sizeof(CanvasVertex)* targetVertexCount);
 }		
 
 //---
 
-void Canvas::quad(const Placement& placement, const QuadSetup& setup, uint8_t customRenderer /*= 0*/, const void* customData /*= nullptr*/, uint32_t customDataSize /*= 0*/)
+void Canvas::quad(const CanvasPlacement& placement, const QuadSetup& setup, uint8_t customRenderer /*= 0*/, const void* customData /*= nullptr*/, uint32_t customDataSize /*= 0*/)
 {
-	canvas::Vertex v[4];
+	CanvasVertex v[4];
 	v[0].pos.x = (int)std::round(setup.x0);
 	v[0].pos.y = (int)std::round(setup.y0);
 	v[1].pos.x = (int)std::round(setup.x1);
@@ -626,9 +626,9 @@ void Canvas::quad(const Placement& placement, const QuadSetup& setup, uint8_t cu
         v[3].uv.x = setup.u0;
         v[3].uv.y = setup.v1;*/
 
-		auto flags = Vertex::MASK_HAS_IMAGE | Vertex::MASK_FILL;
+		auto flags = CanvasVertex::MASK_HAS_IMAGE | CanvasVertex::MASK_FILL;
 		if (image->wrap || setup.wrap)
-			flags |= Vertex::MASK_HAS_WRAP_U | Vertex::MASK_HAS_WRAP_V;
+			flags |= CanvasVertex::MASK_HAS_WRAP_U | CanvasVertex::MASK_HAS_WRAP_V;
 
 		for (int i = 0; i < 4; ++i)
 		{
@@ -650,7 +650,7 @@ void Canvas::quad(const Placement& placement, const QuadSetup& setup, uint8_t cu
 		v[3].uv.x = setup.u0;
 		v[3].uv.y = setup.v1;
 
-		auto flags = Vertex::MASK_FILL;
+		auto flags = CanvasVertex::MASK_FILL;
 
 		for (int i = 0; i < 4; ++i)
 		{
@@ -662,11 +662,11 @@ void Canvas::quad(const Placement& placement, const QuadSetup& setup, uint8_t cu
 		}
 	}
 
-	Batch batch;
+	CanvasBatch batch;
 	batch.atlasIndex = setup.image.atlasIndex;
 	batch.rendererIndex = customRenderer;
-	batch.type = BatchType::FillConvex;
-	batch.packing = BatchPacking::Quads;
+	batch.type = CanvasBatchType::FillConvex;
+	batch.packing = CanvasBatchPacking::Quads;
 	batch.op = setup.op;
 
 	if (customDataSize > 0 && customData)
@@ -681,4 +681,4 @@ void Canvas::quad(const Placement& placement, const QuadSetup& setup, uint8_t cu
 
 //---
         
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

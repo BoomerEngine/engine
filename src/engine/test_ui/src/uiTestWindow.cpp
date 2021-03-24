@@ -108,7 +108,7 @@ TestWindow::TestWindow()
     customMinSize(300, 300);
     layoutMode(ui::LayoutMode::Vertical);
 
-	m_honklerAtlas = RefNew<canvas::DynamicAtlas>(2048, 1);
+	m_honklerAtlas = RefNew<CanvasDynamicAtlas>(2048, 1);
             
     static bool canEdit = true;
 

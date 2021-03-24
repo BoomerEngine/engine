@@ -62,7 +62,7 @@ public:
 
     virtual void initialize() {};
 	virtual void shutdown() {};
-    virtual void render(canvas::Canvas& canvas) {};
+    virtual void render(Canvas& canvas) {};
     virtual void update(float dt) {};
     virtual void processInput(const InputEvent& evt) {};
 

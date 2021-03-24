@@ -28,7 +28,7 @@ IInputAction::~IInputAction()
 void IInputAction::onCanceled()
 {}
 
-void IInputAction::onRender(canvas::Canvas& canvas)
+void IInputAction::onRender(Canvas& canvas)
 {}
 
 void IInputAction::onRender3D(rendering::FrameParams& frame)

@@ -10,7 +10,7 @@
 
 #include "core/image/include/imageView.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -33,10 +33,10 @@ public:
 
 	// find placement of given image in the atlas
 	// NOTE: atlas must be registered first
-	const ImageAtlasEntryInfo* findRenderDataForAtlasEntry(const ImageEntry& entry) const;
+	const CanvasImageEntryInfo* findRenderDataForAtlasEntry(const CanvasImageEntry& entry) const;
 
 	// find placement of given font glyph
-	const ImageAtlasEntryInfo* findRenderDataForGlyph(const font::Glyph* glyph) const;
+	const CanvasImageEntryInfo* findRenderDataForGlyph(const font::Glyph* glyph) const;
 
 	//--
 
@@ -52,20 +52,20 @@ private:
 	virtual void onShutdownService() override final;
 	virtual void onSyncUpdate() override final;
 
-	IAtlas* m_atlasRegistry[MAX_ATLASES];
+	ICanvasAtlas* m_atlasRegistry[MAX_ATLASES];
 
-	GlyphCache* m_glyphCache = nullptr;
+	CanvasGlyphCache* m_glyphCache = nullptr;
 
 	CanvasRenderer* m_renderer = nullptr;
 
     void sync(gpu::CommandWriter& cmd, uint64_t atlasMask, uint64_t glpyhMask);
 
-	bool registerAtlas(IAtlas* atlas, ImageAtlasIndex& outIndex);
-	void unregisterAtlas(IAtlas* atlas, ImageAtlasIndex index);
+	bool registerAtlas(ICanvasAtlas* atlas, CanvasAtlasIndex& outIndex);
+	void unregisterAtlas(ICanvasAtlas* atlas, CanvasAtlasIndex index);
 
-	friend class IAtlas;
+	friend class ICanvasAtlas;
 };
 
 //--
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

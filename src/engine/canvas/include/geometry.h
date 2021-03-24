@@ -30,13 +30,13 @@
 #pragma once
 #include "style.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
 #pragma pack(push)
 #pragma pack(4)
-struct Attributes
+struct CanvasAttributes
 {
 	Vector2 base;
 	Vector2 extent;
@@ -48,34 +48,34 @@ struct Attributes
 
 	//--
 
-	bool operator==(const Attributes& other) const;
-	bool operator!=(const Attributes& other) const;
+	bool operator==(const CanvasAttributes& other) const;
+	bool operator!=(const CanvasAttributes& other) const;
 
-	static uint32_t CalcHash(const Attributes& style);
+	static uint32_t CalcHash(const CanvasAttributes& style);
 
 private:
 	uint32_t _padding0 = 0;
 };
 #pragma pack(pop)
 
-static_assert(sizeof(Attributes) == 40, "Make sure there are no holes");
+static_assert(sizeof(CanvasAttributes) == 40, "Make sure there are no holes");
 
 //--
 
 /// Simple structure to hold renderable canvas geometry (vertices + draw commands)
 /// Can be placed (instanced) in canvas with a custom transformation
 /// NOTE: data cached here depends on the particular UVs and atlas placements or images in the storage!
-struct ENGINE_CANVAS_API Geometry
+struct ENGINE_CANVAS_API CanvasGeometry
 {
     RTTI_DECLARE_POOL(POOL_CANVAS)
 
 public:
-    Geometry();
-	Geometry(const Geometry& other);
-	Geometry(Geometry&& other);
-	Geometry& operator=(const Geometry& other);
-	Geometry& operator=(Geometry&& other);
-	~Geometry();
+    CanvasGeometry();
+	CanvasGeometry(const CanvasGeometry& other);
+	CanvasGeometry(CanvasGeometry&& other);
+	CanvasGeometry& operator=(const CanvasGeometry& other);
+	CanvasGeometry& operator=(CanvasGeometry&& other);
+	~CanvasGeometry();
 
     //--
 
@@ -95,26 +95,26 @@ public:
 	Vector2 boundsMin;
 	Vector2 boundsMax;
 
-	Array<Vertex> vertices;
-	Array<Batch> batches;
-	Array<Attributes> attributes;
+	Array<CanvasVertex> vertices;
+	Array<CanvasBatch> batches;
+	Array<CanvasAttributes> attributes;
 	Array<uint8_t> customData;
 
 	//--
 			
 	// directly append a batch to the geometry
-	void appendVertexBatch(const Vertex* vertices, uint32_t numVertices, const Batch& setup = Batch(), const RenderStyle* style = nullptr);
+	void appendVertexBatch(const CanvasVertex* vertices, uint32_t numVertices, const CanvasBatch& setup = CanvasBatch(), const CanvasRenderStyle* style = nullptr);
 
 	// directly append a batch to the geometry indexed triangle list batch to the geometry
-	void appendIndexedBatch(const Vertex* vertices, const uint16_t* indices, uint32_t numIndices, const Batch& setup = Batch(), const RenderStyle* style = nullptr);
+	void appendIndexedBatch(const CanvasVertex* vertices, const uint16_t* indices, uint32_t numIndices, const CanvasBatch& setup = CanvasBatch(), const CanvasRenderStyle* style = nullptr);
 
 	//--
 
 private:
-	int appendStyle(const RenderStyle& style);
-	void applyStyle(Vertex* vertices, uint32_t numVertices, const RenderStyle& style);
+	int appendStyle(const CanvasRenderStyle& style);
+	void applyStyle(CanvasVertex* vertices, uint32_t numVertices, const CanvasRenderStyle& style);
 };
 
 //--
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

@@ -52,7 +52,7 @@ ConfigProperty<double> cvDataAutoSaveTime("Editor", "DataAutoSaveInterval", 120.
 RTTI_BEGIN_TYPE_CLASS(EditorService);
 RTTI_METADATA(DependsOnServiceMetadata).dependsOn<gpu::DeviceService>();
 RTTI_METADATA(DependsOnServiceMetadata).dependsOn<LoadingService>();
-RTTI_METADATA(DependsOnServiceMetadata).dependsOn<canvas::CanvasService>();
+RTTI_METADATA(DependsOnServiceMetadata).dependsOn<CanvasService>();
 RTTI_END_TYPE();
 
 //--

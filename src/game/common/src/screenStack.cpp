@@ -319,7 +319,7 @@ void GameScreenStack::renderImGuiDebugOverlay(gpu::CommandWriter& cmd, const gpu
         cmd.opBeingPass(fb);
 
         {
-            canvas::Canvas canvas(output.width, output.height);
+            Canvas canvas(output.width, output.height);
 
             m_imgui->beginFrame(canvas, 0.01f);
             DebugPagesRender();
@@ -336,7 +336,7 @@ void GameScreenStack::renderImGuiDebugOverlay(gpu::CommandWriter& cmd, const gpu
 
             m_imgui->endFrame(canvas);
 
-            GetService<canvas::CanvasService>()->render(cmd, canvas);
+            GetService<CanvasService>()->render(cmd, canvas);
         }
 
         cmd.opEndPass();

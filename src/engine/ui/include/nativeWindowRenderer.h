@@ -55,7 +55,7 @@ public:
     virtual void windowSetTitle(NativeWindowID id, StringView txt) override;
     virtual void windowSetOpacity(NativeWindowID id, float opacity) override;
     virtual void windowUpdate(NativeWindowID id) override;
-    virtual void windowRenderContent(NativeWindowID id, const ElementArea& area, bool forcedPaint, const canvas::Canvas& canvas) override;
+    virtual void windowRenderContent(NativeWindowID id, const ElementArea& area, bool forcedPaint, const Canvas& canvas) override;
     virtual void windowSetCapture(NativeWindowID id, int mode) override;
     virtual bool windowGetRenderableArea(NativeWindowID id, ElementArea& outWindowDrawArea) override;
     virtual bool windowHasCloseRequest(NativeWindowID id) override;

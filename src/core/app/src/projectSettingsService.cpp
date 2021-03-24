@@ -22,25 +22,29 @@ ProjectSettingsService::ProjectSettingsService()
 
 void ProjectSettingsService::loadSettings()
 {
+    m_settings.clear();
+    m_settingsPerClass.clear();
+
     if (auto doc = LoadObjectFromXMLFile<ProjectSettingsFile>(m_projectFilePath))
     {
-        // copy settings
-        m_settings = doc->settings();
-
         // reset the settings mapping
         m_settingsPerClass.clear();
         m_settingsPerClass.allocateWith(m_classList.size(), {});
 
         // assign settings to matching classes
-        for (const auto& setting : m_settings)
+        for (const auto& setting : doc->settings())
         {
-            setting->parent(nullptr);
-
-            for (auto i : m_classList.indexRange())
+            if (setting)
             {
-                auto cls = m_classList[i];
-                if (setting->is(cls))
-                    m_settingsPerClass[i].pushBack(setting);
+                setting->parent(nullptr);
+                m_settings.pushBack(setting);
+
+                for (auto i : m_classList.indexRange())
+                {
+                    auto cls = m_classList[i];
+                    if (setting->is(cls))
+                        m_settingsPerClass[i].pushBack(setting);
+                }
             }
         }
     }

@@ -28,12 +28,12 @@ public:
     {
     }
 
-    virtual void render(canvas::Canvas& c) override
+    virtual void render(Canvas& c) override
     {
-		canvas::Geometry g;
+		CanvasGeometry g;
 		{
 			CanvasGridBuilder grid(2, 2, 20, 1024, 1024);
-			canvas::GeometryBuilder builder(g);
+			CanvasGeometryBuilder builder(g);
 
 			{
 				auto r = grid.cell();

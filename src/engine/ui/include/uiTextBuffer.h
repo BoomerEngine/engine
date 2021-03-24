@@ -188,16 +188,16 @@ public:
     ///--
 
     /// render text into canvas
-    void renderText(const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder);
+    void renderText(const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder);
 
     /// render cursor
-    void renderCursor(const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity);
+    void renderCursor(const ElementArea& drawArea, Canvas& canvas, float mergedOpacity);
 
     /// render selection area
-    void renderSelection(const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity);
+    void renderSelection(const ElementArea& drawArea, Canvas& canvas, float mergedOpacity);
 
     /// render highlight area
-    void renderHighlight(const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity);
+    void renderHighlight(const ElementArea& drawArea, Canvas& canvas, float mergedOpacity);
 
     ///--
 
@@ -271,16 +271,16 @@ private:
 
     bool m_modified;
 
-    canvas::Geometry m_cachedCursorGeometry;
-    canvas::Geometry m_cachedSelectionGeometry;
-    canvas::Geometry m_cachedHighlightGeometry;
+    CanvasGeometry m_cachedCursorGeometry;
+    CanvasGeometry m_cachedSelectionGeometry;
+    CanvasGeometry m_cachedHighlightGeometry;
 
     Size m_totalSize;
 
     void generateChars(StringView txt, TChars& outChars) const;
     void generateLayout();
 
-    void generateRangeBlock(int start, int end, Color color, canvas::GeometryBuilder& builder) const;
+    void generateRangeBlock(int start, int end, Color color, CanvasGeometryBuilder& builder) const;
 
     bool lookupGlyphs();
 

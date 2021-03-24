@@ -681,7 +681,7 @@ namespace prv
         }
     }
 
-    void LayoutDisplayData::render(canvas::GeometryBuilder& b, const ElementArea& area, LayoutHorizontalAlign defaultAlignment /*= LayoutHorizontalAlign::Left*/) const
+    void LayoutDisplayData::render(CanvasGeometryBuilder& b, const ElementArea& area, LayoutHorizontalAlign defaultAlignment /*= LayoutHorizontalAlign::Left*/) const
     {
         for (const auto& line : lines)
         {
@@ -734,11 +734,11 @@ namespace prv
                 auto width = icon.image.width * icon.pixelScale;
                 auto height = icon.image.height * icon.pixelScale;
                     
-                auto imageStyle = canvas::ImagePattern(icon.image, canvas::ImagePatternSettings().scale(1.0f /  icon.pixelScale));
+                auto imageStyle = CanvasStyle_ImagePattern(icon.image, ImagePatternSettings().scale(1.0f /  icon.pixelScale));
                 imageStyle.innerColor = imageStyle.outerColor = icon.color;
                 b.fillPaint(imageStyle);
                 b.beginPath();
-                b.blending(canvas::BlendOp::AlphaPremultiplied);
+                b.blending(CanvasBlendOp::AlphaPremultiplied);
                 b.rect(0, 0, width, height);
                 b.fill();
 

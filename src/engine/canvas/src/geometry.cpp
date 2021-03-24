@@ -31,37 +31,37 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
-bool Attributes::operator==(const Attributes& other) const
+bool CanvasAttributes::operator==(const CanvasAttributes& other) const
 {
 	return 0 == memcmp(this, &other, sizeof(other));
 }
 
-bool Attributes::operator!=(const Attributes& other) const
+bool CanvasAttributes::operator!=(const CanvasAttributes& other) const
 {
 	return !operator==(other);
 }
 
-uint32_t Attributes::CalcHash(const Attributes& style)
+uint32_t CanvasAttributes::CalcHash(const CanvasAttributes& style)
 {
 	return CRC32().append(&style, sizeof(style));
 }
 
 //---
 
-Geometry::Geometry()
+CanvasGeometry::CanvasGeometry()
 	: boundsMin(FLT_MAX, FLT_MAX)
 	, boundsMax(-FLT_MAX, -FLT_MAX)
 {}
 
-Geometry::~Geometry()
+CanvasGeometry::~CanvasGeometry()
 {
 }
 
-Geometry::Geometry(const Geometry& other)
+CanvasGeometry::CanvasGeometry(const CanvasGeometry& other)
 	: boundsMin(other.boundsMin)
 	, boundsMax(other.boundsMax)
 	, batches(other.batches)
@@ -69,7 +69,7 @@ Geometry::Geometry(const Geometry& other)
 	, attributes(other.attributes)
 {}
 
-Geometry::Geometry(Geometry&& other)
+CanvasGeometry::CanvasGeometry(CanvasGeometry&& other)
 	: boundsMin(other.boundsMin)
 	, boundsMax(other.boundsMax)
 	, batches(std::move(other.batches))
@@ -80,7 +80,7 @@ Geometry::Geometry(Geometry&& other)
 	other.boundsMax = Vector2(-FLT_MAX, -FLT_MAX);
 }
 
-Geometry& Geometry::operator=(const Geometry& other)
+CanvasGeometry& CanvasGeometry::operator=(const CanvasGeometry& other)
 {
 	if (this != &other)
 	{
@@ -94,7 +94,7 @@ Geometry& Geometry::operator=(const Geometry& other)
 	return *this;
 }
 
-Geometry& Geometry::operator=(Geometry&& other)
+CanvasGeometry& CanvasGeometry::operator=(CanvasGeometry&& other)
 {
 	if (this != &other)
 	{
@@ -111,7 +111,7 @@ Geometry& Geometry::operator=(Geometry&& other)
 	return *this;
 }
 
-void Geometry::reset()
+void CanvasGeometry::reset()
 {
     boundsMin = Vector2(FLT_MAX, FLT_MAX);
     boundsMax = Vector2(-FLT_MAX, -FLT_MAX);
@@ -121,7 +121,7 @@ void Geometry::reset()
 	batches.reset();
 }
 
-uint32_t Geometry::calcMemorySize() const
+uint32_t CanvasGeometry::calcMemorySize() const
 {
 	uint32_t ret = 0;
 	ret += vertices.dataSize();
@@ -133,15 +133,15 @@ uint32_t Geometry::calcMemorySize() const
 
 //--
 
-extern void BuildAttributesFromStyle(const RenderStyle& style, float width, Attributes& outAttributes);
+extern void BuildAttributesFromStyle(const CanvasRenderStyle& style, float width, CanvasAttributes& outAttributes);
 
-int Geometry::appendStyle(const RenderStyle& style)
+int CanvasGeometry::appendStyle(const CanvasRenderStyle& style)
 {
 	int styleIndex = 0;
 	if (!style.attributesNeeded)
 		return 0;
 
-	Attributes attr;
+	CanvasAttributes attr;
 	BuildAttributesFromStyle(style, 1.0f, attr);
 
 	for (auto i : attributes.indexRange())
@@ -152,7 +152,7 @@ int Geometry::appendStyle(const RenderStyle& style)
 	return attributes.size();			
 }
 
-void Geometry::applyStyle(Vertex* vertices, uint32_t numVertices, const RenderStyle& style)
+void CanvasGeometry::applyStyle(CanvasVertex* vertices, uint32_t numVertices, const CanvasRenderStyle& style)
 {			
 	auto* vertexPtr = vertices + numVertices;
 
@@ -172,12 +172,12 @@ void Geometry::applyStyle(Vertex* vertices, uint32_t numVertices, const RenderSt
 	else*/
 
 	{
-		auto flags = Vertex::MASK_FILL;
+		auto flags = CanvasVertex::MASK_FILL;
 
 		int imagePage = 0;
 		if (imageEntry)
 		{
-			flags |= Vertex::MASK_HAS_IMAGE;
+			flags |= CanvasVertex::MASK_HAS_IMAGE;
 			imagePage = imageEntry->pageIndex;
 		}
 
@@ -229,14 +229,14 @@ void Geometry::applyStyle(Vertex* vertices, uint32_t numVertices, const RenderSt
 	}
 }
 
-void Geometry::appendVertexBatch(const Vertex* vertices, uint32_t numVertices, const Batch& setup, const RenderStyle* style)
+void CanvasGeometry::appendVertexBatch(const CanvasVertex* vertices, uint32_t numVertices, const CanvasBatch& setup, const CanvasRenderStyle* style)
 {
 	if (!vertices || !numVertices)
 		return;
 
 	auto firstVertexIndex = this->vertices.size();
 	auto* localVertices = this->vertices.allocateUninitialized(numVertices);
-	memcpy(localVertices, vertices, sizeof(Vertex) * numVertices);
+	memcpy(localVertices, vertices, sizeof(CanvasVertex) * numVertices);
 
 	if (style)
 		applyStyle(localVertices, numVertices, *style);
@@ -245,7 +245,7 @@ void Geometry::appendVertexBatch(const Vertex* vertices, uint32_t numVertices, c
 	batch.vertexOffset = firstVertexIndex;
 }
 
-void Geometry::appendIndexedBatch(const Vertex* vertices, const uint16_t* indices, uint32_t numIndices, const Batch& setup, const RenderStyle* style)
+void CanvasGeometry::appendIndexedBatch(const CanvasVertex* vertices, const uint16_t* indices, uint32_t numIndices, const CanvasBatch& setup, const CanvasRenderStyle* style)
 {
 	if (!vertices || !indices || !numIndices)
 		return;
@@ -271,7 +271,7 @@ void Geometry::appendIndexedBatch(const Vertex* vertices, const uint16_t* indice
 
 //--
 
-uint32_t ImageEntry::CalcHash(const ImageEntry& entry)
+uint32_t CanvasImageEntry::CalcHash(const CanvasImageEntry& entry)
 {
 	CRC32 crc;
 	crc << entry.atlasIndex;
@@ -281,4 +281,4 @@ uint32_t ImageEntry::CalcHash(const ImageEntry& entry)
 
 //--
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

@@ -108,7 +108,7 @@ void TextLabel::computeSize(Size& outSize) const
     m_displayData->measure(outSize);
 }
 
-void TextLabel::prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
+void TextLabel::prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const
 {
     TBaseClass::prepareShadowGeometry(stash, drawArea, pixelScale, builder);
 }
@@ -209,7 +209,7 @@ void GenerateHighlight()
     }*/
 }
 
-void TextLabel::prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
+void TextLabel::prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const
 {
     TBaseClass::prepareForegroundGeometry(stash, drawArea, pixelScale, builder);
 

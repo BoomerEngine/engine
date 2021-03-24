@@ -23,11 +23,11 @@
 #include "gpu/device/include/image.h"
 #include "gpu/device/include/buffer.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
-GlyphCache::GlyphCache(uint32_t size, uint32_t maxPages)
+CanvasGlyphCache::CanvasGlyphCache(uint32_t size, uint32_t maxPages)
 {
 	// image size
 	m_invAtlasSize = 1.0f / size;
@@ -78,15 +78,15 @@ GlyphCache::GlyphCache(uint32_t size, uint32_t maxPages)
     }*/
 }
 
-GlyphCache::~GlyphCache()
+CanvasGlyphCache::~CanvasGlyphCache()
 {
 }
 
-GlyphCache::Page::Page(uint32_t size)
+CanvasGlyphCache::Page::Page(uint32_t size)
 	: image(size, size, 1)
 {}
 
-const ImageAtlasEntryInfo* GlyphCache::findRenderDataForGlyph(const font::Glyph* glyph)
+const CanvasImageEntryInfo* CanvasGlyphCache::findRenderDataForGlyph(const font::Glyph* glyph)
 {
 	DEBUG_CHECK_RETURN_EX_V(glyph, "Invalid input glyph", nullptr);
 
@@ -134,7 +134,7 @@ const ImageAtlasEntryInfo* GlyphCache::findRenderDataForGlyph(const font::Glyph*
 
 //--
 
-void GlyphCache::flush(gpu::CommandWriter& cmd, uint64_t pageMask)
+void CanvasGlyphCache::flush(gpu::CommandWriter& cmd, uint64_t pageMask)
 {
 	if (!m_dirty)
 		return;
@@ -159,4 +159,4 @@ void GlyphCache::flush(gpu::CommandWriter& cmd, uint64_t pageMask)
 
 //--
         
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

@@ -40,13 +40,13 @@ public:
 private:
     Vector3 m_value;
 
-    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity) override;
     virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
     virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const override;
     virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
 
-	canvas::Geometry m_colorRectGeometry;
-	canvas::Geometry m_cursorGeometry;
+	CanvasGeometry m_colorRectGeometry;
+	CanvasGeometry m_cursorGeometry;
 
     Size m_rectSize;
 
@@ -79,13 +79,13 @@ public:
 private:
     float m_hue = 0.0;
 
-    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity) override;
     virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
     virtual bool handleCursorQuery(const ElementArea& area, const Position& absolutePosition, CursorType& outCursorType) const override;
     virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
 
-	canvas::Geometry m_cursorGeometry;
-	canvas::Geometry m_colorBarGeometry;
+	CanvasGeometry m_cursorGeometry;
+	CanvasGeometry m_colorBarGeometry;
     Size m_rectSize;
 
     void recomputeGeometry(const Size& size);

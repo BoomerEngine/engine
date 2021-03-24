@@ -26,9 +26,9 @@ BEGIN_BOOMER_NAMESPACE_EX(test)
 //--
 
 /// custom rendering handler
-class SceneTest_SimpleSpriteOutline : public canvas::ICanvasSimpleBatchRenderer
+class SceneTest_SimpleSpriteOutline : public ICanvasSimpleBatchRenderer
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_SimpleSpriteOutline, canvas::ICanvasSimpleBatchRenderer);
+    RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_SimpleSpriteOutline, ICanvasSimpleBatchRenderer);
 
 public:
 	struct PrivateData
@@ -82,14 +82,14 @@ class SceneTest_CanvasCustomDrawer : public ICanvasTest
     RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_CanvasCustomDrawer, ICanvasTest);
 
 public:
-	RefPtr<canvas::DynamicAtlas> m_atlas;
-	canvas::ImageEntry m_testImages[3];
+	RefPtr<CanvasDynamicAtlas> m_atlas;
+	CanvasImageEntry m_testImages[3];
 	FontPtr m_font;
 
 	virtual void initialize() override
 	{
 		m_font = loadFont("aileron_regular.otf");
-		m_atlas = RefNew<canvas::DynamicAtlas>(1024, 1);
+		m_atlas = RefNew<CanvasDynamicAtlas>(1024, 1);
 
 		m_testImages[0] = m_atlas->registerImage(loadImage("tree.png"));
 		m_testImages[1] = m_atlas->registerImage(loadImage("sign.png"));
@@ -101,14 +101,14 @@ public:
 		m_atlas.reset();
 	}
 
-    virtual void render(canvas::Canvas& c) override
+    virtual void render(Canvas& c) override
     {
 		const auto margin = 7.0f;
 
-		canvas::Geometry g;
+		CanvasGeometry g;
 
 		{
-			canvas::GeometryBuilder b(g);
+			CanvasGeometryBuilder b(g);
 
 			static float t = 0.0f;
 			t += 0.05f;
@@ -117,7 +117,7 @@ public:
 			b.selectRenderer<SceneTest_SimpleSpriteOutline>(Color::MAGENTA, width);
 
 			{
-				auto pattern = canvas::ImagePattern(m_testImages[0]);
+				auto pattern = CanvasStyle_ImagePattern(m_testImages[0]);
 				b.fillPaint(pattern);
 				b.beginPath();
 				b.stylePivot(100, 100);
@@ -128,7 +128,7 @@ public:
 			b.selectRenderer<SceneTest_SimpleSpriteOutline>(Color::RED, 1.0f);
 
 			{
-				auto pattern = canvas::ImagePattern(m_testImages[2]);
+				auto pattern = CanvasStyle_ImagePattern(m_testImages[2]);
 				b.fillPaint(pattern);
 				b.beginPath();
 				b.stylePivot(500, 300);
@@ -140,12 +140,12 @@ public:
 		c.place(Vector2(0, 0), g);
 
 		{
-			canvas::GeometryBuilder b(g);
+			CanvasGeometryBuilder b(g);
 
 			b.selectRenderer<SceneTest_SimpleSpriteOutline>(Color::YELLOW, 5.0f);
 
 			{
-				auto pattern = canvas::ImagePattern(m_testImages[1]);
+				auto pattern = CanvasStyle_ImagePattern(m_testImages[1]);
 				b.fillPaint(pattern);
 				b.beginPath();
 				b.rect(-margin, -margin, m_testImages[1].width + 2.0f * margin, m_testImages[1].height + 2.0f * margin);
@@ -162,7 +162,7 @@ public:
 		c.place(pos + Vector2(500, 100), g);
 
 		{
-			canvas::GeometryBuilder b(g);
+			CanvasGeometryBuilder b(g);
 
 			b.selectRenderer<SceneTest_SimpleSpriteOutline>(Color::CYAN, 2.0f);
 			b.print(m_font, 70.0f, "Outline #%$&");
@@ -171,7 +171,7 @@ public:
 		c.place(Vector2(100, 400), g);
 
 		{
-			canvas::GeometryBuilder b(g);
+			CanvasGeometryBuilder b(g);
 
 			b.selectRenderer<SceneTest_SimpleSpriteOutline>(Color::GREEN, 4.0f);
 			b.print(m_font, 230.0f, "Outline #%$&");

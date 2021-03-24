@@ -49,7 +49,7 @@ public:
 
 private:
     virtual void handleUpdate(double dt) override final;
-    virtual void handleRender(canvas::Canvas& c, float visibility) override final;
+    virtual void handleRender(Canvas& c, float visibility) override final;
 
     float m_totalTime = 0.0f;
 };

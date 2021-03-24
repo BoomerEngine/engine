@@ -39,7 +39,7 @@ DataStash::DataStash(StringView stylesDepotPath)
 	if (!m_styles)
 		m_styles = RefNew<style::Library>();
 
-	m_mainIconAtlas = RefNew<canvas::DynamicAtlas>(1024, 1);
+	m_mainIconAtlas = RefNew<CanvasDynamicAtlas>(1024, 1);
 }
 
 DataStash::~DataStash()
@@ -75,10 +75,10 @@ void DataStash::conditionalRebuildAtlases()
 		
 }
 
-canvas::ImageEntry DataStash::cacheImage(const Image* img, bool supportWrapping /*= false*/, uint8_t additionalPadding /*= 0*/)
+CanvasImageEntry DataStash::cacheImage(const Image* img, bool supportWrapping /*= false*/, uint8_t additionalPadding /*= 0*/)
 {
 	if (!img)
-		return canvas::ImageEntry();
+		return CanvasImageEntry();
 
 	if (const auto* ret = m_imagePtrMap.find(img->runtimeUniqueId()))
 		return *ret;
@@ -92,10 +92,10 @@ canvas::ImageEntry DataStash::cacheImage(const Image* img, bool supportWrapping 
 		}
 	}
 
-	return canvas::ImageEntry();
+	return CanvasImageEntry();
 }
 
-canvas::ImageEntry DataStash::loadImage(StringID key)
+CanvasImageEntry DataStash::loadImage(StringID key)
 {
 	if (const auto* ret = m_imageMap.find(key))
 		return *ret;
@@ -113,7 +113,7 @@ canvas::ImageEntry DataStash::loadImage(StringID key)
         }
     }
 
-    return canvas::ImageEntry();
+    return CanvasImageEntry();
 }
 
 //---

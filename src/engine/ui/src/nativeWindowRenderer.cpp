@@ -388,7 +388,7 @@ bool NativeWindowRenderer::windowGetRenderableArea(NativeWindowID id, ElementAre
     return false;
 }
 
-void NativeWindowRenderer::windowRenderContent(NativeWindowID id, const ElementArea& area, bool forcedPaint, const canvas::Canvas& canvas)
+void NativeWindowRenderer::windowRenderContent(NativeWindowID id, const ElementArea& area, bool forcedPaint, const Canvas& canvas)
 {
     if (auto* window = m_nativeWindowMap.findSafe(id, nullptr))
     {
@@ -415,7 +415,7 @@ void NativeWindowRenderer::windowRenderContent(NativeWindowID id, const ElementA
 			cmd.opBeingPass(fb);
 
 			// render canvas to command buffer
-			GetService<canvas::CanvasService>()->render(cmd, canvas);
+			GetService<CanvasService>()->render(cmd, canvas);
 
 			// finish pass
 			cmd.opEndPass();

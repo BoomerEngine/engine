@@ -189,7 +189,7 @@ void CanvasArea::updateCachedGeometryAndSizes()
     }
 }
 
-void CanvasArea::renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void CanvasArea::renderForeground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
 
@@ -213,7 +213,7 @@ void CanvasArea::renderForeground(DataStash& stash, const ElementArea& drawArea,
     renderStatusMessages(drawArea, canvas, mergedOpacity);
 }
 
-void CanvasArea::renderBackground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void CanvasArea::renderBackground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderBackground(stash, drawArea, canvas, mergedOpacity);
 }
@@ -401,7 +401,7 @@ void CanvasArea::statusMessage(StringID id, StringView txt, Color color /*= Colo
     msg.expiresAt = NativeTimePoint::Now() + (double)decayTime;
 }
 
-void CanvasArea::renderStatusMessages(const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) const
+void CanvasArea::renderStatusMessages(const ElementArea& drawArea, Canvas& canvas, float mergedOpacity) const
 {
     auto lock = CreateLock(m_statusMessagesLock);
 
@@ -438,10 +438,10 @@ void CanvasArea::renderStatusMessages(const ElementArea& drawArea, canvas::Canva
                     totalAreaHeight += metrics.lineHeight;
                 }
 
-				canvas::Geometry geometry;
+				CanvasGeometry geometry;
 
 				{
-					canvas::GeometryBuilder b(geometry);
+					CanvasGeometryBuilder b(geometry);
 
 					b.fillColor(Color(70, 70, 70, 70));
 					b.strokeColor(Color(255, 255, 255, 255));

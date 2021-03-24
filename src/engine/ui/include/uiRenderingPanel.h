@@ -80,7 +80,7 @@ private:
     Point m_lastClickPosition = Point(-1,-1);
     Point m_currentHoverPosition = Point(-1, -1);
 
-    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity) override;
 
 	//--
 
@@ -90,7 +90,7 @@ private:
     gpu::ImageSampledViewPtr m_colorSurfaceSRV;
     gpu::RenderTargetViewPtr m_depthSurfaceRTV;
 
-	canvas::Geometry* m_quadGeometry;
+	CanvasGeometry* m_quadGeometry;
 
 	bool parepareRenderTargets(Point requiredSize, gpu::AcquiredOutput& outOutput);
 

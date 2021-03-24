@@ -15,10 +15,10 @@
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 
 /// extension of the canvas geometry builder, contains support for fonts and icons from atlas
-class ENGINE_UI_API GeometryBuilder : public canvas::GeometryBuilder
+class ENGINE_UI_API GeometryBuilder : public CanvasGeometryBuilder
 {
 public:
-    GeometryBuilder(canvas::Geometry& outGeometry);
+    GeometryBuilder(CanvasGeometry& outGeometry);
 
     //---
 

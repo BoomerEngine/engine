@@ -27,11 +27,11 @@ public:
     virtual void initialize() override
     {}
 
-    virtual void render(canvas::Canvas& c) override
+    virtual void render(Canvas& c) override
     {
-		canvas::Geometry g;
+		CanvasGeometry g;
 		{
-			canvas::GeometryBuilder builder(g);
+			CanvasGeometryBuilder builder(g);
 			builder.antialiasing(true);
 
 			const float strokeSizes[] = { 1.0f, 0.1f, 0.25f, 0.5f, 1.0f, 2.0f, 5.0f, 10.0f, 15.0f, 20.0f };
@@ -77,12 +77,12 @@ public:
 					builder.beginPath();
 					//builder.moveToi(r.left(), r.bottom());
 					//builder.lineToi(r.right(), r.bottom());
-					builder.lineJoin(canvas::LineJoin::Bevel);
+					builder.lineJoin(CanvasLineJoin::Bevel);
 					builder.recti(5, 10, 20, 20);
 					builder.strokeColor(Color::WHITE, strokeSizes[i]);
 					builder.stroke();
 
-					builder.lineJoin(canvas::LineJoin::Miter);
+					builder.lineJoin(CanvasLineJoin::Miter);
 				}
 				else
 				{

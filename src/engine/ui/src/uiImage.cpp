@@ -26,7 +26,7 @@ RTTI_END_TYPE();
 CustomImage::CustomImage()
 {}
 
-CustomImage::CustomImage(canvas::ImageEntry entry)
+CustomImage::CustomImage(CanvasImageEntry entry)
 {
     image(entry);
 }
@@ -55,7 +55,7 @@ void CustomImage::image(const Image* customImage)
     }
 }
 
-void CustomImage::image(canvas::ImageEntry customImage)
+void CustomImage::image(CanvasImageEntry customImage)
 {
     if (customImage)
     {
@@ -101,7 +101,7 @@ void CustomImage::imageScale(float x, float y)
         customStyle("image-scale-y"_id, y);
 }
 
-canvas::ImageEntry CustomImage::acquireImageEntry() const
+CanvasImageEntry CustomImage::acquireImageEntry() const
 {
 	if (const auto* imageStylePtr = evalStyleValueIfPresentPtr<style::ImageReference>("image"_id))
 	{
@@ -120,7 +120,7 @@ canvas::ImageEntry CustomImage::acquireImageEntry() const
 		return imageStylePtr->canvasImage;
 	}
 		
-	return canvas::ImageEntry();
+	return CanvasImageEntry();
 }
 
 void CustomImage::computeSize(Size& outSize) const
@@ -160,7 +160,7 @@ void CustomImage::computeSize(Size& outSize) const
     }
 }
 
-void CustomImage::prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
+void CustomImage::prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const
 {
     TBaseClass::prepareShadowGeometry(stash, drawArea, pixelScale, builder);
 
@@ -184,7 +184,7 @@ void CustomImage::prepareShadowGeometry(DataStash& stash, const ElementArea& dra
                 builder.builder().globalAlpha(shadowAlpha);
                 prepareBoundaryGeometry(imageArea, builder, 0.0f);
                 builder.builder().fillPaint(imageStyle);
-                builder.builder().compositeOperation(canvas::CompositeOperation::DestinationOut);
+                builder.builder().compositeOperation(CompositeOperation::DestinationOut);
                 builder.builder().fill();
                 builder.builder().popState();
             }
@@ -192,17 +192,17 @@ void CustomImage::prepareShadowGeometry(DataStash& stash, const ElementArea& dra
     }*/
 }
 
-void CustomImage::prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
+void CustomImage::prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const
 {
     TBaseClass::prepareForegroundGeometry(stash, drawArea, pixelScale, builder);
 
 	if (const auto imageEntry = acquireImageEntry())
     {
-        canvas::ImagePatternSettings imageSettings(imageEntry);
+        ImagePatternSettings imageSettings(imageEntry);
         imageSettings.m_scaleX = (float)imageEntry.width / std::max<float>(1.0f, m_imageSize.x);
         imageSettings.m_scaleY = (float)imageEntry.height / std::max<float>(1.0f, m_imageSize.y);
 
-		auto style = canvas::ImagePattern(imageSettings);
+		auto style = CanvasStyle_ImagePattern(imageSettings);
 
         if (const auto* colorStylePtr = evalStyleValueIfPresentPtr<Color>("color"_id))
             style.innerColor = style.outerColor = *colorStylePtr;

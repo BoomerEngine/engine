@@ -47,7 +47,7 @@ void HorizontalRuler::generateGeometry(float width, float height) const
 	const auto viewScale = width / (maxVal - minVal);
 	const auto viewOffset = -minVal * viewScale;
 
-	canvas::GeometryBuilder b(m_geometry);
+	CanvasGeometryBuilder b(m_geometry);
 
 	Color backgroundColor = Color::DARKGRAY;
 	if (auto shadowPtr = evalStyleValueIfPresentPtr<style::RenderStyle>("background"_id))
@@ -136,7 +136,7 @@ void HorizontalRuler::generateGeometry(float width, float height) const
 	}
 }
 
-void HorizontalRuler::renderBackground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void HorizontalRuler::renderBackground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderBackground(stash, drawArea, canvas, mergedOpacity);
 
@@ -180,7 +180,7 @@ void VerticalRuler::generateGeometry(float width, float height) const
 	const auto viewScale = height / (maxVal - minVal);
 	const auto viewOffset = -minVal * viewScale;
 
-	canvas::GeometryBuilder b(m_geometry);
+	CanvasGeometryBuilder b(m_geometry);
 
 	Color backgroundColor = Color::DARKGRAY;
 	if (auto shadowPtr = evalStyleValueIfPresentPtr<style::RenderStyle>("background"_id))
@@ -270,7 +270,7 @@ void VerticalRuler::generateGeometry(float width, float height) const
 	}
 }
 
-void VerticalRuler::renderBackground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void VerticalRuler::renderBackground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderBackground(stash, drawArea, canvas, mergedOpacity);
 

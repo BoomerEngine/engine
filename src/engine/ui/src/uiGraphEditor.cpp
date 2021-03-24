@@ -228,7 +228,7 @@ void GraphEditor::handleHoverLeave(const Position& absolutePosition)
     TBaseClass::handleHoverLeave(absolutePosition);
 }
 
-void GenerateConnectionGeometry(const Position& sourcePos, const Vector2& sourceDir, const Position& targetPos, const Vector2& targetDir, Color linkColor, float width, float pixelScale, bool startArrow, bool endArrow, canvas::GeometryBuilder& builder)
+void GenerateConnectionGeometry(const Position& sourcePos, const Vector2& sourceDir, const Position& targetPos, const Vector2& targetDir, Color linkColor, float width, float pixelScale, bool startArrow, bool endArrow, CanvasGeometryBuilder& builder)
 {
     // curve params
     auto dist = std::max<float>(std::fabsf(sourcePos.x - targetPos.x), std::fabsf(sourcePos.y - targetPos.y));
@@ -331,7 +331,7 @@ namespace prv
             return InputActionResult();
         }
 
-        virtual void onRender(canvas::Canvas& canvas) override
+        virtual void onRender(Canvas& canvas) override
         {
             if (auto validSourceSocket = m_sourceSocket.lock())
             {
@@ -349,16 +349,16 @@ namespace prv
                     canvas.pushScissorRect();
                     if (canvas.scissorRect(m_editor->cachedDrawArea().absolutePosition(), m_editor->cachedDrawArea().size()))
                     {
-						canvas::Geometry geometry;
+						CanvasGeometry geometry;
 
 						{
-							canvas::GeometryBuilder builder(geometry);
+							CanvasGeometryBuilder builder(geometry);
 
 							const auto pixelWidth = m_editor->cachedStyleParams().pixelScale;
 							GenerateConnectionGeometry(sourcePos, sourceDir, targetPos, targetDir, validSourceSocket->info().m_linkColor, 4.0f, pixelWidth, false, false, builder);
 						}
 
-						canvas.place(canvas::Placement(), geometry);
+						canvas.place(CanvasPlacement(), geometry);
                     }
                     canvas.popScissorRect();
                 }
@@ -459,7 +459,7 @@ bool GraphEditor::handleContextMenu(const ElementArea& area, const Position& abs
     return true;
 }
         
-void GraphEditor::renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, canvas::Canvas& canvas, float mergedOpacity)
+void GraphEditor::renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderCustomOverlayElements(hitCache, stash, outerArea, outerClipArea, canvas, mergedOpacity);
 

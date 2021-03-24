@@ -111,8 +111,8 @@ private:
     // IElement
     virtual void computeLayout(ElementLayout& outLayout) override;
     virtual void computeSize(Size& outSize) const override;
-    virtual void prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const override;
-    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual void prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const override;
+    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity) override;
 
     virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
     virtual bool handleCharEvent(const InputCharEvent& evt) override;

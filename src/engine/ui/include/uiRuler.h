@@ -37,11 +37,11 @@ private:
     float m_viewActiveRegionMin = 0.0;
     float m_viewActiveRegionMax = 0.0;
 
-	mutable canvas::Geometry m_geometry;
+	mutable CanvasGeometry m_geometry;
 
 	void generateGeometry(float width, float height) const;
 
-    virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity) override;
 };
 
 //--
@@ -68,11 +68,11 @@ private:
     float m_viewActiveRegionMin = 0.0;
     float m_viewActiveRegionMax = 0.0;
 
-	mutable canvas::Geometry m_geometry;
+	mutable CanvasGeometry m_geometry;
 
 	void generateGeometry(float width, float height) const;
 
-    virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity) override;
 };
 
 //--

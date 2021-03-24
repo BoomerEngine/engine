@@ -10,7 +10,7 @@
 
 #include "gpu/device/include/shaderReloadNotifier.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -29,7 +29,7 @@ struct GPUCanvasImageInfo
 
 struct CanvasRenderStates
 {
-	static const auto MAX_BLEND_OPS = (int)BlendOp::MAX;
+	static const auto MAX_BLEND_OPS = (int)CanvasBlendOp::MAX;
 
 	gpu::GraphicsRenderStatesObjectPtr m_mask = nullptr;
 	gpu::GraphicsRenderStatesObjectPtr m_standardFill[MAX_BLEND_OPS];
@@ -65,8 +65,8 @@ public:
 		const gpu::ImageSampledView* atlasImage = nullptr;
 		const gpu::BufferStructuredView* atlasData = nullptr;
 		const gpu::ImageSampledView* glyphImage = nullptr;
-		BatchType batchType = BatchType::FillConvex;
-		BlendOp blendOp = BlendOp::AlphaPremultiplied;
+		CanvasBatchType batchType = CanvasBatchType::FillConvex;
+		CanvasBlendOp blendOp = CanvasBlendOp::AlphaPremultiplied;
 	};
 
     /// handle rendering of batches
@@ -94,7 +94,7 @@ protected:
 
 	void loadShaders();
 
-	static const auto MAX_BLEND_OPS = (int)BlendOp::MAX;
+	static const auto MAX_BLEND_OPS = (int)CanvasBlendOp::MAX;
 
 	gpu::GraphicsPipelineObjectPtr m_mask;
 	gpu::GraphicsPipelineObjectPtr m_standardFill[MAX_BLEND_OPS];
@@ -109,7 +109,7 @@ protected:
 
 /// get the static handler ID
 template< typename T >
-static uint16_t GetHandlerIndex()
+static uint16_t GetCanvasHandlerIndex()
 {
     static const auto id = T::GetStaticClass()->userIndex();
     DEBUG_CHECK_EX(id != INDEX_NONE, "Handled class not properly registered");
@@ -118,4 +118,4 @@ static uint16_t GetHandlerIndex()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

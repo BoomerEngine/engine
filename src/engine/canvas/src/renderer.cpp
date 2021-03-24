@@ -21,7 +21,7 @@
 
 #include "engine/canvas/include/canvas.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -62,7 +62,7 @@ CanvasRenderer::CanvasRenderer()
 		gpu::BufferCreationInfo info;
         info.allowDynamicUpdate = true;
         info.allowVertex = true;
-        info.size = sizeof(canvas::Vertex) * m_maxBatchVetices;
+        info.size = sizeof(CanvasVertex) * m_maxBatchVetices;
         info.label = "CanvasVertices";
 
         m_sharedVertexBuffer = m_device->createBuffer(info);
@@ -82,8 +82,8 @@ CanvasRenderer::CanvasRenderer()
         gpu::BufferCreationInfo info;
         info.allowShaderReads = true;
         info.allowDynamicUpdate = true;
-        info.size = sizeof(canvas::Attributes) * m_maxAttributes;
-        info.stride = sizeof(canvas::Attributes);
+        info.size = sizeof(CanvasAttributes) * m_maxAttributes;
+        info.stride = sizeof(CanvasAttributes);
         info.label = "CanvasAttributesBuffer";
         m_sharedAttributesBuffer = m_device->createBuffer(info);
         m_sharedAttributesBufferSRV = m_sharedAttributesBuffer->createStructuredView();
@@ -126,11 +126,11 @@ void CanvasRenderer::render(gpu::CommandWriter& cmd, const RenderInfo& resources
 
 	// upload vertices as is
 	const auto numVertices = canvas.m_gatheredVertices.size();
-	if (const auto vertexDataSize = sizeof(canvas::Vertex) * numVertices)
+	if (const auto vertexDataSize = sizeof(CanvasVertex) * numVertices)
 	{
 		cmd.opTransitionLayout(m_sharedVertexBuffer, gpu::ResourceLayout::VertexBuffer, gpu::ResourceLayout::CopyDest);
 
-		auto* writePtr = cmd.opUpdateDynamicBufferPtrN<canvas::Vertex>(m_sharedVertexBuffer, 0, numVertices);
+		auto* writePtr = cmd.opUpdateDynamicBufferPtrN<CanvasVertex>(m_sharedVertexBuffer, 0, numVertices);
 		canvas.m_gatheredVertices.copy(writePtr, vertexDataSize);
 
 		cmd.opTransitionLayout(m_sharedVertexBuffer, gpu::ResourceLayout::CopyDest, gpu::ResourceLayout::VertexBuffer);
@@ -138,7 +138,7 @@ void CanvasRenderer::render(gpu::CommandWriter& cmd, const RenderInfo& resources
 
 	// upload attributes as is
 	const auto numAttributes = canvas.m_gatheredAttributes.size();
-	if (const auto attributesDataSize = sizeof(canvas::Attributes) * numAttributes)
+	if (const auto attributesDataSize = sizeof(CanvasAttributes) * numAttributes)
 	{
 		cmd.opTransitionLayout(m_sharedAttributesBuffer, gpu::ResourceLayout::ShaderResource, gpu::ResourceLayout::CopyDest);
 		cmd.opUpdateDynamicBuffer(m_sharedAttributesBuffer, 0, attributesDataSize, canvas.m_gatheredAttributes.typedData());
@@ -255,26 +255,26 @@ void CanvasRenderer::createRenderStates()
 	// drawing - with mask or without
 	for (int i = 0; i < CanvasRenderStates::MAX_BLEND_OPS; ++i)
 	{
-		const auto op = (canvas::BlendOp)i;
+		const auto op = (CanvasBlendOp)i;
 
 		gpu::GraphicsRenderStatesSetup setup;
 
 		switch (op)
 		{
-			case canvas::BlendOp::Copy:
+			case CanvasBlendOp::Copy:
 				break;
 
-			case canvas::BlendOp::Addtive:
+			case CanvasBlendOp::Addtive:
 				setup.blend(true);
 				setup.blendFactor(0, gpu::BlendFactor::One, gpu::BlendFactor::One);
 				break;
 
-			case canvas::BlendOp::AlphaBlend:
+			case CanvasBlendOp::AlphaBlend:
 				setup.blend(true);
 				setup.blendFactor(0, gpu::BlendFactor::SrcAlpha, gpu::BlendFactor::OneMinusSrcAlpha);
 				break;
 
-			case canvas::BlendOp::AlphaPremultiplied:
+			case CanvasBlendOp::AlphaPremultiplied:
 				setup.blend(true);
 				setup.blendFactor(0, gpu::BlendFactor::One, gpu::BlendFactor::OneMinusSrcAlpha);
 				break;
@@ -319,4 +319,4 @@ void CanvasRenderer::createBatchRenderers()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

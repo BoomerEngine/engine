@@ -29,7 +29,7 @@ public:
     Color color = Color::WHITE;
     int blur = 0;
 
-    void print(canvas::Canvas& c, float x, float y, float scale, const FontPtr& fontPtr, int size, bool bold, bool italic, const StringBuf& text)
+    void print(Canvas& c, float x, float y, float scale, const FontPtr& fontPtr, int size, bool bold, bool italic, const StringBuf& text)
     {
         font::FontStyleParams params;
         params.italic = italic;
@@ -41,9 +41,9 @@ public:
         font::FontAssemblyParams assemblyParams;
         fontPtr->renderText(params, assemblyParams, font::FontInputText(text.c_str()), glyphs);
 
-		canvas::Geometry g;
+		CanvasGeometry g;
 		{
-			canvas::GeometryBuilder b(g);
+			CanvasGeometryBuilder b(g);
 			b.fillColor(color);
 			b.print(glyphs);
 		}
@@ -51,7 +51,7 @@ public:
         c.place(XForm2D(x,y), g);
     }
 
-    virtual void render(canvas::Canvas& c) override
+    virtual void render(Canvas& c) override
     {
         float x = 10.0f;
         float y = 10.0f;

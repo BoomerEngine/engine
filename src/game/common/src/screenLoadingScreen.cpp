@@ -77,9 +77,9 @@ void GameLoadingScreenSimple::handleUpdate(double dt)
     m_totalTime += dt;
 }
 
-void GameLoadingScreenSimple::handleRender(canvas::Canvas& c, float visibility)
+void GameLoadingScreenSimple::handleRender(Canvas& c, float visibility)
 {
-    canvas::InplaceGeometryBuilder g(c);
+    InplaceGeometryBuilder g(c);
     g.solidRect(Color::BLACK, 0, 0, c.width(), c.height());
     g.render();
 

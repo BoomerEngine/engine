@@ -25,7 +25,7 @@ namespace ImGui
 	{
 		m_searchPaths.emplaceBack("/engine/interface/icons/");
 
-		m_atlas = boomer::RefNew<boomer::canvas::DynamicAtlas>(1024, 1);
+		m_atlas = boomer::RefNew<boomer::CanvasDynamicAtlas>(1024, 1);
 
 		m_context = ImGui::CreateContext();
 
@@ -224,7 +224,7 @@ namespace ImGui
 		return ret;
 	}
 
-	void ImGUICanvasHelper::beginFrame(boomer::canvas::Canvas& c, float dt)
+	void ImGUICanvasHelper::beginFrame(boomer::Canvas& c, float dt)
 	{
 		//ImGui::SetCurrentFont(ImGui::GetFont(ImGui::Font::Default));
 		m_context->IO.DeltaTime = dt;
@@ -238,7 +238,7 @@ namespace ImGui
 		ImGui::NewFrame();
 	}
 
-	void ImGUICanvasHelper::endFrame(boomer::canvas::Canvas& c, const boomer::XForm2D& placement)
+	void ImGUICanvasHelper::endFrame(boomer::Canvas& c, const boomer::XForm2D& placement)
 	{
 		ImGui::Render();
 		renderToCanvas(ImGui::GetDrawData(), c, placement);
@@ -249,7 +249,7 @@ namespace ImGui
 
 	static_assert(sizeof(ImDrawIdx) == sizeof(uint16_t), "Expected ImGui to use 16-bit indices");
 
-	void ImGUICanvasHelper::renderToCanvas(const ImDrawData* data, boomer::canvas::Canvas& c, const boomer::XForm2D& placement)
+	void ImGUICanvasHelper::renderToCanvas(const ImDrawData* data, boomer::Canvas& c, const boomer::XForm2D& placement)
 	{
 		bool hasScissorRect = false;
 		boomer::Vector4 currentScissorRect;
@@ -285,7 +285,7 @@ namespace ImGui
 				else
 				{
 					static boomer::Mutex GTempVertexArrayLock;
-					static boomer::canvas::Geometry GTempGeometry;
+					static boomer::CanvasGeometry GTempGeometry;
 
 					auto lock = CreateLock(GTempVertexArrayLock);
 
@@ -311,7 +311,7 @@ namespace ImGui
 						writeVertexPtr->uv.y = (vertexData.uv.y * uvScale.y) + uvMin.y;
 						writeVertexPtr->imageEntryIndex = 0;
 						writeVertexPtr->imagePageIndex = 0;
-						writeVertexPtr->attributeFlags = boomer::canvas::Vertex::MASK_FILL | boomer::canvas::Vertex::MASK_HAS_IMAGE;
+						writeVertexPtr->attributeFlags = boomer::CanvasVertex::MASK_FILL | boomer::CanvasVertex::MASK_HAS_IMAGE;
 						writeVertexPtr->attributeIndex = 0;
 						writeVertexPtr++;
 					}
@@ -321,8 +321,8 @@ namespace ImGui
 					batch.rendererIndex = 0;
 					batch.vertexOffset = 0;
 					batch.vertexCount = GTempGeometry.vertices.size();
-					batch.type = boomer::canvas::BatchType::FillConvex;
-					batch.op = boomer::canvas::BlendOp::AlphaPremultiplied;
+					batch.type = boomer::CanvasBatchType::FillConvex;
+					batch.op = boomer::CanvasBlendOp::AlphaPremultiplied;
 
 					c.place(placement, GTempGeometry);
 				}

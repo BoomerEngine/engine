@@ -19,41 +19,41 @@
 
 //--
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
-struct Placement
+struct CanvasPlacement
 {
-	INLINE Placement() {};
-	INLINE Placement(const Placement& other) = default;
-	INLINE Placement(Placement&& other) = default;
-	INLINE Placement& operator=(const Placement& other) = default;
-	INLINE Placement& operator=(Placement && other) = default;
+	INLINE CanvasPlacement() {};
+	INLINE CanvasPlacement(const CanvasPlacement& other) = default;
+	INLINE CanvasPlacement(CanvasPlacement&& other) = default;
+	INLINE CanvasPlacement& operator=(const CanvasPlacement& other) = default;
+	INLINE CanvasPlacement& operator=(CanvasPlacement && other) = default;
 
-	INLINE Placement(const XForm2D& full)
+	INLINE CanvasPlacement(const XForm2D& full)
 		: placement(full)
 		, noScale(false)
 		, simple(false)
 	{}
 
-	INLINE Placement(const Vector2& pos)
+	INLINE CanvasPlacement(const Vector2& pos)
 		: placement(pos.x, pos.y)
 		, noScale(true)
 		, simple(true)
 	{}
 
-	INLINE Placement(const Vector2& pos, float scale)
+	INLINE CanvasPlacement(const Vector2& pos, float scale)
 		: placement(scale, 0, 0, scale, pos.x, pos.y)
 		, noScale(scale == 1.0f)
 		, simple(true)
 	{}
 
-	INLINE Placement(float x, float y)
+	INLINE CanvasPlacement(float x, float y)
 		: placement(x, y)
 		, noScale(true)
 		, simple(true)
 	{}
 
-	INLINE Placement(float x, float y, float scale)
+	INLINE CanvasPlacement(float x, float y, float scale)
 		: placement(x, y)
 		, noScale(scale == 1.0f)
 		, simple(true)
@@ -167,8 +167,8 @@ public:
 
 	/// draw geometry into the canvas at given ABSOLUTE placement, will bake it on the fly - SLOW
 	/// NOTE: all vertices in the geometry will be transformed by the provided placement (+ the canvas "global" pixel offset/scale)
-	void place(const Placement& pos, const Geometry& geometry, float alpha = 1.0f);
-	void place(float x, float y, const Geometry& geometry, float alpha = 1.0f);
+	void place(const CanvasPlacement& pos, const CanvasGeometry& geometry, float alpha = 1.0f);
+	void place(float x, float y, const CanvasGeometry& geometry, float alpha = 1.0f);
 
 	//--
 
@@ -184,22 +184,22 @@ public:
 		float v1 = 1.0f;
 
 		Color color = Color::WHITE;
-		canvas::BlendOp op = canvas::BlendOp::AlphaPremultiplied;
+		CanvasBlendOp op = CanvasBlendOp::AlphaPremultiplied;
 
 		bool wrap = false;
 
-		ImageEntry image;
+		CanvasImageEntry image;
 	};
 
 	/// place a simple quad, mostly useful for custom renderer stuff/debug/simple effects etc
-	void quad(const Placement& placement, const QuadSetup& setup, uint8_t customRenderer = 0, const void* customData = nullptr, uint32_t customDataSize = 0);
+	void quad(const CanvasPlacement& placement, const QuadSetup& setup, uint8_t customRenderer = 0, const void* customData = nullptr, uint32_t customDataSize = 0);
 
 	/// custom renderer
     template< typename R, typename... Args >
-    INLINE void quadEx(const Placement& placement, const QuadSetup& setup, Args&& ... args)
+    INLINE void quadEx(const CanvasPlacement& placement, const QuadSetup& setup, Args&& ... args)
     {
         const typename R::PrivateData data(std::forward< Args >(args)...);
-        static const auto index = canvas::GetHandlerIndex<R>();
+        static const auto index = GetCanvasHandlerIndex<R>();
 		quad(placement, setup, index, &data, sizeof(data));
     }
 
@@ -263,23 +263,23 @@ private:
 
 	//--
 
-	void transformBounds(const Placement& transform, const Vector2& localMin, const Vector2& localMax, Vector2& globalMin, Vector2& globalMax) const;
+	void transformBounds(const CanvasPlacement& transform, const Vector2& localMin, const Vector2& localMax, Vector2& globalMin, Vector2& globalMax) const;
 
 	//--
 
-	Vertex m_tempVertices[MAX_LOCAL_VERTICES];
+	CanvasVertex m_tempVertices[MAX_LOCAL_VERTICES];
 
-	PagedBufferTyped<Vertex> m_gatheredVertices;
-	InplaceArray<Batch, MAX_LOCAL_BATCHES> m_gatheredBatches;
-	InplaceArray<Attributes, MAX_LOCAL_BATCHES> m_gatheredAttributes;
+	PagedBufferTyped<CanvasVertex> m_gatheredVertices;
+	InplaceArray<CanvasBatch, MAX_LOCAL_BATCHES> m_gatheredBatches;
+	InplaceArray<CanvasAttributes, MAX_LOCAL_BATCHES> m_gatheredAttributes;
 	InplaceArray<uint8_t, MAX_LOCAL_BATCHES> m_gatheredData;
 
-	void placeInternal(const Placement& placement, const Vertex* vertices, uint32_t numVertices, uint32_t firstAttributeIndex, uint32_t firstDataOffset, const Batch& batchInfo, float alpha);
-	void placeVertex(const Placement& placement, const Vertex* src, Vertex*& dest, uint32_t firstAttributeIndex);
+	void placeInternal(const CanvasPlacement& placement, const CanvasVertex* vertices, uint32_t numVertices, uint32_t firstAttributeIndex, uint32_t firstDataOffset, const CanvasBatch& batchInfo, float alpha);
+	void placeVertex(const CanvasPlacement& placement, const CanvasVertex* src, CanvasVertex*& dest, uint32_t firstAttributeIndex);
 
 	//--
 
 	friend class CanvasRenderer;
 };
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

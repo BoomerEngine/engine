@@ -322,7 +322,7 @@ void SceneTestProject::handleInput(IInputContext& context)
 
 void SceneTestProject::prepareCanvasCommandBuffers(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output)
 {
-    canvas::Canvas canvas(output.width, output.height);
+    Canvas canvas(output.width, output.height);
 	renderCanvas(canvas);
 
 	{
@@ -331,12 +331,12 @@ void SceneTestProject::prepareCanvasCommandBuffers(gpu::CommandWriter& cmd, cons
         fb.depth.view(output.depth);
 
         cmd.opBeingPass(fb);
-        GetService<canvas::CanvasService>()->render(cmd, canvas);
+        GetService<CanvasService>()->render(cmd, canvas);
         cmd.opEndPass();
 	}
 }
 
-void SceneTestProject::renderCanvas(canvas::Canvas& canvas)
+void SceneTestProject::renderCanvas(Canvas& canvas)
 {
     // Local stuff
     {

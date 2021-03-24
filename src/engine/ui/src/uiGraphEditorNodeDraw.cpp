@@ -62,7 +62,7 @@ struct TextSizeHelper
         return rect;
     }
 
-    void print(canvas::GeometryBuilder& builder, StringView text) const
+    void print(CanvasGeometryBuilder& builder, StringView text) const
     {
         font::FontStyleParams params;
         params.size = m_size;
@@ -736,7 +736,7 @@ Size GraphEditorBlockNode::computeLayoutCircleLike(const Size& innerContentSize,
 
 //--
 
-void GraphEditorBlockNode::prepareBlockOutline(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder, float inset, float titleHeightLimit) const
+void GraphEditorBlockNode::prepareBlockOutline(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder, float inset, float titleHeightLimit) const
 {
     DEBUG_CHECK(m_layout.valid);
 
@@ -826,12 +826,12 @@ void GraphEditorBlockNode::prepareBlockOutline(DataStash& stash, const ElementAr
     }
 }
 
-void GraphEditorBlockNode::prepareBoundaryGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder, float inset) const
+void GraphEditorBlockNode::prepareBoundaryGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder, float inset) const
 {
     prepareBlockOutline(stash, drawArea, pixelScale, builder, inset, 0.0f);
 }
 
-static void BuildSocketShape(graph::SocketShape shape, const Vector2& pos, const Vector2& size, graph::SocketPlacement dir, canvas::GeometryBuilder& builder)
+static void BuildSocketShape(graph::SocketShape shape, const Vector2& pos, const Vector2& size, graph::SocketPlacement dir, CanvasGeometryBuilder& builder)
 {
     switch (shape)
     {
@@ -952,7 +952,7 @@ static void BuildSocketShape(graph::SocketShape shape, const Vector2& pos, const
     }
 }
 
-void GraphEditorBlockNode::prepareBackgroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
+void GraphEditorBlockNode::prepareBackgroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const
 {
     // block itself is rendered with normal style
     TBaseClass::prepareBackgroundGeometry(stash, drawArea, pixelScale, builder);
@@ -985,7 +985,7 @@ void GraphEditorBlockNode::prepareBackgroundGeometry(DataStash& stash, const Ele
     }
 }
 
-bool GraphEditorBlockNode::adjustBackgroundStyle(canvas::RenderStyle& outStyle, float& outBorderWidth) const
+bool GraphEditorBlockNode::adjustBackgroundStyle(CanvasRenderStyle& outStyle, float& outBorderWidth) const
 {
     if (!m_layout.hasTitle && m_layout.titleColor.a > 0)
     {
@@ -997,7 +997,7 @@ bool GraphEditorBlockNode::adjustBackgroundStyle(canvas::RenderStyle& outStyle, 
     return false;
 }
 
-bool GraphEditorBlockNode::adjustBorderStyle(canvas::RenderStyle& outStyle, float& outBorderWidth) const
+bool GraphEditorBlockNode::adjustBorderStyle(CanvasRenderStyle& outStyle, float& outBorderWidth) const
 {
     if (!m_layout.hasTitle && m_layout.borderColor.a > 0)
     {
@@ -1015,7 +1015,7 @@ bool GraphEditorBlockNode::adjustBorderStyle(canvas::RenderStyle& outStyle, floa
 extern ElementArea ArrangeElementLayout(const ElementArea& incomingInnerArea, const ElementLayout& layout, const Size& totalSize);
 extern ElementArea ArrangeAreaLayout(const ElementArea& incomingInnerArea, const Size& totalSize, ElementVerticalLayout verticalAlign, ElementHorizontalLayout horizontalAlign);
 
-void GraphEditorBlockNode::renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, canvas::Canvas& canvas, float mergedOpacity)
+void GraphEditorBlockNode::renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, Canvas& canvas, float mergedOpacity)
 {
     // title bar
     if (cachedStyleParams().pixelScale > 0.4f)
@@ -1059,7 +1059,7 @@ void GraphEditorBlockNode::renderCustomOverlayElements(HitCache& hitCache, DataS
     }
 }
 
-void GraphEditorBlockNode::prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
+void GraphEditorBlockNode::prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const
 {
     TBaseClass::prepareShadowGeometry(stash, drawArea, pixelScale, builder);
 
@@ -1081,18 +1081,18 @@ void GraphEditorBlockNode::prepareShadowGeometry(DataStash& stash, const Element
 
 extern void GenerateConnectionGeometry(const Position& sourcePos, const Vector2& sourceDir,
 	const Position& targetPos, const Vector2& targetDir,
-	Color color, float width, float pixelScale, bool startArrow, bool endArrow, canvas::GeometryBuilder& builder);
+	Color color, float width, float pixelScale, bool startArrow, bool endArrow, CanvasGeometryBuilder& builder);
 
-void GraphEditorBlockNode::drawConnections(const ElementArea& outerArea, const ElementArea& outerClipArea, canvas::Canvas& canvas, float mergedOpacity)
+void GraphEditorBlockNode::drawConnections(const ElementArea& outerArea, const ElementArea& outerClipArea, Canvas& canvas, float mergedOpacity)
 {
-	canvas::Geometry geometry;
+	CanvasGeometry geometry;
 
 	const auto pixelWidth = cachedStyleParams().pixelScale;
     if (pixelWidth > 0.15f)
     {
         if (auto editor = rtti_cast<GraphEditor>(parent()))
         {
-			canvas::GeometryBuilder builder(geometry);
+			CanvasGeometryBuilder builder(geometry);
 
 			for (const auto& socket : m_layout.sockets.values())
             {
@@ -1127,7 +1127,7 @@ void GraphEditorBlockNode::drawConnections(const ElementArea& outerArea, const E
         }
     }
 
-	canvas.place(canvas::Placement(), geometry, mergedOpacity);
+	canvas.place(CanvasPlacement(), geometry, mergedOpacity);
 }
 
 //--

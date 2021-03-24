@@ -154,7 +154,7 @@ public:
         return (float)metrics.textWidth;
     }
 
-    void text(canvas::GeometryBuilder& vg, float x, float y, const char* txt, void* ptr)
+    void text(CanvasGeometryBuilder& vg, float x, float y, const char* txt, void* ptr)
     {
         font::FontStyleParams params;
         params.size = m_size;
@@ -172,7 +172,7 @@ public:
         vg.popTransform();
     }
 
-    void text2(canvas::GeometryBuilder& vg, float x, float y, const char* txt, const char* endTxt)
+    void text2(CanvasGeometryBuilder& vg, float x, float y, const char* txt, const char* endTxt)
     {
         font::FontStyleParams params;
         params.size = m_size;
@@ -190,7 +190,7 @@ public:
         vg.popTransform();
     }
 
-    void text(canvas::GeometryBuilder& vg, float x, float y, const wchar_t* txt, void* ptr)
+    void text(CanvasGeometryBuilder& vg, float x, float y, const wchar_t* txt, void* ptr)
     {
         font::FontStyleParams params;
         params.size = m_size;
@@ -320,7 +320,7 @@ public:
         return 1;
     }
 
-    void textBox(canvas::GeometryBuilder& vg, float x, float y, float breakRowWidth, const char* string, const char* end)
+    void textBox(CanvasGeometryBuilder& vg, float x, float y, float breakRowWidth, const char* string, const char* end)
     {
         NVGtextRow rows[2];
         int nrows = 0, i;
@@ -674,16 +674,16 @@ class SceneTest_CanvasEverything : public ICanvasTest
 public:
     virtual void initialize() override;
 	virtual void shutdown() override;
-    virtual void render(canvas::Canvas& canvas) override;
+    virtual void render(Canvas& canvas) override;
     virtual void processInput(const InputEvent& evt) override;
 
 private:
-	RefPtr<canvas::DynamicAtlas> m_atlas;
-	Array<canvas::ImageEntry> m_images;
+	RefPtr<CanvasDynamicAtlas> m_atlas;
+	Array<CanvasImageEntry> m_images;
 
     FontHelper m_fontHelper;
 
-    canvas::Geometry m_staticGeometry;
+    CanvasGeometry m_staticGeometry;
 
     float m_mouseX;
     float m_mouseY;
@@ -693,7 +693,7 @@ private:
 
 void SceneTest_CanvasEverything::initialize()
 {
-	m_atlas = RefNew<canvas::DynamicAtlas>(1024, 1);
+	m_atlas = RefNew<CanvasDynamicAtlas>(1024, 1);
 
 	for (uint32_t i = 0; i < 12; ++i)
 	{
@@ -734,7 +734,7 @@ static Color MakeColorLinear(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
     return Color(r,g,b,a);
 }
 
-static void DrawGraph(canvas::GeometryBuilder& vg, float x, float y, float w, float h, float t)
+static void DrawGraph(CanvasGeometryBuilder& vg, float x, float y, float w, float h, float t)
 {
     float samples[6];
     samples[0] = (1 + std::sin(t*1.2345f + std::cos(t*0.33457f)*0.44f))*0.5f;
@@ -753,7 +753,7 @@ static void DrawGraph(canvas::GeometryBuilder& vg, float x, float y, float w, fl
     }
 
     // Graph background
-    auto bg = canvas::LinearGradient(x, y, x, y + h, MakeColorLinear(0, 160, 192, 0), MakeColorLinear(0, 160, 192, 64));
+    auto bg = CanvasStyle_LinearGradient(x, y, x, y + h, MakeColorLinear(0, 160, 192, 0), MakeColorLinear(0, 160, 192, 64));
     vg.beginPath();         
     vg.moveTo(sx[0], sy[0]);
     for (int i = 1; i < 6; i++)             
@@ -782,7 +782,7 @@ static void DrawGraph(canvas::GeometryBuilder& vg, float x, float y, float w, fl
 
     // Graph sample pos
     for (int i = 0; i < 6; i++) {
-        bg = canvas::RadialGradient(sx[i], sy[i] + 2, 3.0f, 8.0f, MakeColorLinear(0, 0, 0, 32), MakeColorLinear(0, 0, 0, 0));
+        bg = CanvasStyle_RadialGradient(sx[i], sy[i] + 2, 3.0f, 8.0f, MakeColorLinear(0, 0, 0, 32), MakeColorLinear(0, 0, 0, 0));
         vg.beginPath();
         vg.rect(sx[i] - 10, sy[i] - 10 + 2, 20.0f, 20.0f);
         vg.fillPaint(bg);
@@ -803,9 +803,9 @@ static void DrawGraph(canvas::GeometryBuilder& vg, float x, float y, float w, fl
     //vg.strokeWidth(1.0f);
 }
 
-static void DrawEyes(canvas::GeometryBuilder& vg, float x, float y, float w, float h, float mx, float my, float t)
+static void DrawEyes(CanvasGeometryBuilder& vg, float x, float y, float w, float h, float mx, float my, float t)
 {
-    canvas::RenderStyle gloss, bg;
+    CanvasRenderStyle gloss, bg;
     float ex = w *0.23f;
     float ey = h * 0.5f;
     float lx = x + ex;
@@ -816,14 +816,14 @@ static void DrawEyes(canvas::GeometryBuilder& vg, float x, float y, float w, flo
     float br = (ex < ey ? ex : ey) * 0.5f;
     float blink = 1 - pow(sin(t*0.5f), 200)*0.8f;
 
-    bg = canvas::LinearGradient( x, y + h*0.5f, x + w*0.1f, y + h, MakeColorLinear(0, 0, 0, 32), MakeColorLinear(0, 0, 0, 16));
+    bg = CanvasStyle_LinearGradient( x, y + h*0.5f, x + w*0.1f, y + h, MakeColorLinear(0, 0, 0, 32), MakeColorLinear(0, 0, 0, 16));
     vg.beginPath();
     vg.ellipse(lx + 3.0f, ly + 16.0f, ex, ey);
     vg.ellipse(rx + 3.0f, ry + 16.0f, ex, ey);
     vg.fillPaint(bg);
     vg.fill();
 
-    bg = canvas::LinearGradient( x, y + h*0.25f, x + w*0.1f, y + h, MakeColorLinear(220, 220, 220, 255), MakeColorLinear(128, 128, 128, 255));
+    bg = CanvasStyle_LinearGradient( x, y + h*0.25f, x + w*0.1f, y + h, MakeColorLinear(220, 220, 220, 255), MakeColorLinear(128, 128, 128, 255));
     vg.beginPath();
     vg.ellipse(lx, ly, ex, ey);
     vg.ellipse(rx, ry, ex, ey);
@@ -856,23 +856,23 @@ static void DrawEyes(canvas::GeometryBuilder& vg, float x, float y, float w, flo
     vg.fillColor(MakeColorLinear(32, 32, 32, 255));
     vg.fill();
 
-    gloss = canvas::RadialGradient(lx - ex*0.25f, ly - ey*0.5f, ex*0.1f, ex*0.75f, MakeColorLinear(255, 255, 255, 128), MakeColorLinear(255, 255, 255, 0));
+    gloss = CanvasStyle_RadialGradient(lx - ex*0.25f, ly - ey*0.5f, ex*0.1f, ex*0.75f, MakeColorLinear(255, 255, 255, 128), MakeColorLinear(255, 255, 255, 0));
     vg.beginPath();
     vg.ellipse(lx, ly, ex, ey);
     vg.fillPaint(gloss);
     vg.fill();
 
-    gloss = canvas::RadialGradient(rx - ex*0.25f, ry - ey*0.5f, ex*0.1f, ex*0.75f, MakeColorLinear(255, 255, 255, 128), MakeColorLinear(255, 255, 255, 0));
+    gloss = CanvasStyle_RadialGradient(rx - ex*0.25f, ry - ey*0.5f, ex*0.1f, ex*0.75f, MakeColorLinear(255, 255, 255, 128), MakeColorLinear(255, 255, 255, 0));
     vg.beginPath();
     vg.ellipse(rx, ry, ex, ey);
     vg.fillPaint(gloss);
     vg.fill();
 }
 
-static void DrawCaps(canvas::GeometryBuilder& vg, float x, float y, float width)
+static void DrawCaps(CanvasGeometryBuilder& vg, float x, float y, float width)
 {
     int i;
-    canvas::LineCap caps[3] = { canvas::LineCap::Butt, canvas::LineCap::Round, canvas::LineCap::Square };
+    CanvasLineCap caps[3] = { CanvasLineCap::Butt, CanvasLineCap::Round, CanvasLineCap::Square };
     float lineWidth = 8.0f;
 
     vg.pushTransform();
@@ -900,11 +900,11 @@ static void DrawCaps(canvas::GeometryBuilder& vg, float x, float y, float width)
     vg.popTransform();
 }
 
-void DrawWindow(FontHelper& fh, canvas::GeometryBuilder& vg, const char* title, float x, float y, float w, float h)
+void DrawWindow(FontHelper& fh, CanvasGeometryBuilder& vg, const char* title, float x, float y, float w, float h)
 {
     float cornerRadius = 3.0f;
-    canvas::RenderStyle shadowPaint;
-    canvas::RenderStyle headerPaint;
+    CanvasRenderStyle shadowPaint;
+    CanvasRenderStyle headerPaint;
 
     vg.pushTransform();
     //  nvgClearState(vg);
@@ -917,16 +917,16 @@ void DrawWindow(FontHelper& fh, canvas::GeometryBuilder& vg, const char* title, 
     vg.fill();
 
     // Drop shadow
-    shadowPaint = canvas::BoxGradient(x, y + 2, w, h, cornerRadius * 2, 10.0f, MakeColorLinear(0, 0, 0, 128), MakeColorLinear(0, 0, 0, 0));
+    shadowPaint = CanvasStyle_BoxGradient(x, y + 2, w, h, cornerRadius * 2, 10.0f, MakeColorLinear(0, 0, 0, 128), MakeColorLinear(0, 0, 0, 0));
     vg.beginPath();
     vg.rect(x - 10, y - 10, w + 20, h + 30);
-    vg.roundedRect(x, y, w, h, cornerRadius);           
-    vg.pathWinding(canvas::Winding::CW);
+    vg.roundedRect(x, y, w, h, cornerRadius);
+    vg.pathWinding(CanvasWinding::CW);
     vg.fillPaint(shadowPaint);
     vg.fill();
 
     // Header
-    headerPaint = canvas::LinearGradient(x, y, x, y + 15, MakeColorLinear(255, 255, 255, 8), MakeColorLinear(0, 0, 0, 16));
+    headerPaint = CanvasStyle_LinearGradient(x, y, x, y + 15, MakeColorLinear(255, 255, 255, 8), MakeColorLinear(0, 0, 0, 16));
     vg.beginPath();
     vg.roundedRect(x + 1, y + 1, w - 2, 30.0f, cornerRadius - 1);
     vg.fillPaint(headerPaint);
@@ -988,11 +988,11 @@ static Color nvgHSL(float h, float s, float l)
 }
 
 #pragma warning(disable: 4101)
-static void DrawColorwheel(canvas::GeometryBuilder& vg, float x, float y, float w, float h, float t)
+static void DrawColorwheel(CanvasGeometryBuilder& vg, float x, float y, float w, float h, float t)
 {
     float r0, r1, ax, ay, bx, by, cx, cy, aeps, r;
     float hue = sin(t * 0.12f);
-    canvas::RenderStyle paint;
+    CanvasRenderStyle paint;
 
     vg.pushTransform();
 
@@ -1011,14 +1011,14 @@ static void DrawColorwheel(canvas::GeometryBuilder& vg, float x, float y, float 
         float a0 = (float)i / 6.0f * PI * 2.0f - aeps;
         float a1 = (float)(i + 1.0f) / 6.0f * PI * 2.0f + aeps;
         vg.beginPath();
-        vg.arc(cx, cy, r0, a0, a1, canvas::Winding::CW);
-        vg.arc(cx, cy, r1, a1, a0, canvas::Winding::CCW);
+        vg.arc(cx, cy, r0, a0, a1, CanvasWinding::CW);
+        vg.arc(cx, cy, r1, a1, a0, CanvasWinding::CCW);
         vg.closePath();
         ax = cx + cos(a0) * (r0 + r1)*0.5f;
         ay = cy + sin(a0) * (r0 + r1)*0.5f;
         bx = cx + cos(a1) * (r0 + r1)*0.5f;
         by = cy + sin(a1) * (r0 + r1)*0.5f;
-        paint = canvas::LinearGradient(ax, ay, bx, by, nvgHSLA(a0 / (PI * 2), 1.0f, 0.55f, 255), nvgHSLA(a1 / (PI * 2), 1.0f, 0.55f, 255));
+        paint = CanvasStyle_LinearGradient(ax, ay, bx, by, nvgHSLA(a0 / (PI * 2), 1.0f, 0.55f, 255), nvgHSLA(a1 / (PI * 2), 1.0f, 0.55f, 255));
         vg.fillPaint(paint);
         vg.fill();
     }
@@ -1042,11 +1042,11 @@ static void DrawColorwheel(canvas::GeometryBuilder& vg, float x, float y, float 
     vg.strokeColor(MakeColorLinear(255, 255, 255, 192));
     vg.stroke();
 
-    paint = canvas::BoxGradient(r0 - 3.0f, -5.0f, r1 - r0 + 6.0f, 10.0f, 2.0f, 4.0f, MakeColorLinear(0, 0, 0, 128), MakeColorLinear(0, 0, 0, 0));
+    paint = CanvasStyle_BoxGradient(r0 - 3.0f, -5.0f, r1 - r0 + 6.0f, 10.0f, 2.0f, 4.0f, MakeColorLinear(0, 0, 0, 128), MakeColorLinear(0, 0, 0, 0));
     vg.beginPath();
     vg.rect(r0 - 2.0f - 10.0f, -4.0f - 10.0f, r1 - r0 + 4.0f + 20.0f, 8.0f + 20.0f);
     vg.rect(r0 - 2.0f, -4.0f, r1 - r0 + 4.0f, 8.0f);
-    vg.pathWinding(canvas::Winding::CW);
+    vg.pathWinding(CanvasWinding::CW);
     vg.fillPaint(paint);
     vg.fill();
 
@@ -1061,10 +1061,10 @@ static void DrawColorwheel(canvas::GeometryBuilder& vg, float x, float y, float 
     vg.lineTo(ax, ay);
     vg.lineTo(bx, by);
     vg.closePath();
-    paint = canvas::LinearGradient(r, 0.0f, ax, ay, nvgHSLA(hue, 1.0f, 0.5f, 255), MakeColorLinear(255, 255, 255, 255));
+    paint = CanvasStyle_LinearGradient(r, 0.0f, ax, ay, nvgHSLA(hue, 1.0f, 0.5f, 255), MakeColorLinear(255, 255, 255, 255));
     vg.fillPaint(paint);
     vg.fill();
-    paint = canvas::LinearGradient((r + ax)*0.5f, (0 + ay)*0.5f, bx, by, MakeColorLinear(0, 0, 0, 0), MakeColorLinear(0, 0, 0, 255));
+    paint = CanvasStyle_LinearGradient((r + ax)*0.5f, (0 + ay)*0.5f, bx, by, MakeColorLinear(0, 0, 0, 0), MakeColorLinear(0, 0, 0, 255));
     vg.fillPaint(paint);
     vg.fill();
     vg.strokeColor(MakeColorLinear(0, 0, 0, 64));
@@ -1079,11 +1079,11 @@ static void DrawColorwheel(canvas::GeometryBuilder& vg, float x, float y, float 
     vg.strokeColor(MakeColorLinear(255, 255, 255, 192));
     vg.stroke();
 
-    paint = canvas::RadialGradient(ax, ay, 7.0f, 9.0f, MakeColorLinear(0, 0, 0, 64), MakeColorLinear(0, 0, 0, 0));
+    paint = CanvasStyle_RadialGradient(ax, ay, 7.0f, 9.0f, MakeColorLinear(0, 0, 0, 64), MakeColorLinear(0, 0, 0, 0));
     vg.beginPath();
     vg.rect(ax - 20.0f, ay - 20.0f, 40.0f, 40.0f);
     vg.circle(ax, ay, 7.0f);
-    vg.pathWinding(canvas::Winding::CW);
+    vg.pathWinding(CanvasWinding::CW);
     vg.fillPaint(paint);
     vg.fill();
 
@@ -1092,13 +1092,13 @@ static void DrawColorwheel(canvas::GeometryBuilder& vg, float x, float y, float 
     vg.popTransform();
 }
 
-static void DrawLines(canvas::GeometryBuilder& vg, float x, float y, float w, float h, float t)
+static void DrawLines(CanvasGeometryBuilder& vg, float x, float y, float w, float h, float t)
 {
     int i, j;
     float pad = 5.0f, s = w / 9.0f - pad * 2;
     float pts[4 * 2], fx, fy;
-    canvas::LineJoin joins[3] = { canvas::LineJoin::Miter, canvas::LineJoin::Round, canvas::LineJoin::Bevel };
-    canvas::LineCap caps[3] = { canvas::LineCap::Butt, canvas::LineCap::Round, canvas::LineCap::Square };
+    CanvasLineJoin joins[3] = { CanvasLineJoin::Miter, CanvasLineJoin::Round, CanvasLineJoin::Bevel };
+    CanvasLineCap caps[3] = { CanvasLineCap::Butt, CanvasLineCap::Round, CanvasLineCap::Square };
             
     vg.pushTransform();
     pts[0] = -s*0.25f + cos(t*0.3f) * s*0.5f;
@@ -1127,8 +1127,8 @@ static void DrawLines(canvas::GeometryBuilder& vg, float x, float y, float w, fl
             vg.lineTo(fx + pts[6], fy + pts[7]);
             vg.stroke();
 
-            vg.lineCap(canvas::LineCap::Butt);
-            vg.lineJoin(canvas::LineJoin::Bevel);
+            vg.lineCap(CanvasLineCap::Butt);
+            vg.lineJoin(CanvasLineJoin::Bevel);
 
             //vg.strokeWidth(1.0f);
             vg.strokeColor(MakeColorLinear(0, 192, 255, 255));
@@ -1145,13 +1145,13 @@ static void DrawLines(canvas::GeometryBuilder& vg, float x, float y, float w, fl
     vg.popTransform();
 }
 
-static void DrawSearchBox(FontHelper& fh, canvas::GeometryBuilder& vg, const char* text, float x, float y, float w, float h)
+static void DrawSearchBox(FontHelper& fh, CanvasGeometryBuilder& vg, const char* text, float x, float y, float w, float h)
 {
-    canvas::RenderStyle bg;
+    CanvasRenderStyle bg;
     float cornerRadius = h / 2 - 1;
 
     // Edit
-    bg = canvas::BoxGradient(x, y + 1.5f, w, h, h / 2, 5.0f, MakeColorLinear(0, 0, 0, 16), MakeColorLinear(0, 0, 0, 92));
+    bg = CanvasStyle_BoxGradient(x, y + 1.5f, w, h, h / 2, 5.0f, MakeColorLinear(0, 0, 0, 16), MakeColorLinear(0, 0, 0, 92));
     vg.beginPath();
     vg.roundedRect(x, y, w, h, cornerRadius);
     vg.fillPaint(bg);
@@ -1182,12 +1182,12 @@ static void DrawSearchBox(FontHelper& fh, canvas::GeometryBuilder& vg, const cha
     fh.text(vg, x + w - h*0.55f, y + h*0.55f, ICON_CIRCLED_CROSS, NULL);
 }
 
-static void DrawDropDown(FontHelper& fh, canvas::GeometryBuilder& vg, const char* text, float x, float y, float w, float h)
+static void DrawDropDown(FontHelper& fh, CanvasGeometryBuilder& vg, const char* text, float x, float y, float w, float h)
 {
-    canvas::RenderStyle bg;
+    CanvasRenderStyle bg;
     float cornerRadius = 4.0f;
 
-    bg = canvas::LinearGradient(x, y, x, y + h, MakeColorLinear(255, 255, 255, 16), MakeColorLinear(0, 0, 0, 16));
+    bg = CanvasStyle_LinearGradient(x, y, x, y + h, MakeColorLinear(255, 255, 255, 16), MakeColorLinear(0, 0, 0, 16));
     vg.beginPath();
     vg.roundedRect(x + 1, y + 1, w - 2, h - 2, cornerRadius - 1);
     vg.fillPaint(bg);
@@ -1211,7 +1211,7 @@ static void DrawDropDown(FontHelper& fh, canvas::GeometryBuilder& vg, const char
     fh.text(vg, x + w - h*0.5f, y + h*0.5f, ICON_CHEVRON_RIGHT, NULL);
 }
 
-static void DrawLabel(FontHelper& fh, canvas::GeometryBuilder& vg, const char* text, float x, float y, float w, float h)
+static void DrawLabel(FontHelper& fh, CanvasGeometryBuilder& vg, const char* text, float x, float y, float w, float h)
 {
     fh.fontSize(18.0f);
     fh.fontFace("sans");
@@ -1221,11 +1221,12 @@ static void DrawLabel(FontHelper& fh, canvas::GeometryBuilder& vg, const char* t
     fh.text(vg, x, y + h*0.5f, text, NULL);
 }
 
-static void DrawEditBoxBase(FontHelper& fh, canvas::GeometryBuilder& vg, float x, float y, float w, float h)
+static void DrawEditBoxBase(FontHelper& fh, CanvasGeometryBuilder& vg, float x, float y, float w, float h)
 {
-    canvas::RenderStyle bg;
+    CanvasRenderStyle bg;
+
     // Edit
-    bg = canvas::BoxGradient(x + 1, y + 1 + 1.5f, w - 2, h - 2, 3.0f, 4.0f, MakeColorLinear(255, 255, 255, 32), MakeColorLinear(32, 32, 32, 32));
+    bg = CanvasStyle_BoxGradient(x + 1, y + 1 + 1.5f, w - 2, h - 2, 3.0f, 4.0f, MakeColorLinear(255, 255, 255, 32), MakeColorLinear(32, 32, 32, 32));
     vg.beginPath();
     vg.roundedRect(x + 1.0f, y + 1.0f, w - 2.0f, h - 2.0f, 4 - 1.0f);
     vg.fillPaint(bg);
@@ -1237,7 +1238,7 @@ static void DrawEditBoxBase(FontHelper& fh, canvas::GeometryBuilder& vg, float x
     vg.stroke();
 }
 
-static void DrawEditBox(FontHelper& fh, canvas::GeometryBuilder& vg, const char* text, float x, float y, float w, float h)
+static void DrawEditBox(FontHelper& fh, CanvasGeometryBuilder& vg, const char* text, float x, float y, float w, float h)
 {
     DrawEditBoxBase(fh, vg, x, y, w, h);
 
@@ -1248,7 +1249,7 @@ static void DrawEditBox(FontHelper& fh, canvas::GeometryBuilder& vg, const char*
     fh.text(vg, x + h*0.3f, y + h*0.5f, text, NULL);
 }
 
-static void DrawEditBoxNum(FontHelper& fh, canvas::GeometryBuilder& vg, const char* text, const char* units, float x, float y, float w, float h)
+static void DrawEditBoxNum(FontHelper& fh, CanvasGeometryBuilder& vg, const char* text, const char* units, float x, float y, float w, float h)
 {
     float uw;
     DrawEditBoxBase(fh, vg, x, y, w, h);
@@ -1268,9 +1269,9 @@ static void DrawEditBoxNum(FontHelper& fh, canvas::GeometryBuilder& vg, const ch
     fh.text(vg, x + w - uw - h*0.5f, y + h*0.5f, text, NULL);
 }
 
-static void DrawCheckBox(FontHelper& fh, canvas::GeometryBuilder& vg, const char* text, float x, float y, float w, float h)
+static void DrawCheckBox(FontHelper& fh, CanvasGeometryBuilder& vg, const char* text, float x, float y, float w, float h)
 {
-    canvas::RenderStyle bg;
+    CanvasRenderStyle bg;
 
     fh.fontSize(18.0f);
     fh.fontFace("sans");
@@ -1279,7 +1280,7 @@ static void DrawCheckBox(FontHelper& fh, canvas::GeometryBuilder& vg, const char
     fh.textAlign(NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
     fh.text(vg, x + 28, y + h*0.5f, text, NULL);
 
-    bg = canvas::BoxGradient(x + 1, y + (int)(h*0.5f) - 9 + 1, 18.0f, 18.0f, 3.0f, 3.0f, MakeColorLinear(0, 0, 0, 32), MakeColorLinear(0, 0, 0, 92));
+    bg = CanvasStyle_BoxGradient(x + 1, y + (int)(h*0.5f) - 9 + 1, 18.0f, 18.0f, 3.0f, 3.0f, MakeColorLinear(0, 0, 0, 32), MakeColorLinear(0, 0, 0, 92));
     vg.beginPath();
     vg.roundedRect(x + 1, y + (int)(h*0.5f) - 9, 18.0f, 18.0f, 3.0f);
     vg.fillPaint(bg);
@@ -1292,13 +1293,13 @@ static void DrawCheckBox(FontHelper& fh, canvas::GeometryBuilder& vg, const char
     fh.text(vg, x + 9 + 2, y + h*0.5f, ICON_CHECK, NULL);
 }
 
-static void DrawButton(FontHelper& fh, canvas::GeometryBuilder& vg, const wchar_t* preicon, const char* text, float x, float y, float w, float h, Color col)
+static void DrawButton(FontHelper& fh, CanvasGeometryBuilder& vg, const wchar_t* preicon, const char* text, float x, float y, float w, float h, Color col)
 {
-    canvas::RenderStyle bg;
+    CanvasRenderStyle bg;
     float cornerRadius = 4.0f;
     float tw = 0, iw = 0;
 
-    bg = canvas::LinearGradient(x, y, x, y + h, MakeColorLinear(255, 255, 255, 16), MakeColorLinear(0, 0, 0, 16));
+    bg = CanvasStyle_LinearGradient(x, y, x, y + h, MakeColorLinear(255, 255, 255, 16), MakeColorLinear(0, 0, 0, 16));
     vg.beginPath();
     vg.roundedRect(x + 1, y + 1, w - 2, h - 2, cornerRadius - 1);
     if (col != Color::BLACK) {
@@ -1340,9 +1341,9 @@ static void DrawButton(FontHelper& fh, canvas::GeometryBuilder& vg, const wchar_
     fh.text(vg, x + w*0.5f - tw*0.5f + iw*0.25f, y + h*0.5f, text, NULL);
 }
 
-static void DrawSlider(canvas::GeometryBuilder& vg, float pos, float x, float y, float w, float h)
+static void DrawSlider(CanvasGeometryBuilder& vg, float pos, float x, float y, float w, float h)
 {
-    canvas::RenderStyle bg, knob;
+    CanvasRenderStyle bg, knob;
     float cy = y + (int)(h*0.5f);
     float kr = (float)(int)(h*0.25f);
 
@@ -1350,23 +1351,23 @@ static void DrawSlider(canvas::GeometryBuilder& vg, float pos, float x, float y,
     //  nvgClearState(vg);
 
     // Slot
-    bg = canvas::BoxGradient(x, cy - 2 + 1, w, 4.0f, 2.0f, 2.0f, MakeColorLinear(0, 0, 0, 32), MakeColorLinear(0, 0, 0, 128));
+    bg = CanvasStyle_BoxGradient(x, cy - 2 + 1, w, 4.0f, 2.0f, 2.0f, MakeColorLinear(0, 0, 0, 32), MakeColorLinear(0, 0, 0, 128));
     vg.beginPath();
     vg.roundedRect(x, cy - 2, w, 4.0f, 2.0f);
     vg.fillPaint(bg);
     vg.fill();
 
     // Knob Shadow
-    bg = canvas::RadialGradient(x + (int)(pos*w), cy + 1, kr - 3, kr + 3, MakeColorLinear(0, 0, 0, 64), MakeColorLinear(0, 0, 0, 0));
+    bg = CanvasStyle_RadialGradient(x + (int)(pos*w), cy + 1, kr - 3, kr + 3, MakeColorLinear(0, 0, 0, 64), MakeColorLinear(0, 0, 0, 0));
     vg.beginPath();
     vg.rect(x + (int)(pos*w) - kr - 5, cy - kr - 5, kr * 2 + 5 + 5, kr * 2 + 5 + 5 + 3);
     vg.circle(x + (int)(pos*w), cy, kr);
-    vg.pathWinding(canvas::Winding::CW);
+    vg.pathWinding(CanvasWinding::CW);
     vg.fillPaint(bg);
     vg.fill();
 
     // Knob
-    knob = canvas::LinearGradient(x, cy - kr, x, cy + kr, MakeColorLinear(255, 255, 255, 16), MakeColorLinear(0, 0, 0, 16));
+    knob = CanvasStyle_LinearGradient(x, cy - kr, x, cy + kr, MakeColorLinear(255, 255, 255, 16), MakeColorLinear(0, 0, 0, 16));
     vg.beginPath();
     vg.circle(x + (int)(pos*w), cy, kr - 1);
     vg.fillColor(MakeColorLinear(40, 43, 48, 255));
@@ -1382,34 +1383,34 @@ static void DrawSlider(canvas::GeometryBuilder& vg, float pos, float x, float y,
     vg.popTransform();
 }
 
-static void DrawSpinner(canvas::GeometryBuilder& vg, float cx, float cy, float r, float t)
+static void DrawSpinner(CanvasGeometryBuilder& vg, float cx, float cy, float r, float t)
 {
     float a0 = 0.0f + t * 6;
     float a1 = PI + t * 6;
     float r0 = r;
     float r1 = r * 0.75f;
     float ax, ay, bx, by;
-    canvas::RenderStyle paint;
+    CanvasRenderStyle paint;
 
     vg.pushTransform();
 
     vg.beginPath();
-    vg.arc(cx, cy, r0, a0, a1, canvas::Winding::CW);
-    vg.arc(cx, cy, r1, a1, a0, canvas::Winding::CCW);
+    vg.arc(cx, cy, r0, a0, a1, CanvasWinding::CW);
+    vg.arc(cx, cy, r1, a1, a0, CanvasWinding::CCW);
     vg.closePath();
     ax = cx + cos(a0) * (r0 + r1)*0.5f;
     ay = cy + sin(a0) * (r0 + r1)*0.5f;
     bx = cx + cos(a1) * (r0 + r1)*0.5f;
     by = cy + sin(a1) * (r0 + r1)*0.5f;
-    paint = canvas::LinearGradient(ax, ay, bx, by, MakeColorLinear(0, 0, 0, 0), MakeColorLinear(0, 0, 0, 128));
-    //paint = canvas::LinearGradient(ax, ay, bx, by, MakeColorLinear(255, 0, 0, 255), MakeColorLinear(0, 255, 0, 255));
+    paint = CanvasStyle_LinearGradient(ax, ay, bx, by, MakeColorLinear(0, 0, 0, 0), MakeColorLinear(0, 0, 0, 128));
+    //paint = LinearGradient(ax, ay, bx, by, MakeColorLinear(255, 0, 0, 255), MakeColorLinear(0, 255, 0, 255));
     vg.fillPaint(paint);
     vg.fill();
 
     vg.popTransform();
 }
 
-static void DrawWidths(canvas::GeometryBuilder& vg, float x, float y, float width)
+static void DrawWidths(CanvasGeometryBuilder& vg, float x, float y, float width)
 {
     int i;
 
@@ -1431,32 +1432,32 @@ static void DrawWidths(canvas::GeometryBuilder& vg, float x, float y, float widt
 }
 #pragma warning (disable: 4101)
 
-static void DrawThumbnailsUnclip(canvas::GeometryBuilder& vg, float x, float y, float w, float h, const Array<canvas::ImageEntry>& images, float t)
+static void DrawThumbnailsUnclip(CanvasGeometryBuilder& vg, float x, float y, float w, float h, const Array<CanvasImageEntry>& images, float t)
 {
-    canvas::RenderStyle shadowPaint;
+    CanvasRenderStyle shadowPaint;
     float cornerRadius = 3.0f;
 
     vg.pushTransform();
 
     // Drop shadow
-    shadowPaint = canvas::BoxGradient(x, y + 4, w, h, cornerRadius * 2, 20, MakeColorLinear(0, 0, 0, 128), MakeColorLinear(0, 0, 0, 0));
+    shadowPaint = CanvasStyle_BoxGradient(x, y + 4, w, h, cornerRadius * 2, 20, MakeColorLinear(0, 0, 0, 128), MakeColorLinear(0, 0, 0, 0));
     vg.beginPath();
     vg.rect(x - 10, y - 10, w + 20, h + 30);
     vg.roundedRect(x, y, w, h, cornerRadius);
-    vg.pathWinding(canvas::Winding::CW);
+    vg.pathWinding(CanvasWinding::CW);
     vg.fillPaint(shadowPaint);
     vg.fill();
 
     vg.popTransform();
 }
 
-static void DrawThumbnails(canvas::GeometryBuilder& vg, float x, float y, float w, float h, const Array<canvas::ImageEntry>& images, float t)
+static void DrawThumbnails(CanvasGeometryBuilder& vg, float x, float y, float w, float h, const Array<CanvasImageEntry>& images, float t)
 {
     //t *= 0.05f;
 
     int nimages = (int)images.size();
     float cornerRadius = 3.0f;
-    canvas::RenderStyle shadowPaint, imgPaint, fadePaint;
+    CanvasRenderStyle shadowPaint, imgPaint, fadePaint;
     float ix, iy, iw, ih;
     float thumb = 60.0f;
     float arry = 30.5f;
@@ -1513,8 +1514,8 @@ static void DrawThumbnails(canvas::GeometryBuilder& vg, float x, float y, float 
         if (a < 1.0f)
             DrawSpinner(vg, tx + thumb / 2, ty + thumb / 2, thumb*0.25f, t);
 
-        auto imgPaint = canvas::ImagePattern(images[i], canvas::ImagePatternSettings().alpha(FloatTo255(a)).scale(1.5f));// /* 0.0f / 180.0f*PI, images[i], a*/);
-        //imgPaint = canvas::SolidColor(Color::YELLOW);
+        auto imgPaint = CanvasStyle_ImagePattern(images[i], ImagePatternSettings().alpha(FloatTo255(a)).scale(1.5f));// /* 0.0f / 180.0f*PI, images[i], a*/);
+        //imgPaint = SolidColor(Color::YELLOW);
         vg.pushTransform();
         vg.translate(tx, ty);
         vg.beginPath();
@@ -1523,11 +1524,11 @@ static void DrawThumbnails(canvas::GeometryBuilder& vg, float x, float y, float 
         vg.fill();
         vg.popTransform();
 
-        shadowPaint = canvas::BoxGradient(tx - 1, ty, thumb + 2, thumb + 2, 5.0f, 3.0f, MakeColorLinear(0, 0, 0, 128), MakeColorLinear(0, 0, 0, 0));
+        shadowPaint = CanvasStyle_BoxGradient(tx - 1, ty, thumb + 2, thumb + 2, 5.0f, 3.0f, MakeColorLinear(0, 0, 0, 128), MakeColorLinear(0, 0, 0, 0));
         vg.beginPath();
         vg.rect(tx - 5, ty - 5, thumb + 10, thumb + 10);
         vg.roundedRect(tx, ty, thumb, thumb, 6);
-        vg.pathWinding(canvas::Winding::CW);
+        vg.pathWinding(CanvasWinding::CW);
         vg.fillPaint(shadowPaint);
         vg.fill();
 
@@ -1542,20 +1543,20 @@ static void DrawThumbnails(canvas::GeometryBuilder& vg, float x, float y, float 
     vg.popTransform();
 
     // Hide fades
-    fadePaint = canvas::LinearGradient(x, y, x, y + 6, MakeColorLinear(200, 200, 200, 255), MakeColorLinear(200, 200, 200, 0));
+    fadePaint = CanvasStyle_LinearGradient(x, y, x, y + 6, MakeColorLinear(200, 200, 200, 255), MakeColorLinear(200, 200, 200, 0));
     vg.beginPath();
     vg.rect(x + 4, y, w - 8, 6.0f);
     vg.fillPaint(fadePaint);
     vg.fill();
 
-    fadePaint = canvas::LinearGradient(x, y + h, x, y + h - 6, MakeColorLinear(200, 200, 200, 255), MakeColorLinear(200, 200, 200, 0));
+    fadePaint = CanvasStyle_LinearGradient(x, y + h, x, y + h - 6, MakeColorLinear(200, 200, 200, 255), MakeColorLinear(200, 200, 200, 0));
     vg.beginPath();
     vg.rect(x + 4, y + h - 6, w - 8, 6);
     vg.fillPaint(fadePaint);
     vg.fill();
 
     // Scroll bar
-    shadowPaint = canvas::BoxGradient(x + w - 12 + 1.0f, y + 4 + 1.0f, 8.0f, h - 8.0f, 3.0f, 4.0f, MakeColorLinear(0, 0, 0, 32), MakeColorLinear(0, 0, 0, 92));
+    shadowPaint = CanvasStyle_BoxGradient(x + w - 12 + 1.0f, y + 4 + 1.0f, 8.0f, h - 8.0f, 3.0f, 4.0f, MakeColorLinear(0, 0, 0, 32), MakeColorLinear(0, 0, 0, 92));
     vg.beginPath();
     vg.roundedRect(x + w - 12, y + 4, 8, h - 8, 3);
     vg.fillPaint(shadowPaint);
@@ -1563,7 +1564,7 @@ static void DrawThumbnails(canvas::GeometryBuilder& vg, float x, float y, float 
     vg.fill();
 
     float scrollh = (h / stackh) * (h - 8);
-    shadowPaint = canvas::BoxGradient(x + w - 12 - 1.0f, y + 4 + (h - 8 - scrollh)*u - 1, 8.0f, scrollh, 3.0f, 4.0f, MakeColorLinear(220, 220, 220, 255), MakeColorLinear(128, 128, 128, 255));
+    shadowPaint = CanvasStyle_BoxGradient(x + w - 12 - 1.0f, y + 4 + (h - 8 - scrollh)*u - 1, 8.0f, scrollh, 3.0f, 4.0f, MakeColorLinear(220, 220, 220, 255), MakeColorLinear(128, 128, 128, 255));
     vg.beginPath();
     vg.roundedRect(x + w - 12 + 1, y + 4 + 1 + (h - 8 - scrollh)*u, 8 - 2, scrollh - 2, 2);
     vg.fillPaint(shadowPaint);
@@ -1574,7 +1575,7 @@ static void DrawThumbnails(canvas::GeometryBuilder& vg, float x, float y, float 
 
 
 
-void DrawParagraph(canvas::GeometryBuilder& vg, FontHelper& fh, float x, float y, float width, float height, float mx, float my)
+void DrawParagraph(CanvasGeometryBuilder& vg, FontHelper& fh, float x, float y, float width, float height, float mx, float my)
 {
     NVGtextRow rows[3];
     NVGglyphPosition glyphs[100];
@@ -1691,7 +1692,7 @@ void DrawParagraph(canvas::GeometryBuilder& vg, FontHelper& fh, float x, float y
     vg.popTransform();
 }
 
-void DrawScissor(canvas::GeometryBuilder& vg, float x, float y, float t)
+void DrawScissor(CanvasGeometryBuilder& vg, float x, float y, float t)
 {
     vg.pushTransform();
 
@@ -1727,7 +1728,7 @@ void DrawScissor(canvas::GeometryBuilder& vg, float x, float y, float t)
     vg.popTransform();
 }
 
-void SceneTest_CanvasEverything::render(canvas::Canvas& c)
+void SceneTest_CanvasEverything::render(Canvas& c)
 {
     static uint32_t frameIndex = 0;
     float t = (frameIndex++ / 60.0f);
@@ -1742,7 +1743,7 @@ void SceneTest_CanvasEverything::render(canvas::Canvas& c)
 
         if (m_staticGeometry.empty())
         {
-            canvas::GeometryBuilder b(m_staticGeometry);
+            CanvasGeometryBuilder b(m_staticGeometry);
 
             // Widgets
             DrawWindow(m_fontHelper, b, "Widgets `n Stuff", 50, 50, 300, 400);
@@ -1781,9 +1782,9 @@ void SceneTest_CanvasEverything::render(canvas::Canvas& c)
         c.place(Vector2(0,0), m_staticGeometry);
 
         {
-			canvas::Geometry g;
+			CanvasGeometry g;
 			{
-				canvas::GeometryBuilder b(g);
+				CanvasGeometryBuilder b(g);
 
 				DrawGraph(b, 0, h / 2, w, h / 2, t);
 				DrawEyes(b, w - 250.0f, 50.0f, 150.0f, 100.0f, mx, my, t);
@@ -1796,13 +1797,13 @@ void SceneTest_CanvasEverything::render(canvas::Canvas& c)
         }
 
 		{
-			canvas::Geometry g, g2;
+			CanvasGeometry g, g2;
 			{
-				canvas::GeometryBuilder b(g);
+				CanvasGeometryBuilder b(g);
 				DrawThumbnails(b, 365, popy - 30, 160, 300, m_images, t);
 			}
 			{
-				canvas::GeometryBuilder b2(g2);
+				CanvasGeometryBuilder b2(g2);
 				DrawThumbnailsUnclip(b2, 365, popy - 30, 160, 300, m_images, t);
 			}
 
@@ -1814,9 +1815,9 @@ void SceneTest_CanvasEverything::render(canvas::Canvas& c)
 
 
         {
-			canvas::Geometry g;
+			CanvasGeometry g;
 			{
-				canvas::GeometryBuilder b(g);
+				CanvasGeometryBuilder b(g);
 				//DrawParagraph(b, m_fontHelper, w - 450, 50, 150, 100, mx, my);
 			}
             c.place(Vector2(0,0), g);

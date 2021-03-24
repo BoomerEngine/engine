@@ -11,18 +11,18 @@
 #include "core/image/include/imageAtlas.h"
 #include "engine/font/include/fontGlyph.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
 /// image cache for font glyphs
-class ENGINE_CANVAS_API GlyphCache : public NoCopy
+class ENGINE_CANVAS_API CanvasGlyphCache : public NoCopy
 {
 	RTTI_DECLARE_POOL(POOL_CANVAS);
 
 public:
-	GlyphCache(uint32_t size, uint32_t maxPages);
-	virtual ~GlyphCache();
+	CanvasGlyphCache(uint32_t size, uint32_t maxPages);
+	virtual ~CanvasGlyphCache();
 
     //--
 
@@ -32,7 +32,7 @@ public:
 	//--
 
 	// find placement of given image in the atlas
-	const ImageAtlasEntryInfo* findRenderDataForGlyph(const font::Glyph* glyph);
+	const CanvasImageEntryInfo* findRenderDataForGlyph(const font::Glyph* glyph);
 
 	//--
 
@@ -60,7 +60,7 @@ private:
 	struct Entry
 	{
 		const font::Glyph* glyph = nullptr;
-		canvas::ImageAtlasEntryInfo placement;
+		CanvasImageEntryInfo placement;
 	};
 
 	Array<Page> m_pages;
@@ -76,6 +76,6 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()
 
 

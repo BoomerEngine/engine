@@ -19,7 +19,7 @@
 #include "gpu/device/include/buffer.h"
 #include "gpu/device/include/globalObjects.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -77,14 +77,14 @@ const gpu::GraphicsPipelineObject* ICanvasSimpleBatchRenderer::selectShader(gpu:
 {
 	switch (data.batchType)
 	{
-	case canvas::BatchType::ConcaveMask:
+	case CanvasBatchType::ConcaveMask:
 		return m_mask;
 
-	case canvas::BatchType::FillConcave:
+	case CanvasBatchType::FillConcave:
 		cmd.opSetStencilReferenceValue(1);
 		return m_maskedFill[(int)data.blendOp];
 
-	case canvas::BatchType::FillConvex:
+	case CanvasBatchType::FillConvex:
 		return m_standardFill[(int)data.blendOp];
 	}
 
@@ -98,4 +98,4 @@ void ICanvasSimpleBatchRenderer::render(gpu::CommandWriter& cmd, const RenderDat
 }
 //--
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

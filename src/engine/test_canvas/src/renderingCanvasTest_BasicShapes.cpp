@@ -26,13 +26,13 @@ public:
     virtual void initialize() override
     {}
 
-    virtual void render(canvas::Canvas& c) override
+    virtual void render(Canvas& c) override
     {
         CanvasGridBuilder grid(4, 4, 20, 1024, 1024);
 
-		canvas::Geometry g;
+		CanvasGeometry g;
 		{
-			canvas::GeometryBuilder b(g);
+			CanvasGeometryBuilder b(g);
 
 			// triangle
 			{
@@ -101,13 +101,13 @@ public:
 				auto r = grid.cell();
 
 				b.beginPath();
-				b.arci(r.centerX(), r.centerY(), r.width() / 2, 0.0f, PI, canvas::Winding::CW);
+				b.arci(r.centerX(), r.centerY(), r.width() / 2, 0.0f, PI, CanvasWinding::CW);
 				b.fillColor(Color::GRAY);
 				b.fill();
 			}
 		}
 
-        c.place(canvas::Placement(0,0), g);
+        c.place(CanvasPlacement(0,0), g);
     }
 };
 

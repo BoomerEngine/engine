@@ -91,7 +91,7 @@ protected:
     //--
 
     // ui implementation
-    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity) override;
     virtual bool handleCursorQuery(const ElementArea &area, const Position &absolutePosition, CursorType &outCursorType) const override;
     virtual InputActionPtr handleMouseClick(const ElementArea &area, const InputMouseClickEvent &evt) override;
     virtual bool handleMouseMovement(const InputMouseMovementEvent &evt) override;

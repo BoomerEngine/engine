@@ -252,7 +252,7 @@ Size RenderStyle::measure(float pixelScale) const
     return ret;
 }
 
-canvas::RenderStyle RenderStyle::evaluate(DataStash& stash, float pixelScale, const ElementArea& area) const
+CanvasRenderStyle RenderStyle::evaluate(DataStash& stash, float pixelScale, const ElementArea& area) const
 {
     switch (type)
     {
@@ -264,7 +264,7 @@ canvas::RenderStyle RenderStyle::evaluate(DataStash& stash, float pixelScale, co
 
             auto start = ProjectPointOnBox(area.size(), -d);
             auto end = ProjectPointOnBox(area.size(), d);
-            return canvas::LinearGradient(start, end, innerColor, outerColor);
+            return CanvasStyle_LinearGradient(start, end, innerColor, outerColor);
         }
 
         case 2: // box
@@ -274,7 +274,7 @@ canvas::RenderStyle RenderStyle::evaluate(DataStash& stash, float pixelScale, co
             auto radius = EvalFloat(this->radius, area.size().x, pixelScale, flags & PERC_RADIUS); // TODO: size proportion should take into account both axis
             auto feather = EvalFloat(this->feather, area.size().x, pixelScale, flags & PERC_FEATHER); // TODO: size proportion should take into account both axis
 
-            return canvas::BoxGradient(0.0f, 0.0f, width, height, radius, feather, innerColor, outerColor);
+            return CanvasStyle_BoxGradient(0.0f, 0.0f, width, height, radius, feather, innerColor, outerColor);
         }
 
         case 3: // image - NOTE, this still is never set if image is NULL
@@ -287,7 +287,7 @@ canvas::RenderStyle RenderStyle::evaluate(DataStash& stash, float pixelScale, co
             auto ey = area.size().y;
             auto sy = image->height();
 
-            canvas::ImagePatternSettings params;
+            ImagePatternSettings params;
 
             if (imageFlags & IMAGE_X_WRAP)
                 params.m_wrapU = true;
@@ -302,7 +302,7 @@ canvas::RenderStyle RenderStyle::evaluate(DataStash& stash, float pixelScale, co
             if (image && !cachedImageEntry)
                 cachedImageEntry = stash.cacheImage(image, params.m_wrapU || params.m_wrapV);
 
-            auto renderStyle = canvas::ImagePattern(cachedImageEntry, params);
+            auto renderStyle = CanvasStyle_ImagePattern(cachedImageEntry, params);
             renderStyle.innerColor = innerColor;
             renderStyle.outerColor = outerColor;
             return renderStyle;
@@ -310,7 +310,7 @@ canvas::RenderStyle RenderStyle::evaluate(DataStash& stash, float pixelScale, co
     }
 
     // default
-    return canvas::SolidColor(innerColor);
+    return CanvasStyle_SolidColor(innerColor);
 }
 
 //--

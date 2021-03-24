@@ -1324,12 +1324,12 @@ void IElement::adjustCustomOverlayElementsPixelScale(float& scale) const
 
 }
 
-bool IElement::adjustBackgroundStyle(canvas::RenderStyle& outStyle, float& outBorderWidth) const
+bool IElement::adjustBackgroundStyle(CanvasRenderStyle& outStyle, float& outBorderWidth) const
 {
     return false;
 }
 
-bool IElement::adjustBorderStyle(canvas::RenderStyle& outStyle, float& outBorderWidth) const
+bool IElement::adjustBorderStyle(CanvasRenderStyle& outStyle, float& outBorderWidth) const
 {
     return false;
 }
@@ -1557,7 +1557,7 @@ void IElement::prepareLayout(bool& outLayoutRecomputed, bool force, bool initial
     }
 }
 
-void IElement::prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
+void IElement::prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const
 {
     // draw the dimming rect as big as the clip area
     if (auto fadeoutPtr = evalStyleValueIfPresentPtr<style::RenderStyle>("fadeout"_id))
@@ -1589,7 +1589,7 @@ void IElement::prepareShadowGeometry(DataStash& stash, const ElementArea& drawAr
     }
 }
 
-void IElement::prepareBoundaryGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder, float inset) const
+void IElement::prepareBoundaryGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder, float inset) const
 {
     auto ox = drawArea.absolutePosition().x + inset;
     auto oy = drawArea.absolutePosition().y + inset;
@@ -1605,7 +1605,7 @@ void IElement::prepareBoundaryGeometry(DataStash& stash, const ElementArea& draw
     // TODO: slanted rect, circle, etc
 }
 
-void IElement::prepareBackgroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
+void IElement::prepareBackgroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const
 {
     if (auto shadowPtr = evalStyleValueIfPresentPtr<style::RenderStyle>("background"_id))
     {
@@ -1624,12 +1624,12 @@ void IElement::prepareBackgroundGeometry(DataStash& stash, const ElementArea& dr
     }
 }
 
-void IElement::prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
+void IElement::prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const
 {
 
 }
 
-void IElement::prepareOverlayGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
+void IElement::prepareOverlayGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const
 {
     if (auto borderStylePtr = evalStyleValueIfPresentPtr<Color>("border-color"_id))
     {
@@ -1638,7 +1638,7 @@ void IElement::prepareOverlayGeometry(DataStash& stash, const ElementArea& drawA
             float borderWidth = evalStyleValue<float>("border-width"_id, 0.0f);// *pixelScale;
             if (borderWidth > 0.0f)
             {
-                auto style = canvas::SolidColor(*borderStylePtr);
+                auto style = CanvasStyle_SolidColor(*borderStylePtr);
                 adjustBorderStyle(style, borderWidth);
 
                 builder.beginPath();
@@ -1654,7 +1654,7 @@ void IElement::prepareOverlayGeometry(DataStash& stash, const ElementArea& drawA
                 auto borderBottom = evalStyleValue<float>("border-bottom"_id, 0.0f);// *pixelScale;
                 if (borderLeft > 0.0f || borderTop > 0.0f || borderRight > 0.0f || borderBottom > 0.0f)
                 {
-                    auto style = canvas::SolidColor(*borderStylePtr);
+                    auto style = CanvasStyle_SolidColor(*borderStylePtr);
                     adjustBorderStyle(style, borderWidth);
 
                     if (borderLeft > 0.0f)
@@ -1708,25 +1708,25 @@ void IElement::prepareOverlayGeometry(DataStash& stash, const ElementArea& drawA
     }
 }
 
-void IElement::renderShadow(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void IElement::renderShadow(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     if (m_cachedGeometry && m_cachedGeometry->shadow)
         canvas.place(drawArea.absolutePosition(), *m_cachedGeometry->shadow, mergedOpacity);
 }
 
-void IElement::renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void IElement::renderForeground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     if (m_cachedGeometry && m_cachedGeometry->foreground)
 		canvas.place(drawArea.absolutePosition(), *m_cachedGeometry->foreground, mergedOpacity);
 }
 
-void IElement::renderBackground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void IElement::renderBackground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     if (m_cachedGeometry && m_cachedGeometry->background)
 		canvas.place(drawArea.absolutePosition(), *m_cachedGeometry->background, mergedOpacity);
 }
 
-void IElement::renderOverlay(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void IElement::renderOverlay(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     if (m_cachedGeometry && m_cachedGeometry->overlay)
 		canvas.place(drawArea.absolutePosition(), *m_cachedGeometry->overlay, mergedOpacity);
@@ -1742,26 +1742,26 @@ void IElement::rebuildCachedGeometry(DataStash& stash, const ElementArea& drawAr
 		m_cachedGeometry = new ElementCachedGeometry();
 
 	if (!m_cachedGeometry->shadow)
-		m_cachedGeometry->shadow = new canvas::Geometry();
+		m_cachedGeometry->shadow = new CanvasGeometry();
 
 	if (!m_cachedGeometry->background)
-		m_cachedGeometry->background = new canvas::Geometry;
+		m_cachedGeometry->background = new CanvasGeometry;
 
 	if (!m_cachedGeometry->foreground)
-		m_cachedGeometry->foreground = new canvas::Geometry;
+		m_cachedGeometry->foreground = new CanvasGeometry;
 
 	if (!m_cachedGeometry->overlay)
-		m_cachedGeometry->overlay = new canvas::Geometry;
+		m_cachedGeometry->overlay = new CanvasGeometry;
 
 	m_cachedGeometry->shadow->reset();
 	m_cachedGeometry->background->reset();
 	m_cachedGeometry->foreground->reset();
 	m_cachedGeometry->overlay->reset();
 
-    canvas::GeometryBuilder ShadowGeometry(*m_cachedGeometry->shadow);
-    canvas::GeometryBuilder BackgroundGeometry(*m_cachedGeometry->background);
-    canvas::GeometryBuilder ForegroundGeometry(*m_cachedGeometry->foreground);
-    canvas::GeometryBuilder OverlayGeometry(*m_cachedGeometry->overlay);
+    CanvasGeometryBuilder ShadowGeometry(*m_cachedGeometry->shadow);
+    CanvasGeometryBuilder BackgroundGeometry(*m_cachedGeometry->background);
+    CanvasGeometryBuilder ForegroundGeometry(*m_cachedGeometry->foreground);
+    CanvasGeometryBuilder OverlayGeometry(*m_cachedGeometry->overlay);
 
     // prepare shadow geometry
     prepareShadowGeometry(stash, drawArea, cachedStyleParams().pixelScale, ShadowGeometry);
@@ -1793,12 +1793,12 @@ void IElement::prepareDynamicSizing(const ElementArea& drawArea, const ElementDy
 {
 }
 
-void IElement::renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, canvas::Canvas& canvas, float mergedOpacity)
+void IElement::renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, Canvas& canvas, float mergedOpacity)
 {
 
 }
 
-void IElement::render(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, canvas::Canvas& canvas, float parentMergedOpacity, const ElementDynamicSizing* parentDynamicSizing)
+void IElement::render(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, Canvas& canvas, float parentMergedOpacity, const ElementDynamicSizing* parentDynamicSizing)
 {
     ASSERT(m_visibility != VisibilityState::Hidden);
 

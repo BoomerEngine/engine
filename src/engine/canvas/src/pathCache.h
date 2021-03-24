@@ -32,7 +32,7 @@
 #include "style.h"
 #include "geometryBuilder.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -68,7 +68,7 @@ namespace prv
     {
         uint32_t first; // first point in the point list
         uint32_t count; // number of points in the path so far
-        Winding winding;
+        CanvasWinding winding;
         bool closed;
         bool convex;
 
@@ -77,7 +77,7 @@ namespace prv
         INLINE PathData()
             : first(0)
             , count(0)
-            , winding(Winding::CCW)
+            , winding(CanvasWinding::CCW)
             , closed(false)
             , convex(false)
             , bevelCount(0)
@@ -114,15 +114,15 @@ namespace prv
         void addPoint(const Vector2& pos, PointTypeFlags flags);
         void addBezier(const Vector2& p0, const Vector2& p1, const Vector2& p2, const Vector2& p3, uint32_t level, PointTypeFlags flags);
         void closePath();
-        void winding(Winding winding);
+        void winding(CanvasWinding winding);
 
         void computeDeltas();
-        void computeJoints(float w, LineJoin lineJoin, float mitterLimit);
+        void computeJoints(float w, CanvasLineJoin lineJoin, float mitterLimit);
 
         uint32_t computeFillVertexCount(bool hasFringe) const;
-        uint32_t computeStrokeVertexCount(LineJoin lineJoin, LineCap lineCap, float strokeWidth) const;
+        uint32_t computeStrokeVertexCount(CanvasLineJoin lineJoin, CanvasLineCap lineCap, float strokeWidth) const;
     };
 
 } // prv
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

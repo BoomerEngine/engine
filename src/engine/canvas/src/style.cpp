@@ -33,11 +33,11 @@
 // 3. This notice may not be removed or altered from any source distribution.
 //
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
-RenderStyle::RenderStyle()
+CanvasRenderStyle::CanvasRenderStyle()
 	: wrapU(0)
 	, wrapV(0)
 	, customUV(0)
@@ -46,56 +46,19 @@ RenderStyle::RenderStyle()
 {
 }
 
-/*bool RenderStyle::operator==(const RenderStyle& other) const
-{
-    return (key == other.key) && (extent == other.extent) && (base == other.base) && (radius == other.radius) && 
-        (wrapU == other.wrapU) && (wrapV == other.wrapV) && (customUV == other.customUV) &&
-		(feather == other.feather) && (innerColor == other.innerColor) && (outerColor == other.outerColor) && (image == other.image);
-        //(uvMin == other.uvMin) && (uvMax == other.uvMax);
-}
-
-bool RenderStyle::operator!=(const RenderStyle& other) const
-{
-    return !operator==(other);
-}
-
-uint64_t RenderStyle::ComputeKey(const RenderStyle& style)
-{
-	CRC64 crc;
-
-	crc << style.radius;
-	crc << style.feather;
-	crc << style.innerColor.toNative();
-	crc << style.outerColor.toNative();
-	crc << style.image;
-
-	if (style.image)
-	{
-		crc << style.wrapU;
-		crc << style.wrapV;
-		crc << style.customUV;
-		crc << style.base.x;
-		crc << style.base.x;
-		crc << style.extent.y;
-		crc << style.extent.y;
-	}
-
-	return crc;
-}*/
-
 //--
         
-RenderStyle LinearGradienti(int sx, int sy, int ex, int ey, const Color& icol, const Color& ocol)
+CanvasRenderStyle CanvasStyle_LinearGradienti(int sx, int sy, int ex, int ey, const Color& icol, const Color& ocol)
 {
-    return LinearGradient((float)sx, (float)sy, (float)ex, (float)ey, icol, ocol);
+    return CanvasStyle_LinearGradient((float)sx, (float)sy, (float)ex, (float)ey, icol, ocol);
 }
 
-RenderStyle LinearGradient(float sx, float sy, float ex, float ey, const Color& icol, const Color& ocol)
+CanvasRenderStyle CanvasStyle_LinearGradient(float sx, float sy, float ex, float ey, const Color& icol, const Color& ocol)
 {
-    return LinearGradient(Vector2(sx, sy), Vector2(ex, ey), icol, ocol);
+    return CanvasStyle_LinearGradient(Vector2(sx, sy), Vector2(ex, ey), icol, ocol);
 }
 
-RenderStyle LinearGradient(const Vector2& start, const Vector2& end, const Color& icol, const Color& ocol)
+CanvasRenderStyle CanvasStyle_LinearGradient(const Vector2& start, const Vector2& end, const Color& icol, const Color& ocol)
 {
     float large = 1e5;
 
@@ -103,7 +66,7 @@ RenderStyle LinearGradient(const Vector2& start, const Vector2& end, const Color
     auto dl = dx.length();
     auto dxdl = (dl > 0.001f) ? (dx / dl) : Vector2(0, 1);
 
-    RenderStyle ret;
+    CanvasRenderStyle ret;
 	ret.xformNeeded = true;
 	ret.attributesNeeded = true;
     ret.xform.t[0] = dxdl.y; 
@@ -118,18 +81,18 @@ RenderStyle LinearGradient(const Vector2& start, const Vector2& end, const Color
     ret.radius = 0.0f;
     ret.feather = std::max(1.0f, dl);
     ret.innerColor = icol;
-    ret.outerColor = ocol;           
+    ret.outerColor = ocol;
     return ret;
 }
 
-RenderStyle BoxGradienti(int x, int y, int w, int h, int r, int f, const Color& icol, const Color& ocol)
+CanvasRenderStyle CanvasStyle_BoxGradienti(int x, int y, int w, int h, int r, int f, const Color& icol, const Color& ocol)
 {
-    return BoxGradient((float)x, (float)y, (float)w, (float)h, (float)r, (float)f, icol, ocol);
+    return CanvasStyle_BoxGradient((float)x, (float)y, (float)w, (float)h, (float)r, (float)f, icol, ocol);
 }
 
-RenderStyle BoxGradient(const Vector2& pos, float w, float h, float r, float f, const Color& icol, const Color& ocol)
+CanvasRenderStyle CanvasStyle_BoxGradient(const Vector2& pos, float w, float h, float r, float f, const Color& icol, const Color& ocol)
 {
-    RenderStyle ret;
+    CanvasRenderStyle ret;
 	ret.xformNeeded = true;
 	ret.attributesNeeded = true;
 	ret.extent = Vector2(w, h) * 0.5f;
@@ -141,22 +104,22 @@ RenderStyle BoxGradient(const Vector2& pos, float w, float h, float r, float f, 
     return ret;
 }
 
-RenderStyle BoxGradient(const Vector2& start, const Vector2& end, float r, float f, const Color& icol, const Color& ocol)
+CanvasRenderStyle CanvasStyle_BoxGradient(const Vector2& start, const Vector2& end, float r, float f, const Color& icol, const Color& ocol)
 {
-    return BoxGradient(start, end.x - start.x, end.y - start.x, r, f, icol, ocol);
+    return CanvasStyle_BoxGradient(start, end.x - start.x, end.y - start.x, r, f, icol, ocol);
 }
 
-RenderStyle BoxGradient(float x, float y, float w, float h, float r, float f, const Color& icol, const Color& ocol)
+CanvasRenderStyle CanvasStyle_BoxGradient(float x, float y, float w, float h, float r, float f, const Color& icol, const Color& ocol)
 {
-    return BoxGradient(Vector2(x, y), w, h, r, f, icol, ocol);
+    return CanvasStyle_BoxGradient(Vector2(x, y), w, h, r, f, icol, ocol);
 }
 
-RenderStyle RadialGradient(const Vector2& center, float inr, float outr, const Color& icol, const Color& ocol)
+CanvasRenderStyle CanvasStyle_RadialGradient(const Vector2& center, float inr, float outr, const Color& icol, const Color& ocol)
 {
     auto r = (inr + outr) * 0.5f;
     auto f = (outr - inr);
 
-    RenderStyle ret;
+    CanvasRenderStyle ret;
 	ret.xformNeeded = true;
 	ret.attributesNeeded = true;
 	ret.xform = XForm2D::BuildTranslation(-center);
@@ -168,14 +131,14 @@ RenderStyle RadialGradient(const Vector2& center, float inr, float outr, const C
 	return ret;
 }
 
-RenderStyle RadialGradient(float cx, float cy, float inr, float outr, const Color& icol, const Color& ocol)
+CanvasRenderStyle CanvasStyle_RadialGradient(float cx, float cy, float inr, float outr, const Color& icol, const Color& ocol)
 {
-    return RadialGradient(Vector2(cx, cy), inr, outr, icol, ocol);
+    return CanvasStyle_RadialGradient(Vector2(cx, cy), inr, outr, icol, ocol);
 }
 
-RenderStyle RadialGradienti(int cx, int cy, int inr, int outr, const Color& icol, const Color& ocol)
+CanvasRenderStyle CanvasStyle_RadialGradienti(int cx, int cy, int inr, int outr, const Color& icol, const Color& ocol)
 {
-    return RadialGradient((float)cx, (float)cy, (float)inr, (float)outr, icol, ocol);
+    return CanvasStyle_RadialGradient((float)cx, (float)cy, (float)inr, (float)outr, icol, ocol);
 }
 
 XForm2D ImagePatternSettings::calcPixelToUVTransform() const
@@ -208,12 +171,12 @@ XForm2D ImagePatternSettings::calcPixelToUVTransform() const
 	return ret;
 }
 
-RenderStyle ImagePattern(const ImagePatternSettings& pattern)
+CanvasRenderStyle CanvasStyle_ImagePattern(const ImagePatternSettings& pattern)
 {
 	if (!pattern.m_image)
-		return SolidColor(Color::WHITE);
+		return CanvasStyle_SolidColor(Color::WHITE);
 
-	RenderStyle ret;
+	CanvasRenderStyle ret;
 	ret.attributesNeeded = false; // images are stored in vertices any way, don't need to have extra style for that
 	ret.xformNeeded = true;
 	ret.image = pattern.m_image;
@@ -231,16 +194,16 @@ RenderStyle ImagePattern(const ImagePatternSettings& pattern)
 	return ret;
 }
 
-RenderStyle ImagePattern(ImageEntry image, const ImagePatternSettings& pattern)
+CanvasRenderStyle CanvasStyle_ImagePattern(CanvasImageEntry image, const ImagePatternSettings& pattern)
 {
 	ImagePatternSettings ret = pattern;
 	ret.m_image = image;
-	return ImagePattern(ret);
+	return CanvasStyle_ImagePattern(ret);
 }        
 
-RenderStyle SolidColor(const Color& color)
+CanvasRenderStyle CanvasStyle_SolidColor(const Color& color)
 {
-    RenderStyle ret;
+    CanvasRenderStyle ret;
     ret.radius = 0.0f;
     ret.feather = 1.0f;
     ret.outerColor = color;
@@ -250,4 +213,4 @@ RenderStyle SolidColor(const Color& color)
 
 //--
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

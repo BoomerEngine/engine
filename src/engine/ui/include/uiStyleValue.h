@@ -99,7 +99,7 @@ struct ENGINE_UI_API RenderStyle
 
     Size measure(float pixelScale) const;
 
-    canvas::RenderStyle evaluate(DataStash& stash, float pixelScale, const ElementArea& area) const;
+    CanvasRenderStyle evaluate(DataStash& stash, float pixelScale, const ElementArea& area) const;
 
     //--
 
@@ -118,7 +118,7 @@ struct ENGINE_UI_API RenderStyle
 
     ImagePtr image; // locally stored
 
-    mutable canvas::ImageEntry cachedImageEntry;
+    mutable CanvasImageEntry cachedImageEntry;
 };
 
 //---
@@ -135,7 +135,7 @@ struct ImageReference
     StringID name; // icon name to be loaded from data stash
     ImagePtr image; // locally stored
 
-	mutable canvas::ImageEntry canvasImage; // not saved
+	mutable CanvasImageEntry canvasImage; // not saved
 
     //--
 

@@ -40,10 +40,10 @@ namespace ImGui
 		bool processInput(const boomer::InputEvent& evt);
 
 		// being ImGui frame with BoomerEngine canvas
-		void beginFrame(boomer::canvas::Canvas& c, float dt);
+		void beginFrame(boomer::Canvas& c, float dt);
 
 		// end frame and send it to canvas for rendering
-		void endFrame(boomer::canvas::Canvas& c, const boomer::XForm2D& placement = boomer::XForm2D::IDENTITY());
+		void endFrame(boomer::Canvas& c, const boomer::XForm2D& placement = boomer::XForm2D::IDENTITY());
 
 		//--
 
@@ -61,7 +61,7 @@ namespace ImGui
 	private:
 		ImGuiContext* m_context = nullptr;
 
-		boomer::canvas::DynamicAtlasPtr m_atlas;
+		boomer::DynamicAtlasPtr m_atlas;
 
 		boomer::Array<boomer::StringBuf> m_searchPaths;
 		boomer::HashMap<boomer::StringBuf, ImTextureID> m_iconMap;
@@ -78,7 +78,7 @@ namespace ImGui
 
 		//--
 
-		void renderToCanvas(const ImDrawData* data, boomer::canvas::Canvas& c, const boomer::XForm2D& placement);
+		void renderToCanvas(const ImDrawData* data, boomer::Canvas& c, const boomer::XForm2D& placement);
 		void prepareCanvasImages();
 	};
 

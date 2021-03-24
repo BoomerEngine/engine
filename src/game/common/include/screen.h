@@ -83,7 +83,7 @@ class IGameScreenCanvas : public IGameScreen
 public:
     IGameScreenCanvas();
 
-    virtual void handleRender(canvas::Canvas& c, float visibility) = 0;
+    virtual void handleRender(Canvas& c, float visibility) = 0;
 
 protected:
     virtual void handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, float visibility) override final;

@@ -73,7 +73,7 @@ public:
     bool processRawInput(const InputEvent& evt);
 
     // draw on-screen debug information
-    void renderDebugCanvas(canvas::Canvas& c) const;
+    void renderDebugCanvas(Canvas& c) const;
 
     //--
 

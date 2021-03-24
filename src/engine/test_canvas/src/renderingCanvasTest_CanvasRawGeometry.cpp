@@ -25,8 +25,8 @@ class SceneTest_CanvasRawGeometry : public ICanvasTest
 public:
     NativeTimePoint m_lastUpdateTime;
 
-	RefPtr<canvas::DynamicAtlas> m_atlas;
-	canvas::ImageEntry m_atlasEntry;
+	RefPtr<CanvasDynamicAtlas> m_atlas;
+	CanvasImageEntry m_atlasEntry;
 
     virtual void initialize() override
     {
@@ -34,7 +34,7 @@ public:
 
         auto lena = loadImage("lena.png");
 
-		m_atlas = RefNew<canvas::DynamicAtlas>(1024, 1);
+		m_atlas = RefNew<CanvasDynamicAtlas>(1024, 1);
 		m_atlasEntry = m_atlas->registerImage(lena, true);
     }
 
@@ -63,13 +63,13 @@ public:
         return (1.0f + sin(PI * v)) * 0.5f;
     }
 
-    virtual void render(canvas::Canvas& c) override
+    virtual void render(Canvas& c) override
     {
         const auto GRID_SIZE = 32;
 
         const auto t = m_lastUpdateTime.timeTillNow().toSeconds();
 
-        Array<canvas::Vertex> vertices;
+        Array<CanvasVertex> vertices;
         Array<uint16_t> indices;
 
         vertices.resize((GRID_SIZE + 1) * (GRID_SIZE + 1));
@@ -127,10 +127,10 @@ public:
         }
 
 		{
-			auto style = canvas::ImagePattern(canvas::ImagePatternSettings(m_atlasEntry).customUV());
+			auto style = CanvasStyle_ImagePattern(ImagePatternSettings(m_atlasEntry).customUV());
 
-			canvas::Geometry geometry;
-			geometry.appendIndexedBatch(vertices.typedData(), indices.typedData(), indices.size(), canvas::Batch(), &style);
+			CanvasGeometry geometry;
+			geometry.appendIndexedBatch(vertices.typedData(), indices.typedData(), indices.size(), CanvasBatch(), &style);
 
 			c.place(Vector2(0, 0), geometry);
 		}

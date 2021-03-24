@@ -97,7 +97,7 @@ namespace prv
 
     struct LayoutDisplayImage
     {
-        canvas::ImageEntry image;
+        CanvasImageEntry image;
         LayoutVerticalAlign valaign = LayoutVerticalAlign::Baseline;
         Color color;
         float pixelScale = 1.0f;
@@ -138,7 +138,7 @@ namespace prv
         Array<LayoutDisplayImage> images;
         Array<LayoutDisplayTag> tags;
 
-        void render(canvas::GeometryBuilder& b, const ElementArea& area, LayoutHorizontalAlign defaultAlignment = LayoutHorizontalAlign::Left) const;
+        void render(CanvasGeometryBuilder& b, const ElementArea& area, LayoutHorizontalAlign defaultAlignment = LayoutHorizontalAlign::Left) const;
         void measure(Size& outSize) const; // optimal size
     };
 

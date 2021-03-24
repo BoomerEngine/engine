@@ -185,7 +185,7 @@ namespace Scintilla
         return initialized;
     }
 
-    void SurfaceImpl::render(int x, int y, boomer::canvas::Canvas& canvas)
+    void SurfaceImpl::render(int x, int y, boomer::Canvas& canvas)
     {
 		if (!collected)
 		{
@@ -194,7 +194,7 @@ namespace Scintilla
 			collected = true;
 		}
 
-		canvas.place(boomer::canvas::Placement(x, y), m_displayBuffer->data);
+		canvas.place(boomer::CanvasPlacement(x, y), m_displayBuffer->data);
     }
 
     void SurfaceImpl::Init(WindowID)

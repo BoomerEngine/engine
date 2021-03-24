@@ -31,8 +31,8 @@ public:
     void removeHistograms();
 
 protected:
-    virtual void renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
-    virtual void renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual void renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, Canvas& canvas, float mergedOpacity) override;
+    virtual void renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, Canvas& canvas, float mergedOpacity) override;
     virtual bool handleMouseMovement(const InputMouseMovementEvent& evt) override;
     virtual void handleHoverLeave(const ui::Position& absolutePosition) override;
 
@@ -51,7 +51,7 @@ protected:
         StringView caption;
         Array<CollapsedBucket> collapsedBuckets;
         uint32_t collapsedBucketsMaxValue = 0;
-        canvas::Geometry geometry;
+        CanvasGeometry geometry;
     };
 
     double m_histogramMin = 0.0;

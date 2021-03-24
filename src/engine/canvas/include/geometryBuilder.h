@@ -32,7 +32,7 @@
 #include "style.h"
 #include "geometry.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -40,7 +40,7 @@ namespace prv
 } // prv
 
 /// style of drawing the ends of the lines 
-enum class LineCap : uint8_t
+enum class CanvasLineCap : uint8_t
 {
     Butt,
     Square,
@@ -48,7 +48,7 @@ enum class LineCap : uint8_t
 };
 
 /// style of drawing the line joints
-enum class LineJoin : uint8_t
+enum class CanvasLineJoin : uint8_t
 {
     Bevel,
     Round,
@@ -56,37 +56,37 @@ enum class LineJoin : uint8_t
 };
 
 /// type of geometry to emit from the constructed path
-enum class GeometryType : uint8_t
+enum class CanvasGeometryType : uint8_t
 {
     Stroke = 1,
     Fill = 2,
 };
 
-/// helper class that build a renderable Geometry objects step-by-step
-/// the created Geometry objects are self contained and can be reused for rendering much later
+/// helper class that build a renderable CanvasGeometry objects step-by-step
+/// the created CanvasGeometry objects are self contained and can be reused for rendering much later
 /// the whole point is to minimize CPU overhead when redrawing large and mostly static GUI
 /// NOTE: data storage is required for using cached images and fonts
-class ENGINE_CANVAS_API GeometryBuilder : public NoCopy // should be instanced on the stack
+class ENGINE_CANVAS_API CanvasGeometryBuilder : public NoCopy // should be instanced on the stack
 {
     RTTI_DECLARE_POOL(POOL_CANVAS)
 
 public:
-    GeometryBuilder(Geometry& outGeometry);
-    ~GeometryBuilder();
+    CanvasGeometryBuilder(CanvasGeometry& outGeometry);
+    ~CanvasGeometryBuilder();
 
     //---
 
     /// get current fill rendering style
-    INLINE const RenderStyle& fillStyle() const { return m_style.fillStyle; }
+    INLINE const CanvasRenderStyle& fillStyle() const { return m_style.fillStyle; }
 
     /// get current stroke rendering style
-    INLINE const RenderStyle& strokeStyle() const { return m_style.strokeStyle; }
+    INLINE const CanvasRenderStyle& strokeStyle() const { return m_style.strokeStyle; }
 
     // get the current XForm transform that is being applied to the geometry
     INLINE const XForm2D& transform() const { return m_transform; }
 
 	// current blend operation
-	INLINE BlendOp blending() const { return m_style.op; }
+	INLINE CanvasBlendOp blending() const { return m_style.op; }
 
     //---
 
@@ -96,7 +96,7 @@ public:
 
     // Sets the composite operation
     // The blending modes are encoded into generated geometry (this way we can create whole background, content and frame in one go)
-    void blending(BlendOp op);
+    void blending(CanvasBlendOp op);
 
     //---
 
@@ -115,13 +115,13 @@ public:
     void strokeColor(const Color& color, float width = 1.0f);
 
     // Sets current stroke style to a paint, which can be a one of the gradients or a pattern.
-    void strokePaint(const RenderStyle& style, float width = 1.0f);
+    void strokePaint(const CanvasRenderStyle& style, float width = 1.0f);
 
     // Sets current fill style to a solid color.
     void fillColor(const Color& color);
 
     // Sets current fill style to a paint, which can be a one of the gradients or a pattern.
-    void fillPaint(const RenderStyle& style);
+    void fillPaint(const CanvasRenderStyle& style);
 
     // Sets the miter limit of the stroke style.
     // Miter limit controls when a sharp corner is beveled.
@@ -129,11 +129,11 @@ public:
 
     // Sets how the end of the line (cap) is drawn,
     // Can be one of: Butt (default), Round, Square.
-    void lineCap(LineCap capStyle);
+    void lineCap(CanvasLineCap capStyle);
 
     // Sets how sharp path corners are drawn.
     // Can be one of Miter (default), Round, Bevel.
-    void lineJoin(LineJoin jointStyle);
+    void lineJoin(CanvasLineJoin jointStyle);
 
     // Sets the transparency applied to all rendered shapes.
     // Already transparent paths will get proportionally more transparent as well.
@@ -241,9 +241,9 @@ public:
     // Creates new circle arc shaped sub-path. The arc center is at cx,cy, the arc radius is r,
     // and the arc is drawn from angle a0 to a1, and swept in direction dir (NVG_CCW, or NVG_CW).
     // Angles are specified in radians.
-    void arci(int cx, int cy, int r, float a0, float a1, Winding dir);
-    void arc(float cx, float cy, float r, float a0, float a1, Winding dir);
-    void arc(const Vector2& center, float r, float a0, float a1, Winding dir);
+    void arci(int cx, int cy, int r, float a0, float a1, CanvasWinding dir);
+    void arc(float cx, float cy, float r, float a0, float a1, CanvasWinding dir);
+    void arc(const Vector2& center, float r, float a0, float a1, CanvasWinding dir);
 
     // Creates new rectangle shaped sub-path.
     void recti(int x, int y, int w, int h);
@@ -279,7 +279,7 @@ public:
     void closePath();
 
     // Sets the current sub-path winding, see NVGwinding and NVGsolidity.
-    void pathWinding(Winding dir);
+    void pathWinding(CanvasWinding dir);
 
 	//--
 
@@ -321,7 +321,7 @@ public:
 	template< typename R >
 	INLINE void selectRenderer()
 	{
-		static const auto index = canvas::GetHandlerIndex<R>();
+		static const auto index = GetCanvasHandlerIndex<R>();
 		selectRenderer(index);
 	}
 
@@ -330,7 +330,7 @@ public:
 	INLINE void selectRenderer(Args&& ... args)
 	{
 		const typename R::PrivateData data(std::forward< Args >(args)...);
-		static const auto index = canvas::GetHandlerIndex<R>();
+		static const auto index = GetCanvasHandlerIndex<R>();
 		selectRenderer(index, &data, sizeof(data));
 	}
 
@@ -347,17 +347,17 @@ public:
 private:
     struct RenderState
     {				
-        RenderStyle fillStyle;
-        RenderStyle strokeStyle;
+        CanvasRenderStyle fillStyle;
+        CanvasRenderStyle strokeStyle;
 
 		int cachedFillStyleIndex = -1;
 		int cachedStrokeStyleIndex = -1;
 
-		const ImageAtlasEntryInfo* cachedFillImage = nullptr;
+		const CanvasImageEntryInfo* cachedFillImage = nullptr;
 
-        BlendOp op = BlendOp::AlphaPremultiplied;
-        LineJoin lineJoint = LineJoin::Miter;
-        LineCap lineCap = LineCap::Butt;
+        CanvasBlendOp op = CanvasBlendOp::AlphaPremultiplied;
+        CanvasLineJoin lineJoint = CanvasLineJoin::Miter;
+        CanvasLineCap lineCap = CanvasLineCap::Butt;
         float strokeWidth = 1.0f;
         float miterLimit = 1.8f;
         float alpha = 1.0f;
@@ -403,15 +403,15 @@ private:
 
     Vector2 m_prevPosition;
 
-	Array<Vertex>& m_outVertices;
-	Array<Batch>& m_outBatches;
-	Array<Attributes>& m_outAttributes;
+	Array<CanvasVertex>& m_outVertices;
+	Array<CanvasBatch>& m_outBatches;
+	Array<CanvasAttributes>& m_outAttributes;
 	Array<uint8_t>& m_outRendererData;
 
 	Vector2& m_outVertexBoundsMin;
 	Vector2& m_outVertexBoundsMax;
 
-	HashMap<Attributes, int> m_attributesMap;
+	HashMap<CanvasAttributes, int> m_attributesMap;
 
     //--
 
@@ -431,17 +431,17 @@ private:
     void flattenPath(prv::PathCache& cache);
     void cacheInvertexTransform();
 
-	int mapStyle(const RenderStyle& style, float width);
+	int mapStyle(const CanvasRenderStyle& style, float width);
 
     void applyPaintColor(uint32_t firstVertex, uint32_t numVertices, Color color);
 	void applyPaintAttributes(uint32_t firstVertex, uint32_t numVertices, int attributesIndex);
-	void applyPaintUV(uint32_t firstVertex, uint32_t numVertices, const RenderStyle& style, const ImageAtlasEntryInfo* image);
+	void applyPaintUV(uint32_t firstVertex, uint32_t numVertices, const CanvasRenderStyle& style, const CanvasImageEntryInfo* image);
 };
 
 //--
 
-/// helper geometry builder that is easier for immediate geometry building and draving
-class ENGINE_CANVAS_API InplaceGeometryBuilder : public GeometryBuilder
+/// helper geometry builder that is easier for immediate geometry building and drawing
+class ENGINE_CANVAS_API InplaceGeometryBuilder : public CanvasGeometryBuilder
 {
 public:
     InplaceGeometryBuilder(Canvas& c);
@@ -456,10 +456,10 @@ public:
     void solidRectWithBorder(Color fillColor, Color lineColor, float x, float y, float w, float h);
 
 private:
-    Geometry m_geometry;
+    CanvasGeometry m_geometry;
     Canvas& m_canvas;
 };
 
 //--
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

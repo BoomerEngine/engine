@@ -35,7 +35,7 @@ namespace Scintilla
         void clear();
 
         // render into canvas collector
-        void render(int x, int y, boomer::canvas::Canvas& canvas);
+        void render(int x, int y, boomer::Canvas& canvas);
 
         //--
 
@@ -92,8 +92,8 @@ namespace Scintilla
 
 		struct Buffer
 		{
-            boomer::canvas::Geometry data;
-            boomer::canvas::GeometryBuilder builder;
+            boomer::CanvasGeometry data;
+            boomer::CanvasGeometryBuilder builder;
 
 			Buffer();
 

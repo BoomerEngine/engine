@@ -32,7 +32,7 @@
 #include "pathCache.h"
 #include "geometryBuilder.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 namespace prv
 {
@@ -60,7 +60,7 @@ namespace prv
             paths.back().closed = true;
     }
 
-    void PathCache::winding(Winding winding)
+    void PathCache::winding(CanvasWinding winding)
     {
         if (!paths.empty())
             paths.back().winding = winding;
@@ -173,7 +173,7 @@ namespace prv
             if (path.count > 2)
             {
                 auto area = CalcPathArea(curPoint, path.count);
-                if ((path.winding == Winding::CCW && area < 0.0f) || (path.winding == Winding::CW && area > 0.0f))
+                if ((path.winding == CanvasWinding::CCW && area < 0.0f) || (path.winding == CanvasWinding::CW && area > 0.0f))
                     ReversePathPoints(curPoint, path.count);
             }
 
@@ -211,7 +211,7 @@ namespace prv
         }
     }
 
-    void PathCache::computeJoints(float w, LineJoin lineJoin, float miterLimit)
+    void PathCache::computeJoints(float w, CanvasLineJoin lineJoin, float miterLimit)
         {
         float iw = (w > 0.0f) ? (1.0f / w) : 0.0f;
                 
@@ -251,7 +251,7 @@ namespace prv
 
                 // check to see if the corner needs to be beveled
                 if (curPoint->flags.test(PointTypeFlag::Corner))
-                    if ((dmr2 * miterLimit*miterLimit) < 1.0f || lineJoin == LineJoin::Bevel || lineJoin == LineJoin::Round)
+                    if ((dmr2 * miterLimit*miterLimit) < 1.0f || lineJoin == CanvasLineJoin::Bevel || lineJoin == CanvasLineJoin::Round)
                         curPoint->flags |= PointTypeFlag::Bevel;
 
                 if ((curPoint->flags.test(PointTypeFlag::Bevel)) || (curPoint->flags.test(PointTypeFlag::InnerBevel)))
@@ -269,21 +269,21 @@ namespace prv
         return (uint32_t)std::max<int>(2, (int)ceil(arc / da));
     }
 
-    uint32_t PathCache::computeStrokeVertexCount(LineJoin lineJoin, LineCap lineCap, float strokeWidth) const
+    uint32_t PathCache::computeStrokeVertexCount(CanvasLineJoin lineJoin, CanvasLineCap lineCap, float strokeWidth) const
     {
         auto ncap = CalcCurveDivs(strokeWidth, (float)(PI), tessTol); // calculate divisions per half circle.
 
         uint32_t ret = 0;
         for (auto& path : paths)
         {
-            if (lineJoin == LineJoin::Round)
+            if (lineJoin == CanvasLineJoin::Round)
                 ret += (path.count + path.bevelCount*(ncap + 2) + 1) * 2; // plus one for loop
             else
                 ret += (path.count + path.bevelCount * 5 + 1) * 2; // plus one for loop
 
             if (!path.closed)
             {
-                if (lineCap == LineCap::Round)
+                if (lineCap == CanvasLineCap::Round)
                     ret += (ncap * 2 + 2) * 2;
                 else
                     ret += (3 + 3) * 2;
@@ -307,4 +307,4 @@ namespace prv
 
 } // prv
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

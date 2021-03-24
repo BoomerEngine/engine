@@ -25,17 +25,17 @@
 #include "gpu/device/include/image.h"
 #include "gpu/device/include/buffer.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
-IAtlas::IAtlas()
+ICanvasAtlas::ICanvasAtlas()
 {
 	if (!IsDefaultObjectCreation())
 		GetService<CanvasService>()->registerAtlas(this, m_index);
 }
 
-IAtlas::~IAtlas()
+ICanvasAtlas::~ICanvasAtlas()
 {
 	GetService<CanvasService>()->unregisterAtlas(this, m_index);
 }
@@ -48,7 +48,7 @@ ConfigProperty<uint32_t> cvCanvasPageSizeGranurality("Render.Canvas", "AtlasSize
 ConfigProperty<uint32_t> cvCanvasMaxPages("Rendering.Canvas", "AtlasMaxPages", 64);
 ConfigProperty<bool> cvCanvasForcePowerOfTwoPages("Render.Canvas", "ForcePowerOfTwoSizes", false);
 
-DynamicAtlas::DynamicAtlas(uint32_t requestedSize, uint32_t requestedPageCount)
+CanvasDynamicAtlas::CanvasDynamicAtlas(uint32_t requestedSize, uint32_t requestedPageCount)
 	: m_maxEntries(2048) // TODO: compute
 {
 	// calculate page size
@@ -112,14 +112,14 @@ DynamicAtlas::DynamicAtlas(uint32_t requestedSize, uint32_t requestedPageCount)
     }
 }
 
-DynamicAtlas::~DynamicAtlas()
+CanvasDynamicAtlas::~CanvasDynamicAtlas()
 {}
 
-void DynamicAtlas::rebuild()
+void CanvasDynamicAtlas::rebuild()
 {
 }
 
-bool DynamicAtlas::allocateEntryIndex(uint32_t& outIndex)
+bool CanvasDynamicAtlas::allocateEntryIndex(uint32_t& outIndex)
 {
 	if (!m_freeEntryIndices.empty())
 	{
@@ -139,11 +139,11 @@ bool DynamicAtlas::allocateEntryIndex(uint32_t& outIndex)
 	return false;
 }
 
-ImageEntry DynamicAtlas::registerImage(const Image* ptr, bool supportWrapping /*= false*/, int additionalPixelBorder/*= 0*/)
+CanvasImageEntry CanvasDynamicAtlas::registerImage(const Image* ptr, bool supportWrapping /*= false*/, int additionalPixelBorder/*= 0*/)
 {
-	DEBUG_CHECK_RETURN_EX_V(ptr, "Invalid image", canvas::ImageEntry());
+	DEBUG_CHECK_RETURN_EX_V(ptr, "Invalid image", CanvasImageEntry());
 
-	canvas::ImageEntry ret;
+	CanvasImageEntry ret;
 
 	uint32_t entryIndex = 0;
 	if (allocateEntryIndex(entryIndex))
@@ -161,7 +161,7 @@ ImageEntry DynamicAtlas::registerImage(const Image* ptr, bool supportWrapping /*
 		entry.supportWrapping = supportWrapping;
 
 		auto& placement = m_placements[entryIndex];
-		placement = canvas::ImageAtlasEntryInfo();
+		placement = CanvasImageEntryInfo();
 
 		// convert to 4 channels
 		if (entry.data->channels() != 4)
@@ -178,7 +178,7 @@ ImageEntry DynamicAtlas::registerImage(const Image* ptr, bool supportWrapping /*
 	return ret;
 }
 
-void DynamicAtlas::unregisterImage(ImageEntry entry)
+void CanvasDynamicAtlas::unregisterImage(CanvasImageEntry entry)
 {
 	DEBUG_CHECK_RETURN_EX(entry.entryIndex < m_entries.size(), "Invalid entry index");
 
@@ -191,11 +191,11 @@ void DynamicAtlas::unregisterImage(ImageEntry entry)
 	memzero(info, sizeof(Entry));
 }
 
-DynamicAtlas::Page::Page(uint32_t size)
+CanvasDynamicAtlas::Page::Page(uint32_t size)
 	: image(size, size, 4)
 {}
 
-bool DynamicAtlas::placeImage(const Entry& source, canvas::ImageAtlasEntryInfo& outPlacement)
+bool CanvasDynamicAtlas::placeImage(const Entry& source, CanvasImageEntryInfo& outPlacement)
 {
 	// compute size requirements
 	int padding = 2;
@@ -233,7 +233,7 @@ bool DynamicAtlas::placeImage(const Entry& source, canvas::ImageAtlasEntryInfo& 
 }
 
 
-const ImageAtlasEntryInfo* DynamicAtlas::findRenderDataForAtlasEntry(ImageEntryIndex entryIndex) const
+const CanvasImageEntryInfo* CanvasDynamicAtlas::findRenderDataForAtlasEntry(CanvasImageIndex entryIndex) const
 {
 	if (entryIndex < m_placements.size())
 	{
@@ -247,7 +247,7 @@ const ImageAtlasEntryInfo* DynamicAtlas::findRenderDataForAtlasEntry(ImageEntryI
 
 //--
 
-void DynamicAtlas::flush(gpu::CommandWriter& cmd)
+void CanvasDynamicAtlas::flush(gpu::CommandWriter& cmd)
 {
 	if (m_dirtyEntryInfoMax > m_dirtyEntryInfoMin)
 	{
@@ -295,4 +295,4 @@ void DynamicAtlas::flush(gpu::CommandWriter& cmd)
 
 //--
         
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

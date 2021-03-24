@@ -957,13 +957,13 @@ void Renderer::updateAndRender(float dt)
 
                 info.hitCache->reset(windowArea);
 
-				canvas::Canvas::Setup setup;
+				Canvas::Setup setup;
 				setup.width = std::max<uint32_t>(1, std::ceilf(windowArea.size().x));
 				setup.height = std::max<uint32_t>(1, std::ceilf(windowArea.size().y));
 				setup.pixelOffset.x = -windowArea.absolutePosition().x;
 				setup.pixelOffset.y = -windowArea.absolutePosition().y;
 
-				canvas::Canvas canvas(setup);
+				Canvas canvas(setup);
 				info.window->render(canvas, *info.hitCache, *m_stash, windowArea);
 
 				if (m_currentInputAction && m_currentInputAction->element() && m_currentInputAction->element()->findParentWindow() == info.window)
@@ -1654,13 +1654,13 @@ void Renderer::nativeWindowForceRedraw(NativeWindowID id)
                 //TRACE_INFO("ForcedRedrawSize: [{}x{}]", windowArea.size().x, windowArea.size().y);
                 //Sleep(200);
 
-				canvas::Canvas::Setup setup;
+				Canvas::Setup setup;
 				setup.width = std::max<uint32_t>(1, std::ceilf(windowArea.size().x));
 				setup.height = std::max<uint32_t>(1, std::ceilf(windowArea.size().y));
 				setup.pixelOffset.x = -windowArea.absolutePosition().x;
 				setup.pixelOffset.y = -windowArea.absolutePosition().y;
 
-				canvas::Canvas canvas(setup);
+				Canvas canvas(setup);
 				info.window->render(canvas, *info.hitCache, *m_stash, windowArea);
 
 				if (m_currentInputAction && m_currentInputAction->element() && m_currentInputAction->element()->findParentWindow() == info.window)

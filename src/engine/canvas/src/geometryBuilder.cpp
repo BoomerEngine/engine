@@ -40,7 +40,7 @@
 #include "engine/font/include/fontGlyphBuffer.h"
 #include "engine/font/include/fontInputText.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -52,7 +52,7 @@ ConfigProperty<float> cvLineFringeWidth("Engine.Canvas", "FringeWidth", 1.0f);
 
 //--
 
-GeometryBuilder::GeometryBuilder(Geometry& outGeometry)
+CanvasGeometryBuilder::CanvasGeometryBuilder(CanvasGeometry& outGeometry)
 	: m_distTollerance(cvDistTollerance.get())
 	, m_tessTollerance(cvTessTollerance.get())
 	, m_outVertices(outGeometry.vertices)
@@ -71,18 +71,18 @@ GeometryBuilder::GeometryBuilder(Geometry& outGeometry)
 	m_style.antiAlias = cvAntiAliasForced.get() && cvAntiAliasAllowed.get();
 }
 
-GeometryBuilder::~GeometryBuilder()
+CanvasGeometryBuilder::~CanvasGeometryBuilder()
 {
     delete m_pathCache;
 }
 
-GeometryBuilder::RenderState::RenderState()
+CanvasGeometryBuilder::RenderState::RenderState()
 {
-    fillStyle = SolidColor(Color::WHITE);
-    strokeStyle = SolidColor(Color::BLACK);
+    fillStyle = CanvasStyle_SolidColor(Color::WHITE);
+    strokeStyle = CanvasStyle_SolidColor(Color::BLACK);
 }
 
-void GeometryBuilder::reset()
+void CanvasGeometryBuilder::reset()
 {
     // reset stacks
     m_styleStack.reset();
@@ -102,17 +102,17 @@ void GeometryBuilder::reset()
 	m_stylePivotStack.reset();
 }
 		
-void GeometryBuilder::blending(BlendOp op)
+void CanvasGeometryBuilder::blending(CanvasBlendOp op)
 {
     m_style.op = op;
 }
 
-void GeometryBuilder::pushState()
+void CanvasGeometryBuilder::pushState()
 {
     m_styleStack.pushBack(m_style);
 }
 
-void GeometryBuilder::popState()
+void CanvasGeometryBuilder::popState()
 {
     if (!m_styleStack.empty())
     {
@@ -121,12 +121,12 @@ void GeometryBuilder::popState()
     }
 }
 
-void GeometryBuilder::resetState()
+void CanvasGeometryBuilder::resetState()
 {
     m_style = RenderState();
 }
 
-void BuildAttributesFromStyle(const RenderStyle& style, float width, Attributes& outAttributes)
+void BuildAttributesFromStyle(const CanvasRenderStyle& style, float width, CanvasAttributes& outAttributes)
 {
 	outAttributes.base = style.base;
 	outAttributes.extent = style.extent;
@@ -137,12 +137,12 @@ void BuildAttributesFromStyle(const RenderStyle& style, float width, Attributes&
 	outAttributes.lineWidth = width;
 }
 
-int GeometryBuilder::mapStyle(const RenderStyle& style, float width)
+int CanvasGeometryBuilder::mapStyle(const CanvasRenderStyle& style, float width)
 {
 	if (!style.attributesNeeded && width == 1.0f)
 		return 0;
 
-	Attributes attributes;
+	CanvasAttributes attributes;
 	BuildAttributesFromStyle(style, width, attributes);
 
 	// quick mapping for few styles (most common case)
@@ -161,27 +161,27 @@ int GeometryBuilder::mapStyle(const RenderStyle& style, float width)
 	return m_outAttributes.size();			
 }
 
-void GeometryBuilder::strokeColor(const Color& color, float width)
+void CanvasGeometryBuilder::strokeColor(const Color& color, float width)
 {
-    m_style.strokeStyle = SolidColor(color);
+    m_style.strokeStyle = CanvasStyle_SolidColor(color);
 	m_style.strokeWidth = width;
 	m_style.cachedStrokeStyleIndex = mapStyle(m_style.strokeStyle, width);
 }
 
-void GeometryBuilder::strokePaint(const RenderStyle& style, float width)
+void CanvasGeometryBuilder::strokePaint(const CanvasRenderStyle& style, float width)
 {
     m_style.strokeStyle = style;
 	m_style.strokeWidth = width;
 	m_style.cachedStrokeStyleIndex = mapStyle(style, width);
 }
 
-void GeometryBuilder::fillColor(const Color& color)
+void CanvasGeometryBuilder::fillColor(const Color& color)
 {
-    m_style.fillStyle = SolidColor(color);
+    m_style.fillStyle = CanvasStyle_SolidColor(color);
 	m_style.cachedFillStyleIndex = 0; // don't need style for solid color
 }
 
-void GeometryBuilder::fillPaint(const RenderStyle& style)
+void CanvasGeometryBuilder::fillPaint(const CanvasRenderStyle& style)
 {
 	if (m_style.fillStyle.image != style.image)
 		m_style.cachedFillImage = nullptr;
@@ -190,43 +190,43 @@ void GeometryBuilder::fillPaint(const RenderStyle& style)
 	m_style.fillStyle = style;
 }
 
-void GeometryBuilder::miterLimit(float limit)
+void CanvasGeometryBuilder::miterLimit(float limit)
 {
     m_style.miterLimit = limit;
 }
 
-void GeometryBuilder::lineCap(LineCap capStyle)
+void CanvasGeometryBuilder::lineCap(CanvasLineCap capStyle)
 {
     m_style.lineCap = capStyle;
 }
 
-void GeometryBuilder::lineJoin(LineJoin jointStyle)
+void CanvasGeometryBuilder::lineJoin(CanvasLineJoin jointStyle)
 {
     m_style.lineJoint = jointStyle;
 }
 
-void GeometryBuilder::globalAlpha(float alpha)
+void CanvasGeometryBuilder::globalAlpha(float alpha)
 {
     m_style.alpha = alpha;
 }
 
-void GeometryBuilder::antialiasing(bool flag)
+void CanvasGeometryBuilder::antialiasing(bool flag)
 {
 	m_style.antiAlias = (flag || cvAntiAliasForced.get()) && cvAntiAliasAllowed.get();
 }
 
-void GeometryBuilder::resetTransform()
+void CanvasGeometryBuilder::resetTransform()
 {
     m_transform.identity();
     m_transformClass = XForm2DClass::Identity;
 }
 
-void GeometryBuilder::pushTransform()
+void CanvasGeometryBuilder::pushTransform()
 {
     m_transformStack.pushBack(m_transform);
 }
 
-void GeometryBuilder::popTransform()
+void CanvasGeometryBuilder::popTransform()
 {
     if (!m_transformStack.empty())
     {
@@ -237,7 +237,7 @@ void GeometryBuilder::popTransform()
     }
 }
 
-void GeometryBuilder::cacheInvertexTransform()
+void CanvasGeometryBuilder::cacheInvertexTransform()
 {
     if (!m_transformInvertedValid)
     {
@@ -252,14 +252,14 @@ void GeometryBuilder::cacheInvertexTransform()
     }
 }
 
-void GeometryBuilder::transform(float a, float b, float c, float d, float e, float f)
+void CanvasGeometryBuilder::transform(float a, float b, float c, float d, float e, float f)
 {
     m_transform = XForm2D(a, b, c, d, e, f) * m_transform;
     m_transformClass = m_transform.classify();
     m_transformInvertedValid = false;
 }
 
-void GeometryBuilder::offset(float x, float y)
+void CanvasGeometryBuilder::offset(float x, float y)
 {
     m_transform.t[4] += x;
     m_transform.t[5] += y;
@@ -267,7 +267,7 @@ void GeometryBuilder::offset(float x, float y)
     m_transformInvertedValid = false;
 }
 
-void GeometryBuilder::offseti(int x, int y)
+void CanvasGeometryBuilder::offseti(int x, int y)
 {
     m_transform.t[4] += (float)x;
     m_transform.t[5] += (float)y;
@@ -275,40 +275,40 @@ void GeometryBuilder::offseti(int x, int y)
     m_transformInvertedValid = false;
 }
 
-void GeometryBuilder::translate(float x, float y)
+void CanvasGeometryBuilder::translate(float x, float y)
 {
     m_transform = XForm2D::BuildTranslation(x,y) * m_transform;
     m_transformClass = m_transform.classify();
     m_transformInvertedValid = false;
 }
 
-void GeometryBuilder::translatei(int x, int y)
+void CanvasGeometryBuilder::translatei(int x, int y)
 {
     translate((float)x, (float)y);
 }
 
-void GeometryBuilder::rotate(float angle)
+void CanvasGeometryBuilder::rotate(float angle)
 {
     m_transform = XForm2D::BuildRotation(angle) * m_transform;
     m_transformClass = m_transform.classify();
     m_transformInvertedValid = false;
 }
 
-void GeometryBuilder::skewX(float angle)
+void CanvasGeometryBuilder::skewX(float angle)
 {
     m_transform = XForm2D::BuildSkewX(angle) * m_transform;
     m_transformClass = m_transform.classify();
     m_transformInvertedValid = false;
 }
 
-void GeometryBuilder::skewY(float angle)
+void CanvasGeometryBuilder::skewY(float angle)
 {
     m_transform = XForm2D::BuildSkewY(angle) * m_transform;
     m_transformClass = m_transform.classify();
     m_transformInvertedValid = false;
 }
 
-void GeometryBuilder::scale(float x, float y)
+void CanvasGeometryBuilder::scale(float x, float y)
 {
     m_transform = XForm2D::BuildScale(x,y) * m_transform;
     m_transformClass = m_transform.classify();
@@ -317,29 +317,29 @@ void GeometryBuilder::scale(float x, float y)
 		
 //--
 
-void GeometryBuilder::stylePivot(float x, float y)
+void CanvasGeometryBuilder::stylePivot(float x, float y)
 {
 	m_stylePivot.x = x;
 	m_stylePivot.y = y;
 }
 
-void GeometryBuilder::stylePivot(Vector2 offset)
+void CanvasGeometryBuilder::stylePivot(Vector2 offset)
 {
 	m_stylePivot = offset;
 }
 
-void GeometryBuilder::resetStylePivot()
+void CanvasGeometryBuilder::resetStylePivot()
 {
 	m_stylePivot = Vector2::ZERO();
 	m_stylePivotStack.reset();
 }
 
-void GeometryBuilder::pushStylePivot()
+void CanvasGeometryBuilder::pushStylePivot()
 {
 	m_stylePivotStack.pushBack(m_stylePivot);
 }
 
-void GeometryBuilder::popStylePivot()
+void CanvasGeometryBuilder::popStylePivot()
 {
 	if (!m_stylePivotStack.empty())
 	{ 
@@ -354,17 +354,17 @@ void GeometryBuilder::popStylePivot()
 
 //--
 
-void GeometryBuilder::beginPath()
+void CanvasGeometryBuilder::beginPath()
 {
     m_commands.clear();
 }
 
-void GeometryBuilder::pushRenderer()
+void CanvasGeometryBuilder::pushRenderer()
 {
 	m_customRendererStack.pushBack(m_customRenderer);
 }
 
-void GeometryBuilder::popRenderer()
+void CanvasGeometryBuilder::popRenderer()
 {
 	if (!m_customRendererStack.empty())
 	{
@@ -377,7 +377,7 @@ void GeometryBuilder::popRenderer()
 	}
 }
 
-void GeometryBuilder::selectRenderer(uint8_t index, const void* data /*= nullptr*/, uint32_t dataSize /*= 0*/)
+void CanvasGeometryBuilder::selectRenderer(uint8_t index, const void* data /*= nullptr*/, uint32_t dataSize /*= 0*/)
 {
 	m_customRenderer.index = index;
 
@@ -397,7 +397,7 @@ void GeometryBuilder::selectRenderer(uint8_t index, const void* data /*= nullptr
 	}
 }
 
-void GeometryBuilder::appendCommands(const float* vals, uint32_t numVals)
+void CanvasGeometryBuilder::appendCommands(const float* vals, uint32_t numVals)
 {
     // update the reference position
     auto cmd = (int)vals[0];
@@ -498,60 +498,60 @@ void GeometryBuilder::appendCommands(const float* vals, uint32_t numVals)
     }
 }
 
-void GeometryBuilder::moveToi(int x, int y)
+void CanvasGeometryBuilder::moveToi(int x, int y)
 {
     moveTo((float)x, (float)y);
 }
 
-void GeometryBuilder::moveTo(float x, float y)
+void CanvasGeometryBuilder::moveTo(float x, float y)
 {
     float vals[] = { CMD_MOVETO, x, y };
     appendCommands(vals, ARRAY_COUNT(vals));
 }
 
-void GeometryBuilder::moveTo(const Vector2& pos)
+void CanvasGeometryBuilder::moveTo(const Vector2& pos)
 {
     moveTo(pos.x, pos.y);
 }
 
-void GeometryBuilder::lineToi(int x, int y)
+void CanvasGeometryBuilder::lineToi(int x, int y)
 {
     lineTo((float)x, (float)y);
 }
 
-void GeometryBuilder::lineTo(float x, float y)
+void CanvasGeometryBuilder::lineTo(float x, float y)
 {
     float vals[] = { CMD_LINETO, x, y };
     appendCommands(vals, ARRAY_COUNT(vals));
 }
 
-void GeometryBuilder::lineTo(const Vector2& pos)
+void CanvasGeometryBuilder::lineTo(const Vector2& pos)
 {
     lineTo(pos.x, pos.y);
 }
 
-void GeometryBuilder::bezierToi(int c1x, int c1y, int c2x, int c2y, int x, int y)
+void CanvasGeometryBuilder::bezierToi(int c1x, int c1y, int c2x, int c2y, int x, int y)
 {
     bezierTo((float)c1x, (float)c1y, (float)c2x, (float)c2y, (float)x, (float)y);
 }
 
-void GeometryBuilder::bezierTo(const Vector2& c1, const Vector2& c2, const Vector2& pos)
+void CanvasGeometryBuilder::bezierTo(const Vector2& c1, const Vector2& c2, const Vector2& pos)
 {
     bezierTo(c1.x, c1.y, c2.x, c2.y, pos.x, pos.y);
 }
 
-void GeometryBuilder::bezierTo(float c1x, float c1y, float c2x, float c2y, float x, float y)
+void CanvasGeometryBuilder::bezierTo(float c1x, float c1y, float c2x, float c2y, float x, float y)
 {
     float vals[] = { CMD_BEZIERTO, c1x, c1y, c2x, c2y, x, y };
     appendCommands(vals, ARRAY_COUNT(vals));
 }
 
-void GeometryBuilder::quadTo(const Vector2& c, const Vector2& pos)
+void CanvasGeometryBuilder::quadTo(const Vector2& c, const Vector2& pos)
 {
     quadTo(c.x, c.y, pos.x, pos.y);
 }
 
-void GeometryBuilder::quadTo(float cx, float cy, float x, float y)
+void CanvasGeometryBuilder::quadTo(float cx, float cy, float x, float y)
 {
     float x0 = m_prevPosition.x;
     float y0 = m_prevPosition.y;
@@ -593,12 +593,12 @@ static INLINE float Cross(float dx0, float dy0, float dx1, float dy1)
     return dx1*dy0 - dx0*dy1;
 }
 
-void GeometryBuilder::arcTo(const Vector2& p1, const Vector2& p2, float radius)
+void CanvasGeometryBuilder::arcTo(const Vector2& p1, const Vector2& p2, float radius)
 {
     arcTo(p1.x, p1.y, p2.x, p2.y, radius);
 }
 
-void GeometryBuilder::arcTo(float x1, float y1, float x2, float y2, float radius)
+void CanvasGeometryBuilder::arcTo(float x1, float y1, float x2, float y2, float radius)
 {
     // we cannot arc as a first command
     if (m_commands.empty())
@@ -637,7 +637,7 @@ void GeometryBuilder::arcTo(float x1, float y1, float x2, float y2, float radius
         auto cy = y1 + d0.y*d + -d0.x*radius;
         auto a0 = atan2(d0.x, -d0.y);
         auto a1 = atan2(-d1.x, d1.y);
-        auto dir = Winding::CW;
+        auto dir = CanvasWinding::CW;
         arc(cx, cy, radius, a0, a1, dir);
     }
     else
@@ -646,38 +646,38 @@ void GeometryBuilder::arcTo(float x1, float y1, float x2, float y2, float radius
         auto cy  = y1 + d0.y*d + d0.x*radius;
         auto a0  = atan2(-d0.x, d0.y);
         auto a1 = atan2(d1.x, -d1.y);
-        auto dir = Winding::CCW;
+        auto dir = CanvasWinding::CCW;
         arc(cx, cy, radius, a0, a1, dir);
     }
 }
 
-void GeometryBuilder::closePath()
+void CanvasGeometryBuilder::closePath()
 {
     float vals[] = { CMD_CLOSE };
     appendCommands(vals, ARRAY_COUNT(vals));
 }
 
-void GeometryBuilder::pathWinding(Winding dir)
+void CanvasGeometryBuilder::pathWinding(CanvasWinding dir)
 {
     float vals[] = { CMD_WINDING, (float)dir };
     appendCommands(vals, ARRAY_COUNT(vals));
 }
 
-void GeometryBuilder::arci(int cx, int cy, int r, float a0, float a1, Winding dir)
+void CanvasGeometryBuilder::arci(int cx, int cy, int r, float a0, float a1, CanvasWinding dir)
 {
     arc((float)cx, (float)cy, (float)r, a0, a1, dir);
 }
 
-void GeometryBuilder::arc(const Vector2& center, float r, float a0, float a1, Winding dir)
+void CanvasGeometryBuilder::arc(const Vector2& center, float r, float a0, float a1, CanvasWinding dir)
 {
     arc(center.x, center.y, r, a0, a1, dir);
 }
 
-void GeometryBuilder::arc(float cx, float cy, float r, float a0, float a1, Winding dir)
+void CanvasGeometryBuilder::arc(float cx, float cy, float r, float a0, float a1, CanvasWinding dir)
 {
     // Clamp angles
     auto da = a1 - a0;
-    if (dir == Winding::CW)
+    if (dir == CanvasWinding::CW)
     {
         if (fabs(da) >= TWOPI)
             da = (float)TWOPI;
@@ -698,7 +698,7 @@ void GeometryBuilder::arc(float cx, float cy, float r, float a0, float a1, Windi
     // Split arc into max 90 degree segments.
     uint32_t ndivs = std::max(1, std::min((int)std::round(std::abs(da) / HALFPI), 5));
     float hda = (da / (float)ndivs) / 2.0f;
-    float kappa = std::abs(4.0f / 3.0f * (1.0f - std::cos(hda)) / std::sin(hda)) * (dir == Winding::CCW ? -1.0f : 1.0f);
+    float kappa = std::abs(4.0f / 3.0f * (1.0f - std::cos(hda)) / std::sin(hda)) * (dir == CanvasWinding::CCW ? -1.0f : 1.0f);
 
     float px = 0.0f, py = 0.0f, ptanx = 0.0f, ptany = 0.0f;
     float vals[3 + 5 * 7];
@@ -739,12 +739,12 @@ void GeometryBuilder::arc(float cx, float cy, float r, float a0, float a1, Windi
     appendCommands(vals, nvals);
 }
 
-void GeometryBuilder::recti(int x, int y, int w, int h)
+void CanvasGeometryBuilder::recti(int x, int y, int w, int h)
 {
     rect((float)x, (float)y, (float)w, (float)h);
 }
 
-void GeometryBuilder::rect(float x, float y, float w, float h)
+void CanvasGeometryBuilder::rect(float x, float y, float w, float h)
 {
     float vals[] = {
         CMD_MOVETO, x,y,
@@ -756,37 +756,37 @@ void GeometryBuilder::rect(float x, float y, float w, float h)
     appendCommands(vals, ARRAY_COUNT(vals));
 }
 
-void GeometryBuilder::rect(const Vector2& start, const Vector2& end)
+void CanvasGeometryBuilder::rect(const Vector2& start, const Vector2& end)
 {
     rect(start.x, start.y, end.x - start.x, end.y - start.y);
 }
 
-void GeometryBuilder::rect(const Rect& r)
+void CanvasGeometryBuilder::rect(const Rect& r)
 {
     rect((float)r.min.x, (float)r.min.y, (float)r.width(), (float)r.height());
 }
 
-void GeometryBuilder::roundedRecti(int x, const int  y, const int  w, const int  h, int r)
+void CanvasGeometryBuilder::roundedRecti(int x, const int  y, const int  w, const int  h, int r)
 {
     roundedRect((float)x, (float)y, (float)w, (float)h, (float)r);
 }
 
-void GeometryBuilder::roundedRect(float x, float y, float w, float h, float r)
+void CanvasGeometryBuilder::roundedRect(float x, float y, float w, float h, float r)
 {
     roundedRectVarying(x, y, w, h, r, r, r, r);
 }
 
-void GeometryBuilder::roundedRect(const Vector2& start, const Vector2& end, float r)
+void CanvasGeometryBuilder::roundedRect(const Vector2& start, const Vector2& end, float r)
 {
     roundedRect(start.x, start.y, end.x - start.x, end.y - start.y, r);
 }
 
-void GeometryBuilder::roundedRect(const Rect& rect, float r)
+void CanvasGeometryBuilder::roundedRect(const Rect& rect, float r)
 {
     roundedRect((float)rect.min.x, (float)rect.min.y, (float)rect.width(), (float)rect.height(), r);
 }
 
-void GeometryBuilder::roundedRectVarying(float x, float y, float w, float h, float radTopLeft, float radTopRight, float radBottomRight, float radBottomLeft)
+void CanvasGeometryBuilder::roundedRectVarying(float x, float y, float w, float h, float radTopLeft, float radTopRight, float radBottomRight, float radBottomLeft)
 {
     // degenerate case
     if (radTopLeft < 0.1f && radTopRight < 0.1f && radBottomRight < 0.1f && radBottomLeft < 0.1f)
@@ -827,12 +827,12 @@ void GeometryBuilder::roundedRectVarying(float x, float y, float w, float h, flo
     appendCommands(vals, ARRAY_COUNT(vals));
 }
 
-void GeometryBuilder::ellipsei(int cx, int cy, int rx, int ry)
+void CanvasGeometryBuilder::ellipsei(int cx, int cy, int rx, int ry)
 {
     ellipse((float)cx, (float)cy, (float)rx, (float)ry);
 }
 
-void GeometryBuilder::ellipse(float cx, float cy, float rx, float ry)
+void CanvasGeometryBuilder::ellipse(float cx, float cy, float rx, float ry)
 {
     float kappa90 = 0.5522847493f; // Length proportional to radius of a cubic bezier handle for 90deg arcs.
 
@@ -848,12 +848,12 @@ void GeometryBuilder::ellipse(float cx, float cy, float rx, float ry)
     appendCommands(vals, ARRAY_COUNT(vals));
 }
 
-void GeometryBuilder::ellipse(const Vector2& center, float rx, float ry)
+void CanvasGeometryBuilder::ellipse(const Vector2& center, float rx, float ry)
 {
     ellipse(center.x, center.y, rx, ry);
 }
 
-void GeometryBuilder::ellipse(const Vector2& tl, const Vector2& br)
+void CanvasGeometryBuilder::ellipse(const Vector2& tl, const Vector2& br)
 {
     float rx = (br.x - tl.x) * 0.5f;
     float ry = (br.y - tl.y) * 0.5f;
@@ -862,7 +862,7 @@ void GeometryBuilder::ellipse(const Vector2& tl, const Vector2& br)
     ellipse(cx, cy, rx, ry);
 }
 
-void GeometryBuilder::ellipse(const Rect& rect)
+void CanvasGeometryBuilder::ellipse(const Rect& rect)
 {
     float rx = (rect.max.x - rect.min.x) * 0.5f;
     float ry = (rect.max.y - rect.min.y) * 0.5f;
@@ -871,24 +871,24 @@ void GeometryBuilder::ellipse(const Rect& rect)
     ellipse(cx, cy, rx, ry);
 }
 
-void GeometryBuilder::circlei(int cx, int cy, int r)
+void CanvasGeometryBuilder::circlei(int cx, int cy, int r)
 {
     circle((float)cx, (float)cy, (float)r);
 }
 
-void GeometryBuilder::circle(float cx, float cy, float r)
+void CanvasGeometryBuilder::circle(float cx, float cy, float r)
 {
     ellipse(cx, cy, r, r);
 }
 
-void GeometryBuilder::circle(const Vector2& center, float r)
+void CanvasGeometryBuilder::circle(const Vector2& center, float r)
 {
     ellipse(center.x, center.y, r, r);
 }
 
 ///---
                 
-void GeometryBuilder::flattenPath(prv::PathCache& cache)
+void CanvasGeometryBuilder::flattenPath(prv::PathCache& cache)
 {
     // Flatten
     uint32_t i = 0;
@@ -924,7 +924,7 @@ void GeometryBuilder::flattenPath(prv::PathCache& cache)
             break;
 
         case CMD_WINDING:
-            m_pathCache->winding((Winding)(int)cmdPtr[1]);
+            m_pathCache->winding((CanvasWinding)(int)cmdPtr[1]);
             cmdPtr += 2;
             break;
 
@@ -940,7 +940,7 @@ namespace helper
     class OutputVertexWriter : public NoCopy
     {
     public:
-        INLINE OutputVertexWriter(Array<Vertex>& arr, uint32_t maxVertices)
+        INLINE OutputVertexWriter(Array<CanvasVertex>& arr, uint32_t maxVertices)
             : m_arr(arr)
             , m_numWritten(0)
             , m_boundsMin(FLT_MAX, FLT_MAX)
@@ -964,12 +964,12 @@ namespace helper
             m_arr.resize(actualWrittenCount);
         }
 
-        INLINE Vertex* currentPtr() const
+        INLINE CanvasVertex* currentPtr() const
         {
             return m_curVertex;
         }
 
-		INLINE Vertex* startVertex()
+		INLINE CanvasVertex* startVertex()
 		{
 			return m_startVertex;
 		}
@@ -1026,15 +1026,15 @@ namespace helper
         INLINE const Vector2& boundsMax() const { return m_boundsMax; }
 
     private:
-		Vertex* m_startVertex; // current batch
-		Vertex* m_curVertex; // current vertex
-		Vertex* m_endVertex; // absolute
+		CanvasVertex* m_startVertex; // current batch
+		CanvasVertex* m_curVertex; // current vertex
+		CanvasVertex* m_endVertex; // absolute
         uint32_t m_numWritten;
                  
         Vector2 m_boundsMin;
         Vector2 m_boundsMax;
 
-        Array<Vertex>& m_arr;
+        Array<CanvasVertex>& m_arr;
     };
 
     static INLINE void ChooseBevel(bool bevel, const prv::PathPoint& p0, const prv::PathPoint& p1, float w, Vector2& out0, Vector2& out1)
@@ -1260,7 +1260,7 @@ namespace helper
 
 } // helper
 
-void GeometryBuilder::applyPaintUV(uint32_t firstVertex, uint32_t numVertices, const RenderStyle& style, const ImageAtlasEntryInfo* image)
+void CanvasGeometryBuilder::applyPaintUV(uint32_t firstVertex, uint32_t numVertices, const CanvasRenderStyle& style, const CanvasImageEntryInfo* image)
 {
 	if (style.xformNeeded)
 	{
@@ -1298,7 +1298,7 @@ void GeometryBuilder::applyPaintUV(uint32_t firstVertex, uint32_t numVertices, c
 	}
 }
 
-void GeometryBuilder::applyPaintAttributes(uint32_t firstVertex, uint32_t numVertices, int attributesIndex)
+void CanvasGeometryBuilder::applyPaintAttributes(uint32_t firstVertex, uint32_t numVertices, int attributesIndex)
 {
 	auto* writePtr = m_outVertices.typedData() + firstVertex;
 	auto* writeEndPtr = writePtr + numVertices;
@@ -1309,7 +1309,7 @@ void GeometryBuilder::applyPaintAttributes(uint32_t firstVertex, uint32_t numVer
 	}
 }
 
-void GeometryBuilder::applyPaintColor(uint32_t firstVertex, uint32_t numVertices, Color color)
+void CanvasGeometryBuilder::applyPaintColor(uint32_t firstVertex, uint32_t numVertices, Color color)
 {
     auto* writePtr = m_outVertices.typedData() + firstVertex;
     auto* writeEndPtr = writePtr + numVertices;
@@ -1320,7 +1320,7 @@ void GeometryBuilder::applyPaintColor(uint32_t firstVertex, uint32_t numVertices
     }
 }
 
-void GeometryBuilder::stroke()
+void CanvasGeometryBuilder::stroke()
 {
     // compute the rendering scale, related to current transformation
     // strokes are affected by the scale setting
@@ -1347,8 +1347,8 @@ void GeometryBuilder::stroke()
 	}
 
 	// determine vertex mask
-	auto flags = Vertex::MASK_STROKE;
-	flags |= (rawFringeWidth > 0.0f) ? Vertex::MASK_HAS_FRINGE : 0;
+	auto flags = CanvasVertex::MASK_STROKE;
+	flags |= (rawFringeWidth > 0.0f) ? CanvasVertex::MASK_HAS_FRINGE : 0;
 
     // convert the commands into list of points and path segments
     m_pathCache->reset();
@@ -1385,11 +1385,11 @@ void GeometryBuilder::stroke()
         {
             auto d = (p1->pos - p0->pos).normalized();
 
-            if (m_style.lineCap == LineCap::Butt)
+            if (m_style.lineCap == CanvasLineCap::Butt)
                 helper::AddButtCapStart(vertexWriter, *p0, d, halfStrokeWidth, -rawFringeWidth, rawFringeWidth, flags, alphaScale);
-            else if (m_style.lineCap == LineCap::Square)
+            else if (m_style.lineCap == CanvasLineCap::Square)
                 helper::AddButtCapStart(vertexWriter, *p0, d, halfStrokeWidth, halfStrokeWidth - rawFringeWidth, rawFringeWidth, flags, alphaScale);
-            else if (m_style.lineCap == LineCap::Round)
+            else if (m_style.lineCap == CanvasLineCap::Round)
                 helper::AddRoundCapStart(vertexWriter, *p0, d, halfStrokeWidth, numCapVerts, rawFringeWidth, flags);
         }
 
@@ -1398,7 +1398,7 @@ void GeometryBuilder::stroke()
         {
             if ((p1->flags.test(prv::PointTypeFlag::Bevel)) || (p1->flags.test(prv::PointTypeFlag::InnerBevel)))
             {
-                if (m_style.lineJoint == LineJoin::Round)
+                if (m_style.lineJoint == CanvasLineJoin::Round)
                     helper::AddRoundJoin(vertexWriter, *p0, *p1, halfStrokeWidth, halfStrokeWidth, 0.0f, 1.0f, numCapVerts, rawFringeWidth, flags);
                 else
                     helper::AddBevelJoin(vertexWriter, *p0, *p1, halfStrokeWidth, halfStrokeWidth, halfStrokeWidth, flags, alphaScale);
@@ -1422,11 +1422,11 @@ void GeometryBuilder::stroke()
         {
             auto d = (p1->pos - p0->pos).normalized();
 
-            if (m_style.lineCap == LineCap::Butt)
+            if (m_style.lineCap == CanvasLineCap::Butt)
                 helper::AddButtCapEnd(vertexWriter, *p1, d, halfStrokeWidth, -rawFringeWidth, rawFringeWidth, flags, alphaScale);
-            else if (m_style.lineCap == LineCap::Square)
+            else if (m_style.lineCap == CanvasLineCap::Square)
                 helper::AddButtCapEnd(vertexWriter, *p1, d, halfStrokeWidth, halfStrokeWidth - rawFringeWidth, rawFringeWidth, flags, alphaScale);
-            else if (m_style.lineCap == LineCap::Round)
+            else if (m_style.lineCap == CanvasLineCap::Round)
                 helper::AddRoundCapEnd(vertexWriter, *p1, d, halfStrokeWidth, numCapVerts, rawFringeWidth, flags);
         }
 
@@ -1434,8 +1434,8 @@ void GeometryBuilder::stroke()
 		auto& prim = m_outBatches.emplaceBack();
 		prim.atlasIndex = 0;
 		prim.op = m_style.op;
-		prim.packing = BatchPacking::TriangleStrip;
-		prim.type = BatchType::FillConvex;
+		prim.packing = CanvasBatchPacking::TriangleStrip;
+		prim.type = CanvasBatchType::FillConvex;
 		prim.vertexOffset = vertexWriter.startVertexIndex();
 		prim.vertexCount = vertexWriter.finishAndGetCount();
     }
@@ -1452,7 +1452,7 @@ void GeometryBuilder::stroke()
 	m_outVertexBoundsMax = m_outVertexBoundsMax.max(vertexWriter.boundsMax());
 }
 
-void GeometryBuilder::fill()
+void CanvasGeometryBuilder::fill()
 {
     // convert the commands into list of points and path segments
     m_pathCache->reset();
@@ -1471,7 +1471,7 @@ void GeometryBuilder::fill()
     // calculate joints, some special magic for MSAA mode
     auto fringe = m_style.antiAlias ? m_style.antiAliasFringeWidth : 0.0f;
     auto hasFringe = fringe > 0.0f;
-    m_pathCache->computeJoints(fringe, LineJoin::Miter, 2.4f);
+    m_pathCache->computeJoints(fringe, CanvasLineJoin::Miter, 2.4f);
 
     // allocate output vertices
     bool convex = m_pathCache->paths.size() == 1 && m_pathCache->paths[0].convex;
@@ -1483,11 +1483,11 @@ void GeometryBuilder::fill()
 	uint16_t imageFlags = 0;
 	if (m_style.cachedFillImage)
 	{
-		imageFlags = Vertex::MASK_HAS_IMAGE;
+		imageFlags = CanvasVertex::MASK_HAS_IMAGE;
 		if (m_style.fillStyle.wrapU)
-			imageFlags |= Vertex::MASK_HAS_WRAP_U;
+			imageFlags |= CanvasVertex::MASK_HAS_WRAP_U;
 		if (m_style.fillStyle.wrapV)
-			imageFlags |= Vertex::MASK_HAS_WRAP_V;
+			imageFlags |= CanvasVertex::MASK_HAS_WRAP_V;
 	}
 
     // convert the generated path data into renderable path data
@@ -1496,8 +1496,8 @@ void GeometryBuilder::fill()
 		auto srcPtr = m_pathCache->points.typedData() + path.first;
 
 		// determine vertex flags
-		auto polyFlags = Vertex::MASK_FILL;
-		polyFlags |= convex ? (imageFlags | Vertex::MASK_IS_CONVEX) : 0;
+		auto polyFlags = CanvasVertex::MASK_FILL;
+		polyFlags |= convex ? (imageFlags | CanvasVertex::MASK_IS_CONVEX) : 0;
 
 		// Calculate shape vertices.
 		auto woff = 0.5f * fringe;
@@ -1538,8 +1538,8 @@ void GeometryBuilder::fill()
 		{
 			auto& prim = m_outBatches.emplaceBack();
 			prim.op = m_style.op;
-			prim.packing = BatchPacking::TriangleFan;
-			prim.type = BatchType::FillConvex;
+			prim.packing = CanvasBatchPacking::TriangleFan;
+			prim.type = CanvasBatchType::FillConvex;
 			prim.vertexOffset = vertexWriter.startVertexIndex();
 			prim.vertexCount = vertexWriter.finishAndGetCount();
 			prim.atlasIndex = m_style.fillStyle.image.atlasIndex;
@@ -1550,9 +1550,9 @@ void GeometryBuilder::fill()
 		else
 		{
 			auto& prim = m_outBatches.emplaceBack();
-			prim.op = BlendOp::Copy;
-			prim.packing = BatchPacking::TriangleFan;
-			prim.type = BatchType::ConcaveMask;
+			prim.op = CanvasBlendOp::Copy;
+			prim.packing = CanvasBatchPacking::TriangleFan;
+			prim.type = CanvasBatchType::ConcaveMask;
 			prim.atlasIndex = 0; // mask does not require any particular atlas
 			prim.rendererIndex = 0; // mask is always drawn with default renderer
 			prim.vertexOffset = vertexWriter.startVertexIndex();
@@ -1570,7 +1570,7 @@ void GeometryBuilder::fill()
 	if (!convex)
 	{
 		// write the vertices for the concave masking
-		auto flags = Vertex::MASK_FILL | Vertex::MASK_IS_CONVEX | imageFlags;
+		auto flags = CanvasVertex::MASK_FILL | CanvasVertex::MASK_IS_CONVEX | imageFlags;
 
 		auto firstQuadVertex = vertexWriter.numWrittenVertices() + firstVertex;
 		vertexWriter.add(vertexBoundsMin.x, vertexBoundsMin.y, 0.0f, 0.0f, flags);
@@ -1581,8 +1581,8 @@ void GeometryBuilder::fill()
 		// generate the concave fill pass
 		auto& prim = m_outBatches.emplaceBack();
 		prim.op = m_style.op;
-		prim.packing = BatchPacking::Quads;
-		prim.type = BatchType::FillConcave;
+		prim.packing = CanvasBatchPacking::Quads;
+		prim.type = CanvasBatchType::FillConcave;
 		prim.rendererIndex = m_customRenderer.index;
 		prim.renderDataOffset = m_customRenderer.dataOffset;
 		prim.renderDataSize = m_customRenderer.dataSize;
@@ -1604,7 +1604,7 @@ void GeometryBuilder::fill()
 	// NOTE: this is only supported for styles without image
 	if (hasFringe && !m_style.cachedFillImage)
 	{
-		const auto mask = Vertex::MASK_STROKE | Vertex::MASK_HAS_FRINGE;
+		const auto mask = CanvasVertex::MASK_STROKE | CanvasVertex::MASK_HAS_FRINGE;
 
 		// we need it for each path element
 		const auto firstFringeVertex = vertexWriter.numWrittenVertices() + firstVertex;
@@ -1651,8 +1651,8 @@ void GeometryBuilder::fill()
 			{
 				auto& prim = m_outBatches.emplaceBack();
 				prim.op = m_style.op;
-				prim.packing = BatchPacking::TriangleStrip;
-				prim.type = BatchType::FillConvex;
+				prim.packing = CanvasBatchPacking::TriangleStrip;
+				prim.type = CanvasBatchType::FillConvex;
 				prim.atlasIndex = 0; // fringe does not require image atlas as it's only used when there's no image
 				prim.rendererIndex = m_customRenderer.index;
 				prim.renderDataOffset = m_customRenderer.dataOffset;
@@ -1670,7 +1670,7 @@ void GeometryBuilder::fill()
 	applyPaintColor(firstVertex, vertexWriter.numWrittenVertices(), (m_style.cachedFillStyleIndex == 0) ? m_style.fillStyle.innerColor : Color::WHITE);
 }
 
-void GeometryBuilder::print(const font::Font* font, int fontSize, StringView txt, int hcenter/* = -1*/, int vcenter /*= -1*/, bool bold /*= false*/)
+void CanvasGeometryBuilder::print(const font::Font* font, int fontSize, StringView txt, int hcenter/* = -1*/, int vcenter /*= -1*/, bool bold /*= false*/)
 {
     if (font)
     {
@@ -1704,12 +1704,12 @@ void GeometryBuilder::print(const font::Font* font, int fontSize, StringView txt
     }
 }
 
-void GeometryBuilder::print(const font::GlyphBuffer& glyphs)
+void CanvasGeometryBuilder::print(const font::GlyphBuffer& glyphs)
 {
     return print(glyphs.glyphs(), glyphs.size(), sizeof(font::GlyphBufferEntry));
 }
 
-void GeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, uint32_t dataStride)
+void CanvasGeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, uint32_t dataStride)
 {
 	DEBUG_CHECK_RETURN_EX(numGlyphs < 10000, "Text is to large to be sensibly printed");
 
@@ -1784,7 +1784,7 @@ void GeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, uint32
 				writeVertex[i].imageEntryIndex = 0;
 				writeVertex[i].imagePageIndex = placement->pageIndex;
 				writeVertex[i].attributeIndex = 0;
-				writeVertex[i].attributeFlags = Vertex::MASK_GLYPH; // glyph
+				writeVertex[i].attributeFlags = CanvasVertex::MASK_GLYPH; // glyph
 			}
 
 			// update bounds
@@ -1805,8 +1805,8 @@ void GeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, uint32
 	{
 		auto& prim = m_outBatches.emplaceBack();
 		prim.op = m_style.op;
-		prim.packing = BatchPacking::Quads;
-		prim.type = BatchType::FillConvex;
+		prim.packing = CanvasBatchPacking::Quads;
+		prim.type = CanvasBatchType::FillConvex;
 		prim.atlasIndex = 0; // we don't need atlas for text
 		prim.rendererIndex = m_customRenderer.index;
 		prim.renderDataOffset = m_customRenderer.dataOffset;
@@ -1823,13 +1823,13 @@ void GeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, uint32
 //--
 
 InplaceGeometryBuilder::InplaceGeometryBuilder(Canvas& c)
-    : GeometryBuilder(m_geometry)
+    : CanvasGeometryBuilder(m_geometry)
     , m_canvas(c)
 {}
 
 void InplaceGeometryBuilder::reset()
 {
-    GeometryBuilder::reset();
+    CanvasGeometryBuilder::reset();
     m_geometry.reset();
 }
 
@@ -1871,4 +1871,4 @@ void InplaceGeometryBuilder::solidRectWithBorder(Color f, Color l, float x, floa
 
 //--
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

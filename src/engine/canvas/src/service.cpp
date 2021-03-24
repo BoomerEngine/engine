@@ -20,7 +20,7 @@
 #include "gpu/device/include/deviceService.h"
 #include "gpu/device/include/shaderService.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -39,7 +39,7 @@ RTTI_END_TYPE();
 CanvasService::CanvasService()
 {}
 
-const ImageAtlasEntryInfo* CanvasService::findRenderDataForAtlasEntry(const ImageEntry& entry) const
+const CanvasImageEntryInfo* CanvasService::findRenderDataForAtlasEntry(const CanvasImageEntry& entry) const
 {
 	if (entry.atlasIndex > 0 && entry.atlasIndex < MAX_ATLASES)
 		if (const auto* cache = m_atlasRegistry[entry.atlasIndex])
@@ -49,7 +49,7 @@ const ImageAtlasEntryInfo* CanvasService::findRenderDataForAtlasEntry(const Imag
 
 }
 
-const ImageAtlasEntryInfo* CanvasService::findRenderDataForGlyph(const font::Glyph* glyph) const
+const CanvasImageEntryInfo* CanvasService::findRenderDataForGlyph(const font::Glyph* glyph) const
 {
 	return m_glyphCache->findRenderDataForGlyph(glyph);
 }
@@ -62,7 +62,7 @@ bool CanvasService::onInitializeService(const CommandLine& cmdLine)
 
 	const auto glyphAtlasSize = NextPow2(std::clamp<uint32_t>(cvCanvasGlyphCacheAtlasSize.get(), 256, 4096));
 	const auto glyphAtlasPages = std::clamp<uint32_t>(cvCanvasGlyphCacheAtlasPageCount.get(), 1, 256);
-	m_glyphCache = new GlyphCache(glyphAtlasSize, glyphAtlasPages);
+	m_glyphCache = new CanvasGlyphCache(glyphAtlasSize, glyphAtlasPages);
 
 	m_renderer = new CanvasRenderer();
 
@@ -85,7 +85,7 @@ void CanvasService::onSyncUpdate()
 
 //--
 
-bool CanvasService::registerAtlas(IAtlas* atlas, ImageAtlasIndex& outIndex)
+bool CanvasService::registerAtlas(ICanvasAtlas* atlas, CanvasAtlasIndex& outIndex)
 {
 	DEBUG_CHECK_RETURN_EX_V(atlas != nullptr, "Invalid atlas to register", false);
 	DEBUG_CHECK_RETURN_EX_V(atlas->index() == 0, "Atlas already registered", false);
@@ -104,7 +104,7 @@ bool CanvasService::registerAtlas(IAtlas* atlas, ImageAtlasIndex& outIndex)
 	return false;
 }
 
-void CanvasService::unregisterAtlas(IAtlas* atlas, ImageAtlasIndex index)
+void CanvasService::unregisterAtlas(ICanvasAtlas* atlas, CanvasAtlasIndex index)
 {
 	DEBUG_CHECK_RETURN_EX(atlas != nullptr, "Invalid atlas to unregister");
 	DEBUG_CHECK_RETURN_EX(atlas->index() == index, "Invalid atlas to unregister");
@@ -157,4 +157,4 @@ void CanvasService::render(gpu::CommandWriter& cmd, const Canvas& c)
 
 //--
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

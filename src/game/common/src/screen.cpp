@@ -101,7 +101,7 @@ IGameScreenCanvas::IGameScreenCanvas()
 
 void IGameScreenCanvas::handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, float visibility)
 {
-    canvas::Canvas c(output.width, output.height);
+    Canvas c(output.width, output.height);
     handleRender(c, visibility);
 
     gpu::FrameBuffer fb;
@@ -110,7 +110,7 @@ void IGameScreenCanvas::handleRender(gpu::CommandWriter& cmd, const gpu::Acquire
 
     cmd.opBeingPass(fb);
 
-    static auto* service = GetService<canvas::CanvasService>();
+    static auto* service = GetService<CanvasService>();
     service->render(cmd, c);
 
     cmd.opEndPass();

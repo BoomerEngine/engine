@@ -226,7 +226,7 @@ enum class TreeNodeDefaultExpandState : uint8_t
 
 //---
 
-class Canvas;
+class CanvasArea;
 class ScrolableCanvas;
 class ICanvasContent;
 

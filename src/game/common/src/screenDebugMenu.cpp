@@ -91,7 +91,7 @@ DebugMenuButton::DebugMenuButton(StringView caption, StringID action, bool enabl
     m_enabled = enabled;
 }
 
-void DebugMenuButton::measure(IGameScreenDebugMenu* menu, canvas::Canvas& c, float displayScale, Vector2& outNeededSize) const
+void DebugMenuButton::measure(IGameScreenDebugMenu* menu, Canvas& c, float displayScale, Vector2& outNeededSize) const
 {
     const auto fontSize = (int)(cvDebugMenuTextSize.get() * displayScale);
     auto bounds = c.debugPrintMeasure(m_caption, fontSize);
@@ -100,12 +100,12 @@ void DebugMenuButton::measure(IGameScreenDebugMenu* menu, canvas::Canvas& c, flo
     outNeededSize.y = line.size.y + (cvDebugMenuItemPaddingY.get() * 2.0f);
 }
 
-void DebugMenuButton::render(IGameScreenDebugMenu* menu, canvas::Canvas& c, const RenderState& state) const
+void DebugMenuButton::render(IGameScreenDebugMenu* menu, Canvas& c, const RenderState& state) const
 {
     // background
     if (state.current)
     {
-        canvas::InplaceGeometryBuilder g(c);
+        InplaceGeometryBuilder g(c);
 
         const auto color = m_enabled 
             ? cvDebugMenuActiveBackgroundColor.get()
@@ -290,7 +290,7 @@ bool IGameScreenDebugMenu::queryOpaqueState() const
     return false;
 }
 
-void IGameScreenDebugMenu::handleRender(canvas::Canvas& c, float visibility)
+void IGameScreenDebugMenu::handleRender(Canvas& c, float visibility)
 {
     // display scale of the whole thing
     const auto displayScale = 1.0f;
@@ -368,7 +368,7 @@ void IGameScreenDebugMenu::handleRender(canvas::Canvas& c, float visibility)
             color.r = color.g = color.b = 0;
             color.a = (uint8_t)(backgroundAlpha * 255.0f);
 
-            canvas::InplaceGeometryBuilder g(c);
+            InplaceGeometryBuilder g(c);
             g.solidRect(color, 0, 0, c.width(), c.height());
             g.render();
         }
@@ -376,7 +376,7 @@ void IGameScreenDebugMenu::handleRender(canvas::Canvas& c, float visibility)
 
     // draw the frame
     {
-        canvas::InplaceGeometryBuilder g(c);
+        InplaceGeometryBuilder g(c);
         g.solidRectWithBorder(cvDebugMenuPanelFillColor.get(), cvDebugMenuPanelBorderColor.get(), offsetX, offsetY, totalSize.x, totalSize.y);
 
         if (!m_title.empty())

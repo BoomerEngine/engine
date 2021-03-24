@@ -139,7 +139,7 @@ void ColorPickerLSBox::rebuildCursorGeometry(const Size& size)
 	const float y = size.y * m_value.z;
 	const float r = size.y * 0.025f;
 
-	canvas::GeometryBuilder builder(m_cursorGeometry);
+	CanvasGeometryBuilder builder(m_cursorGeometry);
 
 	Vector3 circleColor;
 	HSVtoRGB(Vector3(m_value.x, m_value.y, m_value.z), circleColor);
@@ -156,7 +156,7 @@ void ColorPickerLSBox::rebuildCursorGeometry(const Size& size)
 	builder.stroke();
 }
 
-void ColorPickerLSBox::renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void ColorPickerLSBox::renderForeground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
 	if (m_rectSize != drawArea.size())
 	{
@@ -227,7 +227,7 @@ void ColorPickerLSBox::recomputeGeometry(const Size& size)
 
     m_rectSize = size;
 
-	Array<canvas::Vertex> tempVertices;
+	Array<CanvasVertex> tempVertices;
 	tempVertices.resize((GRID_SIZE + 1) * (GRID_SIZE + 1));
 
 	m_colorRectGeometry.reset();
@@ -268,7 +268,7 @@ void ColorPickerLSBox::recomputeGeometry(const Size& size)
 
     {
 		auto* writeI = m_colorRectGeometry.vertices.allocateUninitialized(GRID_SIZE * GRID_SIZE * 6);
-        memzero(writeI, sizeof(canvas::Vertex) * GRID_SIZE * GRID_SIZE * 6);
+        memzero(writeI, sizeof(CanvasVertex) * GRID_SIZE * GRID_SIZE * 6);
 
         for (uint32_t y = 0; y < GRID_SIZE; ++y)
         {
@@ -339,7 +339,7 @@ void ColorPickerHueBar::hue(float h)
     }
 }
 
-void ColorPickerHueBar::renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void ColorPickerHueBar::renderForeground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     if (m_rectSize != drawArea.size())
     {
@@ -404,7 +404,7 @@ void ColorPickerHueBar::rebuildCursorGeometry(const Size& size)
 	const float y = size.y / 2.0f;
 	const float r = size.y * 0.2f;
 
-	canvas::GeometryBuilder builder(m_cursorGeometry);
+	CanvasGeometryBuilder builder(m_cursorGeometry);
 
 	Vector3 circleColor;
 	HSVtoRGB(Vector3(m_hue, 1.0f, 1.0f), circleColor);
@@ -430,7 +430,7 @@ void ColorPickerHueBar::recomputeGeometry(const Size& size)
 
     {
         auto* writeV = m_colorBarGeometry.vertices.allocateUninitialized(GRID_SIZE * 6);
-        memzero(writeV, sizeof(canvas::Vertex) * GRID_SIZE * 6);
+        memzero(writeV, sizeof(CanvasVertex) * GRID_SIZE * 6);
 
 		Color color0;
 

@@ -232,10 +232,10 @@ struct ElementCachedGeometry : public NoCopy
     RTTI_DECLARE_POOL(POOL_UI_CANVAS)
 
 public:
-    canvas::Geometry* shadow = nullptr; // rendered with parent clip rect
-    canvas::Geometry* background = nullptr; // rendered with widget client clip rect
-    canvas::Geometry* foreground = nullptr; // rendered with widget client clip rect
-    canvas::Geometry* overlay = nullptr; // rendered with parent clip rect
+    CanvasGeometry* shadow = nullptr; // rendered with parent clip rect
+    CanvasGeometry* background = nullptr; // rendered with widget client clip rect
+    CanvasGeometry* foreground = nullptr; // rendered with widget client clip rect
+    CanvasGeometry* overlay = nullptr; // rendered with parent clip rect
 
     ~ElementCachedGeometry();
 };
@@ -794,34 +794,34 @@ public:
     virtual void computeLayout(ElementLayout& outLayout);
 
     /// generate the outline of this element
-    virtual void prepareBoundaryGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder, float inset) const;
+    virtual void prepareBoundaryGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder, float inset) const;
 
     /// prepare shadow geometry for this element
-    virtual void prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const;
+    virtual void prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const;
 
     /// prepare background geometry for this element
-    virtual void prepareBackgroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const;
+    virtual void prepareBackgroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const;
 
     /// prepare foreground geometry for this element
-    virtual void prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const;
+    virtual void prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const;
 
     /// prepare overlay geometry for this element
-    virtual void prepareOverlayGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const;
+    virtual void prepareOverlayGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const;
 
     /// prepare dynamic sizing data
     virtual void prepareDynamicSizing(const ElementArea& drawArea, const ElementDynamicSizing*& dataPtr) const;
 
     /// render shadow geometry
-    virtual void renderShadow(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity);
+    virtual void renderShadow(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity);
 
     /// render background geometry, by default rendered the cached client geometry
-    virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity);
+    virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity);
 
     /// render foreground geometry
-    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity);
+    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity);
 
     /// render overlay elements
-    virtual void renderOverlay(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity);
+    virtual void renderOverlay(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity);
 
     //---
 
@@ -832,7 +832,7 @@ public:
     void prepareLayout(bool& outLayoutRecomputed, bool force, bool initial);
 
     /// render element
-    void render(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, canvas::Canvas& canvas, float mergedOpacity, const ElementDynamicSizing* parentDynamicSizing);
+    void render(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, Canvas& canvas, float mergedOpacity, const ElementDynamicSizing* parentDynamicSizing);
 
     //---
 
@@ -1055,16 +1055,16 @@ protected:
     virtual void rebuildCachedGeometry(DataStash& stash, const ElementArea& drawArea);
 
     /// render explicit overlay elements
-    virtual void renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, canvas::Canvas& canvas, float mergedOpacity);
+    virtual void renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, Canvas& canvas, float mergedOpacity);
 
     /// adjust pixel scale for children
     virtual void adjustCustomOverlayElementsPixelScale(float& scale) const;
 
     /// adjust dynamically background style before rendering
-    virtual bool adjustBackgroundStyle(canvas::RenderStyle& outStyle, float& outBorderWidth) const;
+    virtual bool adjustBackgroundStyle(CanvasRenderStyle& outStyle, float& outBorderWidth) const;
 
     /// adjust dynamically border style before rendering
-    virtual bool adjustBorderStyle(canvas::RenderStyle& outStyle, float& outBorderWidth) const;
+    virtual bool adjustBorderStyle(CanvasRenderStyle& outStyle, float& outBorderWidth) const;
 
     /// request parent to visit this child for layout update
     void requestChildLayoutUpdate();

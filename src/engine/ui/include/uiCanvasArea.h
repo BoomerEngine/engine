@@ -30,7 +30,7 @@ public:
     virtual void prepareGeometry(CanvasArea* owner, float sx, float sy, Size& outCanvasSizeAtCurrentScale);
 
     // render this element into the canvas
-    virtual void render(CanvasArea* owner, float x, float y, float sx, float sy, canvas::Canvas& canvas, float mergedOpacity) = 0;
+    virtual void render(CanvasArea* owner, float x, float y, float sx, float sy, Canvas& canvas, float mergedOpacity) = 0;
 
     // service input action
     virtual InputActionPtr handleMouseClick(CanvasArea* owner, Position virtualPosition, const InputMouseClickEvent& evt);
@@ -158,10 +158,10 @@ protected:
 
     void updateCachedGeometryAndSizes();
 
-    void renderStatusMessages(const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) const;
+    void renderStatusMessages(const ElementArea& drawArea, Canvas& canvas, float mergedOpacity) const;
 
-    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
-    virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity) override;
+    virtual void renderForeground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity) override;
+    virtual void renderBackground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity) override;
     virtual bool handleMouseWheel(const InputMouseMovementEvent& evt, float delta) override;
     virtual InputActionPtr handleMouseClick(const ElementArea& area, const InputMouseClickEvent& evt) override;
 };

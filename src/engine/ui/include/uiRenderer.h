@@ -137,7 +137,7 @@ public:
     virtual void windowUpdate(NativeWindowID id) = 0;
 
     /// render collected content into the window
-    virtual void windowRenderContent(NativeWindowID id, const ElementArea& area, bool forcedPaint, const canvas::Canvas& canvas) = 0;
+    virtual void windowRenderContent(NativeWindowID id, const ElementArea& area, bool forcedPaint, const Canvas& canvas) = 0;
 
     /// set mouse capture mode
     virtual void windowSetCapture(NativeWindowID id, int mode) = 0;

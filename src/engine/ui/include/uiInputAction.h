@@ -75,7 +75,7 @@ public:
 
     /// Render stuff related to this action
     /// We assume that the input action is always dynamic so we allow a dynamic content to be directly rendered
-    virtual void onRender(canvas::Canvas& canvas);
+    virtual void onRender(Canvas& canvas);
 
     /// Render 3d stuff, subject to owner implementation
     virtual void onRender3D(rendering::FrameParams& frame);

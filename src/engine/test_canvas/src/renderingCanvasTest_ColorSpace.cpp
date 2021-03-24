@@ -26,12 +26,12 @@ public:
     {
     }
 
-    virtual void render(canvas::Canvas& c) override
+    virtual void render(Canvas& c) override
     {
-		canvas::Geometry g;
+		CanvasGeometry g;
 
 		{
-			canvas::GeometryBuilder b(g);
+			CanvasGeometryBuilder b(g);
 
 			b.antialiasing(true);
 
@@ -50,7 +50,7 @@ public:
 
 				b.beginPath();
 				b.recti(0, 0, r.width(), r.height());
-				b.fillPaint(canvas::LinearGradienti(0, r.centerY(), r.width(), r.centerY(), Color::BLACK, Color::WHITE));
+				b.fillPaint(CanvasStyle_LinearGradienti(0, r.centerY(), r.width(), r.centerY(), Color::BLACK, Color::WHITE));
 				b.fill();
 				b.popTransform();
 			}
@@ -64,7 +64,7 @@ public:
 
 				b.beginPath();
 				b.recti(0, 0, r.width(), r.height());
-				b.fillPaint(canvas::SolidColor(Color(middleGray, middleGray, middleGray, 1.0f)));
+				b.fillPaint(CanvasStyle_SolidColor(Color(middleGray, middleGray, middleGray, 1.0f)));
 				b.fill();
 				b.popTransform();
 			}
@@ -82,7 +82,7 @@ public:
 				{
 					b.beginPath();
 					b.recti(x, 0, 1, r.height());
-					b.fillPaint(canvas::SolidColor((x & 1) ? Color::WHITE : Color::BLACK));
+					b.fillPaint(CanvasStyle_SolidColor((x & 1) ? Color::WHITE : Color::BLACK));
 					b.fill();
 				}
 
@@ -100,7 +100,7 @@ public:
 
 				b.beginPath();
 				b.recti(0, 0, r.width(), r.height());
-				b.fillPaint(canvas::LinearGradienti(0, r.centerY(), r.width(), r.centerY(), Color::BLACK, Color::RED));
+				b.fillPaint(CanvasStyle_LinearGradienti(0, r.centerY(), r.width(), r.centerY(), Color::BLACK, Color::RED));
 				b.fill();
 				b.popTransform();
 			}
@@ -114,7 +114,7 @@ public:
 
 				b.beginPath();
 				b.recti(0, 0, r.width(), r.height());
-				b.fillPaint(canvas::SolidColor(Color(middleGray, 0, 0)));
+				b.fillPaint(CanvasStyle_SolidColor(Color(middleGray, 0, 0)));
 				b.fill();
 				b.popTransform();
 			}
@@ -132,7 +132,7 @@ public:
 				{
 					b.beginPath();
 					b.recti(x, 0, 1, r.height());
-					b.fillPaint(canvas::SolidColor((x & 1) ? Color(255, 0, 0) : Color::BLACK));
+					b.fillPaint(CanvasStyle_SolidColor((x & 1) ? Color(255, 0, 0) : Color::BLACK));
 					b.fill();
 				}
 
@@ -150,7 +150,7 @@ public:
 
 				b.beginPath();
 				b.recti(0, 0, r.width(), r.height());
-				b.fillPaint(canvas::LinearGradienti(0, r.centerY(), r.width(), r.centerY(), Color::BLACK, Color::GREEN));
+				b.fillPaint(CanvasStyle_LinearGradienti(0, r.centerY(), r.width(), r.centerY(), Color::BLACK, Color::GREEN));
 				b.fill();
 				b.popTransform();
 			}
@@ -164,7 +164,7 @@ public:
 
 				b.beginPath();
 				b.recti(0, 0, r.width(), r.height());
-				b.fillPaint(canvas::SolidColor(Color(0, middleGray, 0)));
+				b.fillPaint(CanvasStyle_SolidColor(Color(0, middleGray, 0)));
 				b.fill();
 				b.popTransform();
 			}
@@ -182,7 +182,7 @@ public:
 				{
 					b.beginPath();
 					b.recti(x, 0, 1, r.height());
-					b.fillPaint(canvas::SolidColor((x & 1) ? Color(0, 255, 0) : Color::BLACK));
+					b.fillPaint(CanvasStyle_SolidColor((x & 1) ? Color(0, 255, 0) : Color::BLACK));
 					b.fill();
 				}
 
@@ -200,7 +200,7 @@ public:
 
 				b.beginPath();
 				b.recti(0, 0, r.width(), r.height());
-				b.fillPaint(canvas::LinearGradienti(0, r.centerY(), r.width(), r.centerY(), Color::BLACK, Color::BLUE));
+				b.fillPaint(CanvasStyle_LinearGradienti(0, r.centerY(), r.width(), r.centerY(), Color::BLACK, Color::BLUE));
 				b.fill();
 				b.popTransform();
 			}
@@ -214,7 +214,7 @@ public:
 
 				b.beginPath();
 				b.recti(0, 0, r.width(), r.height());
-				b.fillPaint(canvas::SolidColor(Color(0, 0, middleGray)));
+				b.fillPaint(CanvasStyle_SolidColor(Color(0, 0, middleGray)));
 				b.fill();
 				b.popTransform();
 			}
@@ -232,7 +232,7 @@ public:
 				{
 					b.beginPath();
 					b.recti(x, 0, 1, r.height());
-					b.fillPaint(canvas::SolidColor((x & 1) ? Color(0, 0, 255) : Color::BLACK));
+					b.fillPaint(CanvasStyle_SolidColor((x & 1) ? Color(0, 0, 255) : Color::BLACK));
 					b.fill();
 				}
 

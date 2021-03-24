@@ -179,7 +179,7 @@ void FreeCameraEntity::handleUpdateMask(WorldUpdateMask& outUpdateMask) const
     outUpdateMask |= WorldUpdatePhase::PreTick;
 }
 
-void FreeCameraEntity::renderDebugCanvas(canvas::Canvas& c) const
+void FreeCameraEntity::renderDebugCanvas(Canvas& c) const
 {
     const auto pos = cachedWorldTransform().T;
 

@@ -185,7 +185,7 @@ void Window::prepare(DataStash& stash, float nativePixelScale, bool initial, boo
     }
 }
 
-void Window::render(canvas::Canvas& canvas, HitCache& hitCache, DataStash& stash, const ElementArea& nativeArea)
+void Window::render(Canvas& canvas, HitCache& hitCache, DataStash& stash, const ElementArea& nativeArea)
 {
     PC_SCOPE_LVL1(RenderWindow);
 
@@ -201,7 +201,7 @@ void Window::handleExternalCloseRequest()
     requestClose();
 }
 
-void Window::renderBackground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void Window::renderBackground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderBackground(stash, drawArea, canvas, mergedOpacity);
 
@@ -211,7 +211,7 @@ void Window::renderBackground(DataStash& stash, const ElementArea& drawArea, can
         canvas.clearColor(m_clearColor);
 }
 
-void Window::prepareBackgroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
+void Window::prepareBackgroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const
 {
     if (auto shadowPtr = evalStyleValueIfPresentPtr<style::RenderStyle>("background"_id))
     {

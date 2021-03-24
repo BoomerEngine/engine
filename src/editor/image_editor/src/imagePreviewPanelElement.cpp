@@ -40,16 +40,16 @@ BEGIN_BOOMER_NAMESPACE_EX(ed)
 };
 
 /// custom rendering handler
-class CanvasCheckersHandler : public canvas::ICanvasRendererCustomBatchHandler
+class CanvasCheckersHandler : public ICanvasRendererCustomBatchHandler
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CanvasCheckersHandler, canvas::ICanvasRendererCustomBatchHandler);
+    RTTI_DECLARE_VIRTUAL_CLASS(CanvasCheckersHandler, ICanvasRendererCustomBatchHandler);
 
 public:
     virtual void initialize(IDevice* drv) override final
     {
     }
 
-    virtual void render(gpu::CommandWriter& cmd, const canvas::Canvas& canvas, const canvas::CanvasRenderingParams& params, uint32_t firstIndex, uint32_t numIndices, uint32_t numPayloads, const canvas::CanvasCustomBatchPayload* payloads) override
+    virtual void render(gpu::CommandWriter& cmd, const Canvas& canvas, const CanvasRenderingParams& params, uint32_t firstIndex, uint32_t numIndices, uint32_t numPayloads, const CanvasCustomBatchPayload* payloads) override
     {
         if (auto shader = resCanvasCustomHandlerChecker.loadAndGet())
         {
@@ -79,9 +79,9 @@ RTTI_END_TYPE();*/
 //--
 
 /// custom rendering handler
-class ICanvasImagePreviewHandler : public canvas::ICanvasSimpleBatchRenderer
+class ICanvasImagePreviewHandler : public ICanvasSimpleBatchRenderer
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(ICanvasImagePreviewHandler, canvas::ICanvasSimpleBatchRenderer);
+    RTTI_DECLARE_VIRTUAL_CLASS(ICanvasImagePreviewHandler, ICanvasSimpleBatchRenderer);
 
 public:
     struct PrivateData
@@ -187,16 +187,16 @@ struct CanvasTextureCompressionPreviewParams
 };
 
 /// custom rendering handler
-class CanvasTextureCompressionPreviewHandler : public canvas::ICanvasRendererCustomBatchHandler
+class CanvasTextureCompressionPreviewHandler : public ICanvasRendererCustomBatchHandler
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CanvasTextureCompressionPreviewHandler, canvas::ICanvasRendererCustomBatchHandler);
+    RTTI_DECLARE_VIRTUAL_CLASS(CanvasTextureCompressionPreviewHandler, ICanvasRendererCustomBatchHandler);
 
 public:
     virtual void initialize(IDevice* drv) override final
     {
     }
 
-    virtual void render(gpu::CommandWriter& cmd, const canvas::Canvas& canvas, const canvas::CanvasRenderingParams& params, uint32_t firstIndex, uint32_t numIndices, uint32_t numPayloads, const canvas::CanvasCustomBatchPayload* payloads) override
+    virtual void render(gpu::CommandWriter& cmd, const Canvas& canvas, const CanvasRenderingParams& params, uint32_t firstIndex, uint32_t numIndices, uint32_t numPayloads, const CanvasCustomBatchPayload* payloads) override
     {
         if (auto shader = resCanvasCustomCompressedTexturePreview.loadAndGet())
         {
@@ -232,16 +232,16 @@ RTTI_END_TYPE();*/
 /*StaticResource<ShaderLibrary> resCanvasCustomHandlerPixelGrid("/editor/shaders/canvas_pixel_grid.csl");
 
 /// custom rendering handler
-class CanvasImagePixelGridHandler : public canvas::ICanvasRendererCustomBatchHandler
+class CanvasImagePixelGridHandler : public ICanvasRendererCustomBatchHandler
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CanvasImagePixelGridHandler, canvas::ICanvasRendererCustomBatchHandler);
+    RTTI_DECLARE_VIRTUAL_CLASS(CanvasImagePixelGridHandler, ICanvasRendererCustomBatchHandler);
 
 public:
     virtual void initialize(IDevice* drv) override final
     {
     }
 
-    virtual void render(gpu::CommandWriter& cmd, const canvas::Canvas& canvas, const canvas::CanvasRenderingParams& params, uint32_t firstIndex, uint32_t numIndices, uint32_t numPayloads, const canvas::CanvasCustomBatchPayload* payloads) override
+    virtual void render(gpu::CommandWriter& cmd, const Canvas& canvas, const CanvasRenderingParams& params, uint32_t firstIndex, uint32_t numIndices, uint32_t numPayloads, const CanvasCustomBatchPayload* payloads) override
     {
         if (auto shader = resCanvasCustomHandlerPixelGrid.loadAndGet())
         {
@@ -373,17 +373,17 @@ void ImagePreviewElement::configure(const ImagePreviewPanelSettings& settings)
     m_settings.create(settings);
 }
 
-void ImagePreviewElement::render(ui::CanvasArea* owner, float x, float y, float sx, float sy, canvas::Canvas& canvas, float mergedOpacity)
+void ImagePreviewElement::render(ui::CanvasArea* owner, float x, float y, float sx, float sy, Canvas& canvas, float mergedOpacity)
 {
     //auto width = std::max<uint32_t>(1, m_view.width() >> m_mip);
     //auto height = std::max<uint32_t>(1, m_view.height() >> m_mip);
     auto width = m_view->width();
     auto height = m_view->height();
 
-    canvas::Canvas::QuadSetup quad;
+    Canvas::QuadSetup quad;
     quad.x1 = sx * width;
     quad.y1 = sy * height;
-    quad.op = m_settings->premultiply ? canvas::BlendOp::AlphaPremultiplied : canvas::BlendOp::AlphaBlend;
+    quad.op = m_settings->premultiply ? CanvasBlendOp::AlphaPremultiplied : CanvasBlendOp::AlphaBlend;
     quad.wrap = false;
 
     ICanvasImagePreviewHandler::PrivateData setup;
@@ -414,21 +414,21 @@ void ImagePreviewElement::render(ui::CanvasArea* owner, float x, float y, float 
     }
 
     if (m_view->imageViewType() == ImageViewType::View2D)
-        canvas.quadEx<CanvasImagePreviewHandler2D>(canvas::Placement(x, y), quad, setup);
+        canvas.quadEx<CanvasImagePreviewHandler2D>(CanvasPlacement(x, y), quad, setup);
     else if (m_view->imageViewType() == ImageViewType::View2DArray)
-        canvas.quadEx<CanvasImagePreviewHandlerCube>(canvas::Placement(x, y), quad, setup);
+        canvas.quadEx<CanvasImagePreviewHandlerCube>(CanvasPlacement(x, y), quad, setup);
 }
 
 //--
 
-void RenderPixelBackground(canvas::Canvas& canvas, const ui::Position& tl, const ui::Position& br, const ui::ElementArea& drawArea, const Rect& activeImageArea, float colorFrac)
+void RenderPixelBackground(Canvas& canvas, const ui::Position& tl, const ui::Position& br, const ui::ElementArea& drawArea, const Rect& activeImageArea, float colorFrac)
 {
     /*if (!activeImageArea.empty())
     {
         Color color = Color::GRAY;
         color.a = FloatTo255(colorFrac);
 
-        canvas::Canvas::RawVertex v[4];
+        Canvas::RawVertex v[4];
         v[0].uv.x = tl.x;
         v[0].uv.y = tl.y;
         v[1].uv.x = br.x;
@@ -458,15 +458,15 @@ void RenderPixelBackground(canvas::Canvas& canvas, const ui::Position& tl, const
         i[4] = 2;
         i[5] = 3;
 
-        canvas::Canvas::RawGeometry geom;
+        Canvas::RawGeometry geom;
         geom.indices = i;
         geom.vertices = v;
         geom.numIndices = 6;
 
-        static const auto customDrawerId = canvas::GetHandlerIndex<CanvasImagePixelGridHandler>();
+        static const auto customDrawerId = GetHandlerIndex<CanvasImagePixelGridHandler>();
 
-        const auto style = canvas::SolidColor(Color::WHITE);
-        const auto op = canvas::CompositeOperation::Blend;
+        const auto style = SolidColor(Color::WHITE);
+        const auto op = CompositeOperation::Blend;
         canvas.place(style, geom, customDrawerId, canvas.uploadCustomPayloadData(activeImageArea), op);
     }*/
 }

@@ -632,12 +632,12 @@ void VirtualArea::cacheSizes()
     }
 }
 
-void VirtualArea::renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void VirtualArea::renderForeground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
 }
 
-void VirtualArea::renderGridBackground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void VirtualArea::renderGridBackground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     //canvas.placement(drawArea.absolutePosition().x, drawArea.absolutePosition().y);
 
@@ -654,7 +654,7 @@ void VirtualArea::renderGridBackground(DataStash& stash, const ElementArea& draw
 
             if (alphaScale < 1.0f)
             {
-				canvas::Canvas::QuadSetup quad;
+				Canvas::QuadSetup quad;
                 quad.color = renderStyle.innerColor;
 				quad.x1 = drawArea.size().x;
 				quad.y1 = drawArea.size().y;
@@ -668,14 +668,14 @@ void VirtualArea::renderGridBackground(DataStash& stash, const ElementArea& draw
 
                 auto imageSize = (float)renderStyle.image.width;
 
-				canvas::Canvas::QuadSetup quad;
+				Canvas::QuadSetup quad;
 				quad.x1 = drawArea.size().x;
 				quad.y1 = drawArea.size().y;
                 quad.u0 = (0.0f - m_viewOffset.x * m_viewInvScale) / imageSize;
                 quad.v0 = (0.0f - m_viewOffset.y * m_viewInvScale) / imageSize;
                 quad.u1 = quad.u0 + (quad.x1 * m_viewInvScale) / imageSize;
                 quad.v1 = quad.v0 + (quad.y1 * m_viewInvScale) / imageSize;
-				quad.op = canvas::BlendOp::AlphaPremultiplied; // TODO: copy
+				quad.op = CanvasBlendOp::AlphaPremultiplied; // TODO: copy
 				quad.image = renderStyle.image;
                 quad.color = renderStyle.innerColor;
                 quad.wrap = true;
@@ -686,7 +686,7 @@ void VirtualArea::renderGridBackground(DataStash& stash, const ElementArea& draw
     }
 }
 
-void VirtualArea::renderBackground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void VirtualArea::renderBackground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     // TBaseClass::renderBackground(drawArea, canvas, mergedOpacity);
 
@@ -699,7 +699,7 @@ void VirtualArea::adjustCustomOverlayElementsPixelScale(float& scale) const
     scale = m_viewScale;// InvScale;
 }
 
-void VirtualArea::renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, canvas::Canvas& canvas, float mergedOpacity)
+void VirtualArea::renderCustomOverlayElements(HitCache& hitCache, DataStash& stash, const ElementArea& outerArea, const ElementArea& outerClipArea, Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderCustomOverlayElements(hitCache, stash, outerArea, outerClipArea, canvas, mergedOpacity);
 
@@ -728,7 +728,7 @@ void VirtualArea::renderCustomOverlayElements(HitCache& hitCache, DataStash& sta
 
     // debug elements bounds
     /*{
-        canvas::GeometryBuilder b;
+        CanvasGeometryBuilder b;
 
         for (const auto* elem : m_elementProxies)
         {
@@ -990,7 +990,7 @@ public:
         return InputActionResult();
     }
 
-    virtual void onRender(canvas::Canvas& canvas) override
+    virtual void onRender(Canvas& canvas) override
     {
         const auto minAbs = m_area->virtualToAbsolute(m_initialVirtualPos);
         const auto maxAbs = m_area->virtualToAbsolute(m_currentVirtualPos);
@@ -1002,10 +1002,10 @@ public:
 
 		if (maxX > minX && maxY > minY)
 		{
-			canvas::Geometry geometry;
+			CanvasGeometry geometry;
 
 			{
-				canvas::GeometryBuilder builder(geometry);
+				CanvasGeometryBuilder builder(geometry);
 
 				builder.strokeColor(m_selectionColor);
 

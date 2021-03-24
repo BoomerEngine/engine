@@ -140,7 +140,7 @@ void ImageHistogramWidget::removeHistograms()
     m_histogramBucketMax = 1;
 }
 
-void ImageHistogramWidget::renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void ImageHistogramWidget::renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderBackground(stash, drawArea, canvas, mergedOpacity);
 }
@@ -205,8 +205,8 @@ void ImageHistogramWidget::cacheHistogramGeometry()
     {
         for (auto& hist : m_histograms)
         {
-			canvas::GeometryBuilder b(hist.geometry);
-			b.blending(canvas::BlendOp::Addtive);
+			CanvasGeometryBuilder b(hist.geometry);
+			b.blending(CanvasBlendOp::Addtive);
 			b.beginPath();
 			b.moveTo(0.0f, yBase);
 
@@ -300,7 +300,7 @@ void ImageHistogramWidget::updateTooltip() const
     }
 }
 
-void ImageHistogramWidget::renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void ImageHistogramWidget::renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
 
@@ -320,9 +320,9 @@ void ImageHistogramWidget::renderForeground(ui::DataStash& stash, const ui::Elem
 
     if (m_hoverPositionX >= 0 && !m_histograms.empty())
     {
-		canvas::Geometry g;
+		CanvasGeometry g;
 		{
-			canvas::GeometryBuilder b(g);
+			CanvasGeometryBuilder b(g);
 			b.beginPath();
 			b.moveTo(m_hoverPositionX, 0);
 			b.lineTo(m_hoverPositionX, drawArea.size().y);

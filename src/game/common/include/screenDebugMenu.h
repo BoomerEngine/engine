@@ -36,8 +36,8 @@ public:
         float timeSinceCurrent = 0.0f;
     };
 
-    virtual void measure(IGameScreenDebugMenu* menu, canvas::Canvas& c, float displayScale, Vector2& outNeededSize) const = 0;
-    virtual void render(IGameScreenDebugMenu* menu, canvas::Canvas& c, const RenderState& state) const = 0;
+    virtual void measure(IGameScreenDebugMenu* menu, Canvas& c, float displayScale, Vector2& outNeededSize) const = 0;
+    virtual void render(IGameScreenDebugMenu* menu, Canvas& c, const RenderState& state) const = 0;
     virtual bool handleKey(IGameScreenDebugMenu* menu, InputKey key, bool repeat) = 0;
 
 protected:
@@ -55,8 +55,8 @@ class GAME_COMMON_API DebugMenuButton : public IDebugMenuElement
 public:
     DebugMenuButton(StringView caption, StringID action, bool enabled=true, int index=0);
 
-    virtual void measure(IGameScreenDebugMenu* menu, canvas::Canvas& c, float displayScale, Vector2& outNeededSize) const override;
-    virtual void render(IGameScreenDebugMenu* menu, canvas::Canvas& c, const RenderState& state) const override;
+    virtual void measure(IGameScreenDebugMenu* menu, Canvas& c, float displayScale, Vector2& outNeededSize) const override;
+    virtual void render(IGameScreenDebugMenu* menu, Canvas& c, const RenderState& state) const override;
     virtual bool handleKey(IGameScreenDebugMenu* menu, InputKey key, bool repeat) override;
 
     virtual void clicked(IGameScreenDebugMenu* menu);
@@ -95,7 +95,7 @@ protected:
     virtual void handleAttached() override;
     virtual void handleUpdate(double dt) override;
     virtual bool handleInput(const InputEvent& evt) override;
-    virtual void handleRender(canvas::Canvas& c, float visibility) override;
+    virtual void handleRender(Canvas& c, float visibility) override;
 
     virtual bool queryOpaqueState() const override;
 

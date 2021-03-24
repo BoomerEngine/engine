@@ -433,7 +433,7 @@ void ScintillaInnerWidget::computeSize(Size& outSize) const
     outSize.y = 100;
 }
 
-void ScintillaInnerWidget::renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void ScintillaInnerWidget::renderForeground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
 

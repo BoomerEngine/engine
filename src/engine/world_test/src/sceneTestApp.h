@@ -36,7 +36,7 @@ protected:
 
     void prepareSceneCommandBuffers(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output);
     void prepareCanvasCommandBuffers(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output);
-    void renderCanvas(canvas::Canvas& c);
+    void renderCanvas(Canvas& c);
 
     //--
 

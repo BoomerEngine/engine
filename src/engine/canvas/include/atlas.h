@@ -10,26 +10,26 @@
 
 #include "core/image/include/imageAtlas.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
 /// abstract canvas atlas
-class ENGINE_CANVAS_API IAtlas : public NoCopy
+class ENGINE_CANVAS_API ICanvasAtlas : public NoCopy
 {
 public:
-	IAtlas();
-	virtual ~IAtlas();
+	ICanvasAtlas();
+	virtual ~ICanvasAtlas();
 
 	//--
 
 	// get internal atlas index
-	INLINE ImageAtlasIndex index() const { return m_index; }
+	INLINE CanvasAtlasIndex index() const { return m_index; }
 
 	//--
 
 	// find placement of given image in the atlas
-	virtual const ImageAtlasEntryInfo* findRenderDataForAtlasEntry(ImageEntryIndex index) const = 0;
+	virtual const CanvasImageEntryInfo* findRenderDataForAtlasEntry(CanvasImageIndex index) const = 0;
 
 	// flush any data changed to rendering interface
 	virtual void flush(gpu::CommandWriter& cmd) = 0;
@@ -43,17 +43,17 @@ public:
 	//--
 
 private:
-	ImageAtlasIndex m_index = 0;
+	CanvasAtlasIndex m_index = 0;
 };
 
 //--
 
 /// simple dynamic atlas that can be built from images
-class ENGINE_CANVAS_API DynamicAtlas : public IReferencable, public IAtlas
+class ENGINE_CANVAS_API CanvasDynamicAtlas : public IReferencable, public ICanvasAtlas
 {
 public:
-	DynamicAtlas(uint32_t size, uint32_t maxPages);
-	virtual ~DynamicAtlas();
+	CanvasDynamicAtlas(uint32_t size, uint32_t maxPages);
+	virtual ~CanvasDynamicAtlas();
 
 	//--
 
@@ -71,15 +71,15 @@ public:
 	//--
 
 	// place image in the atlas, this might fail if atlas is invalid or we run out of space in it
-	ImageEntry registerImage(const Image* ptr, bool supportWrapping = false, int additionalPixelBorder = 0);
+	CanvasImageEntry registerImage(const Image* ptr, bool supportWrapping = false, int additionalPixelBorder = 0);
 
 	// remove image from the atlas
-	void unregisterImage(ImageEntry entry);
+	void unregisterImage(CanvasImageEntry entry);
 
 	//--
 
 	// find placement of given image in the atlas
-	const ImageAtlasEntryInfo* findRenderDataForAtlasEntry(ImageEntryIndex index) const;
+	const CanvasImageEntryInfo* findRenderDataForAtlasEntry(CanvasImageIndex index) const;
 
 private:
 	bool m_dirty = false;
@@ -114,7 +114,7 @@ private:
 
 	Array<uint16_t> m_freeEntryIndices;
 	Array<Entry> m_entries;
-	Array<ImageAtlasEntryInfo> m_placements;
+	Array<CanvasImageEntryInfo> m_placements;
 
 	//--
 
@@ -127,7 +127,7 @@ private:
 	//--
 
 	bool allocateEntryIndex(uint32_t& outIndex);
-	bool placeImage(const Entry& source, canvas::ImageAtlasEntryInfo& outPlacement);
+	bool placeImage(const Entry& source, CanvasImageEntryInfo& outPlacement);
 
 	//--
 
@@ -136,4 +136,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

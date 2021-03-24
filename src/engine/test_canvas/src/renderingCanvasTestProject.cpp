@@ -273,7 +273,7 @@ void CanvasTestProject::update()
 
         if (const auto output = cmd.opAcquireOutput(m_renderingOutput))
         {
-			canvas::Canvas canvas(output.width, output.height);;
+			Canvas canvas(output.width, output.height);;
 
 			// render test to canvas
 			if (m_currentTest)
@@ -287,7 +287,7 @@ void CanvasTestProject::update()
 
 				cmd.opBeingPass(fb);
 
-				static auto* service = GetService<canvas::CanvasService>();
+				static auto* service = GetService<CanvasService>();
 				service->render(cmd, canvas);
 
 				cmd.opEndPass();

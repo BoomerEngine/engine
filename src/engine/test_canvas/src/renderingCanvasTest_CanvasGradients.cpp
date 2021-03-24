@@ -25,12 +25,12 @@ public:
     virtual void initialize() override
     {}
 
-    virtual void render(canvas::Canvas& c) override
+    virtual void render(Canvas& c) override
     {
-		canvas::Geometry g;
+		CanvasGeometry g;
 
 		{
-			canvas::GeometryBuilder b(g);
+			CanvasGeometryBuilder b(g);
 
 			CanvasGridBuilder grid(4, 4, 20, c.width(), c.height());
 
@@ -43,7 +43,7 @@ public:
 
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::LinearGradienti(0, 0, r.width(), r.height(), Color::RED, Color::WHITE));
+				b.fillPaint(CanvasStyle_LinearGradienti(0, 0, r.width(), r.height(), Color::RED, Color::WHITE));
 				b.fill();
 				b.popTransform();
 			}
@@ -57,7 +57,7 @@ public:
 
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::LinearGradienti(r.width(), 0, 0, r.height(), Color::RED, Color::WHITE));
+				b.fillPaint(CanvasStyle_LinearGradienti(r.width(), 0, 0, r.height(), Color::RED, Color::WHITE));
 				b.fill();
 				b.popTransform();
 			}
@@ -71,7 +71,7 @@ public:
 
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::LinearGradienti(r.width(), r.height() / 2, 0, r.height() / 2, Color::RED, Color::WHITE));
+				b.fillPaint(CanvasStyle_LinearGradienti(r.width(), r.height() / 2, 0, r.height() / 2, Color::RED, Color::WHITE));
 				b.fill();
 				b.popTransform();
 			}
@@ -85,7 +85,7 @@ public:
 
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::LinearGradienti(r.width() / 2, 0, r.width() / 2, r.height(), Color::RED, Color::WHITE));
+				b.fillPaint(CanvasStyle_LinearGradienti(r.width() / 2, 0, r.width() / 2, r.height(), Color::RED, Color::WHITE));
 				b.fill();
 				b.popTransform();
 			}
@@ -99,7 +99,7 @@ public:
 
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::BoxGradienti(0, 0, r.width(), r.height(), 80, 50, Color::GREEN, Color::WHITE));
+				b.fillPaint(CanvasStyle_BoxGradienti(0, 0, r.width(), r.height(), 80, 50, Color::GREEN, Color::WHITE));
 				b.fill();
 				b.popTransform();
 			}
@@ -113,7 +113,7 @@ public:
 
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::BoxGradienti(0, 0, r.width(), r.height(), 80, 0, Color::GREEN, Color::WHITE));
+				b.fillPaint(CanvasStyle_BoxGradienti(0, 0, r.width(), r.height(), 80, 0, Color::GREEN, Color::WHITE));
 				b.fill();
 				b.popTransform();
 			}
@@ -127,7 +127,7 @@ public:
 
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::BoxGradienti(0, 0, r.width(), r.height(), 120, 50, Color::GREEN, Color::WHITE));
+				b.fillPaint(CanvasStyle_BoxGradienti(0, 0, r.width(), r.height(), 120, 50, Color::GREEN, Color::WHITE));
 				b.fill();
 				b.popTransform();
 			}
@@ -141,7 +141,7 @@ public:
 
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::BoxGradienti(0, 0, r.width(), r.height(), 120, 0, Color::GREEN, Color::WHITE));
+				b.fillPaint(CanvasStyle_BoxGradienti(0, 0, r.width(), r.height(), 120, 0, Color::GREEN, Color::WHITE));
 				b.fill();
 				b.popTransform();
 			}
@@ -155,7 +155,7 @@ public:
 
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::RadialGradienti(r.width() / 2, r.height() / 2, 20, 80, Color::BLUE, Color::WHITE));
+				b.fillPaint(CanvasStyle_RadialGradienti(r.width() / 2, r.height() / 2, 20, 80, Color::BLUE, Color::WHITE));
 				b.fill();
 				b.popTransform();
 			}
@@ -169,7 +169,7 @@ public:
 
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::RadialGradienti(r.width() / 2, r.height() / 2, 0, 80, Color::BLUE, Color::WHITE));
+				b.fillPaint(CanvasStyle_RadialGradienti(r.width() / 2, r.height() / 2, 0, 80, Color::BLUE, Color::WHITE));
 				b.fill();
 				b.popTransform();
 			}
@@ -183,7 +183,7 @@ public:
 
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::RadialGradienti(r.width() / 2, r.height() / 2, 80, 20, Color::BLUE, Color::WHITE));
+				b.fillPaint(CanvasStyle_RadialGradienti(r.width() / 2, r.height() / 2, 80, 20, Color::BLUE, Color::WHITE));
 				b.fill();
 				b.popTransform();
 			}
@@ -203,7 +203,7 @@ public:
 
 				b.beginPath();
 				b.roundedRecti(0, 0, r.width(), r.height(), 20);
-				b.fillPaint(canvas::RadialGradienti(r.width() / 2, r.height() / 2, 80, 0, Color::BLUE, Color::WHITE));
+				b.fillPaint(CanvasStyle_RadialGradienti(r.width() / 2, r.height() / 2, 80, 0, Color::BLUE, Color::WHITE));
 				b.fill();
 				b.popTransform();
 			}

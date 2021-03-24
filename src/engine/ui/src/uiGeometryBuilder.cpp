@@ -16,8 +16,8 @@
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 
-GeometryBuilder::GeometryBuilder(canvas::Geometry& outGeometry)
-	: canvas::GeometryBuilder(outGeometry)
+GeometryBuilder::GeometryBuilder(CanvasGeometry& outGeometry)
+	: CanvasGeometryBuilder(outGeometry)
 {
     m_currentVerticalAlignment = font::FontAlignmentVertical::Top;
     m_currentHorizontalAlignment = font::FontAlignmentHorizontal::Left;

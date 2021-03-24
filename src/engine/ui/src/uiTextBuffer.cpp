@@ -506,7 +506,7 @@ void TextBuffer::highlight(int start, int end)
     }
 }
 
-void TextBuffer::renderText(const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder)
+void TextBuffer::renderText(const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder)
 {
     // generate the text
     builder.fillColor(m_textColor);
@@ -515,7 +515,7 @@ void TextBuffer::renderText(const ElementArea& drawArea, float pixelScale, canva
     builder.print(m_postfixChars.typedData(), m_postfixChars.size(), sizeof(CharInfo));
 }
 
-void TextBuffer::generateRangeBlock(int start, int end, Color color, canvas::GeometryBuilder& builder) const
+void TextBuffer::generateRangeBlock(int start, int end, Color color, CanvasGeometryBuilder& builder) const
 {
     auto rangeStart = std::clamp(std::min(start, end), 0, m_lastPos);
     auto rangeEnd = std::clamp(std::max(start, end), 0, m_lastPos);
@@ -552,12 +552,12 @@ void TextBuffer::generateRangeBlock(int start, int end, Color color, canvas::Geo
     }
 }
 
-void TextBuffer::renderSelection(const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void TextBuffer::renderSelection(const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     // generate geometry if needed
 	if (m_cachedSelectionGeometry.empty())
 	{
-		canvas::GeometryBuilder builder(m_cachedSelectionGeometry);
+		CanvasGeometryBuilder builder(m_cachedSelectionGeometry);
 		generateRangeBlock(m_selectionStartPos, m_selectionEndPos, m_selectionColor, builder);
 	}
 
@@ -565,12 +565,12 @@ void TextBuffer::renderSelection(const ElementArea& drawArea, canvas::Canvas& ca
 	canvas.place(drawArea.absolutePosition(), m_cachedSelectionGeometry, mergedOpacity);
 }
 
-void TextBuffer::renderHighlight(const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void TextBuffer::renderHighlight(const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     // generate geometry if needed
 	if (m_cachedHighlightGeometry.empty())
 	{
-		canvas::GeometryBuilder builder(m_cachedHighlightGeometry);
+		CanvasGeometryBuilder builder(m_cachedHighlightGeometry);
 		generateRangeBlock(m_highlightStartPos, m_highlightEndPos, m_hightlightColor, builder);
 	}
 
@@ -578,14 +578,14 @@ void TextBuffer::renderHighlight(const ElementArea& drawArea, canvas::Canvas& ca
 	canvas.place(drawArea.absolutePosition(), m_cachedHighlightGeometry, mergedOpacity);
 }
 
-void TextBuffer::renderCursor(const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void TextBuffer::renderCursor(const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     const auto& glyph = (m_cursorPos.m_char < m_lastPos) ? m_chars[m_cursorPos.m_char] : m_finalGlyph;
 
     // generate the cursor geometry
     if (m_cachedCursorGeometry.empty())
     {
-        canvas::GeometryBuilder builder(m_cachedCursorGeometry);
+        CanvasGeometryBuilder builder(m_cachedCursorGeometry);
 
         builder.strokeColor(m_textColor);
         builder.beginPath();

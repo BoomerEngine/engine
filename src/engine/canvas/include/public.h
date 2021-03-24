@@ -8,30 +8,22 @@
 
 #include "engine_canvas_glue.inl"
 
-namespace boomer
-{
-	namespace rendering
-	{
-		class CommandWriter;
-	}
-}
-
-BEGIN_BOOMER_NAMESPACE_EX(canvas)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
 /// polygon winding
-enum class Winding : uint8_t
+enum class CanvasWinding : uint8_t
 {
-    CCW = 1, // Winding for solid shapes
-    CW = 2, // Winding for holes
+    CCW = 1, // CanvasWinding for solid shapes
+    CW = 2, // CanvasWinding for holes
 };
 
 //--
 
 /// raster composite operation - determines how pixels are mixed
 /// implemented using classical blending scheme
-enum class BlendOp : uint8_t
+enum class CanvasBlendOp : uint8_t
 {
 	Copy, // blending disabled, NOTE: scissor done using discard only
 	AlphaPremultiplied, // src*1 + dest*(1-srcAlpha)
@@ -43,51 +35,51 @@ enum class BlendOp : uint8_t
 
 //--
 
-struct RenderStyle;
+struct CanvasRenderStyle;
 
-struct Geometry;
-class GeometryBuilder;
+struct CanvasGeometry;
+class CanvasGeometryBuilder;
 
 class Canvas;
 class CanvasService;
 class CanvasRenderer;
 
-class IAtlas;
+class ICanvasAtlas;
 
-class DynamicAtlas;
-typedef RefPtr<DynamicAtlas> DynamicAtlasPtr;
+class CanvasDynamicAtlas;
+typedef RefPtr<CanvasDynamicAtlas> DynamicAtlasPtr;
 
-class GlyphCache;
+class CanvasGlyphCache;
 
 class ICanvasBatchRenderer;
 
-struct ImageAtlasEntryInfo;
+struct CanvasImageEntryInfo;
 
 //--
 
-typedef uint16_t ImageAtlasIndex;
-typedef uint16_t ImageEntryIndex;
+typedef uint16_t CanvasAtlasIndex;
+typedef uint16_t CanvasImageIndex;
 
-struct ENGINE_CANVAS_API ImageEntry
+struct ENGINE_CANVAS_API CanvasImageEntry
 {
-	ImageAtlasIndex atlasIndex = 0; // index of the atlas
-	ImageEntryIndex entryIndex = 0; // index of entry in the atlas
+	CanvasAtlasIndex atlasIndex = 0; // index of the atlas
+	CanvasImageIndex entryIndex = 0; // index of entry in the atlas
 	uint16_t width = 0; // width of the registered image
 	uint16_t height = 0; // height of the registered image
 
-	INLINE ImageEntry() {};
+	INLINE CanvasImageEntry() {};
 	INLINE operator bool() const { return atlasIndex != 0; }
 
-	INLINE bool operator==(const ImageEntry& other) const { return atlasIndex == other.atlasIndex && entryIndex == other.entryIndex; }
-	INLINE bool operator!=(const ImageEntry& other) const { return !operator==(other); }
+	INLINE bool operator==(const CanvasImageEntry& other) const { return atlasIndex == other.atlasIndex && entryIndex == other.entryIndex; }
+	INLINE bool operator!=(const CanvasImageEntry& other) const { return !operator==(other); }
 
-	static uint32_t CalcHash(const ImageEntry& entry);
+	static uint32_t CalcHash(const CanvasImageEntry& entry);
 };
 
 //--
 
 /// type of geometry path in canvas rendering
-enum class BatchType : uint8_t
+enum class CanvasBatchType : uint8_t
 {
 	FillConvex, // convex polygon fill, no stencil, just fill
 	FillConcave, // concave polygon fill, previously masked with FillConcave, contains 4 corner vertices
@@ -95,7 +87,7 @@ enum class BatchType : uint8_t
 };
 
 /// vertices in batch
-enum class BatchPacking : uint8_t
+enum class CanvasBatchPacking : uint8_t
 {
 	TriangleList,
 	TriangleFan,
@@ -107,7 +99,7 @@ enum class BatchPacking : uint8_t
 
 #pragma pack(push)
 #pragma pack(1)
-struct Vertex
+struct CanvasVertex
 {
 	static const uint8_t MASK_FILL = 1; // we are a fill
 	static const uint8_t MASK_STROKE = 2; // we are a stroke
@@ -133,14 +125,14 @@ struct Vertex
 	
 //--
 
-struct Batch
+struct CanvasBatch
 {
 	uint32_t vertexOffset = 0;
 	uint32_t vertexCount = 0;
 
-	BatchType type = BatchType::FillConvex;
-	BatchPacking packing = BatchPacking::TriangleList;
-	BlendOp op = BlendOp::AlphaPremultiplied;
+	CanvasBatchType type = CanvasBatchType::FillConvex;
+	CanvasBatchPacking packing = CanvasBatchPacking::TriangleList;
+	CanvasBlendOp op = CanvasBlendOp::AlphaPremultiplied;
 	uint8_t atlasIndex = 0;
 
 	uint64_t glyphPageMask = 0;
@@ -152,7 +144,7 @@ struct Batch
 
 //--
 
-struct ImageAtlasEntryInfo
+struct CanvasImageEntryInfo
 {
 	Vector2 uvOffset;
 	Vector2 uvScale;
@@ -163,4 +155,4 @@ struct ImageAtlasEntryInfo
 
 //--
 
-END_BOOMER_NAMESPACE_EX(canvas)
+END_BOOMER_NAMESPACE()

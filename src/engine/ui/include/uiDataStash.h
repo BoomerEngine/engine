@@ -27,7 +27,7 @@ public:
     INLINE style::Library* styles() const { return m_styles; }
 
 	// get main atlas
-	INLINE canvas::DynamicAtlas* mainAtlas() const { return m_mainIconAtlas; };
+	INLINE CanvasDynamicAtlas* mainAtlas() const { return m_mainIconAtlas; };
 
     // styles version
     INLINE uint32_t stylesVersion() const { return m_stylesVersion; }
@@ -43,10 +43,10 @@ public:
     //---
 
     /// load image by name, uses the search paths, returns image entry usable in canvas
-    canvas::ImageEntry loadImage(StringID key);
+    CanvasImageEntry loadImage(StringID key);
 
 	/// place already loaded image in the main canvas
-	canvas::ImageEntry cacheImage(const Image* img, bool supportWrapping=false, uint8_t additionalPadding=0);
+	CanvasImageEntry cacheImage(const Image* img, bool supportWrapping=false, uint8_t additionalPadding=0);
 
 	//--
 
@@ -59,10 +59,10 @@ protected:
     StyleLibraryPtr m_styles;
     uint32_t m_stylesVersion = 1;
 
-	RefPtr<canvas::DynamicAtlas> m_mainIconAtlas;
+	RefPtr<CanvasDynamicAtlas> m_mainIconAtlas;
 
-    HashMap<StringID, canvas::ImageEntry> m_imageMap;
-	HashMap<uint32_t, canvas::ImageEntry> m_imagePtrMap;
+    HashMap<StringID, CanvasImageEntry> m_imageMap;
+	HashMap<uint32_t, CanvasImageEntry> m_imagePtrMap;
 
     Array<StringBuf> m_imageSearchPaths;
 

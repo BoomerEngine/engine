@@ -44,7 +44,7 @@ public:
 
     virtual void configure(const ImagePreviewPanelSettings& settings) override;
     virtual void prepareGeometry(ui::CanvasArea* owner, float sx, float sy, ui::Size& outCanvasSizeAtCurrentScale) override;
-    virtual void render(ui::CanvasArea* owner, float x, float y, float sx, float sy, canvas::Canvas& canvas, float mergedOpacity)  override;
+    virtual void render(ui::CanvasArea* owner, float x, float y, float sx, float sy, Canvas& canvas, float mergedOpacity)  override;
 
 protected:
     gpu::ImageSampledViewPtr m_view;
@@ -57,7 +57,7 @@ protected:
 
 //--
 
-extern void RenderPixelBackground(canvas::Canvas& canvas, const ui::Position& tl, const ui::Position& br, const ui::ElementArea& drawArea, const Rect& activeImageArea, float colorFrac);
+extern void RenderPixelBackground(Canvas& canvas, const ui::Position& tl, const ui::Position& br, const ui::ElementArea& drawArea, const Rect& activeImageArea, float colorFrac);
 
 //--
 

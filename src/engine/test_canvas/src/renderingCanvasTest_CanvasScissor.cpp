@@ -27,9 +27,9 @@ public:
     {             
     }
 
-    void buildGeometry(MTRandState & rng, float canvasW, float canvasH, canvas::Geometry& outGeometry)
+    void buildGeometry(MTRandState & rng, float canvasW, float canvasH, CanvasGeometry& outGeometry)
     {
-        canvas::GeometryBuilder b(outGeometry);
+        CanvasGeometryBuilder b(outGeometry);
 
         for (int i = 0; i < 200; ++i)
         {
@@ -45,12 +45,12 @@ public:
             const auto startColor = Color((uint8_t)rng.next(), (uint8_t)rng.next(), (uint8_t)rng.next(), 255);
             const auto endColor = Color((uint8_t)rng.next(), (uint8_t)rng.next(), (uint8_t)rng.next(), 255);;
 
-            b.fillPaint(canvas::LinearGradienti(0, 0, w, h, startColor, endColor));
+            b.fillPaint(CanvasStyle_LinearGradienti(0, 0, w, h, startColor, endColor));
             b.fill();
         }
     }
 
-    virtual void render(canvas::Canvas& c) override
+    virtual void render(Canvas& c) override
     {
         m_time += 1.0f / 60.0f;
 
@@ -89,7 +89,7 @@ public:
 
     float m_time = 0.0f;
 
-    canvas::Geometry m_drawGeometry[3];
+    CanvasGeometry m_drawGeometry[3];
 
     float m_drawCanvasWidth = 0.0f;
     float m_drawCanvasHeight = 0.0f;

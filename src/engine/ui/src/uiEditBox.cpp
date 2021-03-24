@@ -147,7 +147,7 @@ void EditBox::computeSize(Size& outSize) const
     outSize = m_textBuffer->size();
 }
 
-void EditBox::prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, canvas::GeometryBuilder& builder) const
+void EditBox::prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const
 {
     TBaseClass::prepareForegroundGeometry(stash, drawArea, pixelScale, builder);
 
@@ -161,7 +161,7 @@ void EditBox::prepareForegroundGeometry(DataStash& stash, const ElementArea& dra
     builder.popTransform();
 }
 
-void EditBox::renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void EditBox::renderForeground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     auto innerArea = cachedLayoutParams().calcInnerAreaFromDrawArea(drawArea);
     m_textBuffer->renderHighlight(innerArea, canvas, mergedOpacity);

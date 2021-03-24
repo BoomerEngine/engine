@@ -46,7 +46,7 @@ void ImagePreviewPanel::previewSettings(const ImagePreviewPanelSettings& setting
     m_previewSettings = settings;
 }
 
-void ImagePreviewPanel::renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void ImagePreviewPanel::renderForeground(ui::DataStash& stash, const ui::ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
 
@@ -68,7 +68,7 @@ void ImagePreviewPanel::renderForeground(ui::DataStash& stash, const ui::Element
             float y0 = ((m_hoverPixelY) * m_viewScale.y) + m_viewOffset.y;
             float y1 = ((m_hoverPixelY+1)*m_viewScale.y) + m_viewOffset.y;
 
-            canvas::InplaceGeometryBuilder b(canvas);
+            InplaceGeometryBuilder b(canvas);
             b.fillColor(Color(64, 64, 64, 64));
             b.beginPath();
             b.rect(x0, 0.0f, x1 - x0, drawArea.size().y);
@@ -83,7 +83,7 @@ void ImagePreviewPanel::renderForeground(ui::DataStash& stash, const ui::Element
             float x = ((m_hoverPixelX)*m_viewScale.x) + m_viewOffset.x;
             float y = ((m_hoverPixelY)*m_viewScale.y) + m_viewOffset.y;
 
-            canvas::InplaceGeometryBuilder b(canvas);
+            InplaceGeometryBuilder b(canvas);
 			b.strokeColor(Color(64, 64, 64, 64));
 			b.beginPath();
 			b.moveTo(x, 0.0f);
@@ -116,7 +116,7 @@ void ImagePreviewPanel::renderForeground(ui::DataStash& stash, const ui::Element
     }
 }
 
-void ImagePreviewPanel::renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void ImagePreviewPanel::renderBackground(ui::DataStash& stash, const ui::ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderBackground(stash, drawArea, canvas, mergedOpacity);
 }

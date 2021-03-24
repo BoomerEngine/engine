@@ -26,9 +26,9 @@ BEGIN_BOOMER_NAMESPACE_EX(ui)
 //--
 
 /// custom rendering handler
-class CanvasRenderingPanelIntegrationHandler : public canvas::ICanvasSimpleBatchRenderer
+class CanvasRenderingPanelIntegrationHandler : public ICanvasSimpleBatchRenderer
 {
-    RTTI_DECLARE_VIRTUAL_CLASS(CanvasRenderingPanelIntegrationHandler, canvas::ICanvasSimpleBatchRenderer);
+    RTTI_DECLARE_VIRTUAL_CLASS(CanvasRenderingPanelIntegrationHandler, ICanvasSimpleBatchRenderer);
 
 public:
 	virtual gpu::ShaderObjectPtr loadMainShaderFile() override
@@ -75,14 +75,14 @@ RenderingPanel::RenderingPanel()
     m_autoRender = cvDefaultRenderingPanelAutoRender.get();
     m_renderRequest = false;
 
-	m_quadGeometry = new canvas::Geometry();
+	m_quadGeometry = new CanvasGeometry();
 	m_quadGeometry->vertices.resize(4);
 
 	auto& batch = m_quadGeometry->batches.emplaceBack();
 	batch.vertexCount = 4;
-	batch.packing = canvas::BatchPacking::Quads;
+	batch.packing = CanvasBatchPacking::Quads;
 	batch.renderDataSize = sizeof(gpu::RenderTargetView*);
-	batch.rendererIndex = canvas::GetHandlerIndex<CanvasRenderingPanelIntegrationHandler>();
+	batch.rendererIndex = GetCanvasHandlerIndex<CanvasRenderingPanelIntegrationHandler>();
 
 	m_quadGeometry->customData.allocateWith(batch.renderDataSize, 0);
 }
@@ -209,7 +209,7 @@ void RenderingPanel::renderCaptureScene(const CameraSetup& camera, const renderi
     }
 }
 
-void RenderingPanel::renderForeground(DataStash& stash, const ElementArea& drawArea, canvas::Canvas& canvas, float mergedOpacity)
+void RenderingPanel::renderForeground(DataStash& stash, const ElementArea& drawArea, Canvas& canvas, float mergedOpacity)
 {
     TBaseClass::renderForeground(stash, drawArea, canvas, mergedOpacity);
 
