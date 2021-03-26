@@ -27,7 +27,7 @@
 #include "gpu/device/include/descriptor.h"
 #include "gpu/device/include/image.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -73,13 +73,14 @@ FrameHelper::~FrameHelper()
 
 //--
 
-FrameRenderer::FrameRenderer(const FrameParams& frame, const gpu::AcquiredOutput& output, const FrameResources& resources, const FrameHelper& helpers, const RenderingScene* scene)
+FrameRenderer::FrameRenderer(const FrameParams& frame, const gpu::AcquiredOutput& output, const FrameResources& resources, const FrameHelper& helpers, const RenderingScene* scene, const DebugGeometryCollector* debug)
     : m_frame(frame)
     , m_resources(resources)
 	, m_helpers(helpers)
 	, m_output(output)
     , m_allocator(POOL_RENDERING_FRAME)
     , m_scene(scene)
+    , m_debug(debug)
 {
 }
 
@@ -122,4 +123,4 @@ void FrameRenderer::finish(gpu::CommandWriter& cmd, FrameStats& outStats)
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

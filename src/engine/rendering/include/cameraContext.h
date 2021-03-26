@@ -10,7 +10,7 @@
 
 #include "core/reflection/include/variantTable.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -87,4 +87,4 @@ public:
 
 //---
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

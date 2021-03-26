@@ -243,7 +243,7 @@
 
         //--
 
-        void Component::handleDebugRender(rendering::FrameParams& frame) const
+        void Component::handleDebugRender(FrameParams& frame) const
         {
             // TODO: draw component center 
         }

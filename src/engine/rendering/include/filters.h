@@ -10,7 +10,7 @@
 
 #include "debugGeometry.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 ///---
 
@@ -38,12 +38,6 @@ enum class FrameFilterBit : uint16_t
     DebugGeometryLines,
     DebugGeometryTransparent,
     DebugGeometryScreen,
-
-    ViewportCameraInfo, // camera placement in the BR
-    ViewportCameraAxes, // small camera orientation axes in the BL
-    ViewportSafeArea, // safe area boundaries
-    ViewportWorldGrid, // world grid at Z=0
-    ViewportWorldAxes, // bit, one meter axes at [0,0,0]
 
     Material_DisableLighting, // bypass all lighting calculations on material
     Material_DisableColorMap, // disable object color (resets it to white)
@@ -148,4 +142,4 @@ extern ENGINE_RENDERING_API const FrameFilterBitInfo* GetFilterTree();
 
 //---
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

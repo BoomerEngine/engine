@@ -24,7 +24,7 @@ public:
     virtual ~IWorldParameters();
 
     // render parameter specific fragments
-    virtual void handleDebugRender(const World* world, rendering::FrameParams& params) const;
+    virtual void handleDebugRender(const World* world, DebugGeometryCollector& params) const;
 };
 
 //---

@@ -12,7 +12,7 @@
 #include "viewCascades.h"
 #include "resources.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -133,4 +133,4 @@ void FrameView_CascadeShadows::render(gpu::CommandWriter& parentCmd)
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

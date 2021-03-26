@@ -141,10 +141,10 @@ SceneLayoutSettings::SceneLayoutSettings()
     viewportState[Viewport_Main].camera.rotation = Angles(20.0f, 40.0f, 0.0f);
     viewportState[Viewport_Main].camera.position = -viewportState[Viewport_Main].camera.rotation.forward() * 3.0f;
 
-    viewportState[Viewport_Main].panel.renderMode = rendering::FrameRenderMode::Default;
-    viewportState[Viewport_Extra1].panel.renderMode = rendering::FrameRenderMode::WireframePassThrough;
-    viewportState[Viewport_Extra2].panel.renderMode = rendering::FrameRenderMode::WireframePassThrough;
-    viewportState[Viewport_Extra3].panel.renderMode = rendering::FrameRenderMode::WireframePassThrough;
+    viewportState[Viewport_Main].panel.renderMode = FrameRenderMode::Default;
+    viewportState[Viewport_Extra1].panel.renderMode = FrameRenderMode::WireframePassThrough;
+    viewportState[Viewport_Extra2].panel.renderMode = FrameRenderMode::WireframePassThrough;
+    viewportState[Viewport_Extra3].panel.renderMode = FrameRenderMode::WireframePassThrough;
 }
 
 //--

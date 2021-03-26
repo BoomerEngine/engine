@@ -198,15 +198,15 @@ void MeshPreviewPanel::handlePostRenderContent()
     }
 }
 
-void MeshPreviewPanel::handleFrame(rendering::FrameParams& frame)
+void MeshPreviewPanel::handleFrame(FrameParams& frame, DebugGeometryCollector& debug)
 {
-    TBaseClass::handleFrame(frame);
+    TBaseClass::handleFrame(frame, debug);
 
     if (m_mesh)
     {
         if (m_previewSettings.showBounds)
         {
-            rendering::DebugDrawer lines(frame.geometry.solid);
+            DebugDrawer lines(frame.geometry.solid);
             lines.color(Color::YELLOW);
             lines.wireBox(m_mesh->bounds());
         }
@@ -244,7 +244,7 @@ void MeshPreviewPanel::handleAreaSelection(bool ctrl, bool shift, const Rect& cl
 void MeshPreviewPanel::destroyPreviewElements()
 {
     for (const auto& proxy : m_proxies)
-        scene()->manager<rendering::RenderingMeshManager>()->commandDetachProxy(proxy);
+        scene()->manager<RenderingMeshManager>()->commandDetachProxy(proxy);
     m_proxies.clear();
 }
 
@@ -254,7 +254,7 @@ void MeshPreviewPanel::createPreviewElements()
 
     if (m_mesh)
     {
-		rendering::RenderingMesh::Setup desc;
+		RenderingMesh::Setup desc;
         desc.mesh = m_mesh;
         desc.forcedLodLevel = m_previewSettings.forceLod;
         desc.focedSingleChunk = m_previewSettings.forceChunk;
@@ -267,7 +267,7 @@ void MeshPreviewPanel::createPreviewElements()
                 for (auto materialName : m_previewSettings.selectedMaterials.keys())
                     desc.excludedMaterialMask.insert(materialName);
 
-                if (auto proxy = rendering::RenderingMesh::Compile(desc))
+                if (auto proxy = RenderingMesh::Compile(desc))
                 {
                     proxy->m_selectable = Selectable(42, 0);
                     m_proxies.pushBack(proxy);
@@ -279,16 +279,16 @@ void MeshPreviewPanel::createPreviewElements()
 			for (auto materialName : m_previewSettings.selectedMaterials.keys())
 				desc.selectiveMaterialMask.insert(materialName);
 
-			if (auto proxy = rendering::RenderingMesh::Compile(desc))
+			if (auto proxy = RenderingMesh::Compile(desc))
 			{
-				proxy->m_flags.configure(rendering::RenderingObjectFlagBit::Selected, m_previewSettings.highlightMaterials);
+				proxy->m_flags.configure(RenderingObjectFlagBit::Selected, m_previewSettings.highlightMaterials);
                 proxy->m_selectable = Selectable(42, 0);
 				m_proxies.pushBack(proxy);
 			}
         }
         else
         {
-			if (auto proxy = rendering::RenderingMesh::Compile(desc))
+			if (auto proxy = RenderingMesh::Compile(desc))
 			{
 				proxy->m_selectable = Selectable(42, 0);
 				m_proxies.pushBack(proxy);
@@ -297,7 +297,7 @@ void MeshPreviewPanel::createPreviewElements()
     }
 
     for (auto& proxy : m_proxies)
-        scene()->manager<rendering::RenderingMeshManager>()->commandAttachProxy(proxy);
+        scene()->manager<RenderingMeshManager>()->commandAttachProxy(proxy);
 }
 
 //--

@@ -11,7 +11,7 @@
 #include "view.h"
 #include "gpu/device/include/commandWriter.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -61,4 +61,4 @@ private:
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

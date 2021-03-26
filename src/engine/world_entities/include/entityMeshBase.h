@@ -64,7 +64,7 @@ protected:
 
     //--
 
-    virtual void createRenderingProxy(rendering::RenderingScene* scene, rendering::RenderingObjectPtr& outProxy, rendering::IRenderingObjectManager*& outManager) const override;
+    virtual void createRenderingProxy(RenderingScene* scene, RenderingObjectPtr& outProxy, IRenderingObjectManager*& outManager) const override;
 
     virtual void queryTemplateProperties(ITemplatePropertyBuilder& outTemplateProperties) const override;
     virtual bool initializeFromTemplateProperties(const ITemplatePropertyValueContainer& templateProperties) override;

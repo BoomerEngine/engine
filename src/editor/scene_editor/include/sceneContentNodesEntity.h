@@ -67,7 +67,7 @@ protected:
     virtual void displayTags(IFormatStream& txt) const override;
 
     virtual void handleTransformUpdated();
-    virtual void handleDebugRender(rendering::FrameParams& frame) const override;
+    virtual void handleDebugRender(DebugGeometryCollector& debug) const override;
     virtual void handleParentChanged() override;
     virtual void handleDataPropertyChanged(const StringBuf& data);
 

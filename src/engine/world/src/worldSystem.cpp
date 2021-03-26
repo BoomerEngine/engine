@@ -71,7 +71,7 @@ void IWorldSystem::handlePostTransform(double dt)
 void IWorldSystem::handleImGuiDebugInterface()
 {}
 
-void IWorldSystem::handleDebugRender(rendering::FrameParams& info)
+void IWorldSystem::handleDebugRender(DebugGeometryCollector& info)
 {}
 
 /*void IWorldSystem::handleWorldContentAttached(const WorldPtr& worldPtr)

@@ -55,7 +55,7 @@ public:
 private:
     MaterialPreviewPanelSettings m_previewSettings;
 
-    rendering::RenderingMeshPtr m_previewProxy;
+    RenderingMeshPtr m_previewProxy;
     MaterialPtr m_material;
 
     void destroyVisualization();

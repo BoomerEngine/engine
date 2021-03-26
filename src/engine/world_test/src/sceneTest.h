@@ -75,8 +75,9 @@ public:
 
     virtual void initialize();
     virtual void configure();
-    virtual void prepareFrame(rendering::FrameParams& info);
-    virtual void renderFrame(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, rendering::FrameStats& outStats, CameraSetup& outCamera);
+    virtual void prepareFrame(FrameParams& info);
+    virtual void renderDebug(DebugGeometryCollector& debug);
+    virtual void renderFrame(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, FrameStats& outStats, CameraSetup& outCamera);
     virtual void update(float dt);
     virtual bool processInput(const InputEvent& evt);
 
@@ -87,6 +88,8 @@ public:
 
     INLINE World* world() const { return m_world; }
 
+    INLINE FreeCameraEntity* camera() const { return m_camera; }
+
 protected:
     WorldPtr m_world;
     bool m_failed = false;
@@ -95,18 +98,19 @@ protected:
     Angles m_initialCameraRotation;
 
     RefPtr<FreeCameraEntity> m_camera;
+    CameraContextPtr m_cameraContext;
 
     //--
 
     void configureLocalAdjustments();
     void recreateWorld();
 
-    static rendering::FrameFilterFlags st_FrameFilterFlags;
-    static rendering::FrameRenderMode st_FrameMode;
+    static FrameFilterFlags st_FrameFilterFlags;
+    static FrameRenderMode st_FrameMode;
 
     static Angles st_GlobalLightingRotation;
 
-    static rendering::FrameParams_ShadowCascades st_CascadeAdjust;
+    static FrameParams_ShadowCascades st_CascadeAdjust;
     static bool st_CascadeAdjustEnabled;
 
     struct GlobalLightingParams
@@ -122,18 +126,18 @@ protected:
 
         GlobalLightingParams();
 
-        void pack(rendering::FrameParams_GlobalLighting& outParams) const;
+        void pack(FrameParams_GlobalLighting& outParams) const;
     };
 
     static GlobalLightingParams st_GlobalLightingAdjust;
 
-    static rendering::FrameParams_ExposureAdaptation st_GlobalExposureAdaptationAdjust;
+    static FrameParams_ExposureAdaptation st_GlobalExposureAdaptationAdjust;
     static bool st_GlobalExposureAdaptationAdjustEnabled;
 
-    static rendering::FrameParams_ToneMapping st_GlobalTonemappingAdjust;
+    static FrameParams_ToneMapping st_GlobalTonemappingAdjust;
     static bool st_GlobalTonemappingAdjustEnabled;
 
-    static rendering::FrameParams_ColorGrading st_GlobalColorGradingAdjust;
+    static FrameParams_ColorGrading st_GlobalColorGradingAdjust;
     static bool st_GlobalColorGradingAdjustEnabled;
 };
 

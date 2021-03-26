@@ -123,7 +123,7 @@ public:
         outCursorType = CursorType::SizeAll;
     }
 
-    virtual void onRender3D(rendering::FrameParams& frame) override final
+    virtual void onRender3D(DebugGeometryCollector& debug) override final
     {
         if (m_lastComputedTransformValid)
         {
@@ -133,7 +133,7 @@ public:
                 auto startPos = space.calcAbsolutePositionForLocal(Vector3::ZERO());
                 auto endPos = space.calcAbsolutePositionForLocal(m_lastComputedTransform.T);
 
-                rendering::DebugDrawer dd(frame.geometry.overlay);
+                DebugDrawer dd(frame.geometry.overlay);
                 dd.color(Color::WHITE);
                 dd.line(startPos, endPos);
             }
@@ -351,7 +351,7 @@ public:
         return m_lines.hitTest(point, viewport, GetHitTestDistance(), outMinHitDistance);
     }
 
-    virtual void render(rendering::FrameParams& frame, GizmoRenderMode mode) override final
+    virtual void render(DebugGeometryCollector& frame, GizmoRenderMode mode) override final
     {
         auto lineWidth = config::cvGizmoTransWidth.get();
         auto color = GetColorForAxisInMode(m_axis, mode);

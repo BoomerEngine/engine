@@ -162,7 +162,7 @@ void Entity::handleDetach()
     
 }
 
-void Entity::handleDebugRender(rendering::FrameParams& frame) const
+void Entity::handleDebugRender(DebugGeometryCollector& frame) const
 {
 
 }

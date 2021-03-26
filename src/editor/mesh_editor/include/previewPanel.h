@@ -55,7 +55,7 @@ private:
     MeshPreviewPanelSettings m_previewSettings;
     HashMap<StringID, MaterialPtr> m_previewMaterials;
 
-    Array<rendering::RenderingMeshPtr> m_proxies;
+    Array<RenderingMeshPtr> m_proxies;
 
     Box m_lastBounds;
 
@@ -64,7 +64,7 @@ private:
     void destroyPreviewElements();
     void createPreviewElements();
 
-    virtual void handleFrame(rendering::FrameParams& frame) override;
+    virtual void handleFrame(FrameParams& frame, DebugGeometryCollector& debug) override;
     virtual void handlePointSelection(bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables) override;
     virtual void handleAreaSelection(bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables) override;
     virtual void handlePostRenderContent() override;

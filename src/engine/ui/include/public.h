@@ -19,9 +19,9 @@
 
 // events always have the valid IElement as source
 
-namespace boomer::rendering
+namespace boomer
 {
-    struct FrameParams;
+    class DebugGeometryCollector;
 }
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)

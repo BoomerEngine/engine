@@ -39,15 +39,15 @@ bool WorldRenderingSystem::handleInitialize(World& scene)
     switch (scene.type())
     {
     case WorldType::SimplePreview:
-        m_scene = RefNew<rendering::RenderingScene>(rendering::RenderingSceneType::EditorPreview);
+        m_scene = RefNew<RenderingScene>(RenderingSceneType::EditorPreview);
         break;
 
     case WorldType::EditorPreview:
-        m_scene = RefNew<rendering::RenderingScene>(rendering::RenderingSceneType::EditorGame);
+        m_scene = RefNew<RenderingScene>(RenderingSceneType::EditorGame);
         break;
 
     default:
-        m_scene = RefNew<rendering::RenderingScene>(rendering::RenderingSceneType::Game);
+        m_scene = RefNew<RenderingScene>(RenderingSceneType::Game);
         break;
     }
 
@@ -81,19 +81,21 @@ void WorldRenderingSystem::renderViewport(World* world, gpu::CommandWriter& cmd,
 
     //--
 
-    rendering::FrameParams frame(output.width, output.height, camera);
+    FrameParams frame;
     frame.resolution.width = output.width;
     frame.resolution.height = output.height;
+    frame.camera.camera = camera;
     frame.camera.cameraContext = context.cameraContext;
     
-    world->renderDebugFragments(frame);
+    DebugGeometryCollector debug(output.width, output.height, camera);
+    world->renderDebugFragments(debug);
 
     if (context.callback)
-        context.callback(frame);
+        context.callback(frame, debug);
 
     //--
 
-    rendering::FrameStats stats;
+    FrameStats stats;
 
     // TODO: implement flipping in PP stack
     if (output.color->flipped())
@@ -130,7 +132,7 @@ void WorldRenderingSystem::renderViewport(World* world, gpu::CommandWriter& cmd,
         flippedOutput.width = output.width;
         flippedOutput.height = output.height;
 
-        if (auto sceneCmd = GetService<rendering::FrameRenderingService>()->render(frame, flippedOutput, m_scene, stats))
+        if (auto sceneCmd = GetService<FrameRenderingService>()->render(frame, flippedOutput, m_scene, &debug, stats))
         {
             cmd.opAttachChildCommandBuffer(sceneCmd);
             cmd.opCopyRenderTarget(GFlippedColorRTV, output.color, 0, 0, true);
@@ -138,7 +140,7 @@ void WorldRenderingSystem::renderViewport(World* world, gpu::CommandWriter& cmd,
     }
     else
     {
-        if (auto sceneCmd = GetService<rendering::FrameRenderingService>()->render(frame, output, m_scene, stats))
+        if (auto sceneCmd = GetService<FrameRenderingService>()->render(frame, output, m_scene, &debug, stats))
             cmd.opAttachChildCommandBuffer(sceneCmd);
     }
 

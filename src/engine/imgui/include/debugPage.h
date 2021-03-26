@@ -9,10 +9,6 @@
 
 #pragma once
 
-namespace boomer::rendering {
-    struct FrameParams;
-}
-
 BEGIN_BOOMER_NAMESPACE()
 
 //----
@@ -34,9 +30,6 @@ public:
 
     //! generate ui using ImGui
     virtual void handleRender();
-
-    //! generate 3D debug fragments, very rare in g
-    virtual void handleRender3D(rendering::FrameParams& frame);
 };
 
 //----

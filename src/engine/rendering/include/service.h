@@ -14,7 +14,7 @@
 
 #include "gpu/device/include/shaderReloadNotifier.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 ///---
 
@@ -36,7 +36,7 @@ public:
     //--
 
     /// render given scene
-    gpu::CommandBuffer* render(const FrameParams& frame, const gpu::AcquiredOutput& output, RenderingScene* scene, FrameStats& outStats);
+    gpu::CommandBuffer* render(const FrameParams& frame, const gpu::AcquiredOutput& output, RenderingScene* scene, const DebugGeometryCollector* debug, FrameStats& outStats);
 
     //--
 
@@ -55,4 +55,4 @@ private:
 
 ///---
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

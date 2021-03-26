@@ -54,7 +54,7 @@ public:
     //---
 
     // rendering active state
-    void render(rendering::FrameParams& frame);
+    void render(DebugGeometryCollector& debug);
 
     // process mouse move event, returns true if we have active hover
     bool updateHover(const Point& clientPoint);

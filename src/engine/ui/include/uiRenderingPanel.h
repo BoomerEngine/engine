@@ -10,7 +10,7 @@
 
 #include "uiElement.h"
 
-namespace boomer::rendering
+namespace boomer
 {
     struct FrameParams_Capture;
 }
@@ -53,7 +53,7 @@ public:
     virtual void handleCamera(CameraSetup& outCamera) const = 0;
 
 	// render the panel, when done submit work to the device
-	virtual void handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& camera, const rendering::FrameParams_Capture* capture = nullptr) = 0;
+	virtual void handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& camera, const FrameParams_Capture* capture = nullptr) = 0;
 
 protected:
     virtual void handleHoverEnter(const Position& pos) override;
@@ -66,7 +66,7 @@ protected:
     Point m_renderTargetOffset = Point(0, 0);
     int m_renderTargetZoom = 0;
 
-    void renderCaptureScene(const CameraSetup& camera, const rendering::FrameParams_Capture* capture = nullptr);
+    void renderCaptureScene(const CameraSetup& camera, const FrameParams_Capture* capture = nullptr);
 
 private:
     NativeTimePoint m_lastRenderTime;

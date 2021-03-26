@@ -26,7 +26,7 @@ public:
     virtual ~IMeshStructureNode();
 
     virtual void setup(MeshPreviewPanelSettings& settings, const Array<const IMeshStructureNode*>& allNodes, const IMeshStructureNode* topNode) const;
-    virtual void render(rendering::FrameParams& frame, const Array<const IMeshStructureNode*>& allNodes, const IMeshStructureNode* topNode) const;
+    virtual void render(DebugGeometryCollector& debug, const Array<const IMeshStructureNode*>& allNodes, const IMeshStructureNode* topNode) const;
 
     virtual void handleItemExpand() override;
     virtual void handleItemCollapse() override;

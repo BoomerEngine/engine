@@ -47,7 +47,7 @@ public:
     //--
 
     // render in-editor debug representation of entities
-    void handleDebugRender(rendering::FrameParams& frame) const;
+    void handleDebugRender(DebugGeometryCollector& debug) const;
 
     //--
 

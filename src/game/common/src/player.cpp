@@ -42,7 +42,7 @@ RTTI_END_TYPE();
 IGamePlayerLocal::IGamePlayerLocal(IGamePlayerIdentity* identity, IGamePlayerConnection* connection)
     : IGamePlayer(identity, connection)
 {
-    m_cameraContext = RefNew<rendering::CameraContext>();
+    m_cameraContext = RefNew<CameraContext>();
 }
 
 IGamePlayerLocal::~IGamePlayerLocal()

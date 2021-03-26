@@ -9,7 +9,7 @@
 #include "build.h"
 #include "filters.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -74,10 +74,10 @@ static FrameFilterFlags MakeDefaultEditorFilter()
     ret |= FrameFilterBit::DebugGeometryTransparent;
     ret |= FrameFilterBit::DebugGeometryOverlay;
 
-    ret |= FrameFilterBit::ViewportCameraInfo;
+    /*ret |= FrameFilterBit::ViewportCameraInfo;
     ret |= FrameFilterBit::ViewportCameraAxes; // small camera orientation axes in the BL
     ret |= FrameFilterBit::ViewportWorldGrid; // world grid at Z=0
-    ret |= FrameFilterBit::ViewportWorldAxes; // bit, one meter axes at [0,0,0]
+    ret |= FrameFilterBit::ViewportWorldAxes; // bit, one meter axes at [0,0,0]*/
 
     ret |= FrameFilterBit::PostProcesses_SelectionHighlight;
     ret |= FrameFilterBit::PostProcesses_SelectionOutline;
@@ -136,14 +136,14 @@ public:
             create(parent, "Overlay", FrameFilterBit::DebugGeometryOverlay);
         }
 
-        {
+        /*{
             auto* parent = create(m_root, "DebugViewport");
             create(parent, "CameraInfo", FrameFilterBit::ViewportCameraInfo);
             create(parent, "CameraAxes", FrameFilterBit::ViewportCameraAxes);
             create(parent, "SafeArea", FrameFilterBit::ViewportSafeArea);
             create(parent, "WorldGrid", FrameFilterBit::ViewportWorldGrid);
             create(parent, "WorldAxes", FrameFilterBit::ViewportWorldAxes);
-        }
+        }*/
 
         {
             auto* parent = create(m_root, "Material");
@@ -196,4 +196,4 @@ const FrameFilterBitInfo* GetFilterTree()
 
 //
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

@@ -20,11 +20,12 @@ struct ENGINE_FONT_API BitmapFontGlyph
     RTTI_DECLARE_NONVIRTUAL_CLASS(BitmapFontGlyph);
 
 public:
-    uint32_t charCode;
+    uint32_t charCode = 0;
+    int page = 0;
     Point offset;
     Point size;
     Point advance;
-    Vector4 uv;
+    Vector4 uv; // xy=min, zw=max
 };
 
 //--
@@ -45,14 +46,26 @@ class ENGINE_FONT_API BitmapFont : public IResource
     RTTI_DECLARE_VIRTUAL_CLASS(BitmapFont, IResource);
 
 public:
+    struct Setup
+    {
+        Array<ImagePtr> imagePages; // all the same size
+        int ascender = 0;
+        int descender = 0;
+        int lineHeight = 0;
+        Array<BitmapFontGlyph> glyphs;
+    };
+
     BitmapFont();
-    BitmapFont(const ImagePtr& imageData, int ascender, int descender, int lineHeight, Array<BitmapFontGlyph>&& glyphs);
+    BitmapFont(Setup&& setup);
     virtual ~BitmapFont();
 
     //--
 
-    /// get the compiled texture atlas image for this font
-    INLINE const ImagePtr& imageAtlas() const { return m_image; }
+    /// compiled image pages, we can have more then one but they will be the same size
+    INLINE const Array<ImagePtr>& images() const { return m_images; }
+
+    /// glyphs
+    INLINE const Array<BitmapFontGlyph>& glyph() const { return m_glyphs; }
 
     // get size of the upper part of the font (above baseline)
     INLINE int ascender() const { return m_ascender; }
@@ -65,26 +78,26 @@ public:
 
     //--
 
-    /// measure width of text
+    /// measure width of text, the height is always the line height
     Point measure(StringView txt) const;
-
-    //--
 
     // generate glyphs
     Point render(StringView txt, Color initialColor, Array<BitmapFontPrintableGlyph>& outGlyphs) const;
 
+    //--
+
 private:
-    // image with all font glyphs
-    ImagePtr m_image;
+    // images with all font glyphs
+    Array<ImagePtr> m_images;
 
     // glyphs
     Array<BitmapFontGlyph> m_glyphs;
     HashMap<uint32_t, const BitmapFontGlyph*> m_glyphMap;
 
     // sizing
-    int m_ascender;
-    int m_descender;
-    int m_lineHeight;
+    int m_ascender = 0;
+    int m_descender = 0;
+    int m_lineHeight = 0;
 
     virtual void onPostLoad() override;
 

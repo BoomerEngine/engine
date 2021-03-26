@@ -13,7 +13,7 @@
 #include "gpu/device/include/commandBuffer.h"
 #include "gpu/device/include/deviceService.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //----
 
@@ -128,4 +128,4 @@ void RenderingScene::finish(gpu::CommandWriter& cmd, const FrameRenderer& frame,
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

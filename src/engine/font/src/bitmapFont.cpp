@@ -29,7 +29,7 @@ RTTI_END_TYPE();
 
 RTTI_BEGIN_TYPE_CLASS(BitmapFont);
     RTTI_METADATA(ResourceDescriptionMetadata).description("Bitmap Font");
-    RTTI_PROPERTY(m_image);
+    RTTI_PROPERTY(m_images);
     RTTI_PROPERTY(m_glyphs);
     RTTI_PROPERTY(m_ascender);
     RTTI_PROPERTY(m_descender);
@@ -39,15 +39,15 @@ RTTI_END_TYPE();
 BitmapFont::BitmapFont()
 {}
 
-BitmapFont::BitmapFont(const ImagePtr& imageData, int ascender, int descender, int lineHeight, Array<BitmapFontGlyph>&& glyphs)
-    : m_image(imageData)
-    , m_glyphs(std::move(glyphs))
-    , m_ascender(ascender)
-    , m_descender(descender)
-    , m_lineHeight(lineHeight)
+BitmapFont::BitmapFont(Setup&& setup)
+    : m_images(std::move(setup.imagePages))
+    , m_glyphs(std::move(setup.glyphs))
+    , m_ascender(setup.ascender)
+    , m_descender(setup.descender)
+    , m_lineHeight(setup.lineHeight)
 {
-    if (m_image)
-        m_image->parent(this);
+    for (const auto& img : m_images)
+        img->parent(this);
 
     // update runtime object
     invalidateRuntimeVersion();

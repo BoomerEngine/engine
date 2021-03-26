@@ -187,7 +187,7 @@ public:
     virtual void handleParentChanged();
     virtual void handleLocalVisibilityChanged();
     virtual void handleVisibilityChanged();
-    virtual void handleDebugRender(rendering::FrameParams& frame) const;
+    virtual void handleDebugRender(DebugGeometryCollector& debug) const;
 
     //--
 

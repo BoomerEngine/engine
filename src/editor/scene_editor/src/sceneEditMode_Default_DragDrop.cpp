@@ -247,13 +247,13 @@ public:
             m_currentPreview->move(m_positionUnderCursor);
     }
 
-    void render(ScenePreviewPanel* panel, rendering::FrameParams& frame)
+    void render(ScenePreviewPanel* panel, DebugGeometryCollector& debug)
     {
         if (m_positionUnderCursorValid)
         {
-            rendering::DebugDrawer dd(frame.geometry.solid);
+            /*DebugDrawer dd(frame.geometry.solid);
             dd.color(Color::CYAN);
-            dd.solidSphere(m_positionUnderCursor, 0.05f);
+            dd.solidSphere(m_positionUnderCursor, 0.05f);*/
         }
     }
 
@@ -343,10 +343,10 @@ void SceneEditMode_Default::updateDragDrop()
         handler->update();
 }
 
-void SceneEditMode_Default::renderDragDrop(ScenePreviewPanel* panel, rendering::FrameParams& frame)
+void SceneEditMode_Default::renderDragDrop(ScenePreviewPanel* panel, DebugGeometryCollector& debug)
 {
     if (auto handler = m_dragDropHandler.lock())
-        handler->render(panel, frame);
+        handler->render(panel, debug);
 }
 
 //--

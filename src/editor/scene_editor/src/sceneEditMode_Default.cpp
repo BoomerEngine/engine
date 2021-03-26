@@ -561,10 +561,10 @@ GizmoActionContextPtr SceneEditMode_Default::createGizmoAction(ScenePreviewConta
     return RefNew<SceneEditModeDefaultTransformAction>(const_cast<SceneEditMode_Default*>(this), panel, transformNodes, container->gridSettings(), container->gizmoSettings());
 }
 
-void SceneEditMode_Default::handleRender(ScenePreviewPanel* panel, rendering::FrameParams& frame)
+void SceneEditMode_Default::handleRender(ScenePreviewPanel* panel, DebugGeometryCollector& debug)
 {
-    TBaseClass::handleRender(panel, frame);
-    renderDragDrop(panel, frame);
+    TBaseClass::handleRender(panel, debug);
+    renderDragDrop(panel, debug);
 }
 
 ui::InputActionPtr SceneEditMode_Default::handleMouseClick(ScenePreviewPanel* panel, const InputMouseClickEvent& evt)

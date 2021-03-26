@@ -42,7 +42,7 @@ protected:
     void update(float dt);
 
     virtual void handleCamera(CameraSetup& outCamera) const override;
-    virtual void handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& camera, const rendering::FrameParams_Capture* capture) override;
+    virtual void handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& camera, const FrameParams_Capture* capture) override;
     virtual bool handleKeyEvent(const InputKeyEvent& evt) override;
     virtual ui::InputActionPtr handleMouseClick(const ui::ElementArea& area, const InputMouseClickEvent& evt) override;
     //virtual bool handleAxisEvent(const InputAxisEvent& evt) override;

@@ -24,7 +24,7 @@
 
 #include "gpu/device/include/descriptor.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -869,4 +869,4 @@ void RenderingMeshManager::commandUpdateProxyFlag(RenderingMeshPtr meshProxy, Re
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

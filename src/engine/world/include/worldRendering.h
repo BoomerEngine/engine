@@ -29,9 +29,9 @@ public:
             
     //---
 
-    INLINE rendering::RenderingScene* scene() const { return m_scene; }
+    INLINE RenderingScene* scene() const { return m_scene; }
 
-    INLINE const rendering::FrameStats& lastFrameStats() const { return m_lastStats; }
+    INLINE const FrameStats& lastFrameStats() const { return m_lastStats; }
 
     INLINE const CameraSetup& lastCamera() const { return m_lastCamera; }
 
@@ -46,9 +46,9 @@ protected:
     virtual void handleShutdown() override;
     virtual void handleImGuiDebugInterface() override;
 
-    rendering::RenderingScenePtr m_scene = nullptr;
+    RenderingScenePtr m_scene = nullptr;
 
-    mutable rendering::FrameStats m_lastStats;
+    mutable FrameStats m_lastStats;
     mutable CameraSetup m_lastCamera;
 };
 

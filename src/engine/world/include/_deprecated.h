@@ -235,7 +235,7 @@
             //--
 
             /// render debug elements
-            virtual void handleDebugRender(rendering::FrameParams& frame) const;
+            virtual void handleDebugRender(DebugGeometryCollector& debug) const;
 
             //--
 

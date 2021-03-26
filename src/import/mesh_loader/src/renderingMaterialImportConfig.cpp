@@ -23,7 +23,7 @@ BEGIN_BOOMER_NAMESPACE_EX(assets)
 //--
 
 RTTI_BEGIN_TYPE_CLASS(MaterialImportConfig);
-    RTTI_OLD_NAME("rendering::MaterialImportConfig");
+    RTTI_OLD_NAME("MaterialImportConfig");
     RTTI_CATEGORY("Texture import");
     RTTI_PROPERTY(m_importTextures).editable().overriddable();
     RTTI_PROPERTY(m_textureSearchPath).editable().overriddable();

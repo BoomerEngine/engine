@@ -26,7 +26,7 @@ BEGIN_BOOMER_NAMESPACE_EX(assets)
 //---
 
 RTTI_BEGIN_TYPE_CLASS(StaticTextureCompressionConfiguration);
-    RTTI_OLD_NAME("rendering::StaticTextureCompressionConfiguration");
+    RTTI_OLD_NAME("StaticTextureCompressionConfiguration");
     RTTI_CATEGORY("Content");
     RTTI_PROPERTY(m_contentType).editable("Content type of the image, usually guessed by the file name postfix").overriddable();
     RTTI_PROPERTY(m_contentColorSpace).editable("Color space of the image's content").overriddable();
@@ -60,7 +60,7 @@ ImageCompressionSettings StaticTextureCompressionConfiguration::loadSettings() c
 //---
 
 RTTI_BEGIN_TYPE_CLASS(StaticTextureFromImageImporter);
-    RTTI_OLD_NAME("rendering::StaticTextureFromImageImporter");
+    RTTI_OLD_NAME("StaticTextureFromImageImporter");
     RTTI_METADATA(ResourceImportedClassMetadata).addClass<StaticTexture2D>();
     RTTI_METADATA(ResourceSourceFormatMetadata).addSourceExtensions("bmp;dds;png;jpg;jpeg;jp2;jpx;tga;tif;tiff;hdr;exr;ppm;pbm;psd;xbm;nef;xpm;gif;webp");
     RTTI_METADATA(ResourceImporterConfigurationClassMetadata).configurationClass<StaticTextureCompressionConfiguration>();

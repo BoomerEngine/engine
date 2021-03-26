@@ -71,13 +71,13 @@ bool GizmoLineShape::hitTest(const Point& point, const ui::ViewportCameraSetup& 
     return hasHit;
 }
 
-void GizmoLineShape::render(rendering::FrameParams& frame, Color lineColor, float lineWidth)
+void GizmoLineShape::render(DebugGeometryCollector& debug, Color lineColor, float lineWidth)
 {
     if (m_cachedPointsValid)
     {
-        rendering::DebugDrawer dd(frame.geometry.overlay);
+        /*DebugDrawer dd(frame.geometry.overlay);
         dd.color(lineColor);
-        dd.lines(m_cachedRenderPoints.typedData(), m_cachedRenderPoints.size());
+        dd.lines(m_cachedRenderPoints.typedData(), m_cachedRenderPoints.size());*/
     }
 }
 

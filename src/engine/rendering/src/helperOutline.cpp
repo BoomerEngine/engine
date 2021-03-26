@@ -24,7 +24,7 @@
 #include "core/containers/include/stringBuilder.h"
 #include "core/resource/include/staticResource.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -80,4 +80,4 @@ void FrameHelperOutline::drawOutlineEffect(gpu::CommandWriter& cmd, const Setup&
 
 //---
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

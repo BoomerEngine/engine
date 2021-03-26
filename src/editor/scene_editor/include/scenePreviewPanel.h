@@ -40,7 +40,7 @@ public:
     virtual void configLoad(const ui::ConfigBlock& block);
 
 private:
-    virtual void handleFrame(rendering::FrameParams& frame) override;
+    virtual void handleFrame(FrameParams& frame, DebugGeometryCollector& debug) override;
     virtual void handlePointSelection(bool ctrl, bool shift, const Point& clientPosition, const Array<Selectable>& selectables) override;
     virtual void handleAreaSelection(bool ctrl, bool shift, const Rect& clientRect, const Array<Selectable>& selectables) override;
     virtual void handleContextMenu(bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const ExactPosition* positionUnderCursor) override;
@@ -57,7 +57,7 @@ private:
     virtual GizmoReferenceSpace gizmoHost_referenceSpace() const override final;
     virtual GizmoActionContextPtr gizmoHost_startAction() const override final;
 
-    virtual rendering::RenderingScene* scene() const override final;
+    virtual RenderingScene* scene() const override final;
 
     void recreateGizmo();
 

@@ -67,7 +67,7 @@ public:
     virtual bool hitTest(Point point, float& outMinHitDistance, const ui::ViewportCameraSetup& viewport, CursorType& outCursor) = 0;
 
     /// render this gizmo in the given frame, usually uses the debug rendering functionality
-    virtual void render(rendering::FrameParams& frame, GizmoRenderMode mode) = 0;
+    virtual void render(DebugGeometryCollector& debug, GizmoRenderMode mode) = 0;
 
     /// activate this gizmo, creates an input action
     virtual ui::InputActionPtr activate(Point point, const GizmoActionContextPtr& action) = 0;

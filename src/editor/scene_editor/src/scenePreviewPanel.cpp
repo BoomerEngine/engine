@@ -55,24 +55,24 @@ void ScenePreviewPanel::requestRecreateGizmo()
     recreateGizmo();
 }
 
-rendering::RenderingScene* ScenePreviewPanel::scene() const
+RenderingScene* ScenePreviewPanel::scene() const
 {
     auto rendering = m_container->world()->system<WorldRenderingSystem>();
     return rendering->scene();
 }
 
-void ScenePreviewPanel::handleFrame(rendering::FrameParams& frame)
+void ScenePreviewPanel::handleFrame(FrameParams& frame, DebugGeometryCollector& debug)
 {
-    TBaseClass::handleFrame(frame);
+    TBaseClass::handleFrame(frame, debug);
 
     if (m_container)
-        m_container->content()->handleDebugRender(frame);
+        m_container->content()->handleDebugRender(debug);
 
     if (auto editMode = m_editMode.lock())
-        editMode->handleRender(this, frame);
+        editMode->handleRender(this, debug);
 
     if (m_gizmos)
-        m_gizmos->render(frame);
+        m_gizmos->render(debug);
 }
 
 ui::DragDropHandlerPtr ScenePreviewPanel::handleDragDrop(const ui::DragDropDataPtr& data, const ui::Position& entryPosition)

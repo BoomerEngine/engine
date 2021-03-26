@@ -55,8 +55,8 @@ void IWorldRenderedEntity::createRenderingProxy()
 
     if (auto* scene = system<WorldRenderingSystem>())
     {
-        rendering::RenderingObjectPtr proxy;
-        rendering::IRenderingObjectManager* manager = nullptr;
+        RenderingObjectPtr proxy;
+        IRenderingObjectManager* manager = nullptr;
 
         createRenderingProxy(scene->scene(), proxy, manager);
 
@@ -93,13 +93,13 @@ void IWorldRenderedEntity::handleEditorStateChange(const EntityEditorState& stat
     {
         if (m_proxyObject)
         {
-            rendering::RenderingObjectFlags clearFlags, setFlags;
+            RenderingObjectFlags clearFlags, setFlags;
 
             const auto selected = state.selected;
             if (selected)
-                setFlags |= rendering::RenderingObjectFlagBit::Selected;
+                setFlags |= RenderingObjectFlagBit::Selected;
             else
-                clearFlags |= rendering::RenderingObjectFlagBit::Selected;
+                clearFlags |= RenderingObjectFlagBit::Selected;
 
             m_proxyManager->commandUpdateProxyFlag(m_proxyObject, clearFlags, setFlags);
         }

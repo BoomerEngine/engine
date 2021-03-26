@@ -53,7 +53,7 @@ void IMeshStructureNode::setup(MeshPreviewPanelSettings& settings, const Array<c
 
 }
 
-void IMeshStructureNode::render(rendering::FrameParams& frame, const Array<const IMeshStructureNode*>& allNodes, const IMeshStructureNode* topNode) const
+void IMeshStructureNode::render(DebugGeometryCollector& debug, const Array<const IMeshStructureNode*>& allNodes, const IMeshStructureNode* topNode) const
 {
 
 }
@@ -319,7 +319,7 @@ public:
         , m_box(mesh->bounds())
     {}
 
-    virtual void render(rendering::FrameParams& frame, const Array<const IMeshStructureNode*>& allNodes, const IMeshStructureNode* topNode) const override
+    virtual void render(DebugGeometryCollector& debug, const Array<const IMeshStructureNode*>& allNodes, const IMeshStructureNode* topNode) const override
     {
 
     }
@@ -351,7 +351,7 @@ public:
         settings.forceChunk = m_index;
     }
 
-    virtual void render(rendering::FrameParams& frame, const Array<const IMeshStructureNode*>& allNodes, const IMeshStructureNode* topNode) const override
+    virtual void render(DebugGeometryCollector& debug, const Array<const IMeshStructureNode*>& allNodes, const IMeshStructureNode* topNode) const override
     {
 
     }
@@ -526,7 +526,7 @@ public:
         settings.forceLod = m_index;
     }
 
-    virtual void render(rendering::FrameParams& frame, const Array<const IMeshStructureNode*>& allNodes, const IMeshStructureNode* topNode) const override
+    virtual void render(DebugGeometryCollector& debug, const Array<const IMeshStructureNode*>& allNodes, const IMeshStructureNode* topNode) const override
     {
 
     }

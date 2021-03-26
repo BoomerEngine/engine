@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -53,4 +53,4 @@ extern ENGINE_RENDERING_API void RenderStatsGui(const FrameStats& frameStats);
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

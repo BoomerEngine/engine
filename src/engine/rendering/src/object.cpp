@@ -9,7 +9,7 @@
 #include "build.h"
 #include "object.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -68,4 +68,4 @@ void IRenderingObjectManager::runNowOrBuffer(std::function<void(void)> func)
 
 //---
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

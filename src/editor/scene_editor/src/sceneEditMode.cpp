@@ -84,7 +84,7 @@ void ISceneEditMode::configurePanelToolbar(ScenePreviewContainer* container, con
 {
 }
     
-void ISceneEditMode::handleRender(ScenePreviewPanel* panel, rendering::FrameParams& frame)
+void ISceneEditMode::handleRender(ScenePreviewPanel* panel, DebugGeometryCollector& debug)
 {
 }
 

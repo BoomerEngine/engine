@@ -550,7 +550,7 @@ void SceneContentNode::handleVisibilityChanged()
     updateDisplayElement();
 }
 
-void SceneContentNode::handleDebugRender(rendering::FrameParams& frame) const
+void SceneContentNode::handleDebugRender(DebugGeometryCollector& debug) const
 {
 }
 

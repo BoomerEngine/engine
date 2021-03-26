@@ -78,7 +78,7 @@ public:
     virtual void onRender(Canvas& canvas);
 
     /// Render 3d stuff, subject to owner implementation
-    virtual void onRender3D(rendering::FrameParams& frame);
+    virtual void onRender3D(DebugGeometryCollector& debug);
 
     ///---
 

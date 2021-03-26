@@ -625,7 +625,7 @@ void World::updateStreaming()
         }
     }
 
-    if (!m_streamingTask && m_streamingEnabled)
+    if (!m_streamingTask && m_streamingEnabled && m_streaming)
     {
         // collect observers
         InplaceArray<WorldObserverInfo, 4> observers;
@@ -948,18 +948,18 @@ void World::renderViewport(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& o
         rs->renderViewport(this, cmd, output, context);
 }
 
-void World::renderDebugFragments(rendering::FrameParams& info)
+void World::renderDebugFragments(DebugGeometryCollector& debug)
 {
     PC_SCOPE_LVL1(RenderWorldFrame);
 
     for (auto& param : m_parameters)
-        param->handleDebugRender(this, info);
+        param->handleDebugRender(this, debug);
 
     for (auto &sys : m_systems)
-        sys->handleDebugRender(info);
+        sys->handleDebugRender(debug);
 
     for (auto& ent : m_entitiesMap.values())
-        ent->ptr->handleDebugRender(info);
+        ent->ptr->handleDebugRender(debug);
 }
 
 //--

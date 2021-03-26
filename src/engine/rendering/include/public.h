@@ -8,7 +8,7 @@
 
 #include "engine_rendering_glue.inl"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 ///---
 
@@ -16,16 +16,16 @@ static const uint32_t MAX_SHADOW_CASCADES = 4;
 
 //--
 
-class DebugGeometry;
+typedef uint16_t DebugGeometryIconID;
 
-enum class DebugFont : uint8_t
-{
-    Normal,
-    Bold,
-    Italic,
-    Big,
-    Small,
-};
+class DebugGeometryBuilder;
+class DebugGeometryBuilderBase;
+class DebugGeometryBuilderScreen;
+
+class DebugGeometryCollector;
+
+class DebugGeometryChunk;
+typedef RefPtr<DebugGeometryChunk> DebugGeometryChunkPtr;
 
 //--
 
@@ -80,4 +80,4 @@ typedef RefPtr<RenderingMesh> RenderingMeshPtr;
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

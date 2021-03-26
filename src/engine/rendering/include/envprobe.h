@@ -8,7 +8,7 @@
 
 #pragma once
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -16,4 +16,4 @@ BEGIN_BOOMER_NAMESPACE_EX(rendering)
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

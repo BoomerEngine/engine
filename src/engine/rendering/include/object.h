@@ -10,7 +10,7 @@
 
 #include "scene.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -110,5 +110,5 @@ struct RenderingObjectMemoryAllocator
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()
 

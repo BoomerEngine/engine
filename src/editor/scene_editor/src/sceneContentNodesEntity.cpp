@@ -213,11 +213,11 @@ void SceneContentDataNode::updateBaseTemplates(const Array<const ObjectIndirectT
     cacheTransformData();
 }
 
-void SceneContentDataNode::handleDebugRender(rendering::FrameParams& frame) const
+void SceneContentDataNode::handleDebugRender(DebugGeometryCollector& debug) const
 {
     // TEMPSHIT
-    rendering::DebugDrawer dd(frame.geometry.solid);
-    dd.axes(cachedLocalToWorldMatrix(), 0.1f);
+    //DebugDrawer dd(frame.geometry.solid);
+    //dd.axes(cachedLocalToWorldMatrix(), 0.1f);
 }
 
 void SceneContentDataNode::handleParentChanged()

@@ -18,7 +18,7 @@
 #include "core/reflection/include/variantTable.h"
 #include "core/memory/include/pageCollection.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 ///---
 
@@ -64,7 +64,7 @@ public:
 class ENGINE_RENDERING_API FrameRenderer : public NoCopy
 {
 public:
-    FrameRenderer(const FrameParams& frame, const gpu::AcquiredOutput& output, const FrameResources& resources, const FrameHelper& helpers, const RenderingScene* scene);
+    FrameRenderer(const FrameParams& frame, const gpu::AcquiredOutput& output, const FrameResources& resources, const FrameHelper& helpers, const RenderingScene* scene, const DebugGeometryCollector* debug);
     ~FrameRenderer();
 
     //--
@@ -82,6 +82,8 @@ public:
     INLINE uint32_t height() const { return m_frame.resolution.height; }
 
     INLINE const RenderingScene* scene() const { return m_scene; }
+
+    INLINE const DebugGeometryCollector* debug() const { return m_debug; }
 
     //--
 
@@ -101,6 +103,7 @@ private:
     bool m_msaa = false;
 
     const RenderingScene* m_scene = nullptr;
+    const DebugGeometryCollector* m_debug = nullptr;
 
     LinearAllocator m_allocator;
 
@@ -115,4 +118,4 @@ private:
 
 ///---
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

@@ -58,7 +58,7 @@ protected:
     gpu::OutputObjectPtr m_renderingOutput;
     bool m_exitRequested;
 
-    rendering::FrameStats m_lastFrameStats;
+    FrameStats m_lastFrameStats;
     CameraSetup m_lastCamera;
 
     gpu::ImageObjectPtr m_flippedColorTarget;

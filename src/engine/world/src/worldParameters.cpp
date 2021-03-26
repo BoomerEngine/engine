@@ -21,7 +21,7 @@ RTTI_END_TYPE();
 IWorldParameters::~IWorldParameters()
 {}
 
-void IWorldParameters::handleDebugRender(const World* world, rendering::FrameParams& params) const
+void IWorldParameters::handleDebugRender(const World* world, DebugGeometryCollector& params) const
 {}
 
 //---

@@ -12,7 +12,7 @@
 #include "gpu/device/include/device.h"
 #include "gpu/device/include/deviceService.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -108,4 +108,4 @@ CameraContext::~CameraContext()
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

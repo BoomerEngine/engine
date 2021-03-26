@@ -97,7 +97,7 @@ void ImageCubePreviewPanel::handleCamera(CameraSetup& outCamera) const
     outCamera.farPlane = 1500.0f;
 }
 
-void ImageCubePreviewPanel::handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& cameraSetup, const rendering::FrameParams_Capture* capture)
+void ImageCubePreviewPanel::handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& cameraSetup, const FrameParams_Capture* capture)
 {
     const Camera camera(cameraSetup);
 

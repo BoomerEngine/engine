@@ -201,7 +201,7 @@ bool ScenePlayInEditorViewport::handleMouseMovement(const InputMouseMovementEven
     return TBaseClass::handleMouseMovement(evt);
 }*/
 
-void ScenePlayInEditorViewport::handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& camera, const rendering::FrameParams_Capture* capture)
+void ScenePlayInEditorViewport::handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& camera, const FrameParams_Capture* capture)
 {
     if (m_screenStack)
     {

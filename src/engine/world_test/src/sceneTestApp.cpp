@@ -127,6 +127,7 @@ bool SceneTestProject::createRenderingOutput()
     setup.m_class = gpu::OutputClass::Window;
 	setup.m_windowStartInFullScreen = false;
 	setup.m_windowAllowFullscreenToggle = true;
+    setup.m_windowInputContextGameMode = true;
 
     // create rendering output
     m_renderingOutput = GetService<DeviceService>()->device()->createOutput(setup);
@@ -347,10 +348,22 @@ void SceneTestProject::renderCanvas(Canvas& canvas)
                 Color::RED, 16, FontAlignmentHorizontal::Right);
         }
 
-        /*canvas.placement(canvas.width() - 20, canvas.height() - 40);
-        Print(canvas,
-            TempString("Camera Rotation: [P={}, Y={}]", Prec(m_lastCamera.rotation().pitch, 1), Prec(m_lastCamera.rotation().yaw, 1)),
-            Color::WHITE, 16, FontAlignmentHorizontal::Right);*/
+        if (m_currentTest)
+        {
+            CameraSetup camera;
+            if (m_currentTest->camera())
+                m_currentTest->camera()->evaluateCamera(camera);
+
+            const auto rot = camera.rotation.toRotator();
+
+            canvas.debugPrint(canvas.width() - 20, canvas.height() - 80,
+                TempString("Camera Position: [X={}, Y={}, Z={}]", Prec(camera.position.x, 2), Prec(camera.position.y, 2), Prec(camera.position.z, 2)),
+                Color::WHITE, 16, FontAlignmentHorizontal::Right);
+
+            canvas.debugPrint(canvas.width() - 20, canvas.height() - 60,
+                TempString("Camera Rotation: [P={}, Y={}]", Prec(rot.pitch, 1), Prec(rot.yaw, 1)),
+                Color::WHITE, 16, FontAlignmentHorizontal::Right);
+        }
 
         if (!m_timeAdvance)
         {
@@ -382,7 +395,7 @@ void SceneTestProject::renderCanvas(Canvas& canvas)
         if (m_currentTest)
             m_currentTest->configure();
 
-        rendering::RenderStatsGui(m_lastFrameStats);
+        RenderStatsGui(m_lastFrameStats);
 
 		m_imguiHelper->endFrame(canvas);
     }

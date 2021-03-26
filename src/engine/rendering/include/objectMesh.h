@@ -13,7 +13,7 @@
 #include "core/object/include/objectSelection.h"
 #include "engine/material/include/runtimeService.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 ///---
 
@@ -274,4 +274,4 @@ private:
 
 ///---
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

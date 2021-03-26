@@ -14,7 +14,7 @@
 #include "core/containers/include/staticStructurePool.h"
 #include "core/containers/include/queue.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 ///--
 
@@ -129,4 +129,4 @@ private:
 
 ///--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

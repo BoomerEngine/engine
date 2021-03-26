@@ -74,7 +74,7 @@ public:
     //--
 
     // render edit mode content, called for each panel separately
-    virtual void handleRender(ScenePreviewPanel* panel, rendering::FrameParams& frame);
+    virtual void handleRender(ScenePreviewPanel* panel, DebugGeometryCollector& debug);
 
     // handle custom viewport click (if no handler is returned we default to camera movement/selection)
     virtual ui::InputActionPtr handleMouseClick(ScenePreviewPanel* panel, const InputMouseClickEvent& evt);

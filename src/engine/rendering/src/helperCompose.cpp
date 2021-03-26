@@ -24,7 +24,7 @@
 #include "core/containers/include/stringBuilder.h"
 #include "core/resource/include/staticResource.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -111,4 +111,4 @@ void FrameHelperCompose::finalCompose(gpu::CommandWriter& cmd, const Setup& setu
 
 //---
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

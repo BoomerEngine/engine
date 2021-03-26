@@ -354,7 +354,7 @@ INLINE float Vector3::operator|(const Vector3 &other) const
 
 INLINE Vector3 Vector3::operator^(const Vector3 &other) const
 {
-    return *this, other;
+    return Vector3(y * other.z - z * other.y, z * other.x - x * other.z, x * other.y - y * other.x);
 }
 
 INLINE float Vector3::operator[](int index) const

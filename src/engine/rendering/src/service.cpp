@@ -22,7 +22,7 @@
 #include "gpu/device/include/commandBuffer.h"
 #include "core/resource/include/loader.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -72,7 +72,7 @@ void FrameRenderingService::onSyncUpdate()
 
 }
 
-gpu::CommandBuffer* FrameRenderingService::render(const FrameParams& frame, const gpu::AcquiredOutput& output, RenderingScene* scene, FrameStats& outStats)
+gpu::CommandBuffer* FrameRenderingService::render(const FrameParams& frame, const gpu::AcquiredOutput& output, RenderingScene* scene, const DebugGeometryCollector* debug, FrameStats& outStats)
 {
     PC_SCOPE_LVL0(RenderFrame);
 
@@ -92,7 +92,7 @@ gpu::CommandBuffer* FrameRenderingService::render(const FrameParams& frame, cons
         gpu::CommandWriter cmd("RenderFrame");
 
         // create frame renderer
-        FrameRenderer renderer(frame, output, *m_sharedResources, *m_sharedHelpers, scene);
+        FrameRenderer renderer(frame, output, *m_sharedResources, *m_sharedHelpers, scene, debug);
 
         // prepare renderer
         renderer.prepare(cmd);
@@ -171,4 +171,4 @@ gpu::CommandBuffer* FrameRenderingService::render(const FrameParams& frame, cons
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

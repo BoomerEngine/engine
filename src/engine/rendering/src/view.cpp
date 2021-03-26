@@ -17,7 +17,7 @@
 #include "gpu/device/include/descriptor.h"
 #include "gpu/device/include/commandWriter.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -476,4 +476,4 @@ void FrameViewSingleCamera::bindCamera(gpu::CommandWriter& cmd)
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

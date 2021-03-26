@@ -44,7 +44,7 @@ public:
     virtual void configureEditMenu(ui::MenuButtonContainer* menu) override;
     virtual void configureViewMenu(ui::MenuButtonContainer* menu) override;
 
-    virtual void handleRender(ScenePreviewPanel* panel, rendering::FrameParams& frame) override;
+    virtual void handleRender(ScenePreviewPanel* panel, DebugGeometryCollector& debug) override;
     virtual ui::InputActionPtr handleMouseClick(ScenePreviewPanel* panel, const InputMouseClickEvent& evt) override;
     virtual bool handleKeyEvent(ScenePreviewPanel* panel, const InputKeyEvent& evt) override;
     virtual void handleContextMenu(ScenePreviewPanel* panel, bool ctrl, bool shift, const ui::Position& absolutePosition, const Point& clientPosition, const Selectable& objectUnderCursor, const ExactPosition* positionUnderCursor) override;
@@ -216,7 +216,7 @@ protected:
 
     RefWeakPtr<SceneObjectDragDropCreationHandler> m_dragDropHandler;
 
-    void renderDragDrop(ScenePreviewPanel* panel, rendering::FrameParams& frame);
+    void renderDragDrop(ScenePreviewPanel* panel, DebugGeometryCollector& debug);
     void updateDragDrop();
 
     //--

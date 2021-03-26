@@ -172,7 +172,7 @@ public:
     //--
 
     /// render debug elements
-    virtual void handleDebugRender(rendering::FrameParams& frame) const;
+    virtual void handleDebugRender(DebugGeometryCollector& frame) const;
 
     /// handle game input event
     virtual bool handleInput(const InputEvent& evt);

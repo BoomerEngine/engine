@@ -185,6 +185,9 @@ ClassType TypeSystem::findClass(StringID name)
 {
     ScopeLock<> lock(m_typesLock);
 
+    if (!name)
+        return nullptr;
+
     Type type = nullptr;
     if (m_types.find(name, type))
         return type.toClass();

@@ -18,7 +18,7 @@ BEGIN_BOOMER_NAMESPACE_EX(assets)
 //--
 
 RTTI_BEGIN_TYPE_ENUM(MeshImportUnits);
-    RTTI_OLD_NAME("rendering::MeshImportUnits");
+    RTTI_OLD_NAME("MeshImportUnits");
     RTTI_ENUM_OPTION(Auto);
     RTTI_ENUM_OPTION(Meters);
     RTTI_ENUM_OPTION(Centimeters);
@@ -29,7 +29,7 @@ RTTI_BEGIN_TYPE_ENUM(MeshImportUnits);
 //--
 
 RTTI_BEGIN_TYPE_ENUM(MeshImportSpace);
-    RTTI_OLD_NAME("rendering::MeshImportSpace");
+    RTTI_OLD_NAME("MeshImportSpace");
     RTTI_ENUM_OPTION(Auto);
     RTTI_ENUM_OPTION(RightHandZUp);
     RTTI_ENUM_OPTION(RightHandYUp);
@@ -40,7 +40,7 @@ RTTI_END_TYPE();
 //--
 
 RTTI_BEGIN_TYPE_ENUM(MeshDataRecalculationMode);
-    RTTI_OLD_NAME("rendering::MeshDataRecalculationMode");
+    RTTI_OLD_NAME("MeshDataRecalculationMode");
     RTTI_ENUM_OPTION(Never);
     RTTI_ENUM_OPTION(WhenMissing);
     RTTI_ENUM_OPTION(Always);
@@ -48,7 +48,7 @@ RTTI_BEGIN_TYPE_ENUM(MeshDataRecalculationMode);
 RTTI_END_TYPE();
 
 RTTI_BEGIN_TYPE_ENUM(MeshNormalComputationMode);
-    RTTI_OLD_NAME("rendering::MeshNormalComputationMode");
+    RTTI_OLD_NAME("MeshNormalComputationMode");
     RTTI_ENUM_OPTION(Flat);
     RTTI_ENUM_OPTION(FaceUniform);
     RTTI_ENUM_OPTION(FaceArea);
@@ -57,7 +57,7 @@ RTTI_END_TYPE();
 //--
 
 RTTI_BEGIN_TYPE_CLASS(MeshImportConfig);
-    RTTI_OLD_NAME("rendering::MeshImportConfig");
+    RTTI_OLD_NAME("MeshImportConfig");
     RTTI_CATEGORY("Import space");
     RTTI_PROPERTY(units).editable().overriddable();
     RTTI_PROPERTY(space).editable().overriddable();

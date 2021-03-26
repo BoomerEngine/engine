@@ -67,9 +67,9 @@ struct ENGINE_WORLD_API WorldStats
 struct ENGINE_WORLD_API WorldRenderingContext
 {
     CameraSetup cameraSetup;
-    rendering::CameraContextPtr cameraContext = nullptr;
+    CameraContextPtr cameraContext = nullptr;
 
-    typedef std::function<void(rendering::FrameParams& frame)> TFrameRenderCallback;
+    typedef std::function<void(FrameParams& frame, DebugGeometryCollector& debug)> TFrameRenderCallback;
     TFrameRenderCallback callback;
 };
 
@@ -84,7 +84,7 @@ struct ENGINE_WORLD_API WorldCreationSetup
     bool hasStreaming = true;
     bool editor = false;
 
-    const rendering::RenderingScene* existingRenderingScene = nullptr;
+    const RenderingScene* existingRenderingScene = nullptr;
 };
 
 ///----
@@ -263,7 +263,7 @@ public:
     //--
 
     /// render the debug fragments
-    void renderDebugFragments(rendering::FrameParams& info);
+    void renderDebugFragments(DebugGeometryCollector& debug);
 
     /// render special debug GUI with ImGui
     void renderDebugGui();

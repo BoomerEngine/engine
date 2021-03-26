@@ -20,5 +20,6 @@ Dependency("engine_imgui")
 Dependency("engine_texture")
 Dependency("engine_material")
 Dependency("engine_mesh")
+Dependency("engine_atlas")
 
 Dependency("gpu_device")

@@ -63,7 +63,7 @@ public:
     virtual void handlePostTransform(double dt);
 
     /// render debug fragments for this system
-    virtual void handleDebugRender(rendering::FrameParams& info);
+    virtual void handleDebugRender(DebugGeometryCollector& info);
 
     /// render ImGui debug interface
     virtual void handleImGuiDebugInterface();

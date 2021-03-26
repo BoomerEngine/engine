@@ -11,7 +11,7 @@
 #include "debugGeometry.h"
 #include "filters.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 ///---
 
@@ -23,7 +23,7 @@ struct ENGINE_RENDERING_API FrameParams_Resolution
 
     uint8_t msaaLevel = 1; // disabled
 
-    FrameParams_Resolution(uint32_t width_, uint32_t height_);
+    FrameParams_Resolution();
 
     float aspect() const; // width/height
 };
@@ -36,7 +36,7 @@ struct ENGINE_RENDERING_API FrameParams_Camera
     Camera camera;
     CameraContext* cameraContext = nullptr;
 
-    FrameParams_Camera(const Camera& camera);
+    FrameParams_Camera();
 };
 
 ///---
@@ -207,19 +207,6 @@ struct ENGINE_RENDERING_API FrameParams_ColorGrading
     FrameParams_ColorGrading();
 };
 
-//---
-
-/// collected debug geometry to render
-struct ENGINE_RENDERING_API FrameParams_DebugGeometry
-{
-    DebugGeometry solid;
-    DebugGeometry transparent;
-    DebugGeometry overlay;
-    DebugGeometry screen;
-
-    FrameParams_DebugGeometry();
-};
-
 //----
 
 /// selection outline parameters
@@ -278,7 +265,6 @@ struct ENGINE_RENDERING_API FrameParams : public NoCopy
     FrameParams_Resolution resolution;
     FrameParams_Capture capture;
     FrameParams_GlobalLighting globalLighting;
-    FrameParams_DebugGeometry geometry;
     FrameParams_DebugData debug;
     FrameParams_ToneMapping toneMapping;
     FrameParams_ExposureAdaptation exposureAdaptation;
@@ -297,9 +283,9 @@ struct ENGINE_RENDERING_API FrameParams : public NoCopy
 
     //--
 
-    FrameParams(uint32_t width, uint32_t height, const Camera& camera);
+    FrameParams();
 };
 
 //---
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

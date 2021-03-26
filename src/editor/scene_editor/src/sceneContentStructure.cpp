@@ -31,10 +31,10 @@ SceneContentStructure::SceneContentStructure(SceneContentNodeType rootNodeType)
 SceneContentStructure::~SceneContentStructure()
 {}
 
-void SceneContentStructure::handleDebugRender(rendering::FrameParams& frame) const
+void SceneContentStructure::handleDebugRender(DebugGeometryCollector& debug) const
 {
     for (const auto& ent : m_nodes)
-        ent->handleDebugRender(frame);
+        ent->handleDebugRender(debug);
 }
 
 SceneContentNode* SceneContentStructure::findNodeByPath(StringView path) const

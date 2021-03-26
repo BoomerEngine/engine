@@ -185,7 +185,7 @@ bool RenderingPanel::parepareRenderTargets(Point requiredSize, gpu::AcquiredOutp
 	return true;
 }
 
-void RenderingPanel::renderCaptureScene(const CameraSetup& camera, const rendering::FrameParams_Capture* capture)
+void RenderingPanel::renderCaptureScene(const CameraSetup& camera, const FrameParams_Capture* capture)
 {
 	const auto size = Point(cachedDrawArea().size());
 

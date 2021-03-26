@@ -14,4 +14,6 @@ Dependency("core_math")
 Dependency("core_image")
 Dependency("core_app")
 
+--Dependency("gpu_device")
+
 Dependency("lib_freetype2")

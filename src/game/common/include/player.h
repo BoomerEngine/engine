@@ -68,7 +68,7 @@ public:
     virtual void handleRender(IGameScreen* screen, gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, float visibility);
 
 private:
-    rendering::CameraContextPtr m_cameraContext;
+    CameraContextPtr m_cameraContext;
 };
 
 //--

@@ -10,7 +10,7 @@
 #include "stats.h"
 #include "engine/imgui/include/imgui.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -344,4 +344,4 @@ void RenderStatsGui(const FrameStats& frameStats)
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

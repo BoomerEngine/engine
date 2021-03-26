@@ -33,7 +33,7 @@ public:
     bool hitTest(const Point& point, const ui::ViewportCameraSetup& viewport, float hitDistance, float& outMinDistance);
 
     /// render the lines
-    void render(rendering::FrameParams& frame, Color lineColor, float lineWidth);
+    void render(DebugGeometryCollector& debug, Color lineColor, float lineWidth);
 
 private:
     bool m_cachedPointsValid = false;

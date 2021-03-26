@@ -81,8 +81,8 @@ public:
     //--
 
 private:
-    uint32_t m_objectID;
-    uint32_t m_subObjectID;
+    uint32_t m_objectID = 0;
+    uint32_t m_subObjectID = 0;
 };
 
 //---

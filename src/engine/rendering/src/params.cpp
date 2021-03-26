@@ -9,19 +9,17 @@
 #include "build.h"
 #include "params.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
 ConfigProperty<float> cvFrameResolutionScaleFactor("Rendering.Viewport", "ResolutionScaleFactor", 1.0f);
 ConfigProperty<int> cvFrameDefaultMSAALevel("Rendering.Viewport", "DefaultMSAA", 0);
 
-FrameParams_Resolution::FrameParams_Resolution(uint32_t width_, uint32_t height_)
-    : width(width_)
-    , height(height_)
+FrameParams_Resolution::FrameParams_Resolution()
 {
-    width = (uint32_t)std::clamp<float>(std::roundf(cvFrameResolutionScaleFactor.get() * width_), 0.0f, 32738.0f);
-    height = (uint32_t)std::clamp<float>(std::roundf(cvFrameResolutionScaleFactor.get() * height_), 0.0f, 32738.0f);
+    /*width = (uint32_t)std::clamp<float>(std::roundf(cvFrameResolutionScaleFactor.get() * width_), 0.0f, 32738.0f);
+    height = (uint32_t)std::clamp<float>(std::roundf(cvFrameResolutionScaleFactor.get() * height_), 0.0f, 32738.0f);*/
 
     if (cvFrameDefaultMSAALevel.get() > 0)
         msaaLevel = cvFrameDefaultMSAALevel.get();
@@ -53,8 +51,7 @@ RTTI_END_TYPE();
 
 //--
 
-FrameParams_Camera::FrameParams_Camera(const Camera& camera_)
-    : camera(camera_)
+FrameParams_Camera::FrameParams_Camera()
 {
 }
 
@@ -145,11 +142,6 @@ FrameParams_AmbientOcclusion::FrameParams_AmbientOcclusion()
 
 //--
 
-FrameParams_DebugGeometry::FrameParams_DebugGeometry()
-{}
-
-//--
-
 static ConfigProperty<Color> cvSelectionOutlineBackColor("Rendering.Selection", "OutlineColorBack", Color(200, 200, 30));
 //static ConfigProperty<Color> cvSelectionOutlineFrontColor("Rendering.Cascades", "OutlineColorFront", Color(30, 30, 200));
 static ConfigProperty<Color> cvSelectionOutlineFrontColor("Rendering.Selection", "OutlineColorFront", Color(200, 200, 30));
@@ -195,9 +187,7 @@ FrameParams_ShadowCascades::FrameParams_ShadowCascades()
 
 //--
 
-FrameParams::FrameParams(uint32_t width, uint32_t height, const Camera& camera_)
-    : camera(camera_)
-    , resolution(width, height)
+FrameParams::FrameParams()
 {}
 
 float FrameParams::screenSpaceScalingFactor(const Vector3& pos) const
@@ -230,4 +220,4 @@ bool FrameParams::screenPosition(const Vector3& center, Vector3& outScreenPos, i
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

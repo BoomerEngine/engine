@@ -27,8 +27,8 @@ public:
 
     INLINE bool visible() const { return m_visible; }
 
-    INLINE rendering::IRenderingObject* renderingProxyObject() const { return m_proxyObject; }
-    INLINE rendering::IRenderingObjectManager* renderingProxyManager() const { return m_proxyManager; }
+    INLINE IRenderingObject* renderingProxyObject() const { return m_proxyObject; }
+    INLINE IRenderingObjectManager* renderingProxyManager() const { return m_proxyManager; }
 
     //---
 
@@ -38,10 +38,10 @@ public:
     //---
 
 protected:
-    rendering::RenderingObjectPtr m_proxyObject = nullptr;
-    rendering::IRenderingObjectManager* m_proxyManager = nullptr;
+    RenderingObjectPtr m_proxyObject = nullptr;
+    IRenderingObjectManager* m_proxyManager = nullptr;
 
-    virtual void createRenderingProxy(rendering::RenderingScene* scene, rendering::RenderingObjectPtr& outProxy, rendering::IRenderingObjectManager*& outManager) const = 0;
+    virtual void createRenderingProxy(RenderingScene* scene, RenderingObjectPtr& outProxy, IRenderingObjectManager*& outManager) const = 0;
 
     virtual void handleAttach() override;
     virtual void handleDetach() override;

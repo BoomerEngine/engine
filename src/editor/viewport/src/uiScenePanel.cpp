@@ -36,18 +36,18 @@ BEGIN_BOOMER_NAMESPACE_EX(ui)
 
 //--
 
-static StringView RenderModeString(rendering::FrameRenderMode mode)
+static StringView RenderModeString(FrameRenderMode mode)
 {
     switch (mode)
     {
-    case rendering::FrameRenderMode::Default: return "[img:viewmode] Default";
-    case rendering::FrameRenderMode::WireframeSolid: return "[img:cube] Solid Wireframe";
-    case rendering::FrameRenderMode::WireframePassThrough: return "[img:wireframe] Wire Wireframe";
-    case rendering::FrameRenderMode::DebugDepth: return "[img:order_front] Debug Depth";
-    case rendering::FrameRenderMode::DebugLuminance: return "[img:lightbulb] Debug Luminance";
-    case rendering::FrameRenderMode::DebugShadowMask: return "[img:shadow_on] Debug Shadowmask";
-    case rendering::FrameRenderMode::DebugAmbientOcclusion: return "[img:shader] Debug Ambient Occlusion";
-    case rendering::FrameRenderMode::DebugReconstructedViewNormals: return "[img:axis] Debug Normals";
+    case FrameRenderMode::Default: return "[img:viewmode] Default";
+    case FrameRenderMode::WireframeSolid: return "[img:cube] Solid Wireframe";
+    case FrameRenderMode::WireframePassThrough: return "[img:wireframe] Wire Wireframe";
+    case FrameRenderMode::DebugDepth: return "[img:order_front] Debug Depth";
+    case FrameRenderMode::DebugLuminance: return "[img:lightbulb] Debug Luminance";
+    case FrameRenderMode::DebugShadowMask: return "[img:shadow_on] Debug Shadowmask";
+    case FrameRenderMode::DebugAmbientOcclusion: return "[img:shader] Debug Ambient Occlusion";
+    case FrameRenderMode::DebugReconstructedViewNormals: return "[img:axis] Debug Normals";
     }
 
     return "";
@@ -284,7 +284,7 @@ RTTI_END_TYPE();
 
 RenderingScenePanelSettings::RenderingScenePanelSettings()
 {
-    filters = rendering::FrameFilterFlags::DefaultEditor();
+    filters = FrameFilterFlags::DefaultEditor();
 }
 
 //---
@@ -292,7 +292,7 @@ RenderingScenePanelSettings::RenderingScenePanelSettings()
 RenderingScenePanel::RenderingScenePanel()
     : m_updateTimer(this, "Update"_id)
 {
-    m_cameraContext = RefNew<rendering::CameraContext>();
+    m_cameraContext = RefNew<CameraContext>();
 
     m_lastUpdateTime.resetToNow();
     m_updateTimer = [this]() {
@@ -912,25 +912,25 @@ bool RenderingScenePanel::handleContextMenu(const ElementArea& area, const Posit
     return true;
 }
 
-void RenderingScenePanel::handleFrame(rendering::FrameParams& frame)
+void RenderingScenePanel::handleFrame(FrameParams& frame, DebugGeometryCollector& debug)
 {
     // draw grid
-    if (m_panelSettings.drawInternalGrid && (frame.filters & rendering::FrameFilterBit::ViewportWorldGrid))
-        drawGrid(frame);
+    if (m_panelSettings.drawInternalGrid)
+        drawGrid(debug);
 
     // draw world axes
-    if (m_panelSettings.drawInternalWorldAxis && (frame.filters & rendering::FrameFilterBit::ViewportWorldAxes))
+    if (m_panelSettings.drawInternalWorldAxis)
     {
-        rendering::DebugDrawer dd(frame.geometry.solid);
-        dd.axes(Matrix::IDENTITY(), 1.0f);
+        /*DebugDrawer dd(frame.geometry.solid);
+        dd.axes(Matrix::IDENTITY(), 1.0f);*/
     }
 
     // draw screen axis
-    if (m_panelSettings.drawInternalCameraAxis && (frame.filters & rendering::FrameFilterBit::ViewportCameraAxes))
+    if (m_panelSettings.drawInternalCameraAxis)
         drawViewAxes(cachedDrawArea().size().x, cachedDrawArea().size().y, frame);
 
     // draw camera info
-    if (m_panelSettings.drawInternalCameraData && (frame.filters & rendering::FrameFilterBit::ViewportCameraInfo))
+    if (m_panelSettings.drawInternalCameraData)
         drawCameraInfo(cachedDrawArea().size().x, cachedDrawArea().size().y, frame);
 
     // use the selected render mode
@@ -942,11 +942,11 @@ void RenderingScenePanel::handleFrame(rendering::FrameParams& frame)
         //  action->onRender3D(frame);
 }
 
-void RenderingScenePanel::drawGrid(rendering::FrameParams& frame)
+void RenderingScenePanel::drawGrid(DebugGeometryCollector& frame)
 {
     static Array<Vector3> points;
 
-    const float z = -0.01f - std::log10f(std::max<float>(0.0f, frame.camera.camera.position().length())) * 0.05f;
+    const float z = -0.01f - std::log10f(std::max<float>(0.0f, frame.camera().position().length())) * 0.05f;
 
     if (points.empty())
     {
@@ -1030,7 +1030,7 @@ void RenderingScenePanel::drawGrid(rendering::FrameParams& frame)
     }
 
     {
-        rendering::DebugDrawer dd(frame.geometry.solid);
+        /*DebugDrawer dd(frame.geometry.solid);
         dd.color(Color(100, 100, 100));
         dd.lines(points.typedData(), points.size());
 
@@ -1040,19 +1040,19 @@ void RenderingScenePanel::drawGrid(rendering::FrameParams& frame)
         centerLines[2] = Vector3(0.0f, -1000.0f, z);
         centerLines[3] = Vector3(0.0f, 1000.0f, z);
         dd.color(Color(130, 150, 150));
-        dd.lines(centerLines, 4);
+        dd.lines(centerLines, 4);*/
     }
 }
 
-void RenderingScenePanel::drawViewAxes(uint32_t width, uint32_t height, rendering::FrameParams& frame)
+void RenderingScenePanel::drawViewAxes(DebugGeometryCollector& frame)
 {
     // calculate placement
     auto scale = cvViewportAxisLength.get() * 1.0f;// cachedStyleParams().m_scale;
     auto bx = 15.0f + scale;
-    auto by = height - 15.0f - scale;
+    auto by = frame.viewportHight()- 15.0f - scale;
 
     // build orientation matrix using
-    auto orientationMatrix = frame.camera.camera.worldToCamera() * CameraSetup::CameraToView;
+    auto orientationMatrix = frame.camera().worldToCamera() * CameraSetup::CameraToView;
 
     // project the view axes
     BaseTransformation t(orientationMatrix);
@@ -1086,17 +1086,17 @@ void RenderingScenePanel::drawViewAxes(uint32_t width, uint32_t height, renderin
     dd.text(tz.x, tz.y, "Z");*/
 }
 
-void RenderingScenePanel::drawCameraInfo(uint32_t width, uint32_t height, rendering::FrameParams& frame)
+void RenderingScenePanel::drawCameraInfo(DebugGeometryCollector& frame)
 {
-    auto bx = width - 20;
-    auto by = height - 20;
+    auto bx = frame.viewportWidth() - 20;
+    auto by = frame.viewportHeight() - 20;
 
     auto pos = m_cameraController.settings().position;
     auto rot = m_cameraController.settings().rotation;
 
-    auto params = rendering::DebugTextParams().right().bottom().color(Color::WHITE);
-    rendering::DebugDrawer dd(frame.geometry.screen);
-    dd.text(bx, by, TempString("Camera [{}, {}, {}], Pitch: {}, Yaw: {}", Prec(pos.x, 1), Prec(pos.y, 1), Prec(pos.z, 1), Prec(rot.pitch, 1), Prec(rot.yaw, 1)), params);
+    auto params = DebugTextParams().right().bottom().color(Color::WHITE);
+    //DebugDrawer dd(frame.geometry.screen);
+    //dd.text(bx, by, TempString("Camera [{}, {}, {}], Pitch: {}, Yaw: {}", Prec(pos.x, 1), Prec(pos.y, 1), Prec(pos.z, 1), Prec(rot.pitch, 1), Prec(rot.yaw, 1)), params);
 }
 
 void RenderingScenePanel::rotateGlobalLight(float deltaPitch, float deltaYaw)
@@ -1164,7 +1164,7 @@ RefPtr<RenderingPanelSelectionQuery> RenderingScenePanel::querySelection(const R
     auto renderAreaHeight = (int)cachedDrawArea().size().y;
 
     // clamp the area
-    rendering::FrameParams_Capture capture;
+    FrameParams_Capture capture;
     if (captureArea)
     {
         auto captureAreaMinX = std::clamp<int>(captureArea->min.x, 0, renderAreaWidth);
@@ -1186,7 +1186,7 @@ RefPtr<RenderingPanelSelectionQuery> RenderingScenePanel::querySelection(const R
 
     // prepare capture settings
     capture.sink = captureBuffer;
-    capture.mode = rendering::FrameCaptureMode::SelectionRect;
+    capture.mode = FrameCaptureMode::SelectionRect;
 
     // render the capture frame
     CameraSetup camera;
@@ -1261,7 +1261,7 @@ RefPtr<RenderingPanelDepthBufferQuery> RenderingScenePanel::queryDepth(const Rec
     auto renderAreaHeight = (int)cachedDrawArea().size().y;
 
     // clamp the area
-    rendering::FrameParams_Capture capture;
+    FrameParams_Capture capture;
     if (captureArea)
     {
         auto captureAreaMinX = std::clamp<int>(captureArea->min.x, 0, renderAreaWidth);
@@ -1283,7 +1283,7 @@ RefPtr<RenderingPanelDepthBufferQuery> RenderingScenePanel::queryDepth(const Rec
 
     // prepare capture settings
     capture.sink = captureImage;
-    capture.mode = rendering::FrameCaptureMode::DepthRect;
+    capture.mode = FrameCaptureMode::DepthRect;
 
     // render the capture frame
     CameraSetup captureCamera;
@@ -1301,18 +1301,21 @@ void RenderingScenePanel::handlePostRenderContent()
 
 }
 
-void RenderingScenePanel::handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& cameraSetup, const rendering::FrameParams_Capture* capture)
+void RenderingScenePanel::handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& cameraSetup, const FrameParams_Capture* capture)
 {
     // create camera
     Camera cameraData;
     cameraData.setup(cameraSetup);
 
     // create frame and render scene content into it
-    rendering::FrameParams frame(output.width, output.height, cameraData);
+    FrameParams frame;
     if (capture)
         frame.capture = *capture;
 
     // setup params
+    frame.resolution.width = output.width;
+    frame.resolution.height = output.height;
+    frame.camera.camera = cameraData;
     frame.index = m_frameIndex++;
     frame.filters = m_panelSettings.filters;
     frame.cascades.numCascades = 3;
@@ -1324,12 +1327,15 @@ void RenderingScenePanel::handleRender(gpu::CommandWriter& cmd, const gpu::Acqui
     // debug stuff
     calculateCurrentPixelUnderCursor(frame.debug.mouseHoverPixel);
 
+    // debug data
+    DebugGeometryCollector debug(output.width, output.height, cameraSetup);
+
     // render to frame
-    handleFrame(frame);
+    handleFrame(frame, debug);
 
     // generate command buffers
-    m_frameStats = rendering::FrameStats();
-    if (auto* childCmd = GetService<rendering::FrameRenderingService>()->render(frame, output, scene(), m_frameStats))
+    m_frameStats = FrameStats();
+    if (auto* childCmd = GetService<FrameRenderingService>()->render(frame, output, scene(), m_frameStats))
         cmd.opAttachChildCommandBuffer(childCmd);
 
     // update 
@@ -1364,22 +1370,22 @@ void RenderingScenePanel::createToolbarItems()
         };
 }
 
-static const rendering::FrameRenderMode USER_SELECTABLE_RENDER_MODES[] = {
-rendering::FrameRenderMode::Default,
-rendering::FrameRenderMode::WireframeSolid,
-rendering::FrameRenderMode::WireframePassThrough,
-rendering::FrameRenderMode::DebugDepth,
-rendering::FrameRenderMode::DebugLuminance,
-rendering::FrameRenderMode::DebugShadowMask,
-rendering::FrameRenderMode::DebugReconstructedViewNormals,
-rendering::FrameRenderMode::DebugAmbientOcclusion,
+static const FrameRenderMode USER_SELECTABLE_RENDER_MODES[] = {
+FrameRenderMode::Default,
+FrameRenderMode::WireframeSolid,
+FrameRenderMode::WireframePassThrough,
+FrameRenderMode::DebugDepth,
+FrameRenderMode::DebugLuminance,
+FrameRenderMode::DebugShadowMask,
+FrameRenderMode::DebugReconstructedViewNormals,
+FrameRenderMode::DebugAmbientOcclusion,
 };
 
 void RenderingScenePanel::buildRenderModePopup(ui::MenuButtonContainer* menu)
 {
     for (auto mode : USER_SELECTABLE_RENDER_MODES)
     {
-        if (mode == rendering::FrameRenderMode::DebugDepth)
+        if (mode == FrameRenderMode::DebugDepth)
             menu->createSeparator();
 
         if (auto title = RenderModeString(mode))
@@ -1392,11 +1398,11 @@ void RenderingScenePanel::buildRenderModePopup(ui::MenuButtonContainer* menu)
     menu->createSeparator();
 }
 
-void RenderingScenePanel::createFilterItem(StringView prefix, const rendering::FrameFilterBitInfo* bitInfo, MenuButtonContainer* menu)
+void RenderingScenePanel::createFilterItem(StringView prefix, const FrameFilterBitInfo* bitInfo, MenuButtonContainer* menu)
 {
     StringBuf name = prefix ? StringBuf(TempString("{}.{}", prefix, bitInfo->name)) : StringBuf(bitInfo->name.view());
 
-    if (bitInfo->bit != rendering::FrameFilterBit::MAX)
+    if (bitInfo->bit != FrameFilterBit::MAX)
     {
         const auto toggled = m_panelSettings.filters.test(bitInfo->bit);
 
@@ -1412,7 +1418,7 @@ void RenderingScenePanel::createFilterItem(StringView prefix, const rendering::F
 
 void RenderingScenePanel::buildFilterPopup(MenuButtonContainer* menu)
 {
-    if (const auto* group = rendering::GetFilterTree())
+    if (const auto* group = GetFilterTree())
     {
         for (const auto* child : group->children)
         {
@@ -1529,8 +1535,8 @@ RTTI_END_TYPE();
 
 RenderingSimpleScenePanel::RenderingSimpleScenePanel()
 {
-    const auto sceneType = rendering::RenderingSceneType::EditorPreview;
-    m_scene = RefNew<rendering::RenderingScene>(sceneType);
+    const auto sceneType = RenderingSceneType::EditorPreview;
+    m_scene = RefNew<RenderingScene>(sceneType);
 }
 
 RenderingSimpleScenePanel::~RenderingSimpleScenePanel()

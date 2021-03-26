@@ -129,10 +129,10 @@ struct EDITOR_VIEWPORT_API RenderingScenePanelSettings
     RTTI_DECLARE_NONVIRTUAL_CLASS(RenderingScenePanelSettings);
 
 public:
-    rendering::FrameRenderMode renderMode = rendering::FrameRenderMode::Default;
+    FrameRenderMode renderMode = FrameRenderMode::Default;
     StringID renderMaterialDebugChannelName;
 
-    rendering::FrameFilterFlags filters;
+    FrameFilterFlags filters;
 
     float cameraSpeedFactor = 1.0f;
     //bool cameraForceOrbit = false;
@@ -167,7 +167,7 @@ public:
     //--
 
     // get the scene to render :)
-    virtual rendering::RenderingScene* scene() const { return nullptr; }
+    virtual RenderingScene* scene() const { return nullptr; }
 
     //--
 
@@ -190,7 +190,7 @@ public:
     INLINE const ViewportCameraControllerSettings& cameraSettings() const { return m_cameraController.settings(); }
 
     // get last frame stats
-    INLINE const rendering::FrameStats& stats() const { return m_frameStats; }
+    INLINE const FrameStats& stats() const { return m_frameStats; }
 
     // change panel settings
     void panelSettings(const RenderingScenePanelSettings& settings);
@@ -229,8 +229,8 @@ protected:
 
     virtual void handleUpdate(float dt);
     virtual void handleCamera(CameraSetup& outCamera) const override;
-    virtual void handleFrame(rendering::FrameParams& frame);
-    virtual void handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& camera, const rendering::FrameParams_Capture* capture) override;
+    virtual void handleFrame(FrameParams& frame, DebugGeometryCollector& debug);
+    virtual void handleRender(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, const CameraSetup& camera, const FrameParams_Capture* capture) override;
     virtual void handlePointSelection(bool ctrl, bool shift, const Point& clientPosition);
     virtual void handleAreaSelection(bool ctrl, bool shift, const Rect& clientRect);
     virtual bool handleContextMenu(const ElementArea& area, const Position& absolutePosition, InputKeyMask controlKeys) override;
@@ -244,9 +244,9 @@ protected:
     virtual void buildFilterPopup(MenuButtonContainer* menu);
     virtual void buildCameraPopup(MenuButtonContainer* menu);
 
-	void drawViewAxes(uint32_t width, uint32_t height, rendering::FrameParams& frame);
-    void drawCameraInfo(uint32_t width, uint32_t height, rendering::FrameParams& frame);
-    void drawGrid(rendering::FrameParams& frame);
+	void drawViewAxes(DebugGeometryCollector& debug);
+    void drawCameraInfo(DebugGeometryCollector& debug);
+    void drawGrid(DebugGeometryCollector& debug);
 
     void rotateGlobalLight(float deltaPitch, float deltaYaw);
 
@@ -257,7 +257,7 @@ protected:
 protected:
     RenderingScenePanelSettings m_panelSettings;
 
-    rendering::FrameStats m_frameStats;
+    FrameStats m_frameStats;
 
 private:
     Timer m_updateTimer;
@@ -272,7 +272,7 @@ private:
 
     mutable Camera m_cachedCamera;
 
-    rendering::CameraContextPtr m_cameraContext;
+    CameraContextPtr m_cameraContext;
 
     RefWeakPtr<ui::IInputAction> m_renderInputAction;
 
@@ -282,7 +282,7 @@ private:
 
     //--
 
-    void createFilterItem(StringView prefix, const rendering::FrameFilterBitInfo* bitInfo, MenuButtonContainer* menu);
+    void createFilterItem(StringView prefix, const FrameFilterBitInfo* bitInfo, MenuButtonContainer* menu);
     void createToolbarItems();
 
     InputActionPtr createLeftMouseButtonCameraAction(const ElementArea& area, const InputMouseClickEvent& evt, bool allowSelection);
@@ -303,12 +303,12 @@ public:
 
     //--
 
-    virtual rendering::RenderingScene* scene() const override final { return m_scene; }
+    virtual RenderingScene* scene() const override final { return m_scene; }
 
     //--
 
 protected:
-    rendering::RenderingScenePtr m_scene;
+    RenderingScenePtr m_scene;
 };
 
 //---

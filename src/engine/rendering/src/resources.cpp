@@ -12,7 +12,7 @@
 
 #include "gpu/device/include/device.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 ///--
 
@@ -255,4 +255,4 @@ void FrameResources::adjust(uint32_t requiredWidth, uint32_t requiredHeight)
 
 ///--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

@@ -10,7 +10,7 @@
 
 #include "gpu/device/include/commandWriter.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //--
 
@@ -30,7 +30,7 @@ public:
 	FrameHelperDebug(gpu::IDevice* api); // initialized to the max resolution of the device
 	~FrameHelperDebug();
 
-    void render(DebugGeometryViewRecorder& rec, const FrameParams_DebugGeometry& geom, const Camera* camera) const;
+    void render(DebugGeometryViewRecorder& rec, const DebugGeometryCollector* debugGeometry, const Camera* camera) const;
 
 private:
 	gpu::IDevice* m_device = nullptr;
@@ -56,14 +56,14 @@ private:
 	mutable uint32_t m_maxVertexDataSize = 0;
 	mutable uint32_t m_maxIndexDataSize = 0;
 
-	void ensureBufferSize(const FrameParams_DebugGeometry& geom) const;
+	void ensureBufferSize(const DebugGeometryCollector* debugGeometry) const;
 
-	void renderInternal(gpu::CommandWriter& cmd, const Camera* camera, const DebugGeometry& geom, const Shaders& shaders) const;
+	void renderInternal(gpu::CommandWriter& cmd, const Camera* camera, const DebugGeometryCollector* debugGeometry, DebugGeometryLayer layer, const Shaders& shaders) const;
 
 	//--
 };
 
 //---
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()
 

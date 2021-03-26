@@ -18,7 +18,7 @@
 #include "gpu/device/include/descriptor.h"
 #include "gpu/device/include/buffer.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //----
 
@@ -158,4 +158,4 @@ void FrameViewCaptureSelection::initializeCommandStreams(gpu::CommandWriter& cmd
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

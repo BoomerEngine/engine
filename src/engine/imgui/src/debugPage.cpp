@@ -37,10 +37,6 @@ void IDebugPage::handleRender()
 {
 }
 
-void IDebugPage::handleRender3D(rendering::FrameParams& frame)
-{
-}
-
 //--
 
 END_BOOMER_NAMESPACE()

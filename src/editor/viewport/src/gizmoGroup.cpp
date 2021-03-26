@@ -66,7 +66,7 @@ GizmoRenderMode GizmoGroup::determineRenderMode(const IGizmo* gizmo) const
     return GizmoRenderMode::Idle;
 }
 
-void GizmoGroup::render(rendering::FrameParams& frame)
+void GizmoGroup::render(DebugGeometryCollector& debug)
 {
     // transform points
     alignGizmos();
@@ -81,7 +81,7 @@ void GizmoGroup::render(rendering::FrameParams& frame)
         if (m_activeGizmo != gizmo)
         {
             auto renderMode = determineRenderMode(gizmo);
-            gizmo->render(frame, renderMode);
+            gizmo->render(debug, renderMode);
         }
     }
 
@@ -91,13 +91,13 @@ void GizmoGroup::render(rendering::FrameParams& frame)
         if (m_activeGizmo == gizmo)
         {
             auto renderMode = determineRenderMode(gizmo);
-            gizmo->render(frame, renderMode);
+            gizmo->render(debug, renderMode);
         }
     }
 
     // render the gizmo into
     if (auto inputAction = m_activeInput.lock())
-        inputAction->onRender3D(frame);
+        inputAction->onRender3D(debug);
 }
 
 bool GizmoGroup::updateHover(const Point& clientPoint)

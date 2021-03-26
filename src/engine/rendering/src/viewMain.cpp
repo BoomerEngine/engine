@@ -22,7 +22,7 @@
 #include "gpu/device/include/image.h"
 #include "helperOutline.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //---
 
@@ -86,7 +86,7 @@ void FrameViewMain::render(gpu::CommandWriter& cmd)
         debugRec.transparent.attachBuffer(rec.forwardTransparent.opCreateChildCommandBuffer(false));
         debugRec.overlay.attachBuffer(rec.sceneOverlay.opCreateChildCommandBuffer(false));
         debugRec.screen.attachBuffer(rec.screenOverlay.opCreateChildCommandBuffer(false));
-        m_frame.helpers().debug->render(debugRec, m_frame.frame().geometry, &m_camera);
+        m_frame.helpers().debug->render(debugRec, m_frame.debug(), &m_camera);
     }
 
     // wait for all recording jobs to finish
@@ -480,4 +480,4 @@ void FrameView_Main::render(gpu::CommandWriter& parentCmd)
 //--
 #endif
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

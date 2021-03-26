@@ -31,7 +31,7 @@ void IInputAction::onCanceled()
 void IInputAction::onRender(Canvas& canvas)
 {}
 
-void IInputAction::onRender3D(rendering::FrameParams& frame)
+void IInputAction::onRender3D(DebugGeometryCollector& debug)
 {}
 
 void IInputAction::onUpdateCursor(CursorType& outCursorType)

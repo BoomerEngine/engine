@@ -18,7 +18,7 @@
 #include "gpu/device/include/descriptor.h"
 #include "gpu/device/include/image.h"
 
-BEGIN_BOOMER_NAMESPACE_EX(rendering)
+BEGIN_BOOMER_NAMESPACE()
 
 //----
 
@@ -113,4 +113,4 @@ void FrameViewCaptureDepth::initializeCommandStreams(gpu::CommandWriter& cmd, Fr
 
 //--
 
-END_BOOMER_NAMESPACE_EX(rendering)
+END_BOOMER_NAMESPACE()

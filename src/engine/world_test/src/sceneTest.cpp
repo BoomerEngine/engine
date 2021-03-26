@@ -33,7 +33,7 @@ static float MaxColor(const Vector3& color, float minMax = 1.0f)
 
 ISceneTest::GlobalLightingParams::GlobalLightingParams()
 {
-    auto params = rendering::FrameParams_GlobalLighting();
+    auto params = FrameParams_GlobalLighting();
 
     globalLightBrightness = MaxColor(params.globalLightColor);
     globalLightColor[0] = params.globalLightColor.x / globalLightBrightness;
@@ -53,7 +53,7 @@ ISceneTest::GlobalLightingParams::GlobalLightingParams()
     globalAmbientBrightness = log2f(globalLightBrightness / 0.1f);
 }
 
-void ISceneTest::GlobalLightingParams::pack(rendering::FrameParams_GlobalLighting& outParams) const
+void ISceneTest::GlobalLightingParams::pack(FrameParams_GlobalLighting& outParams) const
 {
     if (enableLightOverride)
     {
@@ -77,22 +77,22 @@ void ISceneTest::GlobalLightingParams::pack(rendering::FrameParams_GlobalLightin
 
 //--
 
-rendering::FrameFilterFlags ISceneTest::st_FrameFilterFlags = rendering::FrameFilterFlags::DefaultEditor();
-rendering::FrameRenderMode ISceneTest::st_FrameMode = rendering::FrameRenderMode::Default;
+FrameFilterFlags ISceneTest::st_FrameFilterFlags = FrameFilterFlags::DefaultEditor();
+FrameRenderMode ISceneTest::st_FrameMode = FrameRenderMode::Default;
 Angles ISceneTest::st_GlobalLightingRotation(70.0f, 40.0f, 0.0f);
 
 ISceneTest::GlobalLightingParams ISceneTest::st_GlobalLightingAdjust;
 
-rendering::FrameParams_ShadowCascades ISceneTest::st_CascadeAdjust;
+FrameParams_ShadowCascades ISceneTest::st_CascadeAdjust;
 bool ISceneTest::st_CascadeAdjustEnabled = false;
 
-rendering::FrameParams_ExposureAdaptation ISceneTest::st_GlobalExposureAdaptationAdjust;
+FrameParams_ExposureAdaptation ISceneTest::st_GlobalExposureAdaptationAdjust;
 bool ISceneTest::st_GlobalExposureAdaptationAdjustEnabled = false;
 
-rendering::FrameParams_ToneMapping ISceneTest::st_GlobalTonemappingAdjust;
+FrameParams_ToneMapping ISceneTest::st_GlobalTonemappingAdjust;
 bool ISceneTest::st_GlobalTonemappingAdjustEnabled = false;
 
-rendering::FrameParams_ColorGrading ISceneTest::st_GlobalColorGradingAdjust;
+FrameParams_ColorGrading ISceneTest::st_GlobalColorGradingAdjust;
 bool ISceneTest::st_GlobalColorGradingAdjustEnabled = false;
 
 //--
@@ -123,6 +123,7 @@ void ISceneTest::configure()
 
 void ISceneTest::initialize()
 {
+    m_cameraContext = RefNew<CameraContext>();
     recreateWorld();
 }
 
@@ -156,9 +157,10 @@ void ISceneTest::recreateWorld()
     }
 
     m_world->attachEntity(m_camera);
+    m_world->enableStreaming(true);
 }
 
-void ISceneTest::prepareFrame(rendering::FrameParams& info)
+void ISceneTest::prepareFrame(FrameParams& info)
 {
     info.filters = st_FrameFilterFlags;
     info.mode = st_FrameMode;
@@ -185,17 +187,33 @@ void ISceneTest::prepareFrame(rendering::FrameParams& info)
         info.colorGrading = st_GlobalColorGradingAdjust;
 }
 
-void ISceneTest::renderFrame(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, rendering::FrameStats& outStats, CameraSetup& outCamera)
+void ISceneTest::renderDebug(DebugGeometryCollector& debug)
+{
+
+}
+
+void ISceneTest::renderFrame(gpu::CommandWriter& cmd, const gpu::AcquiredOutput& output, FrameStats& outStats, CameraSetup& outCamera)
 {
     if (m_world)
     {
-        /*WorldRenderingContext context;
-        context.colorTarget = output.color;
-        context.depthTarget = output.depth;
-        context.viewportWidth = output.width;
-        context.viewportHeight = output.height;
-        context.viewEntity = m_camera;
-        m_world->renderViewport(cmd, context, outStats, outCamera);*/
+        CameraSetup cameraSetup;
+        cameraSetup.aspect = output.width / (float)output.height;
+        m_camera->evaluateCamera(cameraSetup);
+
+        WorldRenderingContext context;
+        context.cameraSetup = cameraSetup;
+        context.cameraContext = m_cameraContext;
+
+        context.callback = [this](FrameParams& frame, DebugGeometryCollector& debug)
+        {
+            prepareFrame(frame);
+            renderDebug(debug);
+        };
+
+        m_world->renderViewport(cmd, output, context);
+
+        outStats = m_world->system<WorldRenderingSystem>()->lastFrameStats();
+        outCamera = m_world->system<WorldRenderingSystem>()->lastCamera();
     }
 }
 
@@ -247,7 +265,7 @@ static void DrawEnumOptions(T& mode)
     }
 }
 
-static void DrawFilterNodes(const rendering::FrameFilterBitInfo* bit, rendering::FrameFilterFlags& flags)
+static void DrawFilterNodes(const FrameFilterBitInfo* bit, FrameFilterFlags& flags)
 {
     if (bit->children.empty())
     {
@@ -277,7 +295,7 @@ void ISceneTest::configureLocalAdjustments()
         }
 
 
-        const auto root = rendering::GetFilterTree();
+        const auto root = GetFilterTree();
         DrawFilterNodes(root, st_FrameFilterFlags);
         ImGui::End();
     }
