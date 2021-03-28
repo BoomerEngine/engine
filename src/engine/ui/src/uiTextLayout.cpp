@@ -565,15 +565,15 @@ namespace prv
                         displayImage.image = image;
                         displayImage.pixelScale = pixelScale;
                         displayImage.pos.x = std::floorf(lineX);
-                        displayImage.pos.y = baseY - (image.height * pixelScale);
+                        displayImage.pos.y = baseY - (image->height() * pixelScale);
                         displayImage.color = color;
                         displayImage.valaign = region.valign;
-                        lineX += image.width * pixelScale;
+                        lineX += image->width() * pixelScale;
 
                         if (region.valign == LayoutVerticalAlign::Baseline)
-                            lineTextAscender = std::max<float>(lineTextAscender, image.height * pixelScale);
+                            lineTextAscender = std::max<float>(lineTextAscender, image->height() * pixelScale);
                         else
-                            lineImageMaxHeight = std::max<float>(lineImageMaxHeight, image.height * pixelScale);
+                            lineImageMaxHeight = std::max<float>(lineImageMaxHeight, image->height() * pixelScale);
                     }
                 }
                 else
@@ -642,9 +642,9 @@ namespace prv
                     else if (image.valaign == LayoutVerticalAlign::Top)
                         image.pos.y = baseY;
                     else if (image.valaign == LayoutVerticalAlign::Middle)
-                        image.pos.y = baseY + (lineTotalHeight - (image.image.height * image.pixelScale)) / 2.0f;
+                        image.pos.y = baseY + (lineTotalHeight - (image.image->height() * image.pixelScale)) / 2.0f;
                     else if (image.valaign == LayoutVerticalAlign::Bottom)
-                        image.pos.y = baseY + lineTotalHeight - (image.image.height * image.pixelScale);
+                        image.pos.y = baseY + lineTotalHeight - (image.image->height() * image.pixelScale);
                 }
             }
 
@@ -731,8 +731,8 @@ namespace prv
                 b.pushTransform();
                 b.translate(icon.pos.x, icon.pos.y);
 
-                auto width = icon.image.width * icon.pixelScale;
-                auto height = icon.image.height * icon.pixelScale;
+                auto width = icon.image->width() * icon.pixelScale;
+                auto height = icon.image->height() * icon.pixelScale;
                     
                 auto imageStyle = CanvasStyle_ImagePattern(icon.image, ImagePatternSettings().scale(1.0f /  icon.pixelScale));
                 imageStyle.innerColor = imageStyle.outerColor = icon.color;

@@ -22,6 +22,7 @@ class ENGINE_RENDERING_API DebugGeometryImage : public IObject
 
 public:
     DebugGeometryImage(Image* data);
+    DebugGeometryImage(StringView depotPath);
     virtual ~DebugGeometryImage();
 
     INLINE uint32_t width() const { return m_width; }

@@ -25,12 +25,6 @@ public:
     // Select font by object
     void font(const FontPtr& fontPtr);
 
-    // Set vertical text alignment mode
-    void textVerticalAlignment(const FontAlignmentVertical alignment);
-
-    // Set horizontal text alignment mode
-    void textHorizontalAlignment(const FontAlignmentHorizontal alignment);
-
     // Select font size
     void fontSize(uint32_t size);
 
@@ -38,17 +32,15 @@ public:
     uint32_t textLineHeight() const;
 
     // Get width of line of text under currently selected fonts
-    uint32_t textLineWidth(const FontInputText& text) const;
+    uint32_t textLineWidth(StringView text) const;
 
     // Print text, uses only the fill color and current
-    void drawText(const FontInputText& text);
+    void drawText(StringView text);
 
     //---
 
 private:
     FontPtr m_currentFont; // current font
-    FontAlignmentVertical m_currentVerticalAlignment;
-    FontAlignmentHorizontal m_currentHorizontalAlignment;
     uint32_t m_currentSize;
 };
 

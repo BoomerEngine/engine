@@ -11,6 +11,7 @@
 #include "sceneTestUtil.h"
 
 #include "engine/rendering/include/debugGeometryBuilder.h"
+#include "engine/rendering/include/debugGeometryAssets.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
 
@@ -27,9 +28,13 @@ public:
         TBaseClass::configure();
     }
 
+    float m_time = 0.0f;
+
     virtual void update(float dt) override
     {
         TBaseClass::update(dt);
+
+        m_time += dt;
     }
 
     virtual void renderDebug(DebugGeometryCollector& debug) override
@@ -283,7 +288,49 @@ public:
             debug.push(b);
         }
 
-        // TODO: icons
+        {
+            static auto debugIcon = RefNew<DebugGeometryImage>("/engine/interface/icons/arrow_down_green32.png"); 
+
+            DebugGeometryBuilder b(DebugGeometryLayer::SceneSolid);
+
+            Vector3 corners[8];
+            Box(Vector3(5, -2, 0.5f), 0.2f).corners(corners);
+
+            b.size(48.0f);
+            b.image(debugIcon);
+            b.color(Color::WHITE);
+            b.sprites(corners, 8);
+            debug.push(b);
+        }
+
+        {
+            static auto debugIcon = RefNew<DebugGeometryImage>("/engine/tests/textures/lena.png");
+
+            DebugGeometryBuilder b(DebugGeometryLayer::SceneSolid);
+            b.image(debugIcon);
+            b.size(256.0f);
+            b.color(Color::RED);
+            b.sprite(Vector3(5, 2, 0.5f));
+            debug.push(b);
+        }
+
+        {
+            static auto debugIcon = RefNew<DebugGeometryImage>("/engine/interface/icons/node.png");
+
+            DebugGeometryBuilder b(DebugGeometryLayer::SceneTransparent);
+            b.image(debugIcon);
+            b.size(16.0f);
+
+            MTRandState rs;
+            for (uint32_t i = 0; i < 200; ++i)
+            {
+                const auto pos = IRandom::RandSphereSurfacePoint(rs.unit2(), Vector3(5, 1, 0.5f), 0.3f);
+                const auto col = Color(rs.next(), rs.next(), rs.next(), 128);
+                b.color(col);
+                b.sprite(pos);
+            }
+            debug.push(b);
+        }
 
         {
             DebugGeometryBuilder b(DebugGeometryLayer::SceneSolid);
@@ -376,6 +423,159 @@ public:
             b.color(Color::YELLOW);
             b.wireCircleCut(Vector3(7, -2, 0.5f), Vector3::EX(), 0.3f, 0.4f, 60.0f, 120.0f, true);
             b.wireCircleCut(Vector3(7, -2, 0.5f), Vector3::EX(), 0.3f, 0.4f, 240.0f, 300.0f, true);
+            debug.push(b);
+        }
+
+        {
+            DebugGeometryBuilder b(DebugGeometryLayer::SceneSolid);
+
+            b.color(Color::GRAY);
+            b.wireCircleCut(Vector3(8, 0, 0.5f), Vector3::EX(), 0.5f, 0.4f, 0.0f, 360.0f, false);
+            b.size(3.0f);
+            b.color(Color::RED);
+            b.wireCircleCut(Vector3(8, 0, 0.5f), Vector3::EX(), 0.5f, 0.4f, 0.0f, 360.0f, true);
+            b.color(Color::DARKRED);
+            const auto start = 180.0f + 180.0f * std::cosf(m_time * 0.1f);
+            const auto end = start + 120.0f + 100 * std::cosf(0.45f + m_time * 0.1f * 0.122f);
+            b.solidCircleCut(Vector3(8, 0, 0.5f), Vector3::EX(), 0.5f, 0.4f, start, end);
+            debug.push(b);
+        }
+
+        {
+            DebugGeometryBuilderScreen b;
+            b.color(Color(255, 0, 0, 255));
+            b.rect(500, 50, 50, 50);
+            b.color(Color(0, 255, 0, 255));
+            b.rect(550, 75, 50, 50);
+            b.color(Color(0, 0, 255, 255));
+            b.rect(600, 50, 50, 50);
+            b.color(Color(255, 0, 255, 255));
+            b.rect(525, 125, 50, 50);
+            debug.push(b);
+        }
+
+        {
+            DebugGeometryBuilderScreen b;
+            b.color(Color(0, 0, 0, 128));
+            b.rect(50, 250, 100, 100);
+            b.color(Color(255, 0, 0, 40));
+            b.size(10.0f);
+            b.frame(50, 250, 100, 100);
+            debug.push(b);
+        }
+
+        {
+            DebugGeometryBuilderScreen b;
+
+            Vector2 points[3] =
+            {
+                Vector2(750, 50),
+                Vector2(900, 100),
+                Vector2(700, 100),
+            };
+
+            b.size(1.0f);
+            b.color(Color(255, 255, 255, 128));
+            b.lines(points, 3, true);
+
+            b.size(5.0f);
+            b.color(Color(255, 0, 0, 64));
+            b.lines(points, 3, true);
+
+            b.size(10.0f);
+            b.color(Color(0, 255, 0, 64));
+            b.lines(points, 3, true);
+
+            debug.push(b);
+        }
+
+        {
+            static auto debugIcon = RefNew<DebugGeometryImage>("/engine/tests/textures/lena.png");
+
+            DebugGeometryBuilderScreen b;
+            b.color(Color(255, 255, 255, 192));
+            b.image(debugIcon);
+            b.rect(50, 450, 128, 128);
+            b.color(Color(255, 255, 255, 255));
+            b.size(2.0f);
+            b.frame(50, 450, 128, 128);
+            debug.push(b);
+        }
+
+        {
+            DebugGeometryBuilderScreen b;
+            b.color(Color(0, 0, 0, 128));
+            b.rect(50, 50, 300, 150);
+            b.color(Color(255, 255, 255, 128));
+            b.frame(51, 51, 300 - 2, 150 - 2);
+
+            b.color(Color::WHITE);
+            b.appendText("Hello ");
+            b.fontSize(40);
+            b.color(Color::RED);
+            b.appendText("world!");
+            b.appendNewLine();
+
+            b.color(Color::WHITE);
+            b.fontSize(12);
+            b.appendText("This is some small text");
+            b.appendNewLine();
+
+            b.fontSize(25);
+            b.appendText("This is\nmulti line\ntext");
+
+            const auto bb = b.calcBounds();
+
+            b.size(1.0f);
+            b.color(Color::GREEN);
+            b.frame(bb);
+
+            const auto c = bb.center();
+            const auto rect = b.renderText(c.x, c.y, 0, 0);
+
+            b.size(1.0f);
+            b.color(Color::YELLOW);
+            b.frame(rect);
+
+            debug.push(b);
+        }
+
+        {
+            int tx = 300;
+            int ty = 650;
+
+            DebugGeometryBuilderScreen b;
+            b.fontSize(20);
+            b.appendText("This should be in a nice border!");
+            
+            const auto rect = b.calcTextBounds().inflated(10).centered(tx, ty);
+            b.color(Color(0, 0, 0, 64));
+            b.rect(rect);
+            b.color(Color(255, 255, 255, 255));
+            b.frame(rect);
+
+            b.renderText(tx, ty, 0, 0);
+
+            debug.push(b);
+        }
+
+        Point screenPos;
+        float testAlpha = 1.0f;
+        if (debug.worldToScreen(Vector3::ZERO(), screenPos, &testAlpha, 5.0f))
+        {
+            DebugGeometryBuilderScreen b;
+            b.fontSize(20);
+            b.color(Color(255, 255, 255, 255 * testAlpha));
+            b.appendText("ORIGIN");
+
+            const auto rect = b.calcTextBounds().inflated(10).centered(screenPos);
+            b.color(Color(0, 0, 0, 64 * testAlpha));
+            b.rect(rect);
+            b.color(Color(255, 255, 255, 255 * testAlpha));
+            b.frame(rect);
+
+            b.renderText(screenPos.x, screenPos.y, 0, 0);
+
             debug.push(b);
         }
     }

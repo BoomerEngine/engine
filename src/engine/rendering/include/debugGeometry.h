@@ -29,6 +29,8 @@ struct DebugVertex
     static const uint32_t FLAG_SPRITE = FLAG(2);
     static const uint32_t FLAG_LINE = FLAG(3);
     static const uint32_t FLAG_SCREEN = FLAG(4);
+    static const uint32_t FLAG_IMAGE = FLAG(5);
+    static const uint32_t FLAG_GLYPH = FLAG(6);
 
     Vector3 p = Vector3::ZERO();
     float w = 0.0f;
@@ -140,6 +142,11 @@ public:
     void push(const DebugGeometryBuilderBase& data, const Matrix& placement = Matrix::IDENTITY(), const Selectable& selectable = Selectable());
 
     //--
+
+    // get screen coordinates for given world positions, may return false if to far or behind camera
+    bool worldToScreen(const Vector3& pos, Point& outPos, float* outAlpha = nullptr, float blendDistance = 0.0f) const;
+
+    //-
 
 private:
     static PageAllocator st_PageAllocator;

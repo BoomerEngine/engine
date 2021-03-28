@@ -16,6 +16,7 @@
 
 #include "core/system/include/scopeLock.h"
 #include "core/resource/include/tags.h"
+#include "core/containers/include/utf8StringFunctions.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -118,13 +119,13 @@ uint32_t Font::lineSeparation(uint32_t fontSize) const
     return (uint32_t)(m_lineHeight * fontSize);
 }
 
-void Font::measureText(const FontStyleParams& styleParams, const FontAssemblyParams& textParams, const FontInputText& str, FontMetrics& outMetrics) const
+void Font::measureText(const FontStyleParams& styleParams, StringView utf8str, FontMetrics& outMetrics) const
 {
     outMetrics.lineHeight = lineSeparation(styleParams.size);
     outMetrics.textWidth = 0;
 
     // no data to process
-    if (str.empty() || !m_face)
+    if (utf8str.empty() || !m_face)
         return;
 
     // compute the hash of the styles
@@ -133,14 +134,22 @@ void Font::measureText(const FontStyleParams& styleParams, const FontAssemblyPar
     // process string
     float xPos = 0.0f;
     float maxXPos = 0.0f;
-    for (auto ch : str.chars())
     {
-        // get the glyph information
-        auto glyph  = m_glyphCache->fetchGlyph(styleParams, styleHash, m_face, m_id, ch);
-        if (glyph)
+        const auto* str = utf8str.data();
+        const auto* strEnd = str + utf8str.length();
+        while (str < strEnd)
         {
-            xPos += (int)(glyph->advance().x + 0.5f);
-            maxXPos = std::max(maxXPos, xPos);
+            const auto ch = utf8::NextChar(str, strEnd);
+            if (!ch)
+                break;
+
+            // get the glyph information
+            auto glyph = m_glyphCache->fetchGlyph(styleParams, styleHash, m_face, m_id, ch);
+            if (glyph)
+            {
+                xPos += (int)(glyph->advance().x + 0.5f);
+                maxXPos = std::max(maxXPos, xPos);
+            }
         }
     }
 
@@ -153,24 +162,24 @@ const FontGlyph* Font::renderGlyph(const FontStyleParams& styleParams, uint32_t 
     return m_glyphCache->fetchGlyph(styleParams, styleHash, m_face, m_id, glyphcode);
 }
 
-void Font::renderText(const FontStyleParams& styleParams, const FontAssemblyParams& textParams, const FontInputText& str, FontGlyphBuffer& outBuffer, Color color) const
+void Font::renderText(const FontStyleParams& styleParams, StringView utf8str, FontGlyphBuffer& outBuffer, Color color) const
 {
     // no data to process
-    if (str.empty() || !m_face)
+    if (utf8str.empty() || !m_face)
         return;
 
     // compute vertical placement offset
     float y = 0.0f; // baseline offset
-    if (textParams.verticalAlignment == FontAlignmentVertical::Top)
+    /*if (textParams.verticalAlignment == FontAlignmentVertical::Top)
         y = m_ascender * styleParams.size;
     else if (textParams.verticalAlignment == FontAlignmentVertical::Middle)
         y = ((m_ascender + m_descender) / 2.0f) * styleParams.size;
     else if (textParams.verticalAlignment == FontAlignmentVertical::Bottom)
-        y = m_descender * styleParams.size;
+        y = m_descender * styleParams.size;*/
 
     // compute horizontal placement offset
     float x = 0.0f;
-    if (textParams.horizontalAlignment == FontAlignmentHorizontal::Center)
+    /*if (textParams.horizontalAlignment == FontAlignmentHorizontal::Center)
     { 
         // measure text to draw
         FontMetrics metrics;
@@ -183,28 +192,50 @@ void Font::renderText(const FontStyleParams& styleParams, const FontAssemblyPara
         FontMetrics metrics;
         measureText(styleParams, textParams, str, metrics);
         x = -(float)metrics.textWidth;
-    }
+    }*/
 
     // compute the hash of the styles
     auto styleHash = styleParams.calcHash();
 
+    // relative font ascender/descender
+    int ascender = (int)(m_ascender * styleParams.size);
+    int descender = (int)(m_descender * styleParams.size);
+
     // process string
     int textPosition = 0;
-    for (auto ch : str.chars())
     {
-        // get the glyph information
-        auto glyph  = m_glyphCache->fetchGlyph(styleParams, styleHash, m_face, m_id, ch);
-        if (glyph)
+        const auto* str = utf8str.data();
+        const auto* strEnd = str + utf8str.length();
+        while (str < strEnd)
         {
-            // place glyph
-            outBuffer.addGlyph(ch, glyph, x, y, textPosition, color);
+            const auto ch = utf8::NextChar(str, strEnd);
+            if (!ch)
+                break;
 
-            // advance to new position
-            x += (int)(glyph->advance().x + 0.5f);
+            if (ch == 13 || ch == 10)
+            {
+                // new line ?
+                outBuffer.newLine(descender);
+                continue;
+            }
+            else if (ch == 9)
+            {
+                // tab ?
+                outBuffer.m_cursor.x = Align(outBuffer.m_cursor.x, 200); // TODO: proper tabbing
+            }
+            else if (ch < 32)
+            {
+                // generic white space
+                continue;
+            }
+
+            // get the glyph information
+            if (auto glyph = m_glyphCache->fetchGlyph(styleParams, styleHash, m_face, m_id, ch))
+                outBuffer.push(ch, glyph, textPosition, color);
+
+            // count position in the text
+            textPosition++;
         }
-
-        // count position in the text
-        textPosition++;
     }
 }
 

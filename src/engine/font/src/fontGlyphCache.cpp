@@ -155,6 +155,11 @@ FontGlyph* FontGlyphCache::buildGlyph(const FontStyleParams& styleParams, FT_Fac
     // render the glyph
     FT_Render_Glyph(faceData->glyph, FT_RENDER_MODE_NORMAL);// FT_RENDER_MODE_LCD);
 
+    // height
+    const float invScale = 1.0f / (faceData->ascender - faceData->descender);
+    const int ascender = (int)(faceData->ascender * invScale * styleParams.size);
+    const auto descender = (int)(faceData->descender * invScale * styleParams.size);
+
     // note: whitespace characters have no bitmap
     ImagePtr ptr;
     if (faceData->glyph->bitmap.width > 0 && ch > ' ')
@@ -200,14 +205,14 @@ FontGlyph* FontGlyphCache::buildGlyph(const FontStyleParams& styleParams, FT_Fac
 
         // create glyph
         FontGlyphKey glyphId(fontId, ch, styleParams.calcHash());
-        return new FontGlyph(glyphId, ptr, bitmapOffset, bitmapSize, advance, rect);
+        return new FontGlyph(glyphId, ptr, bitmapOffset, bitmapSize, advance, rect, ascender, descender);
     }
     else
     {
         // create glyph with no bitmap
         auto advance = Vector2(faceData->glyph->advance.x / 64.0f, faceData->glyph->advance.y / 64.0f);
         FontGlyphKey glyphId(fontId, ch, styleParams.calcHash());
-        return new FontGlyph(glyphId, ptr, Point(0,0), Point(0, 0), advance, Rect(0,0,0,0));
+        return new FontGlyph(glyphId, ptr, Point(0,0), Point(0, 0), advance, Rect(0,0,0,0), ascender, descender);
     }
 }
 

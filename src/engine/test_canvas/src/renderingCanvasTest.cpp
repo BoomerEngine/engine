@@ -42,6 +42,11 @@ void ICanvasTest::reportError(StringView msg)
     m_hasErrors = true;
 }
 
+CanvasImagePtr ICanvasTest::loadCanvasImage(StringView assetFile)
+{
+    return RefNew<CanvasImage>(loadImage(assetFile));
+}
+
 ImagePtr ICanvasTest::loadImage(StringView assetFile)
 {
     auto imagePtr = LoadImageFromDepotPath(TempString("/engine/tests/textures/{}", assetFile));

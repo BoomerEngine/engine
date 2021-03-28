@@ -23,19 +23,12 @@ public:
 
 	//--
 
-	struct AtlasInfo
-	{
-		const gpu::ImageSampledView* imageSRV = nullptr;
-		const gpu::BufferStructuredView* bufferSRV = nullptr;
-	};
-
 	struct RenderInfo
 	{
-		static const uint32_t MAX_ATLASES = 64;
-
-		AtlasInfo glyphs;
-		AtlasInfo atlases[MAX_ATLASES];
-		uint32_t numValidAtlases = 0;
+        const gpu::ImageSampledView* imageAtlasSRV = nullptr;
+        const gpu::BufferStructuredView* imageEntriesSRV = nullptr;
+        const gpu::ImageSampledView* glyphAtlasSRV = nullptr;
+        const gpu::BufferStructuredView* glypEntriesSRV = nullptr;
 	};
 
 	// render canvas to a given command buffer

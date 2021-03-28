@@ -19,8 +19,8 @@ BEGIN_BOOMER_NAMESPACE_EX(ui)
 GeometryBuilder::GeometryBuilder(CanvasGeometry& outGeometry)
 	: CanvasGeometryBuilder(outGeometry)
 {
-    m_currentVerticalAlignment = FontAlignmentVertical::Top;
-    m_currentHorizontalAlignment = FontAlignmentHorizontal::Left;
+    //m_currentVerticalAlignment = FontAlignmentVertical::Top;
+    //m_currentHorizontalAlignment = FontAlignmentHorizontal::Left;
     m_currentSize = 12;
 }
 
@@ -29,7 +29,7 @@ void GeometryBuilder::font(const FontPtr& fontPtr)
     m_currentFont = fontPtr;
 }
 
-void GeometryBuilder::textVerticalAlignment(const FontAlignmentVertical alignment)
+/*void GeometryBuilder::textVerticalAlignment(const FontAlignmentVertical alignment)
 {
     m_currentVerticalAlignment = alignment;
 }
@@ -37,7 +37,7 @@ void GeometryBuilder::textVerticalAlignment(const FontAlignmentVertical alignmen
 void GeometryBuilder::textHorizontalAlignment(const FontAlignmentHorizontal alignment)
 {
     m_currentHorizontalAlignment = alignment;
-}
+}*/
 
 void GeometryBuilder::fontSize(uint32_t size)
 {
@@ -52,36 +52,36 @@ uint32_t GeometryBuilder::textLineHeight() const
     return (uint32_t)m_currentFont->lineSeparation(m_currentSize);
 }
 
-uint32_t GeometryBuilder::textLineWidth(const FontInputText& text) const
+uint32_t GeometryBuilder::textLineWidth(StringView text) const
 {
     if (m_currentSize < 2 || !m_currentFont)
         return 0;
 
     FontStyleParams styleParams;
     styleParams.size = m_currentSize;
-    FontAssemblyParams assemblyParams;
-    assemblyParams.verticalAlignment = m_currentVerticalAlignment;
-    assemblyParams.horizontalAlignment = m_currentHorizontalAlignment;
+    //FontAssemblyParams assemblyParams;
+    //assemblyParams.verticalAlignment = m_currentVerticalAlignment;
+    //assemblyParams.horizontalAlignment = m_currentHorizontalAlignment;
 
     FontMetrics metrics;
-    m_currentFont->measureText(styleParams, assemblyParams, text, metrics);
+    m_currentFont->measureText(styleParams, text, metrics);
 
     return metrics.textWidth;
 }
 
-void GeometryBuilder::drawText(const FontInputText& text)
+void GeometryBuilder::drawText(StringView text)
 {
     if (m_currentSize < 2 || !m_currentFont)
         return;
 
     FontStyleParams styleParams;
     styleParams.size = m_currentSize;
-    FontAssemblyParams assemblyParams;
-    assemblyParams.verticalAlignment = m_currentVerticalAlignment;
-    assemblyParams.horizontalAlignment = m_currentHorizontalAlignment;
+    //FontAssemblyParams assemblyParams;
+    //assemblyParams.verticalAlignment = m_currentVerticalAlignment;
+    //assemblyParams.horizontalAlignment = m_currentHorizontalAlignment;
 
     FontGlyphBuffer glyphs;
-    m_currentFont->renderText(styleParams, assemblyParams, text, glyphs);
+    m_currentFont->renderText(styleParams, text, glyphs);
 
     print(glyphs);      
 }

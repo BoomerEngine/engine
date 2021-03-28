@@ -345,7 +345,7 @@ void SceneTestProject::renderCanvas(Canvas& canvas)
         {
             canvas.debugPrint(canvas.width() - 20, canvas.height() - 40,
                 TempString("DEBUG GUI ENABLED"),
-                Color::RED, 16, FontAlignmentHorizontal::Right);
+                Color::RED, 16, 1);
         }
 
         if (m_currentTest)
@@ -358,30 +358,30 @@ void SceneTestProject::renderCanvas(Canvas& canvas)
 
             canvas.debugPrint(canvas.width() - 20, canvas.height() - 80,
                 TempString("Camera Position: [X={}, Y={}, Z={}]", Prec(camera.position.x, 2), Prec(camera.position.y, 2), Prec(camera.position.z, 2)),
-                Color::WHITE, 16, FontAlignmentHorizontal::Right);
+                Color::WHITE, 16, 1);
 
             canvas.debugPrint(canvas.width() - 20, canvas.height() - 60,
                 TempString("Camera Rotation: [P={}, Y={}]", Prec(rot.pitch, 1), Prec(rot.yaw, 1)),
-                Color::WHITE, 16, FontAlignmentHorizontal::Right);
+                Color::WHITE, 16, 1);
         }
 
         if (!m_timeAdvance)
         {
             canvas.debugPrint(canvas.width() - 20, 20,
                 TempString("PAUSED"),
-                Color::ORANGERED, 20, FontAlignmentHorizontal::Right);
+                Color::ORANGERED, 20, 1);
         }
         else if (m_timeMultiplier > 0)
         {
             canvas.debugPrint(canvas.width() - 20, 20,
                 TempString("Time x{} faster", 1ULL << m_timeMultiplier),
-                Color::ORANGERED, 20, FontAlignmentHorizontal::Right);
+                Color::ORANGERED, 20, 1);
         }
         else if (m_timeMultiplier < 0)
         {
             canvas.debugPrint(canvas.width() - 20, 20,
                 TempString("Time x{} slower", 1ULL << (-m_timeMultiplier)),
-                Color::ORANGERED, 20, FontAlignmentHorizontal::Right);
+                Color::ORANGERED, 20, 1);
         }
     }
 

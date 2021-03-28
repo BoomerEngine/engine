@@ -18,7 +18,6 @@
 #include "engine/canvas/include/geometry.h"
 #include "engine/canvas/include/canvas.h"
 #include "engine/canvas/include/style.h"
-#include "engine/canvas/include/atlas.h"
 #include "engine/font/include/font.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
@@ -82,23 +81,20 @@ class SceneTest_CanvasCustomDrawer : public ICanvasTest
     RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_CanvasCustomDrawer, ICanvasTest);
 
 public:
-	RefPtr<CanvasDynamicAtlas> m_atlas;
-	CanvasImageEntry m_testImages[3];
+	CanvasImagePtr m_testImages[3];
 	FontPtr m_font;
 
 	virtual void initialize() override
 	{
 		m_font = loadFont("aileron_regular.otf");
-		m_atlas = RefNew<CanvasDynamicAtlas>(1024, 1);
 
-		m_testImages[0] = m_atlas->registerImage(loadImage("tree.png"));
-		m_testImages[1] = m_atlas->registerImage(loadImage("sign.png"));
-		m_testImages[2] = m_atlas->registerImage(loadImage("crate.png"));
+		m_testImages[0] = loadCanvasImage("tree.png");
+		m_testImages[1] = loadCanvasImage("sign.png");
+		m_testImages[2] = loadCanvasImage("crate.png");
 	}
 
 	virtual void shutdown() override
 	{
-		m_atlas.reset();
 	}
 
     virtual void render(Canvas& c) override
@@ -116,23 +112,25 @@ public:
 
 			b.selectRenderer<SceneTest_SimpleSpriteOutline>(Color::MAGENTA, width);
 
+			if (m_testImages[0])
 			{
 				auto pattern = CanvasStyle_ImagePattern(m_testImages[0]);
 				b.fillPaint(pattern);
 				b.beginPath();
 				b.stylePivot(100, 100);
-				b.rect(100-margin, 100 -margin, m_testImages[0].width + 2.0f* margin, m_testImages[0].height + 2.0f * margin);
+				b.rect(100-margin, 100 -margin, m_testImages[0]->width() + 2.0f* margin, m_testImages[0]->height() + 2.0f * margin);
 				b.fill();
 			}
 
 			b.selectRenderer<SceneTest_SimpleSpriteOutline>(Color::RED, 1.0f);
 
+			if (m_testImages[2])
 			{
 				auto pattern = CanvasStyle_ImagePattern(m_testImages[2]);
 				b.fillPaint(pattern);
 				b.beginPath();
 				b.stylePivot(500, 300);
-				b.rect(500 - margin, 300 - margin, m_testImages[2].width + 2.0f * margin, m_testImages[2].height + 2.0f * margin);
+				b.rect(500 - margin, 300 - margin, m_testImages[2]->width() + 2.0f * margin, m_testImages[2]->height() + 2.0f * margin);
 				b.fill();
 			}
 		}
@@ -144,17 +142,18 @@ public:
 
 			b.selectRenderer<SceneTest_SimpleSpriteOutline>(Color::YELLOW, 5.0f);
 
+			if (m_testImages[1])
 			{
 				auto pattern = CanvasStyle_ImagePattern(m_testImages[1]);
 				b.fillPaint(pattern);
 				b.beginPath();
-				b.rect(-margin, -margin, m_testImages[1].width + 2.0f * margin, m_testImages[1].height + 2.0f * margin);
+				b.rect(-margin, -margin, m_testImages[1]->width() + 2.0f * margin, m_testImages[1]->height() + 2.0f * margin);
 				b.fill();
 			}
 		}
 
-		float w = m_testImages[1].width;
-		float h = m_testImages[1].height;
+		float w = m_testImages[1] ? m_testImages[1]->width() : 0.0f;
+		float h = m_testImages[1] ? m_testImages[1]->height() : 0.0f;
 		static float a = 0.0;
 		a += 0.01f;
 

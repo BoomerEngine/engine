@@ -451,9 +451,8 @@ namespace Scintilla
         if (nullptr != fontInfo)
         {
             // prepare the text
-            auto inputText = boomer::FontInputText(text.data(), text.length());
             boomer::FontGlyphBuffer glyphs;
-            fontInfo->m_font->renderText(fontInfo->m_style, fontInfo->m_assembly, inputText, glyphs);
+            fontInfo->m_font->renderText(fontInfo->m_style, boomer::StringView(text.data(), text.length()), glyphs);
 
             // vertical offset
             auto xOffset = floor(rc.left);
@@ -476,15 +475,14 @@ namespace Scintilla
         if (nullptr != fontInfo)
         {
             // measure the text
-            auto inputText = boomer::FontInputText(text.data(), text.length());
             boomer::FontGlyphBuffer glyphs;
-            fontInfo->m_font->renderText(fontInfo->m_style, fontInfo->m_assembly, inputText, glyphs);
+            fontInfo->m_font->renderText(fontInfo->m_style, boomer::StringView(text.data(), text.length()), glyphs);
 
             int lastTextPosition = 0;
             float lastGlyphPos = 0;
-            for (uint32_t i=0; i<glyphs.size(); ++i)
+            for (auto i : glyphs.m_glyphs.indexRange())
             {
-                const auto& g = glyphs.glyphs()[i];
+                const auto& g = glyphs.m_glyphs[i];
 
                 if (g.glyph->size().x > 0.0f)
                     lastGlyphPos = g.pos.x + g.glyph->size().x;
@@ -510,8 +508,7 @@ namespace Scintilla
 
             // measure the text
             boomer::FontMetrics metrics;
-            auto inputText = boomer::FontInputText(text.data(), text.length());
-            fontInfo->m_font->measureText(fontInfo->m_style, fontInfo->m_assembly, inputText, metrics);
+            fontInfo->m_font->measureText(fontInfo->m_style, boomer::StringView(text.data(), text.length()), metrics);
 
             return metrics.textWidth;
         }

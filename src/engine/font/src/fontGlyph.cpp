@@ -14,13 +14,15 @@
 
 BEGIN_BOOMER_NAMESPACE()
 
-FontGlyph::FontGlyph(const FontGlyphKey& id, const ImagePtr& imagePtr, const Point& offset, const Point& size, const Vector2& advance, const Rect& logicalRect)
+FontGlyph::FontGlyph(const FontGlyphKey& id, const ImagePtr& imagePtr, const Point& offset, const Point& size, const Vector2& advance, const Rect& logicalRect, int ascender, int descender)
     : m_id(id)
     , m_offset(offset)
     , m_size(size)
     , m_advance(advance)
     , m_bitmap(imagePtr)
     , m_logicalRect(logicalRect)
+    , m_ascender(ascender)
+    , m_descender(descender)
 {}
 
 uint32_t FontGlyph::calcMemoryUsage() const

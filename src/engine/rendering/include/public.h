@@ -22,6 +22,8 @@ class DebugGeometryBuilder;
 class DebugGeometryBuilderBase;
 class DebugGeometryBuilderScreen;
 
+class DebugGeometryImage;
+
 class DebugGeometryCollector;
 
 class DebugGeometryChunk;

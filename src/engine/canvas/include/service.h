@@ -29,15 +29,12 @@ class ENGINE_CANVAS_API CanvasService : public IService
 public:
 	CanvasService();
 
-	//--
+    //--
 
-	// find placement of given image in the atlas
-	// NOTE: atlas must be registered first
-	const CanvasImageEntryInfo* findRenderDataForAtlasEntry(const CanvasImageEntry& entry) const;
+    INLINE const DynamicGlyphAtlasPtr& glyphAtlas() const { return m_glyphAtlas; }
 
-	// find placement of given font glyph
-	const CanvasImageEntryInfo* findRenderDataForGlyph(const FontGlyph* glyph) const;
-
+    INLINE const DynamicImageAtlasPtr& imageAtlas() const { return m_imageAtlas; }
+	
 	//--
 
 	// render canvas to command buffer, flushed atlases
@@ -52,16 +49,12 @@ private:
 	virtual void onShutdownService() override final;
 	virtual void onSyncUpdate() override final;
 
-	ICanvasAtlas* m_atlasRegistry[MAX_ATLASES];
-
-	CanvasGlyphCache* m_glyphCache = nullptr;
-
 	CanvasRenderer* m_renderer = nullptr;
 
-    void sync(gpu::CommandWriter& cmd, uint64_t atlasMask, uint64_t glpyhMask);
+    void sync(gpu::CommandWriter& cmd);
 
-	bool registerAtlas(ICanvasAtlas* atlas, CanvasAtlasIndex& outIndex);
-	void unregisterAtlas(ICanvasAtlas* atlas, CanvasAtlasIndex index);
+    DynamicGlyphAtlasPtr m_glyphAtlas;
+    DynamicImageAtlasPtr m_imageAtlas;
 
 	friend class ICanvasAtlas;
 };

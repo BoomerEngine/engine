@@ -13,7 +13,6 @@
 #include "engine/canvas/include/geometry.h"
 #include "engine/canvas/include/canvas.h"
 #include "engine/canvas/include/style.h"
-#include "engine/canvas/include/atlas.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
 
@@ -25,22 +24,16 @@ class SceneTest_CanvasRawGeometry : public ICanvasTest
 public:
     NativeTimePoint m_lastUpdateTime;
 
-	RefPtr<CanvasDynamicAtlas> m_atlas;
-	CanvasImageEntry m_atlasEntry;
+    CanvasImagePtr m_atlasEntry;
 
     virtual void initialize() override
     {
         m_lastUpdateTime.resetToNow();
-
-        auto lena = loadImage("lena.png");
-
-		m_atlas = RefNew<CanvasDynamicAtlas>(1024, 1);
-		m_atlasEntry = m_atlas->registerImage(lena, true);
+        m_atlasEntry = loadCanvasImage("lena.png");
     }
 
 	virtual void shutdown() override
 	{
-		m_atlas.reset();
 	}
 
     static float CalcPlasma(float x, float y, float t)

@@ -24,7 +24,6 @@
 #include "engine/ui/include/uiWindowPopup.h"
 #include "engine/ui/include/uiListViewEx.h"
 #include "engine/ui/include/uiTreeViewEx.h"
-#include "engine/canvas/include/atlas.h"
 #include "core/resource/include/depot.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
@@ -108,8 +107,6 @@ TestWindow::TestWindow()
     customMinSize(300, 300);
     layoutMode(ui::LayoutMode::Vertical);
 
-	m_honklerAtlas = RefNew<CanvasDynamicAtlas>(2048, 1);
-            
     static bool canEdit = true;
 
     {
@@ -426,8 +423,7 @@ TestWindow::TestWindow()
             if (i == 1)
             {
                 auto data = LoadImageFromDepotPath(("/engine/interface/images/honkler.png"));
-				auto entry = m_honklerAtlas->registerImage(data);
-                auto image = elem->createChild<ui::CustomImage>(entry);
+                auto image = elem->createChild<ui::CustomImage>(data);
             }
             else if (i == 2)
             {

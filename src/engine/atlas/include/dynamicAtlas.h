@@ -20,9 +20,9 @@ BEGIN_BOOMER_NAMESPACE()
 struct GPUDynamicAtlasImageInfo
 {
     Vector2 uvMin;
-    Vector2 uvMax;
     Vector2 uvScale;
-    Vector2 uvInvScale;
+    uint32_t page;
+    uint32_t _padding;
 };
 #pragma pack(pop)
 

@@ -9,16 +9,19 @@
 #include "build.h"
 
 #include "canvas.h"
-#include "atlas.h"
 #include "service.h"
 #include "renderer.h"
-#include "glyphCache.h"
 
 #include "core/containers/include/bitUtils.h"
 
 #include "gpu/device/include/commandWriter.h"
 #include "gpu/device/include/deviceService.h"
 #include "gpu/device/include/shaderService.h"
+
+#include "engine/atlas/include/dynamicGlyphAtlas.h"
+#include "engine/atlas/include/dynamicImageAtlas.h"
+#include "engine/atlas/include/dynamicImageAtlasEntry.h"
+#include "core/image/include/imageUtils.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -36,33 +39,72 @@ RTTI_END_TYPE();
 
 //---
 
+
+RTTI_BEGIN_TYPE_NATIVE_CLASS(CanvasImage);
+RTTI_END_TYPE();
+
+CanvasImage::CanvasImage(const Image* data, bool wrapU /*= false*/, bool wrapV /*= false*/)
+    : m_wrapU(wrapU)
+    , m_wrapV(wrapV)
+{
+    if (data)
+    {
+        ImagePtr tempData;
+
+        if (data->channels() != 4)
+        {
+            tempData = ConvertChannels(data->view(), 4);
+            data = tempData;
+        }
+
+        m_entry = RefNew<DynamicImageAtlasEntry>(data, wrapU, wrapV);
+        GetService<CanvasService>()->imageAtlas()->attach(m_entry);
+
+        m_id = m_entry->id();
+
+        m_width = m_entry->width();
+        m_height = m_entry->height();
+    }
+}
+
+CanvasImage::CanvasImage(StringView depotPath, bool wrapU /*= false*/, bool wrapV /*= false*/)
+{
+    if (auto data = LoadImageFromDepotPath(depotPath))
+    {
+        if (data->channels() != 4)
+            data = ConvertChannels(data->view(), 4);
+
+        m_entry = RefNew<DynamicImageAtlasEntry>(data, wrapU, wrapV);
+        GetService<CanvasService>()->imageAtlas()->attach(m_entry);
+
+        m_id = m_entry->id();
+
+        m_width = m_entry->width();
+        m_height = m_entry->height();
+    }
+}
+
+CanvasImage::~CanvasImage()
+{
+    if (m_entry)
+    {
+        if (auto service = GetService<CanvasService>())
+            service->imageAtlas()->remove(m_entry);
+        m_entry.reset();
+    }
+}
+
+//---
+
 CanvasService::CanvasService()
 {}
-
-const CanvasImageEntryInfo* CanvasService::findRenderDataForAtlasEntry(const CanvasImageEntry& entry) const
-{
-	if (entry.atlasIndex > 0 && entry.atlasIndex < MAX_ATLASES)
-		if (const auto* cache = m_atlasRegistry[entry.atlasIndex])
-			return cache->findRenderDataForAtlasEntry(entry.entryIndex);
-
-	return nullptr;
-
-}
-
-const CanvasImageEntryInfo* CanvasService::findRenderDataForGlyph(const FontGlyph* glyph) const
-{
-	return m_glyphCache->findRenderDataForGlyph(glyph);
-}
 
 //--
 
 bool CanvasService::onInitializeService(const CommandLine& cmdLine)
 {
-	memzero(m_atlasRegistry, sizeof(m_atlasRegistry));
-
-	const auto glyphAtlasSize = NextPow2(std::clamp<uint32_t>(cvCanvasGlyphCacheAtlasSize.get(), 256, 4096));
-	const auto glyphAtlasPages = std::clamp<uint32_t>(cvCanvasGlyphCacheAtlasPageCount.get(), 1, 256);
-	m_glyphCache = new CanvasGlyphCache(glyphAtlasSize, glyphAtlasPages);
+    m_imageAtlas = RefNew<DynamicImageAtlas>(ImageFormat::RGBA8_UNORM); // canvas is in SRGB space
+    m_glyphAtlas = RefNew<DynamicGlyphAtlas>();
 
 	m_renderer = new CanvasRenderer();
 
@@ -74,8 +116,8 @@ void CanvasService::onShutdownService()
 	delete m_renderer;
 	m_renderer = nullptr;
 
-	delete m_glyphCache;
-	m_glyphCache = nullptr;
+	m_glyphAtlas.reset();
+	m_imageAtlas.reset();
 }
 
 void CanvasService::onSyncUpdate()
@@ -85,72 +127,25 @@ void CanvasService::onSyncUpdate()
 
 //--
 
-bool CanvasService::registerAtlas(ICanvasAtlas* atlas, CanvasAtlasIndex& outIndex)
+void CanvasService::sync(gpu::CommandWriter& cmd)
 {
-	DEBUG_CHECK_RETURN_EX_V(atlas != nullptr, "Invalid atlas to register", false);
-	DEBUG_CHECK_RETURN_EX_V(atlas->index() == 0, "Atlas already registered", false);
-
-	for (uint32_t i = 1; i < MAX_ATLASES; ++i)
-	{
-		if (!m_atlasRegistry[i])
-		{
-			m_atlasRegistry[i] = atlas;
-			outIndex = i;
-			return true;
-		}
-	}
-
-	TRACE_ERROR("To many image atlases registered");
-	return false;
-}
-
-void CanvasService::unregisterAtlas(ICanvasAtlas* atlas, CanvasAtlasIndex index)
-{
-	DEBUG_CHECK_RETURN_EX(atlas != nullptr, "Invalid atlas to unregister");
-	DEBUG_CHECK_RETURN_EX(atlas->index() == index, "Invalid atlas to unregister");
-	DEBUG_CHECK_RETURN_EX(index > 0 && index < MAX_ATLASES, "Invalid atlas index");
-
-	DEBUG_CHECK_RETURN_EX(m_atlasRegistry[index] == atlas, "Unexpected atlas");
-	m_atlasRegistry[index] = nullptr;
-}
-		
-//--
-
-void CanvasService::sync(gpu::CommandWriter& cmd, uint64_t atlasMask, uint64_t glpyhMask)
-{
-    cmd.opBeginBlock("SyncCanvasAtlas");
-
-    if (m_glyphCache)
-        m_glyphCache->flush(cmd, glpyhMask);
-
-    while (atlasMask)
-    {
-        uint32_t atlasIndex = __builtin_ctzll(atlasMask);
-        if (auto* atlas = m_atlasRegistry[atlasIndex])
-            atlas->flush(cmd);
-
-        atlasMask ^= atlasMask & -atlasMask;
-    }
-
-    cmd.opEndBlock();
 }
 
 void CanvasService::render(gpu::CommandWriter& cmd, const Canvas& c)
 {
-	sync(cmd, c.usedAtlasMask(), c.usedGlyphPagesMask());
+	cmd.opBeginBlock("CanvasRender");
+
+	{
+		cmd.opBeginBlock("SyncAtlas");
+		m_glyphAtlas->update(cmd);
+		m_imageAtlas->update(cmd);
+	}
 
 	CanvasRenderer::RenderInfo info;
-	info.glyphs.imageSRV = m_glyphCache->imageSRV();
-	info.numValidAtlases = MAX_ATLASES;
-
-	for (uint32_t i = 0; i < MAX_ATLASES; ++i)
-	{
-		if (auto* atlas = m_atlasRegistry[i])
-		{
-			info.atlases[i].imageSRV = atlas->imageSRV();
-			info.atlases[i].bufferSRV = atlas->imageEntriesSRV();
-		}
-	}
+	info.imageAtlasSRV = m_imageAtlas->imageSRV();
+	info.imageEntriesSRV = m_imageAtlas->imageEntriesSRV();
+    info.glyphAtlasSRV = m_glyphAtlas->imageSRV();
+    info.glypEntriesSRV = m_glyphAtlas->imageEntriesSRV();
 
 	m_renderer->render(cmd, info, c);
 }

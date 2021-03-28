@@ -12,11 +12,11 @@ BEGIN_BOOMER_NAMESPACE();
 
 //--
 
-RTTI_BEGIN_TYPE_CLASS(DynamicImageAtlas);
+RTTI_BEGIN_TYPE_NATIVE_CLASS(DynamicImageAtlas);
 RTTI_END_TYPE();
 
-DynamicImageAtlas::DynamicImageAtlas()
-    : IDynamicAtlas(ImageFormat::RGBA8_UNORM)
+DynamicImageAtlas::DynamicImageAtlas(ImageFormat format)
+    : IDynamicAtlas(format)
 {
 }
 

@@ -49,10 +49,9 @@ struct TextSizeHelper
     {
         FontStyleParams params;
         params.size = m_size;
-        FontAssemblyParams aparams;
-        FontInputText fontText(text.data(), text.length());
+
         FontMetrics metrics;
-        m_font.normal->measureText(params, aparams, fontText, metrics);
+        m_font.normal->measureText(params, text, metrics);
 
         Rect rect;
         rect.min.x = 0;
@@ -66,12 +65,9 @@ struct TextSizeHelper
     {
         FontStyleParams params;
         params.size = m_size;
-        FontAssemblyParams aparams;
-        aparams.verticalAlignment = FontAlignmentVertical::Baseline;
-        FontInputText fontText(text.data(), text.length());
 
         FontGlyphBuffer glyphs;
-        m_font.normal->renderText(params, aparams, fontText, glyphs);
+        m_font.normal->renderText(params, text, glyphs);
 
         builder.print(glyphs);
     }

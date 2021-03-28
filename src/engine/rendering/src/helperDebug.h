@@ -35,19 +35,10 @@ public:
 private:
 	gpu::IDevice* m_device = nullptr;
 
-	gpu::ShaderObjectPtr m_drawShaderSolid;
-	gpu::ShaderObjectPtr m_drawShaderLines;
-
-	struct Shaders
-	{
-		gpu::GraphicsPipelineObjectPtr drawTriangles;
-		gpu::GraphicsPipelineObjectPtr drawLines;
-	};
-
-	Shaders m_renderStatesSolid;
-	Shaders m_renderStatesTransparent;
-	Shaders m_renderStatesOverlay;
-	Shaders m_renderStatesScreen;
+	gpu::GraphicsPipelineObjectPtr m_renderStatesSolid;
+	gpu::GraphicsPipelineObjectPtr m_renderStatesTransparent;
+	gpu::GraphicsPipelineObjectPtr m_renderStatesOverlay;
+	gpu::GraphicsPipelineObjectPtr m_renderStatesSelection;
 			
 	//--
 
@@ -58,7 +49,7 @@ private:
 
 	void ensureBufferSize(const DebugGeometryCollector* debugGeometry) const;
 
-	void renderInternal(gpu::CommandWriter& cmd, const Camera* camera, const DebugGeometryCollector* debugGeometry, DebugGeometryLayer layer, const Shaders& shaders) const;
+	void renderInternal(gpu::CommandWriter& cmd, const Camera* camera, const DebugGeometryCollector* debugGeometry, DebugGeometryLayer layer, const gpu::GraphicsPipelineObject* shader) const;
 
 	//--
 };

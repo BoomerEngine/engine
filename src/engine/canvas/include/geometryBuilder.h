@@ -294,12 +294,12 @@ public:
     // insert text from glyph buffer
     // NOTE: text is transformed by the current transform
     // NOTE: font should NOT be unloaded till the data is submitted for rendering
-    void print(const FontGlyphBuffer& glyphs);
+    void print(const FontGlyphBuffer& glyphs, int hcenter = -1, int vcenter = -1);
 
     // insert text from raw glyph table
     // NOTE: text is transformed by the current transform
     // NOTE: font should NOT be unloaded till the data is submitted for rendering
-    void print(const void* glyphEntries, uint32_t numGlyphs, uint32_t dataStride);
+    void print(const void* glyphEntries, uint32_t numGlyphs, uint32_t dataStride, int hcenter = -1, int vcenter = -1);
 
     // print from font
     void print(const Font* font, int fontSize, StringView txt, int hcenter=-1, int vcenter=-1, bool bold = false);
@@ -352,8 +352,6 @@ private:
 
 		int cachedFillStyleIndex = -1;
 		int cachedStrokeStyleIndex = -1;
-
-		const CanvasImageEntryInfo* cachedFillImage = nullptr;
 
         CanvasBlendOp op = CanvasBlendOp::AlphaPremultiplied;
         CanvasLineJoin lineJoint = CanvasLineJoin::Miter;
@@ -435,7 +433,7 @@ private:
 
     void applyPaintColor(uint32_t firstVertex, uint32_t numVertices, Color color);
 	void applyPaintAttributes(uint32_t firstVertex, uint32_t numVertices, int attributesIndex);
-	void applyPaintUV(uint32_t firstVertex, uint32_t numVertices, const CanvasRenderStyle& style, const CanvasImageEntryInfo* image);
+	void applyPaintUV(uint32_t firstVertex, uint32_t numVertices, const CanvasRenderStyle& style, const CanvasImage* image);
 };
 
 //--

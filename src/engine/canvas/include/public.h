@@ -44,37 +44,41 @@ class Canvas;
 class CanvasService;
 class CanvasRenderer;
 
-class ICanvasAtlas;
-
-class CanvasDynamicAtlas;
-typedef RefPtr<CanvasDynamicAtlas> DynamicAtlasPtr;
-
-class CanvasGlyphCache;
-
 class ICanvasBatchRenderer;
-
-struct CanvasImageEntryInfo;
 
 //--
 
-typedef uint16_t CanvasAtlasIndex;
-typedef uint16_t CanvasImageIndex;
-
-struct ENGINE_CANVAS_API CanvasImageEntry
+/// icon for use with canvas
+class ENGINE_CANVAS_API CanvasImage : public IObject
 {
-	CanvasAtlasIndex atlasIndex = 0; // index of the atlas
-	CanvasImageIndex entryIndex = 0; // index of entry in the atlas
-	uint16_t width = 0; // width of the registered image
-	uint16_t height = 0; // height of the registered image
+    RTTI_DECLARE_VIRTUAL_CLASS(CanvasImage, IObject);
 
-	INLINE CanvasImageEntry() {};
-	INLINE operator bool() const { return atlasIndex != 0; }
+public:
+	CanvasImage(const Image* data, bool wrapU=false, bool wrapV=false);
+	CanvasImage(StringView depotPath, bool wrapU = false, bool wrapV = false);
+    virtual ~CanvasImage();
 
-	INLINE bool operator==(const CanvasImageEntry& other) const { return atlasIndex == other.atlasIndex && entryIndex == other.entryIndex; }
-	INLINE bool operator!=(const CanvasImageEntry& other) const { return !operator==(other); }
+    INLINE uint32_t width() const { return m_width; }
+    INLINE uint32_t height() const { return m_height; }
 
-	static uint32_t CalcHash(const CanvasImageEntry& entry);
+    INLINE AtlasImageID id() const { return m_id; }
+
+	INLINE bool wrapU() const { return m_wrapU; }
+	INLINE bool wrapV() const { return m_wrapV; }
+
+private:
+    AtlasImageID m_id = 0;
+
+    uint32_t m_width = 1;
+    uint32_t m_height = 1;
+
+	bool m_wrapU = false;
+	bool m_wrapV = false;
+
+    DynamicImageAtlasEntryPtr m_entry;
 };
+
+typedef RefPtr<CanvasImage> CanvasImagePtr;
 
 //--
 
@@ -133,24 +137,12 @@ struct CanvasBatch
 	CanvasBatchType type = CanvasBatchType::FillConvex;
 	CanvasBatchPacking packing = CanvasBatchPacking::TriangleList;
 	CanvasBlendOp op = CanvasBlendOp::AlphaPremultiplied;
-	uint8_t atlasIndex = 0;
 
 	uint64_t glyphPageMask = 0;
 
 	uint16_t renderDataOffset = 0;
 	uint8_t renderDataSize = 0;
 	uint8_t rendererIndex = 0;
-};
-
-//--
-
-struct CanvasImageEntryInfo
-{
-	Vector2 uvOffset;
-	Vector2 uvScale;
-	Vector2 uvMax;
-	char pageIndex = -1; // -1 - not placed
-	bool wrap = false;
 };
 
 //--

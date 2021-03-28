@@ -299,10 +299,10 @@ CanvasRenderStyle RenderStyle::evaluate(DataStash& stash, float pixelScale, cons
             else if (imageFlags & IMAGE_Y_STRETCH)
                 params.m_scaleY = sy / ey;
 
-            if (image && !cachedImageEntry)
-                cachedImageEntry = stash.cacheImage(image, params.m_wrapU || params.m_wrapV);
+            if (image && !cachedImage)
+                cachedImage = stash.cacheImage(image, params.m_wrapU || params.m_wrapV);
 
-            auto renderStyle = CanvasStyle_ImagePattern(cachedImageEntry, params);
+            auto renderStyle = CanvasStyle_ImagePattern(cachedImage, params);
             renderStyle.innerColor = innerColor;
             renderStyle.outerColor = outerColor;
             return renderStyle;
@@ -359,7 +359,8 @@ bool FontFamily::operator!=(const FontFamily& other) const
 //--
 
 RTTI_BEGIN_TYPE_STRUCT(ImageReference);
-    RTTI_PROPERTY(image);
+    RTTI_PROPERTY(rawImage);
+    RTTI_PROPERTY(canvasImage);
     RTTI_PROPERTY(name);
 RTTI_END_TYPE();
 
@@ -367,14 +368,14 @@ uint32_t ImageReference::hash() const
 {
     CRC32 crc;
     crc << name;
-    if (image)
-        crc << image->loadPath().view();
+    if (rawImage)
+        crc << rawImage->loadPath().view();
     return crc;
 }
 
 bool ImageReference::operator==(const ImageReference& other) const
 {
-    return (name == other.name) && (image == other.image);
+    return (name == other.name) && (rawImage == other.rawImage) && (canvasImage == other.canvasImage);
 }
 
 bool ImageReference::operator!=(const ImageReference& other) const
@@ -615,8 +616,8 @@ bool CompileStyleValue(const TextTokenLocation& loc, StyleVarType type, const Ra
                 auto url = value.arguments()[0]->string();
 
                 ImageReference style;
-                style.image = loader.loadImage(url);
-                if (!style.image)
+                style.rawImage = loader.loadImage(url);
+                if (!style.rawImage)
                 {
                     err.reportError(loc, TempString("Image '{}' has not been found", url));
                     return false;

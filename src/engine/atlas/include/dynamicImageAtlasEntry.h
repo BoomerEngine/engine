@@ -21,8 +21,8 @@ class ENGINE_ATLAS_API DynamicImageAtlasEntry : public IObject
 
 public:
 	DynamicImageAtlasEntry();
-	DynamicImageAtlasEntry(Image* image, bool wrapU = false, bool wrapV = false);
-	DynamicImageAtlasEntry(Image* image, uint32_t x, uint32_t y, uint32_t w, uint32_t h, bool wrapU = false, bool wrapV = false);
+	DynamicImageAtlasEntry(const Image* image, bool wrapU = false, bool wrapV = false);
+	DynamicImageAtlasEntry(const Image* image, uint32_t x, uint32_t y, uint32_t w, uint32_t h, bool wrapU = false, bool wrapV = false);
 	virtual ~DynamicImageAtlasEntry();
 
 	//--

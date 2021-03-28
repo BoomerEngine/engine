@@ -70,6 +70,8 @@ public:
 
     ImagePtr loadImage(StringView imageName);
     FontPtr loadFont(StringView fontName);
+    CanvasImagePtr loadCanvasImage(StringView imageName);
+
 
 protected:
     bool m_hasErrors;

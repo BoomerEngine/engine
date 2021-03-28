@@ -184,8 +184,8 @@ CanvasRenderStyle CanvasStyle_ImagePattern(const ImagePatternSettings& pattern)
 	ret.outerColor = Color(255, 255, 255, pattern.m_alpha);
 	ret.base.x = 0.0f;
 	ret.base.y = 0.0f;
-	ret.extent.x = pattern.m_image.width;
-	ret.extent.y = pattern.m_image.height;
+	ret.extent.x = pattern.m_image ? pattern.m_image->width() : 0;
+	ret.extent.y = pattern.m_image ? pattern.m_image->height() : 0;
 	ret.wrapU = pattern.m_wrapU;
 	ret.wrapV = pattern.m_wrapV;
 	ret.customUV = pattern.m_customUV;
@@ -194,12 +194,12 @@ CanvasRenderStyle CanvasStyle_ImagePattern(const ImagePatternSettings& pattern)
 	return ret;
 }
 
-CanvasRenderStyle CanvasStyle_ImagePattern(CanvasImageEntry image, const ImagePatternSettings& pattern)
+CanvasRenderStyle CanvasStyle_ImagePattern(const CanvasImage* image, const ImagePatternSettings& pattern)
 {
 	ImagePatternSettings ret = pattern;
-	ret.m_image = image;
+	ret.m_image = AddRef(image);
 	return CanvasStyle_ImagePattern(ret);
-}        
+}
 
 CanvasRenderStyle CanvasStyle_SolidColor(const Color& color)
 {

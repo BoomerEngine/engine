@@ -8,13 +8,6 @@
 
 #include "gpu_device_glue.inl"
 
-BEGIN_BOOMER_NAMESPACE_EX(image)
-
-struct ImageRect;
-class ImageView;
-
-END_BOOMER_NAMESPACE_EX(image)
-
 BEGIN_BOOMER_NAMESPACE_EX(gpu)
 
 ///---

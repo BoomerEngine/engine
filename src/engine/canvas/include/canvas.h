@@ -107,12 +107,6 @@ public:
 	// clear color we want to have the whole output filled before drawing this canvas, mainly used to speed up ui rendering
 	INLINE const Color& clearColor() const { return m_clearColor; }
 
-	// collected mask of used atlases
-	INLINE uint64_t usedAtlasMask() const { return m_usedAtlasMask; }
-
-	// collected mask of used glyph pages
-	INLINE uint64_t usedGlyphPagesMask() const { return m_usedGlyphPagesMask; }
-
 	//--
 
 	// clear the scissor stack
@@ -188,7 +182,7 @@ public:
 
 		bool wrap = false;
 
-		CanvasImageEntry image;
+		const CanvasImage* image = nullptr;
 	};
 
 	/// place a simple quad, mostly useful for custom renderer stuff/debug/simple effects etc
@@ -218,10 +212,10 @@ public:
 	};
 
 	/// quick (debug mostly) text print - measure the text
-	DebugTextBounds debugPrintMeasure(StringView text, int size = 16, FontAlignmentHorizontal align = FontAlignmentHorizontal::Left, bool bold = false) const;
+	DebugTextBounds debugPrintMeasure(StringView text, int size = 16, int align = -1, bool bold = false) const;
 
 	/// quick (debug mostly) text print
-	DebugTextBounds debugPrint(float x, float y, StringView text, Color color = Color::WHITE, int size = 16, FontAlignmentHorizontal align = FontAlignmentHorizontal::Left, bool bold = false);
+	DebugTextBounds debugPrint(float x, float y, StringView text, Color color = Color::WHITE, int size = 16, int align = -1, bool bold = false);
 
 	//--
 
@@ -239,9 +233,6 @@ private:
 	XForm2D m_pixelTransform;
 
 	uint8_t m_currentRenderer = 0;
-
-	uint64_t m_usedAtlasMask = 0;
-	uint64_t m_usedGlyphPagesMask = 0;
 
 	Color m_clearColor;
 

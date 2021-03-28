@@ -9,11 +9,15 @@
 #include "build.h"
 #include "debugGeometry.h"
 #include "debugGeometryBuilder.h"
+#include "debugGeometryAssets.h"
 
 #include "gpu/device/include/deviceService.h"
 #include "gpu/device/include/commandWriter.h"
 #include "engine/atlas/include/dynamicImageAtlas.h"
 #include "engine/atlas/include/dynamicGlyphAtlas.h"
+#include "../../font/include/font.h"
+#include "../../font/include/fontInputText.h"
+#include "../../font/include/fontGlyphBuffer.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -165,6 +169,12 @@ DebugGeometryBuilderBase::DebugGeometryBuilderBase(DebugGeometryLayer layer)
     : m_layer(layer)
 {}
 
+void DebugGeometryBuilderBase::image(const DebugGeometryImage* img)
+{
+    m_imageId = img ? img->id() : 0;
+    updateFlags();
+}
+
 void DebugGeometryBuilderBase::clear()
 {
     m_verticesData.reset();
@@ -179,10 +189,11 @@ DebugGeometryChunkPtr DebugGeometryBuilderBase::buildChunk(gpu::ImageSampledView
 void DebugGeometryBuilderBase::updateFlags()
 {
     m_flags = 0;
-    if (m_solidEdges)
-        m_flags |= DebugVertex::FLAG_EDGES;
-    if (m_solidShading)
-        m_flags |= DebugVertex::FLAG_SHADE;
+    if (m_imageId)
+    {
+        m_flags |= DebugVertex::FLAG_IMAGE;
+        m_flags |= (m_imageId << 16);
+    }
 }
 
 //--
@@ -204,6 +215,16 @@ DebugGeometryBuilder::DebugGeometryBuilder(DebugGeometryLayer layer, const Matri
 DebugGeometryBuilder::~DebugGeometryBuilder()
 {
 
+}
+
+void DebugGeometryBuilder::updateFlags()
+{
+    DebugGeometryBuilderBase::updateFlags();
+
+    if (m_solidEdges)
+        m_flags |= DebugVertex::FLAG_EDGES;
+    if (m_solidShading)
+        m_flags |= DebugVertex::FLAG_SHADE;
 }
 
 void DebugGeometryBuilder::localToWorld(const Matrix& localToWorld)
@@ -1427,9 +1448,11 @@ bool DebugGeometryBuilder::pushCircle(const Vector3& o, const Vector3& u, const 
 
     // start segment and fraction within in
     float startSegFrac = startAngle * angleToSeg;
-    int startSeg = std::ceilf(startSegFrac);
+    int startSeg = std::floorf(startSegFrac);
     startSegFrac = startSegFrac - startSeg;
     bool hasStartFrac = startSegFrac > 0.01f;
+    if (hasStartFrac)
+        startSeg += 1;
 
     // final segment and fraction within it
     float endSegFrac = endAngle * angleToSeg;
@@ -1691,71 +1714,582 @@ void DebugGeometryBuilder::pushSolidCone(uint32_t top, uint32_t bfirst, uint32_t
 
 DebugGeometryBuilderScreen::DebugGeometryBuilderScreen()
     : DebugGeometryBuilderBase(DebugGeometryLayer::Screen)
-{}
+{
+    m_fontStyle.size = 24;
+    m_flags |= DebugVertex::FLAG_SCREEN;
+    fontStyle(DebugGeometryFontStyle::Mono);
+}
+
+void DebugGeometryBuilderScreen::updateFlags()
+{
+    DebugGeometryBuilderBase::updateFlags();
+
+    m_flags |= DebugVertex::FLAG_SCREEN;
+}
+
+void DebugGeometryBuilderScreen::fontStyle(const Font* font)
+{
+    m_font = font;
+
+    if (!m_font)
+        fontStyle(m_fontType);
+}
+
+void DebugGeometryBuilderScreen::fontStyle(DebugGeometryFontStyle font)
+{
+    static const auto monoFontPtr = LoadFontFromDepotPath("/engine/interface/fonts/cour.ttf");
+    m_fontType = font;
+    m_font = monoFontPtr;
+}
+
+uint32_t DebugGeometryBuilderScreen::appendVertex(int x, int y, float u /*= 0.0f*/, float v /*= 0.0f*/)
+{
+    return appendVertex((float)x + 0.5f, (float)y + 0.5f, u, v);
+}
+
+uint32_t DebugGeometryBuilderScreen::appendVertex(float x, float y, float u /*= 0.0f*/, float v /*= 0.0f*/)
+{
+    auto* vt = m_verticesData.allocateUninitialized(1);
+    vt->c = m_color;
+    vt->p.x = x;
+    vt->p.y = x;
+    vt->p.z = 0.5f;
+    vt->s = m_selectable;
+    vt->t.x = u;
+    vt->t.y = v;
+    vt->w = m_size;
+    vt->f = m_flags;
+    return 0;
+}
+
+uint32_t DebugGeometryBuilderScreen::appendVertex(const Point& pt, float u /*= 0.0f*/, float v /*= 0.0f*/)
+{
+    return appendVertex((float)pt.x, (float)pt.y, u, v);
+}
+
+uint32_t DebugGeometryBuilderScreen::appendVertex(const Vector2& pt, float u /*= 0.0f*/, float v /*= 0.0f*/)
+{
+    return appendVertex(pt.x, pt.y, u, v);
+}
 
 void DebugGeometryBuilderScreen::rect(const Rect& r, float u0/* = 0.0f*/, float v0 /*= 0.0f*/, float u1 /*= 1.0f*/, float v1 /*= 1.0f*/)
 {
-
+    rect2(r.min.x, r.min.y, r.max.x, r.max.y, u0, v0, u1, v1);
 }
 
 void DebugGeometryBuilderScreen::rect(const Point& min, const Point& max, float u0/* = 0.0f*/, float v0 /*= 0.0f*/, float u1 /*= 1.0f*/, float v1 /*= 1.0f*/)
 {
-
+    rect2(min.x, min.y, max.x, max.y, u0, v0, u1, v1);
 }
 
 void DebugGeometryBuilderScreen::rect(int x, int y, int w, int h, float u0/* = 0.0f*/, float v0 /*= 0.0f*/, float u1 /*= 1.0f*/, float v1 /*= 1.0f*/)
 {
-
+    rect2(x, y, x + w, y + h, u0, v0, u1, v1);
 }
 
 void DebugGeometryBuilderScreen::rect2(int x0, int y0, int x1, int y1, float u0/* = 0.0f*/, float v0 /*= 0.0f*/, float u1 /*= 1.0f*/, float v1 /*= 1.0f*/)
 {
+    auto b = m_verticesData.size();
 
+    auto* vt = m_verticesData.allocateUninitialized(4);
+    writeVertex(vt++, x0 + 0.5f, y0 + 0.5f, u0, v0);
+    writeVertex(vt++, x1 + 0.5f, y0 + 0.5f, u1, v0);
+    writeVertex(vt++, x1 + 0.5f, y1 + 0.5f, u1, v1);
+    writeVertex(vt++, x0 + 0.5f, y1 + 0.5f, u0, v1);
+
+    auto* it = m_indicesData.allocateUninitialized(6);
+    *it++ = b + 0;
+    *it++ = b + 1;
+    *it++ = b + 2;
+    *it++ = b + 0;
+    *it++ = b + 3;
+    *it++ = b + 2;
 }
 
 void DebugGeometryBuilderScreen::frame(const Rect& r)
 {
-
+    frame2(r.min.x, r.min.y, r.max.x, r.max.y);
 }
 
 void DebugGeometryBuilderScreen::frame(const Point& min, const Point& max)
 {
-
+    frame2(min.x, min.y, max.x, max.y);
 }
 
 void DebugGeometryBuilderScreen::frame(int x, int y, int w, int h)
 {
-
+    frame2(x, y, x + w, y + h);
 }
 
 void DebugGeometryBuilderScreen::frame2(int x0, int y0, int x1, int y1)
 {
+    auto b = m_verticesData.size();
 
+    auto color = m_color;
+    auto flags = m_flags;
+    auto halfWidth = m_size * 0.5f;
+    m_flags &= ~DebugVertex::FLAG_IMAGE;
+    if (m_size < 1.0f)
+    {
+        halfWidth = 1.0f;
+        m_color.a = (uint8_t)(m_color.a * m_size);
+    }
+
+    auto fx0 = x0 + 0.5f;
+    auto fy0 = y0 + 0.5f;
+    auto fx1 = x1 - 0.5f;
+    auto fy1 = y1 - 0.5f;
+
+    auto dx = halfWidth;
+    auto dy = halfWidth;
+
+    auto* vt = m_verticesData.allocateUninitialized(8);
+    writeVertex(vt++, fx0 - dx, fy0 - dy, 0.0f, 0.0f);
+    writeVertex(vt++, fx0 + dx, fy0 + dy, 1.0f, 0.0f);
+
+    writeVertex(vt++, fx1 + dx, fy0 - dy, 0.0f, 0.0f);
+    writeVertex(vt++, fx1 - dx, fy0 + dy, 1.0f, 0.0f);
+
+    writeVertex(vt++, fx1 + dx, fy1 + dy, 0.0f, 0.0f);
+    writeVertex(vt++, fx1 - dx, fy1 - dy, 1.0f, 0.0f);
+
+    writeVertex(vt++, fx0 - dx, fy1 + dy, 0.0f, 0.0f);
+    writeVertex(vt++, fx0 + dx, fy1 - dy, 1.0f, 0.0f);
+
+    uint16_t indices[] = {
+        0,1,3, 0,3,2,
+        2,3,5, 2,5,4,
+        4,5,7, 4,7,6,
+        6,7,1, 6,1,0,
+    };
+
+    auto* it = m_indicesData.allocateUninitialized(ARRAY_COUNT(indices));
+    for (const auto i : indices)
+        *it++ = b + (i % 8);
+
+    m_color = color;
+    m_flags = flags;
 }
 
 void DebugGeometryBuilderScreen::line(const Vector2& a, const Vector2& b)
 {
-
+    line(a.x, a.y, b.x, b.y);
 }
 
 void DebugGeometryBuilderScreen::line(float x0, float y0, float x1, float y1)
 {
+    float dx = x1 - x0;
+    float dy = y1 - y0;
 
+    float len = sqrtf(dx * dx + dy * dy);
 }
 
-Point DebugGeometryBuilderScreen::measureText(StringView txt) const
+void DebugGeometryBuilderScreen::lines(const Vector2* points, uint32_t numPoints, bool closed /*= false*/, Color* colors /*= nullptr*/)
 {
-    return Point();
+    lines((float*)points, numPoints, sizeof(Vector2), closed, colors);
 }
 
-void DebugGeometryBuilderScreen::text(StringView txt)
+struct DebugLineCache : public ISingleton
 {
+    DECLARE_SINGLETON(DebugLineCache);
 
+public:
+    struct Point
+    {
+        float x, y;
+
+        float pdx = 0.0f, pdy = 0.0f; // normalized direction to PREV point
+        float ndx = 0.0f, ndy = 0.0f; // normalized direction to NEXT point
+
+        float tx = 0.0f, ty = 0.0f;
+    };
+
+    Array<Point> points;
+
+    DebugLineCache()
+    {
+        points.reserve(1024);
+    }
+
+    static inline const float LINE_SEGMENT_DIST = 0.5f;
+
+    void buildSegments(const float* coords, uint32_t numPoints, uint32_t pointStride, bool closed /*= false*/, float width)
+    {
+        points.reset();
+        points.reserve(numPoints);
+
+        // copy first point always
+        float px, py;
+        {
+            auto& p = points.emplaceBack();
+            p.x = coords[0] + 0.5f;
+            p.y = coords[1] + 0.5f;
+            coords = OffsetPtr(coords, pointStride);
+            px = p.x;
+            py = p.y;
+        }
+
+        // copy next points only if we are far away enough
+        for (uint32_t i = 1; i < numPoints; ++i)
+        {
+            float x = coords[0] + 0.5f;
+            float y = coords[1] + 0.5f;
+            coords = OffsetPtr(coords, pointStride);
+
+            float dx = x - px;
+            float dy = y - py;
+            float len = std::sqrtf(dx * dx + dy * dy);
+            if (len > LINE_SEGMENT_DIST)
+            {
+                len = 1.0f / len;
+                dx *= len;
+                dy *= len;
+
+                points.back().ndx = dx;
+                points.back().ndy = dy;
+
+                auto& p = points.emplaceBack();
+                p.x = x;
+                p.y = y;
+                p.pdx = dx;
+                p.pdy = dy;
+
+                px = x;
+                py = y;
+            }
+        }
+
+        // closed loop required gluing tangents
+        if (closed)
+        {
+            auto& first = points.front();
+            auto& last = points.back();
+
+            float dx = first.x - last.x;
+            float dy = first.y - last.y;
+            float len = std::sqrtf(dx * dx + dy * dy);
+            if (len > LINE_SEGMENT_DIST)
+            {
+                len = 1.0f / len;
+                dx *= len;
+                dy *= len;
+
+                first.pdx = dx;
+                first.pdy = dy;
+                last.ndx = dx;
+                last.ndy = dy;
+            }
+        }
+
+        // calculate actual tangents
+        for (auto& p : points)
+        {
+            auto dx = p.pdx + p.ndx;
+            auto dy = p.pdy + p.ndy;
+
+            float len = std::sqrtf(dx * dx + dy * dy);
+            if (len > 0.0f)
+            {
+                len = 1.0f / len;
+                dx *= len;
+                dy *= len;
+
+                p.ty = -dx * width;
+                p.tx = dy * width;
+            }
+        }
+    }
+
+public:
+    virtual void deinit() override
+    {
+        points.clear();
+    }
+};
+
+void DebugGeometryBuilderScreen::lines(const float* coords, uint32_t numPoints, uint32_t pointStride, bool closed /*= false*/, Color* colors /*= nullptr*/)
+{
+    if (numPoints < 2)
+        return;
+
+    auto b = m_verticesData.size();
+    auto bb = b;
+
+    auto color = m_color;
+    auto flags = m_flags;
+    auto halfWidth = m_size * 0.5f;
+    m_flags &= ~DebugVertex::FLAG_IMAGE;
+    if (m_size < 1.0f)
+    {
+        halfWidth = 1.0f;
+        m_color.a = (uint8_t)(m_color.a * m_size);
+    }
+
+    // build the line segments
+    auto& lc = DebugLineCache::GetInstance();
+    lc.buildSegments(coords, numPoints, pointStride, closed, m_size);
+
+    // generate vertices
+    auto* vt = m_verticesData.allocateUninitialized(2 * lc.points.size());
+    {
+        for (const auto& p : lc.points)
+        {
+            writeVertex(vt++, p.x - p.tx, p.y - p.ty, 0.0f, 0.0f);
+            writeVertex(vt++, p.x + p.tx, p.y + p.ty, 1.0f, 0.0f);
+        }
+    }
+    
+    // generate indices
+    {
+        auto numSegs = lc.points.size() - 1;
+        auto* it = m_indicesData.allocateUninitialized(6 * numSegs);
+        for (uint32_t i = 0; i < numSegs; ++i)
+        {
+            *it++ = b + 0;
+            *it++ = b + 1;
+            *it++ = b + 3;
+            *it++ = b + 0;
+            *it++ = b + 3;
+            *it++ = b + 2;
+            b += 2;
+        }
+    }
+
+    // close the loop
+    if (closed)
+    {
+        auto* it = m_indicesData.allocateUninitialized(6);
+        *it++ = b + 0;
+        *it++ = b + 1;
+        *it++ = bb + 1;
+        *it++ = b + 0;
+        *it++ = bb + 1;
+        *it++ = bb + 0;
+    }
+
+    m_color = color;
+    m_flags = flags;
 }
 
-void DebugGeometryBuilderScreen::calcBounds(Rect& outBounds) const
+void DebugGeometryBuilderScreen::clearText()
 {
+    m_glyphs.reset();
+}
 
+Rect DebugGeometryBuilderScreen::calcTextBounds() const
+{
+    Rect textBounds;
+    m_glyphs.bounds(textBounds);
+    return textBounds;
+}
+
+void DebugGeometryBuilderScreen::appendText(StringView txt)
+{
+    if (m_font)
+        m_font->renderText(m_fontStyle, txt, m_glyphs, m_color);
+}
+
+void DebugGeometryBuilderScreen::appendNewLine()
+{
+    if (m_font)
+    {
+        const auto currentDescender = m_font->relativeDescender() * m_fontStyle.size;
+        m_glyphs.newLine(currentDescender);
+    }
+}
+
+Rect DebugGeometryBuilderScreen::renderText(int x, int y, int alignX /*= -1*/, int alignY /*= -1*/)
+{
+    static InplaceArray<int, 1024> glyphIds;
+    glyphIds.reset();
+
+    const auto numGlyphs = m_glyphs.m_glyphs.size();
+    GetService<DebugGeometryAssetService>()->glyphAtlas()->mapGlyphs(m_glyphs, glyphIds);
+
+    Rect textBounds;
+    if (m_glyphs.bounds(textBounds))
+    {
+        x -= textBounds.min.x;
+        y -= textBounds.min.y;
+            
+        if (alignX == 0)
+            x -= textBounds.width() / 2;
+        else if (alignX > 0)
+            x -= textBounds.width();
+
+        if (alignY == 0)
+            y -= textBounds.height() / 2;
+        else if (alignY > 0)
+            y -= textBounds.height();
+    }
+
+    m_verticesData.reserve(m_verticesData.size() + numGlyphs * 4);
+    m_indicesData.reserve(m_indicesData.size() + numGlyphs * 6);
+
+    const auto flags = DebugVertex::FLAG_SCREEN | DebugVertex::FLAG_GLYPH;
+
+    for (auto i : m_glyphs.m_glyphs.indexRange())
+    {
+        const auto& g = m_glyphs.m_glyphs[i];
+
+        auto glyphId = glyphIds[i];
+        if (glyphId)
+        {
+            float sizeX = g.glyph->size().x;
+            float sizeY = g.glyph->size().y;
+            float offsetX = x + g.pos.x + 0.5f;
+            float offsetY = y + g.pos.y + 0.5f;
+            float endX = offsetX + sizeX;
+            float endY = offsetY + sizeY;
+
+            // create vertices
+            auto b = m_verticesData.size();
+            {
+                auto* vt = m_verticesData.allocateUninitialized(4);
+                vt->c = g.color;
+                vt->f = flags | (glyphId << 16);
+                vt->s = m_selectable;
+                vt->w = 1.0f;
+                vt->p.x = offsetX;
+                vt->p.y = offsetY;
+                vt->p.z = 1.0f;
+                vt->t.x = 0.0f;
+                vt->t.y = 0.0f;
+                vt++;
+
+                vt->c = g.color;
+                vt->f = flags | (glyphId << 16);
+                vt->s = m_selectable;
+                vt->w = 1.0f;
+                vt->p.x = endX;
+                vt->p.y = offsetY;
+                vt->p.z = 1.0f;
+                vt->t.x = 1.0f;
+                vt->t.y = 0.0f;
+                vt++;
+
+                vt->c = g.color;
+                vt->f = flags | (glyphId << 16);
+                vt->s = m_selectable;
+                vt->w = 1.0f;
+                vt->p.x = endX;
+                vt->p.y = endY;
+                vt->p.z = 1.0f;
+                vt->t.x = 1.0f;
+                vt->t.y = 1.0f;
+                vt++;
+
+                vt->c = g.color;
+                vt->f = flags | (glyphId << 16);
+                vt->s = m_selectable;
+                vt->w = 1.0f;
+                vt->p.x = offsetX;
+                vt->p.y = endY;
+                vt->p.z = 1.0f;
+                vt->t.x = 0.0f;
+                vt->t.y = 1.0f;
+                vt++;
+            }
+
+            // create indices
+            {
+                auto* it = m_indicesData.allocateUninitialized(6);
+                *it++ = b + 0;
+                *it++ = b + 1;
+                *it++ = b + 2;
+                *it++ = b + 0;
+                *it++ = b + 2;
+                *it++ = b + 3;
+            }
+        }
+    }
+
+    if (!textBounds.empty())
+    {
+        textBounds.min.x += x;
+        textBounds.max.x += x;
+        textBounds.min.y += y;
+        textBounds.max.y += y;
+    }
+
+    m_glyphs.reset();
+
+    return textBounds;
+}
+
+void DebugGeometryBuilderScreen::shift(float dx, float dy)
+{
+    for (auto& p : m_verticesData)
+    {
+        p.p.x += dx;
+        p.p.y += dy;
+    }
+}
+
+Rect DebugGeometryBuilderScreen::calcBounds() const
+{
+    if (m_verticesData.empty())
+        return Rect();
+
+    float minX = m_verticesData.front().p.x;
+    float maxX = m_verticesData.front().p.x;
+    float minY = m_verticesData.front().p.y;
+    float maxY = m_verticesData.front().p.y;
+
+    for (const auto v : m_verticesData)
+    {
+        minX = std::min<float>(minX, v.p.x);
+        minY = std::min<float>(minY, v.p.y);
+        maxX = std::max<float>(maxX, v.p.x);
+        maxY = std::max<float>(maxY, v.p.y);
+    }
+
+    int localMinX = (int)std::floorf(minX);
+    int localMinY = (int)std::floorf(minY);
+    int localMaxX = (int)std::ceilf(maxX);
+    int localMaxY = (int)std::ceilf(maxY);
+
+    return Rect(localMinX, localMinY, localMaxX, localMaxY);
+}
+
+Point DebugGeometryBuilderScreen::shiftToAlign(const Rect& bounds, int alignX /*= 0*/, int alignY /*= 0*/)
+{
+    const auto localBounds = calcBounds();
+    if (localBounds.empty())
+        return Point(0, 0);
+
+    if (bounds.empty())
+        return localBounds.size();
+
+    int dx = 0;
+    if (alignX < 0)
+        dx = bounds.min.x - localBounds.min.x;
+    else if (alignX == 0)
+        dx = bounds.min.x - localBounds.min.x + (localBounds.width() - bounds.width()) / 2;
+    else
+        dx = bounds.max.x - localBounds.max.x;
+
+    int dy = 0;
+    if (alignY < 0)
+        dy = bounds.min.y - localBounds.min.y;
+    else if (alignY == 0)
+        dy = bounds.min.y - localBounds.min.y + (localBounds.height() - bounds.height()) / 2;
+    else
+        dy = bounds.max.y - localBounds.max.y;
+
+    if (dx || dy)
+    {
+        float fdx = (float)dx;
+        float fdy = (float)dy;
+
+        for (auto& p : m_verticesData)
+        {
+            p.p.x += fdx;
+            p.p.y += fdy;
+        }
+    }
+
+    return localBounds.size();
 }
 
 //--

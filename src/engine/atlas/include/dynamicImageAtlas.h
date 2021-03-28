@@ -20,7 +20,7 @@ class ENGINE_ATLAS_API DynamicImageAtlas : public IDynamicAtlas
     RTTI_DECLARE_VIRTUAL_CLASS(DynamicImageAtlas, IDynamicAtlas);
 
 public:
-	DynamicImageAtlas();
+	DynamicImageAtlas(ImageFormat format);
 	virtual ~DynamicImageAtlas();
 
 	//--

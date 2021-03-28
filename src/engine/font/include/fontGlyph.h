@@ -57,7 +57,7 @@ class ENGINE_FONT_API FontGlyph : public NoCopy
     RTTI_DECLARE_POOL(POOL_FONTS)
 
 public:
-    FontGlyph(const FontGlyphKey& id, const ImagePtr& imagePtr, const Point& offset, const Point& size, const Vector2& advance, const Rect& logicalRect);
+    FontGlyph(const FontGlyphKey& id, const ImagePtr& imagePtr, const Point& offset, const Point& size, const Vector2& advance, const Rect& logicalRect, int ascender, int descender);
 
     // get the ID of this glyph
     INLINE const FontGlyphKey& id() const { return m_id; }
@@ -77,6 +77,12 @@ public:
     // get the advance to next rendering position after this glyph is rendered
     INLINE const Vector2& advance() const { return m_advance; }
 
+    // get ascender level of the source font
+    INLINE int ascender() const { return m_ascender; }
+    
+    // get descender level of the source font
+    INLINE int descender() const { return m_descender; }    
+
     //--
 
     // compute memory consumed by this glyph
@@ -89,6 +95,9 @@ private:
     Point m_size; // size of the renderable area of the glyph (NOTE: this is the size of the bitmap)
     Vector2 m_advance; // advance to next rendering position after this glyph is rendered, NOTE: sub-pixel rendering and kerning is already accounted for here
     Rect m_logicalRect; // get the logical rectangle for the glyph
+
+    int m_ascender = 0;
+    int m_descender = 0;
 
     ImagePtr m_bitmap; // rendered glyph bitmap
 };

@@ -148,8 +148,33 @@ void CanvasRenderer::render(gpu::CommandWriter& cmd, const RenderInfo& resources
 	// bind vertices
 	cmd.opBindVertexBuffer("CanvasVertex"_id, m_sharedVertexBuffer);
 
-	// bound atlas
-	int currentBoundAtlas = -1;
+	// bind descriptor
+	{
+        struct
+        {
+            Matrix CanvasToScreen;
+
+            uint32_t width;
+            uint32_t height;
+            uint32_t padding0;
+            uint32_t padding1;
+        } consts;
+
+        // setup constants
+        consts.width = canvas.width();
+        consts.height = canvas.height();
+        consts.CanvasToScreen = canvasToScreen;
+
+        // bind data
+        gpu::DescriptorEntry desc[6];
+        desc[0].constants(consts);
+        desc[1] = m_sharedAttributesBufferSRV;
+        desc[2] = resources.imageAtlasSRV;
+        desc[3] = resources.imageEntriesSRV;
+        desc[4] = resources.glyphAtlasSRV;
+		desc[5] = resources.glypEntriesSRV;
+        cmd.opBindDescriptor("CanvasDesc"_id, desc);
+	}
 
 	// draw batches, as many as we can in one go
 	bool firstBatch = true;
@@ -164,8 +189,7 @@ void CanvasRenderer::render(gpu::CommandWriter& cmd, const RenderInfo& resources
 		uint32_t numDrawVertices = batchPtr->vertexCount;
 		while (++batchPtr < batchEnd)
 		{
-			if ((batchPtr->atlasIndex && batchPtr->atlasIndex != curBatchStart->atlasIndex)
-				|| batchPtr->rendererIndex != curBatchStart->rendererIndex
+			if (batchPtr->rendererIndex != curBatchStart->rendererIndex
 				|| batchPtr->renderDataOffset != curBatchStart->renderDataOffset
 				|| batchPtr->op != curBatchStart->op
 				|| batchPtr->type != curBatchStart->type)
@@ -182,49 +206,14 @@ void CanvasRenderer::render(gpu::CommandWriter& cmd, const RenderInfo& resources
 			{
 				// prepare render states
 				ICanvasBatchRenderer::RenderData data;
-				if (curBatchStart->atlasIndex > 0 && curBatchStart->atlasIndex < resources.numValidAtlases)
-				{
-					const auto& atlas = resources.atlases[curBatchStart->atlasIndex];
-
-					data.atlasData = atlas.bufferSRV;
-					data.atlasImage = atlas.imageSRV;
-				}
-
 				data.blendOp = curBatchStart->op;
 				data.batchType = curBatchStart->type;
 				data.customData = OffsetPtr(canvas.m_gatheredData.typedData(), curBatchStart->renderDataOffset);
 				data.vertexBuffer = m_sharedVertexBuffer;
-				data.glyphImage = resources.glyphs.imageSRV ? resources.glyphs.imageSRV : gpu::Globals().TextureArrayWhite;
-
-				// rebind atlas data
-				if ((curBatchStart->atlasIndex && currentBoundAtlas != curBatchStart->atlasIndex) || firstBatch)
-				{
-					struct
-					{
-						Matrix CanvasToScreen;
-
-						uint32_t width;
-						uint32_t height;
-						uint32_t padding0;
-						uint32_t padding1;
-					} consts;
-
-					// setup constants
-					consts.width = canvas.width();
-					consts.height = canvas.height();
-					consts.CanvasToScreen = canvasToScreen;
-
-					// bind data
-					gpu::DescriptorEntry desc[5];
-					desc[0].constants(consts);
-					desc[1] = m_sharedAttributesBufferSRV;
-					desc[2] = data.atlasData ? data.atlasData : m_emptyAtlasEntryBufferSRV;
-					desc[3] = data.atlasImage ? data.atlasImage : gpu::Globals().TextureArrayWhite;
-					desc[4] = data.glyphImage ? data.glyphImage : gpu::Globals().TextureArrayWhite;
-					cmd.opBindDescriptor("CanvasDesc"_id, desc);
-
-					firstBatch = false;
-				}
+                data.atlasImage = resources.imageAtlasSRV;
+                data.atlasData = resources.imageEntriesSRV;
+                data.glyphImage = resources.glyphAtlasSRV;
+                data.glyphData = resources.glypEntriesSRV;
 
 				// render the vertices from all the batches in one go
 				renderer->render(cmd, data, firstDrawVertex, numDrawVertices);

@@ -17,4 +17,5 @@ Dependency("core_image")
 Dependency("gpu_device")
 
 Dependency("engine_font")
+Dependency("engine_atlas")
 Dependency("engine_texture")

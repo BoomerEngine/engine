@@ -17,9 +17,10 @@ BEGIN_BOOMER_NAMESPACE()
 struct FontGlyphBufferEntry
 {
     const FontGlyph* glyph = nullptr; // glyph to render, may be empty for white space/non renderable characters
-    Vector2 pos; // placement for rendering
+    Point pos; // placement for rendering
     Color color = Color::WHITE;
     int textPosition = 0; // original text position for this glyph
+
 };
 
 /// glyph buffer - output of text rendering via font
@@ -28,52 +29,31 @@ class ENGINE_FONT_API FontGlyphBuffer : public NoCopy
 {
 public:
     FontGlyphBuffer();
-    
-    /// reset content
-    INLINE void reset(const Vector2& startPos)
-    { 
-        m_glyphs.clear();
-        m_bounds = Rect::EMPTY();
-    }
 
-    /// get the bounding box of the text
-    INLINE Rect bounds() const
-    {
-        return m_bounds;
-    }
+    //--
 
-    /// get number of glyphs
-    INLINE uint32_t size() const
-    {
-        return m_glyphs.size();
-    }
+    void reset();
 
-    /// get the glyph data
-    INLINE const FontGlyphBufferEntry* glyphs() const
-    {
-        return m_glyphs.typedData();
-    }
+    void push(uint32_t ch, const FontGlyph* glyph, int textPosition, Color color = Color::WHITE);
 
-    /// get fonts
-    INLINE const Array<RefPtr<Font>>& fonts() const
-    {
-        return m_fonts;
-    }
+    void advance(int dx, int dy);
 
-    /// add glyph to buffer
-    void addGlyph(uint32_t ch, const FontGlyph* glyph, float x, float y, int textPosition, Color color = Color::WHITE);
+    void shift(int dx, int dy);
 
-    /// add font
-    void addFont(const RefPtr<Font>& font);
+    void newLine(int currentDescender);
 
-private:
+    bool bounds(Rect& outBounds) const;
+
+    //--
+
+    Point m_cursor;
+
     typedef Array<FontGlyphBufferEntry> TGlyphs;
     TGlyphs m_glyphs;
 
-    typedef Array<RefPtr<Font>> TFonts;
-    TFonts m_fonts;
-
-    Rect m_bounds;
+    int m_currentLineStart = 0;
+    int m_currentLineAscender = 0;
+    bool m_firstLine = true;
 };
 
 END_BOOMER_NAMESPACE()

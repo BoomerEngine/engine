@@ -114,6 +114,12 @@ public:
     //! get cliped rectangle (note: empty rectangle may be returned)
     Rect clipped(const Rect& clipArea) const;
 
+    //! return rect centered on given point
+    Rect centered(int x, int y) const;
+
+    //! return rect centered on given point
+    Rect centered(const Point& c) const;
+
     //! Merge two rectangles - extend rectangle to include given other rectangle
     Rect& merge(const Rect &rect);
 

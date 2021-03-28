@@ -97,7 +97,7 @@ namespace prv
 
     struct LayoutDisplayImage
     {
-        CanvasImageEntry image;
+        CanvasImagePtr image;
         LayoutVerticalAlign valaign = LayoutVerticalAlign::Baseline;
         Color color;
         float pixelScale = 1.0f;

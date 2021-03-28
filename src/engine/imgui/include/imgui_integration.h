@@ -61,8 +61,6 @@ namespace ImGui
 	private:
 		ImGuiContext* m_context = nullptr;
 
-		boomer::DynamicAtlasPtr m_atlas;
-
 		boomer::Array<boomer::StringBuf> m_searchPaths;
 		boomer::HashMap<boomer::StringBuf, ImTextureID> m_iconMap;
 

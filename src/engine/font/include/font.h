@@ -29,31 +29,6 @@ struct ENGINE_FONT_API FontStyleParams
     FontStyleParams(uint32_t size = 10, bool bold = false, bool italic = false, float blur = 0.0f);
 };
 
-/// horizontal text alignment modes
-enum class FontAlignmentHorizontal : uint8_t
-{
-    Left = 0,
-    Center = 1,
-    Right = 2,
-};
-
-/// vertical text alignment modes
-enum class FontAlignmentVertical : uint8_t
-{
-    Top = 0,
-    Middle = 1,
-    Bottom = 2,
-    Baseline = 3,
-};
-
-/// text generation parameters
-struct FontAssemblyParams
-{
-    uint8_t interspace = 0; // additional space between characters in pixels
-    FontAlignmentHorizontal horizontalAlignment = FontAlignmentHorizontal::Left; // alignment flags
-    FontAlignmentVertical verticalAlignment = FontAlignmentVertical::Top; // alignment flags
-};
-
 //---
 
 /// font metrics
@@ -96,13 +71,13 @@ public:
     uint32_t lineSeparation(uint32_t fontSize) const;
 
     /// compute font metrics for given text
-    void measureText(const FontStyleParams& styleParams, const FontAssemblyParams& textParams, const FontInputText& str, FontMetrics& outMetrics) const;
+    void measureText(const FontStyleParams& styleParams, StringView utfStr, FontMetrics& outMetrics) const;
 
     /// generate renderable characters for this font
     /// printable characters are written in the render buffer 
     /// the images for particular glyphs needed to render the text are maintained in the provided glyph cache
     /// returns size of the text (the same as measureText)
-    void renderText(const FontStyleParams& styleParams, const FontAssemblyParams& textParams, const FontInputText& str, FontGlyphBuffer& outBuffer, Color color = Color::WHITE) const;
+    void renderText(const FontStyleParams& styleParams, StringView utfStr, FontGlyphBuffer& outBuffer, Color color = Color::WHITE) const;
 
     /// fetch information about single character
     const FontGlyph* renderGlyph(const FontStyleParams& styleParams, uint32_t glyphcode) const;

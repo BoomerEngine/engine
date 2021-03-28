@@ -48,7 +48,7 @@ struct ENGINE_CANVAS_API CanvasRenderStyle
 	float feather = 0.0f;
 	float margin = 0.0f;
 
-	CanvasImageEntry image;
+	CanvasImagePtr image;
 
 	Color innerColor = Color::WHITE;
 	Color outerColor = Color::WHITE;
@@ -62,9 +62,6 @@ struct ENGINE_CANVAS_API CanvasRenderStyle
 	//--
 
 	CanvasRenderStyle();
-
-    //bool operator==(const CanvasRenderStyle& other) const;
-    //bool operator!=(const CanvasRenderStyle& other) const;
 };
 
 //--
@@ -99,7 +96,7 @@ extern ENGINE_CANVAS_API CanvasRenderStyle CanvasStyle_RadialGradienti(int cx, i
 // image projection settings
 struct ENGINE_CANVAS_API ImagePatternSettings
 {
-	CanvasImageEntry m_image;
+	CanvasImagePtr m_image;
     float m_angle = 0.0f; // rotation around pivot
     float m_offsetX = 0.0f;
     float m_offsetY = 0.0f;
@@ -114,7 +111,8 @@ struct ENGINE_CANVAS_API ImagePatternSettings
 	uint8_t m_margin = 0;
 
     INLINE ImagePatternSettings() {};
-	INLINE ImagePatternSettings(const CanvasImageEntry& image) : m_image(image) {};
+	INLINE ImagePatternSettings(const CanvasImage* image) : m_image(AddRef(image)) {};
+    INLINE ImagePatternSettings(const CanvasImagePtr& imagePtr) : m_image(imagePtr) {};
     INLINE ImagePatternSettings& scale(float s) { m_scaleX = s; m_scaleY = s; return *this; }
     INLINE ImagePatternSettings& offset(float x, float y) { m_offsetX = x; m_offsetY = y;  return *this; }
     INLINE ImagePatternSettings& angle(float a) { m_angle = a;  return *this; }
@@ -125,7 +123,7 @@ struct ENGINE_CANVAS_API ImagePatternSettings
     INLINE ImagePatternSettings& wrapU(bool u = true) { m_wrapU = u; return *this; }
     INLINE ImagePatternSettings& wrapV(bool u = true) { m_wrapV = u; return *this; }
 	INLINE ImagePatternSettings& customUV(bool flag = true) { m_customUV = flag; return *this; }
-	INLINE ImagePatternSettings& image(CanvasImageEntry img) { m_image = img; return *this; }
+	INLINE ImagePatternSettings& image(const CanvasImage* img) { m_image = AddRef(img); return *this; }
 	INLINE ImagePatternSettings& margin(uint8_t m) { m_margin = m; return *this; }
 
 	XForm2D calcPixelToUVTransform() const;
@@ -134,7 +132,7 @@ struct ENGINE_CANVAS_API ImagePatternSettings
 // Creates and returns an image patter. Parameters (ox,oy) specify the left-top location of the image pattern,
 // (ex,ey) the size of one image, angle rotation around the top-left corner, image is handle to the image to render.
 // The gradient is transformed by the current transform when it is passed to nvgFillPaint() or nvgStrokePaint().
-extern ENGINE_CANVAS_API CanvasRenderStyle CanvasStyle_ImagePattern(CanvasImageEntry image, const ImagePatternSettings& pattern);
+extern ENGINE_CANVAS_API CanvasRenderStyle CanvasStyle_ImagePattern(const CanvasImage* image, const ImagePatternSettings& pattern);
 extern ENGINE_CANVAS_API CanvasRenderStyle CanvasStyle_ImagePattern(const ImagePatternSettings& pattern);
 
 // Create a style with solid paint color

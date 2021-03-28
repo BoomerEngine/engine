@@ -23,15 +23,15 @@ class ENGINE_UI_API CustomImage : public IElement
 
 public:
     CustomImage();
-    CustomImage(CanvasImageEntry customImageWidget);
-    CustomImage(const Image* customImageWidget);
+    CustomImage(const CanvasImage* image);
+    CustomImage(const Image* image);
     CustomImage(StringID iconName);
 
     //--
 
     // set image to display, sets the "image" sty
-    void image(const Image* customImageWidget);
-    void image(CanvasImageEntry ptr);
+    void image(const CanvasImage* image);
+    void image(const Image* image);
     void image(StringID iconName);
 
     // set image scaling, if not specified the styles are used
@@ -45,9 +45,9 @@ protected:
     virtual void prepareShadowGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const override;
     virtual void prepareForegroundGeometry(DataStash& stash, const ElementArea& drawArea, float pixelScale, CanvasGeometryBuilder& builder) const override;
 
-	CanvasImageEntry acquireImageEntry() const;
+    CanvasImagePtr acquireImageEntry() const;
 
-    mutable Size m_imageSize;        
+    mutable Size m_imageSize;
 };
 
 //--

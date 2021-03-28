@@ -11,6 +11,7 @@
 #include "renderer.h"
 #include "cameraContext.h"
 #include "params.h"
+#include "debugGeometryAssets.h"
 
 #include "helperDebug.h"
 
@@ -26,6 +27,10 @@
 #include "core/containers/include/stringBuilder.h"
 #include "core/resource/include/staticResource.h"
 
+#include "engine/atlas/include/dynamicGlyphAtlas.h"
+#include "engine/atlas/include/dynamicImageAtlas.h"
+#include "gpu/device/include/shaderSelector.h"
+
 BEGIN_BOOMER_NAMESPACE()
 
 //---
@@ -40,61 +45,42 @@ struct DebugFragmentData
 FrameHelperDebug::FrameHelperDebug(gpu::IDevice* api)
     : m_device(api)
 {
-    m_drawShaderLines = gpu::LoadStaticShaderDeviceObject("debugLines.fx");
-    m_drawShaderSolid = gpu::LoadStaticShaderDeviceObject("debugGeometry.fx");
+    gpu::ShaderSelector selectorSolid;
+    selectorSolid.set("SOLID"_id, 1);
 
+    gpu::ShaderSelector selectorTrans;
+    selectorTrans.set("TRANSPARENT"_id, 1);
+
+    if (auto shader = gpu::LoadStaticShaderDeviceObject("debugGeometry.fx", selectorSolid))
     {
-        gpu::GraphicsRenderStatesSetup setup;
-        setup.depth(true);
-        setup.depthWrite(true);
-        setup.depthFunc(gpu::CompareOp::LessEqual);
-
-        setup.primitiveTopology(gpu::PrimitiveTopology::TriangleList);
-        m_renderStatesSolid.drawTriangles = m_drawShaderSolid->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
-
-        setup.primitiveTopology(gpu::PrimitiveTopology::LineList);
-        m_renderStatesSolid.drawLines = m_drawShaderLines->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
+        {
+            gpu::GraphicsRenderStatesSetup setup;
+            setup.depth(true);
+            setup.depthWrite(true);
+            setup.depthFunc(gpu::CompareOp::LessEqual);
+            m_renderStatesSolid = shader->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
+        }
     }
 
+    if (auto shader = gpu::LoadStaticShaderDeviceObject("debugGeometry.fx", selectorTrans))
     {
-        gpu::GraphicsRenderStatesSetup setup;
-        setup.depth(true);
-        setup.depthWrite(false);
-        setup.depthFunc(gpu::CompareOp::LessEqual);
-        setup.blend(true);
-        setup.blendFactor(0, gpu::BlendFactor::One, gpu::BlendFactor::OneMinusSrcAlpha);
+        {
+            gpu::GraphicsRenderStatesSetup setup;
+            setup.depth(true);
+            setup.depthWrite(false);
+            setup.depthFunc(gpu::CompareOp::LessEqual);
+            setup.blend(true);
+            setup.blendFactor(0, gpu::BlendFactor::One, gpu::BlendFactor::OneMinusSrcAlpha);
+            m_renderStatesTransparent = shader->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
+        }
 
-        setup.primitiveTopology(gpu::PrimitiveTopology::TriangleList);
-        m_renderStatesTransparent.drawTriangles = m_drawShaderSolid->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
-
-        setup.primitiveTopology(gpu::PrimitiveTopology::LineList);
-        m_renderStatesTransparent.drawLines = m_drawShaderLines->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
-    }
-
-    {
-        gpu::GraphicsRenderStatesSetup setup;
-        setup.depth(false);
-        setup.blend(true);
-        setup.blendFactor(0, gpu::BlendFactor::One, gpu::BlendFactor::OneMinusSrcAlpha);
-
-        setup.primitiveTopology(gpu::PrimitiveTopology::TriangleList);
-        m_renderStatesOverlay.drawTriangles = m_drawShaderSolid->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
-
-        setup.primitiveTopology(gpu::PrimitiveTopology::LineList);
-        m_renderStatesOverlay.drawLines = m_drawShaderLines->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
-    }
-
-    {
-        gpu::GraphicsRenderStatesSetup setup;
-        setup.depth(false);
-        setup.blend(true);
-        setup.blendFactor(0, gpu::BlendFactor::One, gpu::BlendFactor::OneMinusSrcAlpha);
-
-        setup.primitiveTopology(gpu::PrimitiveTopology::TriangleList);
-        m_renderStatesScreen.drawTriangles = m_drawShaderLines->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
-
-        setup.primitiveTopology(gpu::PrimitiveTopology::LineList);
-        m_renderStatesScreen.drawLines = m_drawShaderLines->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
+        {
+            gpu::GraphicsRenderStatesSetup setup;
+            setup.depth(false);
+            setup.blend(true);
+            setup.blendFactor(0, gpu::BlendFactor::One, gpu::BlendFactor::OneMinusSrcAlpha);
+            m_renderStatesOverlay = shader->createGraphicsPipeline(api->createGraphicsRenderStates(setup));
+        }
     }
 }
 
@@ -155,13 +141,14 @@ void FrameHelperDebug::render(DebugGeometryViewRecorder& rec, const DebugGeometr
         renderInternal(rec.solid, camera, debugGeometry, DebugGeometryLayer::SceneSolid, m_renderStatesSolid);
         renderInternal(rec.transparent, camera, debugGeometry, DebugGeometryLayer::SceneTransparent, m_renderStatesTransparent);
         renderInternal(rec.overlay, camera, debugGeometry, DebugGeometryLayer::Overlay, m_renderStatesOverlay);
-        renderInternal(rec.screen, camera, debugGeometry, DebugGeometryLayer::Screen, m_renderStatesScreen);
+        renderInternal(rec.screen, camera, debugGeometry, DebugGeometryLayer::Screen, m_renderStatesOverlay);
     }
 }
 
-void FrameHelperDebug::renderInternal(gpu::CommandWriter& cmd, const Camera* camera, const DebugGeometryCollector* debugGeometry, DebugGeometryLayer layer, const Shaders& shaders) const
+void FrameHelperDebug::renderInternal(gpu::CommandWriter& cmd, const Camera* camera, const DebugGeometryCollector* debugGeometry, DebugGeometryLayer layer, const gpu::GraphicsPipelineObject* shader) const
 {
     gpu::CommandWriterBlock block(cmd, "DebugGeometry");
+
 
     // query work
     const DebugGeometryCollector::Element* elemList = nullptr;
@@ -171,7 +158,7 @@ void FrameHelperDebug::renderInternal(gpu::CommandWriter& cmd, const Camera* cam
     debugGeometry->get(layer, elemList, elemCount, elemVertexCount, elemIndexCount);
 
     // nothing to draw
-    if (!elemList)
+    if (!elemList || !shader)
         return;
 
     // upload vertices
@@ -231,7 +218,7 @@ void FrameHelperDebug::renderInternal(gpu::CommandWriter& cmd, const Camera* cam
             Vector3 CameraPosition;
             float _padding0;
             Vector2 PixelSizeInScreenUnits;
-            Vector2 _padding1;
+            Vector2 ProjectZ;
         } data;
 
         data.WorldToScreen = camera->worldToScreen().transposed();
@@ -239,8 +226,23 @@ void FrameHelperDebug::renderInternal(gpu::CommandWriter& cmd, const Camera* cam
         data.PixelSizeInScreenUnits.x = 1.0f / debugGeometry->viewportWidth();
         data.PixelSizeInScreenUnits.y = 1.0f / debugGeometry->viewportHeight();
 
-        gpu::DescriptorEntry desc[1];
+        // w = sz
+        // z = sz*m[2][2] + m[2][3];
+        // z' = z / w
+        //--
+        // z = z' * w
+        // z2 += dz
+        // w2 = sz2 = (z2 - m[2][3]) / m[2][2];
+        // z2 = z2 * w2
+        data.ProjectZ.x = camera->viewToScreen().m[2][2];
+        data.ProjectZ.y = camera->viewToScreen().m[2][3];
+
+        gpu::DescriptorEntry desc[5];
         desc[0].constants(data);
+        desc[1] = GetService<DebugGeometryAssetService>()->imageAtlas()->imageSRV();
+        desc[2] = GetService<DebugGeometryAssetService>()->imageAtlas()->imageEntriesSRV();
+        desc[3] = GetService<DebugGeometryAssetService>()->glyphAtlas()->imageSRV();
+        desc[4] = GetService<DebugGeometryAssetService>()->glyphAtlas()->imageEntriesSRV();
         cmd.opBindDescriptor("DebugFragmentPass"_id, desc);
     }
 
@@ -252,24 +254,13 @@ void FrameHelperDebug::renderInternal(gpu::CommandWriter& cmd, const Camera* cam
         const auto* startBatch = elem;
         uint32_t totalIndices = 0;
 
-        // find end of the range
-        if (1)
+        while (elem)
         {
-            while (elem)
-            {
-                /*if (batch->firstIndex != expectedNextIndexStart)
-                    break;*/
-                /*if (batch->selectable != batch->selectable)
-                    break;*/
-                /*if (batch->type != startBatch->type)
-                    break;*/
-
-                totalIndices += elem->chunk->numIndices();
-                elem = elem->next;
-            }
+            totalIndices += elem->chunk->numIndices();
+            elem = elem->next;
         }
 
-        cmd.opDrawIndexed(shaders.drawTriangles, 0, firstIndex, totalIndices);
+        cmd.opDrawIndexed(shader, 0, firstIndex, totalIndices);
         firstIndex += totalIndices;
     }
 }

@@ -26,7 +26,12 @@ RTTI_END_TYPE();
 CustomImage::CustomImage()
 {}
 
-CustomImage::CustomImage(CanvasImageEntry entry)
+CustomImage::CustomImage(const CanvasImage* entry)
+{
+    image(entry);
+}
+
+CustomImage::CustomImage(const Image* entry)
 {
     image(entry);
 }
@@ -36,17 +41,12 @@ CustomImage::CustomImage(StringID iconName)
     image(iconName);
 }
 
-CustomImage::CustomImage(const Image* customImage)
-{
-    image(customImage);
-}
-
-void CustomImage::image(const Image* customImage)
+void CustomImage::image(const CanvasImage* customImage)
 {
     if (customImage)
     {
         style::ImageReference imageStyle;
-        imageStyle.image = AddRef(customImage);
+        imageStyle.canvasImage = AddRef(customImage);
         customStyle("image"_id, imageStyle);
     }
     else
@@ -55,18 +55,18 @@ void CustomImage::image(const Image* customImage)
     }
 }
 
-void CustomImage::image(CanvasImageEntry customImage)
+void CustomImage::image(const Image* customImage)
 {
     if (customImage)
     {
         style::ImageReference imageStyle;
-        imageStyle.canvasImage = customImage;
+        imageStyle.rawImage = AddRef(customImage);
         customStyle("image"_id, imageStyle);
     }
-	else
-	{
-		removeCustomStyle("image"_id);
-	}
+    else
+    {
+        removeCustomStyle("image"_id);
+    }
 }
 
 void CustomImage::image(StringID iconName)
@@ -101,26 +101,28 @@ void CustomImage::imageScale(float x, float y)
         customStyle("image-scale-y"_id, y);
 }
 
-CanvasImageEntry CustomImage::acquireImageEntry() const
+CanvasImagePtr CustomImage::acquireImageEntry() const
 {
-	if (const auto* imageStylePtr = evalStyleValueIfPresentPtr<style::ImageReference>("image"_id))
-	{
-		if (!imageStylePtr->canvasImage)
-		{
-			if (auto loadedImage = imageStylePtr->image)
-			{
-				if (renderer())
-				{
-					auto entry = renderer()->stash().cacheImage(loadedImage);
-					imageStylePtr->canvasImage = entry;
-				}
-			}
-		}
+    if (const auto* imageStylePtr = evalStyleValueIfPresentPtr<style::ImageReference>("image"_id))
+    {
+        if (renderer() && !imageStylePtr->canvasImage)
+        {
+            if (imageStylePtr->rawImage)
+            {
+                auto entry = renderer()->stash().cacheImage(imageStylePtr->rawImage);
+                imageStylePtr->canvasImage = entry;
+            }
+            else if (imageStylePtr->name)
+            {
+                auto entry = renderer()->stash().loadImage(imageStylePtr->name);
+                imageStylePtr->canvasImage = entry;
+            }
+        }
 
-		return imageStylePtr->canvasImage;
-	}
-		
-	return CanvasImageEntry();
+        return imageStylePtr->canvasImage;
+    }
+
+    return nullptr;
 }
 
 void CustomImage::computeSize(Size& outSize) const
@@ -129,8 +131,8 @@ void CustomImage::computeSize(Size& outSize) const
 
 	if (const auto imageEntry = acquireImageEntry())
     {
-        float width = imageEntry.width * evalStyleValue<float>("image-scale-x"_id, 1.0f);
-        float height = imageEntry.height * evalStyleValue<float>("image-scale-y"_id, 1.0f);
+        float width = imageEntry->width() * evalStyleValue<float>("image-scale-x"_id, 1.0f);
+        float height = imageEntry->height() * evalStyleValue<float>("image-scale-y"_id, 1.0f);
 
         if (const auto* maxWidthPtr = evalStyleValueIfPresentPtr<float>("max-width"_id))
         {
@@ -199,8 +201,8 @@ void CustomImage::prepareForegroundGeometry(DataStash& stash, const ElementArea&
 	if (const auto imageEntry = acquireImageEntry())
     {
         ImagePatternSettings imageSettings(imageEntry);
-        imageSettings.m_scaleX = (float)imageEntry.width / std::max<float>(1.0f, m_imageSize.x);
-        imageSettings.m_scaleY = (float)imageEntry.height / std::max<float>(1.0f, m_imageSize.y);
+        imageSettings.m_scaleX = (float)imageEntry->width() / std::max<float>(1.0f, m_imageSize.x);
+        imageSettings.m_scaleY = (float)imageEntry->height() / std::max<float>(1.0f, m_imageSize.y);
 
 		auto style = CanvasStyle_ImagePattern(imageSettings);
 

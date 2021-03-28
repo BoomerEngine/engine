@@ -13,19 +13,15 @@
 #include "core/input/include/inputStructures.h"
 #include "core/image/include/imageUtils.h"
 #include "engine/canvas/include/service.h"
-#include "engine/canvas/include/atlas.h"
 
 namespace ImGui
 {
-
 
 	//--
 
 	ImGUICanvasHelper::ImGUICanvasHelper()
 	{
 		m_searchPaths.emplaceBack("/engine/interface/icons/");
-
-		m_atlas = boomer::RefNew<boomer::CanvasDynamicAtlas>(1024, 1);
 
 		m_context = ImGui::CreateContext();
 
@@ -88,8 +84,6 @@ namespace ImGui
 	{
 		ImGui::DestroyContext(m_context);
 		m_context = nullptr;
-
-		m_atlas.reset();
 	}
 
 	bool ImGUICanvasHelper::processInput(const boomer::InputEvent& evt)
@@ -175,7 +169,7 @@ namespace ImGui
 
 	ImTextureID ImGUICanvasHelper::registerImage(const boomer::ImagePtr& loadedImage)
 	{
-		if (auto ret = m_atlas->registerImage(loadedImage))
+		/*if (auto ret = m_atlas->registerImage(loadedImage))
 		{
 			m_imageUVRanges.prepareWith(ret.entryIndex + 1);
 
@@ -186,7 +180,7 @@ namespace ImGui
 			}
 
 			return ret.entryIndex;
-		}
+		}*/
 
 		return 0;
 	}
@@ -317,7 +311,6 @@ namespace ImGui
 					}
 
 					auto& batch = GTempGeometry.batches.emplaceBack();
-					batch.atlasIndex = m_atlas->index();
 					batch.rendererIndex = 0;
 					batch.vertexOffset = 0;
 					batch.vertexCount = GTempGeometry.vertices.size();

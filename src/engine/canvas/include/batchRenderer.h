@@ -62,9 +62,13 @@ public:
 		const void* customData = nullptr;
 
 		const gpu::BufferObject* vertexBuffer = nullptr;
+
 		const gpu::ImageSampledView* atlasImage = nullptr;
 		const gpu::BufferStructuredView* atlasData = nullptr;
+
 		const gpu::ImageSampledView* glyphImage = nullptr;
+		const gpu::BufferStructuredView* glyphData = nullptr;
+
 		CanvasBatchType batchType = CanvasBatchType::FillConvex;
 		CanvasBlendOp blendOp = CanvasBlendOp::AlphaPremultiplied;
 	};

@@ -53,6 +53,27 @@ INLINE Rect Rect::inner(int margin) const
     return inner(Point(margin, margin));
 }
 
+INLINE Rect Rect::centered(int x, int y) const
+{
+    if (empty())
+        return Rect();
+
+    const auto w = width();
+    const auto h = height();
+
+    Rect ret;
+    ret.min.x = x - w / 2;
+    ret.min.y = y - h / 2;
+    ret.max.x = ret.min.x + w;
+    ret.max.y = ret.min.y + h;
+    return ret;
+}
+
+INLINE Rect Rect::centered(const Point& c) const
+{
+    return centered(c.x, c.y);
+}
+
 INLINE Rect Rect::inflated(const Point &margin) const
 {
     return Rect(min - margin, max + margin);

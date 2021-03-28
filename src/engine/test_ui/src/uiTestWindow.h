@@ -22,8 +22,6 @@ public:
 
     virtual void queryInitialPlacementSetup(ui::WindowInitialPlacementSetup& outSetup) const override;
     virtual void handleExternalCloseRequest() override;
-
-	DynamicAtlasPtr m_honklerAtlas;
 };
 
 //--

@@ -9,6 +9,8 @@
 #pragma once
 
 #include "debugGeometry.h"
+#include "engine/font/include/font.h"
+#include "engine/font/include/fontGlyphBuffer.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -32,14 +34,13 @@ public:
     INLINE void size(float size = 1.0f) { m_size = size; }
     INLINE void color(Color color) { m_color = color; }
 
-    INLINE void shading(bool flag) { m_solidShading = flag; updateFlags(); }
-    INLINE void edges(bool flag) { m_solidEdges = flag; updateFlags(); }
-
     INLINE const DebugVertex* vertices() const { return m_verticesData.typedData(); }
     INLINE const uint32_t* indices() const { return m_indicesData.typedData(); }
 
     INLINE uint32_t vertexCount() const { return m_verticesData.size(); }
     INLINE uint32_t indexCount() const { return m_indicesData.size(); }
+
+    void image(const DebugGeometryImage* img);
 
     //--
 
@@ -57,7 +58,7 @@ protected:
     static const uint32_t STACK_VERTICES = 4096;
     static const uint32_t STACK_INDICES = 6146;
 
-    void updateFlags();
+    virtual void updateFlags();
 
     DebugGeometryLayer m_layer;
 
@@ -65,9 +66,7 @@ protected:
     float m_size = 1.0f;
     uint32_t m_flags = 0;
     Selectable m_selectable;
-
-    bool m_solidShading = false;
-    bool m_solidEdges = false;
+    AtlasImageID m_imageId = 0;
 
     InplaceArray<DebugVertex, STACK_VERTICES> m_verticesData;
     InplaceArray<uint32_t, STACK_INDICES> m_indicesData;
@@ -81,6 +80,11 @@ class ENGINE_RENDERING_API DebugGeometryBuilder : public DebugGeometryBuilderBas
 public:
 	DebugGeometryBuilder(DebugGeometryLayer layer = DebugGeometryLayer::SceneSolid, const Matrix& localToWorld = Matrix::IDENTITY());
     ~DebugGeometryBuilder();
+
+    //--
+
+    INLINE void shading(bool flag) { m_solidShading = flag; updateFlags(); }
+    INLINE void edges(bool flag) { m_solidEdges = flag; updateFlags(); }
 
     //--
 
@@ -259,9 +263,21 @@ protected:
         vt->t.y = v;
         vt->s = m_selectable;
     }
+
+    bool m_solidShading = false;
+    bool m_solidEdges = false;
+
+    virtual void updateFlags() override;
 };
 
 //--
+
+enum class DebugGeometryFontStyle : uint8_t
+{
+    Mono,
+    Simple,
+    Symbols,
+};
 
 class ENGINE_RENDERING_API DebugGeometryBuilderScreen : public DebugGeometryBuilderBase
 {
@@ -270,12 +286,19 @@ public:
 
     //--
 
-    INLINE void textAlignV(int align) { m_textAlignV = align; }
-    INLINE void textAlignH(int align) { m_textAlignH = align; }
+    INLINE void fontSize(int size) { m_fontStyle.size = size; }
+    INLINE void fontBold(bool flag) { m_fontStyle.bold = flag; }
+    INLINE void fontItalic(bool flag) { m_fontStyle.italic = flag; }
 
-    INLINE void fontSize(int size) { m_fontSize = size; }
-    INLINE void fontBold(bool flag) { m_fontBold = flag; }
-    INLINE void fontItalic(bool flag) { m_fontItalic = flag; }
+    void fontStyle(const Font* font); // setting NULL restores default font
+    void fontStyle(DebugGeometryFontStyle font); // setting NULL restores default font
+
+    //--
+
+    uint32_t appendVertex(int x, int y, float u = 0.0f, float v = 0.0f);
+    uint32_t appendVertex(float x, float y, float u = 0.0f, float v = 0.0f);
+    uint32_t appendVertex(const Point& pt, float u = 0.0f, float v = 0.0f);
+    uint32_t appendVertex(const Vector2& pt, float u = 0.0f, float v = 0.0f);
 
     //--
 
@@ -291,29 +314,67 @@ public:
     void frame(int x, int y, int w, int h);
     void frame2(int x0, int y0, int x1, int y1);
 
-    // a line
+    // a single line
     void line(const Vector2& a, const Vector2& b);
     void line(float x0, float y0, float x1, float y1);
-    
-    // measure text
-    Point measureText(StringView txt) const;
 
-    // print text, leaves the text advanced
-    void text(StringView txt);
+    // line list (preserves tangents), can have optional custom colors
+    void lines(const Vector2* points, uint32_t numPoints, bool closed = false, Color* colors = nullptr);
+    void lines(const float* coords, uint32_t numPoints, uint32_t pointStride, bool closed = false, Color* colors = nullptr);    
+
+    //--
+
+    // clear text without doing anything
+    void clearText();
+
+    // print text, leaves the text advanced but does not FLUSH it
+    void appendText(StringView txt);
+
+    // new line in text printing
+    void appendNewLine();
+
+    // flush text as geometry, optionally can align it, returns the proper bounds of the text
+    Rect renderText(int x, int y, int alignX = -1, int alignY = -1);
+
+    // calcualte current text bounds
+    Rect calcTextBounds() const;
 
     //--
 
     // calculate the min/max of all vertices
-    void calcBounds(Rect& outBounds) const;
+    Rect calcBounds() const;
+
+    // shift all vertices (manual alignment)
+    void shift(float dx, float dy);
+
+    // shift geometry to align it in given rect, returns size of this geometry
+    Point shiftToAlign(const Rect& bounds, int alignX = 0, int alignY = 0);
 
     //--
 
 private:
-    int m_fontSize = 16;
-    bool m_fontBold = false;
-    bool m_fontItalic = false;
-    int m_textAlignV = -1;
-    int m_textAlignH = -1;
+    FontStyleParams m_fontStyle;
+
+    DebugGeometryFontStyle m_fontType = DebugGeometryFontStyle::Mono;
+    const Font* m_font = nullptr;
+
+
+    INLINE void writeVertex(DebugVertex* vt, float x, float y, float u = 0.0f, float v = 0.0f)
+    {
+        vt->p.x = x;
+        vt->p.y = y;
+        vt->p.z = 0.5f;
+        vt->c = m_color;
+        vt->f = m_flags;
+        vt->w = m_size;
+        vt->t.x = u;
+        vt->t.y = v;
+        vt->s = m_selectable;
+    }
+
+    FontGlyphBuffer m_glyphs;
+
+    virtual void updateFlags() override;
 };
 
 //--

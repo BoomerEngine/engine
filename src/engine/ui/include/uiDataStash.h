@@ -26,9 +26,6 @@ public:
     // get the main styling sheet
     INLINE style::Library* styles() const { return m_styles; }
 
-	// get main atlas
-	INLINE CanvasDynamicAtlas* mainAtlas() const { return m_mainIconAtlas; };
-
     // styles version
     INLINE uint32_t stylesVersion() const { return m_stylesVersion; }
 
@@ -43,10 +40,10 @@ public:
     //---
 
     /// load image by name, uses the search paths, returns image entry usable in canvas
-    CanvasImageEntry loadImage(StringID key);
+    CanvasImagePtr loadImage(StringID key);
 
 	/// place already loaded image in the main canvas
-	CanvasImageEntry cacheImage(const Image* img, bool supportWrapping=false, uint8_t additionalPadding=0);
+	CanvasImagePtr cacheImage(const Image* img, bool supportWrapping=false, uint8_t additionalPadding=0);
 
 	//--
 
@@ -59,10 +56,8 @@ protected:
     StyleLibraryPtr m_styles;
     uint32_t m_stylesVersion = 1;
 
-	RefPtr<CanvasDynamicAtlas> m_mainIconAtlas;
-
-    HashMap<StringID, CanvasImageEntry> m_imageMap;
-	HashMap<uint32_t, CanvasImageEntry> m_imagePtrMap;
+    HashMap<StringID, CanvasImagePtr> m_imageMap;
+	HashMap<uint32_t, CanvasImagePtr> m_imagePtrMap;
 
     Array<StringBuf> m_imageSearchPaths;
 

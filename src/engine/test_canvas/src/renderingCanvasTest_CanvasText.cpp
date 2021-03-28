@@ -38,8 +38,7 @@ public:
         params.blur = blur;
 
         FontGlyphBuffer glyphs;
-        FontAssemblyParams assemblyParams;
-        fontPtr->renderText(params, assemblyParams, FontInputText(text.c_str()), glyphs);
+        fontPtr->renderText(params, text, glyphs);
 
 		CanvasGeometry g;
 		{

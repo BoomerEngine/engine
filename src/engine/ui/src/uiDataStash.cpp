@@ -15,7 +15,6 @@
 #include "core/image/include/image.h"
 #include "core/image/include/imageView.h"
 #include "core/image/include/imageUtils.h"
-#include "engine/canvas/include/atlas.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ui)
 
@@ -38,13 +37,10 @@ DataStash::DataStash(StringView stylesDepotPath)
 	m_styles = style::LoadStyleLibrary(stylesDepotPath);
 	if (!m_styles)
 		m_styles = RefNew<style::Library>();
-
-	m_mainIconAtlas = RefNew<CanvasDynamicAtlas>(1024, 1);
 }
 
 DataStash::~DataStash()
 {
-	m_mainIconAtlas.reset();
 }
 
 void DataStash::onPropertyChanged(StringView path)
@@ -75,45 +71,36 @@ void DataStash::conditionalRebuildAtlases()
 		
 }
 
-CanvasImageEntry DataStash::cacheImage(const Image* img, bool supportWrapping /*= false*/, uint8_t additionalPadding /*= 0*/)
+CanvasImagePtr DataStash::cacheImage(const Image* img, bool supportWrapping /*= false*/, uint8_t additionalPadding /*= 0*/)
 {
 	if (!img)
-		return CanvasImageEntry();
+		return nullptr;
 
 	if (const auto* ret = m_imagePtrMap.find(img->runtimeUniqueId()))
 		return *ret;
 
-	if (img)
-	{
-		if (auto entry = m_mainIconAtlas->registerImage(img, supportWrapping, additionalPadding))
-		{
-			m_imagePtrMap[img->runtimeUniqueId()] = entry;
-			return entry;
-		}
-	}
+	auto entry = RefNew<CanvasImage>(img, supportWrapping, supportWrapping);
 
-	return CanvasImageEntry();
+	m_imagePtrMap[img->runtimeUniqueId()] = entry;
+	return entry;
 }
 
-CanvasImageEntry DataStash::loadImage(StringID key)
+CanvasImagePtr DataStash::loadImage(StringID key)
 {
 	if (const auto* ret = m_imageMap.find(key))
 		return *ret;
 
-	if (key)
-	{
-		for (const auto& searchPath : m_imageSearchPaths)
-		{	
-			if (auto imagePtr = LoadImageFromDepotPath(TempString("{}{}.png", searchPath, key)))
-			{
-				auto entry = cacheImage(imagePtr);
-				m_imageMap[key] = entry;
-				return entry;
-			}
-        }
+	for (const auto& searchPath : m_imageSearchPaths)
+	{	
+		if (auto imagePtr = LoadImageFromDepotPath(TempString("{}{}.png", searchPath, key)))
+		{
+			auto entry = cacheImage(imagePtr);
+			m_imageMap[key] = entry;
+			return entry;
+		}
     }
 
-    return CanvasImageEntry();
+	return nullptr;
 }
 
 //---

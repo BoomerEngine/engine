@@ -26,6 +26,7 @@
 #include "engine/material/include/runtimeService.h"
 #include "gpu/device/include/descriptor.h"
 #include "gpu/device/include/image.h"
+#include "debugGeometryAssets.h"
 
 BEGIN_BOOMER_NAMESPACE()
 
@@ -112,6 +113,9 @@ void FrameRenderer::prepare(gpu::CommandWriter& cmd)
 
     // dispatch all material changes
     GetService<MaterialService>()->dispatchMaterialProxyChanges();
+
+    // update debug geometry atlas
+    GetService<DebugGeometryAssetService>()->flushUpdates(cmd);
 
     // bind global frame params
     bindFrameParameters(cmd);

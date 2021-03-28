@@ -37,13 +37,12 @@ public:
 
     /// get the service by class
     template< typename T >
-    INLINE T* service() const
+    INLINE static T* Service()
     {
         static auto userIndex = ClassID<T>()->userIndex();
         if (userIndex != -1)
         {
-            auto service = m_serviceMap[userIndex];
-            //ASSERT_EX(service->cls()->is<T>(), "Incompatible service mapping");
+            auto service = st_serviceMap[userIndex];
             return static_cast<T *>(service);
         }
 
@@ -51,23 +50,25 @@ public:
     }
 
     /// get the service by class
-    INLINE void* serviceByIndex(int index) const
+    INLINE static void* ServiceByIndex(int index)
     {
         if (index != -1)
-            return m_serviceMap[index];
+            return st_serviceMap[index];
         else
             return nullptr;
     }
 
 protected:
     static const uint32_t MAX_SERVICE = 128;
-    InplaceArray<IService*, MAX_SERVICE> m_serviceMap; // index -> service pointer
+    static IService* st_serviceMap[MAX_SERVICE]; // index -> service pointer
 
     typedef Array< RefPtr<IService> > TServices;
     TServices m_services; // all services registered in the app
 
     typedef Array<IService*> TRawServices;
     TRawServices m_tickList; // list of services to tick (in the order of the updates)
+
+    uint32_t m_nextServiceId = 1;
 
     //---
 

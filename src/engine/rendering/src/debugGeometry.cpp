@@ -131,4 +131,38 @@ void DebugGeometryCollector::push(const DebugGeometryBuilderBase& data, const Ma
 
 //--
 
+ConfigProperty<float> cvDebugGeometryMaxScreenProjectionDistance("DebugGeometry", "MaxScreenProjectionDistance", 20.0f);
+ConfigProperty<float> cvDebugGeometryScreenProjectionBlendStart("DebugGeometry", "ProjectionBlendStart", 0.8f); // fade last 20%
+
+bool DebugGeometryCollector::worldToScreen(const Vector3& pos, Point& outPos, float* outAlpha /*= nullptr*/, float blendDistance /*= 0.0f*/) const
+{
+    Vector3 screenPos;
+    if (!m_camera.projectWorldToScreen(pos, screenPos))
+        return false;
+
+	if (blendDistance == 0.0f)
+		blendDistance = cvDebugGeometryMaxScreenProjectionDistance.get();
+
+	if (blendDistance > 0.0f)
+	{
+		const auto dist = m_camera.position().distance(pos);
+		if (dist >= blendDistance)
+			return false;
+
+		if (outAlpha)
+		{
+			auto blendStart = blendDistance * cvDebugGeometryScreenProjectionBlendStart.get();
+			auto blendRange = std::max<float>(0.001f, blendDistance - blendStart);
+			*outAlpha = 1.0f - std::clamp<float>((dist - blendStart) / blendRange, 0.0f, 1.0f);
+		}
+	}
+
+	outPos.x = screenPos.x * m_viewportWidth;
+	outPos.y = screenPos.y * m_viewportHight;
+	return true;
+}
+
+//--
+
+
 END_BOOMER_NAMESPACE()

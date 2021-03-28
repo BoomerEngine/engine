@@ -12,6 +12,10 @@
 #include "gpu/device/include/commandWriter.h"
 #include "gpu/device/include/deviceService.h"
 
+#include "core/image/include/imageUtils.h"
+#include "core/image/include/imageView.h"
+#include "core/image/include/image.h"
+
 #include "engine/atlas/include/dynamicGlyphAtlas.h"
 #include "engine/atlas/include/dynamicImageAtlas.h"
 #include "engine/atlas/include/dynamicImageAtlasEntry.h"
@@ -27,6 +31,27 @@ DebugGeometryImage::DebugGeometryImage(Image* data)
 {
     if (data)
     {
+        ImagePtr tempData;
+        
+        if (data->channels() != 4)
+        {
+            tempData = ConvertChannels(data->view(), 4);
+            data = tempData;
+        }
+
+        m_entry = RefNew<DynamicImageAtlasEntry>(data);
+        GetService<DebugGeometryAssetService>()->imageAtlas()->attach(m_entry);
+        m_id = m_entry->id();
+    }
+}
+
+DebugGeometryImage::DebugGeometryImage(StringView depotPath)
+{
+    if (auto data = LoadImageFromDepotPath(depotPath))
+    {
+        if (data->channels() != 4)
+            data = ConvertChannels(data->view(), 4);
+
         m_entry = RefNew<DynamicImageAtlasEntry>(data);
         GetService<DebugGeometryAssetService>()->imageAtlas()->attach(m_entry);
         m_id = m_entry->id();
@@ -63,7 +88,7 @@ void DebugGeometryAssetService::flushUpdates(gpu::CommandWriter& cmd)
 
 bool DebugGeometryAssetService::onInitializeService(const CommandLine& cmdLine)
 {
-    m_imageAtlas = RefNew<DynamicImageAtlas>();
+    m_imageAtlas = RefNew<DynamicImageAtlas>(ImageFormat::SRGBA8);
     m_glyphAtlas = RefNew<DynamicGlyphAtlas>();
     return true;
 }

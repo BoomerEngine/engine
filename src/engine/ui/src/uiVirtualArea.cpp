@@ -666,7 +666,7 @@ void VirtualArea::renderGridBackground(DataStash& stash, const ElementArea& draw
                 renderStyle.innerColor.a *= alphaScale;
                 renderStyle.outerColor.a *= alphaScale;
 
-                auto imageSize = (float)renderStyle.image.width;
+                auto imageSize = (float)renderStyle.image->width();
 
 				Canvas::QuadSetup quad;
 				quad.x1 = drawArea.size().x;
@@ -676,7 +676,7 @@ void VirtualArea::renderGridBackground(DataStash& stash, const ElementArea& draw
                 quad.u1 = quad.u0 + (quad.x1 * m_viewInvScale) / imageSize;
                 quad.v1 = quad.v0 + (quad.y1 * m_viewInvScale) / imageSize;
 				quad.op = CanvasBlendOp::AlphaPremultiplied; // TODO: copy
-				quad.image = renderStyle.image;
+				quad.image = renderStyle.image.get();
                 quad.color = renderStyle.innerColor;
                 quad.wrap = true;
 

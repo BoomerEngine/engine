@@ -115,7 +115,6 @@ namespace Scintilla
 
     public:
         boomer::FontStyleParams m_style;
-        boomer::FontAssemblyParams m_assembly;
         boomer::FontPtr m_font;
     };
 

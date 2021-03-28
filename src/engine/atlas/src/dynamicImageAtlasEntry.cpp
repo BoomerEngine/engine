@@ -20,7 +20,7 @@ RTTI_END_TYPE();
 DynamicImageAtlasEntry::DynamicImageAtlasEntry()
 {}
 
-DynamicImageAtlasEntry::DynamicImageAtlasEntry(Image* image, bool wrapU /*= false*/, bool wrapV /*= false*/)
+DynamicImageAtlasEntry::DynamicImageAtlasEntry(const Image* image, bool wrapU /*= false*/, bool wrapV /*= false*/)
     : m_image(AddRef(image))
     , m_rect(0, 0, image->width(), image->height())
     , m_wrapU(wrapU)
@@ -28,7 +28,7 @@ DynamicImageAtlasEntry::DynamicImageAtlasEntry(Image* image, bool wrapU /*= fals
 {
 }
 
-DynamicImageAtlasEntry::DynamicImageAtlasEntry(Image* image, uint32_t x, uint32_t y, uint32_t w, uint32_t h, bool wrapU /*= false*/, bool wrapV /*= false*/)
+DynamicImageAtlasEntry::DynamicImageAtlasEntry(const Image* image, uint32_t x, uint32_t y, uint32_t w, uint32_t h, bool wrapU /*= false*/, bool wrapV /*= false*/)
     : m_image(AddRef(image))
     , m_rect(x, y, x + w, y + h)
     , m_wrapU(wrapU)

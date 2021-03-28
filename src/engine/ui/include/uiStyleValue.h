@@ -115,10 +115,9 @@ struct ENGINE_UI_API RenderStyle
     float feather = 0.0f;
     Color innerColor = Color::WHITE;
     Color outerColor = Color::WHITE;
+    ImagePtr image;
 
-    ImagePtr image; // locally stored
-
-    mutable CanvasImageEntry cachedImageEntry;
+    mutable CanvasImagePtr cachedImage; // locally stored
 };
 
 //---
@@ -131,11 +130,9 @@ struct ImageReference
     INLINE ImageReference(const ImageReference& other) = default;
     INLINE ImageReference& operator=(const ImageReference& other) = default;
 
-
     StringID name; // icon name to be loaded from data stash
-    ImagePtr image; // locally stored
-
-	mutable CanvasImageEntry canvasImage; // not saved
+    ImagePtr rawImage; // locally stored
+    mutable CanvasImagePtr canvasImage; // locally stored
 
     //--
 

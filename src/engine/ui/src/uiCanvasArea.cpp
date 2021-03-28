@@ -427,11 +427,9 @@ void CanvasArea::renderStatusMessages(const ElementArea& drawArea, Canvas& canva
                 {
                     FontStyleParams styleParams;
                     styleParams.size = size;
-                    FontAssemblyParams assemblyParams;
 
-                    FontInputText text(msg.text);
                     FontMetrics metrics;
-                    fonts->normal->measureText(styleParams, assemblyParams, text, metrics);
+                    fonts->normal->measureText(styleParams, msg.text, metrics);
 
                     totalAreaWidth = std::max<uint32_t>(totalAreaWidth, metrics.textWidth);
                     linePos.pushBack(totalAreaHeight);

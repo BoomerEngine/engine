@@ -38,9 +38,9 @@ void ServiceContainer::attachService(const RefPtr<IService>& service)
     {
         ASSERT(serviceClass->userIndex() == -1);
 
-        auto serviceId = m_serviceMap.size();
+        auto serviceId = m_nextServiceId++;
         const_cast<IClassType*>(serviceClass.ptr())->assignUserIndex((short)serviceId); // TEMP HACK
-        m_serviceMap.pushBack(service.get());
+        st_serviceMap[serviceId] = service.get();
 
         serviceClass = serviceClass->baseClass();
     }
@@ -86,6 +86,9 @@ void ServiceContainer::shutdown()
             }
         }
         DEBUG_CHECK_EX(!hasAliveServices, "There are some services that are still alive after platform cleanup. Please investigate as this may lead to severe leaks and/or crashes at exit.");
+
+        // clear the map
+        memzero(st_serviceMap, sizeof(st_serviceMap));
 
         // we may crash here, so add another log
         TRACE_INFO("All services released");
@@ -303,10 +306,15 @@ namespace helper
 
 } // helper
 
+IService* ServiceContainer::st_serviceMap[ServiceContainer::MAX_SERVICE] = { nullptr };
+
 bool ServiceContainer::init(const CommandLine& commandline)
 {
     ScopeTimer initTimer;
 
+    // clear service map
+    memzero(st_serviceMap, sizeof(st_serviceMap));
+    
     // extract the service classes and their information
     helper::ServicesGraph serviceGraph;
     if (commandline.hasParam("singleService"))
@@ -398,7 +406,7 @@ BEGIN_BOOMER_NAMESPACE()
 
 void* GetServicePtr(int serviceIndex)
 {
-    return ServiceContainer::GetInstance().serviceByIndex(serviceIndex);
+    return ServiceContainer::ServiceByIndex(serviceIndex);
 }
 
 END_BOOMER_NAMESPACE()

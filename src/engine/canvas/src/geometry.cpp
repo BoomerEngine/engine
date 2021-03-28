@@ -157,7 +157,6 @@ void CanvasGeometry::applyStyle(CanvasVertex* vertices, uint32_t numVertices, co
 	auto* vertexPtr = vertices + numVertices;
 
 	static const auto* service = GetService<CanvasService>();
-	const auto* imageEntry = style.image ? service->findRenderDataForAtlasEntry(style.image) : nullptr;
 
 	auto attributesIndex = appendStyle(style);
 	/*if (attributesIndex == 0)
@@ -174,11 +173,11 @@ void CanvasGeometry::applyStyle(CanvasVertex* vertices, uint32_t numVertices, co
 	{
 		auto flags = CanvasVertex::MASK_FILL;
 
-		int imagePage = 0;
-		if (imageEntry)
+		auto imageEntryIndex = 0;
+		if (style.image)
 		{
 			flags |= CanvasVertex::MASK_HAS_IMAGE;
-			imagePage = imageEntry->pageIndex;
+			imageEntryIndex = style.image->id();
 		}
 
 		auto* vertex = vertices;
@@ -186,38 +185,14 @@ void CanvasGeometry::applyStyle(CanvasVertex* vertices, uint32_t numVertices, co
 		{
 			vertex->attributeIndex = attributesIndex;
 			vertex->attributeFlags = flags;
-			vertex->imageEntryIndex = style.image.entryIndex;
-			vertex->imagePageIndex = imagePage;
+			vertex->imageEntryIndex = imageEntryIndex;
+			vertex->imagePageIndex = 0;
 			++vertex;
 		}
 	}
 
-	if (style.customUV)
-	{
-		if (imageEntry)
-		{
-			auto uvScale = imageEntry->uvMax - imageEntry->uvOffset;
-
-			auto* vertex = vertices;
-			while (vertex < vertexPtr)
-			{
-				vertex->uv.x = (vertex->uv.x * uvScale.x) + imageEntry->uvOffset.x;
-				vertex->uv.y = (vertex->uv.y * uvScale.y) + imageEntry->uvOffset.y;
-				++vertex;
-			}
-		}
-	}
-	else if (imageEntry)
-	{
-		auto* vertex = vertices;
-		while (vertex < vertexPtr)
-		{
-			vertex->uv.x = (style.xform.transformX(vertex->pos.x, vertex->pos.y) * imageEntry->uvScale.x) + imageEntry->uvOffset.x;
-			vertex->uv.y = (style.xform.transformX(vertex->pos.x, vertex->pos.y) * imageEntry->uvScale.y) + imageEntry->uvOffset.y;
-			++vertex;
-		}
-	}
-	else
+	// compute UV from style
+	if (!style.customUV)
 	{
 		auto* vertex = vertices;
 		while (vertex < vertexPtr)
@@ -264,19 +239,8 @@ void CanvasGeometry::appendIndexedBatch(const CanvasVertex* vertices, const uint
 		applyStyle(localVertices, numIndices, *style);
 
 	auto& batch = batches.emplaceBack(setup);
-	batch.atlasIndex = style ? style->image.atlasIndex : 0;
 	batch.vertexOffset = firstVertexIndex;
 	batch.vertexCount = numIndices;
-}
-
-//--
-
-uint32_t CanvasImageEntry::CalcHash(const CanvasImageEntry& entry)
-{
-	CRC32 crc;
-	crc << entry.atlasIndex;
-	crc << entry.entryIndex;
-	return crc;
 }
 
 //--

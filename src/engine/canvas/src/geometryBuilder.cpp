@@ -40,6 +40,8 @@
 #include "engine/font/include/fontGlyphBuffer.h"
 #include "engine/font/include/fontInputText.h"
 
+#include "engine/atlas/include/dynamicGlyphAtlas.h"
+
 BEGIN_BOOMER_NAMESPACE()
 
 //--
@@ -183,9 +185,6 @@ void CanvasGeometryBuilder::fillColor(const Color& color)
 
 void CanvasGeometryBuilder::fillPaint(const CanvasRenderStyle& style)
 {
-	if (m_style.fillStyle.image != style.image)
-		m_style.cachedFillImage = nullptr;
-
 	m_style.cachedFillStyleIndex = mapStyle(style, 1.0f);
 	m_style.fillStyle = style;
 }
@@ -1260,7 +1259,7 @@ namespace helper
 
 } // helper
 
-void CanvasGeometryBuilder::applyPaintUV(uint32_t firstVertex, uint32_t numVertices, const CanvasRenderStyle& style, const CanvasImageEntryInfo* image)
+void CanvasGeometryBuilder::applyPaintUV(uint32_t firstVertex, uint32_t numVertices, const CanvasRenderStyle& style, const CanvasImage* image)
 {
 	if (style.xformNeeded)
 	{
@@ -1273,27 +1272,23 @@ void CanvasGeometryBuilder::applyPaintUV(uint32_t firstVertex, uint32_t numVerti
 		auto* writePtr = m_outVertices.typedData() + firstVertex;
 		auto* writeEndPtr = writePtr + numVertices;
 
-		if (image)
+        uint16_t imageId = 0;
+        float invScaleX = 1.0f;
+        float invScaleY = 1.0f;
+        if (image)
+        {
+            imageId = image->id();
+            invScaleX = 1.0f / image->width();
+            invScaleY = 1.0f / image->height();
+        }
+
+		while (writePtr < writeEndPtr)
 		{
-			while (writePtr < writeEndPtr)
-			{
-				writePtr->uv.x = (paintXform.transformX(writePtr->pos.x - m_stylePivot.x, writePtr->pos.y - m_stylePivot.y) * image->uvScale.x) + image->uvOffset.x;
-				writePtr->uv.y = (paintXform.transformY(writePtr->pos.x - m_stylePivot.x, writePtr->pos.y - m_stylePivot.y) * image->uvScale.y) + image->uvOffset.y;
-				writePtr->imagePageIndex = image->pageIndex;
-				writePtr->imageEntryIndex = style.image.entryIndex;
-				++writePtr;
-			}
-		}
-		else
-		{
-			while (writePtr < writeEndPtr)
-			{
-				writePtr->uv.x = paintXform.transformX(writePtr->pos.x - m_stylePivot.x, writePtr->pos.y - m_stylePivot.y);
-				writePtr->uv.y = paintXform.transformY(writePtr->pos.x - m_stylePivot.x, writePtr->pos.y - m_stylePivot.y);
-				writePtr->imagePageIndex = 0;
-				writePtr->imageEntryIndex = 0;
-				++writePtr;
-			}
+			writePtr->uv.x = paintXform.transformX(writePtr->pos.x - m_stylePivot.x, writePtr->pos.y - m_stylePivot.y) * invScaleX;
+			writePtr->uv.y = paintXform.transformY(writePtr->pos.x - m_stylePivot.x, writePtr->pos.y - m_stylePivot.y) * invScaleY;
+			writePtr->imagePageIndex = 0;
+            writePtr->imageEntryIndex = imageId;
+			++writePtr;
 		}
 	}
 }
@@ -1432,7 +1427,6 @@ void CanvasGeometryBuilder::stroke()
 
         // emit a drawable primitive
 		auto& prim = m_outBatches.emplaceBack();
-		prim.atlasIndex = 0;
 		prim.op = m_style.op;
 		prim.packing = CanvasBatchPacking::TriangleStrip;
 		prim.type = CanvasBatchType::FillConvex;
@@ -1460,10 +1454,6 @@ void CanvasGeometryBuilder::fill()
 
 	// cache image
 	static const auto* service = GetService<CanvasService>();
-	if (m_style.fillStyle.image && !m_style.cachedFillImage)
-		m_style.cachedFillImage = service->findRenderDataForAtlasEntry(m_style.fillStyle.image);
-	else if (!m_style.fillStyle.image)
-		m_style.cachedFillImage = nullptr;
 
     // calculate inner deltas and other data, preparing path to be used
     m_pathCache->computeDeltas();
@@ -1481,12 +1471,12 @@ void CanvasGeometryBuilder::fill()
 
 	// flags in case we have image
 	uint16_t imageFlags = 0;
-	if (m_style.cachedFillImage)
+	if (m_style.fillStyle.image)
 	{
 		imageFlags = CanvasVertex::MASK_HAS_IMAGE;
-		if (m_style.fillStyle.wrapU)
+		if (m_style.fillStyle.wrapU && m_style.fillStyle.image->wrapU())
 			imageFlags |= CanvasVertex::MASK_HAS_WRAP_U;
-		if (m_style.fillStyle.wrapV)
+		if (m_style.fillStyle.wrapV && m_style.fillStyle.image->wrapV())
 			imageFlags |= CanvasVertex::MASK_HAS_WRAP_V;
 	}
 
@@ -1542,7 +1532,6 @@ void CanvasGeometryBuilder::fill()
 			prim.type = CanvasBatchType::FillConvex;
 			prim.vertexOffset = vertexWriter.startVertexIndex();
 			prim.vertexCount = vertexWriter.finishAndGetCount();
-			prim.atlasIndex = m_style.fillStyle.image.atlasIndex;
 			prim.rendererIndex = m_customRenderer.index;
 			prim.renderDataOffset = m_customRenderer.dataOffset;
 			prim.renderDataSize = m_customRenderer.dataSize;
@@ -1553,7 +1542,6 @@ void CanvasGeometryBuilder::fill()
 			prim.op = CanvasBlendOp::Copy;
 			prim.packing = CanvasBatchPacking::TriangleFan;
 			prim.type = CanvasBatchType::ConcaveMask;
-			prim.atlasIndex = 0; // mask does not require any particular atlas
 			prim.rendererIndex = 0; // mask is always drawn with default renderer
 			prim.vertexOffset = vertexWriter.startVertexIndex();
 			prim.vertexCount = vertexWriter.finishAndGetCount();
@@ -1590,19 +1578,19 @@ void CanvasGeometryBuilder::fill()
 		prim.vertexCount = vertexWriter.finishAndGetCount();
 
 		// apply the UV calculation only on the 4 vertices
-		applyPaintUV(firstQuadVertex, 4, m_style.fillStyle, m_style.cachedFillImage);
+		applyPaintUV(firstQuadVertex, 4, m_style.fillStyle, m_style.fillStyle.image);
 		applyPaintAttributes(firstVertex, vertexWriter.numWrittenVertices(), m_style.cachedFillStyleIndex);
 	}
 	else
 	{
 		// apply the UV calculation only on all vertices
-		applyPaintUV(firstVertex, vertexWriter.numWrittenVertices(), m_style.fillStyle, m_style.cachedFillImage);
+		applyPaintUV(firstVertex, vertexWriter.numWrittenVertices(), m_style.fillStyle, m_style.fillStyle.image);
 		applyPaintAttributes(firstVertex, vertexWriter.numWrittenVertices(), m_style.cachedFillStyleIndex);
 	}
 
 	// render additional stroke to cover for the fringe
 	// NOTE: this is only supported for styles without image
-	if (hasFringe && !m_style.cachedFillImage)
+	if (hasFringe && !m_style.fillStyle.image)
 	{
 		const auto mask = CanvasVertex::MASK_STROKE | CanvasVertex::MASK_HAS_FRINGE;
 
@@ -1653,12 +1641,11 @@ void CanvasGeometryBuilder::fill()
 				prim.op = m_style.op;
 				prim.packing = CanvasBatchPacking::TriangleStrip;
 				prim.type = CanvasBatchType::FillConvex;
-				prim.atlasIndex = 0; // fringe does not require image atlas as it's only used when there's no image
 				prim.rendererIndex = m_customRenderer.index;
 				prim.renderDataOffset = m_customRenderer.dataOffset;
 				prim.renderDataSize = m_customRenderer.dataSize;
 				prim.vertexOffset = vertexWriter.startVertexIndex();
-				prim.vertexCount = vertexWriter.finishAndGetCount();						
+				prim.vertexCount = vertexWriter.finishAndGetCount();
 			}
 		}
 	}
@@ -1674,42 +1661,23 @@ void CanvasGeometryBuilder::print(const Font* font, int fontSize, StringView txt
 {
     if (font)
     {
-        FontGlyphBuffer buffer;
-
         FontStyleParams styleParams;
         styleParams.size = fontSize;
         styleParams.bold = bold;
 
-        FontAssemblyParams assemblyParams;
-        if (hcenter == 0)
-            assemblyParams.horizontalAlignment = FontAlignmentHorizontal::Center;
-        else if (hcenter == 1)
-            assemblyParams.horizontalAlignment = FontAlignmentHorizontal::Right;
-        else 
-            assemblyParams.horizontalAlignment = FontAlignmentHorizontal::Left;
+        FontGlyphBuffer buffer;
+        font->renderText(styleParams, txt, buffer);
 
-        if (vcenter == 0)
-            assemblyParams.verticalAlignment = FontAlignmentVertical::Middle;
-        else if (vcenter == 1)
-            assemblyParams.verticalAlignment = FontAlignmentVertical::Bottom;
-        else if (vcenter == 2)
-            assemblyParams.verticalAlignment = FontAlignmentVertical::Baseline;
-        else
-            assemblyParams.verticalAlignment = FontAlignmentVertical::Top;
-                
-        FontInputText inputText(txt.data(), txt.length());
-        font->renderText(styleParams, assemblyParams, inputText, buffer);
-
-        print(buffer);
+        print(buffer, hcenter, vcenter);
     }
 }
 
-void CanvasGeometryBuilder::print(const FontGlyphBuffer& glyphs)
+void CanvasGeometryBuilder::print(const FontGlyphBuffer& glyphs, int hcenter /*= -1*/, int vcenter /*= -1*/)
 {
-    return print(glyphs.glyphs(), glyphs.size(), sizeof(FontGlyphBufferEntry));
+    return print(glyphs.m_glyphs.typedData(), glyphs.m_glyphs.size(), sizeof(FontGlyphBufferEntry), hcenter, vcenter);
 }
 
-void CanvasGeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, uint32_t dataStride)
+void CanvasGeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, uint32_t dataStride, int hcenter /*= -1*/, int vcenter /*= -1*/)
 {
 	DEBUG_CHECK_RETURN_EX(numGlyphs < 10000, "Text is to large to be sensibly printed");
 
@@ -1718,6 +1686,9 @@ void CanvasGeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, 
 	// allocate output space
 	auto firstVertex = m_outVertices.size();
 	auto writeVertex = m_outVertices.allocateUninitialized(numGlyphs * 4);
+
+    // glyph atlas
+    auto* glyphAtlas = GetService<CanvasService>()->glyphAtlas().get();
 
 	// convert glyphs to vertices
     auto readPtr  = (const FontGlyphBufferEntry*)glyphEntries;
@@ -1742,7 +1713,7 @@ void CanvasGeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, 
         float endY = offsetY + sizeY;
 
 		// resolve glyph UV placement
-		if (const auto* placement = service->findRenderDataForGlyph(srcGlyph.glyph))
+        if (auto id = glyphAtlas->mapGlyph(*srcGlyph.glyph))
 		{
 			if (m_transformClass & XForm2DClass::HasScaleRotation)
 			{
@@ -1767,22 +1738,22 @@ void CanvasGeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, 
 				writeVertex[3].pos.y = endY;
 			}
 
-			// write UVs
-			writeVertex[0].uv.x = placement->uvOffset.x;
-			writeVertex[0].uv.y = placement->uvOffset.y;
-			writeVertex[1].uv.x = placement->uvMax.x;
-			writeVertex[1].uv.y = placement->uvOffset.y;
-			writeVertex[2].uv.x = placement->uvMax.x;
-			writeVertex[2].uv.y = placement->uvMax.y;
-			writeVertex[3].uv.x = placement->uvOffset.x;
-			writeVertex[3].uv.y = placement->uvMax.y;
+			// write default quad UVs, the actual UVs are taken from glyph atlas at runtime
+			writeVertex[0].uv.x = 0.0f;
+			writeVertex[0].uv.y = 0.0f;
+			writeVertex[1].uv.x = 1.0f;
+			writeVertex[1].uv.y = 0.0f;
+			writeVertex[2].uv.x = 1.0f;
+			writeVertex[2].uv.y = 1.0f;
+			writeVertex[3].uv.x = 0.0f;
+			writeVertex[3].uv.y = 1.0f;
 
 			// write common data
 			for (int i = 0; i < 4; ++i)
 			{
 				writeVertex[i].color = srcGlyph.color;
-				writeVertex[i].imageEntryIndex = 0;
-				writeVertex[i].imagePageIndex = placement->pageIndex;
+				writeVertex[i].imageEntryIndex = id;
+				writeVertex[i].imagePageIndex = 0;
 				writeVertex[i].attributeIndex = 0;
 				writeVertex[i].attributeFlags = CanvasVertex::MASK_GLYPH; // glyph
 			}
@@ -1790,10 +1761,6 @@ void CanvasGeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, 
 			// update bounds
 			boundsMin = boundsMin.min(writeVertex[0].pos);
 			boundsMax = boundsMax.max(writeVertex[2].pos);
-
-			// collect masks
-			if (placement->pageIndex != -1)
-				glyphPageMask |= 1ULL << placement->pageIndex;
 
 			// counts
 			writeVertex += 4;
@@ -1807,7 +1774,6 @@ void CanvasGeometryBuilder::print(const void* glyphEntries, uint32_t numGlyphs, 
 		prim.op = m_style.op;
 		prim.packing = CanvasBatchPacking::Quads;
 		prim.type = CanvasBatchType::FillConvex;
-		prim.atlasIndex = 0; // we don't need atlas for text
 		prim.rendererIndex = m_customRenderer.index;
 		prim.renderDataOffset = m_customRenderer.dataOffset;
 		prim.renderDataSize = m_customRenderer.dataSize;

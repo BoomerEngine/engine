@@ -21,7 +21,6 @@
 #include "core/containers/include/utf8StringFunctions.h"
 #include "engine/font/include/fontGlyph.h"
 #include "core/input/include/inputStructures.h"
-#include "engine/canvas/include/atlas.h"
 
 #ifdef PLATFORM_MSVC
 #pragma warning (disable: 4706) // assignment within conditional expression
@@ -67,8 +66,6 @@ struct FontHelper
 public:
     FontHelper()
         : m_size(10)
-        , m_verticalAlignment(FontAlignmentVertical::Top)
-        , m_horizontalAlignment(FontAlignmentHorizontal::Left)
     {
     }
 
@@ -106,20 +103,20 @@ public:
     void textAlign(uint32_t flags)
     {
         if (flags & NVG_ALIGN_LEFT)
-            m_horizontalAlignment = FontAlignmentHorizontal::Left;
+            m_horizontalAlignment = -1;
         else if (flags & NVG_ALIGN_CENTER)
-            m_horizontalAlignment = FontAlignmentHorizontal::Center;
+            m_horizontalAlignment = 0;
         else if (flags & NVG_ALIGN_RIGHT)
-            m_horizontalAlignment = FontAlignmentHorizontal::Right;
+            m_horizontalAlignment = 1;
 
         if (flags & NVG_ALIGN_TOP)
-            m_verticalAlignment = FontAlignmentVertical::Top;
+            m_verticalAlignment = -1;
         else if (flags & NVG_ALIGN_MIDDLE)
-            m_verticalAlignment = FontAlignmentVertical::Middle;
+            m_verticalAlignment = 0;
         else if (flags & NVG_ALIGN_BOTTOM)
-            m_verticalAlignment = FontAlignmentVertical::Bottom;
+            m_verticalAlignment = 1;
         else if (flags & NVG_ALIGN_BASELINE)
-            m_verticalAlignment = FontAlignmentVertical::Baseline;
+            m_verticalAlignment = 0;
     }
 
     void fontBlur(uint32_t blur)
@@ -132,10 +129,9 @@ public:
         params.size = m_size;
 
         FontGlyphBuffer glyphs;
-        FontAssemblyParams assemblyParams;
         FontMetrics metrics;
         if (m_currentFace)
-            m_currentFace->measureText(params, assemblyParams, FontInputText(string), metrics);
+            m_currentFace->measureText(params, string, metrics);
 
         return (float)metrics.textWidth;
     }
@@ -145,11 +141,12 @@ public:
         FontStyleParams params;
         params.size = m_size;
 
+        StringBuf txt(string);
+
         FontGlyphBuffer glyphs;
-        FontAssemblyParams assemblyParams;
         FontMetrics metrics;
         if (m_currentFace)
-            m_currentFace->measureText(params, assemblyParams, FontInputText(string), metrics);
+            m_currentFace->measureText(params, txt, metrics);
 
         return (float)metrics.textWidth;
     }
@@ -160,11 +157,12 @@ public:
         params.size = m_size;
 
         FontGlyphBuffer glyphs;
-        FontAssemblyParams assemblyParams;
-        assemblyParams.verticalAlignment = m_verticalAlignment;
-        assemblyParams.horizontalAlignment = m_horizontalAlignment;
+        //FontAssemblyParams assemblyParams;
+        //assemblyParams.verticalAlignment = m_verticalAlignment;
+        //assemblyParams.horizontalAlignment = m_horizontalAlignment;
+
         if (m_currentFace)
-            m_currentFace->renderText(params, assemblyParams, FontInputText(txt), glyphs);
+            m_currentFace->renderText(params, txt, glyphs);
 
         vg.pushTransform();
         vg.translate(x, y);
@@ -178,11 +176,11 @@ public:
         params.size = m_size;
 
         FontGlyphBuffer glyphs;
-        FontAssemblyParams assemblyParams;
-        assemblyParams.verticalAlignment = m_verticalAlignment;
-        assemblyParams.horizontalAlignment = m_horizontalAlignment;
+        //FontAssemblyParams assemblyParams;
+        //assemblyParams.verticalAlignment = m_verticalAlignment;
+        //assemblyParams.horizontalAlignment = m_horizontalAlignment;
         if (m_currentFace)
-            m_currentFace->renderText(params, assemblyParams, FontInputText(txt, endTxt - txt), glyphs);
+            m_currentFace->renderText(params, StringView(txt, endTxt - txt), glyphs);
 
         vg.pushTransform();
         vg.translate(x, y);
@@ -190,17 +188,19 @@ public:
         vg.popTransform();
     }
 
-    void text(CanvasGeometryBuilder& vg, float x, float y, const wchar_t* txt, void* ptr)
+    void text(CanvasGeometryBuilder& vg, float x, float y, const wchar_t* string, void* ptr)
     {
         FontStyleParams params;
         params.size = m_size;
 
+        StringBuf txt(string);
+
         FontGlyphBuffer glyphs;
-        FontAssemblyParams assemblyParams;
-        assemblyParams.verticalAlignment = m_verticalAlignment;
-        assemblyParams.horizontalAlignment = m_horizontalAlignment;
+        //FontAssemblyParams assemblyParams;
+        //assemblyParams.verticalAlignment = m_verticalAlignment;
+        //assemblyParams.horizontalAlignment = m_horizontalAlignment;
         if (m_currentFace)
-            m_currentFace->renderText(params, assemblyParams, FontInputText(txt), glyphs);
+            m_currentFace->renderText(params, txt, glyphs);
 
         vg.pushTransform();
         vg.translate(x, y);
@@ -662,8 +662,8 @@ private:
     uint32_t m_size;
     FontPtr m_currentFace;
 
-    FontAlignmentVertical m_verticalAlignment;
-    FontAlignmentHorizontal m_horizontalAlignment;
+    int m_verticalAlignment = -1;
+    int m_horizontalAlignment = -1;
 };
 
 /// test of all of the canvas feature
@@ -678,8 +678,7 @@ public:
     virtual void processInput(const InputEvent& evt) override;
 
 private:
-	RefPtr<CanvasDynamicAtlas> m_atlas;
-	Array<CanvasImageEntry> m_images;
+	Array<CanvasImagePtr> m_images;
 
     FontHelper m_fontHelper;
 
@@ -693,12 +692,10 @@ private:
 
 void SceneTest_CanvasEverything::initialize()
 {
-	m_atlas = RefNew<CanvasDynamicAtlas>(1024, 1);
-
 	for (uint32_t i = 0; i < 12; ++i)
 	{
-		const auto img = loadImage(TempString("image{}.png", i+1));
-		m_images.pushBack(m_atlas->registerImage(img));
+		const auto img = loadCanvasImage(TempString("image{}.png", i+1));
+        m_images.pushBack(img);
 	}
 
     m_fontHelper.init(*this);
@@ -709,7 +706,6 @@ void SceneTest_CanvasEverything::initialize()
 
 void SceneTest_CanvasEverything::shutdown()
 {
-	m_atlas.reset();
 }
 
 void SceneTest_CanvasEverything::processInput(const InputEvent& evt)
@@ -1432,7 +1428,7 @@ static void DrawWidths(CanvasGeometryBuilder& vg, float x, float y, float width)
 }
 #pragma warning (disable: 4101)
 
-static void DrawThumbnailsUnclip(CanvasGeometryBuilder& vg, float x, float y, float w, float h, const Array<CanvasImageEntry>& images, float t)
+static void DrawThumbnailsUnclip(CanvasGeometryBuilder& vg, float x, float y, float w, float h, const Array<CanvasImagePtr>& images, float t)
 {
     CanvasRenderStyle shadowPaint;
     float cornerRadius = 3.0f;
@@ -1451,7 +1447,7 @@ static void DrawThumbnailsUnclip(CanvasGeometryBuilder& vg, float x, float y, fl
     vg.popTransform();
 }
 
-static void DrawThumbnails(CanvasGeometryBuilder& vg, float x, float y, float w, float h, const Array<CanvasImageEntry>& images, float t)
+static void DrawThumbnails(CanvasGeometryBuilder& vg, float x, float y, float w, float h, const Array<CanvasImagePtr>& images, float t)
 {
     //t *= 0.05f;
 
@@ -1493,8 +1489,8 @@ static void DrawThumbnails(CanvasGeometryBuilder& vg, float x, float y, float w,
         ty = y + 10;
         tx += (i % 2) * (thumb + 10);
         ty += (i / 2) * (thumb + 10);
-        imgw = images[i].width;
-        imgh = images[i].height;
+        imgw = images[i]->width();
+        imgh = images[i]->height();
         if (imgw < imgh) {
             iw = thumb;
             ih = iw * (float)imgh / (float)imgw;

@@ -13,7 +13,6 @@
 #include "engine/canvas/include/geometry.h"
 #include "engine/canvas/include/canvas.h"
 #include "engine/canvas/include/style.h"
-#include "engine/canvas/include/atlas.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
 
@@ -23,25 +22,18 @@ class SceneTest_CanvasTexture : public ICanvasTest
     RTTI_DECLARE_VIRTUAL_CLASS(SceneTest_CanvasTexture, ICanvasTest);
 
 public:
-	RefPtr<CanvasDynamicAtlas> m_atlas;
-
-	CanvasImageEntry m_atlasEntry;
+	CanvasImagePtr m_atlasEntry;
 
 	NativeTimePoint m_time;
 
     virtual void initialize() override
     {
 		m_time.resetToNow();
-
-		auto lena = loadImage("lena.png");
-
-		m_atlas = RefNew<CanvasDynamicAtlas>(1024, 1);
-		m_atlasEntry = m_atlas->registerImage(lena, true);
+		m_atlasEntry = loadCanvasImage("lena.png");
     }
 
 	virtual void shutdown() override
 	{
-		m_atlas.reset();
 	}
 
     virtual void render(Canvas& c) override
@@ -117,8 +109,8 @@ public:
 				b.resetTransform();
 				b.translatei(r.left(), r.top());
 
-				float cx = m_atlasEntry.width / 2;
-				float cy = m_atlasEntry.height / 2;
+				float cx = m_atlasEntry->width() / 2;
+				float cy = m_atlasEntry->height() / 2;
 
 				b.blending(CanvasBlendOp::Copy);
 				b.beginPath();
@@ -134,11 +126,11 @@ public:
 				b.resetTransform();
 				b.translatei(r.left(), r.top());
 
-				float cx = m_atlasEntry.width;
-				float cy = m_atlasEntry.height;
+				float cx = m_atlasEntry->width();
+				float cy = m_atlasEntry->height();
 
-				float ox = (m_atlasEntry.width / 1.5f) - r.width();
-				float oy = (m_atlasEntry.height / 1.5f) - r.height();
+				float ox = (m_atlasEntry->width() / 1.5f) - r.width();
+				float oy = (m_atlasEntry->height() / 1.5f) - r.height();
 
 				b.blending(CanvasBlendOp::Copy);
 				b.beginPath();
@@ -168,8 +160,8 @@ public:
 				b.resetTransform();
 				b.translatei(r.left(), r.top());
 
-				float cx = m_atlasEntry.width / 2;
-				float cy = m_atlasEntry.height / 2;
+				float cx = m_atlasEntry->width() / 2;
+				float cy = m_atlasEntry->height() / 2;
 
 				b.blending(CanvasBlendOp::Copy);
 				b.beginPath();
@@ -185,11 +177,11 @@ public:
 				b.resetTransform();
 				b.translatei(r.left(), r.top());
 
-				float cx = m_atlasEntry.width;
-				float cy = m_atlasEntry.height;
+				float cx = m_atlasEntry->width();
+				float cy = m_atlasEntry->height();
 
-				float ox = (m_atlasEntry.width / 1.5f) - r.width();
-				float oy = (m_atlasEntry.height / 1.5f) - r.height();
+				float ox = (m_atlasEntry->width() / 1.5f) - r.width();
+				float oy = (m_atlasEntry->height() / 1.5f) - r.height();
 
 				b.blending(CanvasBlendOp::Copy);
 				b.beginPath();

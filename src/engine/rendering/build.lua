@@ -14,6 +14,7 @@ Dependency("core_math")
 Dependency("core_app")
 Dependency("core_fibers")
 Dependency("core_input")
+Dependency("core_image")
 
 Dependency("engine_font")
 Dependency("engine_imgui")

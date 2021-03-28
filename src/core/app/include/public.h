@@ -45,8 +45,8 @@ extern CORE_APP_API void* GetServicePtr(int serviceIndex);
 template< typename T >
 INLINE T* GetService()
 {
-    static auto ptr  = (T*)GetServicePtr(ClassID<T>()->userIndex());
-    return ptr;
+    static const auto index = ClassID<T>()->userIndex();
+    return static_cast<T*>(GetServicePtr(index));
 }
 
 //--

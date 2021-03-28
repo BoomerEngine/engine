@@ -123,7 +123,7 @@ void Canvas::pixelPlacement(float pixelOffsetX, float pixelOffsetY, float pixelS
 
 //--
 
-Canvas::DebugTextBounds Canvas::debugPrintMeasure(StringView text, int size /*= 16*/, FontAlignmentHorizontal align /*= FontAlignmentHorizontal::Left*/, bool bold /*= false*/) const
+Canvas::DebugTextBounds Canvas::debugPrintMeasure(StringView text, int size /*= 16*/, int align /*= -1*/, bool bold /*= false*/) const
 {
     static const auto normalFont = LoadFontFromDepotPath("/engine/interface/fonts/aileron_regular.otf");
     static const auto boldFont = LoadFontFromDepotPath("/engine/interface/fonts/aileron_bold.otf");
@@ -136,32 +136,26 @@ Canvas::DebugTextBounds Canvas::debugPrintMeasure(StringView text, int size /*= 
 		params.size = size;
 
 		FontGlyphBuffer glyphs;
-		FontAssemblyParams assemblyParams;
-		assemblyParams.horizontalAlignment = align;
-		font->renderText(params, assemblyParams, FontInputText(text.data(), text.length()), glyphs);
+        font->renderText(params, text, glyphs);
 
 		DebugTextBounds bounds;
 
-		if (glyphs.size())
+		if (!glyphs.m_glyphs.empty())
 		{
             bounds.min = Vector2::INF();
 			bounds.max = -Vector2::INF();
 
-			const auto* glyph = glyphs.glyphs();
-			const auto* glyphEnd = glyph + glyphs.size();
-			while (glyph < glyphEnd)
+			for (const auto& g : glyphs.m_glyphs)
 			{
-				float x0 = glyph->pos.x + glyph->glyph->offset().x;
-				float y0 = glyph->pos.y + glyph->glyph->offset().y;
-                float x1 = x0 + glyph->glyph->size().x;
-                float y1 = y0 + glyph->glyph->size().y;
+				float x0 = g.pos.x + g.glyph->offset().x;
+				float y0 = g.pos.y + g.glyph->offset().y;
+                float x1 = x0 + g.glyph->size().x;
+                float y1 = y0 + g.glyph->size().y;
 
 				bounds.min.x = std::min(bounds.min.x, x0);
 				bounds.min.y = std::min(bounds.min.y, y0);
                 bounds.max.x = std::max(bounds.max.x, x1);
                 bounds.max.y = std::max(bounds.max.y, y1);
-
-				++glyph;
 			}
 		}
 
@@ -175,7 +169,7 @@ Canvas::DebugTextBounds Canvas::debugPrintMeasure(StringView text, int size /*= 
 	return DebugTextBounds();
 }
 
-Canvas::DebugTextBounds Canvas::debugPrint(float x, float y, StringView text, Color color /*= Color::WHITE*/, int size /*= 16*/, FontAlignmentHorizontal align /*= FontAlignmentHorizontal::Left*/, bool bold /*= false*/)
+Canvas::DebugTextBounds Canvas::debugPrint(float x, float y, StringView text, Color color /*= Color::WHITE*/, int size /*= 16*/, int align /*= FontAlignmentHorizontal::Left*/, bool bold /*= false*/)
 {
     static const auto normalFont = LoadFontFromDepotPath("/engine/interface/fonts/aileron_regular.otf");
 	static const auto boldFont = LoadFontFromDepotPath("/engine/interface/fonts/aileron_bold.otf");
@@ -188,9 +182,19 @@ Canvas::DebugTextBounds Canvas::debugPrint(float x, float y, StringView text, Co
 		params.size = size;
 
 		FontGlyphBuffer glyphs;
-		FontAssemblyParams assemblyParams;
-		assemblyParams.horizontalAlignment = align;
-		font->renderText(params, assemblyParams, FontInputText(text.data(), text.length()), glyphs, color);
+		font->renderText(params, text, glyphs, color);
+
+		if (align >= 0)
+		{
+			Rect bounds;
+			if (glyphs.bounds(bounds))
+			{
+				if (align == 0)
+					x -= bounds.width() / 2;
+				else if (align > 0)
+					x -= bounds.width();
+			}
+		}
 
 		CanvasGeometry g;
 		{
@@ -465,11 +469,6 @@ void Canvas::placeInternal(const CanvasPlacement& placement, const CanvasVertex*
 	if (numVertices <= 2 || !vertices)
 		return;
 
-	// collect masks so we know what needs to be flushed
-	m_usedGlyphPagesMask |= batch.glyphPageMask;
-	if (batch.atlasIndex)
-		m_usedAtlasMask |= 1LLU << batch.atlasIndex;
-
 	// compute target vertex count
 	const auto targetVertexCount = CalcFlattenedVertexCount(numVertices, batch.packing);
 	DEBUG_CHECK_RETURN_EX(targetVertexCount <= MAX_LOCAL_VERTICES, "To many vertices in one batch");
@@ -576,7 +575,6 @@ void Canvas::placeInternal(const CanvasPlacement& placement, const CanvasVertex*
 	// place batch
 	auto& outBatch = m_gatheredBatches.emplaceBack();
 	outBatch.type = batch.type;
-	outBatch.atlasIndex = batch.atlasIndex;
 	outBatch.rendererIndex = batch.rendererIndex;
 	outBatch.op = batch.op;
 	outBatch.vertexOffset = m_gatheredVertices.size();
@@ -604,38 +602,29 @@ void Canvas::quad(const CanvasPlacement& placement, const QuadSetup& setup, uint
 
 	static const auto* service = GetService<CanvasService>();
 
-	const auto* image = setup.image ? service->findRenderDataForAtlasEntry(setup.image) : nullptr;
-	if (image)
+	if (setup.image)
 	{ 
-		const auto uvScale = image->uvMax - image->uvOffset;
-
-		v[0].uv.x = (setup.u0 * uvScale.x) + image->uvOffset.x;
-		v[0].uv.y = (setup.v0 * uvScale.y) + image->uvOffset.y;
-		v[1].uv.x = (setup.u1 * uvScale.x) + image->uvOffset.x;
-		v[1].uv.y = (setup.v0 * uvScale.y) + image->uvOffset.y;
-		v[2].uv.x = (setup.u1 * uvScale.x) + image->uvOffset.x;
-		v[2].uv.y = (setup.v1 * uvScale.y) + image->uvOffset.y;
-		v[3].uv.x = (setup.u0 * uvScale.x) + image->uvOffset.x;
-		v[3].uv.y = (setup.v1 * uvScale.y) + image->uvOffset.y;
-        /*v[0].uv.x = setup.u0;
-        v[0].uv.y = setup.v0;
-        v[1].uv.x = setup.u1;
-        v[1].uv.y = setup.v0;
-        v[2].uv.x = setup.u1;
-        v[2].uv.y = setup.v1;
-        v[3].uv.x = setup.u0;
-        v[3].uv.y = setup.v1;*/
+		v[0].uv.x = setup.u0;
+		v[0].uv.y = setup.v0;
+		v[1].uv.x = setup.u1;
+		v[1].uv.y = setup.v0;
+		v[2].uv.x = setup.u1;
+		v[2].uv.y = setup.v1;
+		v[3].uv.x = setup.u0;
+		v[3].uv.y = setup.v1;
 
 		auto flags = CanvasVertex::MASK_HAS_IMAGE | CanvasVertex::MASK_FILL;
-		if (image->wrap || setup.wrap)
-			flags |= CanvasVertex::MASK_HAS_WRAP_U | CanvasVertex::MASK_HAS_WRAP_V;
+		if (setup.image->wrapU())
+			flags |= CanvasVertex::MASK_HAS_WRAP_U;
+        if (setup.image->wrapV())
+            flags |= CanvasVertex::MASK_HAS_WRAP_V;
 
 		for (int i = 0; i < 4; ++i)
 		{
 			v[i].attributeIndex = 0;
 			v[i].attributeFlags = flags;
-			v[i].imageEntryIndex = setup.image.entryIndex;
-			v[i].imagePageIndex = image->pageIndex;
+			v[i].imageEntryIndex = setup.image->id();
+			v[i].imagePageIndex = 0; // TODO: remove
 			v[i].color = setup.color;
 		}
 	}
@@ -663,7 +652,6 @@ void Canvas::quad(const CanvasPlacement& placement, const QuadSetup& setup, uint
 	}
 
 	CanvasBatch batch;
-	batch.atlasIndex = setup.image.atlasIndex;
 	batch.rendererIndex = customRenderer;
 	batch.type = CanvasBatchType::FillConvex;
 	batch.packing = CanvasBatchPacking::Quads;
