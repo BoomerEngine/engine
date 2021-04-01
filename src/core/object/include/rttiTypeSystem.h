@@ -24,9 +24,6 @@ BEGIN_BOOMER_NAMESPACE()
 class CORE_OBJECT_API TypeSystem : public ISingleton
 {
 public:
-    /// Update internal caches
-    void updateCaches();
-
     /// Find type by name (any type)
     /// NOTE: array and pointer types may be created if the name fits
     Type findType(StringID typeName);
@@ -39,9 +36,6 @@ public:
 
     /// Find class property using the property hash (much faster than looking it up manually)
     const Property* findProperty(uint64_t propertyHash);
-
-    /// Find global function
-    const Function* findGlobalFunction(StringID name);
 
     /// Enumerate classes derived from given base class
     typedef std::function<bool(ClassType )> TClassFilter;
@@ -64,9 +58,6 @@ public:
 
     /// Register class property
     void registerProperty(const Property* prop);
-
-    /// Register global function
-    void registerGlobalFunction(const Function* function);
 
     //--
 
@@ -137,16 +128,12 @@ protected:
     typedef Array<ClassType>  TStorageClassList;
     typedef Array<std::pair< const char*, TDynamicTypeCreationFunction > > TDynamicTypeCreators;
     typedef HashMap<ClassType, TClassList> TChildClasses;
-    typedef HashMap<StringID, const Function*> TFunctionMap;
 
     Mutex m_typesLock;
     TTypeMap m_types;
     TTypeMap m_alternativeTypes;
     TTypeList m_typeList;
     TStorageClassList m_classes;
-
-    Mutex m_functionLock;
-    TFunctionMap m_functionMap;
 
     Mutex m_nativeMapLock;
     TNativeTypeMap m_nativeMap;

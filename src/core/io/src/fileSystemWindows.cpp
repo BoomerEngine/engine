@@ -849,6 +849,21 @@ namespace prv
                 break;
             }
 
+            case PathCategory::SharedDir:
+            {
+                GetModuleFileNameW(NULL, path, MAX_PATH);
+
+                if (auto* ch = wcsrchr(path, '\\'))
+                    ch[0] = 0;
+
+                if (auto* ch = wcsrchr(path, '\\'))
+                    ch[1] = 0;
+
+                f.append(path);
+                f.append("shared\\");
+                break;
+            }
+
             case PathCategory::EngineDir:
             {
                 GetModuleFileNameW(NULL, path, MAX_PATH);

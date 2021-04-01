@@ -55,7 +55,7 @@ const DataModel* DataModelRepository::buildModelForFunction(const Function* func
 {
     auto lock = CreateLock(m_lock);
 
-    // get existing model
+    /*// get existing model
     DataModel* model = nullptr;
     if (m_functionModels.find(func->fullName(), model))
         return model;
@@ -70,7 +70,8 @@ const DataModel* DataModelRepository::buildModelForFunction(const Function* func
 
     // done, DUMP IT
     TRACE_INFO("Generated function model: {}", IndirectPrint(model));
-    return model;
+    return model;*/
+    return nullptr;
 }
 
 //--

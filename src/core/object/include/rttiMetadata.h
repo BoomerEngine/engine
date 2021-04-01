@@ -27,7 +27,6 @@ public:
     virtual ~IMetadata();
 
     static SpecificClassType<IMetadata> GetStaticClass();
-    virtual ClassType nativeClass() const = 0;
     virtual ClassType cls() const;
 
     //--
@@ -107,7 +106,6 @@ public:
 
     static SpecificClassType<ShortTypeNameMetadata> GetStaticClass();
     virtual ClassType cls() const override;
-    virtual ClassType nativeClass() const override;
 
     // initialize class (since we have no automatic reflection in this project)
     static void RegisterType(TypeSystem& typeSystem);

@@ -11,8 +11,8 @@
 #include "gizmoReferenceSpace.h"
 
 #include "viewportCameraSetup.h"
-#include "engine/rendering/include/debug.h"
-#include "engine/rendering/include/params.h"
+#include "engine/rendering/include/debugGeometry.h"
+#include "engine/rendering/include/debugGeometryBuilder.h"
 
 BEGIN_BOOMER_NAMESPACE_EX(ed)
 
@@ -75,9 +75,14 @@ void GizmoLineShape::render(DebugGeometryCollector& debug, Color lineColor, floa
 {
     if (m_cachedPointsValid)
     {
-        /*DebugDrawer dd(frame.geometry.overlay);
-        dd.color(lineColor);
-        dd.lines(m_cachedRenderPoints.typedData(), m_cachedRenderPoints.size());*/
+        DebugGeometryBuilder d;
+        d.color(lineColor);
+        d.size(lineWidth);
+
+        for (auto i = 0; i < m_cachedRenderPoints.size(); i += 2)
+            d.wire(m_cachedRenderPoints[i], m_cachedRenderPoints[i + 1]);
+
+        debug.push(d);
     }
 }
 

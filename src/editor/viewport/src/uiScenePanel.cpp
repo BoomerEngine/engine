@@ -10,7 +10,8 @@
 #include "uiScenePanel.h"
 
 #include "engine/rendering/include/params.h"
-#include "engine/rendering/include/debug.h"
+#include "engine/rendering/include/debugGeometry.h"
+#include "engine/rendering/include/debugGeometryBuilder.h"
 #include "engine/rendering/include/service.h"
 #include "engine/rendering/include/cameraContext.h"
 #include "engine/rendering/include/scene.h"
@@ -921,17 +922,18 @@ void RenderingScenePanel::handleFrame(FrameParams& frame, DebugGeometryCollector
     // draw world axes
     if (m_panelSettings.drawInternalWorldAxis)
     {
-        /*DebugDrawer dd(frame.geometry.solid);
-        dd.axes(Matrix::IDENTITY(), 1.0f);*/
+        DebugGeometryBuilder dd;
+        dd.wireAxes(Matrix::IDENTITY(), 1.0f);
+        debug.push(dd);
     }
 
     // draw screen axis
     if (m_panelSettings.drawInternalCameraAxis)
-        drawViewAxes(cachedDrawArea().size().x, cachedDrawArea().size().y, frame);
+        drawViewAxes(debug);
 
     // draw camera info
     if (m_panelSettings.drawInternalCameraData)
-        drawCameraInfo(cachedDrawArea().size().x, cachedDrawArea().size().y, frame);
+        drawCameraInfo(debug);
 
     // use the selected render mode
     frame.mode = m_panelSettings.renderMode;
@@ -942,117 +944,33 @@ void RenderingScenePanel::handleFrame(FrameParams& frame, DebugGeometryCollector
         //  action->onRender3D(frame);
 }
 
-void RenderingScenePanel::drawGrid(DebugGeometryCollector& frame)
+void RenderingScenePanel::drawGrid(DebugGeometryCollector& debug)
 {
-    static Array<Vector3> points;
+    const float z = -0.01f - std::log10f(std::max<float>(0.0f, debug.camera().position().length())) * 0.05f;
 
-    const float z = -0.01f - std::log10f(std::max<float>(0.0f, frame.camera().position().length())) * 0.05f;
-
-    if (points.empty())
-    {
-        points.reserve(2048);
-
-        // huge grid
-        {
-            auto gridStep = 100.0f;
-            auto gridSteps = 10;
-            auto gridSize = gridStep * gridSteps;
-
-            for (int i = -gridSteps; i <= gridSteps; ++i)
-            {
-                if (i != 0)
-                {
-                    auto pos = (float)i * gridStep;
-                    points.emplaceBack(-gridSize, pos, z);
-                    points.emplaceBack(gridSize, pos, z);
-                    points.emplaceBack(pos, -gridSize, z);
-                    points.emplaceBack(pos, gridSize, z);
-                }
-            }
-        }
-
-        // big grid
-        {
-            auto gridStep = 10.0f;
-            auto gridSteps = 10;
-            auto gridSize = gridStep * gridSteps;
-
-            for (int i = -gridSteps; i <= gridSteps; ++i)
-            {
-                if (i != 0)
-                {
-                    auto pos = (float)i * gridStep;
-                    points.emplaceBack(-gridSize, pos, z);
-                    points.emplaceBack(gridSize, pos, z);
-                    points.emplaceBack(pos, -gridSize, z);
-                    points.emplaceBack(pos, gridSize, z);
-                }
-            }
-        }
-
-        // small grid
-        {
-            auto gridStep = 1.0f;
-            auto gridSteps = 10;
-            auto gridSize = gridStep * gridSteps;
-
-            for (int i = -gridSteps; i <= gridSteps; ++i)
-            {
-                if (i != 0)
-                {
-                    auto pos = (float)i * gridStep;
-                    points.emplaceBack(-gridSize, pos, z);
-                    points.emplaceBack(gridSize, pos, z);
-                    points.emplaceBack(pos, -gridSize, z);
-                    points.emplaceBack(pos, gridSize, z);
-                }
-            }
-        }
-
-        // tiny grid
-        {
-            auto gridStep = 0.1f;
-            auto gridSteps = 10;
-            auto gridSize = gridStep * gridSteps;
-
-            for (int i = -gridSteps; i <= gridSteps; ++i)
-            {
-                if (i != 0)
-                {
-                    auto pos = (float)i * gridStep;
-                    points.emplaceBack(-gridSize, pos, z);
-                    points.emplaceBack(gridSize, pos, z);
-                    points.emplaceBack(pos, -gridSize, z);
-                    points.emplaceBack(pos, gridSize, z);
-                }
-            }
-        }
-    }
-
-    {
-        /*DebugDrawer dd(frame.geometry.solid);
-        dd.color(Color(100, 100, 100));
-        dd.lines(points.typedData(), points.size());
-
-        Vector3 centerLines[4];
-        centerLines[0] = Vector3(-1000.0f, 0.0f, z);
-        centerLines[1] = Vector3(1000.0f, 0.0f, z);
-        centerLines[2] = Vector3(0.0f, -1000.0f, z);
-        centerLines[3] = Vector3(0.0f, 1000.0f, z);
-        dd.color(Color(130, 150, 150));
-        dd.lines(centerLines, 4);*/
-    }
+    DebugGeometryBuilder dd;
+    dd.color(Color(100, 100, 100));
+    dd.wireGrid(Vector3(0,0,z), Vector3::EZ(), 0.2f, 21);
+    dd.color(Color(95, 95, 95));
+    dd.wireGrid(Vector3(0, 0, z), Vector3::EZ(), 2.0f, 21);
+    dd.color(Color(90, 90, 90));
+    dd.wireGrid(Vector3(0, 0, z), Vector3::EZ(), 20.0f, 21);
+    /*dd.color(Color(85, 85, 85));
+    dd.wireGrid(Vector3(0, 0, z), Vector3::EZ(), 200.0f, 21);
+    dd.color(Color(80, 80, 80));
+    dd.wireGrid(Vector3(0, 0, z), Vector3::EZ(), 2000.0f, 21);*/
+    debug.push(dd);
 }
 
-void RenderingScenePanel::drawViewAxes(DebugGeometryCollector& frame)
+void RenderingScenePanel::drawViewAxes(DebugGeometryCollector& debug)
 {
     // calculate placement
-    auto scale = cvViewportAxisLength.get() * 1.0f;// cachedStyleParams().m_scale;
+    auto scale = cvViewportAxisLength.get() * cachedStyleParams().pixelScale;
     auto bx = 15.0f + scale;
-    auto by = frame.viewportHight()- 15.0f - scale;
+    auto by = debug.viewportHeight()- 15.0f - scale;
 
     // build orientation matrix using
-    auto orientationMatrix = frame.camera().worldToCamera() * CameraSetup::CameraToView;
+    auto orientationMatrix = debug.camera().worldToCamera() * CameraSetup::CameraToView;
 
     // project the view axes
     BaseTransformation t(orientationMatrix);
@@ -1060,43 +978,46 @@ void RenderingScenePanel::drawViewAxes(DebugGeometryCollector& frame)
     auto ey = t.transformVector(Vector3::EY()) * scale;
     auto ez = t.transformVector(Vector3::EZ()) * scale;
 
-    // render the axes with orthographic projection
-    InplaceArray<Vector2, 8> vertices;
-
-    /*auto o = Vector2(bx, by);
+    auto o = Vector2(bx, by);
     auto px = o + Vector2(ex.x, ex.y);
     auto py = o + Vector2(ey.x, ey.y);
     auto pz = o + Vector2(ez.x, ez.y);
-    dd.lineColor(Color::RED);
+
+    // render the axes with orthographic projection
+    DebugGeometryBuilderScreen dd;
+    dd.color(Color::RED);
     dd.line(o, px);
-    dd.lineColor(Color::GREEN);
+    dd.color(Color::GREEN);
     dd.line(o, py);
-    dd.lineColor(Color::BLUE);
+    dd.color(Color::BLUE);
     dd.line(o, pz);
 
-    // labels
+    // render labels
     auto tx = o + Vector2(ex.x, ex.y) * 1.05f;
     auto ty = o + Vector2(ey.x, ey.y) * 1.05f;
     auto tz = o + Vector2(ez.x, ez.y) * 1.05f;
-    dd.lineColor(Color::WHITE);
-    dd.alignHorizontal(0);
-    dd.alignVertical(0);
-    dd.text(tx.x, tx.y, "X");
-    dd.text(ty.x, ty.y, "Y");
-    dd.text(tz.x, tz.y, "Z");*/
+    dd.color(Color::WHITE);
+    dd.appendText("X");
+    dd.renderText(tx.x, tx.y, 0, 0);
+    dd.appendText("Y");
+    dd.renderText(ty.x, ty.y, 0, 0);
+    dd.appendText("Z");
+    dd.renderText(tz.x, tz.y, 0, 0);
+    debug.push(dd);
 }
 
-void RenderingScenePanel::drawCameraInfo(DebugGeometryCollector& frame)
+void RenderingScenePanel::drawCameraInfo(DebugGeometryCollector& debug)
 {
-    auto bx = frame.viewportWidth() - 20;
-    auto by = frame.viewportHeight() - 20;
+    auto bx = debug.viewportWidth() - 20;
+    auto by = debug.viewportHeight() - 20;
 
     auto pos = m_cameraController.settings().position;
     auto rot = m_cameraController.settings().rotation;
 
-    auto params = DebugTextParams().right().bottom().color(Color::WHITE);
-    //DebugDrawer dd(frame.geometry.screen);
-    //dd.text(bx, by, TempString("Camera [{}, {}, {}], Pitch: {}, Yaw: {}", Prec(pos.x, 1), Prec(pos.y, 1), Prec(pos.z, 1), Prec(rot.pitch, 1), Prec(rot.yaw, 1)), params);
+    DebugGeometryBuilderScreen dd;
+    dd.appendText(TempString("Camera [{}, {}, {}], Pitch: {}, Yaw: {}", Prec(pos.x, 1), Prec(pos.y, 1), Prec(pos.z, 1), Prec(rot.pitch, 1), Prec(rot.yaw, 1)));
+    dd.renderText(bx, by, 1, 1);
+    debug.push(dd);
 }
 
 void RenderingScenePanel::rotateGlobalLight(float deltaPitch, float deltaYaw)
@@ -1335,7 +1256,7 @@ void RenderingScenePanel::handleRender(gpu::CommandWriter& cmd, const gpu::Acqui
 
     // generate command buffers
     m_frameStats = FrameStats();
-    if (auto* childCmd = GetService<FrameRenderingService>()->render(frame, output, scene(), m_frameStats))
+    if (auto* childCmd = GetService<FrameRenderingService>()->render(frame, output, scene(), &debug, m_frameStats))
         cmd.opAttachChildCommandBuffer(childCmd);
 
     // update 

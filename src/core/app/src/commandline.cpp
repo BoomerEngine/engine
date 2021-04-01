@@ -28,7 +28,7 @@ RTTI_END_TYPE();
 RTTI_BEGIN_TYPE_CLASS(CommandLine);
     RTTI_PROPERTY(m_commands);
     RTTI_PROPERTY(m_params);
-    RTTI_FUNCTION("Empty", empty);
+    /*RTTI_FUNCTION("Empty", empty);
     RTTI_FUNCTION("SetParam", paramStr);
     RTTI_FUNCTION("RemoveParam", removeParamStr);
     RTTI_FUNCTION("HasParam", hasParamStr);
@@ -39,7 +39,7 @@ RTTI_BEGIN_TYPE_CLASS(CommandLine);
     //RTTI_FUNCTION("getSingleValueUTF16", singleValueUTF16);
     RTTI_FUNCTION("GetAllValues", allValuesStr);
     RTTI_FUNCTION("ToString", toString);
-    RTTI_STATIC_FUNCTION("Parse", Parse);
+    RTTI_STATIC_FUNCTION("Parse", Parse);*/
 RTTI_END_TYPE();
 
 //--

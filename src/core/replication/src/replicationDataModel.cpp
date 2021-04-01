@@ -134,11 +134,6 @@ DataModel::DataModel(StringID name, DataModelType modelType)
     , m_type(modelType)
 {}
 
-void DataModel::buildFromFunction(const Function* functionType, DataModelRepository& repository)
-{
-    // TODO
-}
-
 void DataModel::buildFromType(ClassType structType, DataModelRepository& repository)
 {
     // build model
@@ -598,7 +593,7 @@ void DataModel::encodeFromNativeData(const void* data, IDataModelMapper& mapper,
     }
 }
 
-void DataModel::encodeFromFunctionCall(const FunctionCallingParams& params, IDataModelMapper& mapper, BitWriter& w) const
+/*void DataModel::encodeFromFunctionCall(const FunctionCallingParams& params, IDataModelMapper& mapper, BitWriter& w) const
 {
     for (auto& field : m_fields)
     {
@@ -608,7 +603,7 @@ void DataModel::encodeFromFunctionCall(const FunctionCallingParams& params, IDat
         else
             encodeFieldData(field, fieldData, mapper, w);
     }
-}
+}*/
 
 bool DataModel::decodeToNativeData(void* data, IDataModelResolver& resolve, BitReader& r) const
 {
@@ -635,7 +630,7 @@ bool DataModel::decodeToNativeData(void* data, IDataModelResolver& resolve, BitR
     return true;
 }
 
-bool DataModel::decodeToFunctionCall(FunctionCallingParams& params, IDataModelResolver& resolve, BitReader& r) const
+/*bool DataModel::decodeToFunctionCall(FunctionCallingParams& params, IDataModelResolver& resolve, BitReader& r) const
 {
     for (auto& field : m_fields)
     {
@@ -659,7 +654,7 @@ bool DataModel::decodeToFunctionCall(FunctionCallingParams& params, IDataModelRe
     }
 
     return true;
-}
+}*/
 
 //--
 

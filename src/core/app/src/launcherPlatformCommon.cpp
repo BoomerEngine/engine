@@ -111,9 +111,6 @@ bool CommonPlatform::handleStart(const CommandLine& systemCmdline, IApplication*
 
     }
 #endif
-    // initialize RTTI caches
-    TypeSystem::GetInstance().updateCaches();
-
     // if we have the app run it
     if (application)
     {

@@ -12,7 +12,8 @@
 #include "gizmoGroup.h"
 #include "viewportCameraSetup.h"
 
-#include "engine/rendering/include/debug.h"
+#include "engine/rendering/include/debugGeometry.h"
+#include "engine/rendering/include/debugGeometryBuilder.h"
 #include "engine/rendering/include/params.h"
 #include "core/input/include/inputStructures.h"
 #include "engine/ui/include/uiInputAction.h"
@@ -133,30 +134,32 @@ public:
                 auto startPos = space.calcAbsolutePositionForLocal(Vector3::ZERO());
                 auto endPos = space.calcAbsolutePositionForLocal(m_lastComputedTransform.T);
 
-                DebugDrawer dd(frame.geometry.overlay);
+                DebugGeometryBuilder dd;
                 dd.color(Color::WHITE);
-                dd.line(startPos, endPos);
+                dd.wire(startPos, endPos);
+                debug.push(dd);
             }
 
             // TEXT
-            /*{
-                // get the translation vector
-                auto localDelta = m_lastComputedTransform.translation();
-                auto localLength = localDelta.length();
+            {
+                auto localDelta = m_lastComputedTransform.T;
+                auto localLength = localDelta.distance(Vector3::ZERO());
 
-                // place the text in the mid point
-                ScreenCanvas dd(frame);
-                auto textPosition = m_transaction->capturedReferenceSpace().calcAbsolutePositionForLocal(localDelta / 2.0f).approximate();
+                auto textPosition = m_action->capturedReferenceSpace().calcAbsolutePositionForLocal(localDelta * 0.5f);
 
-                Vector3 screenPos;
-                if (dd.calcScreenPosition(textPosition, screenPos))
+                Point screenPos;
+                if (debug.worldToScreen(textPosition, screenPos))
                 {
-                    dd.lineColor(Color::WHITE);
-                    dd.alignHorizontal(0);
-                    dd.alignVertical(0);
-                    dd.textBox(screenPos.x, screenPos.y, TempString("{}", Prec(localLength, 2)));
+                    DebugGeometryBuilderScreen ss;
+                    ss.color(Color::WHITE);
+                    ss.fontSize(30);
+                    ss.appendText(TempString("{}", Prec(localLength, 2)));
+
+                    ss.color(Color(0, 0, 0, 64));
+                    ss.renderTextWithBackground(screenPos.x, screenPos.y, 0, 0);
+                    debug.push(ss);
                 }
-            }*/
+            }
         }
     }
 

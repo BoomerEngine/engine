@@ -29,6 +29,7 @@ enum class ProjectGroupType : uint8_t
 {
     Engine,
     User,
+    MonoScripts,
 };
 
 enum class ProjectType : uint8_t
@@ -38,6 +39,7 @@ enum class ProjectType : uint8_t
     LocalLibrary,
     RttiGenerator,
     ExternalLibrary,
+    MonoScriptProject,
 };
 
 struct Configuration;
@@ -120,8 +122,12 @@ struct ProjectStructure
         std::vector<fs::path> libraryLinkFile; // additional files to link with
 
         std::vector<DeployInfo> deployList; // list of additional files to deploy to binary directory
+        std::vector<DeployInfo> sharedDeployList; // list of shared files to deploy to shared binary directory
         
         std::vector<ToolInfo> tools;
+
+        std::string assignedVSGuid;
+        std::string assignedProjectFile;
 
         //--
 
@@ -159,9 +165,14 @@ struct ProjectStructure
         static int ExportFileOption(lua_State* L); // string, string, bool [opt]
         static int ExportFileFilter(lua_State* L); // string, string
         static int ExportDeploy(lua_State* L); // string, string [opt]
+        static int ExportDeployDir(lua_State* L); // string, string [opt]
+        static int ExportDeployShared(lua_State* L); // string, string [opt]
+        static int ExportDeploySharedDir(lua_State* L); // string, string [opt]
         static int ExportLibraryInclude(lua_State* L); // string
         static int ExportLibraryLink(lua_State* L); // string
         static int ExportTool(lua_State* L); // string, string
+        static int ExportAssignedGuid(lua_State* L); // string
+        static int ExportAssignedProjectFile(lua_State* L); // string
 
         bool internalAddStringOnce(std::vector<std::string>& deps, std::string_view name);
 
@@ -184,6 +195,7 @@ struct ProjectStructure
     ~ProjectStructure();
 
     void scanProjects(ProjectGroupType group, fs::path rootScanPath);
+    void scanScriptProjects(ProjectGroupType group, fs::path rootScanPath);
 
     bool setupProjects(const Configuration& config);
     bool scanContent(uint32_t& outTotalFiles);
@@ -196,15 +208,59 @@ struct ProjectStructure
 
 private:
     void scanProjectsAtDir(ProjectGroup* group, std::vector<std::string_view>& directoryNames, fs::path directoryPath);
+    void scanScriptProjectsAtDir(ProjectGroup* group, fs::path directoryPath);
     bool resolveProjectDependency(std::string_view name, std::vector<ProjectInfo*>& outProjects);
     void addProjectDependency(ProjectInfo* project, std::vector<ProjectInfo*>& outProjects);
 };
 
 //--
 
+struct ScriptProjectStructure
+{
+    ScriptProjectStructure(const fs::path& rootPath, std::string_view name);
+    ~ScriptProjectStructure();
+
+    struct DirInfo;
+
+    struct FileInfo
+    {
+        DirInfo* parent = nullptr;
+
+        std::string name; // "test.cs"
+
+        std::string relativePath; // path relative to the source root, ie. "game/test.cs"
+        fs::path absolutePath; // full path to file on disk "Z:\\BoomerEngine\\engine\\scripts\\mono\\game\\test.cs"
+    };
+
+    struct DirInfo
+    {
+        DirInfo* parent = nullptr;
+
+        std::string name; // "game"
+        std::vector<DirInfo*> dirs;
+        std::vector<FileInfo*> files;
+
+        fs::path absolutePath; // full path to file on disk "Z:\\BoomerEngine\\engine\\scripts\\game\\test.cs"
+
+        ~DirInfo();
+    };
+
+    std::string name; // "DemoGame"
+    fs::path rootPath; // full path to file on disk "Z:\\BoomerEngine\\engine\\scripts\\"
+
+    DirInfo* root = nullptr;
+    std::vector<FileInfo*> files;
+
+    void scan();
+
+private:
+    void scanFilesAtDir(const fs::path& rootPath, DirInfo* dir, std::string_view extension);
+};
+
+//--
+
 struct Configuration
 {
-    ToolType tool;
     BuildType build;
     PlatformType platform;
     GeneratorType generator;
@@ -222,8 +278,13 @@ struct Configuration
     fs::path engineSourcesPath;
     fs::path projectSourcesPath; // may be empty
 
+    fs::path engineScriptPath;
+    fs::path projectScriptPath;
+
     fs::path solutionPath; // build folder
     fs::path deployPath; // "bin" folder when all crap is written
+
+    fs::path sharedDeployPath; // ".bin/.shared"
 
     // windows.vs2019.standalone.final
     // linux.cmake.dev.release

@@ -29,7 +29,7 @@ void IMetadata::RegisterType(TypeSystem& typeSystem)
 
 ClassType IMetadata::cls() const
 {
-    return nativeClass();
+    return GetStaticClass();
 }
 
 SpecificClassType<IMetadata> IMetadata::GetStaticClass()
@@ -44,11 +44,6 @@ ShortTypeNameMetadata::~ShortTypeNameMetadata()
 {}
 
 ClassType ShortTypeNameMetadata::cls() const
-{
-    return GetStaticClass();
-}
-
-ClassType ShortTypeNameMetadata::nativeClass() const
 {
     return GetStaticClass();
 }

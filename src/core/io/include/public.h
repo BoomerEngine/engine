@@ -147,6 +147,9 @@ enum class PathCategory : uint8_t
     // path to the bin/ directory we are running from
     ExecutableDir,
 
+    // shared binary directory (shared/ or bin/shared), contains all not-linked utilities
+    SharedDir,
+
     // engine directory (contains engine's src, data and config)
     EngineDir,
 

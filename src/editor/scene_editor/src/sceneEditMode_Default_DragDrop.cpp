@@ -30,7 +30,8 @@
 #include "engine/world/include/rawEntity.h"
 #include "engine/world/include/rawPrefab.h"
 
-#include "engine/rendering/include/debug.h"
+#include "engine/rendering/include/debugGeometry.h"
+#include "engine/rendering/include/debugGeometryBuilder.h"
 
 #include "core/object/include/actionHistory.h"
 #include "core/object/include/action.h"

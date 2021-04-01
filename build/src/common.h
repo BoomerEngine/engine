@@ -20,11 +20,6 @@ extern "C" {
 #include "lua/lstate.h"
 }
 
-enum class ToolType : uint8_t {
-    SolutionGenerator,
-    ReflectionGenerator,
-};
-
 enum class PlatformType : uint8_t {
     Windows,
     UWP,

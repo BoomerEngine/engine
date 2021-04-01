@@ -9,8 +9,6 @@
 
 #pragma once
 
-#include "core/script/include/scriptObject.h"
-
 #if 0
         //---
 

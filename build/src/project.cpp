@@ -68,21 +68,6 @@ bool Configuration::parseOptions(const char* path, const Commandline& cmd)
     }
 
     {
-        const auto& str = cmd.get("tool");
-        if (str.empty())
-            this->tool = ToolType::SolutionGenerator;
-        else if (str == "make")
-            this->tool = ToolType::SolutionGenerator;
-        else if (str == "reflection")
-            this->tool = ToolType::ReflectionGenerator;
-        else
-        {
-            std::cout << "Invalid tool specified\n";
-            return false;
-        }
-    }
-
-    {
         const auto& str = cmd.get("build");
         if (str.empty())
         {
@@ -194,6 +179,13 @@ bool Configuration::parsePaths(const char* executable, const Commandline& cmd)
             std::cout << "Specified engine directory has no source directory\n";
             return false;
         }
+
+        this->engineScriptPath = engineRootPath / "data" / "scripts";
+        if (!fs::is_directory(engineScriptPath))
+        {
+            std::cout << "Specified engine directory has no data/scripts directory\n";
+            return false;
+        }
     }
 
     {
@@ -206,11 +198,16 @@ bool Configuration::parsePaths(const char* executable, const Commandline& cmd)
             solutionPartialPath += mergedName();
 
             this->deployPath = rootPath / solutionPartialPath;
+            this->sharedDeployPath = rootPath / ".bin/shared";
         }
         else
         {
             this->deployPath = str;
+            this->sharedDeployPath = str;
         }
+
+        this->deployPath.make_preferred();
+        this->sharedDeployPath.make_preferred();
 
         std::error_code ec;
         if (!fs::is_directory(deployPath, ec))
@@ -218,6 +215,15 @@ bool Configuration::parsePaths(const char* executable, const Commandline& cmd)
             if (!fs::create_directories(deployPath, ec))
             {
                 std::cout << "Failed to create deploy directory " << deployPath << "\n";
+                return false;
+            }
+        }
+
+        if (!fs::is_directory(sharedDeployPath, ec))
+        {
+            if (!fs::create_directories(sharedDeployPath, ec))
+            {
+                std::cout << "Failed to create deploy directory " << sharedDeployPath << "\n";
                 return false;
             }
         }
@@ -252,6 +258,8 @@ bool Configuration::parsePaths(const char* executable, const Commandline& cmd)
 
     engineSourcesPath = engineSourcesPath.make_preferred();
     projectSourcesPath = projectSourcesPath.make_preferred();
+    engineScriptPath = engineScriptPath.make_preferred();
+    projectScriptPath = projectScriptPath.make_preferred();
     solutionPath = solutionPath.make_preferred();
     deployPath = deployPath.make_preferred();
 
@@ -286,8 +294,13 @@ void ProjectStructure::ProjectInfo::internalRegisterFunctions(lua_State* L)
     internalRegisterFunction(L, "GlobalDefine", &ExportGlobalDefine);
     internalRegisterFunction(L, "Tool", &ExportTool);
     internalRegisterFunction(L, "Deploy", &ExportDeploy);
+    internalRegisterFunction(L, "DeployDir", &ExportDeployDir);
+    internalRegisterFunction(L, "SharedDeploy", &ExportDeployShared);
+    internalRegisterFunction(L, "SharedDeployDir", &ExportDeploySharedDir);
     internalRegisterFunction(L, "LibraryLink", &ExportLibraryLink);
-    internalRegisterFunction(L, "LibraryInclude", &ExportLibraryInclude);    
+    internalRegisterFunction(L, "LibraryInclude", &ExportLibraryInclude);
+    internalRegisterFunction(L, "AssignedGUID", &ExportAssignedGuid);
+    internalRegisterFunction(L, "AssignedProjectFile", &ExportAssignedProjectFile);
 }
 
 template< typename T >
@@ -584,6 +597,100 @@ int ProjectStructure::ProjectInfo::ExportDeploy(lua_State* L)
     return 0;
 }
 
+static void ScanDeployFiles(const fs::path& rootPath, const fs::path& curPath, std::vector<ProjectStructure::DeployInfo>& outDeploy)
+{
+    try
+    {
+        for (const auto& entry : fs::directory_iterator(curPath))
+        {
+            const auto name = entry.path().filename().u8string();
+
+            if (entry.is_directory())
+            {
+                ScanDeployFiles(rootPath, entry.path(), outDeploy);
+            }
+            else if (entry.is_regular_file())
+            {
+                ProjectStructure::DeployInfo info;
+                info.deployTarget = entry.path().lexically_relative(rootPath).u8string().c_str();
+                if (!info.deployTarget.empty())
+                {
+                    info.sourcePath = entry.path();
+                    outDeploy.push_back(info);
+                    //std::cout << "Found shared file '" << info.deployTarget << "'\n";
+                }
+            }
+        }
+    }
+    catch (fs::filesystem_error& e)
+    {
+        std::cout << "Filesystem Error: " << e.what() << "\n";
+    }
+}
+
+int ProjectStructure::ProjectInfo::ExportDeployDir(lua_State* L)
+{
+    return 0;
+}
+
+int ProjectStructure::ProjectInfo::ExportDeployShared(lua_State* L)
+{
+    auto* self = (ProjectInfo*)L->selfPtr;
+    std::string_view path = luaL_checkstring(L, 1);
+
+    auto fullPath = self->rootPath / path;
+    std::error_code ec;
+    if (!fs::exists(fullPath, ec))
+    {
+        std::cout << "Referenced deployment file '" << path << "' does not exist in the library folder\n";
+        self->hasScriptErrors = true;
+    }
+    else if (!fs::is_regular_file(fullPath, ec))
+    {
+        std::cout << "Referenced deployment object '" << path << "' is not a file\n";
+        self->hasScriptErrors = true;
+    }
+    else
+    {
+        DeployInfo info;
+        info.sourcePath = fullPath;
+
+        if (lua_isnoneornil(L, 2))
+            info.deployTarget = fullPath.filename().u8string();
+        else
+            info.deployTarget = luaL_checkstring(L, 2);
+
+        self->sharedDeployList.push_back(info);
+    }
+
+    return 0;
+}
+
+int ProjectStructure::ProjectInfo::ExportDeploySharedDir(lua_State* L)
+{
+    auto* self = (ProjectInfo*)L->selfPtr;
+    std::string_view path = luaL_checkstring(L, 1);
+
+    auto fullPath = self->rootPath / path;
+    std::error_code ec;
+    if (!fs::exists(fullPath, ec))
+    {
+        std::cout << "Referenced deployment directory '" << path << "' does not exist in the library folder\n";
+        self->hasScriptErrors = true;
+    }
+    else if (!fs::is_directory(fullPath, ec))
+    {
+        std::cout << "Referenced deployment directory '" << path << "' is not a directory\n";
+        self->hasScriptErrors = true;
+    }
+    else
+    {
+        ScanDeployFiles(fullPath, fullPath, self->sharedDeployList);
+    }
+
+    return 0;
+}
+
 int ProjectStructure::ProjectInfo::ExportTool(lua_State* L)
 {
     auto* self = (ProjectInfo*)L->selfPtr;
@@ -679,10 +786,30 @@ int ProjectStructure::ProjectInfo::ExportProjectType(lua_State* L)
         self->type = ProjectType::LocalApplication;
     else if (name == "external")
         self->type = ProjectType::ExternalLibrary;
+    else if (name == "mono")
+        self->type = ProjectType::MonoScriptProject;
     else
     {
         std::cout << "Project '" << self->mergedName << "' has invalid type: '" << name << "'\n";
     }
+
+    return 0;
+}
+
+int ProjectStructure::ProjectInfo::ExportAssignedGuid(lua_State* L)
+{
+    auto* self = (ProjectInfo*)L->selfPtr;
+    std::string_view name = luaL_checkstring(L, 1);
+    self->assignedVSGuid = name;
+
+    return 0;
+}
+
+int ProjectStructure::ProjectInfo::ExportAssignedProjectFile(lua_State* L)
+{
+    auto* self = (ProjectInfo*)L->selfPtr;
+    std::string_view name = luaL_checkstring(L, 1);
+    self->assignedProjectFile = name;
 
     return 0;
 }
@@ -939,6 +1066,52 @@ void ProjectStructure::scanProjectsAtDir(ProjectGroup* group, std::vector<std::s
     }
 }
 
+void ProjectStructure::scanScriptProjectsAtDir(ProjectGroup* group, fs::path directoryPath)
+{
+    bool hasBuildLua = false;
+
+    try
+    {
+        for (const auto& entry : fs::directory_iterator(directoryPath))
+        {
+            const auto name = entry.path().filename().u8string();
+
+            if (entry.is_directory())
+            {
+                scanScriptProjectsAtDir(group, entry.path());
+            }
+            else if (entry.is_regular_file())
+            {
+                if (name == "build.lua")
+                {
+                    hasBuildLua = true;
+                }
+            }
+        }
+    }
+    catch (fs::filesystem_error& e)
+    {
+        std::cout << "Filesystem Error: " << e.what() << "\n";
+    }
+
+    if (hasBuildLua)
+    {
+        auto* project = new ProjectInfo();
+        project->type = ProjectType::Disabled;
+        project->group = group;
+        project->name = directoryPath.filename().u8string();
+        project->mergedName = project->name;
+        project->rootPath = directoryPath;
+
+        group->projects.push_back(project);
+        projects.push_back(project);
+
+        projectsMap[project->mergedName] = project;
+
+        std::cout << "Found script project '" << project->mergedName << "' at " << project->rootPath << "\n";
+    }
+}
+
 ProjectStructure::ProjectInfo* ProjectStructure::findProject(std::string_view name)
 {
     auto it = projectsMap.find(std::string(name));
@@ -1060,6 +1233,20 @@ void ProjectStructure::scanProjects(ProjectGroupType groupType, fs::path rootSca
     std::cout << "Discovered " << group->projects.size() << " project(s)\n";
 }
 
+void ProjectStructure::scanScriptProjects(ProjectGroupType groupType, fs::path rootScanPath)
+{
+    std::cout << "Scanning for script projects at " << rootScanPath << "\n";
+
+    auto* group = new ProjectGroup;
+    group->type = groupType;
+    group->rootPath = rootScanPath;
+    groups.push_back(group);
+
+    scanScriptProjectsAtDir(group, rootScanPath);
+
+    std::cout << "Discovered " << group->projects.size() << " project(s)\n";
+}
+
 bool ProjectStructure::setupProjects(const Configuration& config)
 {
     bool valid = true;
@@ -1097,7 +1284,86 @@ bool ProjectStructure::deployFiles(const Configuration& config)
             fs::path targetPath = config.deployPath / deploy.deployTarget;
             valid &= CopyNewerFile(deploy.sourcePath, targetPath);
         }
+
+        for (const auto& deploy : proj->sharedDeployList)
+        {
+            fs::path targetPath = config.sharedDeployPath / deploy.deployTarget;
+            valid &= CopyNewerFile(deploy.sourcePath, targetPath);
+        }
     }
 
     return valid;
 }
+
+//--
+
+ScriptProjectStructure::ScriptProjectStructure(const fs::path& rootPath_, std::string_view name_)
+    : rootPath(rootPath_)
+    , name(name_)
+{}
+
+ScriptProjectStructure::~ScriptProjectStructure()
+{
+    delete root;
+    root = nullptr;
+}
+
+ScriptProjectStructure::DirInfo::~DirInfo()
+{
+    for (auto* file : files)
+        delete file;
+    for (auto* dir : dirs)
+        delete dir;
+}
+
+void ScriptProjectStructure::scanFilesAtDir(const fs::path& rootPath, DirInfo* dir, std::string_view extension)
+{
+    try
+    {
+        for (const auto& entry : fs::directory_iterator(dir->absolutePath))
+        {
+            const auto name = entry.path().filename().u8string();
+
+            // skip hidden entries
+            if (name.c_str()[0] == '.')
+                continue;
+
+            if (entry.is_directory())
+            {
+                auto* childDir = new DirInfo();
+                childDir->parent = dir;
+                childDir->name = name;
+                childDir->absolutePath = entry.path();
+                dir->dirs.push_back(childDir);
+
+                scanFilesAtDir(rootPath, childDir, extension);
+            }
+            else if (entry.is_regular_file())
+            {
+                if (EndsWith(name, extension))
+                {
+                    auto* file = new FileInfo();
+                    file->name = name;
+                    file->absolutePath = entry.path();
+                    file->relativePath = entry.path().lexically_relative(rootPath).u8string();
+                    file->parent = dir;
+                    dir->files.push_back(file);
+                    files.push_back(file);
+                }
+            }
+        }
+    }
+    catch (fs::filesystem_error& e)
+    {
+        std::cout << "Filesystem Error: " << e.what() << "\n";
+    }
+}
+
+void ScriptProjectStructure::scan()
+{
+    root = new DirInfo();
+    root->absolutePath = rootPath;
+    scanFilesAtDir(root->absolutePath, root, ".cs");
+}
+
+//--

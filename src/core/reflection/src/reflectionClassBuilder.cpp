@@ -45,7 +45,6 @@ ClassBuilder::ClassBuilder(NativeClass* classPtr)
 
 ClassBuilder::~ClassBuilder()
 {
-    m_functions.clearPtr();
 }
 
 void ClassBuilder::category(const char* category)
@@ -58,8 +57,17 @@ void ClassBuilder::submit()
     for (auto& prop : m_properties)
         prop.submit(m_classPtr);
 
-    for (auto* func : m_functions)
-        func->submit(m_classPtr);
+    for (const auto& func : m_nativeFunctions)
+    {
+        auto* nativeFunc = new NativeFunction(m_classPtr, func.rawName, func.sig, func.ptr, func.wrapPtr);
+        m_classPtr->addNativeFunction(nativeFunc);
+    }
+
+    for (const auto& func : m_monoFunctions)
+    {
+        auto* monoFunc = new MonoFunction(m_classPtr, func.rawName, func.sig, func.ptr);
+        m_classPtr->addMonoFunction(monoFunc);
+    }
 
     m_traits.apply(m_classPtr->traits());
 
@@ -90,14 +98,46 @@ PropertyBuilder& ClassBuilder::addProperty(const char* rawName, Type type, uint3
     return m_properties.back();
 }
 
-FunctionBuilder& ClassBuilder::addFunction(const char* rawName)
+void ClassBuilder::addNativeFunction(const char* rawName, const FunctionSignature& sig, const FunctionPointer& ptr, TFunctionWrapperPtr wrapPtr)
 {
-    while (*rawName == '_')
-        ++rawName;
+    const auto id = StringID(rawName);
 
-    auto func = new FunctionBuilder(rawName);
-    m_functions.emplaceBack(func);
-    return *func;
+    for (auto& entry : m_nativeFunctions)
+    {
+        if (entry.rawName == id)
+        {
+            entry.ptr = ptr;
+            entry.sig = sig;
+            entry.wrapPtr = wrapPtr;
+            return;
+        }
+    }
+
+    auto& entry = m_nativeFunctions.emplaceBack();
+    entry.rawName = id;
+    entry.ptr = ptr;
+    entry.sig = sig;
+    entry.wrapPtr = wrapPtr;
+}
+
+void ClassBuilder::addMonoFunction(const char* rawName, const FunctionSignature& sig, TFunctionMonoWrapperPtr ptr)
+{
+    const auto id = StringID(rawName);
+
+    for (auto& entry : m_monoFunctions)
+    {
+        if (entry.rawName == id)
+        {
+            entry.ptr = ptr;
+            entry.sig = sig;
+            return;
+        }
+    }
+
+    auto& entry = m_monoFunctions.emplaceBack();
+    entry.rawName = id;
+    entry.ptr = ptr;
+    entry.sig = sig;
 }
 
 IMetadata& ClassBuilder::addMetadata(ClassType classType)

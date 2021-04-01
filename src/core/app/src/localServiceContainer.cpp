@@ -71,6 +71,9 @@ void ServiceContainer::shutdown()
             TRACE_INFO("Service '{}' shut down", service->cls()->name());
         }
 
+        // clear the map
+        memzero(st_serviceMap, sizeof(st_serviceMap));
+
         // we may have crashed, put a log
         TRACE_INFO("All services closed");
         m_services.clear();
@@ -86,9 +89,6 @@ void ServiceContainer::shutdown()
             }
         }
         DEBUG_CHECK_EX(!hasAliveServices, "There are some services that are still alive after platform cleanup. Please investigate as this may lead to severe leaks and/or crashes at exit.");
-
-        // clear the map
-        memzero(st_serviceMap, sizeof(st_serviceMap));
 
         // we may crash here, so add another log
         TRACE_INFO("All services released");

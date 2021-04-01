@@ -13,8 +13,10 @@
 #include "scenePreviewPanel.h"
 
 #include "engine/rendering/include/scene.h"
-#include "engine/rendering/include/debug.h"
 #include "engine/rendering/include/params.h"
+
+#include "engine/rendering/include/debugGeometry.h"
+#include "engine/rendering/include/debugGeometryBuilder.h"
 
 #include "engine/world/include/world.h"
 #include "engine/world/include/worldRendering.h"

@@ -291,8 +291,6 @@ SamplerObjectPtr IRenderingTest::createSampler(const SamplerState& info)
 
 //--
 
-using namespace image;
-
 static ImageFormat ConvertImageFormat(ImagePixelFormat pixelFormat, uint32_t numChannels)
 {
     if (pixelFormat == ImagePixelFormat::Uint8_Norm)

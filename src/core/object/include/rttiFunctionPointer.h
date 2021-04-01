@@ -61,6 +61,12 @@ typedef void (*TFunctionPtr)();
 // based on AngleScript implementation
 struct FunctionPointer
 {
+    INLINE FunctionPointer(std::nullptr_t)
+    {
+        memzero(ptr.dummy, sizeof(ptr.dummy));
+        flag = 0;
+    }
+
     INLINE FunctionPointer(uint8_t f = 0)
     {
         memzero(ptr.dummy, sizeof(ptr.dummy));
@@ -215,7 +221,10 @@ struct MakeMethodHelper<SINGLE_PTR_SIZE+4*sizeof(int)>
 //---
 
 // native calling wrapper pointer
-typedef void (*TFunctionWrapperPtr)(void* contextPtr, const FunctionPointer& func, const FunctionCallingParams& params);
+typedef void (*TFunctionWrapperPtr)(void* contextPtr, const FunctionCallingParams& params);
+
+// Mono native calling wrapper pointer
+typedef void* TFunctionMonoWrapperPtr;
 
 //---
 

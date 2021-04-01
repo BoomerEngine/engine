@@ -9,34 +9,7 @@
 #include "build.h"
 #include "reflectionFunctionBuilder.h"
 
-#include "core/object/include/rttiFunction.h"
-
 BEGIN_BOOMER_NAMESPACE()
 
-FunctionBuilder::FunctionBuilder(const char* name)
-    : m_name(name)
-    , m_isConst(false)
-    , m_isStatic(false)
-    , m_functionWrapperPtr(nullptr)
-{
-}
-
-FunctionBuilder::~FunctionBuilder()
-{
-}
-
-void FunctionBuilder::submit(IClassType* targetClass)
-{
-    ASSERT(m_functionPtr);
-    ASSERT(m_functionWrapperPtr != nullptr);
-
-    auto func = new Function(targetClass, StringID(m_name.c_str()));
-    func->setupNative(m_returnType, m_paramTypes, m_functionPtr, m_functionWrapperPtr, m_isConst, m_isStatic);
-
-    if (targetClass == nullptr)
-        RTTI::GetInstance().registerGlobalFunction(func);
-    else
-        targetClass->addFunction(func);
-}
 
 END_BOOMER_NAMESPACE()

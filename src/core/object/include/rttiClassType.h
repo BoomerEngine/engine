@@ -87,8 +87,12 @@ public:
     INLINE const TConstProperties& localProperties() const { return (const TConstProperties&) m_localProperties; }
 
     // get local (this class only) functions
-    typedef Array< const Function* > TConstFunctions;
-    INLINE const TConstFunctions& localFunctions() const { return (const TConstFunctions&)m_localFunctions; }
+    typedef Array< const NativeFunction* > TConstNativeFunctions;
+    INLINE const TConstNativeFunctions& localNativeFunctions() const { return (const TConstNativeFunctions&)m_localNativeFunctions; }
+
+    // get local (this class only) functions
+    typedef Array< const MonoFunction* > TConstMonoFunctions;
+    INLINE const TConstMonoFunctions& localMonoFunctions() const { return (const TConstMonoFunctions&)m_localMonoFunctions; }
 
     // get the declared base class of this class
     INLINE ClassType baseClass() const { return m_baseClass; }
@@ -99,8 +103,11 @@ public:
     // get ALL properties (from this class and base classes)
     const TConstProperties& allProperties() const;
 
-    // get ALL functions (from this class and base classes)
-    const TConstFunctions& allFunctions() const;
+    // get ALL native functions (from this class and base classes)
+    const TConstNativeFunctions& allNativeFunctions() const;
+
+    // get ALL mono functions (from this class and base classes)
+    const TConstMonoFunctions& allMonoFunctions() const;
 
     // get all template properties for this class
     typedef Array<TemplateProperty> TConstTemplateProperties;
@@ -109,11 +116,11 @@ public:
     // find property with given name (recursive)
     const Property* findProperty(StringID propertyName) const;
 
-    // find function by name (recursive)
-    const Function* findFunction(StringID functionName) const;
+    // find native function by name (recursive to base classes)
+    const NativeFunction* findNativeFunction(StringID functionName) const;
 
-    // find function by name without cache check (recursive)
-    const Function* findFunctionNoCache(StringID functionName) const;
+    // find mono function shim by name  (recursive to base classes)
+    const MonoFunction* findMonoFunction(StringID functionName) const;
 
     // patch all pointers to resources, returns list of patched properties (top-level only)
     bool patchResourceReferences(void* data, IResource* currentResource, IResource* newResource, Array<StringID>* outPatchedProperties) const;
@@ -142,6 +149,9 @@ public:
 
     //---------------
 
+    // clear all cached data
+    void clearCachedData();
+
     // bind a base class
     // NOTE: works only on a non-const (buildable) RTTI class, do not call after RTII initialized for a given module
     void baseClass(ClassType baseClass);
@@ -152,7 +162,11 @@ public:
 
     // add a function to this class
     // NOTE: works only on a non-const (buildable) RTTI class, do not call after RTII initialized for a given module
-    void addFunction(Function* function);
+    void addNativeFunction(NativeFunction* function);
+
+    // add a mono function shim to this class
+    // NOTE: works only on a non-const (buildable) RTTI class, do not call after RTII initialized for a given module
+    void addMonoFunction(MonoFunction* function);
 
     //---------------
 
@@ -192,30 +206,30 @@ public:
 protected:
     mutable short m_userIndex;
 
+    const IClassType* m_baseClass;
+
     StringID m_shortName;
     PoolTag m_memoryPool;
 
-    typedef HashMap<StringID, const Function*> TFunctionCache;
+    //--
 
     typedef Array< Property* > TNonConstProperties;
     TNonConstProperties m_localProperties;
 
-    typedef Array< Function* > TNonConstFunctions;
-    TNonConstFunctions m_localFunctions;
+    typedef Array< NativeFunction* > TNonConstNativeFunctions;
+    TNonConstNativeFunctions m_localNativeFunctions;
 
-    mutable TConstProperties m_allProperties;
-    mutable bool m_allPropertiesCached = false;
+    typedef Array< MonoFunction* > TNonConstMonoFunctions;
+    TNonConstMonoFunctions m_localMonoFunctions;
 
-    mutable TConstTemplateProperties m_allTemplateProperties;
-    mutable bool m_allTemplatePropertiesCached = false;
+    //--
 
-    mutable TConstFunctions m_allFunctions;
-    mutable TFunctionCache m_allFunctionsMap;
-    mutable bool m_allFunctionsCached = false;
+    mutable std::atomic<TConstProperties*> m_allProperties = nullptr;
 
-    mutable SpinLock m_allTablesLock;
+    mutable std::atomic<TConstTemplateProperties*> m_allTemplateProperties = nullptr;
 
-    const IClassType* m_baseClass;
+    mutable std::atomic<TConstNativeFunctions*> m_allNativeFunctions = nullptr;
+    mutable std::atomic<TConstMonoFunctions*> m_allMonoFunctions = nullptr;
 
     //--
 
@@ -234,9 +248,7 @@ protected:
     virtual void releaseTypeReferences() override;
 };
 
-END_BOOMER_NAMESPACE()
-
-BEGIN_BOOMER_NAMESPACE()
+//--
 
 // shared-ptr cast for RTTI SharedPointers
 template< class _DestType, class _SrcType >
@@ -267,6 +279,8 @@ INLINE const _DestType* rtti_cast(const _SrcType* srcObj)
 
     return nullptr;
 }
+
+//--
 
 END_BOOMER_NAMESPACE()
     

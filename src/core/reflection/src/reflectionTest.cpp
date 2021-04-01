@@ -11,6 +11,40 @@
 
 BEGIN_BOOMER_NAMESPACE_EX(test)
 
+struct DupaStruct
+{
+    RTTI_DECLARE_NONVIRTUAL_CLASS(DupaStruct);
+
+    float re = 0;
+    float im = 0;
+
+    INLINE DupaStruct() {};
+    INLINE DupaStruct(float a, float b) : re(a), im(b) {};
+
+    float Mag() const
+    {
+        return std::sqrtf(re * re + im * im);
+    }
+
+    DupaStruct operator+(const DupaStruct& b) const
+    {
+        return DupaStruct(re + b.re, im + b.im);
+    }
+
+    DupaStruct& operator+=(const DupaStruct& b)
+    {
+        re += b.re;
+        im += b.im;
+        return *this;
+    }
+};
+
+RTTI_BEGIN_TYPE_STRUCT(DupaStruct);
+RTTI_NATIVE_CLASS_FUNCTION(Mag);
+RTTI_NATIVE_CLASS_FUNCTION(operator+);
+//RTTI_NATIVE_CLASS_FUNCTION(operator+=);
+RTTI_END_TYPE();
+
 class Dupa : public IObject
 {
     RTTI_DECLARE_VIRTUAL_CLASS(Dupa, IObject);
@@ -78,6 +112,11 @@ private:
     {
         return false;
     }
+
+    static bool IsDupa()
+    {
+        return false;
+    }
 };
 
 RTTI_BEGIN_TYPE_CLASS(Dupa);
@@ -85,18 +124,19 @@ RTTI_BEGIN_TYPE_CLASS(Dupa);
     RTTI_PROPERTY(m_y).name("Dupa");
     RTTI_PROPERTY(m_arrX);
     RTTI_PROPERTY(m_arrY);
-    RTTI_FUNCTION("TestP0", TestP0);
-    RTTI_FUNCTION("TestRetP0", TestRetP0);
-    RTTI_FUNCTION("TestP1", TestP1);
-    RTTI_FUNCTION("TestRetP1", TestRetP1);
-    RTTI_FUNCTION("TestP2", TestP2);
-    RTTI_FUNCTION("TestRetP2", TestRetP2);
-    RTTI_FUNCTION("TestP3", TestP3);
-    RTTI_FUNCTION("TestRetP3", TestRetP3);
-    RTTI_FUNCTION("TestP4", TestP4);
-    RTTI_FUNCTION("TestRetP4", TestRetP4);
-    RTTI_FUNCTION("TestP5", TestP5);
-    RTTI_FUNCTION("TestRetP5", TestRetP5);
+    RTTI_NATIVE_CLASS_FUNCTION(TestP0);
+    RTTI_NATIVE_CLASS_FUNCTION(TestRetP0);
+    RTTI_NATIVE_CLASS_FUNCTION(TestP1);
+    RTTI_NATIVE_CLASS_FUNCTION(TestRetP1);
+    RTTI_NATIVE_CLASS_FUNCTION(TestP2);
+    RTTI_NATIVE_CLASS_FUNCTION(TestRetP2);
+    RTTI_NATIVE_CLASS_FUNCTION(TestP3);
+    RTTI_NATIVE_CLASS_FUNCTION(TestRetP3);
+    RTTI_NATIVE_CLASS_FUNCTION(TestP4);
+    RTTI_NATIVE_CLASS_FUNCTION(TestRetP4);
+    RTTI_NATIVE_CLASS_FUNCTION(TestP5);
+    RTTI_NATIVE_CLASS_FUNCTION(TestRetP5);
+    RTTI_NATIVE_STATIC_FUNCTION(IsDupa);
 RTTI_END_TYPE();
 
 // TODO: test extracted reflection info

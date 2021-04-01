@@ -253,11 +253,6 @@ SpecificClassType<IObject> IObject::GetStaticClass()
     return SpecificClassType<IObject>(*objectType.ptr());
 }
 
-ClassType IObject::cls() const
-{
-    return nativeClass();
-}
-
 //--
 
 DataViewResult IObject::describeDataView(StringView viewPath, DataViewInfo& outInfo) const
@@ -378,7 +373,8 @@ void IObject::postEvent(StringID eventID, const void* data, Type dataType)
 
 void IObject::RegisterType(TypeSystem& typeSystem)
 {
-    Type ret = new NativeClass("IObject", sizeof(IObject), alignof(IObject), typeid(IObject).hash_code(), ClassAllocationPool::TAG);
+    NativeClass* ret = new NativeClass("IObject", sizeof(IObject), alignof(IObject), typeid(IObject).hash_code(), ClassAllocationPool::TAG);
+    ret->bindCtorDtor<IObject>();
     typeSystem.registerType(ret);
 }
 

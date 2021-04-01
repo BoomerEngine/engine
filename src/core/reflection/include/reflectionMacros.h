@@ -75,7 +75,6 @@ public:\
     using TBaseClass = className;\
     using StaticClassAllocationPool = ClassAllocationPool; \
     static SpecificClassType<className> GetStaticClass();\
-    ClassType nativeClass() const { return GetStaticClass(); }\
     ClassType cls() const { return GetStaticClass(); }\
 private:\
     friend void CreateType_##className(const char* typeName);\
@@ -89,8 +88,7 @@ public:\
     using TBaseClass = className;\
     using StaticClassAllocationPool = ClassAllocationPool; \
     static SpecificClassType<className> GetStaticClass();\
-    virtual ClassType nativeClass() const { return GetStaticClass(); }\
-    virtual ClassType cls() const { return nativeClass(); }\
+    virtual ClassType cls() const { return GetStaticClass(); }\
 private:\
     friend void CreateType_##className(const char* typeName);\
     friend void InitType_##className();
@@ -100,7 +98,7 @@ public:\
     using TBaseClass = baseClass;\
     using StaticClassAllocationPool = ClassAllocationPool; \
     static SpecificClassType<className> GetStaticClass();\
-    virtual ClassType nativeClass() const { return GetStaticClass(); }\
+    virtual ClassType cls() const { return GetStaticClass(); }\
 private:\
     friend void CreateType_##className(const char* typeName);\
     friend void InitType_##className();
@@ -282,17 +280,26 @@ private:\
 #define RTTI_PROPERTY_VIRTUAL(_name, _type, _offset)\
     builder.addProperty(_name, GetTypeObject<_type>(), _offset)
 
-// Define a type's object function (requires pointer to "this" to work)
-#define RTTI_FUNCTION(_name, _func)\
-    builder.addFunction<TType>(_name).setupProxy(&TType::_func, MakeMethodPtr(TType, _func))
 
 // Define a type's object function (requires pointer to "this" to work)
-#define RTTI_FUNCTION_SIMPLE(_func)\
-    builder.addFunction<TType>(#_func).setupProxy(&TType::_func, MakeMethodPtr(TType, _func))
+#define RTTI_NATIVE_CLASS_FUNCTION_EX(_name, _func) {\
+    const auto sig = FunctionSignatureBuilderClass<TType>::capture(&TType::_func); \
+    const auto shim = NativeFunctionShimBuilderClass<TType, decltype(&TType::_func), &TType::_func>::buildShim(&TType::_func); \
+    builder.addNativeFunction(_name, sig, MakeMethodPtr(TType, _func), shim); }
 
-// Define a type's static function (does not require a this pointer)
-#define RTTI_STATIC_FUNCTION(_name, _func)\
-    builder.addStaticFunction(_name).setupProxy(&TType::_func, MakeFunctionPtr(TType::_func))
+// Define a type's object function (requires pointer to "this" to work)
+#define RTTI_NATIVE_STATIC_FUNCTION_EX(_name, _func) {\
+    const auto sig = FunctionSignatureBuilderStatic::capture(&TType::_func); \
+    const auto shim = NativeFunctionShimBuilderStatic<decltype(&TType::_func), &TType::_func>::buildShim(&TType::_func); \
+    builder.addNativeFunction(_name, sig, MakeFunctionPtr(TType::_func), shim); }
+
+// Define a type's object function (requires pointer to "this" to work)
+#define RTTI_NATIVE_CLASS_FUNCTION(_func) \
+    RTTI_NATIVE_CLASS_FUNCTION_EX(#_func, _func)
+
+// Define a type's object function (requires pointer to "this" to work)
+#define RTTI_NATIVE_STATIC_FUNCTION(_func) \
+    RTTI_NATIVE_STATIC_FUNCTION_EX(#_func, _func)
 
 /// END
 
@@ -300,17 +307,4 @@ private:\
 #define RTTI_END_TYPE()\
     builder.submit(); }
 
-///------------------------------
-/// GLOBAL DEFINITION PARTS - must be in .cpp file, not related to a single type
-///------------------------------
-
-// Define a static global function callable from anywhere
-// Many systems can use it but this is mostly for integration with scripting languages
-#define RTTI_GLOBAL_FUNCTION(_func, _name)\
-    void RegisterGlobalFunc_##_func() {\
-        FunctionBuilder funcBuilder(_name);\
-        FunctionBuilderStatic globalFuncBuilder(funcBuilder);\
-        globalFuncBuilder.setupProxy(&_func, MakeFunctionPtr(_func));\
-        funcBuilder.submit(nullptr);\
-    }
 

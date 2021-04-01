@@ -14,7 +14,8 @@
 #include "engine/rendering/include/object.h"
 #include "engine/rendering/include/objectMesh.h"
 #include "engine/rendering/include/params.h"
-#include "engine/rendering/include/debug.h"
+#include "engine/rendering/include/debugGeometry.h"
+#include "engine/rendering/include/debugGeometryBuilder.h"
 #include "engine/material/include/materialInstance.h"
 #include "engine/material/include/materialTemplate.h"
 #include "engine/ui/include/uiTextLabel.h"
@@ -206,9 +207,10 @@ void MeshPreviewPanel::handleFrame(FrameParams& frame, DebugGeometryCollector& d
     {
         if (m_previewSettings.showBounds)
         {
-            DebugDrawer lines(frame.geometry.solid);
-            lines.color(Color::YELLOW);
-            lines.wireBox(m_mesh->bounds());
+            DebugGeometryBuilder dd;
+            dd.color(Color::YELLOW);
+            dd.wireBox(m_mesh->bounds());
+            debug.push(dd);
         }
     }
 }

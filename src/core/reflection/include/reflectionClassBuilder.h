@@ -84,8 +84,11 @@ public:
     // create metadata
     IMetadata& addMetadata(ClassType classType);
 
-    // create function builder
-    FunctionBuilder& addFunction(const char* rawName);
+    // create a native function builder
+    void addNativeFunction(const char* rawName, const FunctionSignature& sig, const FunctionPointer& ptr, TFunctionWrapperPtr wrapPtr);
+
+    // create a mono function builder
+    void addMonoFunction(const char* rawName, const FunctionSignature& sig, TFunctionMonoWrapperPtr ptr);
 
     //---
 
@@ -103,17 +106,6 @@ public:
         return static_cast<T&>(addMetadata(ClassID<T>()));
     }
 
-    template< typename T >
-    INLINE FunctionBuilderClass<T> addFunction(const char* name)
-    {
-        return FunctionBuilderClass<T>(addFunction(name));
-    }
-
-    INLINE FunctionBuilderStatic addStaticFunction(const char* name)
-    {
-        return FunctionBuilderStatic(addFunction(name));
-    }
-
     INLINE TypeTraitBuilder& addTrait()
     {
         return m_traits;
@@ -128,11 +120,29 @@ public:
 
 private:
     NativeClass* m_classPtr;
-    Array< PropertyBuilder > m_properties;
-    Array< FunctionBuilder* > m_functions;
-    Array< StringID > m_oldNames;
+    Array<PropertyBuilder> m_properties;
+    Array<StringID> m_oldNames;
     StringBuf m_categoryName;
     TypeTraitBuilder m_traits;
+
+    struct NativeFunctionInfo
+    {
+        StringID rawName;
+        FunctionSignature sig;
+        FunctionPointer ptr; 
+        TFunctionWrapperPtr wrapPtr = nullptr;
+    };
+
+    Array<NativeFunctionInfo> m_nativeFunctions;
+
+    struct MonoFunctionInfo
+    {
+        StringID rawName;
+        FunctionSignature sig;
+        TFunctionMonoWrapperPtr ptr = nullptr;
+    };
+
+    Array<MonoFunctionInfo> m_monoFunctions;
 };
 
 //--

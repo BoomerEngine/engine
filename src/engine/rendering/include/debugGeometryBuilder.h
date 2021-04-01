@@ -336,7 +336,10 @@ public:
     // flush text as geometry, optionally can align it, returns the proper bounds of the text
     Rect renderText(int x, int y, int alignX = -1, int alignY = -1);
 
-    // calcualte current text bounds
+    // flush text and add a background behind it
+    Rect renderTextWithBackground(int x, int y, int alignX = -1, int alignY = -1, int margin=10);
+
+    // calculate current text bounds
     Rect calcTextBounds() const;
 
     //--

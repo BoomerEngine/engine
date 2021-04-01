@@ -138,16 +138,10 @@ public:
     // NOTE: invalid/incompatible properties are skipped
     void buildFromType(ClassType structType, DataModelRepository& repository);
 
-    // initialize from a function
-    void buildFromFunction(const Function* functionType, DataModelRepository& repository);
-
     //--
 
     // encode data with this model using native data layout
     void encodeFromNativeData(const void* data, IDataModelMapper& mapper, BitWriter& w) const;
-
-    // encode from a function call
-    void encodeFromFunctionCall(const FunctionCallingParams& params, IDataModelMapper& mapper, BitWriter& w) const;
 
     //--
 
@@ -155,11 +149,6 @@ public:
     /// NOTE: memory for data MUST BE PREALLOCATED!
     /// NOTE: this function may return false if there are errors in the bit stream, the goal is TO NEVER CRASH
     bool decodeToNativeData(void* data, IDataModelResolver& resolver, BitReader& r) const;
-
-    /// decode data with this model using native data layout
-    /// NOTE: memory for parameters MUST BE PREALLOCATED!
-    /// NOTE: this function may return false if there are errors in the bit stream, the goal is TO NEVER CRASH
-    bool decodeToFunctionCall(FunctionCallingParams& params, IDataModelResolver& resolve, BitReader& r) const;
 
     //--
 

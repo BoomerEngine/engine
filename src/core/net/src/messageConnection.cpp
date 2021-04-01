@@ -14,10 +14,10 @@ BEGIN_BOOMER_NAMESPACE_EX(net)
 //--
 
 RTTI_BEGIN_TYPE_ABSTRACT_CLASS(MessageConnection);
-    RTTI_FUNCTION("getConnectionId", connectionId);
-    RTTI_FUNCTION("getLocalAddress", localAddress);
-    RTTI_FUNCTION("getRemoteAddress", remoteAddress);
-    RTTI_FUNCTION("isConnected", isConnected);
+    //RTTI_FUNCTION("getConnectionId", connectionId);
+    //RTTI_FUNCTION("getLocalAddress", localAddress);
+    //RTTI_FUNCTION("getRemoteAddress", remoteAddress);
+    //RTTI_FUNCTION("isConnected", isConnected);
     //RTTI_FUNCTION("send", sendScripted);
 RTTI_END_TYPE();
 

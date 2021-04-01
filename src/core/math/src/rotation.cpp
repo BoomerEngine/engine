@@ -18,20 +18,22 @@ RTTI_BEGIN_TYPE_STRUCT(Angles);
     RTTI_PROPERTY(pitch).editable("Pitch around Y axis").range(-360.0f, 360.0f).widgetDrag(true);
     RTTI_PROPERTY(yaw).editable("Yaw around Z axis").range(-360.0f, 360.0f).widgetDrag(true);
     RTTI_PROPERTY(roll).editable("Roll around X axis").range(-360.0f, 360.0f).widgetDrag(true);
-    RTTI_FUNCTION("ForwardVector", forward);
-    RTTI_FUNCTION("SideVector", side);
-    RTTI_FUNCTION("UpVector", up);
-    RTTI_FUNCTION("IsZero", isZero);
-    RTTI_FUNCTION("IsNearZero", isNearZero);
-    RTTI_FUNCTION("ToMatrix", toMatrix);
-    RTTI_FUNCTION("ToMatrix33", toMatrix33);
-    RTTI_FUNCTION("ToQuat", toQuat);
-    RTTI_FUNCTION("ToAxes", angleVectors);
-    RTTI_FUNCTION("Distance", distance);
-    RTTI_FUNCTION("Normalize", normalize);
-    RTTI_FUNCTION("Normalized", normalized);
-//        RTTI_STATIC_FUNCTION("Random", Rand);
-    RTTI_STATIC_FUNCTION("Approach", Approach);
+
+    RTTI_NATIVE_CLASS_FUNCTION_EX("ForwardVector", forward);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("SideVector", side);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("UpVector", up);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("IsZero", isZero);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("IsNearZero", isNearZero);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("ToMatrix", toMatrix);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("ToMatrix33", toMatrix33);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("ToQuat", toQuat);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("ToAxes", angleVectors);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Distance", distance);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Normalize", normalize);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Normalized", normalized);
+
+    RTTI_NATIVE_STATIC_FUNCTION_EX("Approach", Approach);
+
 RTTI_END_TYPE();
 
 //-----------------------------------------------------------------------------
@@ -265,7 +267,7 @@ void Angles::print(IFormatStream& f) const
 
 //--
 
-static Angles opNegA(const Angles& a) { return -a; }
+/*static Angles opNegA(const Angles& a) { return -a; }
 static Angles opAddA(const Angles& a, const Angles& b) { return a + b; }
 static Angles opSubA(const Angles& a, const Angles& b) { return a - b; }
 static Angles opMulAF(const Angles& a, float b) { return a * b; }
@@ -277,22 +279,22 @@ static Angles opAsssignSubA(Angles& a, const Angles& b) { return a -= b; }
 static Angles opAsssignMulAF(Angles& a, float b) { return a *= b; }
 static Angles opAsssignDivAF(Angles& a, float b) { return a /= b; }
 
-/*static Angles AbsA(const Angles& a) { return a.abs(); }
+static Angles AbsA(const Angles& a) { return a.abs(); }
 static float DotA(const Angles& a, const Angles& b) { return Dot(a,b); }
 static Angles MinA(const Angles& a, const Angles& b) { return Min(a,b); }
 static Angles MaxA(const Angles& a, const Angles& b) { return Max(a,b); }
 static Angles LerpA(const Angles& a, const Angles& b, float f) { return Lerp(a,b, f); }
 static Angles LerpNormalizedA(const Angles& a, const Angles& b, float f) { return Lerp(a,b, f); }
 static Angles ClampA(const Angles& a, const Angles& minV, const Angles& maxV) { return Clamp(a,minV,maxV); }
-static Angles ClampAF(const Angles& a, float minV, float maxV) { return Clamp(a,minV,maxV); }*/
+static Angles ClampAF(const Angles& a, float minV, float maxV) { return Clamp(a,minV,maxV); }
 
-/*RTTI_GLOBAL_FUNCTION(AbsA, "Core.AbsA");
+RTTI_GLOBAL_FUNCTION(AbsA, "Core.AbsA");
 RTTI_GLOBAL_FUNCTION(MinA, "Core.MinA");
 RTTI_GLOBAL_FUNCTION(MaxA, "Core.MaxA");
 RTTI_GLOBAL_FUNCTION(ClampA, "Core.ClampA");
 RTTI_GLOBAL_FUNCTION(ClampAF, "Core.ClampAF");
 RTTI_GLOBAL_FUNCTION(LerpA, "Core.LerpA");
-RTTI_GLOBAL_FUNCTION(LerpNormalizedA, "Core.LerpNormalizedA");*/
+RTTI_GLOBAL_FUNCTION(LerpNormalizedA, "Core.LerpNormalizedA");
 RTTI_GLOBAL_FUNCTION(opNegA, "Core.opNegate_ref_Angles_Angles");
 RTTI_GLOBAL_FUNCTION(opAddA, "Core.opAdd_ref_Angles_ref_Angles_Angles");
 RTTI_GLOBAL_FUNCTION(opSubA, "Core.opSubtract_ref_Angles_ref_Angles_Angles");
@@ -303,7 +305,7 @@ RTTI_GLOBAL_FUNCTION(opAsssignAddA, "Core.opAddAssign_out_Angles_ref_Angles_Angl
 RTTI_GLOBAL_FUNCTION(opAsssignSubA, "Core.opSubAssign_out_Angles_ref_Angles_Angles");
 RTTI_GLOBAL_FUNCTION(opAsssignMulAF, "Core.opMulAssign_out_Angles_float_Angles");
 RTTI_GLOBAL_FUNCTION(opAsssignDivAF, "Core.opDivAssign_out_Angles_float_Angles");
-
+*/
 //--
 
 END_BOOMER_NAMESPACE()

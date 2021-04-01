@@ -713,30 +713,66 @@ void DebugGeometryBuilder::wireGrid(const Vector3& o, const Vector3& u, const Ve
 {
     if (count >= 2)
     {
-        const float step = 1.0f / (count - 1);
+        // generate vertices
+        auto base = m_verticesData.size();
+        m_verticesData.reserve(m_verticesData.size() + (count + 1) * (count + 1));
 
-        // U dir
-        auto vMin = o;
-        auto vMax = o + v;
-        auto hStep = u * step;
-        for (uint32_t i = 0; i < count; ++i)
         {
-            auto base = m_verticesData.size();
-            appendVertex(vMin + hStep * i);
-            appendVertex(vMax + hStep * i);
-            appendWire(base + 0, base + 1);
+
+            // steps
+            const float step = 1.0f / (count - 1);
+            const auto hStep = u * step;
+            const auto vStep = v * step;
+
+            // generate vertices
+            auto curV = Vector3::ZERO();
+            for (uint32_t i = 0; i <= count; ++i)
+            {
+                auto curU = Vector3::ZERO();
+                for (uint32_t j = 0; j <= count; ++j)
+                {
+                    appendVertex(o + curU + curV);
+                    curU += hStep;
+                }
+
+                curV += vStep;
+            }
         }
 
-        // V dir
-        auto hMin = o;
-        auto hMax = o + u;
-        auto vStep = v * step;
-        for (uint32_t i = 0; i < count; ++i)
+        // generate indices
         {
-            auto base = m_verticesData.size();
-            appendVertex(hMin + vStep * i);
-            appendVertex(hMax + vStep * i);
-            appendWire(base + 0, base + 1);
+            const auto numIndices = 6 * count * count + 3 * count + 3 * count;
+            auto* start = m_indicesData.allocateUninitialized(numIndices);
+            auto* it = start;
+
+            auto rowCur = base;
+            auto rowNext = base + (count + 1);
+            for (uint32_t i = 0; i <= count; ++i)
+            {
+                auto cur = rowCur;
+                auto next = rowNext;
+                for (uint32_t j = 0; j <= count; ++j, ++cur, ++next)
+                {
+                    if (j < count)
+                    {
+                        *it++ = 0;
+                        *it++ = cur;
+                        *it++ = cur + 1;
+                    }
+
+                    if (i < count)
+                    {
+                        *it++ = 0;
+                        *it++ = cur;
+                        *it++ = next;
+                    }
+                }
+
+                rowCur += count + 1;
+                rowNext += count + 1;
+            }
+
+            ASSERT(it == start + numIndices);
         }
     }
 }
@@ -1878,10 +1914,13 @@ void DebugGeometryBuilderScreen::line(const Vector2& a, const Vector2& b)
 
 void DebugGeometryBuilderScreen::line(float x0, float y0, float x1, float y1)
 {
-    float dx = x1 - x0;
-    float dy = y1 - y0;
+    Vector2 points[2];
+    points[0].x = x0;
+    points[0].y = y0;
+    points[1].x = x1;
+    points[1].y = y1;
 
-    float len = sqrtf(dx * dx + dy * dy);
+    lines(points, 2, false);
 }
 
 void DebugGeometryBuilderScreen::lines(const Vector2* points, uint32_t numPoints, bool closed /*= false*/, Color* colors /*= nullptr*/)
@@ -2215,6 +2254,26 @@ Rect DebugGeometryBuilderScreen::renderText(int x, int y, int alignX /*= -1*/, i
     m_glyphs.reset();
 
     return textBounds;
+}
+
+Rect DebugGeometryBuilderScreen::renderTextWithBackground(int x, int y, int alignX /*= -1*/, int alignY /*= -1*/, int margin /*= 10*/)
+{
+    auto b = m_verticesData.size();
+    rect(Rect(0, 0, 1, 1));
+
+    auto textRect = renderText(x, y, alignX, alignY);
+    textRect = textRect.inflated(margin);
+
+    m_verticesData[b + 0].p.x = textRect.min.x + 0.5f;
+    m_verticesData[b + 0].p.y = textRect.min.y + 0.5f;
+    m_verticesData[b + 1].p.x = textRect.max.x + 0.5f;
+    m_verticesData[b + 1].p.y = textRect.min.y + 0.5f;
+    m_verticesData[b + 2].p.x = textRect.max.x + 0.5f;
+    m_verticesData[b + 2].p.y = textRect.max.y + 0.5f;
+    m_verticesData[b + 3].p.x = textRect.min.x + 0.5f;
+    m_verticesData[b + 3].p.y = textRect.max.y + 0.5f;
+
+    return textRect;
 }
 
 void DebugGeometryBuilderScreen::shift(float dx, float dy)

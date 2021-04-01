@@ -1215,6 +1215,7 @@ bool CopyNewerFile(const fs::path& source, const fs::path& target)
 
         std::cout << "Copying " << target << "\n";
         fs::remove(target);
+        fs::create_directories(target.parent_path());
         fs::copy(source, target);
 
         return true;

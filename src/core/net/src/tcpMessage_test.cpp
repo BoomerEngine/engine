@@ -67,7 +67,7 @@ public:
 };
 
 RTTI_BEGIN_TYPE_CLASS(HelloReply);
-    RTTI_FUNCTION("messageHello", messageHello);
+    //RTTI_FUNCTION("messageHello", messageHello);
 RTTI_END_TYPE();
 
 //--
@@ -88,7 +88,7 @@ public:
 };
 
 RTTI_BEGIN_TYPE_CLASS(AnswerCapture);
-    RTTI_FUNCTION("messageAnswer", messageAnswer);
+    //RTTI_FUNCTION("messageAnswer", messageAnswer);
 RTTI_END_TYPE();
 
 //--

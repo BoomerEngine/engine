@@ -12,7 +12,8 @@
 #include "sceneContentNodes.h"
 #include "sceneContentNodesEntity.h"
 
-#include "engine/rendering/include/debug.h"
+#include "engine/rendering/include/debugGeometry.h"
+#include "engine/rendering/include/debugGeometryBuilder.h"
 #include "engine/rendering/include/params.h"
 
 #include "core/resource/include/indirectTemplate.h"

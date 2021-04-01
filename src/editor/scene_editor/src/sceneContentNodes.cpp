@@ -15,7 +15,8 @@
 
 #include "editor/assets/include/browserService.h"
 
-#include "engine/rendering/include/debug.h"
+#include "engine/rendering/include/debugGeometry.h"
+#include "engine/rendering/include/debugGeometryBuilder.h"
 #include "engine/rendering/include/params.h"
 
 #include "core/object/include/rttiResourceReferenceType.h"

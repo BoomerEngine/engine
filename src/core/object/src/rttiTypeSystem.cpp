@@ -119,15 +119,6 @@ void TypeSystem::deinit()
     m_properties.clear();
 }
 
-void TypeSystem::updateCaches()
-{
-    for (auto classPtr : m_classes)
-    {
-        classPtr->allProperties();
-        classPtr->allFunctions();
-    }
-}
-
 void TypeSystem::enumBaseTypes(Array<Type>& outAllTypes)
 {
     ScopeLock<> lock(m_typesLock);
@@ -205,17 +196,6 @@ ClassType TypeSystem::findClass(StringID name)
         auto correctedName = StringID(name.view().afterFirst("rendering::"));
         return findClass(correctedName);
     }
-
-    return nullptr;
-}
-
-const Function* TypeSystem::findGlobalFunction(StringID name)
-{
-    ScopeLock<> lock(m_functionLock);
-
-    const Function* func = nullptr;
-    if (m_functionMap.find(name, func))
-        return func;
 
     return nullptr;
 }
@@ -364,21 +344,6 @@ void TypeSystem::registerProperty(const Property* prop)
 
     DEBUG_CHECK_EX(m_properties.find(prop->hash()) == nullptr, "Property already registered");
     m_properties.set(prop->hash(), prop);
-}
-
-void TypeSystem::registerGlobalFunction(const Function* function)
-{
-    ScopeLock<> lock(m_functionLock);
-
-    if (m_functionMap.contains(function->name()))
-    {
-        TRACE_ERROR("Global function '{}' was already registered", function->name());
-    }
-    else
-    {
-        TRACE_INFO("Registered global function '{}'", function->name());
-        m_functionMap.set(function->name(), function);
-    }
 }
 
 void TypeSystem::registerDynamicTypeCreator(const char* keyword, TDynamicTypeCreationFunction creatorFunction)

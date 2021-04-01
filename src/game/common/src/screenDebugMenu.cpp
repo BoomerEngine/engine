@@ -337,7 +337,7 @@ void IGameScreenDebugMenu::handleRender(Canvas& c, float visibility)
     const auto headerMarginY = cvDebugMenuHeaderMarginY.get() * displayScale;
     if (!m_title.empty())
     {
-        const auto bounds = c.debugPrintMeasure(m_title, (int)headerFontSize, FontAlignmentHorizontal::Center, true);
+        const auto bounds = c.debugPrintMeasure(m_title, (int)headerFontSize, 0, true);
         headerTextSize = bounds.size;
         headerSize = bounds.size;
         headerSize.x += headerMarginX * 2.0f;

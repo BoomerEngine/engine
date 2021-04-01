@@ -1,6 +1,6 @@
 #include "common.h"
 #include "toolReflection.h"
-#include "generated.h"
+#include "projectGenerator.h"
 
 //--
 
@@ -166,7 +166,7 @@ bool ProjectReflection::parseDeclarations()
     return valid;
 }
 
-bool ProjectReflection::generateReflection(CodeGenerator& gen) const
+bool ProjectReflection::generateReflection(ProjectGenerator& gen) const
 {
     bool valid = true;
 
@@ -305,7 +305,7 @@ bool ProjectReflection::generateReflectionForProject(const RefelctionProject& p,
 ToolReflection::ToolReflection()
 {}
 
-bool GenerateInlinedReflection(const Configuration& config, ProjectStructure& structure, CodeGenerator& codeGenerator)
+bool GenerateInlinedReflection(const Configuration& config, ProjectStructure& structure, ProjectGenerator& codeGenerator)
 {
     ProjectReflection reflection;
 
@@ -328,8 +328,23 @@ bool GenerateInlinedReflection(const Configuration& config, ProjectStructure& st
     return true;
 }
 
-bool ToolReflection::run(const Configuration& config)
+int ToolReflection::run(const char* argv0, const Commandline& cmdline)
 {
+    //--
+
+    Configuration config;
+    if (!config.parseOptions(argv0, cmdline)) {
+        std::cout << "Invalid/incomplete configuration\n";
+        return -1;
+    }
+
+    if (!config.parsePaths(argv0, cmdline)) {
+        std::cout << "Invalid/incomplete configuration\n";
+        return -1;
+    }
+
+    //--
+
     ProjectStructure structure;
 
     if (!config.engineSourcesPath.empty())
@@ -340,18 +355,18 @@ bool ToolReflection::run(const Configuration& config)
 
     uint32_t totalFiles = 0;
     if (!structure.scanContent(totalFiles))
-        return false;
+        return -1;
 
     std::cout << "Found " << totalFiles << " total files across " << structure.projects.size() << " projects\n";
 
-    CodeGenerator codeGenerator(config);
+    ProjectGenerator codeGenerator(config);
     if (!GenerateInlinedReflection(config, structure, codeGenerator))
-        return false;
+        return -1;
 
     if (!codeGenerator.saveFiles())
-        return false;
+        return -1;
 
-    return true;
+    return 0;
 }
 
 //--

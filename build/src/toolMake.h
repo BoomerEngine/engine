@@ -9,10 +9,7 @@ class ToolMake
 {
 public:
     ToolMake();
-
-    bool run(const Configuration& config);
-
-private:
+    int run(const char* argv0, const Commandline& cmdline);
 };
 
 

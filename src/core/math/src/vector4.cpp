@@ -21,56 +21,25 @@ RTTI_BEGIN_TYPE_STRUCT(Vector4);
     RTTI_PROPERTY(z).editable();
     RTTI_PROPERTY(w).editable();
 
-    RTTI_FUNCTION("MinValue", minValue);
-    RTTI_FUNCTION("MaxValue", maxValue);
-    RTTI_FUNCTION("Abs",abs);
-    RTTI_FUNCTION("Trunc", trunc);
-    RTTI_FUNCTION("Frac", frac);
-    RTTI_FUNCTION("Round", round);
-    RTTI_FUNCTION("Ceil", ceil);
-    RTTI_FUNCTION("Floor", floor);
-    RTTI_FUNCTION("SquareLength", squareLength);
-    RTTI_FUNCTION("Length", length);
-    RTTI_FUNCTION("InvLength", invLength);
-    RTTI_FUNCTION("Sum", sum);
-    RTTI_FUNCTION("Trace", trace);
-    RTTI_FUNCTION("Normalize", normalize);
-    RTTI_FUNCTION("Normalized", normalized);
-    RTTI_FUNCTION("Distance", distance);
-    RTTI_FUNCTION("SquareDistance", squareDistance);
-    RTTI_FUNCTION("Project", project);
-    RTTI_FUNCTION("Projected", projected);
-
-    RTTI_FUNCTION("xx", xx);
-    RTTI_FUNCTION("xz", xz);
-    RTTI_FUNCTION("xw", xw);
-    RTTI_FUNCTION("yx", yx);
-    RTTI_FUNCTION("yy", yy);
-    RTTI_FUNCTION("yw", yw);
-    RTTI_FUNCTION("zx", zx);
-    RTTI_FUNCTION("zy", zy);
-    RTTI_FUNCTION("zz", zz);
-    RTTI_FUNCTION("wx", wx);
-    RTTI_FUNCTION("wy", wy);
-    RTTI_FUNCTION("wz", wz);
-    RTTI_FUNCTION("ww", ww);
-    RTTI_FUNCTION("xy", _xy);
-    RTTI_FUNCTION("yz", _yz);
-    RTTI_FUNCTION("zw", _zw);
-    RTTI_FUNCTION("xxx", xxx);
-    RTTI_FUNCTION("yyy", yyy);
-    RTTI_FUNCTION("zzz", zzz);
-    RTTI_FUNCTION("www", www);
-    RTTI_FUNCTION("xyz", _xyz);
-    RTTI_FUNCTION("zyx", zyx);
-    RTTI_FUNCTION("xxxx", xxxx);
-    RTTI_FUNCTION("yyyy", yyyy);
-    RTTI_FUNCTION("zzzz", zzzz);
-    RTTI_FUNCTION("wwww", wwww);
-    RTTI_FUNCTION("xyzw", _xyzw);
-    RTTI_FUNCTION("wzyx", wzyx);
-
-    //RTTI_STATIC_FUNCTION("Random", Rand);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("MinValue", minValue);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("MaxValue", maxValue);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Abs",abs);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Trunc", trunc);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Frac", frac);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Round", round);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Ceil", ceil);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Floor", floor);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("SquareLength", squareLength);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Length", length);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("InvLength", invLength);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Sum", sum);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Trace", trace);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Normalize", normalize);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Normalized", normalized);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Distance", distance);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("SquareDistance", squareDistance);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Project", project);
+    RTTI_NATIVE_CLASS_FUNCTION_EX("Projected", projected);
 RTTI_END_TYPE();
 
 //--
@@ -102,7 +71,7 @@ void Vector4::print(IFormatStream& f) const
 
 //--
 
-static Vector4 opNegV4(const Vector4& a) { return -a; }
+/*static Vector4 opNegV4(const Vector4& a) { return -a; }
 static Vector4 opAddV4(const Vector4& a, const Vector4& b) { return a + b; }
 static Vector4 opSubV4(const Vector4& a, const Vector4& b) { return a - b; }
 static Vector4 opMulV4(const Vector4& a, const Vector4& b) { return a * b; }
@@ -126,7 +95,7 @@ static Vector4 opDivV4F(const Vector4& a, float b) { return a / b; }
 static Vector4 opMulFV4(float a, const Vector4& b) { return b * a; }
 
 static Vector4 AbsV4(const Vector4& a) { return a.abs(); }
-/*static Vector4 MinV4(const Vector4& a, const Vector4& b) { return Min(a,b); }
+static Vector4 MinV4(const Vector4& a, const Vector4& b) { return Min(a,b); }
 static Vector4 MaxV4(const Vector4& a, const Vector4& b) { return Max(a,b); }
 static float DotV4(const Vector4& a, const Vector4& b) { return Dot(a,b); }
 static Vector4 SnapV4(const Vector4& a, float b) { return Snap(a,b); }
@@ -136,10 +105,10 @@ static Vector4 ClampV4F(const Vector4& a, float minF, float maxF) { return Clamp
 static Vector4 NormalV4(const Vector4 &a, const Vector4 &normal) { return NormalPart(a, normal); }
 static Vector4 TangentV4(const Vector4 &a, const Vector4 &normal) { return TangentPart(a, normal); }
 static Vector4 ClampLengthV4(const Vector4& a, float maxLength) { return ClampLength(a, maxLength); }
-static Vector4 SetLengthV4(const Vector4& a, float maxLength) { return SetLength(a, maxLength); }*/
+static Vector4 SetLengthV4(const Vector4& a, float maxLength) { return SetLength(a, maxLength); }
 
 RTTI_GLOBAL_FUNCTION(AbsV4, "Core.AbsV4");
-/*RTTI_GLOBAL_FUNCTION(DotV4, "Core.DotV4");
+RTTI_GLOBAL_FUNCTION(DotV4, "Core.DotV4");
 RTTI_GLOBAL_FUNCTION(SnapV4, "Core.SnapV4");
 RTTI_GLOBAL_FUNCTION(MinV4, "Core.MinV4");
 RTTI_GLOBAL_FUNCTION(MaxV4, "Core.MaxV4");
@@ -149,7 +118,7 @@ RTTI_GLOBAL_FUNCTION(ClampV4F, "Core.ClampV4F");
 RTTI_GLOBAL_FUNCTION(NormalV4, "Core.NormalV4");
 RTTI_GLOBAL_FUNCTION(TangentV4, "Core.TangentV4");
 RTTI_GLOBAL_FUNCTION(ClampLengthV4, "Core.ClampLengthV4");
-RTTI_GLOBAL_FUNCTION(SetLengthV4, "Core.SetLengthV4");*/
+RTTI_GLOBAL_FUNCTION(SetLengthV4, "Core.SetLengthV4");
 RTTI_GLOBAL_FUNCTION(opNegV4, "Core.opNegate_ref_Vector4_Vector4");
 RTTI_GLOBAL_FUNCTION(opAddV4, "Core.opAdd_ref_Vector4_ref_Vector4_Vector4");
 RTTI_GLOBAL_FUNCTION(opSubV4, "Core.opSubtract_ref_Vector4_ref_Vector4_Vector4");
@@ -169,6 +138,7 @@ RTTI_GLOBAL_FUNCTION(opAsssignAddV4F, "Core.opAddAssign_out_Vector4_float_Vector
 RTTI_GLOBAL_FUNCTION(opAsssignSubV4F, "Core.opSubAssign_out_Vector4_float_Vector4");
 RTTI_GLOBAL_FUNCTION(opAsssignMulV4F, "Core.opMulAssign_out_Vector4_float_Vector4");
 RTTI_GLOBAL_FUNCTION(opAsssignDivV4F, "Core.opDivAssign_out_Vector4_float_Vector4");
+*/
 
 //--
 

@@ -65,9 +65,9 @@
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>common.h</PrecompiledHeaderFile>
     </ClCompile>
-    <ClCompile Include="generated.cpp" />
-    <ClCompile Include="generatedCMAKE.cpp" />
-    <ClCompile Include="generatedVS.cpp" />
+    <ClCompile Include="projectGenerator.cpp" />
+    <ClCompile Include="solutionGeneratorCMAKE.cpp" />
+    <ClCompile Include="solutionGeneratorVS.cpp" />
     <ClCompile Include="lua\lapi.c">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
@@ -175,14 +175,15 @@
     <ClCompile Include="project.cpp" />
     <ClCompile Include="toolMake.cpp" />
     <ClCompile Include="toolReflection.cpp" />
+    <ClCompile Include="toolScriptMake.cpp" />
     <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="codeParser.h" />
     <ClInclude Include="common.h" />
-    <ClInclude Include="generated.h" />
-    <ClInclude Include="generatorCMAKE.h" />
-    <ClInclude Include="generatorVS.h" />
+    <ClInclude Include="projectGenerator.h" />
+    <ClInclude Include="solutionGeneratorCMAKE.h" />
+    <ClInclude Include="solutionGeneratorVS.h" />
     <ClInclude Include="lua\lapi.h" />
     <ClInclude Include="lua\lauxlib.h" />
     <ClInclude Include="lua\lcode.h" />
@@ -214,6 +215,7 @@
     <ClInclude Include="project.h" />
     <ClInclude Include="toolMake.h" />
     <ClInclude Include="toolReflection.h" />
+    <ClInclude Include="toolScriptMake.h" />
     <ClInclude Include="utils.h" />
   </ItemGroup>
   <ItemGroup>

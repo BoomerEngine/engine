@@ -15,7 +15,6 @@
 
 #include "core/containers/include/stringID.h"
 
-
 // Helper macros for old stuff
 #define NO_DEFAULT_CONSTRUCTOR( _class )    \
     protected: _class() {};
@@ -24,6 +23,10 @@
 #define OBJECT_EVENT_FUNC StringID eventID, const IObject* object, StringView eventPath, const DataHolder& eventData
 
 BEGIN_BOOMER_NAMESPACE()
+
+//---
+
+class MonoServiceImpl;
 
 //---
 
@@ -73,6 +76,9 @@ public:
 // object ID Type
 typedef uint32_t ObjectID;
 
+// object scripted object ID
+typedef uint32_t ObjectScriptID;
+
 /// Base class of manageable objects
 /// NOTE: objects are NOT copyable, period
 class CORE_OBJECT_API IObject : public IReferencable
@@ -117,10 +123,7 @@ public:
     static SpecificClassType<IObject> GetStaticClass();
 
     // Get object class, dynamic
-    virtual ClassType cls() const;
-
-    // Get object class, dynamic
-    virtual ClassType nativeClass() const = 0;
+    virtual ClassType cls() const { return GetStaticClass(); }
 
     // Print object description, usually just class name but for named objects or objects with captions we can print their name as well
     virtual void print(IFormatStream& f) const override;
@@ -305,6 +308,8 @@ public:
     static void RegisterSerializeFunction(const std::function<Buffer(const IObject*)>& func);
     static void RegisterDeserializeFunction(const std::function<ObjectPtr(const void*, uint32_t, bool)>& func);
 
+    //--
+
 protected:
     INLINE IObject(const IObject&) {};
     INLINE IObject& operator=(const IObject&) { return *this;  };
@@ -314,10 +319,17 @@ protected:
     ObjectWeakPtr m_parent;
 
     // unique (runtime) ID for this object
-    ObjectID m_id;
+    ObjectID m_id = 0;
+
+    // unique ID of the object's representation in Mono (usually a weak ref)
+    ObjectScriptID m_monoScriptId = 0;
 
     // event key (TODO: merge somehow with ObjectID ?)
     GlobalEventKey m_eventKey;
+
+    //--
+
+    friend class MonoServiceImpl;
 };
 
 END_BOOMER_NAMESPACE()

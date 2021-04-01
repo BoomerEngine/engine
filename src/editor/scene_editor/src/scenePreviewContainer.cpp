@@ -16,8 +16,10 @@
 #include "sceneContentNodesEntity.h"
 
 #include "engine/rendering/include/scene.h"
-#include "engine/rendering/include/debug.h"
 #include "engine/rendering/include/params.h"
+
+#include "engine/rendering/include/debugGeometry.h"
+#include "engine/rendering/include/debugGeometryBuilder.h"
 
 #include "engine/ui/include/uiToolBar.h"
 #include "engine/world/include/world.h"

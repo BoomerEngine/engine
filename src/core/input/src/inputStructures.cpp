@@ -317,18 +317,18 @@ void InputEvent::print(IFormatStream& f) const
 //--
 
 RTTI_BEGIN_TYPE_CLASS(BaseKeyFlags);
-	RTTI_FUNCTION("IsLeftDown", isLeftDown);
-	RTTI_FUNCTION("IsMidDown", isMidDown);
-	RTTI_FUNCTION("IsRightDown", isRightDown);
-	RTTI_FUNCTION("IsAltDown", isAltDown);
-	RTTI_FUNCTION("IsShiftDown", isShiftDown);
-	RTTI_FUNCTION("IsCtrlDown", isCtrlDown);
-	RTTI_FUNCTION("IsLeftAltDown", isLeftAltDown);
-	RTTI_FUNCTION("IsLeftShiftDown", isLeftShiftDown);
-	RTTI_FUNCTION("IsLeftControlDown", isLeftCtrlDown);
-	RTTI_FUNCTION("IsRightAltDown", isRightAltDown);
-	RTTI_FUNCTION("IsRightShiftDown", isRightShiftDown);
-	RTTI_FUNCTION("IsRightControlDown", isRightCtrlDown);
+RTTI_NATIVE_CLASS_FUNCTION_EX("IsLeftDown", isLeftDown);
+RTTI_NATIVE_CLASS_FUNCTION_EX("IsMidDown", isMidDown);
+RTTI_NATIVE_CLASS_FUNCTION_EX("IsRightDown", isRightDown);
+RTTI_NATIVE_CLASS_FUNCTION_EX("IsAltDown", isAltDown);
+RTTI_NATIVE_CLASS_FUNCTION_EX("IsShiftDown", isShiftDown);
+RTTI_NATIVE_CLASS_FUNCTION_EX("IsCtrlDown", isCtrlDown);
+RTTI_NATIVE_CLASS_FUNCTION_EX("IsLeftAltDown", isLeftAltDown);
+RTTI_NATIVE_CLASS_FUNCTION_EX("IsLeftShiftDown", isLeftShiftDown);
+RTTI_NATIVE_CLASS_FUNCTION_EX("IsLeftControlDown", isLeftCtrlDown);
+RTTI_NATIVE_CLASS_FUNCTION_EX("IsRightAltDown", isRightAltDown);
+RTTI_NATIVE_CLASS_FUNCTION_EX("IsRightShiftDown", isRightShiftDown);
+RTTI_NATIVE_CLASS_FUNCTION_EX("IsRightControlDown", isRightCtrlDown);
 RTTI_END_TYPE();
 
 BaseKeyFlags::BaseKeyFlags()
@@ -372,13 +372,13 @@ RTTI_BEGIN_TYPE_CLASS(InputMouseClickEvent);
 	RTTI_PROPERTY(m_keyMask);
 	RTTI_PROPERTY(m_windowPos);
 	RTTI_PROPERTY(m_absolutePos);
-	RTTI_FUNCTION("LeftClicked", leftClicked);
+	/*RTTI_FUNCTION("LeftClicked", leftClicked);
 	RTTI_FUNCTION("LeftDoubleClicked", leftDoubleClicked);
 	RTTI_FUNCTION("LeftReleased", leftReleased);
 	RTTI_FUNCTION("MidClicked", midClicked);
 	RTTI_FUNCTION("MidReleased", midReleased);
 	RTTI_FUNCTION("RightClicked", rightClicked);
-	RTTI_FUNCTION("RightReleased", rightReleased);
+	RTTI_FUNCTION("RightReleased", rightReleased);*/
 RTTI_END_TYPE();
 
 InputMouseClickEvent::InputMouseClickEvent(InputDeviceID deviceId, InputKey key, MouseEventType type, BaseKeyFlags BaseKeyFlags, const Point& windowPos, const Point& absolutePos)
@@ -476,7 +476,7 @@ RTTI_BEGIN_TYPE_CLASS(InputCharEvent);
 	RTTI_PROPERTY_FORCE_TYPE(m_scanCode, uint16_t);
 	RTTI_PROPERTY(m_repeated);
 	RTTI_PROPERTY(m_keyMask);
-	RTTI_FUNCTION("GetPrintableText", text);
+	//RTTI_FUNCTION("GetPrintableText", text);
 RTTI_END_TYPE();
 
 InputCharEvent::InputCharEvent(InputDeviceID deviceId, KeyScanCode scanCode, bool repeated, BaseKeyFlags BaseKeyFlags)
@@ -518,10 +518,10 @@ RTTI_BEGIN_TYPE_CLASS(InputKeyEvent);
 	RTTI_PROPERTY(m_pressed);
 	RTTI_PROPERTY(m_repeated);
 	RTTI_PROPERTY(m_keyMask);
-	RTTI_FUNCTION("Pressed", pressed);
+	/*RTTI_FUNCTION("Pressed", pressed);
 	RTTI_FUNCTION("PressedOrRepeated", pressedOrRepeated);
 	RTTI_FUNCTION("Released", released);
-	RTTI_FUNCTION("IsDown", isDown);
+	RTTI_FUNCTION("IsDown", isDown);*/
 RTTI_END_TYPE();
 
 InputKeyEvent::InputKeyEvent(InputDeviceType deviceType, InputDeviceID deviceId, InputKey key, bool pressed, bool repeated, BaseKeyFlags BaseKeyFlags)

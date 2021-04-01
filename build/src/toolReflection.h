@@ -6,7 +6,7 @@
 
 //--
 
-struct CodeGenerator;
+struct ProjectGenerator;
 
 struct ProjectReflection
 {
@@ -33,7 +33,7 @@ struct ProjectReflection
     bool extract(const ProjectStructure& structure, const Configuration& config);
     bool tokenizeFiles();
     bool parseDeclarations();
-    bool generateReflection(CodeGenerator& gen) const;
+    bool generateReflection(ProjectGenerator& gen) const;
 
 private:
     bool generateReflectionForProject(const RefelctionProject& p, std::stringstream& f) const;
@@ -46,11 +46,9 @@ class ToolReflection
 public:
     ToolReflection();
 
-    bool run(const Configuration& config);
-
-private:
+    int run(const char* argv0, const Commandline& cmdline);
 };
 
-extern bool GenerateInlinedReflection(const Configuration& config, ProjectStructure& structure, CodeGenerator& codeGenerator);
+extern bool GenerateInlinedReflection(const Configuration& config, ProjectStructure& structure, ProjectGenerator& codeGenerator);
 
 //--

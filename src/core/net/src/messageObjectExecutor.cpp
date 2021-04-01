@@ -87,7 +87,7 @@ namespace prv
     {
         HashSet<StringID> checkedFunctionNames;
 
-        // check all functions
+        /*// check all functions
         for (auto func : objectClass->allFunctions())
         {
             // don't bother with base functions for virtual functions
@@ -137,7 +137,7 @@ namespace prv
 
             TRACE_INFO("Found message handling function '{}' in class '{}' to handle message type '{}' with context {}", func->name(), objectClass->name(), messageStructType->name(), contextObjectClass);
             outFunctions[messageStructType] = func;
-        }
+        }*/
     }
 
     const MessageObjectExecutorTypeRegistry::ClassEntry* MessageObjectExecutorTypeRegistry::typeInfoForClass(ClassType contextObjectClass, ClassType classType)
@@ -185,9 +185,9 @@ bool DispatchObjectMessage(IObject* object, Type messageType, const void* messag
         const Function* callFunction = nullptr;
         if (classInfo->m_messageFunctions.find(messageType.toClass(), callFunction))
         {
-            FunctionCallingParams params;
+            //FunctionCallingParams params;
 
-            if (contextObjectType && callFunction->numParams() == 2)
+            /*if (contextObjectType && callFunction->numParams() == 2)
             {
                 ObjectPtr contextObjectPtr(AddRef(contextObject));
 
@@ -201,7 +201,7 @@ bool DispatchObjectMessage(IObject* object, Type messageType, const void* messag
                 params.m_argumentsPtr[0] = (void*)messagePayload;
                 callFunction->run(nullptr, object, params);
                 return true;
-            }
+            }*/
         }
         else
         {

@@ -50,8 +50,6 @@ IClassType::IClassType(StringID name, uint32_t size, uint32_t alignment, PoolTag
     : IType(name)
     , m_baseClass(nullptr)
     , m_memoryPool(pool)
-    , m_allPropertiesCached(false)
-    , m_allFunctionsCached(false)
     , m_userIndex(INDEX_NONE)
 {
     m_traits.metaType = MetaType::Class;
@@ -61,6 +59,8 @@ IClassType::IClassType(StringID name, uint32_t size, uint32_t alignment, PoolTag
 
 IClassType::~IClassType()
 {
+    clearCachedData();
+
     //m_localProperties.clearPtr();
     //m_localFunctions.clearPtr();
 }
@@ -639,18 +639,20 @@ const Property* IClassType::findProperty(StringID propertyName) const
     return nullptr;
 }
 
-const Function* IClassType::findFunction(StringID functionName) const
+const NativeFunction* IClassType::findNativeFunction(StringID functionName) const
 {
-    allFunctions();
+    const auto& functions = allNativeFunctions();
+    for (const auto* func : functions)
+        if (func->name() == functionName)
+            return func;
 
-    const Function* ret = nullptr;
-    m_allFunctionsMap.find(functionName, ret);
-    return ret;
+    return nullptr;
 }
 
-const Function* IClassType::findFunctionNoCache(StringID functionName) const
+const MonoFunction* IClassType::findMonoFunction(StringID functionName) const
 {
-    for (auto func  : allFunctions())
+    const auto& functions = allMonoFunctions();
+    for (const auto* func : functions)
         if (func->name() == functionName)
             return func;
 
@@ -659,68 +661,78 @@ const Function* IClassType::findFunctionNoCache(StringID functionName) const
 
 const IClassType::TConstProperties& IClassType::allProperties() const
 {
-    if (!m_allPropertiesCached)
+    if (auto* propList = m_allProperties.load())
+        return *propList;
+
+    auto* propList = new TConstProperties();
+
+    if (m_baseClass)
+        *propList = m_baseClass->allProperties();
+
+    for (const auto* prop : m_localProperties)
+        propList->pushBack(prop);
+
+    TConstProperties* existingProps = nullptr;
+    if (!m_allProperties.compare_exchange_strong(existingProps, propList))
     {
-        m_allTablesLock.acquire();
-
-        if (!m_allPropertiesCached)
-        {
-            m_allProperties.clear();
-
-            if (m_baseClass)
-                m_allProperties = m_baseClass->allProperties();
-
-            for (auto prop : m_localProperties)
-                m_allProperties.pushBack(prop);
-
-            m_allPropertiesCached = true;
-        }
-
-        m_allTablesLock.release();
+        delete propList;
+        return *existingProps;
     }
 
-    return m_allProperties;
+    return *propList;
 }
 
-const IClassType::TConstFunctions& IClassType::allFunctions() const
+const IClassType::TConstNativeFunctions& IClassType::allNativeFunctions() const
 {
-    if (!m_allFunctionsCached)
+    if (auto* funcList = m_allNativeFunctions.load())
+        return *funcList;
+
+    auto* funcList = new TConstNativeFunctions();
+
+    if (m_baseClass)
+        *funcList = m_baseClass->allNativeFunctions();
+
+    for (const auto* func : m_localNativeFunctions)
+        funcList->pushBack(func);
+
+    TConstNativeFunctions* existingFuncs = nullptr;
+    if (!m_allNativeFunctions.compare_exchange_strong(existingFuncs, funcList))
     {
-        m_allTablesLock.acquire();
-
-        if (!m_allFunctionsCached)
-        {
-            m_allFunctions.clear();
-            m_allFunctionsMap.clear();
-
-            for (auto func : m_localFunctions)
-                m_allFunctions.pushBack(func);
-
-            if (m_baseClass)
-            {
-                for (auto func : m_baseClass->allFunctions())
-                {
-                    m_allFunctions.pushBack(func);
-                    m_allFunctionsMap[func->name()] = func;
-                }
-            }
-
-            for (auto func  : m_localFunctions)
-                m_allFunctionsMap[func->name()] = func;
-
-            m_allFunctionsCached = true;
-        }
-
-        m_allTablesLock.release();
+        delete funcList;
+        return *existingFuncs;
     }
 
-    return m_allFunctions;
+    return *funcList;
+}
+
+const IClassType::TConstMonoFunctions& IClassType::allMonoFunctions() const
+{
+    if (auto* funcList = m_allMonoFunctions.load())
+        return *funcList;
+
+    auto* funcList = new TConstMonoFunctions();
+
+    if (m_baseClass)
+        *funcList = m_baseClass->allMonoFunctions();
+
+    for (const auto* func : m_localMonoFunctions)
+        funcList->pushBack(func);
+
+    TConstMonoFunctions* existingFuncs = nullptr;
+    if (!m_allMonoFunctions.compare_exchange_strong(existingFuncs, funcList))
+    {
+        delete funcList;
+        return *existingFuncs;
+    }
+
+    return *funcList;
 }
 
 class LocalClassTemplatePropertyCollector : public ITemplatePropertyBuilder
 {
 public:
-    LocalClassTemplatePropertyCollector()
+    LocalClassTemplatePropertyCollector(Array<TemplateProperty>& outList)
+        : m_outList(outList)
     {
     }
 
@@ -732,15 +744,11 @@ public:
         DEBUG_CHECK_RETURN_EX(name, "Invalid name");
         DEBUG_CHECK_RETURN_EX(type, "Invalid type");
 
-        for (auto index : m_properties.indexRange())
-        {
-            if (m_properties[index].name == name)
-            {
-                m_properties.erase(index);
-            }
-        }
+        for (auto index : m_outList.indexRange())
+            if (m_outList[index].name == name)
+                m_outList.erase(index);
 
-        auto& entry = m_properties.emplaceBack(type);
+        auto& entry = m_outList.emplaceBack(type);
         entry.category = category;
         entry.name = name;
         entry.editorData = editorData;
@@ -752,54 +760,53 @@ public:
 
     //--
 
-    Array<TemplateProperty> m_properties;
+    Array<TemplateProperty>& m_outList;
 };
 
 const IClassType::TConstTemplateProperties& IClassType::allTemplateProperties() const
 {
-    if (!m_allTemplatePropertiesCached)
+    if (auto* propList = m_allTemplateProperties.load())
+        return *propList;
+
+    auto propList = new TConstTemplateProperties();
+
+    if (is<IObject>() && !isAbstract())
     {
-        m_allTablesLock.acquire();
+        auto* def = (IObject*)defaultObject();
 
-        if (!m_allTemplatePropertiesCached)
+        LocalClassTemplatePropertyCollector localCollector(*propList);
+
+        // collect the native properties that are overridable
         {
-            if (is<IObject>() && !isAbstract())
+            for (const auto* prop : allProperties())
             {
-                auto* def = (IObject*)defaultObject();
-
-                LocalClassTemplatePropertyCollector localCollector;
-
-                // collect the native properties that are overridable
+                if (prop->overridable()) // TODO: different tag ?
                 {
-                    for (const auto* prop : allProperties())
-                    {
-                        if (prop->overridable()) // TODO: different tag ?
-                        {
-                            const void* defaultData = prop->offsetPtr(def);
+                    const void* defaultData = prop->offsetPtr(def);
 
-                            auto& entry = localCollector.m_properties.emplaceBack(prop->type());
-                            prop->type()->copy(entry.defaultValue, defaultData);
-                            entry.nativeProperty = prop;
-                            entry.category = prop->category();
-                            entry.name = prop->name();
-                            entry.editorData = prop->editorData();
-                        }
-                    }
+                    auto& entry = localCollector.m_outList.emplaceBack(prop->type());
+                    prop->type()->copy(entry.defaultValue, defaultData);
+                    entry.nativeProperty = prop;
+                    entry.category = prop->category();
+                    entry.name = prop->name();
+                    entry.editorData = prop->editorData();
                 }
-
-                // get additional properties
-                def->queryTemplateProperties(localCollector);
-
-                m_allTemplateProperties = std::move(localCollector.m_properties);
             }
-
-            m_allTemplatePropertiesCached = true;
         }
 
-        m_allTablesLock.release();
+        // get additional properties
+        def->queryTemplateProperties(localCollector);
     }
 
-    return m_allTemplateProperties;
+    // store
+    TConstTemplateProperties* existingProps = nullptr;
+    if (!m_allTemplateProperties.compare_exchange_strong(existingProps, propList))
+    {
+        delete propList;
+        return *existingProps;
+    }
+
+    return *propList;
 }
 
 const IMetadata* IClassType::metadata(ClassType metadataType) const
@@ -826,39 +833,64 @@ void IClassType::collectMetadataList(Array<const IMetadata*>& outMetadataList) c
     MetadataContainer::collectMetadataList(outMetadataList);
 }
 
+void IClassType::clearCachedData()
+{
+    delete m_allMonoFunctions.exchange(nullptr);
+    delete m_allNativeFunctions.exchange(nullptr);
+    delete m_allProperties.exchange(nullptr);
+    delete m_allTemplateProperties.exchange(nullptr);    
+}
+
 void IClassType::baseClass(ClassType baseClass)
 {
     if (baseClass == this)
         baseClass = nullptr; // special case for  root classes
 
-    DEBUG_CHECK_EX(m_baseClass == nullptr, "Base class already set");
-    DEBUG_CHECK_EX(!baseClass || !baseClass->is(this), "Recursive class chain");
+    DEBUG_CHECK_RETURN_EX(m_baseClass == nullptr, "Base class already set");
+    DEBUG_CHECK_RETURN_EX(!baseClass || !baseClass->is(this), "Recursive class chain");
 
-    m_baseClass = baseClass.ptr();
-    m_allPropertiesCached = false;
-
-    if (m_baseClass && m_baseClass->name().view().endsWith("Metadata"))
+    if (baseClass != m_baseClass)
     {
-        DEBUG_CHECK_EX(name().view().endsWith("Metadata"), TempString("Metadata class '{}' name must end with Metadata", name()));
+        clearCachedData();
+
+        m_baseClass = baseClass.ptr();
+
+        if (m_baseClass && m_baseClass->name().view().endsWith("Metadata"))
+        {
+            DEBUG_CHECK_EX(name().view().endsWith("Metadata"), TempString("Metadata class '{}' name must end with Metadata", name()));
+        }
     }
 }
 
 void IClassType::addProperty(Property* property)
 {
-    DEBUG_CHECK(property != nullptr);
-    DEBUG_CHECK(property->parent() == this);
+    DEBUG_CHECK_RETURN(property != nullptr);
+    DEBUG_CHECK_RETURN(property->parent() == this);
 
     m_localProperties.pushBack(property);
-    m_allPropertiesCached = false;
+
+    delete m_allProperties.exchange(nullptr);
+    delete m_allTemplateProperties.exchange(nullptr);
 }
 
-void IClassType::addFunction(Function* function)
+void IClassType::addNativeFunction(NativeFunction* function)
 {
-    DEBUG_CHECK(function != nullptr);
-    DEBUG_CHECK(function->parent() == this);
+    DEBUG_CHECK_RETURN(function != nullptr);
+    DEBUG_CHECK_RETURN(function->parent() == this);
 
-    m_localFunctions.pushBack(function);
-    m_allFunctionsCached = false;
+    m_localNativeFunctions.pushBack(function);
+    
+    delete m_allNativeFunctions.exchange(nullptr);
+}
+
+void IClassType::addMonoFunction(MonoFunction* function)
+{
+    DEBUG_CHECK_RETURN(function != nullptr);
+    DEBUG_CHECK_RETURN(function->parent() == this);
+
+    m_localMonoFunctions.pushBack(function);
+
+    delete m_allMonoFunctions.exchange(nullptr);
 }
 
 bool IClassType::handlePropertyMissing(TypeSerializationContext& context, StringID name, Type dataType, const void* data) const
@@ -889,8 +921,11 @@ void IClassType::cacheTypeData()
 
 void IClassType::releaseTypeReferences()
 {
+    clearCachedData();
+
     m_localProperties.clearPtr();
-    m_localFunctions.clearPtr();
+    m_localMonoFunctions.clearPtr();
+    m_localNativeFunctions.clearPtr();
 }
 
 void IClassType::assignUserIndex(short index) const

@@ -13,16 +13,39 @@
 
 BEGIN_BOOMER_NAMESPACE()
 
+//---
+
 class FunctionBuilder;
 
-END_BOOMER_NAMESPACE()
+// abstract function call stack frame
+class CORE_OBJECT_API IFunctionStackFrame : public NoCopy
+{
+public:
+    virtual ~IFunctionStackFrame();
 
-BEGIN_BOOMER_NAMESPACE()
+    virtual const IFunctionStackFrame* parent() const = 0;
+
+    virtual StringID functionName() const = 0;
+    virtual StringID className() const = 0;
+
+    virtual StringBuf sourceFile() const = 0;
+    virtual uint32_t sourceLine() const = 0;
+
+    virtual void throwException(const char* txt) const;
+
+    //--
+
+    // print callstack
+    void print(IFormatStream& f) const;
+
+    // dump callstack to log (debug)
+    void dump();
+};
 
 //---
 
 // modifier
-    enum class FunctionParamFlag : uint8_t
+enum class FunctionParamFlag : uint8_t
 {
     Normal = 0,
     Ref = 1,
@@ -68,61 +91,18 @@ typedef DirectFlags<FunctionFlag> FunctionFlags;
 
 //---
 
-// abstract function call stack frame
-class CORE_OBJECT_API IFunctionStackFrame : public NoCopy
+class FunctionSignatureBuilder;
+
+// function signature - return value and parameters
+class CORE_OBJECT_API FunctionSignature
 {
 public:
-    virtual ~IFunctionStackFrame();
-
-    virtual const IFunctionStackFrame* parent() const = 0;
-
-    virtual StringID functionName() const = 0;
-    virtual StringID className() const = 0;
-
-    virtual StringBuf sourceFile() const = 0;
-    virtual uint32_t sourceLine() const = 0;
-
-    virtual void throwException(const char* txt) const;
+    FunctionSignature();
+    FunctionSignature(const FunctionSignature& other) = default;
+    FunctionSignature& operator=(const FunctionSignature& other) = default;
+    FunctionSignature(const FunctionParamType& retType, const Array<FunctionParamType>& argTypes, bool isConst, bool isStatic);
 
     //--
-
-    // print callstack
-    void print(IFormatStream& f) const;
-
-    // dump callstack to log (debug)
-    void dump();
-};
-
-//---
-
-// function code block
-class CORE_OBJECT_API IFunctionCodeBlock : public NoCopy
-{
-    RTTI_DECLARE_POOL(POOL_SCRIPT_CODE)
-
-public:
-    virtual ~IFunctionCodeBlock();
-    virtual void release() = 0;
-    virtual uint64_t codeHash() const = 0;
-    virtual void run(const IFunctionStackFrame* parentFrame, void* context, const FunctionCallingParams& params) const = 0;
-};
-
-//---
-
-// callable native function
-class CORE_OBJECT_API Function : public NoCopy
-{
-    RTTI_DECLARE_POOL(POOL_RTTI)
-
-public:
-    Function(const IType* parent, StringID name, bool isScripted = false);
-    virtual ~Function();
-
-    /// get the name of the property
-    INLINE StringID name() const { return m_name; }
-
-    /// get the owner of this property
-    INLINE const IType* parent() const { return m_parent; }
 
     /// get type returned by the function
     INLINE FunctionParamType returnType() const { return m_returnType; }
@@ -133,84 +113,109 @@ public:
     /// get function parameter type
     INLINE const FunctionParamType* params() const { return m_paramTypes.typedData(); }
 
-    /// get function flags
-    INLINE FunctionFlags flags() const { return m_flags; }
-
-    /// is this a static function ?
     /// NOTE: non static functions will require object pointer
-    INLINE bool isStatic() const { return m_flags.test(FunctionFlag::Static); }
+    INLINE bool isStatic() const { return m_static; }
 
     /// is this a const function ?
-    INLINE bool isConst() const { return m_flags.test(FunctionFlag::Const); }
-
-    /// is this a native function
-    INLINE bool isNative() const { return m_flags.test(FunctionFlag::Native); }
-
-    /// is this a scripted function
-    INLINE bool scripted() const { return m_flags.test(FunctionFlag::Scripted); }
-
-    /// get size of memory needed to pass all function arguments
-    INLINE uint32_t paramsDataBlockSize() const { return m_paramsDataBlockSize; }
-
-    /// get size of memory needed to pass all function arguments
-    INLINE uint32_t paramsDataBlockAlignment() const { return m_paramsDataBlockAlignment; }
-
-    /// get the native function pointer (for direct calls)
-    INLINE const FunctionPointer& nativeFunctionPointer() const { return m_functionPtr; }
+    INLINE bool isConst() const { return m_const; }
 
     //--
-
-    /// get function full name, usually className and functionName (ie. GameObject.Tick)
-    StringBuf fullName() const;
 
     /// get function signature as string
     void print(IFormatStream& f) const;
 
     //--
 
-    /// setup as native function
-    void setupNative(const FunctionParamType& retType, const Array<FunctionParamType>& argTypes, const FunctionPointer& functionPointer, TFunctionWrapperPtr functionWrapper, bool isConst, bool isStatic);
-
-    /// setup as scripted function
-    void setupScripted(const FunctionParamType& retType, const Array<FunctionParamType>& argTypes, IFunctionCodeBlock* scriptedCode, bool isConst, bool isStatic);
-
-    /// cleanup
-    void cleanupScripted();
-
-    //--
-
-    /// bind JIT version of this function
-    /// NOTE: can fail if the code used to generate the JITed function does not match our current code
-    bool bindJITFunction(uint64_t codeHash, TFunctionJittedWrapperPtr jitPtr);
-
-    //--
-
-    /// run function, works for both native and scripted functions, totally transparent
-    void run(const IFunctionStackFrame* parentFrame, void* context, const FunctionCallingParams& params) const;
-
 private:
-    FunctionPointer m_functionPtr; // function pointer (native functions)
-    TFunctionWrapperPtr m_functionWrapperPtr; // function wrapper (for calling native fuctions from scripts)
-    IFunctionCodeBlock* m_functionCode; // function code (script functions)
-    TFunctionJittedWrapperPtr m_functionJittedCode; // in case function was JITTed
-
-    //--
-
-    const IType* m_parent; // class
-    StringID m_name; // name of the function
-
-    FunctionFlags m_flags; // function flags
-
     FunctionParamType m_returnType; // type returned by the function
 
     typedef Array<FunctionParamType> TParamTypes;
     TParamTypes m_paramTypes; // type of parameters accepted by function
 
-    uint32_t m_paramsDataBlockSize = 0;
-    uint32_t m_paramsDataBlockAlignment = 1;
+    bool m_static = false;
+    bool m_const = false;
 
-    void calculateDataBlockSize();
+    friend class FunctionSignatureBuilder;
 };
+
+//---
+
+// basic function
+class CORE_OBJECT_API IFunction : public NoCopy
+{
+    RTTI_DECLARE_POOL(POOL_RTTI)
+
+public:
+    IFunction(const IType* parent, StringID name, const FunctionSignature& signature);
+
+    /// get the name of the property
+    INLINE StringID name() const { return m_name; }
+
+    /// get the owner of this property
+    INLINE const IType* parent() const { return m_parent; }
+
+    /// get function calling signature
+    INLINE const FunctionSignature& signature() const { return m_signature; }
+
+private:
+    const IType* m_parent; // class
+    StringID m_name; // name of the function
+
+    FunctionSignature m_signature;
+};
+
+//---
+
+// callable object's native function, usable in the visual scripting system
+class CORE_OBJECT_API NativeFunction : public IFunction
+{
+    RTTI_DECLARE_POOL(POOL_RTTI)
+
+public:
+    NativeFunction(const IType* parent, StringID name, const FunctionSignature& signature, FunctionPointer nativePtr, TFunctionWrapperPtr wrappedPtr);
+
+    ///--
+
+    /// get the native function pointer (for direct calls)
+    INLINE const FunctionPointer& nativeFunctionPointer() const { return m_nativePtr; }
+
+    /// get universal function wrapper
+    INLINE TFunctionWrapperPtr nativeFunctionWrapper() const { return m_wrappedPtr; }
+
+    //--
+
+    /// run function, works for both native and scripted functions, totally transparent, can be used by scripting languages when running the function directly is out of question
+    void run(const IFunctionStackFrame* parentFrame, void* context, const FunctionCallingParams& params) const;
+
+    //--
+
+private:
+    FunctionPointer m_nativePtr = nullptr;
+    TFunctionWrapperPtr m_wrappedPtr = nullptr;
+};
+
+//---
+
+// mono callable function, contains specialized Mono shim that calls the native function pointer
+class CORE_OBJECT_API MonoFunction : public IFunction
+{
+    RTTI_DECLARE_POOL(POOL_RTTI)
+
+public:
+    MonoFunction(const IType* parent, StringID name, const FunctionSignature& signature, TFunctionMonoWrapperPtr ptr);
+
+    ///--
+
+    /// get the callable function address to be exported to mono
+    INLINE TFunctionMonoWrapperPtr monoFunctionWrapper() const { return m_monoWrappedPtr; }
+
+    //--
+
+private:
+    TFunctionMonoWrapperPtr m_monoWrappedPtr = nullptr;
+};
+
+//---
 
 END_BOOMER_NAMESPACE()
 
